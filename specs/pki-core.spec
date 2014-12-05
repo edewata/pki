@@ -5,7 +5,7 @@ distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:             pki-core
 Version:          10.2.0
-Release:          1%{?dist}
+Release:          5%{?dist}
 Summary:          Certificate System - PKI Core Components
 URL:              http://pki.fedoraproject.org/
 License:          GPLv2
@@ -27,6 +27,7 @@ BuildRequires:    ldapjdk
 BuildRequires:    apache-commons-cli
 BuildRequires:    apache-commons-codec
 BuildRequires:    apache-commons-io
+BuildRequires:    jakarta-commons-httpclient
 BuildRequires:    nspr-devel
 BuildRequires:    nss-devel >= 3.14.3
 BuildRequires:    openldap-devel
@@ -37,16 +38,23 @@ BuildRequires:    xalan-j2
 BuildRequires:    xerces-j2
 
 %if  0%{?rhel}
-BuildRequires:    resteasy-base-atom-provider
-BuildRequires:    resteasy-base-jaxb-provider
-BuildRequires:    resteasy-base-jaxrs
-BuildRequires:    resteasy-base-jaxrs-api
-BuildRequires:    resteasy-base-jackson-provider
+# 'resteasy-base' is a subset of the complete set of
+# 'resteasy' packages and consists of what is needed to
+# support the PKI Restful interface on RHEL platforms
+BuildRequires:    resteasy-base-atom-provider >= 3.0.6-1
+BuildRequires:    resteasy-base-client >= 3.0.6-1
+BuildRequires:    resteasy-base-jaxb-provider >= 3.0.6-1
+BuildRequires:    resteasy-base-jaxrs >= 3.0.6-1
+BuildRequires:    resteasy-base-jaxrs-api >= 3.0.6-1
+BuildRequires:    resteasy-base-jackson-provider >= 3.0.6-1
 %else
 BuildRequires:    resteasy >= 3.0.6-2
 %endif
 
+%if ! 0%{?rhel}
 BuildRequires:    pylint
+%endif
+
 BuildRequires:    python-nss
 BuildRequires:    python-requests
 BuildRequires:    libselinux-python
@@ -54,9 +62,9 @@ BuildRequires:    policycoreutils-python
 BuildRequires:    python-ldap
 BuildRequires:    junit
 BuildRequires:    jpackage-utils >= 0:1.7.5-10
-BuildRequires:    jss >= 4.2.6-28
+BuildRequires:    jss >= 4.2.6-35
 BuildRequires:    systemd-units
-BuildRequires:    tomcatjss >= 7.1.0
+BuildRequires:    tomcatjss >= 7.1.0-5
 
 # additional build requirements needed to build native 'tpsclient'
 # REMINDER:  Revisit these once 'tpsclient' is rewritten as a Java app
@@ -71,7 +79,14 @@ BuildRequires:    svrcore-devel
 BuildRequires:    zlib
 BuildRequires:    zlib-devel
 
-Source0:          http://pki.fedoraproject.org/pki/sources/%{name}/%{name}-%{version}%{?prerel}.tar.gz
+%if 0%{?rhel}
+# NOTE:  In the future, as a part of its path, this URL will contain a release
+#        directory which consists of the fixed number of the upstream release
+#        upon which this tarball was originally based.
+Source0:          http://pki.fedoraproject.org/pki/sources/%{name}/%{version}/%{name}-%{version}%{?prerel}.tar.gz
+%else
+Source0:          http://pki.fedoraproject.org/pki/sources/%{name}/%{version}/%{release}/%{name}-%{version}%{?prerel}.tar.gz
+%endif
 
 %if 0%{?rhel}
 ExcludeArch:      ppc ppc64 ppcle ppc64le s390 s390x
@@ -170,7 +185,7 @@ Group:            System Environment/Libraries
 Requires:         java-headless >= 1:1.7.0
 Requires:         nss
 Requires:         jpackage-utils >= 0:1.7.5-10
-Requires:         jss >= 4.2.6-28
+Requires:         jss >= 4.2.6-35
 
 Provides:         symkey = %{version}-%{release}
 
@@ -203,21 +218,26 @@ Requires:         apache-commons-codec
 Requires:         apache-commons-io
 Requires:         apache-commons-lang
 Requires:         apache-commons-logging
+Requires:         jakarta-commons-httpclient
 Requires:         java-headless >= 1:1.7.0
 Requires:         javassist
 Requires:         jackson-jaxrs-json-provider
 Requires:         jpackage-utils >= 0:1.7.5-10
-Requires:         jss >= 4.2.6-28
+Requires:         jss >= 4.2.6-35
 Requires:         ldapjdk
 Requires:         python-ldap
 Requires:         python-lxml
 Requires:         python-requests >= 1.1.0-3
 %if  0%{?rhel}
-Requires:    resteasy-base-atom-provider
-Requires:    resteasy-base-jaxb-provider
-Requires:    resteasy-base-jaxrs
-Requires:    resteasy-base-jaxrs-api
-Requires:    resteasy-base-jackson-provider
+# 'resteasy-base' is a subset of the complete set of
+# 'resteasy' packages and consists of what is needed to
+# support the PKI Restful interface on RHEL platforms
+Requires:    resteasy-base-atom-provider >= 3.0.6-1
+Requires:    resteasy-base-client >= 3.0.6-1
+Requires:    resteasy-base-jaxb-provider >= 3.0.6-1
+Requires:    resteasy-base-jaxrs >= 3.0.6-1
+Requires:    resteasy-base-jaxrs-api >= 3.0.6-1
+Requires:    resteasy-base-jackson-provider >= 3.0.6-1
 %else
 Requires:         resteasy >= 3.0.6-2
 %endif
@@ -289,14 +309,18 @@ Requires:         policycoreutils-python
 Requires:         selinux-policy-base >= 3.11.1-43
 Obsoletes:        pki-selinux
 
+%if 0%{?rhel}
+Requires:         tomcat >= 7.0.54
+%else
 Requires:         tomcat >= 7.0.47
+%endif
 
 Requires:         velocity
 Requires(post):   systemd-units
 Requires(preun):  systemd-units
 Requires(postun): systemd-units
 
-Requires:         tomcatjss >= 7.1.0
+Requires:         tomcatjss >= 7.1.0-5
 
 %description -n   pki-server
 The PKI Server Framework is required by the following four PKI subsystems:
@@ -569,12 +593,14 @@ ln -s %{_javadir}/pki/pki-tps.jar %{buildroot}%{_datadir}/pki/tps/webapps/tps/WE
 
 %if %{with server}
 
+%if ! 0%{?rhel}
 # Scanning the python code with pylint. A return value of 0 represents there are no
 # errors or warnings reported by pylint.
 sh ../pylint-build-scan.sh %{buildroot} `pwd`
 if [ $? -eq 1 ]; then
     exit 1
 fi
+%endif
 
 %{__rm} -rf %{buildroot}%{_datadir}/pki/server/lib
 
@@ -831,6 +857,25 @@ echo >> /var/log/pki/pki-server-upgrade-%{version}.log 2>&1
 %endif # %{with server}
 
 %changelog
+* Tue Dec  2 2014 Matthew Harmsen <mharmsen@redhat.com> - 10.2.0-5
+- Bugzilla Bug #1165351 - Errata TPS test fails due to dependent packages not
+  found (mharmsen)
+- PKI Trac Ticket #1211 - New release overwrites old source tarball (mharmsen)
+- Bugzilla Bug #1151147 - issuerDN encoding correction (cfu)
+
+* Mon Nov 24 2014 Christina Fu <cfu@redhat.com> 10.2.0-4
+- Ticket 1198 Bugzilla 1158410 add TLS range support to server.xml by default and upgrade
+- up the release number to 4
+
+* Wed Oct 1 2014 Ade Lee <alee@redhat.com> 10.2.0-3
+- Disable pylint dependency for RHEL builds
+- Added jakarta-commons-httpclient requirements
+- Added tomcat version for RHEL build
+- Added resteasy-base-client for RHEL build
+
+* Wed Sep 24 2014 Matthew Harmsen <mharmsen@redhat.com> - 10.2.0-2
+- PKI TRAC Ticket #1130 - Add RHEL/CentOS conditionals to spec
+
 * Wed Sep  3 2014 Dogtag Team <pki-devel@redhat.com> 10.2.0-1
 - Update release number for release build
 
