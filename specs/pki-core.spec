@@ -859,6 +859,7 @@ echo >> /var/log/pki/pki-server-upgrade-%{version}.log 2>&1
 
 %changelog
 * Tue Dec 16 2014 Matthew Harmsen <mharmsen@redhat.com> - 10.2.0-6
+- Bugzilla Bug #1160435 - Remove obsolete packages from CS 9.0
 - PKI TRAC Ticket #1187 - mod_perl should be removed from requirements for 10.2
 - PKI TRAC Ticket #1205 - Outdated selinux-policy dependency.
 - Removed perl(XML::LibXML), perl-Crypt-SSLeay, and perl-Mozilla-LDAP runtime
