@@ -39,16 +39,26 @@
 . /opt/rhqa_pki/env.sh
 
 ######################################################################################
-#pki-user-cli-user-ca.sh should be first executed prior to pki-user-cli-user-cert-delete-ca.sh
+#pki-user-cli-role-user-create-tests should be first executed prior to pki-user-cli-user-cert-delete-ca.sh
 ######################################################################################
-
-########################################################################
-# Test Suite Globals
-########################################################################
-
-########################################################################
-
 run_pki-user-cli-user-cert-delete-ca_tests(){
+subsystemId=$1
+SUBSYSTEM_TYPE=$2
+MYROLE=$3
+
+if [ "$TOPO9" = "TRUE" ] ; then
+        prefix=$subsystemId
+elif [ "$MYROLE" = "MASTER" ] ; then
+        if [[ $subsystemId == SUBCA* ]]; then
+                prefix=$subsystemId
+        else
+                prefix=ROOTCA
+        fi
+else
+        prefix=$MYROLE
+fi
+
+SUBSYSTEM_HOST=$(eval echo \$${MYROLE})
 
         ##### Create temporary directory to save output files #####
     rlPhaseStartSetup "pki_user_cli_user_cert-del-ca-startup: Create temporary directory"
@@ -68,7 +78,7 @@ local TEMP_NSS_DB="$TmpDir/nssdb"
 local TEMP_NSS_DB_PASSWD="redhat123"
 	##### pki_user_cli_user_cert_delete_ca-configtest ####
      rlPhaseStartTest "pki_user_cli_user_cert-del-configtest-001: pki user-cert-del configuration test"
-        rlRun "pki user-cert-del --help > $TmpDir/pki_user_cert_del_cfg.out 2>&1" \
+        rlRun "pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) user-cert-del --help > $TmpDir/pki_user_cert_del_cfg.out 2>&1" \
                 0 \
                 "User cert delete configuration"
         rlAssertGrep "usage: user-cert-del <User ID> <Cert ID>" "$TmpDir/pki_user_cert_del_cfg.out"
@@ -81,146 +91,196 @@ local TEMP_NSS_DB_PASSWD="redhat123"
 	##### Delete certs asigned to a user - valid Cert ID and User ID #####
 
 	rlPhaseStartTest "pki_user_cli_user_cert-del-CA-002-tier1: Delete cert assigned to a user - valid UserID and CertID"
-                k=2
 		i=0
         	rlRun "pki -d $CERTDB_DIR \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                             user-add --fullName=\"$user1fullname\" $user1"
 		 while [ $i -lt 4 ] ; do
-		cert_type="pkcs10"
-                rlRun "generate_user_cert $cert_info $k \"$user1$(($i+1))\" \"$user1fullname$(($i+1))\" $user1$(($i+1))@example.org $testname $cert_type $i" 0  "Generating temp cert"
-                local cert_serialNumber_pkcs10=$(cat $cert_info| grep cert_serialNumber | cut -d- -f2)
-                local STRIP_HEX_PKCS10=$(echo $cert_serialNumber_pkcs10 | cut -dx -f2)
-                local CONV_UPP_VAL_PKCS10=${STRIP_HEX_PKCS10^^}
-                local decimal_valid_serialNumber_pkcs10=$(echo "ibase=16;$CONV_UPP_VAL_PKCS10"|bc)
+		rlRun "generate_new_cert tmp_nss_db:$TEMP_NSS_DB tmp_nss_db_pwd:$TEMP_NSS_DB_PASSWD request_type:pkcs10 \
+                        algo:rsa key_size:2048 subject_cn:\"$user1fullname$(($i+1))\" subject_uid:$user1$(($i+1)) subject_email:$user1$(($i+1))@example.org \
+                        organizationalunit:Engineering organization:Example country:US archive:false req_profile:caUserCert \
+                        target_host:$SUBSYSTEM_HOST protocol: port:$(eval echo \$${subsystemId}_UNSECURE_PORT) cert_db_dir:$CERTDB_DIR cert_db_pwd:$CERTDB_DIR_PASSWORD \
+                        certdb_nick:\"${prefix}_agentV\" cert_info:$cert_info"
+                        local cert_serialNumber_pkcs10=$(cat $cert_info| grep cert_serialNumber | cut -d- -f2)
+                        local decimal_valid_serialNumber_pkcs10=$(cat $cert_info| grep decimal_valid_serialNumber | cut -d- -f2)
+                        local STRIP_HEX_PKCS10=$(echo $cert_serialNumber_pkcs10 | cut -dx -f2)
+                        local CONV_UPP_VAL_PKCS10=${STRIP_HEX_PKCS10^^}
                 serialhexuser1[$i]=$cert_serialNumber_pkcs10
                 serialdecuser1[$i]=$decimal_valid_serialNumber_pkcs10
+                rlRun "pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) cert-show $cert_serialNumber_pkcs10 --encoded > $TmpDir/pki_ca_user_cert_del_encoded_002pkcs10$i.out" 0 "Executing pki cert-show $cert_serialNumber_pkcs10"
+                rlRun "sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' $TmpDir/pki_ca_user_cert_del_encoded_002pkcs10$i.out > $TmpDir/pki_user_cert_del-CA_validcert_002pkcs10$i.pem"
 
-		cert_type="crmf"
-                rlRun "generate_user_cert $cert_info $k \"$user1$(($i+1))\" \"$user1fullname$(($i+1))\" $user1$(($i+1))@example.org $testname $cert_type $i" 0  "Generating temp cert"
-                local cert_serialNumber_crmf=$(cat $cert_info| grep cert_serialNumber | cut -d- -f2)
-                local STRIP_HEX_CRMF=$(echo $cert_serialNumber_crmf | cut -dx -f2)
-                local CONV_UPP_VAL_CRMF=${STRIP_HEX_CRMF^^}
-                local decimal_valid_serialNumber_crmf=$(echo "ibase=16;$CONV_UPP_VAL_CRMF"|bc)
+                rlRun "generate_new_cert tmp_nss_db:$TEMP_NSS_DB tmp_nss_db_pwd:$TEMP_NSS_DB_PASSWD request_type:crmf \
+                        algo:rsa key_size:2048 subject_cn:\"$user1fullname$(($i+1))\" subject_uid:$user1$(($i+1)) subject_email:$user1$(($i+1))@example.org \
+                        organizationalunit:Engineering organization:Example country:US archive:false req_profile:caUserCert \
+                        target_host:$SUBSYSTEM_HOST protocol: port:$(eval echo \$${subsystemId}_UNSECURE_PORT) cert_db_dir:$CERTDB_DIR cert_db_pwd:$CERTDB_DIR_PASSWORD \
+                        certdb_nick:\"${prefix}_agentV\" cert_info:$cert_info"
+                        local cert_serialNumber_crmf=$(cat $cert_info| grep cert_serialNumber | cut -d- -f2)
+                        local decimal_valid_serialNumber_crmf=$(cat $cert_info| grep decimal_valid_serialNumber | cut -d- -f2)
+                        local STRIP_HEX_CRMF=$(echo $cert_serialNumber_crmf | cut -dx -f2)
+                        local CONV_UPP_VAL_CRMF=${STRIP_HEX_CRMF^^}
                 serialhexuser1_crmf[$i]=$cert_serialNumber_crmf
                 serialdecuser1_crmf[$i]=$decimal_valid_serialNumber_crmf
+		rlRun "pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) cert-show $cert_serialNumber_crmf --encoded > $TmpDir/pki_ca_user_cert_del_encoded_002crmf$i.out" 0 "Executing pki cert-show $cert_serialNumber_crmf"
+                rlRun "sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' $TmpDir/pki_ca_user_cert_del_encoded_002crmf$i.out > $TmpDir/pki_user_cert_del-CA_validcert_002crmf$i.pem"
+
                 rlLog "pki -d $CERTDB_DIR/ \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
                             user-cert-add $user1 --input $TmpDir/pki_user_cert_del-CA_validcert_002pkcs10$i.pem"
                 rlRun "pki -d $CERTDB_DIR/ \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
                             user-cert-add $user1 --input $TmpDir/pki_user_cert_del-CA_validcert_002pkcs10$i.pem"
 
 		rlLog "pki -d $CERTDB_DIR/ \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
                             user-cert-add $user1 --input $TmpDir/pki_user_cert_del-CA_validcert_002crmf$i.pem"
                 rlRun "pki -d $CERTDB_DIR/ \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
                             user-cert-add $user1 --input $TmpDir/pki_user_cert_del-CA_validcert_002crmf$i.pem"
                 let i=$i+1
         	done
 		i=0
 		rlLog "Executing pki -d $CERTDB_DIR/ \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
-                            user-cert-del $user1 \"2;${serialdecuser1[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))$@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US\""
+                            user-cert-del $user1 \"2;${serialdecuser1[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))$@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US\""
 		rlRun "pki -d $CERTDB_DIR/ \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
-                            user-cert-del $user1 \"2;${serialdecuser1[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US\" > $TmpDir/pki_user_cert_del_CA_002.out" \
+                            user-cert-del $user1 \"2;${serialdecuser1[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US\" > $TmpDir/pki_user_cert_del_CA_002.out" \
 			0 \
 			"Delete cert assigned to $user1"
-		rlAssertGrep "Deleted certificate \"2;${serialdecuser1[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US\"" "$TmpDir/pki_user_cert_del_CA_002.out"
+		rlAssertGrep "Deleted certificate \"2;${serialdecuser1[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US\"" "$TmpDir/pki_user_cert_del_CA_002.out"
 
 		rlLog "Executing pki -d $CERTDB_DIR/ \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
-                            user-cert-del $user1 \"2;${serialdecuser1_crmf[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))$@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US\""
+                            user-cert-del $user1 \"2;${serialdecuser1_crmf[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))$@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US\""
                 rlRun "pki -d $CERTDB_DIR/ \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
-                            user-cert-del $user1 \"2;${serialdecuser1_crmf[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US\" > $TmpDir/pki_user_cert_del_CA_002crmf.out" \
+                            user-cert-del $user1 \"2;${serialdecuser1_crmf[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US\" > $TmpDir/pki_user_cert_del_CA_002crmf.out" \
                         0 \
                         "Delete cert assigned to $user1"
-                rlAssertGrep "Deleted certificate \"2;${serialdecuser1_crmf[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US\"" "$TmpDir/pki_user_cert_del_CA_002crmf.out"
+                rlAssertGrep "Deleted certificate \"2;${serialdecuser1_crmf[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US\"" "$TmpDir/pki_user_cert_del_CA_002crmf.out"
 		
 		rlRun "pki -d $CERTDB_DIR \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                             user-del $user1"
 	rlPhaseEnd
 
 	##### Delete certs asigned to a user - invalid Cert ID #####
 
 	rlPhaseStartTest "pki_user_cli_user_cert-del-CA-003: pki user-cert-del should fail if an invalid Cert ID is provided"
-		k=3
                 i=0
                 rlRun "pki -d $CERTDB_DIR \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                             user-add --fullName=\"$user1fullname\" $user1"
                  while [ $i -lt 4 ] ; do
-                cert_type="pkcs10"
-                rlRun "generate_user_cert $cert_info $k \"$user1$(($i+1))\" \"$user1fullname$(($i+1))\" $user1$(($i+1))@example.org $testname $cert_type $i" 0  "Generating temp cert"
-                local cert_serialNumber_pkcs10=$(cat $cert_info| grep cert_serialNumber | cut -d- -f2)
-                local STRIP_HEX_PKCS10=$(echo $cert_serialNumber_pkcs10 | cut -dx -f2)
-                local CONV_UPP_VAL_PKCS10=${STRIP_HEX_PKCS10^^}
-                local decimal_valid_serialNumber_pkcs10=$(echo "ibase=16;$CONV_UPP_VAL_PKCS10"|bc)
+		rlRun "generate_new_cert tmp_nss_db:$TEMP_NSS_DB tmp_nss_db_pwd:$TEMP_NSS_DB_PASSWD request_type:pkcs10 \
+                        algo:rsa key_size:2048 subject_cn:\"$user1fullname$(($i+1))\" subject_uid:$user1$(($i+1)) subject_email:$user1$(($i+1))@example.org \
+                        organizationalunit:Engineering organization:Example country:US archive:false req_profile:caUserCert \
+                        target_host:$SUBSYSTEM_HOST protocol: port:$(eval echo \$${subsystemId}_UNSECURE_PORT) cert_db_dir:$CERTDB_DIR cert_db_pwd:$CERTDB_DIR_PASSWORD \
+                        certdb_nick:\"${prefix}_agentV\" cert_info:$cert_info"
+                        local cert_serialNumber_pkcs10=$(cat $cert_info| grep cert_serialNumber | cut -d- -f2)
+                        local decimal_valid_serialNumber_pkcs10=$(cat $cert_info| grep decimal_valid_serialNumber | cut -d- -f2)
+                        local STRIP_HEX_PKCS10=$(echo $cert_serialNumber_pkcs10 | cut -dx -f2)
+                        local CONV_UPP_VAL_PKCS10=${STRIP_HEX_PKCS10^^}
                 serialhexuser1[$i]=$cert_serialNumber_pkcs10
                 serialdecuser1[$i]=$decimal_valid_serialNumber_pkcs10
+                rlRun "pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) cert-show $cert_serialNumber_pkcs10 --encoded > $TmpDir/pki_ca_user_cert_del_encoded_003pkcs10$i.out" 0 "Executing pki cert-show $cert_serialNumber_pkcs10"
+                rlRun "sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' $TmpDir/pki_ca_user_cert_del_encoded_003pkcs10$i.out > $TmpDir/pki_user_cert_del-CA_validcert_003pkcs10$i.pem"
 
-                cert_type="crmf"
-                rlRun "generate_user_cert $cert_info $k \"$user1$(($i+1))\" \"$user1fullname$(($i+1))\" $user1$(($i+1))@example.org $testname $cert_type $i" 0  "Generating temp cert"
-                local cert_serialNumber_crmf=$(cat $cert_info| grep cert_serialNumber | cut -d- -f2)
-                local STRIP_HEX_CRMF=$(echo $cert_serialNumber_crmf | cut -dx -f2)
-                local CONV_UPP_VAL_CRMF=${STRIP_HEX_CRMF^^}
-                local decimal_valid_serialNumber_crmf=$(echo "ibase=16;$CONV_UPP_VAL_CRMF"|bc)
+                rlRun "generate_new_cert tmp_nss_db:$TEMP_NSS_DB tmp_nss_db_pwd:$TEMP_NSS_DB_PASSWD request_type:crmf \
+                        algo:rsa key_size:2048 subject_cn:\"$user1fullname$(($i+1))\" subject_uid:$user1$(($i+1)) subject_email:$user1$(($i+1))@example.org \
+                        organizationalunit:Engineering organization:Example country:US archive:false req_profile:caUserCert \
+                        target_host:$SUBSYSTEM_HOST protocol: port:$(eval echo \$${subsystemId}_UNSECURE_PORT) cert_db_dir:$CERTDB_DIR cert_db_pwd:$CERTDB_DIR_PASSWORD \
+                        certdb_nick:\"${prefix}_agentV\" cert_info:$cert_info"
+                        local cert_serialNumber_crmf=$(cat $cert_info| grep cert_serialNumber | cut -d- -f2)
+                        local decimal_valid_serialNumber_crmf=$(cat $cert_info| grep decimal_valid_serialNumber | cut -d- -f2)
+                        local STRIP_HEX_CRMF=$(echo $cert_serialNumber_pkcs10 | cut -dx -f2)
+                        local CONV_UPP_VAL_CRMF=${STRIP_HEX_CRMF^^}
                 serialhexuser1_crmf[$i]=$cert_serialNumber_crmf
                 serialdecuser1_crmf[$i]=$decimal_valid_serialNumber_crmf
+                rlRun "pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) cert-show $cert_serialNumber_crmf --encoded > $TmpDir/pki_ca_user_cert_del_encoded_003crmf$i.out" 0 "Executing pki cert-show $cert_serialNumber_crmf"
+                rlRun "sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' $TmpDir/pki_ca_user_cert_del_encoded_003crmf$i.out > $TmpDir/pki_user_cert_del-CA_validcert_003crmf$i.pem"
+
                 rlLog "pki -d $CERTDB_DIR/ \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
                             user-cert-add $user1 --input $TmpDir/pki_user_cert_del-CA_validcert_003pkcs10$i.pem"
                 rlRun "pki -d $CERTDB_DIR/ \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
                             user-cert-add $user1 --input $TmpDir/pki_user_cert_del-CA_validcert_003pkcs10$i.pem"
 
                 rlLog "pki -d $CERTDB_DIR/ \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
                             user-cert-add $user1 --input $TmpDir/pki_user_cert_del-CA_validcert_003crmf$i.pem"
                 rlRun "pki -d $CERTDB_DIR/ \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
                             user-cert-add $user1 --input $TmpDir/pki_user_cert_del-CA_validcert_003crmf$i.pem"
                 let i=$i+1
 		done
                 i=1
-                command="pki -d $CERTDB_DIR -n CA_adminV -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '3;${serialdecuser1[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+                command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n ${prefix}_adminV -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '3;${serialdecuser1[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
                 rlLog "Executing: $command"
                 errmsg="PKIException: Failed to modify user."
                 errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - pki user-cert-del should fail if Invalid Cert ID is provided"
 
-                command="pki -d $CERTDB_DIR -n CA_adminV -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '3;${serialdecuser1_crmf[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+                command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n ${prefix}_adminV -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '3;${serialdecuser1_crmf[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
                 rlLog "Executing: $command"
                 errmsg="PKIException: Failed to modify user."
                 errorcode=255
@@ -231,12 +291,12 @@ local TEMP_NSS_DB_PASSWD="redhat123"
 
         rlPhaseStartTest "pki_user_cli_user_cert-del-CA-004: pki user-cert-del should fail if a non-existing User ID is provided"
 		i=1
-		command="pki -d $CERTDB_DIR -n CA_adminV -c $CERTDB_DIR_PASSWORD user-cert-del testuser4 '2;${serialdecuser1[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n ${prefix}_adminV -c $CERTDB_DIR_PASSWORD user-cert-del testuser4 '2;${serialdecuser1[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
 	        errmsg="ResourceNotFoundException: User not found"
 		errorcode=255
         	rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - User not found message should be thrown when deleting certs assigned to a user that does not exist"
 
-		command="pki -d $CERTDB_DIR -n CA_adminV -c $CERTDB_DIR_PASSWORD user-cert-del testuser4 '2;${serialdecuser1_crmf[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n ${prefix}_adminV -c $CERTDB_DIR_PASSWORD user-cert-del testuser4 '2;${serialdecuser1_crmf[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
                 errmsg="ResourceNotFoundException: User not found"
 		errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - User not found message should be thrown when deleting certs assigned to a user that does not exist"
@@ -248,15 +308,17 @@ local TEMP_NSS_DB_PASSWD="redhat123"
         rlPhaseStartTest "pki_user_cli_user_cert-del-CA-005: pki user-cert-del should fail is there is a mismatch of User ID and Cert ID"
 		i=1
 		rlRun "pki -d $CERTDB_DIR \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                             user-add --fullName=\"$user2fullname\" --password=Secret123 $user2"
-		command="pki -d $CERTDB_DIR -n CA_adminV -c $CERTDB_DIR_PASSWORD user-cert-del $user2 '2;${serialdecuser1[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n ${prefix}_adminV -c $CERTDB_DIR_PASSWORD user-cert-del $user2 '2;${serialdecuser1[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
                 errmsg="ResourceNotFoundException: Certificate not found"
 		errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when there is a Cert ID and User ID mismatch"
 		
-		command="pki -d $CERTDB_DIR -n CA_adminV -c $CERTDB_DIR_PASSWORD user-cert-del $user2 '2;${serialdecuser1_crmf[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n ${prefix}_adminV -c $CERTDB_DIR_PASSWORD user-cert-del $user2 '2;${serialdecuser1_crmf[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
                 errmsg="ResourceNotFoundException: Certificate not found"
 		errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when there is a Cert ID and User ID mismatch"
@@ -267,13 +329,13 @@ local TEMP_NSS_DB_PASSWD="redhat123"
 
         rlPhaseStartTest "pki_user_cli_user_cert-del-CA-006-tier1: pki user-cert-del should fail if User ID is not provided"
 		i=1
-		command="pki -d $CERTDB_DIR -n CA_adminV -c $CERTDB_DIR_PASSWORD user-cert-del '2;${serialdecuser1[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n ${prefix}_adminV -c $CERTDB_DIR_PASSWORD user-cert-del '2;${serialdecuser1[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
                 errmsg="Error: Incorrect number of arguments specified."
 		errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when User ID is missing"
 
 
-		command="pki -d $CERTDB_DIR -n CA_adminV -c $CERTDB_DIR_PASSWORD user-cert-del '2;${serialdecuser1_crmf[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n ${prefix}_adminV -c $CERTDB_DIR_PASSWORD user-cert-del '2;${serialdecuser1_crmf[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
                 errmsg="Error: Incorrect number of arguments specified."
 		errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when User ID is missing"
@@ -283,7 +345,7 @@ local TEMP_NSS_DB_PASSWD="redhat123"
 	##### Delete certs asigned to a user - no Cert ID #####
 
         rlPhaseStartTest "pki_user_cli_user_cert-del-CA-007-tier1: pki user-cert-del should fail if Cert ID is not provided"
-		command="pki -d $CERTDB_DIR -n CA_adminV -c $CERTDB_DIR_PASSWORD user-cert-del $user1"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n ${prefix}_adminV -c $CERTDB_DIR_PASSWORD user-cert-del $user1"
                 errmsg="Error: Incorrect number of arguments specified."
 		errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when Cert ID is missing"
@@ -295,13 +357,13 @@ local TEMP_NSS_DB_PASSWD="redhat123"
 
         rlPhaseStartTest "pki_user_cli_user_cert-del-CA-008: Delete certs assigned to a user - as CA_agentV should fail"
 		i=1
-		command="pki -d $CERTDB_DIR -n CA_agentV -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
-                errmsg="ForbiddenException: Authorization failed on resource: certServer.ca.users, operation: execute"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n ${prefix}_agentV -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+                errmsg="ForbiddenException: Authorization Error"
 		errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authentication usinf cert CA_agentV"
 
-		 command="pki -d $CERTDB_DIR -n CA_agentV -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1_crmf[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
-                errmsg="ForbiddenException: Authorization failed on resource: certServer.ca.users, operation: execute"
+		 command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n ${prefix}_agentV -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1_crmf[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+                errmsg="ForbiddenException: Authorization Error"
 		errorcode=255
 		rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authentication using cert CA_agentV"
         rlPhaseEnd
@@ -310,17 +372,16 @@ local TEMP_NSS_DB_PASSWD="redhat123"
 
         rlPhaseStartTest "pki_user_cli_user_cert-del-CA-009: Delete certs assigned to a user - as CA_auditorV should fail"
 		i=1
-		command="pki -d $CERTDB_DIR -n CA_auditorV -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
-                errmsg="ForbiddenException: Authorization failed on resource: certServer.ca.users, operation: execute"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n ${prefix}_auditV -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+                errmsg="ForbiddenException: Authorization Error"
 		errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authentication using cert CA_auditorV"
 		
-		command="pki -d $CERTDB_DIR -n CA_auditorV -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1_crmf[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
-                errmsg="ForbiddenException: Authorization failed on resource: certServer.ca.users, operation: execute"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n ${prefix}_auditV -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1_crmf[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+                errmsg="ForbiddenException: Authorization Error"
 		errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authentication using cert CA_auditorV"
 
-        rlLog "FAIL: https://fedorahosted.org/pki/ticket/962"
         rlPhaseEnd
 
 	##### Delete certs asigned to a user - as CA_adminE ##### 
@@ -330,13 +391,13 @@ local TEMP_NSS_DB_PASSWD="redhat123"
 		rlRun "date --set='next day'" 0 "Set System date a day ahead"
                                 rlRun "date --set='next day'" 0 "Set System date a day ahead"
                                 rlRun "date"
-		command="pki -d $CERTDB_DIR -n CA_adminE -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
-                errmsg="ForbiddenException: Authorization failed on resource: certServer.ca.users, operation: execute"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n ${prefix}_adminE -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+                errmsg="ForbiddenException: Authorization Error"
 		errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authentication using cert CA_adminE"
 
-		command="pki -d $CERTDB_DIR -n CA_adminE -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1_crmf[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
-                errmsg="ForbiddenException: Authorization failed on resource: certServer.ca.users, operation: execute"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n ${prefix}_adminE -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1_crmf[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+                errmsg="ForbiddenException: Authorization Error"
 		errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authentication using cert CA_adminE"
 
@@ -351,13 +412,13 @@ local TEMP_NSS_DB_PASSWD="redhat123"
                 rlRun "date --set='next day'" 0 "Set System date a day ahead"
                                 rlRun "date --set='next day'" 0 "Set System date a day ahead"
                                 rlRun "date"
-		command="pki -d $CERTDB_DIR -n CA_agentE -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
-                errmsg="ForbiddenException: Authorization failed on resource: certServer.ca.users, operation: execute"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n ${prefix}_agentE -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+                errmsg="ForbiddenException: Authorization Error"
 		errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authentication using cert CA_agentE"
 
-		command="pki -d $CERTDB_DIR -n CA_agentE -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1_crmf[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
-                errmsg="ForbiddenException: Authorization failed on resource: certServer.ca.users, operation: execute"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n ${prefix}_agentE -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1_crmf[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+                errmsg="ForbiddenException: Authorization Error"
 		errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authentication using cert CA_agentE"
 
@@ -369,12 +430,12 @@ local TEMP_NSS_DB_PASSWD="redhat123"
 
         rlPhaseStartTest "pki_user_cli_user_cert-del-CA-0012: Delete certs assigned to a user - as CA_adminR should fail"
 		i=1
-		command="pki -d $CERTDB_DIR -n CA_adminR -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n ${prefix}_adminR -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
                 errmsg="PKIException: Unauthorized"
 		errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authentication using cert CA_adminR"
 
-		command="pki -d $CERTDB_DIR -n CA_adminR -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1_crmf[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n ${prefix}_adminR -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1_crmf[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
                 errmsg="PKIException: Unauthorized"
 		errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authentication using cert CA_adminR"
@@ -385,48 +446,48 @@ local TEMP_NSS_DB_PASSWD="redhat123"
 	
         rlPhaseStartTest "pki_user_cli_user_cert-del-CA-0013: Delete certs assigned to a user - as CA_agentR should fail"
 		i=1
-		command="pki -d $CERTDB_DIR -n CA_agentR -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n ${prefix}_agentR -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
                 errmsg="PKIException: Unauthorized"
 		errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authentication using cert CA_agentR"
 		
-		command="pki -d $CERTDB_DIR -n CA_agentR -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1_crmf[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n ${prefix}_agentR -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1_crmf[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
                 errmsg="PKIException: Unauthorized"
 		errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authentication using cert CA_agentR"
 
         rlPhaseEnd
 
-        ##### Delete certs asigned to a user - as CA_adminUTCA ##### 
+        ##### Delete certs asigned to a user - as role_user_UTCA ##### 
 
-        rlPhaseStartTest "pki_user_cli_user_cert-del-CA-0014: Delete certs assigned to a user - as CA_adminUTCA should fail"
+        rlPhaseStartTest "pki_user_cli_user_cert-del-CA-0014: Delete certs assigned to a user - as role_user_UTCA should fail"
                 i=1
-		command="pki -d $CERTDB_DIR -n CA_adminUTCA -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
-                errmsg="ForbiddenException: Authorization failed on resource: certServer.ca.users, operation: execute"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $UNTRUSTED_CERT_DB_LOCATION -n role_user_UTCA -c $UNTRUSTED_CERT_DB_PASSWORD user-cert-del $user1 '2;${serialdecuser1[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+                errmsg="PKIException: Unauthorized"
 		errorcode=255
-                rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authentication using cert CA_adminUTCA"
+                rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authentication using cert role_user_UTCA"
 
-		command="pki -d $CERTDB_DIR -n CA_adminUTCA -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1_crmf[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
-                errmsg="ForbiddenException: Authorization failed on resource: certServer.ca.users, operation: execute"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $UNTRUSTED_CERT_DB_LOCATION -n role_user_UTCA -c $UNTRUSTED_CERT_DB_PASSWORD user-cert-del $user1 '2;${serialdecuser1_crmf[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+                errmsg="PKIException: Unauthorized"
 		errorcode=255
-                rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authentication using cert CA_adminUTCA"
+                rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authentication using cert role_user_UTCA"
 
         rlLog "FAIL: https://fedorahosted.org/pki/ticket/962"
         rlPhaseEnd
 
-	 ##### Delete certs asigned to a user - as CA_agentUTCA ##### 
+	 ##### Delete certs asigned to a user - as role_user_UTCA ##### 
 
-        rlPhaseStartTest "pki_user_cli_user_cert-del-CA-0015: Delete certs assigned to a user - as CA_agentUTCA should fail"
+        rlPhaseStartTest "pki_user_cli_user_cert-del-CA-0015: Delete certs assigned to a user - as role_user_UTCA should fail"
                 i=1
-		command="pki -d $CERTDB_DIR -n CA_agentUTCA -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
-                errmsg="ForbiddenException: Authorization failed on resource: certServer.ca.users, operation: execute"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $UNTRUSTED_CERT_DB_LOCATION -n role_user_UTCA -c $UNTRUSTED_CERT_DB_PASSWORD user-cert-del $user1 '2;${serialdecuser1[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+                errmsg="PKIException: Unauthorized"
 		errorcode=255
-                rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authentication using cert CA_agentUTCA"
+                rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authentication using cert role_user_UTCA"
 
-		command="pki -d $CERTDB_DIR -n CA_agentUTCA -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1_crmf[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
-                errmsg="ForbiddenException: Authorization failed on resource: certServer.ca.users, operation: execute"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $UNTRUSTED_CERT_DB_LOCATION -n role_user_UTCA -c $UNTRUSTED_CERT_DB_PASSWORD user-cert-del $user1 '2;${serialdecuser1_crmf[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+                errmsg="PKIException: Unauthorized"
 		errorcode=255
-                rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authentication using cert CA_agentUTCA"
+                rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authentication using cert role_user_UTCA"
         rlLog "FAIL: https://fedorahosted.org/pki/ticket/962"
         rlPhaseEnd
 
@@ -434,13 +495,13 @@ local TEMP_NSS_DB_PASSWD="redhat123"
 
         rlPhaseStartTest "pki_user_cli_user_cert-del-CA-0016: Delete certs assigned to a user - as CA_operatorV should fail"
                 i=1
-		command="pki -d $CERTDB_DIR -n CA_operatorV -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
-                errmsg="ForbiddenException: Authorization failed on resource: certServer.ca.users, operation: execute"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n ${prefix}_operatorV -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+                errmsg="ForbiddenException: Authorization Error"
 		errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authentication using cert CA_operatorV"
 
-		command="pki -d $CERTDB_DIR -n CA_operatorV -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1_crmf[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
-                errmsg="ForbiddenException: Authorization failed on resource: certServer.ca.users, operation: execute"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n ${prefix}_operatorV -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1_crmf[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+                errmsg="ForbiddenException: Authorization Error"
 		errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authentication using cert CA_operatorV"
 
@@ -450,12 +511,12 @@ local TEMP_NSS_DB_PASSWD="redhat123"
 
         rlPhaseStartTest "pki_user_cli_user_cert-del-CA-0017: Delete certs assigned to a user - as a user not assigned to any role should fail"
                 i=1
-		command="pki -d $CERTDB_DIR -u $user2 -w Secret123 -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -u $user2 -w Secret123 -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
                 errmsg="ForbiddenException: Authentication method not allowed."
 		errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authentication as a user not assigned to any role"
 
-		command="pki -d $CERTDB_DIR -u $user2 -w Secret123 -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1_crmf[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -u $user2 -w Secret123 -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1_crmf[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
                 errmsg="ForbiddenException: Authentication method not allowed."
 		errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authentication as a user not assigned to any role"
@@ -467,12 +528,12 @@ local TEMP_NSS_DB_PASSWD="redhat123"
 
         rlPhaseStartTest "pki_user_cli_user_cert-del-CA-0018: Delete certs assigned to a user - switch positions of the required options"
                 i=1
-		command="pki -d $CERTDB_DIR -n CA_adminV -c $CERTDB_DIR_PASSWORD user-cert-del '2;${serialdecuser1[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US' $user1"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n ${prefix}_adminV -c $CERTDB_DIR_PASSWORD user-cert-del '2;${serialdecuser1[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US' $user1"
                 errmsg="Error:"
 		errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when switching positions of required options"
 
-		command="pki -d $CERTDB_DIR -n CA_adminV -c $CERTDB_DIR_PASSWORD user-cert-del '2;${serialdecuser1_crmf[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US' $user1"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n ${prefix}_adminV -c $CERTDB_DIR_PASSWORD user-cert-del '2;${serialdecuser1_crmf[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US' $user1"
                 errmsg="Error:"
 		errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when switching positions of required options"
@@ -483,34 +544,43 @@ local TEMP_NSS_DB_PASSWD="redhat123"
 ### Tests to delete certs assigned to CA users - i18n characters ####
 
 rlPhaseStartTest "pki_user_cli_user_cert-del-CA-0019: Delete certs assigned to user - Subject name has i18n Characters"
-        k=19
-	cert_type="pkcs10"
-        rlRun "generate_user_cert $cert_info $k \"Örjan Äke\" \"Örjan Äke\" "test@example.org" $testname $cert_type" 0  "Generating temp cert"
-        local cert_serialNumber=$(cat $cert_info| grep cert_serialNumber | cut -d- -f2)
-        local STRIP_HEX_PKCS10=$(echo $cert_serialNumber | cut -dx -f2)
-        local CONV_UPP_VAL_PKCS10=${STRIP_HEX_PKCS10^^}
-        local decimal_valid_serialNumber_pkcs10=$(echo "ibase=16;$CONV_UPP_VAL_PKCS10"|bc)
+	rlRun "generate_new_cert tmp_nss_db:$TEMP_NSS_DB tmp_nss_db_pwd:$TEMP_NSS_DB_PASSWD request_type:pkcs10 \
+        algo:rsa key_size:2048 subject_cn:\"Örjan Äke\" subject_uid:\"Örjan Äke\" subject_email:test@example.org \
+        organizationalunit:Engineering organization:Example country:US archive:false req_profile:caUserCert \
+        target_host:$SUBSYSTEM_HOST protocol: port:$(eval echo \$${subsystemId}_UNSECURE_PORT) cert_db_dir:$CERTDB_DIR cert_db_pwd:$CERTDB_DIR_PASSWORD \
+        certdb_nick:\"${prefix}_agentV\" cert_info:$cert_info"
+        local cert_serialNumber_pkcs10=$(cat $cert_info| grep cert_serialNumber | cut -d- -f2)
+        local decimal_valid_serialNumber_pkcs10=$(cat $cert_info| grep decimal_valid_serialNumber | cut -d- -f2)
+        rlRun "pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) cert-show $cert_serialNumber_pkcs10 --encoded > $TmpDir/pki_ca_user_cert_del_encoded_0019pkcs10.out" 0 "Executing pki cert-show $cert_serialNumber_pkcs10"
+        rlRun "sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' $TmpDir/pki_ca_user_cert_del_encoded_0019pkcs10.out > $TmpDir/pki_user_cert_del-CA_validcert_0019pkcs10.pem"
+
         rlRun "pki -d $CERTDB_DIR/ \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
                             user-cert-add $user1 --input $TmpDir/pki_user_cert_del-CA_validcert_0019pkcs10.pem  > $TmpDir/pki_user_cert_del_CA_useraddcert_0019.out" \
                             0 \
                             "Cert is added to the user $user1"
-        rlAssertGrep "Added certificate \"2;$decimal_valid_serialNumber_pkcs10;CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=Örjan Äke,E=test@example.org,CN=Örjan Äke,OU=Engineering,O=Example,C=US\"" "$TmpDir/pki_user_cert_del_CA_useraddcert_0019.out"
+        rlAssertGrep "Added certificate \"2;$decimal_valid_serialNumber_pkcs10;$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=Örjan Äke,E=test@example.org,CN=Örjan Äke,OU=Engineering,O=Example,C=US\"" "$TmpDir/pki_user_cert_del_CA_useraddcert_0019.out"
         rlLog "Executing: pki -d $CERTDB_DIR/ \
-                              -n CA_adminV \
+                              -n ${prefix}_adminV \
                               -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                               -t ca \
-                               user-cert-del $user1 \"2;$decimal_valid_serialNumber_pkcs10;CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=Örjan Äke,E=test@example.org,CN=Örjan Äke,OU=Engineering,O=Example,C=US\""
+                               user-cert-del $user1 \"2;$decimal_valid_serialNumber_pkcs10;$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=Örjan Äke,E=test@example.org,CN=Örjan Äke,OU=Engineering,O=Example,C=US\""
         rlRun "pki -d $CERTDB_DIR/ \
-                   -n CA_adminV \
+                   -n ${prefix}_adminV \
                    -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                    -t ca \
-                   user-cert-del $user1 \"2;$decimal_valid_serialNumber_pkcs10;CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=Örjan Äke,E=test@example.org,CN=Örjan Äke,OU=Engineering,O=Example,C=US\" > $TmpDir/pki_user_cert_del_ca_0019.out" \
+                   user-cert-del $user1 \"2;$decimal_valid_serialNumber_pkcs10;$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=Örjan Äke,E=test@example.org,CN=Örjan Äke,OU=Engineering,O=Example,C=US\" > $TmpDir/pki_user_cert_del_ca_0019.out" \
                     0 \
                     "Delete certs assigned to $user1 with i18n chars"
-	rlAssertGrep "Deleted certificate \"2;$decimal_valid_serialNumber_pkcs10;CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=Örjan Äke,E=test@example.org,CN=Örjan Äke,OU=Engineering,O=Example,C=US\"" "$TmpDir/pki_user_cert_del_ca_0019.out"
+	rlAssertGrep "Deleted certificate \"2;$decimal_valid_serialNumber_pkcs10;$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=Örjan Äke,E=test@example.org,CN=Örjan Äke,OU=Engineering,O=Example,C=US\"" "$TmpDir/pki_user_cert_del_ca_0019.out"
 
         rlPhaseEnd
 
@@ -518,13 +588,13 @@ rlPhaseStartTest "pki_user_cli_user_cert-del-CA-0019: Delete certs assigned to u
 
         rlPhaseStartTest "pki_user_cli_user_cert-del-CA-0020: Delete certs assigned to a user - using a cert not assigned to any role should fail"
                 i=1
-		command="pki -d $CERTDB_DIR -n $user1$i-pkcs10 -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
-                errmsg="ForbiddenException: Authorization failed on resource: certServer.ca.users, operation: execute"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n $user1$i-pkcs10 -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+                errmsg="ForbiddenException: Authorization Error"
 		errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authenticating using a cert not assigned to any role"
 
-		command="pki -d $CERTDB_DIR -n $user1$i-crmf -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1_crmf[$i]};CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
-                errmsg="ForbiddenException: Authorization failed on resource: certServer.ca.users, operation: execute"
+		command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $CERTDB_DIR -n $user1$i-crmf -c $CERTDB_DIR_PASSWORD user-cert-del $user1 '2;${serialdecuser1_crmf[$i]};$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=$user1$(($i+1)),E=$user1$(($i+1))@example.org,CN=$user1fullname$(($i+1)),OU=Engineering,O=Example,C=US'"
+                errmsg="ForbiddenException: Authorization Error"
 		errorcode=255
                 rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Error should be thrown when authenticating using a cert not assigned to any role"
 
@@ -536,65 +606,90 @@ rlPhaseStartTest "pki_user_cli_user_cert-del-CA-0019: Delete certs assigned to u
 rlPhaseStartTest "pki_user_cli_user_cert-del-CA-0021: Add an Admin user \"admin_user\", add a cert to admin_user, add a new user as admin_user, delete the cert assigned to admin_user and then adding a new user should fail"
         k=21
         rlRun "pki -d $CERTDB_DIR \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                             user-add --fullName=\"Admin User\" --password=Secret123 admin_user"
 
         rlRun "pki -d $CERTDB_DIR \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
                             group-member-add Administrators admin_user > $TmpDir/pki-user-cert-delete-ca-group0021.out"
 
         rlRun "pki -d $CERTDB_DIR \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                             user-add --fullName=\"Admin User1\" --password=Secret123 admin_user1"
 
         rlRun "pki -d $CERTDB_DIR \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
                             group-member-add Administrators admin_user1 > $TmpDir/pki-user-cert-delete-ca-group00211.out"
-        cert_type="pkcs10"
-        rlRun "generate_user_cert $cert_info $k \"admin_user\" \"Admin User\" "admin_user@example.org" $testname $cert_type" 0  "Generating temp cert"
-        local cert_serialNumber_pkcs10=$(cat $cert_info| grep cert_serialNumber | cut -d- -f2)
-        local STRIP_HEX_PKCS10=$(echo $cert_serialNumber_pkcs10 | cut -dx -f2)
-        local CONV_UPP_VAL_PKCS10=${STRIP_HEX_PKCS10^^}
-        local decimal_valid_serialNumber_pkcs10=$(echo "ibase=16;$CONV_UPP_VAL_PKCS10"|bc)
 
-        cert_type="crmf"
-        rlRun "generate_user_cert $cert_info $k \"admin_user1\" \"Admin User1\" "admin_user1@example.org" $testname $cert_type" 0  "Generating temp cert"
+	rlRun "generate_new_cert tmp_nss_db:$TEMP_NSS_DB tmp_nss_db_pwd:$TEMP_NSS_DB_PASSWD request_type:pkcs10 \
+        algo:rsa key_size:2048 subject_cn:\"Admin User\" subject_uid:\"admin_user\" subject_email:admin_user@example.org \
+        organizationalunit:Engineering organization:Example country:US archive:false req_profile:caUserCert \
+        target_host:$SUBSYSTEM_HOST protocol: port:$(eval echo \$${subsystemId}_UNSECURE_PORT) cert_db_dir:$CERTDB_DIR cert_db_pwd:$CERTDB_DIR_PASSWORD \
+        certdb_nick:\"${prefix}_agentV\" cert_info:$cert_info"
+        local cert_serialNumber_pkcs10=$(cat $cert_info| grep cert_serialNumber | cut -d- -f2)
+        local decimal_valid_serialNumber_pkcs10=$(cat $cert_info| grep decimal_valid_serialNumber | cut -d- -f2)
+        rlRun "pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) cert-show $cert_serialNumber_pkcs10 --encoded > $TmpDir/pki_ca_user_cert_del_encoded_0021pkcs10.out" 0 "Executing pki cert-show $cert_serialNumber_pkcs10"
+        rlRun "sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' $TmpDir/pki_ca_user_cert_del_encoded_0021pkcs10.out > $TmpDir/pki_user_cert_del-CA_validcert_0021pkcs10.pem"
+
+        rlRun "generate_new_cert tmp_nss_db:$TEMP_NSS_DB tmp_nss_db_pwd:$TEMP_NSS_DB_PASSWD request_type:crmf \
+        algo:rsa key_size:2048 subject_cn:\"Admin User1\" subject_uid:\"admin_user1\" subject_email:admin_user1@example.org \
+        organizationalunit:Engineering organization:Example country:US archive:false req_profile:caUserCert \
+        target_host:$SUBSYSTEM_HOST protocol: port:$(eval echo \$${subsystemId}_UNSECURE_PORT) cert_db_dir:$CERTDB_DIR cert_db_pwd:$CERTDB_DIR_PASSWORD \
+        certdb_nick:\"${prefix}_agentV\" cert_info:$cert_info"
         local cert_serialNumber_crmf=$(cat $cert_info| grep cert_serialNumber | cut -d- -f2)
-        local STRIP_HEX_CRMF=$(echo $cert_serialNumber_crmf | cut -dx -f2)
-        local CONV_UPP_VAL_CRMF=${STRIP_HEX_CRMF^^}
-        local decimal_valid_serialNumber_crmf=$(echo "ibase=16;$CONV_UPP_VAL_CRMF"|bc)
+        local decimal_valid_serialNumber_crmf=$(cat $cert_info| grep decimal_valid_serialNumber | cut -d- -f2)
+        rlRun "pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) cert-show $cert_serialNumber_crmf --encoded > $TmpDir/pki_user_cert_del-CA_encoded_0021crmf.out" 0 "Executing pki cert-show $cert_serialNumber_crmf"
+        rlRun "sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' $TmpDir/pki_user_cert_del-CA_encoded_0021crmf.out > $TmpDir/pki_user_cert_del-CA_validcert_0021crmf.pem"
+
         rlLog "Executing pki -d $CERTDB_DIR/ \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
                             user-cert-add admin_user --input $TmpDir/pki_user_cert_del-CA_validcert_0021pkcs10.pem"
         rlRun "pki -d $CERTDB_DIR/ \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
                             user-cert-add admin_user --input $TmpDir/pki_user_cert_del-CA_validcert_0021pkcs10.pem  > $TmpDir/pki_user_cert_delete_CA_useraddcert_0021.out" \
                             0 \
                             "Cert is added to the user admin_user"
-        rlAssertGrep "Added certificate \"2;$decimal_valid_serialNumber_pkcs10;CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=admin_user,E=admin_user@example.org,CN=Admin User,OU=Engineering,O=Example,C=US\"" "$TmpDir/pki_user_cert_delete_CA_useraddcert_0021.out"
-        rlAssertGrep "Cert ID: 2;$decimal_valid_serialNumber_pkcs10;CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=admin_user,E=admin_user@example.org,CN=Admin User,OU=Engineering,O=Example,C=US" "$TmpDir/pki_user_cert_delete_CA_useraddcert_0021.out"
+        rlAssertGrep "Added certificate \"2;$decimal_valid_serialNumber_pkcs10;$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=admin_user,E=admin_user@example.org,CN=Admin User,OU=Engineering,O=Example,C=US\"" "$TmpDir/pki_user_cert_delete_CA_useraddcert_0021.out"
+        rlAssertGrep "Cert ID: 2;$decimal_valid_serialNumber_pkcs10;$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=admin_user,E=admin_user@example.org,CN=Admin User,OU=Engineering,O=Example,C=US" "$TmpDir/pki_user_cert_delete_CA_useraddcert_0021.out"
         rlAssertGrep "Version: 2" "$TmpDir/pki_user_cert_delete_CA_useraddcert_0021.out"
         rlAssertGrep "Serial Number: $cert_serialNumber_pkcs10" "$TmpDir/pki_user_cert_delete_CA_useraddcert_0021.out"
-        rlAssertGrep "Issuer: CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain" "$TmpDir/pki_user_cert_delete_CA_useraddcert_0021.out"
+        rlAssertGrep "Issuer: $(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME)" "$TmpDir/pki_user_cert_delete_CA_useraddcert_0021.out"
         rlAssertGrep "Subject: UID=admin_user,E=admin_user@example.org,CN=Admin User,OU=Engineering,O=Example,C=US" "$TmpDir/pki_user_cert_delete_CA_useraddcert_0021.out"
-        rlRun "certutil -d $TEMP_NSS_DB -A -n \"CA Signing Certificate - $CA_DOMAIN Security Domain\" -i $CERTDB_DIR/ca_cert.pem -t \"CT,CT,CT\""
+        rlRun "certutil -d $TEMP_NSS_DB -A -n \"CA Signing Certificate - $(eval echo \$${prefix}_DOMAIN) Security Domain\" -i $CERTDB_DIR/ca_cert.pem -t \"CT,CT,CT\""
+	rlRun "certutil -d $TEMP_NSS_DB -A -n \"admin_user-pkcs10\" -i $TmpDir/pki_user_cert_del-CA_validcert_0021pkcs10.pem  -t "u,u,u""
         rlLog "pki -d $TEMP_NSS_DB/ \
                            -n admin_user-pkcs10 \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -c $TEMP_NSS_DB_PASSWD \
                             user-add --fullName=\"New Test User3\" new_test_user3"
         rlRun "pki -d $TEMP_NSS_DB/ \
                            -n admin_user-pkcs10 \
                            -c $TEMP_NSS_DB_PASSWD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                             user-add --fullName=\"New Test User3\" new_test_user3 > $TmpDir/pki_user_cert_delete_CA_useradd_0021.out 2>&1" \
                             0 \
                             "Adding a new user as admin_user"
@@ -603,20 +698,24 @@ rlPhaseStartTest "pki_user_cli_user_cert-del-CA-0021: Add an Admin user \"admin_
         rlAssertGrep "Full name: New Test User3" "$TmpDir/pki_user_cert_delete_CA_useradd_0021.out"
 
 	rlLog "Executing pki -d $CERTDB_DIR/ \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
-                            user-cert-del admin_user \"2;$decimal_valid_serialNumber_pkcs10;CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=admin_user,E=admin_user@example.org,CN=Admin User,OU=Engineering,O=Example,C=US\""
+                            user-cert-del admin_user \"2;$decimal_valid_serialNumber_pkcs10;$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=admin_user,E=admin_user@example.org,CN=Admin User,OU=Engineering,O=Example,C=US\""
                 rlRun "pki -d $CERTDB_DIR/ \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
-                            user-cert-del admin_user \"2;$decimal_valid_serialNumber_pkcs10;CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=admin_user,E=admin_user@example.org,CN=Admin User,OU=Engineering,O=Example,C=US\" > $TmpDir/pki_user_cert_del_CA_0021.out" \
+                            user-cert-del admin_user \"2;$decimal_valid_serialNumber_pkcs10;$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=admin_user,E=admin_user@example.org,CN=Admin User,OU=Engineering,O=Example,C=US\" > $TmpDir/pki_user_cert_del_CA_0021.out" \
                         0 \
                         "Delete cert assigned to admin_user"
-                rlAssertGrep "Deleted certificate \"2;$decimal_valid_serialNumber_pkcs10;CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=admin_user,E=admin_user@example.org,CN=Admin User,OU=Engineering,O=Example,C=US\"" "$TmpDir/pki_user_cert_del_CA_0021.out"
+                rlAssertGrep "Deleted certificate \"2;$decimal_valid_serialNumber_pkcs10;$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=admin_user,E=admin_user@example.org,CN=Admin User,OU=Engineering,O=Example,C=US\"" "$TmpDir/pki_user_cert_del_CA_0021.out"
 
-	command="pki -d $TEMP_NSS_DB -n admin_user-pkcs10 -c $TEMP_NSS_DB_PASSWD user-add --fullName='New Test User5' new_test_user5"
+	command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $TEMP_NSS_DB -n admin_user-pkcs10 -c $TEMP_NSS_DB_PASSWD user-add --fullName='New Test User5' new_test_user5"
         rlLog "Executing: $command"
         errmsg="PKIException: Unauthorized"
         errorcode=255
@@ -624,31 +723,39 @@ rlPhaseStartTest "pki_user_cli_user_cert-del-CA-0021: Add an Admin user \"admin_
 
 
         rlLog "Executing pki -d $CERTDB_DIR/ \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
                             user-cert-add admin_user1 --input $TmpDir/pki_user_cert_del-CA_validcert_0021crmf.pem"
         rlRun "pki -d $CERTDB_DIR/ \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
                             user-cert-add admin_user1 --input $TmpDir/pki_user_cert_del-CA_validcert_0021crmf.pem  > $TmpDir/pki_user_cert_delete_CA_useraddcert_0021crmf.out" \
                             0 \
                             "Cert is added to the user admin_user1"
-        rlAssertGrep "Added certificate \"2;$decimal_valid_serialNumber_crmf;CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=admin_user1,E=admin_user1@example.org,CN=Admin User1,OU=Engineering,O=Example,C=US\"" "$TmpDir/pki_user_cert_delete_CA_useraddcert_0021crmf.out"
-        rlAssertGrep "Cert ID: 2;$decimal_valid_serialNumber_crmf;CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=admin_user1,E=admin_user1@example.org,CN=Admin User1,OU=Engineering,O=Example,C=US" "$TmpDir/pki_user_cert_delete_CA_useraddcert_0021crmf.out"
+        rlAssertGrep "Added certificate \"2;$decimal_valid_serialNumber_crmf;$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=admin_user1,E=admin_user1@example.org,CN=Admin User1,OU=Engineering,O=Example,C=US\"" "$TmpDir/pki_user_cert_delete_CA_useraddcert_0021crmf.out"
+        rlAssertGrep "Cert ID: 2;$decimal_valid_serialNumber_crmf;$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=admin_user1,E=admin_user1@example.org,CN=Admin User1,OU=Engineering,O=Example,C=US" "$TmpDir/pki_user_cert_delete_CA_useraddcert_0021crmf.out"
         rlAssertGrep "Version: 2" "$TmpDir/pki_user_cert_delete_CA_useraddcert_0021crmf.out"
         rlAssertGrep "Serial Number: $cert_serialNumber_crmf" "$TmpDir/pki_user_cert_delete_CA_useraddcert_0021crmf.out"
-        rlAssertGrep "Issuer: CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain" "$TmpDir/pki_user_cert_delete_CA_useraddcert_0021crmf.out"
+        rlAssertGrep "Issuer: $(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME)" "$TmpDir/pki_user_cert_delete_CA_useraddcert_0021crmf.out"
         rlAssertGrep "Subject: UID=admin_user1,E=admin_user1@example.org,CN=Admin User1,OU=Engineering,O=Example,C=US" "$TmpDir/pki_user_cert_delete_CA_useraddcert_0021crmf.out"
-
+	rlRun "certutil -d $TEMP_NSS_DB -A -n \"admin_user1-crmf\" -i $TmpDir/pki_user_cert_del-CA_validcert_0021crmf.pem  -t "u,u,u""
         rlLog "pki -d $TEMP_NSS_DB/ \
                            -n admin_user1-crmf \
                            -c $TEMP_NSS_DB_PASSWD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                             user-add --fullName=\"New Test User4\" new_test_user4"
         rlRun "pki -d $TEMP_NSS_DB/ \
                            -n admin_user1-crmf \
                            -c $TEMP_NSS_DB_PASSWD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                             user-add --fullName=\"New Test User4\" new_test_user4 > $TmpDir/pki_user_cert_delete_CA_useradd_0021crmf.out 2>&1" \
                             0 \
                             "Adding a new user as admin_user1"
@@ -657,44 +764,56 @@ rlPhaseStartTest "pki_user_cli_user_cert-del-CA-0021: Add an Admin user \"admin_
         rlAssertGrep "Full name: New Test User4" "$TmpDir/pki_user_cert_delete_CA_useradd_0021crmf.out"
 
 	rlLog "Executing pki -d $CERTDB_DIR/ \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
-                            user-cert-del admin_user1 \"2;$decimal_valid_serialNumber_crmf;CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=admin_user1,E=admin_user1@example.org,CN=Admin User1,OU=Engineering,O=Example,C=US\""
+                            user-cert-del admin_user1 \"2;$decimal_valid_serialNumber_crmf;$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=admin_user1,E=admin_user1@example.org,CN=Admin User1,OU=Engineering,O=Example,C=US\""
                 rlRun "pki -d $CERTDB_DIR/ \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
-                            user-cert-del admin_user1 \"2;$decimal_valid_serialNumber_crmf;CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=admin_user1,E=admin_user1@example.org,CN=Admin User1,OU=Engineering,O=Example,C=US\" > $TmpDir/pki_user_cert_del_CA_00212.out" \
+                            user-cert-del admin_user1 \"2;$decimal_valid_serialNumber_crmf;$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=admin_user1,E=admin_user1@example.org,CN=Admin User1,OU=Engineering,O=Example,C=US\" > $TmpDir/pki_user_cert_del_CA_00212.out" \
                         0 \
                         "Delete cert assigned to admin_user1"
-                rlAssertGrep "Deleted certificate \"2;$decimal_valid_serialNumber_crmf;CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=admin_user1,E=admin_user1@example.org,CN=Admin User1,OU=Engineering,O=Example,C=US\"" "$TmpDir/pki_user_cert_del_CA_00212.out"
-	command="pki -d $TEMP_NSS_DB -n admin_user1-crmf -c $TEMP_NSS_DB_PASSWD user-add --fullName='New Test User6' new_test_user6"
+                rlAssertGrep "Deleted certificate \"2;$decimal_valid_serialNumber_crmf;$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=admin_user1,E=admin_user1@example.org,CN=Admin User1,OU=Engineering,O=Example,C=US\"" "$TmpDir/pki_user_cert_del_CA_00212.out"
+	command="pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) -d $TEMP_NSS_DB -n admin_user1-crmf -c $TEMP_NSS_DB_PASSWD user-add --fullName='New Test User6' new_test_user6"
          rlLog "Executing: $command"
 	errmsg="PKIException: Unauthorized"
 	errorcode=255
 	rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Adding a new user as admin_user1-crmf after deleting the cert from the user"
 	rlRun "pki -d $CERTDB_DIR \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
                             group-member-del Administrators admin_user"
 
         rlRun "pki -d $CERTDB_DIR \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
                             group-member-del Administrators admin_user1"
 
         rlRun "pki -d $CERTDB_DIR \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
                             user-del admin_user"
 
         rlRun "pki -d $CERTDB_DIR \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
                             user-del admin_user1"
 
@@ -704,120 +823,180 @@ rlPhaseEnd
 
 rlPhaseStartTest "pki_user_cli_user_cert-delete-CA-0022: Add an Agent user agent_user, add a cert to agent_user, approve a cert request as agent_user, delete the cert from agent_user and approving a new cert request should fail"
                 rlRun "pki -d $CERTDB_DIR \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                             user-add --fullName=\"Agent User\" --type=\"Certificate Manager Agents\" agent_user"
 
                 rlRun "pki -d $CERTDB_DIR \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
                             group-member-add \"Certificate Manager Agents\" agent_user > $TmpDir/pki-user-cert-delete-ca-group0020.out"
 
-                k=22
-                cert_type="pkcs10"
-                rlRun "generate_user_cert $cert_info $k \"agent_user\" \"Agent User\" "agent_user@example.org" $testname $cert_type" 0  "Generating temp cert"
+		rlRun "pki -d $CERTDB_DIR \
+                           -n ${prefix}_adminV \
+                           -c $CERTDB_DIR_PASSWORD \
+                -h $SUBSYSTEM_HOST \
+                -p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
+                            user-add --fullName=\"Agent User1\" --type=\"Certificate Manager Agents\" agent_user1"
+
+                rlRun "pki -d $CERTDB_DIR \
+                           -n ${prefix}_adminV \
+                           -c $CERTDB_DIR_PASSWORD \
+                -h $SUBSYSTEM_HOST \
+                -p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
+                           -t ca \
+                            group-member-add \"Certificate Manager Agents\" agent_user1 > $TmpDir/pki-user-cert-delete-ca-group00201.out"
+		rlRun "generate_new_cert tmp_nss_db:$TEMP_NSS_DB tmp_nss_db_pwd:$TEMP_NSS_DB_PASSWD request_type:pkcs10 \
+                algo:rsa key_size:2048 subject_cn:\"Agent User\" subject_uid:agent_user subject_email:agent_user@example.org \
+                organizationalunit:Engineering organization:Example country:US archive:false req_profile:caUserCert \
+                target_host:$SUBSYSTEM_HOST protocol: port:$(eval echo \$${subsystemId}_UNSECURE_PORT) cert_db_dir:$CERTDB_DIR cert_db_pwd:$CERTDB_DIR_PASSWORD \
+                certdb_nick:\"${prefix}_agentV\" cert_info:$cert_info"
                 local cert_serialNumber_pkcs10=$(cat $cert_info| grep cert_serialNumber | cut -d- -f2)
                 local STRIP_HEX_PKCS10=$(echo $cert_serialNumber_pkcs10 | cut -dx -f2)
                 local CONV_UPP_VAL_PKCS10=${STRIP_HEX_PKCS10^^}
                 local decimal_valid_serialNumber_pkcs10=$(echo "ibase=16;$CONV_UPP_VAL_PKCS10"|bc)
+                rlRun "pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) cert-show $cert_serialNumber_pkcs10 --encoded > $TmpDir/pki_user_cert_delete-CA_encoded_0022pkcs10.out" 0 "Executing pki cert-show $cert_serialNumber_pkcs10"
+                rlRun "sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' $TmpDir/pki_user_cert_delete-CA_encoded_0022pkcs10.out > $TmpDir/pki_user_cert_del-CA_validcert_0022pkcs10.pem"
 
-                rlLog "Executing pki -d $CERTDB_DIR/ \
-                           -n CA_adminV \
-                           -c $CERTDB_DIR_PASSWORD \
-                           -t ca \
-                            user-cert-add agent_user --input $TmpDir/pki_user_cert_del-CA_validcert_0022pkcs10.pem"
+                rlRun "generate_new_cert tmp_nss_db:$TEMP_NSS_DB tmp_nss_db_pwd:$TEMP_NSS_DB_PASSWD request_type:crmf \
+                algo:rsa key_size:2048 subject_cn:\"Agent User1\" subject_uid:agent_user1 subject_email:agent_user1@example.org \
+                organizationalunit:Engineering organization:Example country:US archive:false req_profile:caUserCert \
+                target_host:$SUBSYSTEM_HOST protocol: port:$(eval echo \$${subsystemId}_UNSECURE_PORT) cert_db_dir:$CERTDB_DIR cert_db_pwd:$CERTDB_DIR_PASSWORD \
+                certdb_nick:\"${prefix}_agentV\" cert_info:$cert_info"
+                local cert_serialNumber_crmf=$(cat $cert_info| grep cert_serialNumber | cut -d- -f2)
+                local STRIP_HEX_CRMF=$(echo $cert_serialNumber_crmf | cut -dx -f2)
+                local CONV_UPP_VAL_CRMF=${STRIP_HEX_CRMF^^}
+                local decimal_valid_serialNumber_crmf=$(echo "ibase=16;$CONV_UPP_VAL_CRMF"|bc)
+                rlRun "pki -h $SUBSYSTEM_HOST -p $(eval echo \$${subsystemId}_UNSECURE_PORT) cert-show $cert_serialNumber_crmf --encoded > $TmpDir/pki_user_cert_del-CA_encoded_0022crmf.out" 0 "Executing pki cert-show $cert_serialNumber_crmf"
+                rlRun "sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' $TmpDir/pki_user_cert_del-CA_encoded_0022crmf.out > $TmpDir/pki_user_cert_del-CA_validcert_0022crmf.pem"
+
+		rlRun "certutil -d $TEMP_NSS_DB -A -n \"agentuserpkcs10\" -i $TmpDir/pki_user_cert_del-CA_validcert_0022pkcs10.pem  -t "u,u,u""
+                rlRun "certutil -d $TEMP_NSS_DB -A -n \"agent-user1-crmf\" -i $TmpDir/pki_user_cert_del-CA_validcert_0022crmf.pem  -t "u,u,u""
+
                 rlRun "pki -d $CERTDB_DIR/ \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
                            -t ca \
                             user-cert-add agent_user --input $TmpDir/pki_user_cert_del-CA_validcert_0022pkcs10.pem  > $TmpDir/pki_user_cert_delete_CA_useraddcert_0022.out" \
                            0 \
                             "Add cert to agent_user"
-                rlAssertGrep "Added certificate \"2;$decimal_valid_serialNumber_pkcs10;CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=agent_user,E=agent_user@example.org,CN=Agent User,OU=Engineering,O=Example,C=US\"" "$TmpDir/pki_user_cert_delete_CA_useraddcert_0022.out"
-                rlAssertGrep "Cert ID: 2;$decimal_valid_serialNumber_pkcs10;CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=agent_user,E=agent_user@example.org,CN=Agent User,OU=Engineering,O=Example,C=US" "$TmpDir/pki_user_cert_delete_CA_useraddcert_0022.out"
-                rlAssertGrep "Version: 2" "$TmpDir/pki_user_cert_delete_CA_useraddcert_0022.out"
-                rlAssertGrep "Serial Number: $cert_serialNumber_pkcs10" "$TmpDir/pki_user_cert_delete_CA_useraddcert_0022.out"
-                rlAssertGrep "Issuer: CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain" "$TmpDir/pki_user_cert_delete_CA_useraddcert_0022.out"
-                rlAssertGrep "Subject: UID=agent_user,E=agent_user@example.org,CN=Agent User,OU=Engineering,O=Example,C=US" "$TmpDir/pki_user_cert_delete_CA_useraddcert_0022.out"
 
-                local pkcs_requestid
-                local pkcs_reqstatus
-                local pkcs_requestdn
-                rlRun "create_cert_request $TEMP_NSS_DB redhat123 pkcs10 rsa 2048 \"New Test User2\" "new_test_user2" "new_test_user2@example.org" "Engineering" "Example" "US" "--" "pkcs_reqstatus" "pkcs_requestid" "pkcs_requestdn""
-
-                rlRun "pki cert-request-show $pkcs_requestid > $TmpDir/pki_user_cert_delete_CA_certrequestshow_0022" 0 "Executing pki cert-request-show $pkcs_requestid"
-                rlAssertGrep "Request ID: $pkcs_requestid" "$TmpDir/pki_user_cert_delete_CA_certrequestshow_0022"
-                rlAssertGrep "Type: enrollment" "$TmpDir/pki_user_cert_delete_CA_certrequestshow_0022"
-                rlAssertGrep "Status: pending" "$TmpDir/pki_user_cert_delete_CA_certrequestshow_0022"
-                rlAssertGrep "Operation Result: success" "$TmpDir/pki_user_cert_delete_CA_certrequestshow_0022"
-
-                #Agent Approve the certificate after reviewing the cert for the user
-                rlLog "Executing: pki -d $TEMP_NSS_DB/ \
-                                      -n \"agent_user-pkcs10\" \
-                                      -c $TEMP_NSS_DB_PASSWD \
-                                      -t ca \
-                                      cert-request-review --action=approve $pkcs_requestid"
-                rlRun "pki -d $TEMP_NSS_DB/ \
-                           -n \"agent_user-pkcs10\" \
-                           -c $TEMP_NSS_DB_PASSWD \
+		rlRun "pki -d $CERTDB_DIR/ \
+                           -n ${prefix}_adminV \
+                           -c $CERTDB_DIR_PASSWORD \
+                -h $SUBSYSTEM_HOST \
+                -p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
-                           cert-request-review --action=approve $pkcs_requestid > $TmpDir/pki_user_cert_delete_CA_certapprove_0022 2>&1" \
+                           -t ca \
+                            user-cert-add agent_user1 --input $TmpDir/pki_user_cert_del-CA_validcert_0022crmf.pem  > $TmpDir/pki_user_cert_delete_CA_useraddcert_0022.out" \
                            0 \
-                           "agent_user approve the cert"
-                rlAssertGrep "Approved certificate request $pkcs_requestid" "$TmpDir/pki_user_cert_delete_CA_certapprove_0022"
-                rlRun "pki cert-request-show $pkcs_requestid > $TmpDir/pki_user_cert_delete_CA_certapprovedshow_0022" 0 "Executing pki cert-request-show $pkcs_requestid"
-                rlAssertGrep "Request ID: $pkcs_requestid" "$TmpDir/pki_user_cert_delete_CA_certapprovedshow_0022"
-                rlAssertGrep "Type: enrollment" "$TmpDir/pki_user_cert_delete_CA_certapprovedshow_0022"
-                rlAssertGrep "Status: complete" "$TmpDir/pki_user_cert_delete_CA_certapprovedshow_0022"
-                rlAssertGrep "Certificate ID:" "$TmpDir/pki_user_cert_delete_CA_certapprovedshow_0022"
+                            "Add cert to agent_user1"
+
+		rlRun "generate_new_cert tmp_nss_db:$TEMP_NSS_DB tmp_nss_db_pwd:$TEMP_NSS_DB_PASSWD request_type:pkcs10 \
+                algo:rsa key_size:2048 subject_cn: subject_uid: subject_email: \
+                organizationalunit: organization: country: archive:false req_profile:caUserCert \
+                target_host:$SUBSYSTEM_HOST protocol: port:$(eval echo \$${subsystemId}_UNSECURE_PORT) cert_db_dir:$TEMP_NSS_DB cert_db_pwd:$TEMP_NSS_DB_PASSWD \
+                certdb_nick:\"agentuserpkcs10\" cert_info:$cert_info" 0 "Successfully approved a cert request as agentuserpkcs10"
+
+                rlRun "generate_new_cert tmp_nss_db:$TEMP_NSS_DB tmp_nss_db_pwd:$TEMP_NSS_DB_PASSWD request_type:crmf \
+                algo:rsa key_size:2048 subject_cn: subject_uid: subject_email: \
+                organizationalunit: organization: country: archive:false req_profile:caUserCert \
+                target_host:$SUBSYSTEM_HOST protocol: port:$(eval echo \$${subsystemId}_UNSECURE_PORT) cert_db_dir:$TEMP_NSS_DB cert_db_pwd:$TEMP_NSS_DB_PASSWD \
+                certdb_nick:\"agent-user1-crmf\" cert_info:$cert_info" 0 "Successfully approved a cert request as agent-user1-crmf"
 
 		rlLog "Executing pki -d $CERTDB_DIR/ \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
-                            user-cert-del agent_user \"2;$decimal_valid_serialNumber_pkcs10;CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=agent_user,E=agent_user@example.org,CN=Agent User,OU=Engineering,O=Example,C=US\""
+                            user-cert-del agent_user \"2;$decimal_valid_serialNumber_pkcs10;$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=agent_user,E=agent_user@example.org,CN=Agent User,OU=Engineering,O=Example,C=US\""
                 rlRun "pki -d $CERTDB_DIR/ \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
-                            user-cert-del agent_user \"2;$decimal_valid_serialNumber_pkcs10;CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=agent_user,E=agent_user@example.org,CN=Agent User,OU=Engineering,O=Example,C=US\" > $TmpDir/pki_user_cert_del_CA_0022.out" \
+                            user-cert-del agent_user \"2;$decimal_valid_serialNumber_pkcs10;$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=agent_user,E=agent_user@example.org,CN=Agent User,OU=Engineering,O=Example,C=US\" > $TmpDir/pki_user_cert_del_CA_0022.out" \
                         0 \
                         "Delete cert assigned to agent_user"
-                rlAssertGrep "Deleted certificate \"2;$decimal_valid_serialNumber_pkcs10;CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain;UID=agent_user,E=agent_user@example.org,CN=Agent User,OU=Engineering,O=Example,C=US\"" "$TmpDir/pki_user_cert_del_CA_0022.out"
+                rlAssertGrep "Deleted certificate \"2;$decimal_valid_serialNumber_pkcs10;$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=agent_user,E=agent_user@example.org,CN=Agent User,OU=Engineering,O=Example,C=US\"" "$TmpDir/pki_user_cert_del_CA_0022.out"
 		
-		
-		local pkcs_requestid_new
-                local pkcs_reqstatus_new
-                local pkcs_requestdn_new
-                rlRun "create_cert_request $TEMP_NSS_DB redhat123 pkcs10 rsa 2048 \"New Test User2\" "new_test_user4" "new_test_user4@example.org" "Engineering" "Example" "US" "--" "pkcs_reqstatus_new" "pkcs_requestid_new" "pkcs_requestdn_new""
+		rlLog "Executing pki -d $CERTDB_DIR/ \
+                           -n ${prefix}_adminV \
+                           -c $CERTDB_DIR_PASSWORD \
+                -h $SUBSYSTEM_HOST \
+                -p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
+                           -t ca \
+                            user-cert-del agent_user1 \"2;$decimal_valid_serialNumber_crmf;$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=agent_user1,E=agent_user1@example.org,CN=Agent User1,OU=Engineering,O=Example,C=US\""
+                rlRun "pki -d $CERTDB_DIR/ \
+                           -n ${prefix}_adminV \
+                           -c $CERTDB_DIR_PASSWORD \
+                -h $SUBSYSTEM_HOST \
+                -p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
+                           -t ca \
+                            user-cert-del agent_user1 \"2;$decimal_valid_serialNumber_crmf;$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=agent_user1,E=agent_user1@example.org,CN=Agent User1,OU=Engineering,O=Example,C=US\" > $TmpDir/pki_user_cert_del_CA_0022crmf.out" \
+                        0 \
+                        "Delete cert assigned to agent_user1"
+                rlAssertGrep "Deleted certificate \"2;$decimal_valid_serialNumber_crmf;$(eval echo \$${prefix}_SIGNING_CERT_SUBJECT_NAME);UID=agent_user1,E=agent_user1@example.org,CN=Agent User1,OU=Engineering,O=Example,C=US\"" "$TmpDir/pki_user_cert_del_CA_0022crmf.out"
 
-                rlRun "pki cert-request-show $pkcs_requestid_new > $TmpDir/pki_user_cert_delete_CA_certrequestshow_0022_1" 0 "Executing pki cert-request-show $pkcs_requestid_new"
-                rlAssertGrep "Request ID: $pkcs_requestid_new" "$TmpDir/pki_user_cert_delete_CA_certrequestshow_0022_1"
-                rlAssertGrep "Type: enrollment" "$TmpDir/pki_user_cert_delete_CA_certrequestshow_0022_1"
-                rlAssertGrep "Status: pending" "$TmpDir/pki_user_cert_delete_CA_certrequestshow_0022_1"
-                rlAssertGrep "Operation Result: success" "$TmpDir/pki_user_cert_delete_CA_certrequestshow_0022_1"
+                rlRun "run_req_action_cert tmp_nss_db:$TEMP_NSS_DB tmp_nss_db_pwd:$TEMP_NSS_DB_PASSWD request_type:pkcs10 \
+        algo:rsa key_size:2048 subject_cn: subject_uid: subject_email: \
+        organizationalunit: organization: country: archive:false req_profile:caUserCert \
+        target_host:$SUBSYSTEM_HOST protocol: port:$(eval echo \$${subsystemId}_UNSECURE_PORT) cert_db_dir:$TEMP_NSS_DB cert_db_pwd:$TEMP_NSS_DB_PASSWD \
+        certdb_nick:\"agentuserpkcs10\" cert_info:$cert_info" 0 "Cert approval by agentuserpkcs10 should fail"
 
-                #Agent user whose certificate has been deleted tries to approve the certificate request
-		command="pki -d $TEMP_NSS_DB -n \"agent_user-pkcs10\" -c $TEMP_NSS_DB_PASSWD -t ca cert-request-review --action=approve $pkcs_requestid_new"
-                rlLog "Executing: $command"
-                errmsg="PKIException: Unauthorized"
-                errorcode=255
-                rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Approving the cert as agent_user whose cert has been deleted"
+        rlAssertGrep "PKIException: Unauthorized" "$cert_info"
+
+        rlRun "run_req_action_cert tmp_nss_db:$TEMP_NSS_DB tmp_nss_db_pwd:$TEMP_NSS_DB_PASSWD request_type:crmf \
+        algo:rsa key_size:2048 subject_cn: subject_uid: subject_email: \
+        organizationalunit: organization: country: archive:false req_profile:caUserCert \
+        target_host:$SUBSYSTEM_HOST protocol: port:$(eval echo \$${subsystemId}_UNSECURE_PORT) cert_db_dir:$TEMP_NSS_DB cert_db_pwd:$TEMP_NSS_DB_PASSWD \
+        certdb_nick:\"agent-user1-crmf\" cert_info:$cert_info" 0 "Cert approval by agent-user1-crmf should fail"
+
+        rlAssertGrep "PKIException: Unauthorized" "$cert_info"
 
 		rlRun "pki -d $CERTDB_DIR \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
                             group-member-del \"Certificate Manager Agents\" agent_user"
 
 
         rlRun "pki -d $CERTDB_DIR \
-                           -n CA_adminV \
+                           -n ${prefix}_adminV \
                            -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            -t ca \
                             user-del agent_user"
+
+	rlRun "pki -d $CERTDB_DIR \
+                           -n ${prefix}_adminV \
+                           -c $CERTDB_DIR_PASSWORD \
+                -h $SUBSYSTEM_HOST \
+                -p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
+                           -t ca \
+                            group-member-del \"Certificate Manager Agents\" agent_user1"
+
+
+        rlRun "pki -d $CERTDB_DIR \
+                           -n ${prefix}_adminV \
+                           -c $CERTDB_DIR_PASSWORD \
+                -h $SUBSYSTEM_HOST \
+                -p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
+                           -t ca \
+                            user-del agent_user1"
 
 	rlPhaseEnd
 
@@ -829,8 +1008,10 @@ rlPhaseStartTest "pki_user_cli_user_cleanup: Deleting role users"
         while [ $j -lt 3 ] ; do
                eval usr=\$user$j
                rlRun "pki -d $CERTDB_DIR \
-                          -n CA_adminV \
+                          -n ${prefix}_adminV \
                           -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            user-del  $usr > $TmpDir/pki-user-del-ca-user-symbol-00$j.out" \
                            0 \
                            "Deleted user $usr"
@@ -841,8 +1022,10 @@ rlPhaseStartTest "pki_user_cli_user_cleanup: Deleting role users"
         while [ $j -lt 5 ] ; do
                eval usr="new_test_user$j"
                rlRun "pki -d $CERTDB_DIR \
-                          -n CA_adminV \
+                          -n ${prefix}_adminV \
                           -c $CERTDB_DIR_PASSWORD \
+ 		-h $SUBSYSTEM_HOST \
+ 		-p $(eval echo \$${subsystemId}_UNSECURE_PORT) \
                            user-del  $usr > $TmpDir/pki-user-del-ca-new-user-00$j.out" \
                            0 \
                            "Deleted user $usr"
@@ -851,9 +1034,7 @@ rlPhaseStartTest "pki_user_cli_user_cleanup: Deleting role users"
         done
 	#Delete temporary directory
         rlRun "popd"
-        rlRun "rm -r $TmpDir" 0 "Removing tmp directory"
+        #rlRun "rm -r $TmpDir" 0 "Removing tmp directory"
     rlPhaseEnd
 
 }
-
-

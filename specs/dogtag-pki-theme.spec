@@ -1,6 +1,6 @@
 Name:             dogtag-pki-theme
-Version:          10.2.0
-Release:          5%{?dist}
+Version:          10.2.1
+Release:          1%{?dist}
 Summary:          Certificate System - Dogtag PKI Theme Components
 URL:              http://pki.fedoraproject.org/
 License:          GPLv2
@@ -15,10 +15,10 @@ BuildRequires:    java-devel >= 1:1.7.0
 BuildRequires:    jpackage-utils >= 1.7.5-10
 
 %if 0%{?rhel}
-# NOTE:  As a part of its path, this URL contains a fixed number representing
-#        the number of the upstream release upon which this tarball was
-#        originally based.
-Source0:          http://pki.fedoraproject.org/pki/sources/%{name}/%{version}/5/rhel/%{name}-%{version}%{?prerel}.tar.gz
+# NOTE:  In the future, as a part of its path, this URL will contain a release
+#        directory which consists of the fixed number of the upstream release
+#        upon which this tarball was originally based.
+Source0:          http://pki.fedoraproject.org/pki/sources/%{name}/%{version}/%{release}/rhel/%{name}-%{version}%{?prerel}.tar.gz
 %else
 Source0:          http://pki.fedoraproject.org/pki/sources/%{name}/%{version}/%{release}/%{name}-%{version}%{?prerel}.tar.gz
 %endif
@@ -170,6 +170,9 @@ cd build
 
 
 %changelog
+* Mon Jan 19 2015 Dogtag Team <pki-devel@redhat.com> 10.2.1-1
+- Update release number for release build
+
 * Thu Dec  4 2014 Matthew Harmsen <mharmsen@redhat.com> - 10.2.0-5
 - PKI Trac Ticket #1211 - New release overwrites old source tarball
 

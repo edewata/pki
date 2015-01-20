@@ -41,7 +41,7 @@ rhcs_install_set_ldap_vars() {
                 export RHDS_SERVER_PACKAGES="389-ds-base policycoreutils-python"
         else
                 export DISTRO="RedHat"
-                export RHDS_SERVER_PACKAGES="redhat-ds-base 389-ds-base policycoreutils-python"
+                export RHDS_SERVER_PACKAGES="389-ds-base policycoreutils-python"
         fi
 
 	#Copy rhds-install.sh to /opt/rhqa_pki
@@ -75,12 +75,7 @@ rhds_install()
 	####################################################
 	# turn off firewall
 	####################################################
-	echo $FLAVOR | grep "Fedora"
-	if [ $? -eq 0 ] ; then
-		rlRun "systemctl stop firewalld"
-	else
-		rlRun "service iptables stop"
-	fi
+	rlRun "systemctl stop firewalld"
 
 	####################################################
 	# check for installed RHDS packages

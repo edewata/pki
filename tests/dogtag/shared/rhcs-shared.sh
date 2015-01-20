@@ -131,14 +131,9 @@ submit_instance_logs(){
 # start RHCS instance
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 rhcs_start_instance(){
-	INSTANCE_ID=$1
-	echo $FLAVOR | grep "Fedora"
-        if [ $? -eq 0 ] ; then
-		rlLog "Executing: systemctl start pki-tomcatd@pki-tomcat.service"
-		systemctl start pki-tomcatd@pki-tomcat.service
-	else
-		service $INSTANCE_ID start
-	fi
+        TOMCAT_ID=$1
+	rlLog "Executing: systemctl start pki-tomcatd@$TOMCAT_ID.service"
+	systemctl start pki-tomcatd@$TOMCAT_ID.service
 	sleep 60
 }
 
@@ -150,14 +145,9 @@ rhcs_start_instance(){
 # stop RHCS instance
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 rhcs_stop_instance(){
-        INSTANCE_ID=$1
-	echo $FLAVOR | grep "Fedora"
-        if [ $? -eq 0 ] ; then
-		rlLog "Executing: systemctl stop pki-tomcatd@pki-tomcat.service"
-		systemctl stop pki-tomcatd@pki-tomcat.service
-	else
-		service $INSTANCE_ID stop
-	fi
+        TOMCAT_ID=$1
+	rlLog "Executing: systemctl stop pki-tomcatd@$TOMCAT_ID.service"
+	systemctl stop pki-tomcatd@$TOMCAT_ID.service
         sleep 60
 }
 
@@ -289,10 +279,10 @@ install_and_trust_KRA_cert(){
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 disable_ca_nonce(){
-	local ca_server_root=$1
-	local rc=0
-	rlLog "Configuring ca.enableNonces=false ..."
-        ca_config_file="$ca_server_root/conf/CS.cfg"
+        local ca_tomcat_name=$1
+        local rc=0
+        rlLog "Configuring ca.enableNonces=false ..."
+        ca_config_file="/var/lib/pki/$ca_tomcat_name/ca/conf/CS.cfg"
         temp_file="$ca_config_file.temp"
         search_string="ca.enableNonces=true"
         replace_string="ca.enableNonces=false"
@@ -301,11 +291,11 @@ disable_ca_nonce(){
         chown pkiuser:pkiuser $ca_config_file
         cat $ca_config_file | grep $replace_string
         if [ $? -eq 0 ] ; then
-		rhcs_stop_instance
-                rhcs_start_instance
+                rhcs_stop_instance $ca_tomcat_name
+                rhcs_start_instance $ca_tomcat_name
         else
-		lLog "$ca_config_file did not get configured with $replace_string"
-		rc=1
+                lLog "$ca_config_file did not get configured with $replace_string"
+                rc=1
         fi
         return $rc
 }
@@ -318,10 +308,10 @@ disable_ca_nonce(){
 #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 enable_ca_nonce(){
-        local ca_server_root=$1
-	local rc=0
+        local ca_tomcat_name=$1
+        local rc=0
         rlLog "Configuring ca.enableNonces=true ..."
-        ca_config_file="$ca_server_root/conf/CS.cfg"
+        ca_config_file="/var/lib/pki/$ca_tomcat_name/ca/conf/CS.cfg"
         temp_file="$ca_config_file.temp"
         search_string="ca.enableNonces=false"
         replace_string="ca.enableNonces=true"
@@ -330,13 +320,13 @@ enable_ca_nonce(){
         chown pkiuser:pkiuser $ca_config_file
         cat $ca_config_file | grep $replace_string
         if [ $? -eq 0 ] ; then
-		rhcs_stop_instance
-                rhcs_start_instance
+                rhcs_stop_instance $ca_tomcat_name
+                rhcs_start_instance $ca_tomcat_name
         else
-		rlLog "$ca_config_file did not get configured with $replace_string"
-		rc=1
+                rlLog "$ca_config_file did not get configured with $replace_string"
+                rc=1
         fi
-	return $rc
+        return $rc
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
@@ -482,9 +472,15 @@ importP12FileNew()
         local nss_db_password=$4                                                                                                                                                              
         local cert_nickname=$5                                                                                                                                                                
         rlLog "cert_p12file = $cert_p12file"                                                                                                                                                  
-        rlLog "nss_db_dir = $nssdb_dir"                                                                                                                                                       
-        rlRun "pki -d $nssdb_dir -c $nss_db_password client-init" 0                                                                                                                           
-        rlRun "pk12util -i $cert_p12file -d $nssdb_dir -K $nss_db_password -W $p12file_password"                                                                                              
+        rlLog "nss_db_dir = $nssdb_dir"
+	rlLog "Verify $nssdb_dir is already NSS Database"
+	if [ -d "$nssdb_dir" ]; then
+		rlLog "$nssdb_dir is already a existing database we don't create a new one"
+	else
+		rlLog "$nssdb_dir doesn't exist"
+		rlRun "pki -d $nssdb_dir -c $nss_db_password client-init" 0 "Initialiaize $nssdb_dir with password $nss_db_password"
+	fi
+        rlRun "pk12util -i $cert_p12file -d $nssdb_dir -K $nss_db_password -W $p12file_password"
         if [ $? = 0 ]; then                                                                                                                                                                   
                         rlPass "pk12util command executed successfully"                                                                                                                       
                         rlRun "certutil -L -d $nssdb_dir | grep $cert_nickname" 0 "Verify certificate is installed"                                                                           
@@ -612,3 +608,41 @@ cert-release-hold_expect_data()
         echo "send -- \"y\\r\"" >> $expfile
         echo "expect eof" >> $expfile
 }
+##################################################
+# Returns Subsystem used by particular Topology
+#get_topo_stack takes 2 arguments, 
+#1. Role 
+#2. Ouptut file to save the topology details
+#Examples:
+#get_topo_stack MASTER $TmpDir/topo_file
+#local KRA_INST=$(cat $TmpDir/topo_file | grep MY_KRA | cut -d= -f2)
+#local CA_INST=$(cat $TmpDir/topo_file | grep MY_CA | cut -d= -f2)
+################################################
+get_topo_stack()
+{
+	MY_ROLE=$1
+	TOPO_FILE=$2
+	if [ $MY_ROLE == "MASTER" ]; then
+        	echo "MY_CA=ROOTCA" > $TOPO_FILE
+	        echo "MY_KRA=KRA3" >> $TOPO_FILE
+        	echo "MY_OCSP=OCSP3" >> $TOPO_FILE
+	        echo "MY_TKS=TKS1" >> $TOPO_FILE
+	elif [ $MY_ROLE == "SUBCA1" ]; then
+        	echo "MY_CA=SUBCA1" > $TOPO_FILE
+	        echo "MY_KRA=KRA1" >> $TOPO_FILE
+        	echo "MY_OCSP=OCSP1" >> $TOPO_FILE
+	elif [ $MY_ROLE = "SUBCA2" ]; then
+        	echo "MY_CA=SUBCA2" >> $TOPO_FILE
+	        echo "MY_KRA=KRA2" >> $TOPO_FILE
+        	echo "MY_OCSP=OCSP2" >> $TOPO_FILE
+	elif [ $MY_ROLE = "CLONECA1" ]; then
+        	echo "MY_CA=CLONE_CA1" > $TOPO_FILE
+	        echo "MY_KRA=CLONE_KRA1" >> $TOPO_FILE
+        	echo "MY_OCSP=CLONE_OCSP1" >> $TOPO_FILE
+	elif [ $MY_ROLE = "CLONECA2" ]; then
+        	echo "MY_CA=CLONE_CA2" > $TOPO_FILE
+	        echo "MY_KRA=CLONE_KRA2" >> $TOPO_FILE
+        	echo "MY_OCSP=CLONE_OCSP2" >> $TOPO_FILE
+	fi
+}
+#################################################################

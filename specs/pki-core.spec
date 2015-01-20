@@ -4,8 +4,8 @@ distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:             pki-core
-Version:          10.2.0
-Release:          6%{?dist}
+Version:          10.2.1
+Release:          1%{?dist}
 Summary:          Certificate System - PKI Core Components
 URL:              http://pki.fedoraproject.org/
 License:          GPLv2
@@ -33,6 +33,7 @@ BuildRequires:    nss-devel >= 3.14.3
 BuildRequires:    openldap-devel
 BuildRequires:    pkgconfig
 BuildRequires:    policycoreutils
+BuildRequires:    python-sphinx
 BuildRequires:    velocity
 BuildRequires:    xalan-j2
 BuildRequires:    xerces-j2
@@ -64,7 +65,11 @@ BuildRequires:    junit
 BuildRequires:    jpackage-utils >= 0:1.7.5-10
 BuildRequires:    jss >= 4.2.6-35
 BuildRequires:    systemd-units
+%if 0%{?rhel}
 BuildRequires:    tomcatjss >= 7.1.0-5
+%else
+BuildRequires:    tomcatjss >= 7.1.1
+%endif
 
 # additional build requirements needed to build native 'tpsclient'
 # REMINDER:  Revisit these once 'tpsclient' is rewritten as a Java app
@@ -80,10 +85,10 @@ BuildRequires:    zlib
 BuildRequires:    zlib-devel
 
 %if 0%{?rhel}
-# NOTE:  As a part of its path, this URL contains a fixed number representing
-#        the number of the upstream release upon which this tarball was
-#        originally based.
-Source0:          http://pki.fedoraproject.org/pki/sources/%{name}/%{version}/6/rhel/%{name}-%{version}%{?prerel}.tar.gz
+# NOTE:  In the future, as a part of its path, this URL will contain a release
+#        directory which consists of the fixed number of the upstream release
+#        upon which this tarball was originally based.
+Source0:          http://pki.fedoraproject.org/pki/sources/%{name}/%{version}/%{release}/rhel/%{name}-%{version}%{?prerel}.tar.gz
 %else
 Source0:          http://pki.fedoraproject.org/pki/sources/%{name}/%{version}/%{release}/%{name}-%{version}%{?prerel}.tar.gz
 %endif
@@ -228,6 +233,7 @@ Requires:         ldapjdk
 Requires:         python-ldap
 Requires:         python-lxml
 Requires:         python-requests >= 1.1.0-3
+
 %if  0%{?rhel}
 # 'resteasy-base' is a subset of the complete set of
 # 'resteasy' packages and consists of what is needed to
@@ -239,8 +245,20 @@ Requires:    resteasy-base-jaxrs >= 3.0.6-1
 Requires:    resteasy-base-jaxrs-api >= 3.0.6-1
 Requires:    resteasy-base-jackson-provider >= 3.0.6-1
 %else
+%if  0%{?fedora} >= 22
+# Starting from Fedora 22, resteasy packages were split into
+# subpackages.
+Requires:    resteasy-atom-provider >= 3.0.6-7
+Requires:    resteasy-client >= 3.0.6-7
+Requires:    resteasy-jaxb-provider >= 3.0.6-7
+Requires:    resteasy-core >= 3.0.6-7
+Requires:    resteasy-jaxrs-api >= 3.0.6-7
+Requires:    resteasy-jackson-provider >= 3.0.6-7
+%else
 Requires:         resteasy >= 3.0.6-2
 %endif
+%endif
+
 Requires:         xalan-j2
 Requires:         xerces-j2
 Requires:         xml-commons-apis
@@ -323,7 +341,11 @@ Requires(post):   systemd-units
 Requires(preun):  systemd-units
 Requires(postun): systemd-units
 
+%if 0%{?rhel}
 Requires:         tomcatjss >= 7.1.0-5
+%else
+Requires:         tomcatjss >= 7.1.1
+%endif
 
 %description -n   pki-server
 The PKI Server Framework is required by the following four PKI subsystems:
@@ -696,6 +718,7 @@ echo >> /var/log/pki/pki-server-upgrade-%{version}.log 2>&1
 %files -n pki-base
 %defattr(-,root,root,-)
 %doc base/common/LICENSE
+%doc base/common/html/
 %dir %{_datadir}/pki
 %{_datadir}/pki/VERSION
 %{_datadir}/pki/etc/
@@ -714,6 +737,7 @@ echo >> /var/log/pki/pki-server-upgrade-%{version}.log 2>&1
 %dir %{_localstatedir}/log/pki
 %{_sbindir}/pki-upgrade
 %{_mandir}/man8/pki-upgrade.8.gz
+%{_mandir}/man1/pki-python-client.1.gz
 
 %files -n pki-tools
 %defattr(-,root,root,-)
@@ -754,6 +778,7 @@ echo >> /var/log/pki/pki-server-upgrade-%{version}.log 2>&1
 %{_mandir}/man1/pki-key.1.gz
 %{_mandir}/man1/pki-securitydomain.1.gz
 %{_mandir}/man1/pki-user.1.gz
+%{_mandir}/man1/pki-ca-profile.1.gz
 
 
 %if %{with server}
@@ -858,6 +883,14 @@ echo >> /var/log/pki/pki-server-upgrade-%{version}.log 2>&1
 %endif # %{with server}
 
 %changelog
+* Mon Jan 19 2015 Dogtag Team <pki-devel@redhat.com> 10.2.1-1
+- Change resteasy dependencies for F22+
+- Added CLIs to simplify generating user certificates
+- Added enhancements to KRA Python API
+- Added a man page for pki ca-profile commands.
+- Added python api docs
+- Update release number for release build
+
 * Tue Dec 16 2014 Matthew Harmsen <mharmsen@redhat.com> - 10.2.0-6
 - Bugzilla Bug #1160435 - Remove obsolete packages from CS 9.0
 - PKI TRAC Ticket #1187 - mod_perl should be removed from requirements for 10.2

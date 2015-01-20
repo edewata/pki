@@ -686,48 +686,55 @@ class KeyClient(object):
 
         nonce_iv = self.crypto.generate_nonce_iv()
         session_key = self.crypto.generate_session_key()
-        trans_wrapped_session_key = \
-            self.crypto.asymmetric_wrap(session_key, self.transport_cert)
-        wrapped_private_data = self.crypto.symmetric_wrap(private_data,
-                                                          session_key,
-                                                          nonce_iv=nonce_iv)
 
-        algorithm_oid = self.DES_EDE3_CBC_OID
-        symkey_params = base64.encodestring(nonce_iv)
+        wrapped_session_key = self.crypto.asymmetric_wrap(session_key, self.transport_cert)
 
-        return self.archive_encrypted_data(client_key_id, data_type,
-                                           wrapped_private_data,
-                                           trans_wrapped_session_key,
-                                           algorithm_oid,
-                                           symkey_params,
-                                           key_algorithm=key_algorithm,
-                                           key_size=key_size)
+        encrypted_data = self.crypto.symmetric_wrap(
+            private_data,
+            session_key,
+            nonce_iv=nonce_iv)
+
+        return self.archive_encrypted_data(
+            client_key_id,
+            data_type,
+            encrypted_data,
+            wrapped_session_key,
+            algorithm_oid=None,
+            nonce_iv=nonce_iv,
+            key_algorithm=key_algorithm,
+            key_size=key_size)
 
     @pki.handle_exceptions()
-    def archive_encrypted_data(self, client_key_id, data_type,
-                               encrypted_data, trans_wrapped_session_key,
-                               algorithm_oid, symkey_params,
-                               key_algorithm=None, key_size=None):
-        """ Archive a secret (symmetric key or passphrase) on the DRM.
+    def archive_encrypted_data(self,
+            client_key_id,
+            data_type,
+            encrypted_data,
+            wrapped_session_key,
+            algorithm_oid=None,
+            nonce_iv=None,
+            key_algorithm=None,
+            key_size=None):
+        """
+        Archive a secret (symmetric key or passphrase) on the DRM.
 
-            Refer to archive_key() comments for a description of client_key_id,
-            data_type, key_algorithm and key_size.
+        Refer to archive_key() comments for a description of client_key_id,
+        data_type, key_algorithm and key_size.
 
-            The following parameters are also required:
-                - wrapped_private_data - which is the secret wrapped by a
-                session key (168 bit 3DES symmetric key)
-                - trans_wrapped_session_key - the above session key wrapped by
-                the DRM transport certificate public key.
-                - the algorithm_oid string for the symmetric key wrap
-                - the symkey_params for the symmetric key wrap
+        The following parameters are also required:
+            - encrypted_data - which is the data encrypted by a
+              session key (168 bit 3DES symmetric key)
+            - wrapped_session_key - the above session key wrapped by
+              the DRM transport certificate public key.
+            - the algorithm_oid string for the symmetric key wrap
+            - the nonce_iv for the symmetric key wrap
 
-            This function is useful if the caller wants to do their own wrapping
-            of the secret, or if the secret was generated on a separate client
-            machine and the wrapping was done there.
+        This function is useful if the caller wants to do their own wrapping
+        of the secret, or if the secret was generated on a separate client
+        machine and the wrapping was done there.
 
-            The function returns a KeyRequestResponse object containing a
-            KeyRequestInfo object with details about the archival request and
-            key archived.
+        The function returns a KeyRequestResponse object containing a
+        KeyRequestInfo object with details about the archival request and
+        key archived.
         """
         if (client_key_id is None) or (data_type is None):
             raise TypeError("Client Key ID and data type must be specified")
@@ -738,13 +745,22 @@ class KeyClient(object):
                     "For symmetric keys, key algorithm and key size "
                     "must be specified")
 
-        if (encrypted_data is None) or (trans_wrapped_session_key is None) or \
-                (algorithm_oid is None) or (symkey_params is None):
-            raise TypeError(
-                "All data and wrapping parameters must be specified")
+        if not encrypted_data:
+            raise TypeError('Missing encrypted data')
 
-        twsk = base64.encodestring(trans_wrapped_session_key)
+        if not wrapped_session_key:
+            raise TypeError('Missing wrapped session key')
+
+        if not algorithm_oid:
+            algorithm_oid = KeyClient.DES_EDE3_CBC_OID
+
+        if not nonce_iv:
+            raise TypeError('Missing nonce IV')
+
         data = base64.encodestring(encrypted_data)
+        twsk = base64.encodestring(wrapped_session_key)
+        symkey_params = base64.encodestring(nonce_iv)
+
         request = KeyArchivalRequest(client_key_id=client_key_id,
                                      data_type=data_type,
                                      wrapped_private_data=data,
@@ -908,7 +924,8 @@ class KeyClient(object):
                                    trans_wrapped_session_key=None,
                                    session_wrapped_passphrase=None,
                                    nonce_data=None):
-        """ Retrieve a secret (passphrase or symmetric key) from the DRM using
+        """
+        Retrieve a secret (passphrase or symmetric key) from the DRM using
         a passphrase.
 
         This function generates a key recovery request, approves it, and
@@ -922,28 +939,28 @@ class KeyClient(object):
 
         1) A passphrase is provided by the caller.
 
-        In this case, CryptoProvider methods will be called to create the data
-        to securely send the passphrase to the DRM.  Basically, three pieces of
-        data will be sent:
+           In this case, CryptoProvider methods will be called to create the data
+           to securely send the passphrase to the DRM.  Basically, three pieces of
+           data will be sent:
 
-        - the passphrase wrapped by a 168 bit 3DES symmetric key (the session
-        key).  This is referred to as the parameter session_wrapped_passphrase.
+           - the passphrase wrapped by a 168 bit 3DES symmetric key (the session
+             key).  This is referred to as the parameter session_wrapped_passphrase.
 
-        - the session key wrapped with the public key in the DRM transport
-        certificate.  This is referred to as the trans_wrapped_session_key.
+           - the session key wrapped with the public key in the DRM transport
+             certificate.  This is referred to as the trans_wrapped_session_key.
 
-        - ivps nonce data, referred to as nonce_data
+           - ivps nonce data, referred to as nonce_data
 
-        The function will return the tuple (KeyData, unwrapped_secret)
+           The function will return the tuple (KeyData, unwrapped_secret)
 
         2) The caller provides the trans_wrapped_session_key,
-        session_wrapped_passphrase and nonce_data.
+           session_wrapped_passphrase and nonce_data.
 
-        In this case, the data will simply be passed to the DRM.  The function
-        will return the secret encrypted by the passphrase using PBE Encryption.
-        The secret will still need to be decrypted by the caller.
+           In this case, the data will simply be passed to the DRM.  The function
+           will return the secret encrypted by the passphrase using PBE Encryption.
+           The secret will still need to be decrypted by the caller.
 
-        The function will return the tuple (KeyData, None)
+           The function will return the tuple (KeyData, None)
         """
         pass
 

@@ -20,13 +20,20 @@ package com.netscape.cmstools.client;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.URI;
 import java.util.Arrays;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
-import org.apache.commons.io.FileUtils;
 
+import com.netscape.certsrv.cert.CertClient;
+import com.netscape.certsrv.cert.CertData;
 import com.netscape.certsrv.client.ClientConfig;
+import com.netscape.certsrv.client.PKIClient;
+import com.netscape.certsrv.dbs.certdb.CertId;
 import com.netscape.cmstools.cli.CLI;
 import com.netscape.cmstools.cli.MainCLI;
 
@@ -45,19 +52,39 @@ public class ClientCertImportCLI extends CLI {
     }
 
     public void printHelp() {
-        formatter.printHelp(getFullName() + " [OPTIONS...]", options);
+        formatter.printHelp(getFullName() + " [nickname] [OPTIONS...]", options);
     }
 
     public void createOptions() {
-        Option option = new Option(null, "cert", true, "Import certificate file");
+        Option option = new Option(null, "cert", true, "Certificate file to import.");
         option.setArgName("path");
         options.addOption(option);
 
-        option = new Option(null, "ca-cert", true, "Import CA certificate file");
+        option = new Option(null, "ca-cert", true, "CA certificate file to import.");
+        option.setArgName("path");
+        options.addOption(option);
+
+        option = new Option(null, "pkcs12", true, "PKCS #12 file to import.");
+        option.setArgName("path");
+        options.addOption(option);
+
+        option = new Option(null, "pkcs12-password", true, "PKCS #12 password.");
+        option.setArgName("password");
+        options.addOption(option);
+
+        option = new Option(null, "pkcs12-password-file", true, "PKCS #12 password file.");
         option.setArgName("path");
         options.addOption(option);
 
         options.addOption(null, "ca-server", false, "Import CA certificate from CA server");
+
+        option = new Option(null, "serial", true, "Serial number of certificate to import from CA server");
+        option.setArgName("serial number");
+        options.addOption(option);
+
+        option = new Option(null, "trust", true, "Trust attributes. Default: u,u,u.");
+        option.setArgName("trust attributes");
+        options.addOption(option);
     }
 
     public void execute(String[] args) throws Exception {
@@ -81,100 +108,225 @@ public class ClientCertImportCLI extends CLI {
 
         String[] cmdArgs = cmd.getArgs();
 
-        if (cmdArgs.length != 0) {
+        if (cmdArgs.length > 1) {
             System.err.println("Error: Too many arguments specified.");
-            printHelp();
-            System.exit(-1);
-        }
-
-        byte[] bytes = null;
-
-        String certPath = cmd.getOptionValue("cert");
-        String caCertPath = cmd.getOptionValue("ca-cert");
-        boolean importFromCAServer = cmd.hasOption("ca-server");
-
-        boolean isCACert = false;
-
-        // load the certificate
-        if (certPath != null) {
-            if (verbose) System.out.println("Loading certificate from " + certPath + ".");
-            bytes = FileUtils.readFileToByteArray(new File(certPath));
-
-
-        } else if (caCertPath != null) {
-            if (verbose) System.out.println("Loading CA certificate from " + caCertPath + ".");
-            bytes = FileUtils.readFileToByteArray(new File(caCertPath));
-
-            isCACert = true;
-
-        } else if (importFromCAServer) {
-
-            // late initialization
-            MainCLI mainCLI = (MainCLI)parent.parent;
-            mainCLI.init();
-
-            client = mainCLI.getClient();
-            ClientConfig config = client.getConfig();
-
-            String caServerURI = "http://" + config.getServerURI().getHost() + ":8080/ca";
-
-            if (verbose) System.out.println("Downloading CA certificate from " + caServerURI + ".");
-            bytes = client.downloadCACertChain(caServerURI);
-
-            isCACert = true;
-
-        } else {
-            System.err.println("Error: Missing certificate to import");
             printHelp();
             System.exit(-1);
         }
 
         MainCLI mainCLI = (MainCLI)parent.getParent();
 
-        if (mainCLI.config.getCertNickname() == null) {
-            System.err.println("Error: Certificate nickname is required.");
-            System.exit(-1);
+        String nickname = null;
+
+        // Get nickname from command argument if specified.
+        if (cmdArgs.length > 0) {
+            nickname = cmdArgs[0];
         }
 
-        File certDatabase = mainCLI.certDatabase;
-        File certFile = new File(certDatabase, "import.crt");
+        // Otherwise, get nickname from authentication option -n.
+        // This code is used to provide backward compatibility.
+        // TODO: deprecate/remove this code in 10.3.
+        if (nickname == null) {
+            nickname = mainCLI.config.getCertNickname();
+        }
 
-        try {
+        // nickname is not required to import PKCS #12 file
+
+        String certPath = cmd.getOptionValue("cert");
+        String caCertPath = cmd.getOptionValue("ca-cert");
+        String pkcs12Path = cmd.getOptionValue("pkcs12");
+        String pkcs12Password = cmd.getOptionValue("pkcs12-password");
+        String pkcs12PasswordPath = cmd.getOptionValue("pkcs12-password-file");
+        boolean importFromCAServer = cmd.hasOption("ca-server");
+        String serialNumber = cmd.getOptionValue("serial");
+        String trustAttributes = cmd.getOptionValue("trust", "u,u,u");
+
+        // load the certificate
+        if (certPath != null) {
+
+            if (verbose) System.out.println("Importing certificate from " + certPath + ".");
+
+            importCert(
+                    mainCLI.certDatabase.getAbsolutePath(),
+                    certPath,
+                    nickname,
+                    trustAttributes);
+
+        } else if (caCertPath != null) {
+
+            if (verbose) System.out.println("Importing CA certificate from " + caCertPath + ".");
+
+            trustAttributes = "CT,c,";
+
+            importCert(
+                    mainCLI.certDatabase.getAbsolutePath(),
+                    caCertPath,
+                    nickname,
+                    trustAttributes);
+
+        } else if (pkcs12Path != null) {
+
+            if (verbose) System.out.println("Importing certificates from " + pkcs12Path + ".");
+
+            if (pkcs12Password != null && pkcs12PasswordPath != null) {
+                throw new Exception("PKCS #12 password and password file are mutually exclusive");
+
+            } else if (pkcs12Password != null) {
+                // store password into a temporary file
+                File pkcs12PasswordFile = File.createTempFile("pki-client-cert-import-", ".pwd");
+                pkcs12PasswordFile.deleteOnExit();
+
+                try (PrintWriter out = new PrintWriter(new FileWriter(pkcs12PasswordFile))) {
+                    out.print(pkcs12Password);
+                }
+
+                pkcs12PasswordPath = pkcs12PasswordFile.getAbsolutePath();
+
+            } else if (pkcs12PasswordPath != null) {
+                // nothing to do
+
+            } else {
+                throw new Exception("Missing PKCS #12 password");
+            }
+
+            // import certificates and private key into PKCS #12 file
+            importPKCS12(
+                    mainCLI.certDatabase.getAbsolutePath(),
+                    mainCLI.config.getCertPassword(),
+                    pkcs12Path,
+                    pkcs12PasswordPath);
+
+        } else if (importFromCAServer) {
+
+            // late initialization
+            mainCLI.init();
+
+            client = mainCLI.getClient();
+            URI serverURI = mainCLI.config.getServerURI();
+
+            String caServerURI = serverURI.getScheme() + "://" +
+                serverURI.getHost() + ":" + serverURI.getPort() + "/ca";
+
+            if (verbose) System.out.println("Importing CA certificate from " + caServerURI + ".");
+            byte[] bytes = client.downloadCACertChain(caServerURI);
+
+            File certFile = File.createTempFile("pki-client-cert-import-", ".crt");
+            certFile.deleteOnExit();
+
             try (FileOutputStream out = new FileOutputStream(certFile)) {
                 out.write(bytes);
             }
 
-            String flag;
-            if (isCACert) {
-                if (verbose) System.out.println("Importing CA certificate.");
-                flag = "CT,c,";
+            trustAttributes = "CT,c,";
 
-            } else {
-                if (verbose) System.out.println("Importing certificate.");
-                flag = "u,u,u";
+            importCert(
+                    mainCLI.certDatabase.getAbsolutePath(),
+                    certFile.getAbsolutePath(),
+                    nickname,
+                    trustAttributes);
+
+        } else if (serialNumber != null) {
+
+            // connect to CA anonymously
+            ClientConfig config = new ClientConfig(mainCLI.config);
+            config.setCertDatabase(null);
+            config.setCertPassword(null);
+            config.setCertNickname(null);
+
+            URI serverURI = config.getServerURI();
+            if (verbose) System.out.println("Importing certificate " + serialNumber + " from " + serverURI + ".");
+
+            PKIClient client = new PKIClient(config, null);
+            CertClient certClient = new CertClient(client, "ca");
+
+            CertData certData = certClient.getCert(new CertId(serialNumber));
+
+            File certFile = File.createTempFile("pki-client-cert-import-", ".crt");
+            certFile.deleteOnExit();
+
+            String encoded = certData.getEncoded();
+            try (PrintWriter out = new PrintWriter(new FileWriter(certFile))) {
+                out.write(encoded);
             }
 
-            String[] commands = {
-                    "/usr/bin/certutil", "-A",
-                    "-d", certDatabase.getAbsolutePath(),
-                    "-i", certFile.getAbsolutePath(),
-                    "-n", mainCLI.config.getCertNickname(),
-                    "-t", flag
-            };
+            importCert(
+                    mainCLI.certDatabase.getAbsolutePath(),
+                    certFile.getAbsolutePath(),
+                    nickname,
+                    trustAttributes);
 
-            Runtime rt = Runtime.getRuntime();
-            Process p = rt.exec(commands);
+        } else {
+            System.err.println("Error: Missing certificate to import");
+            printHelp();
+            System.exit(-1);
+            return;
+        }
 
-            int rc = p.waitFor();
-            if (rc != 0) {
-                MainCLI.printMessage("Import failed");
-                return;
-            }
+        if (nickname == null) {
+            MainCLI.printMessage("Imported certificates from PKCS #12 file");
 
-            MainCLI.printMessage("Imported certificate \"" + mainCLI.config.getCertNickname() + "\"");
+        } else {
+            MainCLI.printMessage("Imported certificate \"" + nickname + "\"");
+        }
+    }
 
-        } finally {
-            certFile.delete();
+    public void importCert(
+            String dbPath,
+            String certPath,
+            String nickname,
+            String trustAttributes) throws Exception {
+
+        if (nickname == null) {
+            System.err.println("Error: Missing certificate nickname.");
+            System.exit(-1);
+        }
+
+        String[] command = {
+                "/bin/certutil", "-A",
+                "-d", dbPath,
+                "-i", certPath,
+                "-n", nickname,
+                "-t", trustAttributes
+        };
+
+        try {
+            run(command);
+
+        } catch (Exception e) {
+            throw new Exception("Unable to import certificate file", e);
+        }
+    }
+
+    public void importPKCS12(
+            String dbPath,
+            String dbPassword,
+            String pkcs12Path,
+            String pkcs12PasswordPath) throws Exception {
+
+        String[] command = {
+                "/bin/pk12util",
+                "-d", dbPath,
+                "-K", dbPassword,
+                "-i", pkcs12Path,
+                "-w", pkcs12PasswordPath
+        };
+
+        try {
+            run(command);
+
+        } catch (Exception e) {
+            throw new Exception("Unable to import PKCS #12 file", e);
+        }
+    }
+
+    public void run(String[] command) throws IOException, InterruptedException {
+
+        Runtime rt = Runtime.getRuntime();
+        Process p = rt.exec(command);
+        int rc = p.waitFor();
+
+        if (rc != 0) {
+            throw new IOException("Command failed. RC: " + rc);
         }
     }
 }

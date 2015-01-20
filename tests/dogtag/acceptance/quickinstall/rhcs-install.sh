@@ -44,6 +44,11 @@
 # Include tests
 . ./acceptance/quickinstall/rhds-install.sh
 . ./acceptance/quickinstall/rhcs-install-lib.sh
+##global variables##
+ROOTCA_INSTALLED=TRUE
+SUBCA1_INSTALLED=TRUE
+SUBCA2_INSTALLED=TRUE
+####################
 
 run_rhcs_install_packages() {
 	rlPhaseStartSetup "rhcs_install_packages: Default install"
@@ -129,14 +134,14 @@ run_install_subsystem_RootCA()
                         else
                                rlLog "ERROR: $item package is NOT installed"
                                rc=1
+			       ROOTCA_INSTALLED=FALSE
+			       break
                         fi
                 done
 		if [ $rc -eq 0 ] ; then
 			rhcs_install_RootCA
-			if [ $? -eq 0 ]; then
-				CA_INSTALLED=TRUE
-			else
-				CA_INSTALLED=FALSE
+			if [ $? -ne 0 ]; then
+				ROOTCA_INSTALLED=FALSE 
 			fi
 		fi
 	rlPhaseEnd
@@ -158,7 +163,7 @@ run_install_subsystem_kra() {
 			rc=1
 		fi
 
-		if [ $rc -eq 0 ] && [ "$CA_INSTALLED" = "TRUE" ]; then
+		if [ $rc -eq 0 ] && [ $(eval echo \$${CA}_INSTALLED) = "TRUE" ]; then
 			rhcs_install_kra $number $master_hostname $CA
 		fi
 	rlPhaseEnd
@@ -180,7 +185,7 @@ run_install_subsystem_ocsp() {
 			rc=1
 		fi
 
-		if [ $rc -eq 0 ] && [ "$CA_INSTALLED" = "TRUE" ]; then
+		if [ $rc -eq 0 ] && [ $(eval echo \$${CA}_INSTALLED) = "TRUE" ]; then
 			rhcs_install_ocsp $number $master_hostname $CA
 		fi
 	rlPhaseEnd
@@ -226,7 +231,7 @@ run_install_subsystem_tks() {
 			rc=1
                 fi
 
-		if [ $rc -eq 0 ] && [ "$CA_INSTALLED" = "TRUE" ]; then
+		if [ $rc -eq 0 ] && [ $(eval echo \$${CA}_INSTALLED) = "TRUE" ]; then
 			rlLog "Installing TKS"
 			rhcs_install_tks $number $master_hostname $CA
 		fi
@@ -280,11 +285,16 @@ run_install_subsystem_subca(){
                         else
                         	rlLog "ERROR: $item package is NOT installed"
                                 rc=1
+				eval SUBCA${number}_INSTALLED=FALSE
+				break
                         fi
                 done
                 if [ $rc -eq 0 ] ; then
                         rlLog "Installing Sub CA"
                         rhcs_install_SubCA $number $master_hostname $CA
+			if [ $? -ne 0 ]; then
+				eval SUBCA${number}_INSTALLED=FALSE
+                        fi
                 fi
 	rlPhaseEnd 
 }
@@ -392,3 +402,4 @@ run_install_subsystem_cloneTKS(){
                 fi
 	rlPhaseEnd
 }
+

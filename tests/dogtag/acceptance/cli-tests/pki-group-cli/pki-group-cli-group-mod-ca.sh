@@ -55,6 +55,27 @@ run_pki-group-cli-group-mod-ca_tests(){
         rlRun "pushd $TmpDir"
     rlPhaseEnd
 
+subsystemId=$1
+SUBSYSTEM_TYPE=$2
+MYROLE=$3
+
+if [ "$TOPO9" = "TRUE" ] ; then
+        prefix=$subsystemId
+elif [ "$MYROLE" = "MASTER" ] ; then
+        if [[ $subsystemId == SUBCA* ]]; then
+                prefix=$subsystemId
+        else
+                prefix=ROOTCA
+        fi
+else
+        prefix=$MYROLE
+fi
+
+CA_HOST=$(eval echo \$${MYROLE})
+CA_PORT=$(eval echo \$${subsystemId}_UNSECURE_PORT)
+local TEMP_NSS_DB="$TmpDir/nssdb"
+local TEMP_NSS_DB_PASSWD="redhat123"
+
 group1=ca_group
 group1desc="Test ca group"
 group2=abcdefghijklmnopqrstuvwxyx12345678
@@ -83,16 +104,22 @@ i18ngroup_mod_description="kakskümmend"
      ##### Tests to modify CA groups ####
     rlPhaseStartTest "pki_group_cli_group_mod-CA-002: Modify a group's description in CA using CA_adminV"
 	rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-add --description=\"$group1desc\" $group1"
         rlLog "Executing: pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		    -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-mod --description=\"$group1_mod_description\" $group1"
         rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-mod --description=\"$group1_mod_description\" $group1 > $TmpDir/pki-group-mod-ca-002.out" \
 		    0 \
 		    "Modified $group1 description"
@@ -105,16 +132,22 @@ i18ngroup_mod_description="kakskümmend"
 
 rlPhaseStartTest "pki_group_cli_group_mod-CA-003:--description with characters and numbers"
 	rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-add --description=test g1"
         rlLog "Executing: pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		    -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-mod --description abcdefghijklmnopqrstuvwxyx12345678 g1"
         rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-mod --description=abcdefghijklmnopqrstuvwxyx12345678 g1 > $TmpDir/pki-group-mod-ca-004.out" \
                     0 \
                     "Modified group using CA_adminV with --description with characters and numbers"
@@ -125,26 +158,33 @@ rlPhaseStartTest "pki_group_cli_group_mod-CA-003:--description with characters a
     rlPhaseEnd
 
 	rlPhaseStartTest "pki_group_cli_group_mod-CA-004:--description with maximum length and symbols "
-        randsym=`cat /dev/urandom | tr -dc 'a-zA-Z0-9@#%^&_+=~*-' | fold -w 1024 | head -n 1`
+	randsym_b64=$(openssl rand -base64 1024 |  perl -p -e 's/\n//')
+        randsym=$(echo $randsym_b64 | sed 's/\///g')	
 
         rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-add --description=test g2"
         rlLog "Executing: pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		    -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-mod --description=\"$randsym\" g2"
         rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-mod --description=\"$randsym\" g2 > $TmpDir/pki-group-mod-ca-005.out" \
                     0 \
                     "Modified group using CA_adminV with maximum --description length and character symbols in it"
         actual_group_string=`cat $TmpDir/pki-group-mod-ca-005.out | grep "Description: " | xargs echo`
         expected_group_string="Description: $randsym"
         rlAssertGrep "Modified group \"g2\"" "$TmpDir/pki-group-mod-ca-005.out"
-        rlAssertGrep "Group ID: u2" "$TmpDir/pki-group-mod-ca-005.out"
+        rlAssertGrep "Group ID: g2" "$TmpDir/pki-group-mod-ca-005.out"
         if [[ $actual_group_string = $expected_group_string ]] ; then
                 rlPass "$expected_group_string found"
         else
@@ -157,16 +197,22 @@ rlPhaseStartTest "pki_group_cli_group_mod-CA-003:--description with characters a
 
     rlPhaseStartTest "pki_group_cli_group_mod-CA-005:--description with $ character "
 	rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-add --description=test g3"
         rlLog "Executing: pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		    -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-mod --description=$ g3"
         rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-mod --description=$ g3 > $TmpDir/pki-group-mod-ca-008.out" \
                     0 \
                     "Modified group using CA_adminV with --description $ character"
@@ -179,18 +225,25 @@ rlPhaseStartTest "pki_group_cli_group_mod-CA-003:--description with characters a
 
  rlPhaseStartTest "pki_group_cli_group_mod-CA-006: Modify a group to CA with -t option"
 	rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		    -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
+		    -t ca \
                     group-add --description=test g4"
         rlLog "Executing: pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                    -t ca \
                     group-mod --description=\"$group1desc\"  g4"
 
         rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                    -t ca \
                     group-mod --description=\"$group1desc\" g4 > $TmpDir/pki-group-mod-ca-007.out" \
                     0 \
@@ -201,7 +254,7 @@ rlPhaseStartTest "pki_group_cli_group_mod-CA-003:--description with characters a
 	rlLog "PKI TICKET: https://fedorahosted.org/pki/ticket/818"
     rlPhaseEnd
     rlPhaseStartTest "pki_group_cli_group_mod-CA-007:  Modify a group -- missing required option group id"
-	command="pki -d $CERTDB_DIR -n CA_adminV -c $CERTDB_DIR_PASSWORD -t ca group-mod --description='$group1desc'"
+	command="pki -d $CERTDB_DIR -n ${prefix}_adminV -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT -t ca group-mod --description='$group1desc'"
 	errmsg="Error: No Group ID specified."
 	errorcode=255
 	rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Modify group -- missing required option group id"
@@ -211,13 +264,13 @@ rlPhaseStartTest "pki_group_cli_group_mod-CA-003:--description with characters a
 
 ##### Tests to modify groups using revoked cert#####
     rlPhaseStartTest "pki_group_cli_group_mod-CA-008: Should not be able to modify groups using a revoked cert CA_adminR"
-	command="pki -d $CERTDB_DIR -n CA_adminR -c $CERTDB_DIR_PASSWORD group-mod --description='$group1desc' $group1"
+	command="pki -d $CERTDB_DIR -n ${prefix}_adminR -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT group-mod --description='$group1desc' $group1"
 	errmsg="PKIException: Unauthorized"
         errorcode=255
         rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Cannot modify group $group1 using a user having revoked cert"
     rlPhaseEnd
     rlPhaseStartTest "pki_group_cli_group_mod-CA-009: Should not be able to modify group using an agent or a revoked cert CA_agentR"
-	command="pki -d $CERTDB_DIR -n CA_agentR -c $CERTDB_DIR_PASSWORD group-mod --description='$group1desc' $group1"
+	command="pki -d $CERTDB_DIR -n ${prefix}_agentR -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT group-mod --description='$group1desc' $group1"
 	errmsg="PKIException: Unauthorized"
         errorcode=255
         rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Cannot modify group $group1 using a user having revoked cert"
@@ -225,38 +278,31 @@ rlPhaseStartTest "pki_group_cli_group_mod-CA-003:--description with characters a
 
 ##### Tests to modify groups using an agent user#####
     rlPhaseStartTest "pki_group_cli_group_mod-CA-010: Should not be able to modify groups using a CA_agentV user"
-	command="pki -d $CERTDB_DIR -n CA_agentV -c $CERTDB_DIR_PASSWORD group-mod --description='$group1desc' $group1"
-	errmsg="ForbiddenException: Authorization failed on resource: certServer.ca.groups, operation: execute"
+	command="pki -d $CERTDB_DIR -n ${prefix}_agentV -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT group-mod --description='$group1desc' $group1"
+	errmsg="ForbiddenException: Authorization Error"
 	errorcode=255
 	rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Cannot modify group $group1 using a agent cert"
     rlPhaseEnd
 
-    rlPhaseStartTest "pki_group_cli_group_mod-CA-011: Should not be able to modify group using a CA_agentR user"
-	command="pki -d $CERTDB_DIR -n CA_agentR -c $CERTDB_DIR_PASSWORD group-mod --description='$group1desc' $group1"
-	errmsg="PKIException: Unauthorized"
-        errorcode=255
-        rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Cannot modify group $group1 using a agent cert"
-    rlPhaseEnd
-
 ##### Tests to modify groups using expired cert#####
-    rlPhaseStartTest "pki_group_cli_group_mod-CA-012: Should not be able to modify group using a CA_adminE cert"
+    rlPhaseStartTest "pki_group_cli_group_mod-CA-011: Should not be able to modify group using a CA_adminE cert"
         rlRun "date --set='next day'" 0 "Set System date a day ahead"
                                 rlRun "date --set='next day'" 0 "Set System date a day ahead"
                                 rlRun "date"
-	command="pki -d $CERTDB_DIR -n CA_adminE -c $CERTDB_DIR_PASSWORD group-mod --description='$group1desc' $group1"
-	errmsg="ForbiddenException: Authorization failed on resource: certServer.ca.groups, operation: execute"
+	command="pki -d $CERTDB_DIR -n ${prefix}_adminE -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT group-mod --description='$group1desc' $group1"
+	errmsg="ForbiddenException: Authorization Error"
         errorcode=255
         rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Cannot modify group $group1 using an expired admin cert"
 	rlLog "FAIL: https://fedorahosted.org/pki/ticket/934"
         rlRun "date --set='2 days ago'" 0 "Set System back to the present day"
     rlPhaseEnd
 
-    rlPhaseStartTest "pki_group_cli_group_mod-CA-013: Should not be able to modify group using a CA_agentE cert"
+    rlPhaseStartTest "pki_group_cli_group_mod-CA-012: Should not be able to modify group using a CA_agentE cert"
         rlRun "date --set='next day'" 0 "Set System date a day ahead"
                                 rlRun "date --set='next day'" 0 "Set System date a day ahead"
                                 rlRun "date"
-	command="pki -d $CERTDB_DIR -n CA_agentE -c $CERTDB_DIR_PASSWORD group-mod --description='$group1desc' $group1"
-	errmsg="ForbiddenException: Authorization failed on resource: certServer.ca.groups, operation: execute"
+	command="pki -d $CERTDB_DIR -n ${prefix}_agentE -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT group-mod --description='$group1desc' $group1"
+	errmsg="ForbiddenException: Authorization Error"
         errorcode=255
         rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Cannot modify group $group1 using an expired agent cert"
 	rlLog "FAIL: https://fedorahosted.org/pki/ticket/934"
@@ -264,31 +310,31 @@ rlPhaseStartTest "pki_group_cli_group_mod-CA-003:--description with characters a
     rlPhaseEnd
 
  ##### Tests to modify groups using audit users#####
-    rlPhaseStartTest "pki_group_cli_group_mod-CA-014: Should not be able to modify group using a CA_auditV"
-	command="pki -d $CERTDB_DIR -n CA_auditV -c $CERTDB_DIR_PASSWORD group-mod --description='$group1desc' $group1"
-	errmsg="ForbiddenException: Authorization failed on resource: certServer.ca.groups, operation: execute"
+    rlPhaseStartTest "pki_group_cli_group_mod-CA-013: Should not be able to modify group using a CA_auditV"
+	command="pki -d $CERTDB_DIR -n ${prefix}_auditV -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT group-mod --description='$group1desc' $group1"
+	errmsg="ForbiddenException: Authorization Error"
 	errorcode=255
 	rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Cannot modify group $group1 using an audit cert"
     rlPhaseEnd
 
         ##### Tests to modify groups using operator user###
-    rlPhaseStartTest "pki_group_cli_group_mod-CA-015: Should not be able to modify group using a CA_operatorV"
-	command="pki -d $CERTDB_DIR -n CA_operatorV -c $CERTDB_DIR_PASSWORD group-mod --description='$group1desc' $group1"
-	errmsg="ForbiddenException: Authorization failed on resource: certServer.ca.groups, operation: execute"
+    rlPhaseStartTest "pki_group_cli_group_mod-CA-014: Should not be able to modify group using a CA_operatorV"
+	command="pki -d $CERTDB_DIR -n ${prefix}_operatorV -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT group-mod --description='$group1desc' $group1"
+	errmsg="ForbiddenException: Authorization Error"
         errorcode=255
         rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Cannot modify group $group1 as CA_operatorV"
     rlPhaseEnd
 
-##### Tests to modify groups using CA_adminUTCA and CA_agentUTCA  user's certificate will be issued by an untrusted CA users#####
-    rlPhaseStartTest "pki_group_cli_group_mod-CA-016: Should not be able to modify groups using a cert created from a untrusted CA CA_adminUTCA"
-	command="pki -d /tmp/untrusted_cert_db -n CA_adminUTCA -c Password group-mod --description='$group1desc' $group1"
+##### Tests to modify groups using role_user_UTCA user's certificate will be issued by an untrusted CA users#####
+    rlPhaseStartTest "pki_group_cli_group_mod-CA-015: Should not be able to modify groups using a cert created from a untrusted CA CA_adminUTCA"
+	command="pki -d $UNTRUSTED_CERT_DB_LOCATION -n role_user_UTCA -c $UNTRUSTED_CERT_DB_PASSWORD -h $CA_HOST -p $CA_PORT group-mod --description='$group1desc' $group1"
 	errmsg="PKIException: Unauthorized"
         errorcode=255
         rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Cannot modify group $group1 as adminUTCA"
     rlPhaseEnd
 
-rlPhaseStartTest "pki_group_cli_group_mod-CA-017:  Modify a group -- Group ID does not exist"
-        command="pki -d $CERTDB_DIR -n CA_adminV -c $CERTDB_DIR_PASSWORD -t ca group-mod --description='$group1desc' g5"
+rlPhaseStartTest "pki_group_cli_group_mod-CA-016:  Modify a group -- Group ID does not exist"
+        command="pki -d $CERTDB_DIR -n ${prefix}_adminV -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT -t ca group-mod --description='$group1desc' g5"
         errmsg="ResourceNotFoundException: Group g5  not found."
         errorcode=255
         rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Modifying a non existing group"
@@ -296,60 +342,74 @@ rlPhaseStartTest "pki_group_cli_group_mod-CA-017:  Modify a group -- Group ID do
 
 ##### Tests to modify CA groups with empty parameters ####
 
-    rlPhaseStartTest "pki_group_cli_group_mod-CA-018: Modify a user created group in CA using CA_adminV - description is empty"
+    rlPhaseStartTest "pki_group_cli_group_mod-CA-017: Modify a user created group in CA using CA_adminV - description is empty"
 	rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                    -t ca \
                     group-add --description=\"$group1desc\" g5"
-	command="pki -d $CERTDB_DIR -n CA_adminV -c $CERTDB_DIR_PASSWORD group-mod --description=\"\" g5"
-	errmsg="BadRequestException: Invalid DN syntax."
-	errorcode=255
-	rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Modifying Group --description is empty"
+	rlLog "pki -d $CERTDB_DIR -n ${prefix}_adminV -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT group-mod --description=\"\" g5"
+        rlRun "pki -d $CERTDB_DIR -n ${prefix}_adminV -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT group-mod --description=\"\" g5 > $TmpDir/pki-group-mod-ca-0017.out" 0 "Group modified successfully with empty description"
+        rlAssertGrep "Modified group \"g5\"" "$TmpDir/pki-group-mod-ca-0017.out"
+        rlAssertGrep "Group ID: g5" "$TmpDir/pki-group-mod-ca-0017.out"
 	rlLog "FAIL: https://fedorahosted.org/pki/ticket/818"
     rlPhaseEnd
 
 
 ##### Tests to modify CA groups with the same value ####
 
-    rlPhaseStartTest "pki_group_cli_group_mod-CA-019: Modify a group in CA using CA_adminV - description same old value"
+    rlPhaseStartTest "pki_group_cli_group_mod-CA-018: Modify a group in CA using CA_adminV - description same old value"
 	rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-show $group1 > $TmpDir/pki-group-mod-ca-041_1.out"
 	rlAssertGrep "Group \"$group1\"" "$TmpDir/pki-group-mod-ca-041_1.out"
 	rlAssertGrep "Group ID: $group1" "$TmpDir/pki-group-mod-ca-041_1.out"
-        rlAssertGrep "Description: $group1desc" "$TmpDir/pki-group-mod-ca-041_1.out"
+        rlAssertGrep "Description: $group1_mod_description" "$TmpDir/pki-group-mod-ca-041_1.out"
         rlLog "Executing: pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
-                    group-mod --description=\"$group1desc\" $group1"
+		    -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
+                    group-mod --description=\"$group1_mod_description\" $group1"
         rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
-                    group-mod --description=\"$group1desc\" $group1 > $TmpDir/pki-group-mod-ca-041_2.out" \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
+                    group-mod --description=\"$group1_mod_description\" $group1 > $TmpDir/pki-group-mod-ca-041_2.out" \
                     0 \
                     "Modifying $group1 with same old description"
 	rlAssertGrep "Modified group \"$group1\"" "$TmpDir/pki-group-mod-ca-041_2.out"
         rlAssertGrep "Group ID: $group1" "$TmpDir/pki-group-mod-ca-041_2.out"
-        rlAssertGrep "Description: $group1desc" "$TmpDir/pki-group-mod-ca-041_2.out"
+        rlAssertGrep "Description: $group1_mod_description" "$TmpDir/pki-group-mod-ca-041_2.out"
 	rlLog "PKI TICKET: https://fedorahosted.org/pki/ticket/818"
     rlPhaseEnd
 
 ##### Tests to modify CA groups having i18n chars in the description ####
 
-rlPhaseStartTest "pki_group_cli_group_mod-CA-020: Modify a groups's description having i18n chars in CA using CA_adminV"
+rlPhaseStartTest "pki_group_cli_group_mod-CA-019: Modify a groups's description having i18n chars in CA using CA_adminV"
         rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		    -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-add --description=\"$i18ngroupdescription\" $i18ngroup"
         rlLog "Executing: pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		    -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-mod --description=\"$i18ngroup_mod_description\" $i18ngroup"
         rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-mod --description=\"$i18ngroup_mod_description\" $i18ngroup > $TmpDir/pki-group-mod-ca-043.out" \
                    0 \
                     "Modified $i18ngroup description"
@@ -360,19 +420,25 @@ rlPhaseStartTest "pki_group_cli_group_mod-CA-020: Modify a groups's description 
     rlPhaseEnd
 
 ##### Tests to modify system generated CA groups ####
-    rlPhaseStartTest "pki_group_cli_group_mod-CA-021: Modify Administrator group's description in CA using CA_adminV"
+    rlPhaseStartTest "pki_group_cli_group_mod-CA-020: Modify Administrator group's description in CA using CA_adminV"
 	rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-show Administrators > $TmpDir/pki-group-mod-ca-group-show-022.out"
 	admin_group_desc=$(cat $TmpDir/pki-group-mod-ca-group-show-022.out| grep Description | cut -d- -f2)
         rlLog "Executing: pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		    -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-mod --description=\"$group1_mod_description\" Administrators"
         rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-mod --description=\"$group1_mod_description\" Administrators > $TmpDir/pki-group-mod-ca-022.out" \
                     0 \
                     "Modified Administrators group description"
@@ -381,17 +447,32 @@ rlPhaseStartTest "pki_group_cli_group_mod-CA-020: Modify a groups's description 
         rlAssertGrep "Description: $group1_mod_description" "$TmpDir/pki-group-mod-ca-022.out"
 	#Restoring the original description of Administrators group
 	rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-mod --description=\"$admin_group_desc\" Administrators"
     rlPhaseEnd
 
-	rlPhaseStartTest "pki_group_cli_group_mod-CA-022: Modify Administrators group in CA using CA_adminV - description is empty"
-        command="pki -d $CERTDB_DIR -n CA_adminV -c $CERTDB_DIR_PASSWORD group-mod --description=\"\" Administrators"
-        errmsg="BadRequestException: Invalid DN syntax."
-        errorcode=255
-        rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Modifying Group --description is empty"
-        rlLog "FAIL: https://fedorahosted.org/pki/ticket/833"
+	rlPhaseStartTest "pki_group_cli_group_mod-CA-021: Modify Administrators group in CA using CA_adminV - description is empty"
+	rlRun "pki -d $CERTDB_DIR \
+                    -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
+                    group-show Administrators > $TmpDir/pki-group-mod-ca-group-show-023.out"
+        admin_group_desc=$(cat $TmpDir/pki-group-mod-ca-group-show-023.out| grep Description | cut -d- -f2)
+        rlLog "pki -d $CERTDB_DIR -n ${prefix}_adminV -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT group-mod --description=\"\" Administrators"
+        rlRun "pki -d $CERTDB_DIR -n ${prefix}_adminV -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT group-mod --description=\"\" Administrators > $TmpDir/pki-group-mod-ca-023.out" 0 "Successfully modified Administrator group description"
+        rlAssertGrep "Modified group \"Administrators\"" "$TmpDir/pki-group-mod-ca-023.out"
+        rlAssertGrep "Group ID: Administrators" "$TmpDir/pki-group-mod-ca-023.out"
+        #Restoring the original description of Administrators group
+        rlRun "pki -d $CERTDB_DIR \
+                   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
+                    group-mod --description=\"$admin_group_desc\" Administrators"
     rlPhaseEnd
 
 
@@ -401,8 +482,10 @@ rlPhaseStartTest "pki_group_cli_group_cleanup: Deleting role groups"
         i=1
         while [ $i -lt 6 ] ; do
                rlRun "pki -d $CERTDB_DIR \
-                          -n CA_adminV \
-                          -c $CERTDB_DIR_PASSWORD \
+			   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                            group-del  g$i > $TmpDir/pki-group-del-ca-group-00$i.out" \
                            0 \
                            "Deleted group  g$i"
@@ -414,8 +497,10 @@ rlPhaseStartTest "pki_group_cli_group_cleanup: Deleting role groups"
         while [ $j -lt 2 ] ; do
                eval grp=\$group$j
                rlRun "pki -d $CERTDB_DIR \
-                          -n CA_adminV \
-                          -c $CERTDB_DIR_PASSWORD \
+			   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                            group-del  $grp > $TmpDir/pki-group-del-ca-group-symbol-00$j.out" \
                            0 \
                            "Deleted group $grp"
@@ -423,16 +508,18 @@ rlPhaseStartTest "pki_group_cli_group_cleanup: Deleting role groups"
                 let j=$j+1
         done
 	rlRun "pki -d $CERTDB_DIR \
-                          -n CA_adminV \
-                          -c $CERTDB_DIR_PASSWORD \
+			   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                            group-del $i18ngroup > $TmpDir/pki-group-del-ca-i18ngroup-001.out" \
                            0 \
                            "Deleted group $i18ngroup"
                 rlAssertGrep "Deleted group \"$i18ngroup\"" "$TmpDir/pki-group-del-ca-i18ngroup-001.out"
 
 	#Delete temporary directory
-        rlRun "popd"
-        rlRun "rm -r $TmpDir" 0 "Removing tmp directory"
+        #rlRun "popd"
+        #rlRun "rm -r $TmpDir" 0 "Removing tmp directory"
 
     rlPhaseEnd
 }

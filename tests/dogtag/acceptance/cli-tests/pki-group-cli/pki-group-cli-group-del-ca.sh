@@ -50,6 +50,28 @@ run_pki-group-cli-group-del-ca_tests(){
         rlRun "pushd $TmpDir"
     rlPhaseEnd
 
+subsystemId=$1
+SUBSYSTEM_TYPE=$2
+MYROLE=$3
+
+if [ "$TOPO9" = "TRUE" ] ; then
+        prefix=$subsystemId
+elif [ "$MYROLE" = "MASTER" ] ; then
+        if [[ $subsystemId == SUBCA* ]]; then
+                prefix=$subsystemId
+        else
+                prefix=ROOTCA
+        fi
+else
+        prefix=$MYROLE
+fi
+
+CA_HOST=$(eval echo \$${MYROLE})
+CA_PORT=$(eval echo \$${subsystemId}_UNSECURE_PORT)
+local TEMP_NSS_DB="$TmpDir/nssdb"
+local TEMP_NSS_DB_PASSWD="redhat123"
+local cert_info="$TmpDir/cert_info"
+
     rlPhaseStartTest "pki_group_cli_group_del-CA-ca-configtest-001: pki group-del --help configuration test"
         rlRun "pki group-del --help > $TmpDir/group_del.out 2>&1" 0 "pki group-del --help"
         rlAssertGrep "usage: group-del <Group ID>" "$TmpDir/group_del.out"
@@ -77,8 +99,10 @@ run_pki-group-cli-group-del-ca_tests(){
 	i=1
         while [ $i -lt 25 ] ; do
                rlRun "pki -d $CERTDB_DIR \
-                          -n CA_adminV \
-                          -c $CERTDB_DIR_PASSWORD \
+			  -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                            group-add --description=test_group g$i"
                 let i=$i+1
         done
@@ -87,17 +111,21 @@ run_pki-group-cli-group-del-ca_tests(){
 	i=1
 	while [ $i -lt 25 ] ; do
 	       rlLog "pki -d $CERTDB_DIR \
-                          -n CA_adminV \
-                          -c $CERTDB_DIR_PASSWORD \
+			  -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                            group-del  g$i"
                rlRun "pki -d $CERTDB_DIR \
-                          -n CA_adminV \
-                          -c $CERTDB_DIR_PASSWORD \
+			  -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                            group-del  g$i > $TmpDir/pki-group-del-ca-group1-00$i.out" \
                            0 \
                            "Deleted group g$i"
 		rlAssertGrep "Deleted group \"g$i\"" "$TmpDir/pki-group-del-ca-group1-00$i.out"
-	   	command="pki -d $CERTDB_DIR -n CA_adminV -c $CERTDB_DIR_PASSWORD group-show g$i"
+	   	command="pki -d $CERTDB_DIR -n ${prefix}_adminV -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT group-show g$i"
 		errmsg="GroupNotFoundException: Group g$i not found"
 		errorcode=255
 		rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - deleted group should not exist"
@@ -108,8 +136,10 @@ run_pki-group-cli-group-del-ca_tests(){
         while [ $i -lt 8 ] ; do
 	       eval grp=\$group$i
                rlRun "pki -d $CERTDB_DIR \
-                          -n CA_adminV \
-                          -c $CERTDB_DIR_PASSWORD \
+			  -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                            group-add --description=test_group $grp"
                 let i=$i+1
         done
@@ -119,17 +149,21 @@ run_pki-group-cli-group-del-ca_tests(){
         while [ $j -lt 8 ] ; do
 	       eval grp=\$group$j
 	       rlLog "pki -d $CERTDB_DIR \
-                          -n CA_adminV \
-                          -c $CERTDB_DIR_PASSWORD \
+			  -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                            group-del $grp "
                rlRun "pki -d $CERTDB_DIR \
-                          -n CA_adminV \
-                          -c $CERTDB_DIR_PASSWORD \
+			  -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                            group-del $grp > $TmpDir/pki-group-del-ca-group2-00$j.out" \
 			   0 \
 			   "Deleted group $grp"
 		rlAssertGrep "Deleted group \"$grp\"" "$TmpDir/pki-group-del-ca-group2-00$j.out"
-	   	command="pki -d $CERTDB_DIR -n CA_adminV -c $CERTDB_DIR_PASSWORD group-show $grp"
+	   	command="pki -d $CERTDB_DIR -n ${prefix}_adminV -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT group-show $grp"
 		errmsg="GroupNotFoundException: Group $grp not found"
 		errorcode=255
 		rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - deleted group should not exist"
@@ -139,17 +173,21 @@ run_pki-group-cli-group-del-ca_tests(){
 
     rlPhaseStartTest "pki_group_cli_group_del-CA-004: Case sensitive groupid"
 	rlRun "pki -d $CERTDB_DIR \
-                          -n CA_adminV \
-                          -c $CERTDB_DIR_PASSWORD \
+			   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                            group-add --description=test_group group_abc"
 	rlRun "pki -d $CERTDB_DIR \
-                          -n CA_adminV \
-                          -c $CERTDB_DIR_PASSWORD \
+			   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                            group-del  GROUP_ABC > $TmpDir/pki-group-del-ca-group-002_1.out" \
                            0 \
                            "Deleted group GROUP_ABC groupid is not case sensitive"
         rlAssertGrep "Deleted group \"GROUP_ABC\"" "$TmpDir/pki-group-del-ca-group-002_1.out"
-	command="pki -d $CERTDB_DIR -n CA_adminV -c $CERTDB_DIR_PASSWORD group-show group_abc"
+	command="pki -d $CERTDB_DIR -n ${prefix}_adminV -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT group-show group_abc"
 	errmsg="GroupNotFoundException: Group group_abc not found"
 	errorcode=255
 	rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - deleted group group_abc should not exist"
@@ -157,25 +195,31 @@ run_pki-group-cli-group-del-ca_tests(){
 
     rlPhaseStartTest "pki_group_cli_group_del-CA-005: Delete group when required option group id is missing"
 	rlRun "pki -d $CERTDB_DIR \
-                          -n CA_adminV \
-                          -c $CERTDB_DIR_PASSWORD \
+			   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                            group-del  > $TmpDir/pki-group-del-ca-group-003_1.out 2>&1" \
                            255 \
                            "Cannot delete a group without groupid"
         rlAssertGrep "usage: group-del <Group ID>" "$TmpDir/pki-group-del-ca-group-003_1.out"
     rlPhaseEnd
   
-    rlPhaseStartTest "pki_group_cli_group_del-CA-006: Maximum length of group id"
-	group2=`cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 2048 | head -n 1`
+    rlPhseStartTest "pki_group_cli_group_del-CA-006: Maximum length of group id"
+	group2=$(openssl rand -hex 2048 |  perl -p -e 's/\n//')
         rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-add --description=test \"$group2\" > $TmpDir/pki-group-add-ca-001_1.out" \
                     0 \
                     "Added group using CA_adminV with maximum group id length"
 	rlRun "pki -d $CERTDB_DIR \
-                          -n CA_adminV \
-                          -c $CERTDB_DIR_PASSWORD \
+			   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                            group-del \"$group2\" > $TmpDir/pki-group-del-ca-group-006.out" \
                            0 \
                            "Deleting group with maximum group id length using CA_adminV"
@@ -186,23 +230,28 @@ run_pki-group-cli-group-del-ca_tests(){
         else
                 rlFail "Deleted group \"$group2\" not found"
         fi
-	command="pki -d $CERTDB_DIR -n CA_adminV -c $CERTDB_DIR_PASSWORD group-show \"$group2\""
+	command="pki -d $CERTDB_DIR -n ${prefix}_adminV -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT group-show \"$group2\""
         errmsg="GroupNotFoundException: Group \"$group2\" not found"
 	errorcode=255
         rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - deleted group with max length should not exist"
     rlPhaseEnd 
     
     rlPhaseStartTest "pki_group_cli_group_del-CA-007: groupid with maximum length and symbols"
-	groupid=`cat /dev/urandom | tr -dc 'a-zA-Z0-9!?@~#*^_+$' | fold -w 2048 | head -n 1`
+	rand_groupid=$(openssl rand -base64 2048 |  perl -p -e 's/\n//')
+        groupid=$(echo $rand_groupid | sed 's/\///g')
         rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-add --description=test '$groupid' > $TmpDir/pki-group-add-ca-001_8.out" \
                     0 \
                     "Added group using CA_adminV with maximum groupid length and character symbols in it"
 	rlRun "pki -d $CERTDB_DIR \
-                          -n CA_adminV \
-                          -c $CERTDB_DIR_PASSWORD \
+			   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                            group-del '$groupid' > $TmpDir/pki-group-del-ca-group-007.out" \
                            0 \
                            "Deleting group with maximum group id length and character symbols using CA_adminV"	
@@ -214,8 +263,10 @@ run_pki-group-cli-group-del-ca_tests(){
                 rlFail "Deleted group $groupid not found"
         fi
 	rlRun "pki -d $CERTDB_DIR \
-                          -n CA_adminV \
-                          -c $CERTDB_DIR_PASSWORD \
+			   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                            group-show '$groupid'  > $TmpDir/pki-group-del-ca-group-007_2.out 2>&1" \
                            255 \
                            "Verify expected error message - deleted group with max length and character symbols should not exist"
@@ -230,20 +281,24 @@ run_pki-group-cli-group-del-ca_tests(){
     
     rlPhaseStartTest "pki_group_cli_group_del-CA-008: Delete group from CA with -t option"
         rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-add --description=\"g1description\" g1 > $TmpDir/pki-group-add-ca-009.out" \
                     0 \
                     "Add group g1 to CA"
 	rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                    -t ca \
                     group-del g1 > $TmpDir/pki-group-del-ca-group-009.out" \
                     0 \
                     "Deleting group g1 using -t ca option" 
 	rlAssertGrep "Deleted group \"g1\"" "$TmpDir/pki-group-del-ca-group-009.out"
-        command="pki -d $CERTDB_DIR -n CA_adminV -c $CERTDB_DIR_PASSWORD group-show g1"
+        command="pki -d $CERTDB_DIR -n ${prefix}_adminV -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT group-show g1"
         errmsg="GroupNotFoundException: Group g1 not found"
 	errorcode=255
         rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - deleted group g1 should not exist"	
@@ -252,19 +307,23 @@ run_pki-group-cli-group-del-ca_tests(){
     rlPhaseStartTest "pki_group_cli_group_del-CA-009: Should not be able to delete group using a revoked cert CA_adminR"
 	#Add a group
 	rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-add --description=\"g2description\" g2 > $TmpDir/pki-group-add-ca-010.out" \
                     0 \
                     "Add group g2 to CA"
-	command="pki -d $CERTDB_DIR -n CA_adminR -c $CERTDB_DIR_PASSWORD group-del g2"
+	command="pki -d $CERTDB_DIR -n ${prefix}_adminR -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT group-del g2"
 	errmsg="PKIException: Unauthorized"
 	errorcode=255
 	rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Should not be able to delete group g2 using a admin having a revoked cert"
 	#Make sure group is not deleted
 	rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-show g2 > $TmpDir/pki-group-show-ca-001.out" \
 		    0 \
 		    "Show group g2"
@@ -274,14 +333,16 @@ run_pki-group-cli-group-del-ca_tests(){
     rlPhaseEnd
 
     rlPhaseStartTest "pki_group_cli_group_del-CA-010: Should not be able to delete group using a agent with revoked cert CA_agentR"
-	command="pki -d $CERTDB_DIR -n CA_agentR -c $CERTDB_DIR_PASSWORD group-del g2"
+	command="pki -d $CERTDB_DIR -n ${prefix}_agentR -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT group-del g2"
 	errmsg="PKIException: Unauthorized"
 	errorcode=255
 	rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Should not be able to delete group g2 using a agent having a revoked cert"
 	#Make sure group is not deleted
 	rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-show g2 > $TmpDir/pki-group-show-ca-002.out" \
                     0 \
                     "Show group g2"
@@ -291,14 +352,16 @@ run_pki-group-cli-group-del-ca_tests(){
     rlPhaseEnd
 
     rlPhaseStartTest "pki_group_cli_group_del-CA-011: Should not be able to delete group using a valid agent CA_agentV user"
-	command="pki -d $CERTDB_DIR -n CA_agentV  -c $CERTDB_DIR_PASSWORD group-del g2"
-	errmsg="ForbiddenException: Authorization failed on resource: certServer.ca.groups, operation: execute"
+	command="pki -d $CERTDB_DIR -n ${prefix}_agentV -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT group-del g2"
+	errmsg="ForbiddenException: Authorization Error"
 	errorcode=255
 	rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Should not be able to delete group g2 using a valid agent cert"
 	#Make sure group is not deleted
 	rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		    -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-show g2 > $TmpDir/pki-group-show-ca-003.out" \
                     0 \
                     "Show group g2"
@@ -311,8 +374,8 @@ run_pki-group-cli-group-del-ca_tests(){
 	#Set datetime 2 days ahead
         rlRun "date --set='+2 days'" 0 "Set System date 2 days ahead"
 	rlRun "date"
-	command="pki -d $CERTDB_DIR -n CA_adminE -c $CERTDB_DIR_PASSWORD group-del g2"
-	errmsg="PKIException: Unauthorized" 
+	command="pki -d $CERTDB_DIR -n ${prefix}_adminE -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT group-del g2"
+	errmsg="ForbiddenException: Authorization Error" 
 	errorcode=255
 	rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Should not be able to delete group g2 using an expired admin cert"
 	#Set datetime back on original
@@ -320,8 +383,10 @@ run_pki-group-cli-group-del-ca_tests(){
 	rlLog "PKI TICKET :: https://engineering.redhat.com/trac/pki-tests/ticket/962"
 	#Make sure group is not deleted
 	rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-show g2 > $TmpDir/pki-group-show-ca-004.out" \
                     0 \
                     "Show group g2"
@@ -333,8 +398,8 @@ run_pki-group-cli-group-del-ca_tests(){
     rlPhaseStartTest "pki_group_cli_group_del-CA-013: Should not be able to delete a group using CA_agentE cert"
 	rlRun "date --set='+2 days'" 0 "Set System date 2 days ahead"
         rlRun "date"
-	command="pki -d $CERTDB_DIR -n CA_agentE -c $CERTDB_DIR_PASSWORD group-del g2"
-	errmsg="ClientResponseFailure: Error status 401 Unauthorized returned"
+	command="pki -d $CERTDB_DIR -n ${prefix}_agentE -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT group-del g2"
+	errmsg="ForbiddenException: Authorization Error"
 	errorcode=255
 	rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Should not be able to delete group g2 using a agent cert"
 
@@ -342,8 +407,10 @@ run_pki-group-cli-group-del-ca_tests(){
 	rlRun "date --set='-2 days'" 0 "Set System back to the present day"
 	#Make sure group is not deleted
 	rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-show g2 > $TmpDir/pki-group-show-ca-005.out" \
                     0 \
                     "Show group g2"
@@ -353,14 +420,16 @@ run_pki-group-cli-group-del-ca_tests(){
     rlPhaseEnd 
 
     rlPhaseStartTest "pki_group_cli_group_del-CA-014: Should not be able to delete group using a CA_auditV"
-	command="pki -d $CERTDB_DIR -n CA_auditV -c $CERTDB_DIR_PASSWORD group-del g2"
-	errmsg="ForbiddenException: Authorization failed on resource: certServer.ca.groups, operation: execute"
+	command="pki -d $CERTDB_DIR -n ${prefix}_auditV -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT group-del g2"
+	errmsg="ForbiddenException: Authorization Error"
 	errorcode=255
 	rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Should not be able to delete group g2 using a audit cert"
 	#Make sure group is not deleted
 	rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-show g2 > $TmpDir/pki-group-show-ca-006.out" \
                     0 \
                     "Show group g2"
@@ -370,14 +439,16 @@ run_pki-group-cli-group-del-ca_tests(){
     rlPhaseEnd
 
     rlPhaseStartTest "pki_group_cli_group_del-CA-015: Should not be able to delete group using a CA_operatorV"
-	command="pki -d $CERTDB_DIR -n CA_operatorV -c $CERTDB_DIR_PASSWORD group-del g2"
-	errmsg="ForbiddenException: Authorization failed on resource: certServer.ca.groups, operation: execute"
+	command="pki -d $CERTDB_DIR -n ${prefix}_operatorV -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT group-del g2"
+	errmsg="ForbiddenException: Authorization Error"
 	errorcode=255
 	rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Should not be able to delete group g2 using a operator cert"
 	#Make sure group is not deleted
 	rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-show g2 > $TmpDir/pki-group-show-ca-007.out" \
                     0 \
                     "Show group g2"
@@ -387,14 +458,16 @@ run_pki-group-cli-group-del-ca_tests(){
     rlPhaseEnd
 
     rlPhaseStartTest "pki_group_cli_group_del-CA-016: Should not be able to delete group using a cert created from a untrusted CA CA_adminUTCA"
-	command="pki -d /tmp/untrusted_cert_db -n CA_adminUTCA -c Password group-del g2"
+	command="pki -d $UNTRUSTED_CERT_DB_LOCATION -n role_user_UTCA -c $UNTRUSTED_CERT_DB_PASSWORD -h $CA_HOST -p $CA_PORT group-del g2"
 	errmsg="PKIException: Unauthorized"
 	errorcode=255
 	rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - Should not be able to delete group g2 using a untrusted cert"
 	#Make sure group is not deleted
 	rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                    -h $CA_HOST \
+                    -p $CA_PORT \
                     group-show g2 > $TmpDir/pki-group-show-ca-008.out" \
                     0 \
                     "Show group g2"
@@ -404,82 +477,80 @@ run_pki-group-cli-group-del-ca_tests(){
     rlPhaseEnd
 
     rlPhaseStartTest "pki_group_cli_group_del-CA-017: Should not be able to delete group using a user cert"
-        local TEMP_NSS_DB="$TmpDir/nssdb"
-        local ret_reqstatus
-        local ret_requestid
-        local valid_serialNumber
-        local temp_out="$TmpDir/usercert-show.out"
-        #Create a user cert
-        rlRun "create_cert_request $TEMP_NSS_DB Password pkcs10 rsa 2048 \"pki User1\" \"pkiUser1\" \
-                \"pkiuser1@example.org\" \"Engineering\" \"Example.Inc\" "US" "--" "ret_reqstatus" "ret_requestid"" 0 "Generating  pkcs10 Certificate Request"
-        rlLog "pki -d $CERTDB_DIR -c $CERTDB_DIR_PASSWORD -n \"CA_agentV\" ca-cert-request-review $ret_requestid \
-                --action approve 1"
-        rlRun "pki -d $CERTDB_DIR -c $CERTDB_DIR_PASSWORD -n \"CA_agentV\" ca-cert-request-review $ret_requestid \
-                --action approve 1> $TmpDir/pki-approve-out" 0 "Approve Certificate requeset"
-        rlAssertGrep "Approved certificate request $ret_requestid" "$TmpDir/pki-approve-out"
-        rlLog "pki cert-request-show $ret_requestid | grep \"Certificate ID\" | sed 's/ //g' | cut -d: -f2)"
-        rlRun "pki cert-request-show $ret_requestid > $TmpDir/usercert-show1.out"
-        valid_serialNumber=`cat $TmpDir/usercert-show1.out | grep 'Certificate ID' | sed 's/ //g' | cut -d: -f2`
-        rlLog "valid_serialNumber=$valid_serialNumber"
-        #Import user certs to $TEMP_NSS_DB
-        rlRun "pki cert-show $valid_serialNumber --encoded > $temp_out" 0 "command pki cert-show $valid_serialNumber --encoded"
-        rlRun "certutil -d $TEMP_NSS_DB -A -n pkiUser1 -i $temp_out  -t \"u,u,u\""
-        local expfile="$TmpDir/expfile_pkiuser1.out"
+	#Create a user cert
+        rlRun "generate_new_cert tmp_nss_db:$TEMP_NSS_DB tmp_nss_db_pwd:$TEMP_NSS_DB_PASSWD request_type:pkcs10 \
+        algo:rsa key_size:2048 subject_cn:\"pki User2\" subject_uid:pkiUser2 subject_email:pkiuser2@example.org \
+        organizationalunit:Engineering organization:Example.Inc country:US archive:false req_profile:caUserCert \
+        target_host:$CA_HOST protocol: port:$CA_PORT cert_db_dir:$CERTDB_DIR cert_db_pwd:$CERTDB_DIR_PASSWORD \
+        certdb_nick:\"${prefix}_agentV\" cert_info:$cert_info"
+        local valid_pkcs10_serialNumber=$(cat $cert_info| grep cert_serialNumber | cut -d- -f2)
+        local valid_decimal_pkcs10_serialNumber=$(cat $cert_info| grep decimal_valid_serialNumber | cut -d- -f2)
+        rlRun "pki -h $CA_HOST -p $CA_PORT cert-show $valid_pkcs10_serialNumber --encoded > $TmpDir/pki_ca_group_del_encoded_0025pkcs10.out" 0 "Executing pki cert-show $valid_pkcs10_serialNumber"
+        rlRun "sed -n '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' $TmpDir/pki_ca_group_del_encoded_0025pkcs10.out > $TmpDir/pki_ca_group_del_encoded_0025pkcs10.pem"
+        rlRun "certutil -d $TEMP_NSS_DB -A -n \"casigningcert\" -i $CERTDB_DIR/ca_cert.pem -t \"CT,CT,CT\""
+        rlRun "certutil -d $TEMP_NSS_DB -A -n pkiUser2 -i $TmpDir/pki_ca_group_del_encoded_0025pkcs10.pem  -t "u,u,u""
         rlLog "Executing: pki -d $TEMP_NSS_DB \
-                   -n pkiUser1 \
-                   -c Password \
+                   -n pkiUser2 \
+                   -c $TEMP_NSS_DB_PASSWD \
+                   -h $CA_HOST \
+                   -p $CA_PORT \
                     group-del g2"
-        echo "spawn -noecho pki -d $TEMP_NSS_DB -n pkiUser1 -c Password group-del g2" > $expfile
-        echo "expect \"WARNING: UNTRUSTED ISSUER encountered on 'CN=$HOSTNAME,O=$CA_DOMAIN Security Domain' indicates a non-trusted CA cert 'CN=CA Signing Certificate,O=$CA_DOMAIN Security Domain'
-Import CA certificate (Y/n)? \"" >> $expfile
-        echo "send -- \"Y\r\"" >> $expfile
-        echo "expect \"CA server URI \[http://$HOSTNAME:$CA_UNSECURE_PORT/ca\]: \"" >> $expfile
-        echo "send -- \"\r\"" >> $expfile
-        echo "expect eof" >> $expfile
-	echo "catch wait result" >> $expfile
-        echo "exit [lindex \$result 3]" >> $expfile
-        cat $expfile
-        rlRun "/usr/bin/expect -f $expfile >  $TmpDir/pki-group-del-ca-pkiUser1-002.out 2>&1" 255 "Should not be able to delete groups using a user cert"
-        rlAssertGrep "PKIException: Unauthorized" "$TmpDir/pki-group-del-ca-pkiUser1-002.out"
-	#Make sure group is not deleted
-	rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+        rlRun "pki -d $TEMP_NSS_DB \
+                   -n pkiUser2 \
+                   -c $TEMP_NSS_DB_PASSWD \
+                   -h $CA_HOST \
+                   -p $CA_PORT \
+                    group-del g2 >  $TmpDir/pki-ca-group-del-pkiUser1-0025.out 2>&1" 255 "Should not be able to find groups using a user cert"
+        rlAssertGrep "PKIException: Unauthorized" "$TmpDir/pki-ca-group-del-pkiUser1-0025.out"
+        #Make sure group is not deleted
+        rlRun "pki -d $CERTDB_DIR \
+                   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                   -h $CA_HOST \
+                   -p $CA_PORT \
                     group-show g2 > $TmpDir/pki-group-show-ca-009.out" \
                     0 \
                     "Show group g2"
         rlAssertGrep "Group \"g2\"" "$TmpDir/pki-group-show-ca-009.out"
         rlAssertGrep "Group ID: g2" "$TmpDir/pki-group-show-ca-009.out"
-        rlAssertGrep "Description: g2description" "$TmpDir/pki-group-show-ca-009.out"	
+        rlAssertGrep "Description: g2description" "$TmpDir/pki-group-show-ca-009.out"
 
-	#Cleanup:delete group g2
-	rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
-                    group-del g2 > $TmpDir/pki-group-del-ca-018.out 2>&1"	
+        #Cleanup:delete group g2
+        rlRun "pki -d $CERTDB_DIR \
+                   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                   -h $CA_HOST \
+                   -p $CA_PORT \
+                    group-del g2 > $TmpDir/pki-group-del-ca-018.out 2>&1"
     rlPhaseEnd
 
     rlPhaseStartTest "pki_group_cli_group_del-CA-018: delete group id with i18n characters"
         rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                   -h $CA_HOST \
+                   -p $CA_PORT \
                     group-add --description=test 'ÖrjanÄke' > $TmpDir/pki-group-add-ca-001_19.out 2>&1" \
                     0 \
                     "Adding gid ÖrjanÄke with i18n characters"
         rlAssertGrep "Added group \"ÖrjanÄke\"" "$TmpDir/pki-group-add-ca-001_19.out"
         rlAssertGrep "Group ID: ÖrjanÄke" "$TmpDir/pki-group-add-ca-001_19.out"
 	rlLog "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                   -h $CA_HOST \
+                   -p $CA_PORT \
                     group-del 'ÖrjanÄke'"
         rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                   -h $CA_HOST \
+                   -p $CA_PORT \
                     group-del 'ÖrjanÄke' > $TmpDir/pki-group-del-ca-001_19_3.out 2>&1" \
                     0 \
                     "Deleted gid ÖrjanÄke with i18n characters"
 	rlAssertGrep "Deleted group \"ÖrjanÄke\""  "$TmpDir/pki-group-del-ca-001_19_3.out"
-        command="pki -d $CERTDB_DIR -n CA_adminV -c $CERTDB_DIR_PASSWORD group-show 'ÖrjanÄke'"
+        command="pki -d $CERTDB_DIR -n ${prefix}_adminV -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT group-show 'ÖrjanÄke'"
         errmsg="GroupNotFoundException: Group ÖrjanÄke not found"
 	errorcode=255
         rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - deleted group 'ÖrjanÄke' should not exist"
@@ -487,40 +558,48 @@ Import CA certificate (Y/n)? \"" >> $expfile
 
     rlPhaseStartTest "pki_group_cli_group_del-CA-020: delete groupid with i18n characters"
         rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                   -h $CA_HOST \
+                   -p $CA_PORT \
                     group-add --description=test 'ÉricTêko' > $TmpDir/pki-group-add-ca-001_20.out 2>&1" \
                     0 \
                     "Adding group id ÉricTêko with i18n characters"
         rlAssertGrep "Added group \"ÉricTêko\"" "$TmpDir/pki-group-add-ca-001_20.out"
         rlAssertGrep "Group ID: ÉricTêko" "$TmpDir/pki-group-add-ca-001_20.out"
         rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                   -h $CA_HOST \
+                   -p $CA_PORT \
                     group-show 'ÉricTêko' > $TmpDir/pki-group-add-ca-001_20_2.out" \
                     0 \
                     "Show group 'ÉricTêko'"
         rlAssertGrep "Group \"ÉricTêko\"" "$TmpDir/pki-group-add-ca-001_20_2.out"
         rlAssertGrep "Group ID: ÉricTêko" "$TmpDir/pki-group-add-ca-001_20_2.out"
 	rlLog "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                   -h $CA_HOST \
+                   -p $CA_PORT \
                     group-del 'ÉricTêko'"
 	rlRun "pki -d $CERTDB_DIR \
-                   -n CA_adminV \
-                   -c $CERTDB_DIR_PASSWORD \
+		   -n ${prefix}_adminV \
+                    -c $CERTDB_DIR_PASSWORD \
+                   -h $CA_HOST \
+                   -p $CA_PORT \
                     group-del 'ÉricTêko' > $TmpDir/pki-group-del-ca-001_20_3.out 2>&1" \
                     0 \
                     "Delete gid ÉricTêko with i18n characters"
 	rlAssertGrep "Deleted group \"ÉricTêko\""  "$TmpDir/pki-group-del-ca-001_20_3.out"
-        command="pki -d $CERTDB_DIR -n CA_adminV -c $CERTDB_DIR_PASSWORD group-show 'ÉricTêko'"
+        command="pki -d $CERTDB_DIR -n ${prefix}_adminV -c $CERTDB_DIR_PASSWORD -h $CA_HOST -p $CA_PORT group-show 'ÉricTêko'"
         errmsg="GroupNotFoundException: Group ÉricTêko not found"
 	errorcode=255
         rlRun "verifyErrorMsg \"$command\" \"$errmsg\" \"$errorcode\"" 0 "Verify expected error message - deleted group 'ÉricTêko' should not exist"
     rlPhaseEnd 
 
     rlPhaseStartTest "pki_group_cli_group_del-CA_cleanup-004: Deleting the temp directory"
-        rlRun "popd"
-        rlRun "rm -r $TmpDir" 0 "Removing tmp directory"
+        #rlRun "popd"
+        #rlRun "rm -r $TmpDir" 0 "Removing tmp directory"
     rlPhaseEnd
 }
