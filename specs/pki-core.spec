@@ -49,7 +49,18 @@ BuildRequires:    resteasy-base-jaxrs >= 3.0.6-1
 BuildRequires:    resteasy-base-jaxrs-api >= 3.0.6-1
 BuildRequires:    resteasy-base-jackson-provider >= 3.0.6-1
 %else
+%if  0%{?fedora} >= 22
+# Starting from Fedora 22, resteasy packages were split into
+# subpackages.
+BuildRequires:    resteasy-atom-provider >= 3.0.6-7
+BuildRequires:    resteasy-client >= 3.0.6-7
+BuildRequires:    resteasy-jaxb-provider >= 3.0.6-7
+BuildRequires:    resteasy-core >= 3.0.6-7
+BuildRequires:    resteasy-jaxrs-api >= 3.0.6-7
+BuildRequires:    resteasy-jackson-provider >= 3.0.6-7
+%else
 BuildRequires:    resteasy >= 3.0.6-2
+%endif
 %endif
 
 %if ! 0%{?rhel}
@@ -226,7 +237,6 @@ Requires:         apache-commons-logging
 Requires:         jakarta-commons-httpclient
 Requires:         java-headless >= 1:1.7.0
 Requires:         javassist
-Requires:         jackson-jaxrs-json-provider
 Requires:         jpackage-utils >= 0:1.7.5-10
 Requires:         jss >= 4.2.6-35
 Requires:         ldapjdk
@@ -890,6 +900,7 @@ echo >> /var/log/pki/pki-server-upgrade-%{version}.log 2>&1
 - Added a man page for pki ca-profile commands.
 - Added python api docs
 - Update release number for release build
+- Updated Resteasy and Jackson dependencies.
 
 * Tue Dec 16 2014 Matthew Harmsen <mharmsen@redhat.com> - 10.2.0-6
 - Bugzilla Bug #1160435 - Remove obsolete packages from CS 9.0
