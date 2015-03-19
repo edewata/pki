@@ -4,7 +4,7 @@ distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 Name:             pki-core
-Version:          10.2.1
+Version:          10.2.2
 Release:          1%{?dist}
 Summary:          Certificate System - PKI Core Components
 URL:              http://pki.fedoraproject.org/
@@ -893,6 +893,9 @@ echo >> /var/log/pki/pki-server-upgrade-%{version}.log 2>&1
 %endif # %{with server}
 
 %changelog
+* Wed Mar 18 2015 Dogtag Team <pki-devel@redhat.com> 10.2.2-1
+- Update release number for release build
+
 * Mon Jan 19 2015 Dogtag Team <pki-devel@redhat.com> 10.2.1-1
 - Change resteasy dependencies for F22+
 - Added CLIs to simplify generating user certificates
