@@ -49,7 +49,7 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         else:
             config.pki_log.info(log.INITIALIZATION_SPAWN_1, __name__,
                                 extra=config.PKI_INDENTATION_LEVEL_1)
-            if (deployer.mdict['pki_subsystem'] == "CA" or
+            if (deployer.mdict['pki_subsystem'] == "CA" or\
                 config.str2bool(deployer.mdict['pki_standalone'])) and\
                config.str2bool(deployer.mdict['pki_external_step_two']):
                 # verify that this External CA (Step 2), or Stand-alone PKI
@@ -71,6 +71,8 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         # verify selinux context of selected ports
         deployer.configuration_file.populate_non_default_ports()
         deployer.configuration_file.verify_selinux_ports()
+        # If secure DS connection is required, verify parameters
+        deployer.configuration_file.verify_ds_secure_connection_data()
         return self.rv
 
     def destroy(self, deployer):

@@ -400,6 +400,12 @@ class PKIConfigParser:
         if config.str2bool(self.mdict['pki_ds_secure_connection']):
             protocol = 'ldaps'
             port = self.mdict['pki_ds_ldaps_port']
+            # ldap.set_option(ldap.OPT_DEBUG_LEVEL, 255)
+            ldap.set_option(ldap.OPT_X_TLS_DEMAND, True)
+            ldap.set_option(ldap.OPT_X_TLS, ldap.OPT_X_TLS_DEMAND)
+            ldap.set_option(ldap.OPT_X_TLS_CACERTFILE,
+                            self.mdict['pki_ds_secure_connection_ca_pem_file'])
+            ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_DEMAND)
         else:
             protocol = 'ldap'
             port = self.mdict['pki_ds_ldap_port']
@@ -619,7 +625,7 @@ class PKIConfigParser:
                 # and add this to the "sensitive" key value pairs read in from
                 # the configuration file
                 self.mdict['pki_one_time_pin'] = \
-                    ''.join(random.choice(string.ascii_letters + string.digits)
+                    ''.join(random.choice(string.ascii_letters + string.digits)\
                     for x in range(20))
             if self.mdict['pki_subsystem'] in\
                config.PKI_TOMCAT_SUBSYSTEMS:
@@ -774,6 +780,8 @@ class PKIConfigParser:
                     "-->"
                 self.mdict['PKI_CLOSE_SEPARATE_PORTS_WEB_COMMENT_SLOT'] = \
                     "-->"
+                self.mdict['PKI_DS_SECURE_CONNECTION_SLOT'] = \
+                    self.mdict['pki_ds_secure_connection'].lower()
                 self.mdict['PKI_EE_SECURE_CLIENT_AUTH_PORT_SLOT'] = \
                     self.mdict['pki_https_port']
                 self.mdict\
@@ -1118,8 +1126,8 @@ class PKIConfigParser:
                 # Stand-alone PKI
                 self.mdict['pki_security_domain_type'] = "new"
                 self.mdict['pki_issuing_ca'] = "External CA"
-            elif (config.pki_subsystem != "CA" or
-                    config.str2bool(self.mdict['pki_clone']) or
+            elif (config.pki_subsystem != "CA" or\
+                    config.str2bool(self.mdict['pki_clone']) or\
                     config.str2bool(self.mdict['pki_subordinate'])):
                 # PKI KRA, PKI OCSP, PKI RA, PKI TKS, PKI TPS,
                 # CA Clone, KRA Clone, OCSP Clone, TKS Clone, TPS Clone

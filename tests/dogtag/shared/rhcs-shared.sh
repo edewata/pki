@@ -14,10 +14,14 @@
 #	runJava <java class> <input>
 #	set_javapath
 #	install_and_trust_CA_cert <ca_server_root> <nss_db_dir>
+#       install_and_trust_user_cert <certificate pem file> <nickname> <nss-db-directory>
 #	disable_ca_nonce <ca_server_root>
 #	enable_ca_nonce <ca_server_root>
 #	importP12File <P12FileLocation> <P12FilePassword> <nssdbDirectory> <nssdbPassword> <cert_nickname>
-#
+#       forward_system_clock <number_of_days>
+#       reverse_system_clock <number_of_days>
+#       replace_string_in_a_file <file_name> <original_string> <replace_string>
+#       scep_do_enroll_with_sscep <scep_enroll_pin> <scep_enroll_url>  <scep_host_ipaddr> <temp_dir> <fingerprint>
 ######################################################################
 #######################################################################
 
@@ -270,6 +274,109 @@ install_and_trust_KRA_cert(){
         rlRun "certutil -d $kra_nss_dir -L -n \"$kra_cert_nick\" -a > $nss_db_dir/kra_cert.pem"
         rlRun "certutil -d $nss_db_dir -A -n \"$kra_cert_nick\" -i $nss_db_dir/kra_cert.pem -t \"CT,CT,CT\" "
 }
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# install_and_trust_user_cert
+#   Usage: install_and_trust_user_cert <certificate pem file> <nickname> <nss-db-directory>
+#
+# This will check and install user certificate in a given nss-db
+#
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+install_and_trust_user_cert(){
+        local cert_pem_file="$1"
+        local user_cert_nick="$2"
+        local nss_db_dir="$3"
+        rlRun "certutil -d $nss_db_dir -A -n \"$user_cert_nick\" -i $cert_pem_file -t \"u,u,u\" "
+}
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# forward_system_clock
+#   Usage: forward_system_clock <number_of_days>
+#
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+forward_system_clock(){
+        local number_of_days=$1
+        rlLog "Current Date/Time: $(date)"
+        rlRun "chronyc -a 'manual on' 1> $TmpDir/chrony.out" 0 "Set chrony to manual mode"
+        rlAssertGrep "200 OK" "$TmpDir/chrony.out"
+        local cur_date=$(date)
+        rlLog "Move system to $cur_date + $number_of_days days ahead"
+        rlRun "chronyc -a -m 'offline' 'settime $cur_date + $number_of_days days' 'makestep' 'manual reset' 1> $TmpDir/chrony.out"
+        rlLog "Date after modifying using chrony: $(date)"
+}
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# reverse_system_clock
+#   Usage: reverse_system_clock <number_of_days>
+#
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+reverse_system_clock(){
+        local numdays=$1
+        rlLog "number_of_days=$numdays"
+        rlLog "Current Date/Time: $(date)"
+        local new_string="$numdays days ago"
+        local new_date=$(date -d "$new_string")
+        rlRun "chronyc -a -m 'settime $new_date' 'makestep' 'manual reset' 'online' 1> $TmpDir/chrony.out"
+        rlAssertGrep "200 OK" "$TmpDir/chrony.out"
+        rlLog "Date after modifying using chrony: $(date)"
+}
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#       replace_string_in_a_file <file_name> <original_string> <replace_string>
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+replace_string_in_a_file()
+{
+        local file_name=$1
+        local original_string=$2
+        local replace_string=$3
+        local rc=0
+        temp_file="$file_name.temp"
+        rlRun "sed 's/$original_string/$replace_string/g' $file_name > $temp_file"
+        cp $temp_file $file_name
+        cat $file_name | grep $replace_string
+        if [ $? -ne 0 ] ; then
+                rlLog "$file_name did not get replaced with $replace_string"
+                rc=1
+        fi
+        return $rc
+}
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#       scep_do_enroll_with_sscep <scep_enroll_pin> <scep_enroll_url> <scep_host_ipaddr> <temp_dir> <fingerprint>
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+scep_do_enroll_with_sscep()
+{
+        local scep_enroll_pin=$1
+        local scep_enroll_url=$2
+        local ipaddress=$3
+        local temp_dir=$4
+        local digest=$5
+        local rc=0
+
+        rlRun "/bin/rm -f $temp_dir/local.csr $temp_dir/local.key $temp_dir/ca.crt $temp_dir/cert.crt"
+
+        #generate a key
+        rlLog "/usr/bin/mkrequest -ip $ipaddress $scep_enroll_pin $digest"
+        rlRun "/usr/bin/mkrequest -ip $ipaddress $scep_enroll_pin $digest > $temp_dir/gen_key"
+
+        #get ca cert
+        rlLog "/usr/bin/sscep getca -c $temp_dir/ca.crt -u $scep_enroll_url"
+        rlRun "/usr/bin/sscep getca -c $temp_dir/ca.crt -u $scep_enroll_url > $temp_dir/getca_out"
+
+        #submit enrollment request
+        rlLog "/usr/bin/sscep enroll -f $temp_dir/sscep.conf -c $temp_dir/ca.crt -k $temp_dir/local.key -r $temp_dir/local.csr  -l $temp_dir/cert.crt -u $scep_enroll_url"
+        rlRun "/usr/bin/sscep enroll -f $temp_dir/sscep.conf -c $temp_dir/ca.crt -k $temp_dir/local.key -r $temp_dir/local.csr  -l $temp_dir/cert.crt -u $scep_enroll_url > $temp_dir/scep_enroll.out"
+        if [ $? -ne 0 ] ; then
+                rc=1
+        fi
+
+        return $rc
+}
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # disable_ca_nonce
@@ -627,6 +734,13 @@ get_topo_stack()
 	        echo "MY_KRA=KRA3" >> $TOPO_FILE
         	echo "MY_OCSP=OCSP3" >> $TOPO_FILE
 	        echo "MY_TKS=TKS1" >> $TOPO_FILE
+		echo "MY_TPS=TPS1" >> $TOPO_FILE
+		echo "MY_SUBCA=SUBCA1" >> $TOPO_FILE
+                echo "MY_CLONE_CA=CLONE_CA1" >> $TOPO_FILE
+                echo "MY_CLONE_KRA=CLONE_KRA1" >> $TOPO_FILE
+                echo "MY_CLONE_OCSP=CLONE_OCSP1" >> $TOPO_FILE
+                echo "MY_CLONE_TKS=CLONE_TKS1" >> $TOPO_FILE
+		echo "MY_CLONE_TPS=CLONE_TPS1" >> $TOPO_FILE
 	elif [ $MY_ROLE == "SUBCA1" ]; then
         	echo "MY_CA=SUBCA1" > $TOPO_FILE
 	        echo "MY_KRA=KRA1" >> $TOPO_FILE
@@ -646,3 +760,145 @@ get_topo_stack()
 	fi
 }
 #################################################################
+#
+#When using curl to query/update a resource in console,
+#use this function to process the output receieved
+#
+##################################################################
+process_curl_output()
+{
+        output_file=$1
+        sed -i "s/\&/\n&/g" $output_file
+        sed -i "s/+//g"  $output_file
+        sed -i "s/^&//g" $output_file
+        sed -i "s/%3A/":"/g" $output_file
+        sed -i "s/%3B/":"/g" $output_file
+        sed -i "s/%3D/"="/g" $output_file
+}
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+### This script Creates Posix Users with inetOrgPerson , PosixAccount and ShadowAccount ObjectClass
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+create_dir_user()
+{
+local SUFFIX=$1
+local MAX=`expr $2`
+local COUNT=`expr 1`
+local temp=`expr 0`
+local UIDVALUE=14583100
+local GIDVALUE=14564100
+local DOMAIN=$(hostname)
+
+                while [ "$COUNT" -le "$MAX" ]
+                do
+
+                                echo -e "dn: uid=idmuser$(expr $COUNT),ou=People,$SUFFIX"
+                                echo -e "uid: idmuser$(expr $COUNT)"
+                                echo -e "cn: idmuser$(expr $COUNT)"
+                                echo -e "sn: $(expr $COUNT)"
+                                echo -e "objectClass: top"
+                                #echo -e "objectClass: account"
+                                echo -e "objectClass: posixAccount"
+                                echo -e "objectClass: inetOrgPerson"
+                                echo -e "loginShell: /bin/bash"
+                                echo -e "homeDirectory: /home/student$(expr $COUNT)"
+                                uidNumber=$(expr $UIDVALUE + $temp)
+                                echo -e "uidNumber: $uidNumber"
+                                echo -e "gidNumber: $GIDVALUE"
+                                echo -e "userPassword: {SSHA}j3lBh1Seqe4rqF1+NuWmjhvtAni1JC5A"
+                                echo -e "mail: idmuser$(expr $COUNT)@$DOMAIN"
+                                echo -e "gecos: idmuser$(expr $COUNT) User"
+                                echo -e "l: India\n"
+                                COUNT=`expr $COUNT + 1`
+                                temp=`expr $temp + 1`
+
+                done
+                COUNT=`expr 1`
+                echo -e "dn: cn=idmusers,ou=Groups,$SUFFIX"
+                echo -e "objectClass: posixGroup"
+                echo -e "objectClass: top"
+                echo -e "objectClass: groupOfUniqueNames"
+                echo -e "cn: idmusers"
+                echo -e "userPassword: {crypt}x"
+                echo -e "gidNumber: $GIDVALUE"
+                while [ "$COUNT" -le "$MAX" ]
+                do
+                        echo -e "memberUid: idmuser$COUNT"
+                        COUNT=`expr $COUNT + 1`
+                done
+
+}
+
+#################################################################
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+### This script creates a tpsclient enrollment file
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+gen_enroll_data_file()
+{
+        tps_host=$1
+        tps_port=$2
+        cuid=$3
+        ldap_user=$4
+        ldap_userpwd=$5
+        data_file=$6
+        new_pin="redhat"
+        rlLog "$data_file"
+        echo "op=var_set name=ra_host value=$tps_host" > $data_file
+        echo "op=var_set name=ra_port value=$tps_port" >> $data_file
+        echo "op=var_set name=ra_uri value=/tps/tps" >> $data_file
+        echo "op=token_set cuid=$cuid msn=01020304 app_ver=6FBBC105 key_info=0101 major_ver=0 minor_ver=0" >> $data_file
+        echo "op=token_set auth_key=404142434445464748494a4b4c4d4e4f" >> $data_file
+        echo "op=token_set mac_key=404142434445464748494a4b4c4d4e4f" >> $data_file
+        echo "op=token_set kek_key=404142434445464748494a4b4c4d4e4f" >> $data_file
+        echo "op=ra_enroll uid=$ldap_user pwd=$ldap_userpwd new_pin=$new_pin num_threads=1" >> $data_file
+        echo "op=exit" >> $data_file
+}
+############################################################################################################
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+### This script creates a tpsclient format file
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+gen_format_data_file()
+{
+        tps_host=$1
+        tps_port=$2
+        cuid=$3
+        ldap_user=$4
+        ldap_userpwd=$5
+        data_file=$6
+        new_pin="redhat"
+        rlLog "$data_file"
+        echo "op=var_set name=ra_host value=$tps_host" > $data_file
+        echo "op=var_set name=ra_port value=$tps_port" >> $data_file
+        echo "op=var_set name=ra_uri value=/tps/tps" >> $data_file
+        echo "op=token_set cuid=$cuid msn=01020304 app_ver=6FBBC105 key_info=0101 major_ver=0 minor_ver=0" >> $data_file
+        echo "op=token_set auth_key=404142434445464748494a4b4c4d4e4f" >> $data_file
+        echo "op=token_set mac_key=404142434445464748494a4b4c4d4e4f" >> $data_file
+        echo "op=token_set kek_key=404142434445464748494a4b4c4d4e4f" >> $data_file
+        echo "op=ra_format uid=$ldap_user pwd=$ldap_userpwd new_pin=$new_pin num_threads=1" >> $data_file
+        echo "op=exit" >> $data_file
+}
+############################################################################################################
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+### This script creates a tpsclient pin reset file
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+gen_pin_reset_data_file()
+{
+        tps_host=$1
+        tps_port=$2
+        cuid=$3
+        ldap_user=$4
+        ldap_userpwd=$5
+        data_file=$6
+        new_pin="redhat"
+        rlLog "$data_file"
+        echo "op=var_set name=ra_host value=$tps_host" > $data_file
+        echo "op=var_set name=ra_port value=$tps_port" >> $data_file
+        echo "op=var_set name=ra_uri value=/tps/tps" >> $data_file
+        echo "op=token_set cuid=$cuid msn=01020304 app_ver=6FBBC105 key_info=0101 major_ver=0 minor_ver=0" >> $data_file
+        echo "op=token_set auth_key=404142434445464748494a4b4c4d4e4f" >> $data_file
+        echo "op=token_set mac_key=404142434445464748494a4b4c4d4e4f" >> $data_file
+        echo "op=token_set kek_key=404142434445464748494a4b4c4d4e4f" >> $data_file
+        echo "op=ra_reset_pin uid=$ldap_user pwd=$ldap_userpwd new_pin=$new_pin num_threads=1" >> $data_file
+        echo "op=exit" >> $data_file
+}
+#################################################################
+ 

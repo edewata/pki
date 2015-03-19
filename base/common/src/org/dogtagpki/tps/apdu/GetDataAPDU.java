@@ -32,6 +32,17 @@ public class GetDataAPDU extends APDU {
         setP2((byte) 0x7F);
     }
 
+    public GetDataAPDU(byte[] identifier) {
+
+        this();
+
+        if(identifier != null && identifier.length == 2) {
+            setP1(identifier[0]);
+            setP2(identifier[1]);
+        }
+
+    }
+
     @Override
     public Type getType()
     {

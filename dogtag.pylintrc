@@ -21,6 +21,11 @@ persistent=yes
 # usually to register additional checkers.
 load-plugins=
 
+# A comma-separated list of package or module names from where C extensions may
+# be loaded. Extensions are loading into the active Python interpreter and may
+# run arbitrary code
+extension-pkg-whitelist=ldap,lxml,nss
+
 
 [MESSAGES CONTROL]
 
@@ -37,7 +42,10 @@ load-plugins=
 #  	String statement has no effect Used when a string is used as a statement (which of course has no effect). This is a particular case of W0104 with its own message so you can easily disable it if you’re   #       using those strings as documentation, instead of comments.
 # W0511 (fixme): Used when a warning note as FIXME or XXX is detected.
 # W0142: Used when a function or method is called using *args or **kwargs to dispatch arguments. This doesn't improve readability and should be used with care.
-disable=W0511,W0105,W0142
+#
+# C and R messages are disabled by default. To clean up the code, enable C and
+# R messages temporarily.
+disable=W0511,W0105,W0142,C,R
 
 
 [REPORTS]
@@ -46,12 +54,6 @@ disable=W0511,W0105,W0142
 # (visual studio) and html. You can also give a reporter class, eg
 # mypackage.mymodule.MyReporterClass.
 output-format=text
-
-# Include message's id in output
-include-ids=yes
-
-# Include symbolic ids of messages in output
-symbols=no
 
 # Put messages in a separate file for each module / package specified on the
 # command line instead of printing them on stdout. Reports (if any) will be
@@ -126,6 +128,11 @@ ignore-imports=no
 # Tells whether missing members accessed in mixin class should be ignored. A
 # mixin class is detected if its name ends with "mixin" (case insensitive).
 ignore-mixin-members=yes
+
+# List of module names for which member attributes should not be checked
+# (useful for modules/projects where namespaces are manipulated during runtime
+# and thus existing member attributes cannot be deduced by static analysis
+ignored-modules=ldap
 
 # List of classes names for which member attributes should not be checked
 # (useful for classes with attributes dynamically set).

@@ -2,7 +2,7 @@
 # vim: dict=/usr/share/beakerlib/dictionary.vim cpt=.,w,b,u,t,i,k
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-#   runtest.sh of /CoreOS/rhcs/acceptance/legacy-tests/ca-tests
+#   runtest.sh of /CoreOS/rhcs/acceptance/legacy-tests/ca-tests/usergroups
 #   Description: PKI CA user and group tests 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # The following pki commands needs to be tested:
@@ -39,23 +39,20 @@
 
 run_pki-legacy-ca-usergroup_tests()
 {
-	local subsystemId=$1
-        local subsystemType=$2
-        local csRole=$3
-	local tomcat_name=$(eval echo \$${subsystemId}_TOMCAT_INSTANCE_NAME)
+	local subsystemType=$1
+        local csRole=$2
 
         # Creating Temporary Directory for pki ca-usergroup
-        rlPhaseStartSetup "pki ca usergroup Temporary Directory and disable nonce"
+        rlPhaseStartSetup "pki ca usergroup Temporary Directory"
         rlRun "TmpDir=\`mktemp -d\`" 0 "Creating tmp directory"
         rlRun "pushd $TmpDir"
-	rlLog "tomcat name=$tomcat_name"
-	disable_ca_nonce $tomcat_name
 	rlRun "export SSL_DIR=$CERTDB_DIR"
         rlPhaseEnd
 
         # Local Variables
         get_topo_stack $csRole $TmpDir/topo_file
         local CA_INST=$(cat $TmpDir/topo_file | grep MY_CA | cut -d= -f2)
+	local tomcat_name=$(eval echo \$${CA_INST}_TOMCAT_INSTANCE_NAME)
         local ca_unsecure_port=$(eval echo \$${CA_INST}_UNSECURE_PORT)
         local ca_secure_port=$(eval echo \$${CA_INST}_SECURE_PORT)
         local ca_host=$(eval echo \$${csRole})
@@ -70,11 +67,12 @@ run_pki-legacy-ca-usergroup_tests()
 	local valid_agent_cert=$CA_INST\_agentV
         local TEMP_NSS_DB="$TmpDir/nssdb"
         local TEMP_NSS_DB_PWD="redhat"
-        local ca_admin_user=$(eval echo \$${subsystemId}_ADMIN_USER)
+        local ca_admin_user=$(eval echo \$${CA_INST}_ADMIN_USER)
         local rand=$RANDOM
         local tmp_junk_data=$(openssl rand -base64 50 |  perl -p -e 's/\n//')        
 	local TEMP_NSS_DB="$TmpDir/nssdb"
 	local TEMP_NSS_DB_PWD="redhat"
+	disable_ca_nonce $tomcat_name
 
         rlPhaseStartTest "pki_ca_usergroup-001: Valid CA admin add users"
 		local userid="ug02"
@@ -355,7 +353,7 @@ run_pki-legacy-ca-usergroup_tests()
                 rlAssertGrep "Trusted Managers" "$TmpDir/ca_usergroup_007_3.txt"	
 	rlPhaseEnd
 
-	rlPhaseStartTest "pki_ca_usergroup-008: Valid CA admin list groups"
+	rlPhaseStartTest "pki_ca_usergroup-008: Valid CA admin add a user to the group"
                 local userid="ug08"
                 local fullname=$userid
                 local password=password$userid
@@ -514,8 +512,303 @@ run_pki-legacy-ca-usergroup_tests()
                 rlAssertGrep "HTTP/1.1 200 OK" "$TmpDir/ca_usergroup_010_003.txt"
         rlPhaseEnd 
 
+	rlPhaseStartTest "pki_ca_usergroup-011: Valid CA agent cannot add new user"
+		local userid="ug11"
+                local fullname=$userid
+                local password="password$userid"
+                local email="$userid@redhat.com"
+                local phone="12345"
+                local state="CA"
+                rlLog "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_011.txt \
+                             -u $valid_agent_user:$valid_agent_user_password \
+                             -d \"OP_TYPE=OP_ADD&OP_SCOPE=users&RS_ID=$userid&fullname=$fullname&password=$password&email=$email&phone=$phone&state=$state&groups=&userType=\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\""
+                rlRun "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_011.txt \
+                             -u $valid_agent_user:$valid_agent_user_password \
+                             -d \"OP_TYPE=OP_ADD&OP_SCOPE=users&RS_ID=$userid&fullname=$fullname&password=$password&email=$email&phone=$phone&state=$state&groups=&userType=\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\" > $TmpDir/ca_usergroup_011_2.txt" 0 "Add user $userid to $CA_INST using a agent user"
+                rlAssertGrep "HTTP/1.1 200 OK" "$TmpDir/ca_usergroup_011.txt"
+                rlAssertGrep "You are not authorized to perform this operation" "$TmpDir/ca_usergroup_011_2.txt"
+	rlPhaseEnd
+
+	rlPhaseStartTest "pki_ca_usergroup-012: CA Audit user cannot add new user"
+                local userid="ug12"
+                local fullname=$userid
+                local password="password$userid"
+                local email="$userid@redhat.com"
+                local phone="12345"
+                local state="CA"
+                rlLog "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_012.txt \
+                             -u $valid_audit_user:$valid_audit_user_password \
+                             -d \"OP_TYPE=OP_ADD&OP_SCOPE=users&RS_ID=$userid&fullname=$fullname&password=$password&email=$email&phone=$phone&state=$state&groups=&userType=\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\""
+                rlRun "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_012.txt \
+                             -u $valid_audit_user:$valid_audit_user_password \
+                             -d \"OP_TYPE=OP_ADD&OP_SCOPE=users&RS_ID=$userid&fullname=$fullname&password=$password&email=$email&phone=$phone&state=$state&groups=&userType=\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\" > $TmpDir/ca_usergroup_012_2.txt" 0 "Add user $userid to $CA_INST using a audit user"
+                rlAssertGrep "HTTP/1.1 200 OK" "$TmpDir/ca_usergroup_012.txt"
+                rlAssertGrep "You are not authorized to perform this operation" "$TmpDir/ca_usergroup_012_2.txt"
+        rlPhaseEnd
+
+	rlPhaseStartTest "pki_ca_usergroup-013: CA Operator user cannot add new user"
+                local userid="ug13"
+                local fullname=$userid
+                local password="password$userid"
+                local email="$userid@redhat.com"
+                local phone="12345"
+                local state="CA"
+                rlLog "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_013.txt \
+                             -u $valid_operator_user:$valid_operator_user_password \
+                             -d \"OP_TYPE=OP_ADD&OP_SCOPE=users&RS_ID=$userid&fullname=$fullname&password=$password&email=$email&phone=$phone&state=$state&groups=&userType=\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\""
+                rlRun "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_013.txt \
+                             -u $valid_operator_user:$valid_operator_user_password \
+                             -d \"OP_TYPE=OP_ADD&OP_SCOPE=users&RS_ID=$userid&fullname=$fullname&password=$password&email=$email&phone=$phone&state=$state&groups=&userType=\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\" > $TmpDir/ca_usergroup_013_2.txt" 0 "Add user $userid to $CA_INST using a operator user"
+                rlAssertGrep "HTTP/1.1 200 OK" "$TmpDir/ca_usergroup_013.txt"
+                rlAssertGrep "You are not authorized to perform this operation" "$TmpDir/ca_usergroup_013_2.txt"
+        rlPhaseEnd
+	
+	rlPhaseStartTest "pki_ca_usergroup-014: CA audit user cannot add new group"
+		local groupid="group14"
+                local groupdesc="group14_desc"
+                #Add group
+                rlLog "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_014.txt \
+                             -u $valid_audit_user:$valid_audit_user_password \
+                             -d \"OP_TYPE=OP_ADD&OP_SCOPE=groups&RS_ID=$groupid&desc=$groupdesc&user=\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\""
+                rlRun "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_014.txt \
+                             -u $valid_audit_user:$valid_audit_user_password \
+                             -d \"OP_TYPE=OP_ADD&OP_SCOPE=groups&RS_ID=$groupid&desc=$groupdesc&user=\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\" > $TmpDir/ca_usergroup_014_2.txt" 0 "Add group $groupid"
+                rlAssertGrep "HTTP/1.1 200 OK" "$TmpDir/ca_usergroup_014.txt"
+                rlAssertGrep "You are not authorized to perform this operation" "$TmpDir/ca_usergroup_014_2.txt"
+	rlPhaseEnd
+
+	rlPhaseStartTest "pki_ca_usergroup-015: CA agent user cannot add new group"
+                local groupid="group15"
+                local groupdesc="group15_desc"
+                #Add group
+                rlLog "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_015.txt \
+                             -u $valid_agent_user:$valid_agent_user_password \
+                             -d \"OP_TYPE=OP_ADD&OP_SCOPE=groups&RS_ID=$groupid&desc=$groupdesc&user=\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\""
+                rlRun "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_015.txt \
+                             -u $valid_agent_user:$valid_agent_user_password \
+                             -d \"OP_TYPE=OP_ADD&OP_SCOPE=groups&RS_ID=$groupid&desc=$groupdesc&user=\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\" > $TmpDir/ca_usergroup_015_2.txt" 0 "Add group $groupid"
+                rlAssertGrep "HTTP/1.1 200 OK" "$TmpDir/ca_usergroup_015.txt"
+                rlAssertGrep "You are not authorized to perform this operation" "$TmpDir/ca_usergroup_015_2.txt"
+        rlPhaseEnd
+
+	rlPhaseStartTest "pki_ca_usergroup-016: CA operator user cannot add new group"
+                local groupid="group16"
+                local groupdesc="group16_desc"
+                #Add group
+                rlLog "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_016.txt \
+                             -u $valid_operator_user:$valid_operator_user_password \
+                             -d \"OP_TYPE=OP_ADD&OP_SCOPE=groups&RS_ID=$groupid&desc=$groupdesc&user=\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\""
+                rlRun "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_016.txt \
+                             -u $valid_operator_user:$valid_operator_user_password \
+                             -d \"OP_TYPE=OP_ADD&OP_SCOPE=groups&RS_ID=$groupid&desc=$groupdesc&user=\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\" > $TmpDir/ca_usergroup_016_2.txt" 0 "Add group $groupid"
+                rlAssertGrep "HTTP/1.1 200 OK" "$TmpDir/ca_usergroup_016.txt"
+                rlAssertGrep "You are not authorized to perform this operation" "$TmpDir/ca_usergroup_016_2.txt"
+        rlPhaseEnd
+	
+	rlPhaseStartTest "pki_ca_usergroup-017: CA agent user cannot delete existing group"
+		local groupid="group17"
+                local groupdesc="group17_desc"
+                #Add group
+                rlLog "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_017.txt \
+                             -u $valid_admin_user:$valid_admin_user_password \
+                             -d \"OP_TYPE=OP_ADD&OP_SCOPE=groups&RS_ID=$groupid&desc=$groupdesc&user=\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\""
+                rlRun "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_017.txt \
+                             -u $valid_admin_user:$valid_admin_user_password \
+                             -d \"OP_TYPE=OP_ADD&OP_SCOPE=groups&RS_ID=$groupid&desc=$groupdesc&user=\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\" > $TmpDir/ca_usergroup_017_2.txt" 0 "Add group $groupid"
+                rlAssertGrep "HTTP/1.1 200 OK" "$TmpDir/ca_usergroup_017.txt"
+                rlAssertNotGrep "Failed to add group" "$TmpDir/ca_usergroup_017_2.txt"
+                #List group
+                rlLog "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_017_002.txt \
+                             -u $valid_admin_user:$valid_admin_user_password \
+                             -d \"OP_TYPE=OP_SEARCH&OP_SCOPE=groups\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\""
+                rlRun "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_017_002.txt \
+                             -u $valid_admin_user:$valid_admin_user_password \
+                             -d \"OP_TYPE=OP_SEARCH&OP_SCOPE=groups\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\" > $TmpDir/ca_usergroup_017_002_2.txt" 0 "List groups"
+                rlAssertGrep "HTTP/1.1 200 OK" "$TmpDir/ca_usergroup_017_002.txt"
+                rlRun "cat  $TmpDir/ca_usergroup_017_002_2.txt | python -c 'import sys, urllib as ul; print ul.unquote(sys.stdin.read());' | sed 'y/+/ /' > $TmpDir/ca_usergroup_017_002_3.txt"
+                rlAssertGrep "$groupid" "$TmpDir/ca_usergroup_017_002_3.txt"
+                #Delete group using agent
+                rlLog "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_017_003.txt \
+                             -u $valid_agent_user:$valid_agent_user_password \
+                             -d \"OP_TYPE=OP_DELETE&OP_SCOPE=groups&RS_ID=$groupid\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\""
+                rlRun "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_017_003.txt \
+                             -u $valid_agent_user:$valid_agent_user_password \
+                             -d \"OP_TYPE=OP_DELETE&OP_SCOPE=groups&RS_ID=$groupid\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\" > $TmpDir/ca_usergroup_017_003_2.txt" 0 "Delete group $groupid"
+                rlAssertGrep "HTTP/1.1 200 OK" "$TmpDir/ca_usergroup_017_003.txt"
+                rlAssertGrep "You are not authorized to perform this operation" "$TmpDir/ca_usergroup_017_003_2.txt"
+		 #List group
+                rlLog "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_017_004.txt \
+                             -u $valid_admin_user:$valid_admin_user_password \
+                             -d \"OP_TYPE=OP_SEARCH&OP_SCOPE=groups\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\""
+                rlRun "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_017_004.txt \
+                             -u $valid_admin_user:$valid_admin_user_password \
+                             -d \"OP_TYPE=OP_SEARCH&OP_SCOPE=groups\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\" > $TmpDir/ca_usergroup_017_004_2.txt" 0 "List groups"
+                rlAssertGrep "HTTP/1.1 200 OK" "$TmpDir/ca_usergroup_017_004.txt"
+                rlRun "cat  $TmpDir/ca_usergroup_017_004_2.txt | python -c 'import sys, urllib as ul; print ul.unquote(sys.stdin.read());' | sed 'y/+/ /' > $TmpDir/ca_usergroup_017_004_3.txt"
+                rlAssertGrep "$groupid" "$TmpDir/ca_usergroup_017_004_3.txt"
+	rlPhaseEnd
+
+	rlPhaseStartTest "pki_ca_usergroup-018: CA Audit user cannot delete existing group"
+		local groupid="group18"
+                local groupdesc="group18_desc"
+                #Add group
+                rlLog "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_018.txt \
+                             -u $valid_admin_user:$valid_admin_user_password \
+                             -d \"OP_TYPE=OP_ADD&OP_SCOPE=groups&RS_ID=$groupid&desc=$groupdesc&user=\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\""
+                rlRun "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_018.txt \
+                             -u $valid_admin_user:$valid_admin_user_password \
+                             -d \"OP_TYPE=OP_ADD&OP_SCOPE=groups&RS_ID=$groupid&desc=$groupdesc&user=\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\" > $TmpDir/ca_usergroup_018_2.txt" 0 "Add group $groupid"
+                rlAssertGrep "HTTP/1.1 200 OK" "$TmpDir/ca_usergroup_018.txt"
+                rlAssertNotGrep "Failed to add group" "$TmpDir/ca_usergroup_018_2.txt"
+                #List group
+                rlLog "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_018_002.txt \
+                             -u $valid_admin_user:$valid_admin_user_password \
+                             -d \"OP_TYPE=OP_SEARCH&OP_SCOPE=groups\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\""
+                rlRun "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_018_002.txt \
+                             -u $valid_admin_user:$valid_admin_user_password \
+                             -d \"OP_TYPE=OP_SEARCH&OP_SCOPE=groups\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\" > $TmpDir/ca_usergroup_018_002_2.txt" 0 "List groups"
+                rlAssertGrep "HTTP/1.1 200 OK" "$TmpDir/ca_usergroup_018_002.txt"
+                rlRun "cat  $TmpDir/ca_usergroup_018_002_2.txt | python -c 'import sys, urllib as ul; print ul.unquote(sys.stdin.read());' | sed 'y/+/ /' > $TmpDir/ca_usergroup_018_002_3.txt"
+                rlAssertGrep "$groupid" "$TmpDir/ca_usergroup_018_002_3.txt"
+                #Delete group using auditor
+                rlLog "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_018_003.txt \
+                             -u $valid_audit_user:$valid_audit_user_password \
+                             -d \"OP_TYPE=OP_DELETE&OP_SCOPE=groups&RS_ID=$groupid\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\""
+                rlRun "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_018_003.txt \
+                             -u $valid_audit_user:$valid_audit_user_password \
+                             -d \"OP_TYPE=OP_DELETE&OP_SCOPE=groups&RS_ID=$groupid\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\" > $TmpDir/ca_usergroup_018_003_2.txt" 0 "Delete group $groupid"
+                rlAssertGrep "HTTP/1.1 200 OK" "$TmpDir/ca_usergroup_018_003.txt"
+                rlAssertGrep "You are not authorized to perform this operation" "$TmpDir/ca_usergroup_018_003_2.txt"
+		 #List group
+                rlLog "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_018_004.txt \
+                             -u $valid_admin_user:$valid_admin_user_password \
+                             -d \"OP_TYPE=OP_SEARCH&OP_SCOPE=groups\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\""
+                rlRun "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_018_004.txt \
+                             -u $valid_admin_user:$valid_admin_user_password \
+                             -d \"OP_TYPE=OP_SEARCH&OP_SCOPE=groups\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\" > $TmpDir/ca_usergroup_018_004_2.txt" 0 "List groups"
+                rlAssertGrep "HTTP/1.1 200 OK" "$TmpDir/ca_usergroup_018_004.txt"
+                rlRun "cat  $TmpDir/ca_usergroup_018_004_2.txt | python -c 'import sys, urllib as ul; print ul.unquote(sys.stdin.read());' | sed 'y/+/ /' > $TmpDir/ca_usergroup_018_004_3.txt"
+                rlAssertGrep "$groupid" "$TmpDir/ca_usergroup_018_004_3.txt"
+	rlPhaseEnd
+
+
+	rlPhaseStartTest "pki_ca_usergroup-019: CA Operator user cannot delete existing group"
+		local groupid="group19"
+                local groupdesc="group19_desc"
+                #Add group
+                rlLog "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_019.txt \
+                             -u $valid_admin_user:$valid_admin_user_password \
+                             -d \"OP_TYPE=OP_ADD&OP_SCOPE=groups&RS_ID=$groupid&desc=$groupdesc&user=\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\""
+                rlRun "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_019.txt \
+                             -u $valid_admin_user:$valid_admin_user_password \
+                             -d \"OP_TYPE=OP_ADD&OP_SCOPE=groups&RS_ID=$groupid&desc=$groupdesc&user=\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\" > $TmpDir/ca_usergroup_019_2.txt" 0 "Add group $groupid"
+                rlAssertGrep "HTTP/1.1 200 OK" "$TmpDir/ca_usergroup_019.txt"
+                rlAssertNotGrep "Failed to add group" "$TmpDir/ca_usergroup_019_2.txt"
+                #List group
+                rlLog "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_019_002.txt \
+                             -u $valid_admin_user:$valid_admin_user_password \
+                             -d \"OP_TYPE=OP_SEARCH&OP_SCOPE=groups\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\""
+                rlRun "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_019_002.txt \
+                             -u $valid_admin_user:$valid_admin_user_password \
+                             -d \"OP_TYPE=OP_SEARCH&OP_SCOPE=groups\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\" > $TmpDir/ca_usergroup_019_002_2.txt" 0 "List groups"
+                rlAssertGrep "HTTP/1.1 200 OK" "$TmpDir/ca_usergroup_019_002.txt"
+                rlRun "cat  $TmpDir/ca_usergroup_019_002_2.txt | python -c 'import sys, urllib as ul; print ul.unquote(sys.stdin.read());' | sed 'y/+/ /' > $TmpDir/ca_usergroup_019_002_3.txt"
+                rlAssertGrep "$groupid" "$TmpDir/ca_usergroup_019_002_3.txt"
+                #Delete group using operator
+                rlLog "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_019_003.txt \
+                             -u $valid_operator_user:$valid_operator_user_password \
+                             -d \"OP_TYPE=OP_DELETE&OP_SCOPE=groups&RS_ID=$groupid\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\""
+                rlRun "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_019_003.txt \
+                             -u $valid_operator_user:$valid_operator_user_password \
+                             -d \"OP_TYPE=OP_DELETE&OP_SCOPE=groups&RS_ID=$groupid\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\" > $TmpDir/ca_usergroup_019_003_2.txt" 0 "Delete group $groupid"
+                rlAssertGrep "HTTP/1.1 200 OK" "$TmpDir/ca_usergroup_019_003.txt"
+                rlAssertGrep "You are not authorized to perform this operation" "$TmpDir/ca_usergroup_019_003_2.txt"
+		 #List group
+                rlLog "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_019_004.txt \
+                             -u $valid_admin_user:$valid_admin_user_password \
+                             -d \"OP_TYPE=OP_SEARCH&OP_SCOPE=groups\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\""
+                rlRun "curl --basic \
+                            --dump-header  $TmpDir/ca_usergroup_019_004.txt \
+                             -u $valid_admin_user:$valid_admin_user_password \
+                             -d \"OP_TYPE=OP_SEARCH&OP_SCOPE=groups\" \
+                             -k \"https://$ca_host:$ca_secure_port/ca/ug\" > $TmpDir/ca_usergroup_019_004_2.txt" 0 "List groups"
+                rlAssertGrep "HTTP/1.1 200 OK" "$TmpDir/ca_usergroup_019_004.txt"
+                rlRun "cat  $TmpDir/ca_usergroup_019_004_2.txt | python -c 'import sys, urllib as ul; print ul.unquote(sys.stdin.read());' | sed 'y/+/ /' > $TmpDir/ca_usergroup_019_004_3.txt"
+                rlAssertGrep "$groupid" "$TmpDir/ca_usergroup_019_004_3.txt"
+	rlPhaseEnd
+
 	rlPhaseStartTest "pki_ca_usergroup_cleanup: Deleting users and groups"
-		local group=("group01" "group10")
+		local group=("group01" "group10" "group17" "group18" "group19")
                 i=0
                 while [ $i -lt ${#group[@]} ] ; do
                         groupid=${group[$i]}
@@ -524,7 +817,6 @@ run_pki-legacy-ca-usergroup_tests()
                              -u $valid_admin_user:$valid_admin_user_password \
                              -d \"OP_TYPE=OP_DELETE&OP_SCOPE=groups&RS_ID=$groupid\" \
                              -k \"https://$ca_host:$ca_secure_port/ca/ug\" > $TmpDir/ca_group_cleanup_$i_2.txt" 0 "Delete group $groupid"
-                	rlAssertNotGrep "Failed to add group" "$TmpDir/ca_usergroup_009_2.txt"
                 let i=$i+1
                 done
 
@@ -539,7 +831,9 @@ run_pki-legacy-ca-usergroup_tests()
                              -k \"https://$ca_host:$ca_secure_port/ca/ug\" > $TmpDir/ca_usergroup_cleanup_$i_2.txt" 0 "Delete user $userid"
 		let i=$i+1
 		done
-
-	enable_ca_nonce $tomcat_name
+		enable_ca_nonce $tomcat_name
+		rlRun "popd"
+	        rlRun "rm -r $TmpDir" 0 "Removing temp directory"
 	rlPhaseEnd
 }
+

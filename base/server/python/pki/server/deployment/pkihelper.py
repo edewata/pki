@@ -40,6 +40,7 @@ from grp import getgrnam
 from pwd import getpwnam
 from pwd import getpwuid
 import xml.etree.ElementTree as ET
+from lxml import etree
 import zipfile
 import selinux
 if selinux.is_selinux_enabled():
@@ -816,6 +817,18 @@ class ConfigurationFile:
                     (port, context))
         return
 
+    def verify_ds_secure_connection_data(self):
+        # Check to see if a secure connection is being used for the DS
+        if config.str2bool(self.mdict['pki_ds_secure_connection']):
+            # Verify existence of a local PEM file containing a
+            # directory server CA certificate
+            self.confirm_file_exists("pki_ds_secure_connection_ca_pem_file")
+            # Verify existence of a nickname for this
+            # directory server CA certificate
+            self.confirm_data_exists("pki_ds_secure_connection_ca_nickname")
+            # Set trustargs for this directory server CA certificate
+            self.mdict['pki_ds_secure_connection_ca_trustargs'] = "CT,CT,CT"
+
     def verify_command_matches_configuration_file(self):
         # Silently verify that the command-line parameters match the values
         # that are present in the corresponding configuration file
@@ -924,13 +937,13 @@ class Instance:
             # present within the PKI 'tomcat' registry directory
             for instance in os.listdir(
                     self.mdict['pki_instance_type_registry_path']):
-                if os.path.isdir(
-                    os.path.join(
-                        self.mdict['pki_instance_type_registry_path'],
+                if os.path.isdir(\
+                    os.path.join(\
+                        self.mdict['pki_instance_type_registry_path'],\
                         instance)) and not\
-                   os.path.islink(
-                       os.path.join(
-                           self.mdict['pki_instance_type_registry_path'],
+                   os.path.islink(\
+                       os.path.join(\
+                           self.mdict['pki_instance_type_registry_path'],\
                            instance)):
                     rv += 1
             config.pki_log.debug(log.PKIHELPER_TOMCAT_INSTANCES_2,
@@ -986,7 +999,7 @@ class Instance:
         # catching all exceptions because we do not want to break if underlying
         # requests or urllib3 use a different exception.
         # If the connection fails, we will time out in any case
-        # pylint: disable-msg=W0703
+        # pylint: disable=W0703
         try:
             client = pki.system.SystemStatusClient(connection)
             response = client.get_status()
@@ -1738,7 +1751,7 @@ class File:
                     extra=config.PKI_INDENTATION_LEVEL_2)
                 open(name, "w").close()
                 with open(name, "w") as FILE:
-                    noise = ''.join(random.choice(string.ascii_letters +
+                    noise = ''.join(random.choice(string.ascii_letters +\
                                     string.digits) for x in range(random_bytes))
                     FILE.write(noise)
                 # chmod <perms> <name>
@@ -2655,7 +2668,7 @@ class KRAConnector:
 
             # get a list of all the CA's in the security domain
             # noinspection PyBroadException
-            # pylint: disable-msg=W0703
+            # pylint: disable=W0703
             sechost = cs_cfg.get('securitydomain.host')
             secport = cs_cfg.get('securitydomain.httpsadminport')
             try:
@@ -2675,7 +2688,7 @@ class KRAConnector:
                 # the auth is not successful or servers are down.  In the
                 # worst case, we will time out anyways.
                 # noinspection PyBroadException
-                # pylint: disable-msg=W0703
+                # pylint: disable=W0703
                 try:
                     self.execute_using_sslget(
                         ca_port, ca_host, subsystemnick,
@@ -3674,8 +3687,8 @@ class ConfigClient:
         with open(self.mdict['pki_external_admin_csr_path'], "w") as f:
             f.write("-----BEGIN CERTIFICATE REQUEST-----\n")
         admin_certreq = None
-        with open(os.path.join(
-                  self.mdict['pki_client_database_dir'],
+        with open(os.path.join(\
+                  self.mdict['pki_client_database_dir'],\
                   "admin_pkcs10.bin.asc"), "r") as f:
             admin_certreq = f.read()
         with open(self.mdict['pki_external_admin_csr_path'], "a") as f:
@@ -3956,7 +3969,12 @@ class ConfigClient:
 
     def set_database_parameters(self, data):
         data.dsHost = self.mdict['pki_ds_hostname']
-        data.dsPort = self.mdict['pki_ds_ldap_port']
+        if config.str2bool(self.mdict['pki_ds_secure_connection']):
+            data.secureConn = "true"
+            data.dsPort = self.mdict['pki_ds_ldaps_port']
+        else:
+            data.secureConn = "false"
+            data.dsPort = self.mdict['pki_ds_ldap_port']
         data.baseDN = self.mdict['pki_ds_base_dn']
         data.bindDN = self.mdict['pki_ds_bind_dn']
         data.database = self.mdict['pki_ds_database']
@@ -3969,10 +3987,6 @@ class ConfigClient:
             data.removeData = "true"
         else:
             data.removeData = "false"
-        if config.str2bool(self.mdict['pki_ds_secure_connection']):
-            data.secureConn = "true"
-        else:
-            data.secureConn = "false"
         if config.str2bool(self.mdict['pki_share_db']):
             data.sharedDB = "true"
             data.sharedDBUserDN = self.mdict['pki_share_dbuser_dn']
@@ -4173,4 +4187,38 @@ class PKIDeployer:
         self.tps_connector = TPSConnector(self)
         self.config_client = ConfigClient(self)
 
+    def deploy_webapp(self, name, doc_base, descriptor):
+        """
+        Deploy a web application into a Tomcat instance.
 
+        This method will copy the specified deployment descriptor into
+        <instance>/conf/Catalina/localhost/<name>.xml and point the docBase
+        to the specified location. The web application will become available
+        under "/<name>" URL path.
+
+        See also: http://tomcat.apache.org/tomcat-7.0-doc/config/context.html
+
+        :param name: Web application name.
+        :type name: str
+        :param doc_base: Path to web application content.
+        :type doc_base: str
+        :param descriptor: Path to deployment descriptor (context.xml).
+        :type descriptor: str
+        """
+        new_descriptor = os.path.join(
+            self.mdict['pki_instance_configuration_path'],
+            "Catalina",
+            "localhost",
+            name + ".xml")
+
+        parser = etree.XMLParser(remove_blank_text=True)
+        document = etree.parse(descriptor, parser)
+
+        context = document.getroot()
+        context.set('docBase', doc_base)
+
+        with open(new_descriptor, 'w') as f:
+            f.write(etree.tostring(document, pretty_print=True))
+
+        os.chown(new_descriptor, self.mdict['pki_uid'], self.mdict['pki_gid'])
+        os.chmod(new_descriptor, config.PKI_DEPLOYMENT_DEFAULT_FILE_PERMISSIONS)

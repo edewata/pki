@@ -245,7 +245,55 @@ build: $(BUILT_FILES)
 	chmod a+x ./acceptance/cli-tests/pki-ca-profile-cli/pki-ca-profile-cli-mod.sh
 	# Legacy tests
 	chmod a+x ./acceptance/legacy/ca-tests/usergroups/pki-ca-usergroups.sh
-	chmod a+x ./acceptance/legacy/ca-tests/profiles/ca-profile.sh
+	chmod a+x ./acceptance/legacy/ca-tests/profiles/ca-ad-profiles.sh
+	chmod a+x ./acceptance/legacy/ca-tests/profiles/ca-ag-profiles.sh
+	chmod a+x ./acceptance/legacy/ca-tests/acls/ca-admin-acl.sh
+	chmod a+x ./acceptance/legacy/ca-tests/internaldb/ca-admin-internaldb.sh
+	chmod a+x ./acceptance/legacy/ca-tests/authplugin/ca-admin-authplugins.sh
+	chmod a+x ./acceptance/legacy/ca-tests/logs/ca-ad-logs.sh
+	chmod a+x ./acceptance/legacy/ca-tests/cert-enrollment/ca-ee-enrollments.sh
+	chmod a+x ./acceptance/legacy/ca-tests/cert-enrollment/ca-ag-requests.sh
+	chmod a+x ./acceptance/legacy/ca-tests/cert-enrollment/ca-ee-retrieval.sh
+	chmod a+x ./acceptance/legacy/ca-tests/crlissuingpoint/ca-admin-crlissuingpoints.sh
+	chmod a+x ./acceptance/legacy/ca-tests/crls/ca-agent-crls.sh
+	chmod a+x ./acceptance/legacy/ca-tests/publishing/ca-admin-publishing.sh
+	chmod a+x ./acceptance/legacy/ca-tests/cert-enrollment/ca-ag-certificates.sh
+	chmod a+x ./acceptance/legacy/ca-tests/ocsp/ca-ee-ocsp.sh
+	chmod a+x ./acceptance/legacy/ca-tests/renewal/renew_manual.sh
+	chmod a+x ./acceptance/legacy/ca-tests/renewal/renew_DirAuthUserCert.sh
+	chmod a+x ./acceptance/legacy/ca-tests/renewal/renew_caSSLClientCert.sh
+	chmod a+x ./acceptance/legacy/ca-tests/scep_tests/scep-enroll.sh
+	chmod a+x ./acceptance/legacy/drm-tests/acls/drm-ad-acls.sh
+	chmod a+x ./acceptance/legacy/drm-tests/agent/drm-ag-tests.sh
+	chmod a+x ./acceptance/legacy/drm-tests/internaldb/drm-ad-internaldb.sh
+	chmod a+x ./acceptance/legacy/drm-tests/usergroups/drm-ad-usergroups.sh	
+	chmod a+x ./acceptance/legacy/drm-tests/logs/drm-ad-logs.sh
+	chmod a+x ./acceptance/legacy/subca-tests/usergroups/subca-usergroups.sh
+	chmod a+x ./acceptance/legacy/subca-tests/acls/subca-ad-acls.sh
+	chmod a+x ./acceptance/legacy/subca-tests/internaldb/subca-ad-internaldb.sh
+	chmod a+x ./acceptance/legacy/subca-tests/authplugin/subca-ad-authplugin.sh
+	chmod a+x ./acceptance/legacy/subca-tests/crlissuingpoint/subca-ad-crlissuingpoints.sh
+	chmod a+x ./acceptance/legacy/subca-tests/publishing/subca-ad-publishing.sh
+	chmod a+x ./acceptance/legacy/subca-tests/crls/subca-ag-crls.sh
+	chmod a+x ./acceptance/legacy/subca-tests/cert-enrollment/subca-ag-certificates.sh
+	chmod a+x ./acceptance/legacy/subca-tests/cert-enrollment/subca-ag-requests.sh
+	chmod a+x ./acceptance/legacy/subca-tests/cert-enrollment/subca-ee-enrollments.sh
+	chmod a+x ./acceptance/legacy/subca-tests/cert-enrollment/subca-ee-retrieval.sh
+	chmod a+x ./acceptance/legacy/subca-tests/profiles/subca-ad-profiles.sh
+	chmod a+x ./acceptance/legacy/subca-tests/profiles/subca-ag-profiles.sh
+	chmod a+x ./acceptance/legacy/subca-tests/logs/subca-ad-logs.sh
+	chmod a+x ./acceptance/legacy/subca-tests/scep_tests/subca-scep-enroll.sh
+	chmod a+x ./acceptance/legacy/ocsp-tests/usergroups/ocsp-ad-usergroups.sh
+	chmod a+x ./acceptance/legacy/ocsp-tests/acls/ocsp-ad-acls.sh
+	chmod a+x ./acceptance/legacy/ocsp-tests/logs/ocsp-ad-logs.sh
+	chmod a+x ./acceptance/legacy/ocsp-tests/internaldb/ocsp-ad-internaldb.sh
+	chmod a+x ./acceptance/legacy/tks-tests/acls/tks-ad-acls.sh
+	chmod a+x ./acceptance/legacy/tks-tests/internaldb/tks-ad-internaldb.sh
+	chmod a+x ./acceptance/legacy/tks-tests/logs/tks-ad-logs.sh
+	chmod a+x ./acceptance/legacy/tks-tests/usergroups/tks-ad-usergroups.sh
+	chmod a+x ./acceptance/legacy/ipa-tests/ipa_backend_plugin.sh
+	chmod a+x ./acceptance/legacy/clone_ca_tests/clone_tests.sh
+	chmod a+x ./acceptance/legacy/clone_drm_tests/clone_drm_agent_tests.sh
 	# bug verifications
 	chmod a+x ./acceptance/bugzilla/tomcatjss-bugs/bug-1058366.sh
 	chmod a+x ./acceptance/bugzilla/tomcatjss-bugs/bug-1084224.sh
@@ -256,11 +304,6 @@ build: $(BUILT_FILES)
 	chmod a+x ./acceptance/bugzilla/jss-bugs/bug-1133718.sh
 	chmod a+x ./acceptance/bugzilla/jss-bugs/bug-1040640.sh
 	chmod a+x ./acceptance/bugzilla/pki-core-bugs/bug-790924.sh
-	#installer tests
-	chmod a+x ./acceptance/install-tests/ca-installer.sh
-	chmod a+x ./acceptance/install-tests/kra-installer.sh
-	chmod a+x ./acceptance/install-tests/ocsp-installer.sh
-	chmod a+x ./acceptance/install-tests/tks-installer.sh
 
 clean:
 	rm -f *~ $(BUILT_FILES)

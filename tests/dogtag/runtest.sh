@@ -177,11 +177,56 @@
 . ./acceptance/cli-tests/pki-ca-profile-cli/pki-ca-profile-cli-add.sh
 . ./acceptance/cli-tests/pki-ca-profile-cli/pki-ca-profile-cli-mod.sh
 . ./acceptance/legacy/ca-tests/usergroups/pki-ca-usergroups.sh
-. ./acceptance/legacy/ca-tests/profiles/ca-profile.sh
-. ./acceptance/install-tests/ca-installer.sh
-. ./acceptance/install-tests/kra-installer.sh
-. ./acceptance/install-tests/ocsp-installer.sh
-. ./acceptance/install-tests/tks-installer.sh
+. ./acceptance/legacy/ca-tests/profiles/ca-ag-profiles.sh
+. ./acceptance/legacy/ca-tests/profiles/ca-ad-profiles.sh
+. ./acceptance/legacy/ca-tests/internaldb/ca-admin-internaldb.sh
+. ./acceptance/legacy/ca-tests/acls/ca-admin-acl.sh
+. ./acceptance/legacy/ca-tests/authplugin/ca-admin-authplugins.sh
+. ./acceptance/legacy/ca-tests/logs/ca-ad-logs.sh
+. ./acceptance/legacy/ca-tests/cert-enrollment/ca-ee-enrollments.sh
+. ./acceptance/legacy/ca-tests/cert-enrollment/ca-ag-requests.sh
+. ./acceptance/legacy/ca-tests/cert-enrollment/ca-ee-retrieval.sh
+. ./acceptance/legacy/ca-tests/crlissuingpoint/ca-admin-crlissuingpoints.sh
+. ./acceptance/legacy/ca-tests/crls/ca-agent-crls.sh
+. ./acceptance/legacy/ca-tests/publishing/ca-admin-publishing.sh
+. ./acceptance/legacy/ca-tests/cert-enrollment/ca-ag-certificates.sh
+. ./acceptance/legacy/ca-tests/ocsp/ca-ee-ocsp.sh
+. ./acceptance/legacy/ca-tests/renewal/renew_manual.sh
+. ./acceptance/legacy/ca-tests/renewal/renew_DirAuthUserCert.sh
+. ./acceptance/legacy/ca-tests/renewal/renew_caSSLClientCert.sh
+. ./acceptance/legacy/ca-tests/scep_tests/scep-enroll.sh
+. ./acceptance/legacy/subca-tests/usergroups/subca-usergroups.sh
+. ./acceptance/legacy/subca-tests/acls/subca-ad-acls.sh
+. ./acceptance/legacy/subca-tests/internaldb/subca-ad-internaldb.sh
+. ./acceptance/legacy/subca-tests/authplugin/subca-ad-authplugin.sh
+. ./acceptance/legacy/subca-tests/crlissuingpoint/subca-ad-crlissuingpoints.sh
+. ./acceptance/legacy/subca-tests/publishing/subca-ad-publishing.sh
+. ./acceptance/legacy/subca-tests/crls/subca-ag-crls.sh
+. ./acceptance/legacy/subca-tests/cert-enrollment/subca-ag-certificates.sh
+. ./acceptance/legacy/subca-tests/cert-enrollment/subca-ag-requests.sh
+. ./acceptance/legacy/subca-tests/cert-enrollment/subca-ee-enrollments.sh
+. ./acceptance/legacy/subca-tests/cert-enrollment/subca-ee-retrieval.sh
+. ./acceptance/legacy/subca-tests/profiles/subca-ad-profiles.sh
+. ./acceptance/legacy/subca-tests/profiles/subca-ag-profiles.sh
+. ./acceptance/legacy/subca-tests/logs/subca-ad-logs.sh
+. ./acceptance/legacy/subca-tests/scep_tests/subca-scep-enroll.sh
+. ./acceptance/legacy/drm-tests/acls/drm-ad-acls.sh
+. ./acceptance/legacy/drm-tests/agent/drm-ag-tests.sh
+. ./acceptance/legacy/drm-tests/internaldb/drm-ad-internaldb.sh
+. ./acceptance/legacy/drm-tests/usergroups/drm-ad-usergroups.sh
+. ./acceptance/legacy/drm-tests/logs/drm-ad-logs.sh
+. ./acceptance/legacy/ocsp-tests/usergroups/ocsp-ad-usergroups.sh
+. ./acceptance/legacy/ocsp-tests/acls/ocsp-ad-acls.sh
+. ./acceptance/legacy/ocsp-tests/logs/ocsp-ad-logs.sh
+. ./acceptance/legacy/ocsp-tests/internaldb/ocsp-ad-internaldb.sh
+. ./acceptance/legacy/ocsp-tests/agent/ocsp-ag-tests.sh
+. ./acceptance/legacy/tks-tests/usergroups/tks-ad-usergroups.sh
+. ./acceptance/legacy/tks-tests/logs/tks-ad-logs.sh
+. ./acceptance/legacy/tks-tests/internaldb/tks-ad-internaldb.sh
+. ./acceptance/legacy/tks-tests/acls/tks-ad-acls.sh
+. ./acceptance/legacy/ipa-tests/ipa_backend_plugin.sh
+. ./acceptance/legacy/clone_ca_tests/clone_tests.sh
+. ./acceptance/legacy/clone_drm_tests/clone_drm_agent_tests.sh
 . ./acceptance/bugzilla/bug_setup.sh
 . ./acceptance/bugzilla/bug_uninstall.sh
 . ./acceptance/bugzilla/tomcatjss-bugs/bug-1058366.sh
@@ -191,6 +236,7 @@
 . ./acceptance/bugzilla/jss-bugs/bug-1133718.sh
 . ./acceptance/bugzilla/jss-bugs/bug-1040640.sh
 . ./acceptance/bugzilla/pki-core-bugs/bug-790924.sh
+
 
 # Make sure TESTORDER is initialized or multihost may have issues
 TESTORDER=1
@@ -256,6 +302,21 @@ rlJournalStart
                 TKS_INST=$(cat /tmp/topo_file | grep MY_TKS | cut -d= -f2)
                 rlLog "Subsystem ID TKS=$TKS_INST"
                 run_pki-user-cli-role-user-create-tests $TKS_INST tks $MYROLE
+                SUBCA_INST=$(cat /tmp/topo_file | grep MY_SUBCA | cut -d= -f2)
+                rlLog "Subsystem ID SUBCA=$SUBCA_INST"
+                run_pki-user-cli-role-user-create-tests $SUBCA_INST ca $MYROLE
+                CLONECA_INST=$(cat /tmp/topo_file | grep MY_CLONE_CA | cut -d= -f2)
+                rlLog "Subsystem ID CLONECA=$CLONECA_INST"
+                run_pki-user-cli-role-user-create-tests $CLONECA_INST ca $MYROLE
+                CLONEKRA_INST=$(cat /tmp/topo_file | grep MY_CLONE_KRA | cut -d= -f2)
+                rlLog "Subsystem ID CLONEKRA=$CLONEKRA_INST"
+                run_pki-user-cli-role-user-create-tests $CLONEKRA_INST kra $MYROLE
+                CLONEOCSP_INST=$(cat /tmp/topo_file | grep MY_CLONE_OCSP | cut -d= -f2)
+                rlLog "Subsystem ID CLONEOCSP=$CLONEOCSP_INST"
+                run_pki-user-cli-role-user-create-tests $CLONEOCSP_INST ocsp $MYROLE
+                CLONETKS_INST=$(cat /tmp/topo_file | grep MY_CLONE_TKS | cut -d= -f2)
+                rlLog "Subsystem ID CLONETKS=$CLONETKS_INST"
+                run_pki-user-cli-role-user-create-tests $CLONETKS_INST ocsp $MYROLE
         elif [ "$TOPO1_UPPERCASE" = "TRUE" ] ; then
                 run_rhcs_install_set_vars
                 run_rhcs_install_topo_1
@@ -997,13 +1058,6 @@ rlJournalStart
 		run_bug_790924
         fi
 	
-	LEGACY_CA_ADMIN_ACL_UPPERCASE=$(echo $LEGACY_CA_ADMIN_ACL | tr [a-z] [A-Z])
-        if [ "$LEGACY_CA_ADMIN_ACL_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ] ; then
-                #Execute legacy CA admin acl tests
-		subsystemType=ca
-		run_admin-ca-acl_tests $subsystemType $MYROLE
-        fi
-
 	######## PKI KEY KRA TESTS ############
 	PKI_KEY_KRA_TESTS_UPPERCASE=$(echo $PKI_KEY_KRA_TESTS | tr [a-z] [A-Z])
         if [ "$PKI_KEY_KRA_TESTS_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ] ; then
@@ -1409,86 +1463,271 @@ rlJournalStart
                 rlLog "Subsystem ID CA=$CA_INST"
                 run_pki-user-cli-user-cleanup_tests $CA_INST ca $MY_ROLE
 	fi
-        rlPhaseEnd
 
 	######## LEGACY TESTS ############
-	PKI_CA_LEGACY_TESTS_UPPERCASE=$(echo $PKI_CA_LEGACY_TESTS | tr [a-z] [A-Z])
-        if [ "$PKI_CA_LEGACY_TESTS_UPPERCASE" = "TRUE" ] ; then
-                # Execute pki legacy-ca tests
-                  subsystemId=$CA_INST
-                  subsystemType=ca
-                  run_pki-legacy-ca-usergroup_tests $subsystemId $subsystemType $MYROLE
-                  run_admin-ca-log_tests $subsystemType $MYROLE
-        fi
-
         PKI_LEGACY_CA_USERGROUP_UPPERCASE=$(echo $PKI_LEGACY_CA_USERGROUP | tr [a-z] [A-Z])
         if [ "$PKI_LEGACY_CA_USERGROUP_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ] ; then
                 # Execute pki ca-usergroup-tests  tests
-                  subsystemId=$CA_INST
                   subsystemType=ca
-                  rlLog "Subsystem ID CA=$CA_INST, MY_ROLE=$MYROLE"
-                  run_pki-legacy-ca-usergroup_tests $subsystemId $subsystemType $MYROLE
+                  run_pki-legacy-ca-usergroup_tests $subsystemType $MYROLE
         fi
-
-	PKI_LEGACY_CA_PROFILE_UPPERCASE=$(echo $PKI_LEGACY_CA_PROFILE | tr [a-z] [A-Z])
-	if [ "$PKI_LEGACY_CA_PROFILE_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+	PKI_LEGACY_CA_ADMIN_PROFILE_UPPERCASE=$(echo $PKI_LEGACY_CA_ADMIN_PROFILE | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_CA_ADMIN_PROFILE_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		subsystemType=ca
+		run_admin-ca-profile_tests $subsystemType $MYROLE
+	fi
+	PKI_LEGACY_CA_AGENT_PROFILE_UPPERCASE=$(echo $PKI_LEGACY_CA_AGENT_PROFILE | tr [a-z] [A-Z]) 
+	if [ "$PKI_LEGACY_CA_AGENT_PROFILE_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		subsystemType=ca
+		run_agent-ca-profile_tests $subsystemType $MYROLE 
+	fi
+	PKI_LEGACY_CA_ACLS_UPPERCASE=$(echo $PKI_LEGACY_CA_ACLS | tr [a-z] [A-Z])
+        if [ "$PKI_LEGACY_CA_ACLS_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+                subsystemType=ca
+                run_admin-ca-acl_tests $subsystemType $MYROLE
+        fi
+	PKI_LEGACY_CA_INTERNALDB_UPPERCASE=$(echo $PKI_LEGACY_CA_INTERNALDB | tr [a-z] [A-Z])
+        if [ "$PKI_LEGACY_CA_INTERNALDB_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+                subsystemType=ca
+                run_admin-ca-intdb_tests $subsystemType $MYROLE
+        fi
+	PKI_LEGACY_CA_AUTHPLUGIN_UPPERCASE=$(echo $PKI_LEGACY_CA_AUTHPLUGIN | tr [a-z] [A-Z])
+        if [ "$PKI_LEGACY_CA_AUTHPLUGIN_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+                subsystemType=ca
+                run_admin-ca-authplugin_tests $subsystemType $MYROLE
+        fi
+	PKI_LEGACY_CA_ADMIN_LOGS_UPPERCASE=$(echo $PKI_LEGACY_CA_ADMIN_LOGS | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_CA_ADMIN_LOGS_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
 		subsystemType=ca
 		run_admin-ca-log_tests $subsystemType $MYROLE
 	fi
-        rlPhaseEnd
-
-	######## INSTALL TESTS ############
-        PKI_INSTALL_TESTS_UPPERCASE=$(echo $PKI_INSTALL_TESTS | tr [a-z] [A-Z])
-        if [ "$PKI_INSTALL_TESTS_UPPERCASE" = "TRUE" ] ; then
-                # Execute pki install tests
-                  subsystemId=$CA_INST
-                  subsystemType=ca
-                # Execute pki KRA install tests
-                  run_rhcs_ca_installer_tests $subsystemId $subsystemType $MYROLE
-                  subsystemId=$KRA_INST
-                  subsystemType=kra
-                  run_rhcs_kra_installer_tests $subsystemId $subsystemType $MYROLE
-                # Execute pki OCSP install tests
-                  subsystemId=$OCSP_INST
-                  subsystemType=ocsp
-                  run_rhcs_ocsp_installer_tests $subsystemId $subsystemType $MYROLE
-                # Execute pki TKS install tests
-                  subsystemId=$TKS_INST
-                  subsystemType=tks
-                  run_rhcs_tks_installer_tests $subsystemId $subsystemType $MYROLE
+	PKI_LEGACY_CA_EE_ENROLLMENT_UPPERCASE=$(echo $PKI_LEGACY_CA_EE_ENROLLMENT | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_CA_EE_ENROLLMENT_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then 
+		subsystemType=ca
+		run_ee-ca-enrollment_tests $subsystemType $MYROLE
+	fi	
+	PKI_LEGACY_CA_AG_REQUESTS_UPPERCASE=$(echo $PKI_LEGACY_CA_AG_REQUESTS | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_CA_AG_REQUESTS_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		subsystemType=ca
+		run_ca-ag-requests_tests $subsystemType $MYROLE
+	fi
+	PKI_LEGACY_CA_EE_RETRIEVAL_UPPERCASE=$(echo $PKI_LEGACY_CA_EE_RETRIEVAL | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_CA_EE_RETRIEVAL_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		subsystemType=ca
+		run_ee-ca-retrieval_tests $subsystemType $MYROLE
+	fi
+	PKI_LEGACY_CA_CRLISSUINGPOINT_UPPERCASE=$(echo $PKI_LEGACY_CA_CRLISSUINGPOINT | tr [a-z] [A-Z])
+        if [ "$PKI_LEGACY_CA_CRLISSUINGPOINT_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+                subsystemType=ca
+                run_admin-ca-crlissuingpoints_tests $subsystemType $MYROLE
         fi
-
-        PKI_CA_INSTALL_UPPERCASE=$(echo $PKI_CA_INSTALL | tr [a-z] [A-Z])
-        if [ "$PKI_CA_INSTALL_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
-                # Execute pki CA install tests
-                  subsystemId=$CA_INST
-                  subsystemType=ca
-                  run_rhcs_ca_installer_tests $subsystemId $subsystemType $MYROLE
+        PKI_LEGACY_CA_AGENT_CRL_UPPERCASE=$(echo $PKI_LEGACY_CA_AGENT_CRL | tr [a-z] [A-Z])
+        if [ "$PKI_LEGACY_CA_AGENT_CRL_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+                subsystemType=ca
+                run_agent-ca-crls_tests $subsystemType $MYROLE
         fi
-
-        PKI_KRA_INSTALL_UPPERCASE=$(echo $PKI_KRA_INSTALL | tr [a-z] [A-Z])
-        if [ "$PKI_KRA_INSTALL_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
-                # Execute pki KRA install tests
-                  subsystemId=$KRA_INST
-                  subsystemType=kra
-                  run_rhcs_kra_installer_tests $subsystemId $subsystemType $MYROLE
+        PKI_LEGACY_CA_ADMIN_PUBLISHING_UPPERCASE=$(echo $PKI_LEGACY_CA_ADMIN_PUBLISHING | tr [a-z] [A-Z])
+        if [ "$PKI_LEGACY_CA_ADMIN_PUBLISHING_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+                subsystemType=ca
+                run_admin-ca-publishing_tests $subsystemType $MYROLE
         fi
-
-	PKI_OCSP_INSTALL_UPPERCASE=$(echo $PKI_OCSP_INSTALL | tr [a-z] [A-Z])
-        if [ "$PKI_OCSP_INSTALL_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
-                # Execute pki OCSP install tests
-                  subsystemId=$OCSP_INST
-                  subsystemType=ocsp
-                  run_rhcs_ocsp_installer_tests $subsystemId $subsystemType $MYROLE
+	PKI_LEGACY_CA_AG_CERTIFICATES_UPPERCASE=$(echo $PKI_LEGACY_CA_AG_CERTIFICATES | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_CA_AG_CERTIFICATES_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		subsystemType=ca
+		run_ca-ag-certificates_tests $subsystemType $MYROLE
+	fi
+	PKI_LEGACY_CA_ADMIN_EE_OCSP_UPPERCASE=$(echo $PKI_LEGACY_CA_ADMIN_EE_OCSP | tr [a-z] [A-Z])
+        if [ "$PKI_LEGACY_CA_ADMIN_EE_OCSP_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+                subsystemType=ca
+                run_ca-ee-ocsp_tests $subsystemType $MYROLE
         fi
-
-	PKI_TKS_INSTALL_UPPERCASE=$(echo $PKI_TKS_INSTALL | tr [a-z] [A-Z])
-        if [ "$PKI_TKS_INSTALL_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
-                # Execute pki TKS install tests
-                  subsystemId=$TKS_INST
-                  subsystemType=tks
-                  run_rhcs_tks_installer_tests $subsystemId $subsystemType $MYROLE
+	PKI_LEGACY_CA_RENEW_MANUAL_UPPERCASE=$(echo $PKI_LEGACY_CA_RENEW_MANUAL | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_CA_RENEW_MANUAL_UPPERCASE" = "TRUE" ] || [ "TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		# Execute pki ca-renew-manual tests
+		subsystemType=ca
+		run_pki-legacy-ca-renew_manual_tests $subsystemType $MYROLE
+	fi
+	PKI_LEGACY_CA_RENEW_DIRECTORY_AUTH_USERCERT_UPPERCASE=$(echo $PKI_LEGACY_CA_RENEW_DIRECTORY_AUTH_USERCERT | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_CA_RENEW_DIRECTORY_AUTH_USERCERT_UPPERCASE" = "TRUE" ] || [ "TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		# Execute pki ca-renew-directory-auth-usercert tests
+		subsystemType=ca
+		run_pki-legacy-ca-renew_dir_auth_user_cert_tests $subsystemType $MYROLE
+	fi
+	PKI_LEGACY_CA_RENEW_SSLCLIENTAUTH_CERT_UPPERCASE=$(echo $PKI_LEGACY_CA_RENEW_SSLCLIENTAUTH_CERT | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_CA_RENEW_SSLCLIENTAUTH_CERT_UPPERCASE" = "TRUE" ] || [ "TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		# Execute pki ca-renew-sslclient-cert tests
+		subsystemType=ca
+		run_pki-legacy-ca-renew_self_ca_user_ssl_client_cert_tests $subsystemType $MYROLE
+	fi
+	PKI_LEGACY_CA_SCEP_ENROLL_UPPERCASE=$(echo $PKI_LEGACY_CA_SCEP_ENROLL | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_CA_SCEP_ENROLL_UPPERCASE" = "TRUE" ] || [ "TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		# Execute ca scep enroll tests
+		subsystemType=ca
+		run_pki-legacy-ca-scep_tests $subsystemType $MYROLE
+	fi
+	PKI_LEGACY_KRA_AG_UPPERCASE=$(echo $PKI_LEGACY_KRA_AG_TESTS | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_KRA_AG_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		subsystemType=kra
+		run_kra-ag_tests $subsystemType $MYROLE
+	fi
+	PKI_LEGACY_KRA_AD_USERGROUPS_UPPERCASE=$(echo $PKI_LEGACY_KRA_AD_USERGROUPS | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_KRA_AD_USERGROUPS_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		subsystemType=kra
+		run_kra-ad_usergroups $subsystemType $MYROLE
+	fi
+	PKI_LEGACY_KRA_AD_ACLS_UPPERCASE=$(echo $PKI_LEGACY_KRA_AD_ACLS | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_KRA_AD_ACLS_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		subsystemType=kra
+		run_admin-kra-acl_tests $subsystemType $MYROLE
+	fi
+	PKI_LEGACY_KRA_AD_INTERNALDB_UPPERCASE=$(echo $PKI_LEGACY_KRA_AD_INTERNALDB | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_KRA_AD_INTERNALDB_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		subsystemType=kra
+		run_admin-kra-internaldb_tests $subsystemType $MYROLE
+	fi
+	PKI_LEGACY_KRA_AD_LOGS_UPPERCASE=$(echo $PKI_LEGACY_KRA_AD_LOGS | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_KRA_AD_LOGS_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		subsystemType=kra
+		run_admin-kra-log_tests $subsystemType $MYROLE
+	fi
+	PKI_LEGACY_SUBCA_USERGROUP_UPPERCASE=$(echo $PKI_LEGACY_SUBCA_USERGROUP | tr [a-z] [A-Z])
+        if [ "$PKI_LEGACY_SUBCA_USERGROUP_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ] ; then
+                # Execute pki subca-usergroup-tests  tests
+                subsystemType=ca
+                run_pki-legacy-subca-usergroup_tests $subsystemType $MYROLE
         fi
+	PKI_LEGACY_SUBCA_ADMIN_ACLS_UPPERCASE=$(echo $PKI_LEGACY_SUBCA_ADMIN_ACLS | tr [a-z] [A-Z])
+        if [ "$PKI_LEGACY_SUBCA_ADMIN_ACLS_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+                subsystemType=ca
+                run_admin-subca-acl_tests $subsystemType $MYROLE
+        fi
+        PKI_LEGACY_SUBCA_ADMIN_INTERNALDB_UPPERCASE=$(echo $PKI_LEGACY_SUBCA_ADMIN_INTERNALDB | tr [a-z] [A-Z])
+        if [ "$PKI_LEGACY_SUBCA_ADMIN_INTERNALDB_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+                subsystemType=ca
+                run_admin-subca-intdb_tests $subsystemType $MYROLE
+        fi
+        PKI_LEGACY_SUBCA_ADMIN_AUTHPLUGIN_UPPERCASE=$(echo $PKI_LEGACY_SUBCA_ADMIN_AUTHPLUGIN | tr [a-z] [A-Z])
+        if [ "$PKI_LEGACY_SUBCA_ADMIN_AUTHPLUGIN_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+                subsystemType=ca
+                run_admin-subca-authplugin_tests $subsystemType $MYROLE
+        fi
+        PKI_LEGACY_SUBCA_ADMIN_CRLISSUINGPOINT_UPPERCASE=$(echo $PKI_LEGACY_SUBCA_ADMIN_CRLISSUINGPOINT | tr [a-z] [A-Z])
+        if [ "$PKI_LEGACY_SUBCA_ADMIN_CRLISSUINGPOINT_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+                subsystemType=ca
+                run_admin-subca-crlissuingpoints_tests $subsystemType $MYROLE
+        fi
+        PKI_LEGACY_SUBCA_ADMIN_PUBLISHING_UPPERCASE=$(echo $PKI_LEGACY_SUBCA_ADMIN_PUBLISHING | tr [a-z] [A-Z])
+        if [ "$PKI_LEGACY_SUBCA_ADMIN_PUBLISHING_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+                subsystemType=ca
+                run_admin-subca-publishing_tests $subsystemType $MYROLE
+        fi
+        PKI_LEGACY_SUBCA_AGENT_CRL_UPPERCASE=$(echo $PKI_LEGACY_SUBCA_AGENT_CRL | tr [a-z] [A-Z])
+        if [ "$PKI_LEGACY_SUBCA_AGENT_CRL_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+                subsystemType=ca
+                run_agent-subca-crls_tests $subsystemType $MYROLE
+        fi
+	PKI_LEGACY_SUBCA_AG_CERTIFICATES_UPPERCASE=$(echo $PKI_LEGACY_SUBCA_AG_CERTIFICATES | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_SUBCA_AG_CERTIFICATES_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		subsystemType=ca
+		run_subca-ag-certificates_tests $subsystemType $MYROLE
+	fi
+	PKI_LEGACY_SUBCA_AG_REQUESTS_UPPERCASE=$(echo $PKI_LEGACY_SUBCA_AG_REQUESTS | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_SUBCA_AG_REQUESTS_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		subsystemType=ca
+		run_subca-ag-requests_tests $subsystemType $MYROLE
+	fi
+	PKI_LEGACY_SUBCA_EE_ENROLLMENT_UPPERCASE=$(echo $PKI_LEGACY_SUBCA_EE_ENROLLMENT | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_SUBCA_EE_ENROLLMENT_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		subsystemType=ca
+		run_ee-subca-enrollment_tests $subsystemType $MYROLE
+	fi
+	PKI_LEGACY_SUBCA_EE_RETRIEVAL_UPPERCASE=$(echo $PKI_LEGACY_SUBCA_EE_RETRIEVAL | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_SUBCA_EE_RETRIEVAL_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		subsystemType=ca
+		run_ee-subca-retrieval_tests $subsystemType $MYROLE
+	fi
+	PKI_LEGACY_SUBCA_ADMIN_PROFILE_UPPERCASE=$(echo $PKI_LEGACY_SUBCA_ADMIN_PROFILE | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_SUBCA_ADMIN_PROFILE_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		subsystemType=ca
+		run_admin-subca-profile_tests $subsystemType $MYROLE
+	fi
+	PKI_LEGACY_SUBCA_AGENT_PROFILE_UPPERCASE=$(echo $PKI_LEGACY_SUBCA_AGENT_PROFILE | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_SUBCA_AGENT_PROFILE_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		subsystemType=ca
+		run_agent-subca-profile_tests $subsystemType $MYROLE
+	fi
+	PKI_LEGACY_SUBCA_ADMIN_LOGS_UPPERCASE=$(echo $PKI_LEGACY_SUBCA_ADMIN_LOGS | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_SUBCA_ADMIN_LOGS_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		subsystemType=ca
+		run_admin-subca-log_tests $subsystemType $MYROLE
+	fi	
+	PKI_LEGACY_SUBCA_SCEP_ENROLL_UPPERCASE=$(echo $PKI_LEGACY_SUBCA_SCEP_ENROLL | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_SUBCA_SCEP_ENROLL_UPPERCASE" = "TRUE" ] || [ "TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		# Execute subca scep enroll tests
+		subsystemType=ca
+		run_pki-legacy-subca-scep_tests $subsystemType $MYROLE
+	fi
+        PKI_LEGACY_OCSP_AD_USERGROUPS_UPPERCASE=$(echo $PKI_LEGACY_OCSP_AD_USERGROUPS | tr [a-z] [A-Z])
+        if [ "$PKI_LEGACY_OCSP_AD_USERGROUPS_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+                subsystemType=ocsp
+                run_ocsp-ad_usergroups $subsystemType $MYROLE
+        fi
+        PKI_LEGACY_OCSP_AD_ACLS_UPPERCASE=$(echo $PKI_LEGACY_OCSP_AD_ACLS | tr [a-z] [A-Z])
+        if [ "$PKI_LEGACY_OCSP_AD_ACLS_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+                subsystemType=ocsp
+                run_admin-ocsp-acl_tests $subsystemType $MYROLE
+        fi
+        PKI_LEGACY_OCSP_AD_LOGS_UPPERCASE=$(echo $PKI_LEGACY_OCSP_AD_LOGS | tr [a-z] [A-Z])
+        if [ "$PKI_LEGACY_OCSP_AD_LOGS_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+                subsystemType=ocsp
+                run_admin-ocsp-log_tests $subsystemType $MYROLE
+        fi
+        PKI_LEGACY_OCSP_AD_INTERNALDB_UPPERCASE=$(echo $PKI_LEGACY_OCSP_AD_INTERNALDB | tr [a-z] [A-Z])
+        if [ "$PKI_LEGACY_OCSP_AD_INTERNALDB_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+                subsystemType=ocsp
+                run_admin-ocsp-internaldb_tests $subsystemType $MYROLE
+        fi
+        PKI_LEGACY_OCSP_AG_UPPERCASE=$(echo $PKI_LEGACY_OCSP_AG_TESTS | tr [a-z] [A-Z])
+        if [ "$PKI_LEGACY_OCSP_AG_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+                subsystemType=ocsp
+                run_ocsp-ag_tests $subsystemType $MYROLE
+        fi
+	PKI_LEGACY_TKS_AD_USERGROUPS_UPPERCASE=$(echo $PKI_LEGACY_TKS_AD_USERGROUPS | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_TKS_AD_USERGROUPS_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		subsystemType=tks
+		run_tks-ad_usergroups $subsystemType $MYROLE
+	fi
+	PKI_LEGACY_TKS_AD_ACLS_UPPERCASE=$(echo $PKI_LEGACY_TKS_AD_ACLS | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_TKS_AD_ACLS_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		subsystemType=tks
+		run_admin-tks-acl_tests $subsystemType $MYROLE
+	fi
+	PKI_LEGACY_TKS_AD_LOGS_UPPERCASE=$(echo $PKI_LEGACY_TKS_AD_LOGS | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_TKS_AD_LOGS_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		subsystemType=tks
+		run_admin-tks-log_tests $subsystemType $MYROLE
+	fi
+	PKI_LEGACY_TKS_AD_INTERNALDB_UPPERCASE=$(echo $PKI_LEGACY_TKS_AD_INTERNALDB | tr [a-z] [A-Z])
+	if [ "$PKI_LEGACY_TKS_AD_INTERNALDB_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+		subsystemType=tks
+		run_admin-tks-internaldb_tests $subsystemType $MYROLE
+	fi
+	PKI_LEGACY_IPA_UPPERCASE=$(echo $PKI_LEGACY_IPA_TESTS | tr [a-z] [A-Z])
+        if [ "$PKI_LEGACY_IPA_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ]; then
+                subsystemType=ca
+                run_ipa_backend_plugin $subsystemType $MYROLE
+        fi
+        PKI_LEGACY_CLONE_CA_TESTS_UPPERCASE=$(echo $PKI_LEGACY_CLONE_CA_TESTS | tr [a-z] [A-Z])
+        if [ "$PKI_LEGACY_CLONE_CA_TESTS_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPERCASE" = "TRUE" ]; then
+                subsystemType=ca
+                clone_legacy_ca_tests $subsystemType $MYROLE
+        fi	
+	PKI_LEGACY_CLONE_KRA_TESTS_UPPERCASE=$(echo $PKI_LEGACY_CLONE_KRA_TESTS | tr [a-z] [A-Z])
+        if [ "$PKI_LEGACY_CLONE_KRA_TESTS_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPERCASE" = "TRUE" ]; then
+                subsystemType=kra
+                clone_legacy_drm_tests $subsystemType $MYROLE
+        fi
+	rlPhaseEnd
 	######## DEV UNIT TESTS ############
 	DEV_JAVA_TESTS_UPPERCASE=$(echo $DEV_JAVA_TESTS | tr [a-z] [A-Z])
         if [ "$DEV_JAVA_TESTS_UPPERCASE" = "TRUE" ] || [ "$TEST_ALL_UPPERCASE" = "TRUE" ] ; then

@@ -20,8 +20,8 @@ package org.dogtagpki.server.tps.dbs;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
 import org.dogtagpki.tps.main.Util;
 
 import com.netscape.certsrv.base.EBaseException;
@@ -41,6 +41,7 @@ public class ActivityDatabase extends LDAPDatabase<ActivityRecord> {
     public final static String OP_DELETE = "delete"; // delete a token
     //public final static String OP_MODIFY_AUDIT_SIGNING = "modify_audit_signing";
     public final static String OP_ENROLLMENT = "enrollment";
+    public final static String OP_RECOVERY = "recovery";
     public final static String OP_RENEWAL = "renewal";
     public final static String OP_PIN_RESET = "pin_reset";
     public final static String OP_FORMAT = "format";
@@ -88,13 +89,21 @@ public class ActivityDatabase extends LDAPDatabase<ActivityRecord> {
     }
 
     @Override
-    public String createFilter(String filter) {
+    public String createFilter(String keyword, Map<String, String> attributes) {
 
-        if (StringUtils.isEmpty(filter)) {
-            return "(id=*)";
+        StringBuilder sb = new StringBuilder();
+
+        if (keyword != null) {
+            keyword = LDAPUtil.escapeFilter(keyword);
+            sb.append("(|(tokenID=*" + keyword + "*)(userID=*" + keyword + "*))");
         }
 
-        filter = LDAPUtil.escapeFilter(filter);
-        return "(|(tokenID=*" + filter + "*)(userID=*" + filter + "*))";
+        createFilter(sb, attributes);
+
+        if (sb.length() == 0) {
+            sb.append("(id=*)");
+        }
+
+        return sb.toString();
     }
 }

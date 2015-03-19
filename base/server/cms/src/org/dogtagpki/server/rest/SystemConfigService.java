@@ -174,7 +174,7 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
             cs.commit(false);
         } catch (EBaseException e) {
             CMS.debug(e);
-            throw new PKIException("Unable to commit config parameters to file");
+            throw new PKIException("Unable to commit config parameters to file", e);
         }
         initializeDatabase(data);
 
@@ -200,8 +200,8 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
                 ConfigurationUtils.setCertPermissions(cert.getCertTag());
                 CMS.debug("Processed '" + cert.getCertTag() + "' certificate.");
             } catch (Exception e) {
-                e.printStackTrace();
-                throw new PKIException("Error in configuring system certificates" + e);
+                CMS.debug(e);
+                throw new PKIException("Error in configuring system certificates" + e, e);
             }
             if (ret != 0) {
                 throw new PKIException("Error in configuring system certificates");
@@ -234,8 +234,8 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
         try {
             ConfigurationUtils.removePreopConfigEntries();
         } catch (EBaseException e) {
-            e.printStackTrace();
-            throw new PKIException("Errors when removing preop config entries: " + e);
+            CMS.debug(e);
+            throw new PKIException("Errors when removing preop config entries: " + e, e);
         }
 
         // Create an empty file that designates the fact that although
@@ -632,7 +632,7 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
         cs.putString("internaldb.database", data.getDatabase());
         cs.putString("internaldb.basedn", data.getBaseDN());
         cs.putString("internaldb.ldapauth.bindDN", data.getBindDN());
-        cs.putBoolean("internaldb.ldapconn.secureConn", data.getSecureConn().equals("on"));
+        cs.putBoolean("internaldb.ldapconn.secureConn", data.getSecureConn().equals("true"));
         cs.putString("preop.database.removeData", data.getRemoveData());
         cs.putBoolean("preop.database.createNewDB", data.getCreateNewDB());
         cs.putBoolean("preop.database.setupReplication", data.getSetupReplication());
@@ -675,7 +675,7 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
             cs.putString("internaldb.ldapconn.cloneReplicationPort", cloneReplicationPort);
 
             String replicationSecurity = data.getReplicationSecurity();
-            if ((cloneReplicationPort == data.getDsPort()) && (data.getSecureConn().equals("on"))) {
+            if ((cloneReplicationPort == data.getDsPort()) && (data.getSecureConn().equals("true"))) {
                 replicationSecurity = "SSL";
             } else if (replicationSecurity == null) {
                 replicationSecurity = "None";
@@ -915,8 +915,8 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
             cs.putString("securitydomain.host", host);
             cs.putInteger("securitydomain.httpsadminport",port);
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException("Failed to resolve security domain URL");
+            CMS.debug(e);
+            throw new PKIException("Failed to resolve security domain URL", e);
         }
 
         getCertChainFromSecurityDomain(host, port);
@@ -957,8 +957,8 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
         try {
             installToken = ConfigurationUtils.getInstallToken(host, port, user, pass);
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException("Failed to obtain installation token from security domain: " + e);
+            CMS.debug(e);
+            throw new PKIException("Failed to obtain installation token from security domain: " + e, e);
         }
 
         if (installToken == null) {

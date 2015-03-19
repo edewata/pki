@@ -27,6 +27,7 @@ package org.dogtagpki.server.connector;
 public interface IRemoteRequest {
 //    public static final String TOKEN_CUID = "CUID";
     public static final String TOKEN_CUID = "tokencuid";
+    public static final String TOKEN_KDD = "KDD";
     public static final String GET_XML = "xml";
     public static final int RESPONSE_STATUS_NOT_FOUND = -1;
     public static final String RESPONSE_STATUS = "status";
@@ -34,6 +35,9 @@ public interface IRemoteRequest {
     public static final String RESPONSE_STATUS_XML = "Status";
 
     // TKS request params
+    public static final String CHANNEL_PROTOCOL = "protocol";
+    public static final String SEQUENCE_COUNTER = "sequenceCounter";
+    public static final String DERIVATION_CONSTANT = "derivationConstant";
     public static final String SERVER_SIDE_KEYGEN = "serversideKeygen";
     public static final String TOKEN_CARD_CHALLENGE = "card_challenge";
     public static final String TOKEN_HOST_CHALLENGE = "host_challenge";
@@ -43,13 +47,14 @@ public interface IRemoteRequest {
     public static final String TOKEN_DATA_NUM_BYTES = "dataNumBytes";
     public static final String TOKEN_NEW_KEYINFO = "newKeyInfo";
     public static final String TOKEN_DATA = "data";
+    public static final String WRAPPED_DEK_SESSION_KEY = "wrappedDekKey";
 
     // TKS response params
     /* computeSessionKey responses */
     public static final String TKS_RESPONSE_SessionKey = "sessionKey";
     public static final String TKS_RESPONSE_EncSessionKey = "encSessionKey";
     public static final String TKS_RESPONSE_KEK_DesKey = "kek_wrapped_desKey";
-    public static final String TKS_RESPONSE_DRM_Trans_DesKey = "drm_trans_wrapped_desKey";
+    public static final String TKS_RESPONSE_DRM_Trans_DesKey = "drm_trans_desKey";
     public static final String TKS_RESPONSE_KeyCheck = "keycheck";
     public static final String TKS_RESPONSE_HostCryptogram = "hostCryptogram";
 
@@ -66,6 +71,8 @@ public interface IRemoteRequest {
     public static final String CA_ProfileId = "profileId";
     public static final String CA_ENROLL_screenname = "screenname";
     public static final String CA_ENROLL_publickey = "publickey";
+    public static final String CA_ENROLL_subjectdn = "subject";
+    public static final String CA_ENROLL_san_num = "req_san_entries";
     public static final String CA_RenewedCertificate = "renewedCertificate";
     public static final String CA_RENEWAL_SerialNum = "serial_num";
     public static final String CA_RENEWAL= "renewal";

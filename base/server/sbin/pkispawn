@@ -53,7 +53,7 @@ error was:
 
 
 # Handle the Keyboard Interrupt
-# pylint: disable-msg=W0613
+# pylint: disable=W0613
 def interrupt_handler(event, frame):
     print
     print '\nInstallation canceled.'
@@ -204,9 +204,44 @@ def main(argv):
                 parser.read_text('Hostname',
                                  config.pki_subsystem,
                                  'pki_ds_hostname')
-                parser.read_text('Port',
-                                 config.pki_subsystem,
-                                 'pki_ds_ldap_port')
+
+                if parser.mdict['pki_ds_secure_connection'] == 'True':
+                    secure = 'Y'
+                else:
+                    secure = 'N'
+
+                secure = parser.read_text(
+                    'Use a secure LDAPS connection (Yes/No/Quit)',
+                    default=secure,
+                    options=['Yes', 'Y', 'No', 'N', 'Quit', 'Q'],
+                    sign='?', case_sensitive=False).lower()
+
+                if secure == 'q' or secure == 'quit':
+                    print "Installation canceled."
+                    sys.exit(0)
+
+                if secure == 'y' or secure == 'yes':
+                    # Set secure DS connection to true
+                    parser.set_property(config.pki_subsystem,
+                                        'pki_ds_secure_connection',
+                                        'True')
+                    # Prompt for secure 'ldaps' port
+                    parser.read_text('Secure LDAPS Port',
+                                     config.pki_subsystem,
+                                     'pki_ds_ldaps_port')
+                    # Specify complete path to a directory server
+                    # CA certificate pem file
+                    pem_file = parser.read_text(
+                        'Directory Server CA certificate pem file',
+                        allow_empty=False)
+                    parser.set_property(config.pki_subsystem,
+                                        'pki_ds_secure_connection_ca_pem_file',
+                                        pem_file)
+                else:
+                    parser.read_text('LDAP Port',
+                                     config.pki_subsystem,
+                                     'pki_ds_ldap_port')
+
                 parser.read_text('Bind DN',
                                  config.pki_subsystem,
                                  'pki_ds_bind_dn')
@@ -505,7 +540,7 @@ def main(argv):
         instance = scriptlet.PkiScriptlet()
         try:
             rv = instance.spawn(deployer)
-        # pylint: disable-msg=W0703
+        # pylint: disable=W0703
         except Exception:
             log_error_details()
             print
@@ -546,12 +581,16 @@ def print_install_information(mdict):
                   % mdict['pki_client_database_dir']
         print log.PKI_CHECK_STATUS_MESSAGE % mdict['pki_instance_name']
         print log.PKI_INSTANCE_RESTART_MESSAGE % mdict['pki_instance_name']
-        if (((config.pki_subsystem == "KRA" or
-              config.pki_subsystem == "OCSP") and
-            config.str2bool(mdict['pki_standalone'])) and
+        if (((config.pki_subsystem == "KRA" or\
+              config.pki_subsystem == "OCSP") and\
+            config.str2bool(mdict['pki_standalone'])) and\
             not config.str2bool(mdict['pki_external_step_two'])):
             # Stand-alone PKI KRA/OCSP (External CA Step 1)
             print log.PKI_CONFIGURATION_STANDALONE_1 % config.pki_subsystem
+        elif (config.pki_subsystem == "TPS"):
+            print log.PKI_ACCESS_TPS_URL % (mdict['pki_hostname'],
+                                            mdict['pki_https_port'],
+                                            config.pki_subsystem.lower())
         else:
             print log.PKI_ACCESS_URL % (mdict['pki_hostname'],
                                         mdict['pki_https_port'],
