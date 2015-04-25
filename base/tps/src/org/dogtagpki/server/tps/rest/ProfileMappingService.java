@@ -32,6 +32,7 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import org.apache.commons.lang.StringUtils;
 import org.dogtagpki.server.tps.TPSSubsystem;
 import org.dogtagpki.server.tps.config.ProfileMappingDatabase;
 import org.dogtagpki.server.tps.config.ProfileMappingRecord;
@@ -41,6 +42,7 @@ import com.netscape.certsrv.apps.CMS;
 import com.netscape.certsrv.base.BadRequestException;
 import com.netscape.certsrv.base.ForbiddenException;
 import com.netscape.certsrv.base.PKIException;
+import com.netscape.certsrv.common.Constants;
 import com.netscape.certsrv.tps.profile.ProfileMappingCollection;
 import com.netscape.certsrv.tps.profile.ProfileMappingData;
 import com.netscape.certsrv.tps.profile.ProfileMappingResource;
@@ -139,11 +141,12 @@ public class ProfileMappingService extends PKIService implements ProfileMappingR
             return createOKResponse(response);
 
         } catch (PKIException e) {
+            CMS.debug("ProfileMappingService: " + e);
             throw e;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException(e.getMessage());
+            CMS.debug(e);
+            throw new PKIException(e);
         }
     }
 
@@ -159,11 +162,12 @@ public class ProfileMappingService extends PKIService implements ProfileMappingR
             return createOKResponse(createProfileMappingData(database.getRecord(profileMappingID)));
 
         } catch (PKIException e) {
+            CMS.debug("ProfileMappingService: " + e);
             throw e;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException(e.getMessage());
+            CMS.debug(e);
+            throw new PKIException(e);
         }
     }
 
@@ -179,9 +183,9 @@ public class ProfileMappingService extends PKIService implements ProfileMappingR
             String status = profileMappingData.getStatus();
             Principal principal = servletRequest.getUserPrincipal();
 
-            if (status == null || database.requiresApproval() && !database.canApprove(principal)) {
+            if (StringUtils.isEmpty(status) || database.requiresApproval() && !database.canApprove(principal)) {
                 // if status is unspecified or user doesn't have rights to approve, the entry is disabled
-                profileMappingData.setStatus("Disabled");
+                profileMappingData.setStatus(Constants.CFG_DISABLED);
             }
 
             database.addRecord(profileMappingData.getID(), createProfileMappingRecord(profileMappingData));
@@ -190,11 +194,12 @@ public class ProfileMappingService extends PKIService implements ProfileMappingR
             return createCreatedResponse(profileMappingData, profileMappingData.getLink().getHref());
 
         } catch (PKIException e) {
+            CMS.debug("ProfileMappingService: " + e);
             throw e;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException(e.getMessage());
+            CMS.debug(e);
+            throw new PKIException(e);
         }
     }
 
@@ -210,21 +215,21 @@ public class ProfileMappingService extends PKIService implements ProfileMappingR
             ProfileMappingRecord record = database.getRecord(profileMappingID);
 
             // only disabled profile mapping can be updated
-            if (!"Disabled".equals(record.getStatus())) {
+            if (!Constants.CFG_DISABLED.equals(record.getStatus())) {
                 throw new ForbiddenException("Unable to update profile mapping " + profileMappingID);
             }
 
             // update status if specified
             String status = profileMappingData.getStatus();
-            if (status != null && !"Disabled".equals(status)) {
-                if (!"Enabled".equals(status)) {
+            if (status != null && !Constants.CFG_DISABLED.equals(status)) {
+                if (!Constants.CFG_ENABLED.equals(status)) {
                     throw new ForbiddenException("Invalid profile mapping status: " + status);
                 }
 
                 // if user doesn't have rights, set to pending
                 Principal principal = servletRequest.getUserPrincipal();
                 if (database.requiresApproval() && !database.canApprove(principal)) {
-                    status = "Pending_Approval";
+                    status = Constants.CFG_PENDING_APPROVAL;
                 }
 
                 // enable profile mapping
@@ -244,21 +249,22 @@ public class ProfileMappingService extends PKIService implements ProfileMappingR
             return createOKResponse(profileMappingData);
 
         } catch (PKIException e) {
+            CMS.debug("ProfileMappingService: " + e);
             throw e;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException(e.getMessage());
+            CMS.debug(e);
+            throw new PKIException(e);
         }
     }
 
     @Override
-    public Response changeProfileMappingStatus(String profileMappingID, String action) {
+    public Response changeStatus(String profileMappingID, String action) {
 
         if (profileMappingID == null) throw new BadRequestException("Profile mapping ID is null.");
         if (action == null) throw new BadRequestException("Action is null.");
 
-        CMS.debug("ProfileMappingService.changeProfileMappingStatus(\"" + profileMappingID + "\")");
+        CMS.debug("ProfileMappingService.changeStatus(\"" + profileMappingID + "\", \"" + action + "\")");
 
         try {
             TPSSubsystem subsystem = (TPSSubsystem)CMS.getSubsystem(TPSSubsystem.ID);
@@ -267,25 +273,52 @@ public class ProfileMappingService extends PKIService implements ProfileMappingR
             ProfileMappingRecord record = database.getRecord(profileMappingID);
             String status = record.getStatus();
 
-            if ("Disabled".equals(status)) {
-                if ("enable".equals(action)) {
-                    status = "Enabled";
+            Principal principal = servletRequest.getUserPrincipal();
+            boolean canApprove = database.canApprove(principal);
+
+            if (Constants.CFG_DISABLED.equals(status)) {
+
+                if (database.requiresApproval()) {
+
+                    if ("submit".equals(action) && !canApprove) {
+                        status = Constants.CFG_PENDING_APPROVAL;
+
+                    } else if ("enable".equals(action) && canApprove) {
+                        status = Constants.CFG_ENABLED;
+
+                    } else {
+                        throw new BadRequestException("Invalid action: " + action);
+                    }
+
                 } else {
-                    throw new BadRequestException("Invalid action: " + action);
+                    if ("enable".equals(action)) {
+                        status = Constants.CFG_ENABLED;
+
+                    } else {
+                        throw new BadRequestException("Invalid action: " + action);
+                    }
                 }
 
-            } else if ("Enabled".equals(status)) {
+            } else if (Constants.CFG_ENABLED.equals(status)) {
+
                 if ("disable".equals(action)) {
-                    status = "Disabled";
+                    status = Constants.CFG_DISABLED;
+
                 } else {
                     throw new BadRequestException("Invalid action: " + action);
                 }
 
-            } else if ("Pending_Approval".equals(status)) {
-                if ("approve".equals(action)) {
-                    status = "Enabled";
-                } else if ("reject".equals(action)) {
-                    status = "Disabled";
+            } else if (Constants.CFG_PENDING_APPROVAL.equals(status)) {
+
+                if ("approve".equals(action) && canApprove) {
+                    status = Constants.CFG_ENABLED;
+
+                } else if ("reject".equals(action) && canApprove) {
+                    status = Constants.CFG_DISABLED;
+
+                } else if ("cancel".equals(action) && !canApprove) {
+                    status = Constants.CFG_DISABLED;
+
                 } else {
                     throw new BadRequestException("Invalid action: " + action);
                 }
@@ -302,11 +335,12 @@ public class ProfileMappingService extends PKIService implements ProfileMappingR
             return createOKResponse(profileMappingData);
 
         } catch (PKIException e) {
+            CMS.debug("ProfileMappingService: " + e);
             throw e;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException(e.getMessage());
+            CMS.debug(e);
+            throw new PKIException(e);
         }
     }
 
@@ -322,7 +356,7 @@ public class ProfileMappingService extends PKIService implements ProfileMappingR
             ProfileMappingRecord record = database.getRecord(profileMappingID);
             String status = record.getStatus();
 
-            if (!"Disabled".equals(status)) {
+            if (!Constants.CFG_DISABLED.equals(status)) {
                 throw new ForbiddenException("Unable to delete profile mapping " + profileMappingID);
             }
 
@@ -331,11 +365,12 @@ public class ProfileMappingService extends PKIService implements ProfileMappingR
             return createNoContentResponse();
 
         } catch (PKIException e) {
+            CMS.debug("ProfileMappingService: " + e);
             throw e;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException(e.getMessage());
+            CMS.debug(e);
+            throw new PKIException(e);
         }
     }
 }

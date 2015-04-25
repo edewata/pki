@@ -32,6 +32,7 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import org.apache.commons.lang.StringUtils;
 import org.dogtagpki.server.tps.TPSSubsystem;
 import org.dogtagpki.server.tps.config.ConnectorDatabase;
 import org.dogtagpki.server.tps.config.ConnectorRecord;
@@ -41,6 +42,7 @@ import com.netscape.certsrv.apps.CMS;
 import com.netscape.certsrv.base.BadRequestException;
 import com.netscape.certsrv.base.ForbiddenException;
 import com.netscape.certsrv.base.PKIException;
+import com.netscape.certsrv.common.Constants;
 import com.netscape.certsrv.tps.connector.ConnectorCollection;
 import com.netscape.certsrv.tps.connector.ConnectorData;
 import com.netscape.certsrv.tps.connector.ConnectorResource;
@@ -139,11 +141,12 @@ public class ConnectorService extends PKIService implements ConnectorResource {
             return createOKResponse(response);
 
         } catch (PKIException e) {
+            CMS.debug("ConnectorService: " + e);
             throw e;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException(e.getMessage());
+            CMS.debug(e);
+            throw new PKIException(e);
         }
     }
 
@@ -161,11 +164,12 @@ public class ConnectorService extends PKIService implements ConnectorResource {
             return createOKResponse(createConnectorData(database.getRecord(connectorID)));
 
         } catch (PKIException e) {
+            CMS.debug("ConnectorService: " + e);
             throw e;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException(e.getMessage());
+            CMS.debug(e);
+            throw new PKIException(e);
         }
     }
 
@@ -183,9 +187,9 @@ public class ConnectorService extends PKIService implements ConnectorResource {
             String status = connectorData.getStatus();
             Principal principal = servletRequest.getUserPrincipal();
 
-            if (status == null || database.requiresApproval() && !database.canApprove(principal)) {
+            if (StringUtils.isEmpty(status) || database.requiresApproval() && !database.canApprove(principal)) {
                 // if status is unspecified or user doesn't have rights to approve, the entry is disabled
-                connectorData.setStatus("Disabled");
+                connectorData.setStatus(Constants.CFG_DISABLED);
             }
 
             database.addRecord(connectorData.getID(), createConnectorRecord(connectorData));
@@ -194,11 +198,12 @@ public class ConnectorService extends PKIService implements ConnectorResource {
             return createCreatedResponse(connectorData, connectorData.getLink().getHref());
 
         } catch (PKIException e) {
+            CMS.debug("ConnectorService: " + e);
             throw e;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException(e.getMessage());
+            CMS.debug(e);
+            throw new PKIException(e);
         }
     }
 
@@ -217,21 +222,21 @@ public class ConnectorService extends PKIService implements ConnectorResource {
             ConnectorRecord record = database.getRecord(connectorID);
 
             // only disabled connector can be updated
-            if (!"Disabled".equals(record.getStatus())) {
+            if (!Constants.CFG_DISABLED.equals(record.getStatus())) {
                 throw new ForbiddenException("Unable to update connector " + connectorID);
             }
 
             // update status if specified
             String status = connectorData.getStatus();
-            if (status != null && !"Disabled".equals(status)) {
-                if (!"Enabled".equals(status)) {
+            if (status != null && !Constants.CFG_DISABLED.equals(status)) {
+                if (!Constants.CFG_ENABLED.equals(status)) {
                     throw new ForbiddenException("Invalid connector status: " + status);
                 }
 
                 // if user doesn't have rights, set to pending
                 Principal principal = servletRequest.getUserPrincipal();
                 if (database.requiresApproval() && !database.canApprove(principal)) {
-                    status = "Pending_Approval";
+                    status = Constants.CFG_PENDING_APPROVAL;
                 }
 
                 // enable connector
@@ -251,21 +256,22 @@ public class ConnectorService extends PKIService implements ConnectorResource {
             return createOKResponse(connectorData);
 
         } catch (PKIException e) {
+            CMS.debug("ConnectorService: " + e);
             throw e;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException(e.getMessage());
+            CMS.debug(e);
+            throw new PKIException(e);
         }
     }
 
     @Override
-    public Response changeConnectorStatus(String connectorID, String action) {
+    public Response changeStatus(String connectorID, String action) {
 
         if (connectorID == null) throw new BadRequestException("Connector ID is null.");
         if (action == null) throw new BadRequestException("Action is null.");
 
-        CMS.debug("ConnectorService.changeConnectorStatus(\"" + connectorID + "\")");
+        CMS.debug("ConnectorService.changeStatus(\"" + connectorID + "\", \"" + action + "\")");
 
         try {
             TPSSubsystem subsystem = (TPSSubsystem)CMS.getSubsystem(TPSSubsystem.ID);
@@ -274,25 +280,52 @@ public class ConnectorService extends PKIService implements ConnectorResource {
             ConnectorRecord record = database.getRecord(connectorID);
             String status = record.getStatus();
 
-            if ("Disabled".equals(status)) {
-                if ("enable".equals(action)) {
-                    status = "Enabled";
+            Principal principal = servletRequest.getUserPrincipal();
+            boolean canApprove = database.canApprove(principal);
+
+            if (Constants.CFG_DISABLED.equals(status)) {
+
+                if (database.requiresApproval()) {
+
+                    if ("submit".equals(action) && !canApprove) {
+                        status = Constants.CFG_PENDING_APPROVAL;
+
+                    } else if ("enable".equals(action) && canApprove) {
+                        status = Constants.CFG_ENABLED;
+
+                    } else {
+                        throw new BadRequestException("Invalid action: " + action);
+                    }
+
                 } else {
-                    throw new BadRequestException("Invalid action: " + action);
+                    if ("enable".equals(action)) {
+                        status = Constants.CFG_ENABLED;
+
+                    } else {
+                        throw new BadRequestException("Invalid action: " + action);
+                    }
                 }
 
-            } else if ("Enabled".equals(status)) {
+            } else if (Constants.CFG_ENABLED.equals(status)) {
+
                 if ("disable".equals(action)) {
-                    status = "Disabled";
+                    status = Constants.CFG_DISABLED;
+
                 } else {
                     throw new BadRequestException("Invalid action: " + action);
                 }
 
-            } else if ("Pending_Approval".equals(status)) {
-                if ("approve".equals(action)) {
-                    status = "Enabled";
-                } else if ("reject".equals(action)) {
-                    status = "Disabled";
+            } else if (Constants.CFG_PENDING_APPROVAL.equals(status)) {
+
+                if ("approve".equals(action) && canApprove) {
+                    status = Constants.CFG_ENABLED;
+
+                } else if ("reject".equals(action) && canApprove) {
+                    status = Constants.CFG_DISABLED;
+
+                } else if ("cancel".equals(action) && !canApprove) {
+                    status = Constants.CFG_DISABLED;
+
                 } else {
                     throw new BadRequestException("Invalid action: " + action);
                 }
@@ -309,11 +342,12 @@ public class ConnectorService extends PKIService implements ConnectorResource {
             return createOKResponse(connectorData);
 
         } catch (PKIException e) {
+            CMS.debug("ConnectorService: " + e);
             throw e;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException(e.getMessage());
+            CMS.debug(e);
+            throw new PKIException(e);
         }
     }
 
@@ -331,7 +365,7 @@ public class ConnectorService extends PKIService implements ConnectorResource {
             ConnectorRecord record = database.getRecord(connectorID);
             String status = record.getStatus();
 
-            if (!"Disabled".equals(status)) {
+            if (!Constants.CFG_DISABLED.equals(status)) {
                 throw new ForbiddenException("Unable to delete connector " + connectorID);
             }
 
@@ -340,11 +374,12 @@ public class ConnectorService extends PKIService implements ConnectorResource {
             return createNoContentResponse();
 
         } catch (PKIException e) {
+            CMS.debug("ConnectorService: " + e);
             throw e;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException(e.getMessage());
+            CMS.debug(e);
+            throw new PKIException(e);
         }
     }
 }

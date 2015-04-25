@@ -1,7 +1,7 @@
 Summary:          Dogtag Public Key Infrastructure (PKI) Suite
 Name:             dogtag-pki
-Version:          10.2.2
-Release:          1%{?dist}
+Version:          10.2.3
+Release:          2%{?dist}
 # The entire source code is GPLv2 except for 'pki-tps' which is LGPLv2
 License:          GPLv2 and LGPLv2
 URL:              http://pki.fedoraproject.org/
@@ -15,32 +15,10 @@ ExcludeArch:      ppc ppc64 ppcle ppc64le s390 s390x
 
 %define dogtag_pki_theme_version   %{version}
 %define esc_version                1.1.0
-# NOTE:  The following package versions are TLS compliant:
 %define jss_version                4.2.6-35
+# NOTE:  The following package versions are TLS compliant:
 %define pki_core_version           %{version}
 %define pki_console_version        %{version}
-%if 0%{?rhel}
-%define tomcatjss_version          7.1.0-5
-%else
-%define tomcatjss_version          7.1.1
-%endif
-
-Requires:         apache-commons-codec
-%if  0%{?fedora} >= 21
-Requires:         selinux-policy-targeted >= 3.13.1-9
-%else
-# 0%{?rhel} || 0%{?fedora} < 21
-Requires:         selinux-policy-targeted >= 3.12.1-153
-%endif
-
-# Make certain that this 'meta' package requires the latest version(s)
-# of ALL top-level Dogtag PKI support packages
-Requires:         jss >= %{jss_version}
-Requires:         tomcatjss >= %{tomcatjss_version}
-
-# Make certain that this 'meta' package requires the latest version(s)
-# of ALL top-level Dogtag PKI support javadocs
-Requires:         jss-javadoc >= %{jss_version}
 
 # Make certain that this 'meta' package requires the latest version(s)
 # of ALL Dogtag PKI theme packages
@@ -58,6 +36,10 @@ Requires:         pki-server >= %{pki_core_version}
 Requires:         pki-tools >= %{pki_core_version}
 Requires:         pki-symkey >= %{pki_core_version}
 Requires:         pki-base >= %{pki_core_version}
+
+# Make certain that this 'meta' package requires the latest version(s)
+# of ALL top-level Dogtag PKI support javadocs
+Requires:         jss-javadoc >= %{jss_version}
 
 # Make certain that this 'meta' package requires the latest version(s)
 # of ALL Dogtag PKI core javadocs
@@ -116,7 +98,25 @@ rm -rf %{buildroot}
 %doc README
 
 %changelog
-* Wed Mar 18 2015 Dogtag Team <pki-devel@redhat.com> 10.2.2-1
+* Fri Apr 24 2015 Dogtag Team <pki-devel@redhat.com> 10.2.3-2
+- Restored requirement for 'jss-javadocs'
+
+* Thu Apr 23 2015 Dogtag Team <pki-devel@redhat.com> 10.2.3-1
+- Update release number for release build
+- Remove tomcatjss, jss and selinux requirements as these should
+  be handled by pki packages
+
+* Thu Apr  9 2015 Dogtag Team <pki-devel@redhat.com> 10.2.3-0.1
+- Reverted version number back to 10.2.3-0.1
+- Added support for Tomcat 8.
+
+* Mon Apr  6 2015 Dogtag Team <pki-devel@redhat.com> 10.3.0-0.1
+- Updated version number to 10.3.0-0.1
+
+* Wed Mar 18 2015 Dogtag Team <pki-devel@redhat.com> 10.2.3-0.1
+- Updated version number to 10.2.3-0.1
+
+* Tue Mar 17 2015 Dogtag Team <pki-devel@redhat.com> 10.2.2-1
 - Update release number for release build
 
 * Mon Jan 19 2015 Dogtag Team <pki-devel@redhat.com> 10.2.1-1

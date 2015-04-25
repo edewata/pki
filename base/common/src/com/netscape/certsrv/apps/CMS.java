@@ -509,6 +509,28 @@ public final class CMS {
     }
 
     /**
+     * Enable the subsystem with the given ID.
+     *
+     * Does not start the subsystem.
+     *
+     * @param id Subsystem ID.
+     */
+    public static void enableSubsystem(String id) throws EBaseException {
+        _engine.setSubsystemEnabled(id, true);
+    }
+
+    /**
+     * Disable the subsystem with the given ID.
+     *
+     * Does not stop the subsystem.
+     *
+     * @param id Subsystem ID.
+     */
+    public static void disableSubsystem(String id) throws EBaseException {
+        _engine.setSubsystemEnabled(id, false);
+    }
+
+    /**
      * Retrieves the localized user message from UserMessages.properties.
      *
      * @param msgID message id defined in UserMessages.properties
@@ -1093,7 +1115,6 @@ public final class CMS {
      * @param name configuration name
      * @param isValueConfigured true if value is configured
      * @param params configuration parameters
-     * @exception EBaseException failed to create subject alt name configuration
      */
     public static void getGeneralNameConfigDefaultParams(String name,
             boolean isValueConfigured, Vector<String> params) {
@@ -1107,7 +1128,6 @@ public final class CMS {
      * @param name configuration name
      * @param isValueConfigured true if value is configured
      * @param params configuration parameters
-     * @exception EBaseException failed to create subject alt name configuration
      */
     public static void getGeneralNamesConfigDefaultParams(String name,
             boolean isValueConfigured, Vector<String> params) {
@@ -1121,7 +1141,6 @@ public final class CMS {
      * @param name configuration name
      * @param isValueConfigured true if value is configured
      * @param info configuration parameters
-     * @exception EBaseException failed to create subject alt name configuration
      */
     public static void getGeneralNameConfigExtendedPluginInfo(String name,
             boolean isValueConfigured, Vector<String> info) {
@@ -1135,7 +1154,6 @@ public final class CMS {
      * @param name configuration name
      * @param isValueConfigured true if value is configured
      * @param info configuration parameters
-     * @exception EBaseException failed to create subject alt name configuration
      */
     public static void getGeneralNamesConfigExtendedPluginInfo(String name,
             boolean isValueConfigured, Vector<String> info) {
@@ -1625,7 +1643,7 @@ public final class CMS {
         _engine.setListOfVerifiedCerts(size, interval, unknownStateInterval);
     }
 
-    public static IPasswordStore getPasswordStore() {
+    public static IPasswordStore getPasswordStore() throws EBaseException {
         return _engine.getPasswordStore();
     }
 

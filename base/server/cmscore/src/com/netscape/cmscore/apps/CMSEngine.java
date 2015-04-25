@@ -29,6 +29,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -57,6 +58,7 @@ import netscape.security.x509.X509CRLImpl;
 import netscape.security.x509.X509CertImpl;
 import netscape.security.x509.X509CertInfo;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.xerces.parsers.DOMParser;
 import org.mozilla.jss.CryptoManager.CertificateUsage;
 import org.mozilla.jss.util.PasswordCallback;
@@ -173,6 +175,7 @@ import com.netscape.cmscore.usrgrp.UGSubsystem;
 import com.netscape.cmscore.util.Debug;
 import com.netscape.cmsutil.net.ISocketFactory;
 import com.netscape.cmsutil.password.IPasswordStore;
+import com.netscape.cmsutil.password.NuxwdogPasswordStore;
 import com.netscape.cmsutil.util.Utils;
 
 public class CMSEngine implements ICMSEngine {
@@ -181,6 +184,7 @@ public class CMSEngine implements ICMSEngine {
     private static final String PROP_SUBSYSTEM = "subsystem";
     private static final String PROP_ID = "id";
     private static final String PROP_CLASS = "class";
+    private static final String PROP_ENABLED = "enabled";
     private static final String SERVER_XML = "server.xml";
 
     public static final SubsystemRegistry mSSReg = SubsystemRegistry.getInstance();
@@ -258,6 +262,14 @@ public class CMSEngine implements ICMSEngine {
             { null, null, null } //ssl_clientauth_EE
     };
 
+    private static final int PW_OK =0;
+    private static final int PW_BAD_SETUP = 1;
+    private static final int PW_INVALID_PASSWORD = 2;
+    private static final int PW_CANNOT_CONNECT = 3;
+    private static final int PW_NO_USER = 4;
+    private static final int PW_MAX_ATTEMPTS = 3;
+
+
     /**
      * private constructor.
      */
@@ -279,39 +291,164 @@ public class CMSEngine implements ICMSEngine {
     }
 
     /**
-     * Retrieves the instance roort path of this server.
+     * Retrieves the instance root path of this server.
      */
     public String getInstanceDir() {
         return instanceDir;
     }
 
-    public synchronized IPasswordStore getPasswordStore() {
-        // initialize the PasswordReader and PasswordWriter
-        try {
-            String pwdPath = mConfig.getString("passwordFile");
-            if (mPasswordStore == null) {
-                CMS.debug("CMSEngine: getPasswordStore(): password store not initialized before.");
-                String pwdClass = mConfig.getString("passwordClass");
+    public boolean startedByNuxwdog() {
+        String wdPipeName = System.getenv("WD_PIPE_NAME");
+        if (StringUtils.isNotEmpty(wdPipeName)) {
+            return true;
+        }
+        return false;
+    }
 
-                try {
-                    mPasswordStore = (IPasswordStore) Class.forName(pwdClass).newInstance();
-                } catch (Exception e) {
-                    CMS.debug("CMSEngine: getPasswordStore(): password store initialization failure:"
-                            + e.toString());
-                    throw e;
-                }
+    public synchronized IPasswordStore getPasswordStore() throws EBaseException {
+        if (mPasswordStore == null) {
+            String pwdClass = null;
+            String pwdPath = null;
+
+            if (startedByNuxwdog()) {
+                pwdClass = NuxwdogPasswordStore.class.getName();
+                // note: pwdPath is expected to be null in this case
             } else {
-                CMS.debug("CMSEngine: getPasswordStore(): password store initialized before.");
+                pwdClass = mConfig.getString("passwordClass");
+                pwdPath = mConfig.getString("passwordFile", null);
             }
 
-            // have to initialize it because other places don't always
-            mPasswordStore.init(pwdPath);
-            CMS.debug("CMSEngine: getPasswordStore(): password store initialized.");
-        } catch (Exception e) {
-            CMS.debug("CMSEngine: getPasswordStore(): failure:" + e.toString());
+            try {
+                mPasswordStore = (IPasswordStore) Class.forName(pwdClass).newInstance();
+                mPasswordStore.init(pwdPath);
+            } catch (Exception e) {
+                System.out.println("Cannot get password store: " + e);
+                throw new EBaseException(e);
+            }
         }
-
         return mPasswordStore;
+    }
+
+    public void initializePasswordStore(IConfigStore config) throws EBaseException, IOException {
+        // create and initialize mPasswordStore
+        getPasswordStore();
+
+        boolean skipPublishingCheck = config.getBoolean(
+                "cms.password.ignore.publishing.failure", true);
+        String pwList = config.getString("cms.passwordlist", "internaldb,replicationdb");
+        String tags[] = StringUtils.split(pwList, ",");
+
+        for (String tag : tags) {
+            int iteration = 0;
+            int result = PW_INVALID_PASSWORD;
+            String binddn;
+            String authType;
+            LdapConnInfo connInfo = null;
+
+            if (tag.equals("internaldb")) {
+                authType = config.getString("internaldb.ldapauth.authtype", "BasicAuth");
+                if (!authType.equals("BasicAuth"))
+                    continue;
+
+                connInfo = new LdapConnInfo(
+                        config.getString("internaldb.ldapconn.host"),
+                        config.getInteger("internaldb.ldapconn.port"),
+                        config.getBoolean("internaldb.ldapconn.secureConn"));
+
+                binddn = config.getString("internaldb.ldapauth.bindDN");
+            } else if (tag.equals("replicationdb")) {
+                authType = config.getString("internaldb.ldapauth.authtype", "BasicAuth");
+                if (!authType.equals("BasicAuth"))
+                    continue;
+
+                connInfo = new LdapConnInfo(
+                        config.getString("internaldb.ldapconn.host"),
+                        config.getInteger("internaldb.ldapconn.port"),
+                        config.getBoolean("internaldb.ldapconn.secureConn"));
+
+                binddn = "cn=Replication Manager masterAgreement1-" + config.getString("machineName", "") + "-" +
+                        config.getString("instanceId", "") + ",cn=config";
+            } else if (tags.equals("CA LDAP Publishing")) {
+                authType = config.getString("ca.publish.ldappublish.ldap.ldapauth.authtype", "BasicAuth");
+                if (!authType.equals("BasicAuth"))
+                    continue;
+
+                connInfo = new LdapConnInfo(
+                        config.getString("ca.publish.ldappublish.ldap.ldapconn.host"),
+                        config.getInteger("ca.publish.ldappublish.ldap.ldapconn.port"),
+                        config.getBoolean("ca.publish.ldappublish.ldap.ldapconn.secureConn"));
+
+                binddn = config.getString("ca.publish.ldappublish.ldap.ldapauth.bindDN");
+
+            } else {
+                // ignore any others for now
+                continue;
+            }
+
+            do {
+                String passwd = mPasswordStore.getPassword(tag, iteration);
+                result = testLDAPConnection(tag, connInfo, binddn, passwd);
+                iteration++;
+            } while ((result == PW_INVALID_PASSWORD) && (iteration < PW_MAX_ATTEMPTS));
+
+            if (result != PW_OK) {
+                if ((result == PW_NO_USER) && (tag.equals("replicationdb"))) {
+                    System.out.println(
+                        "CMSEngine: init(): password test execution failed for replicationdb" +
+                        "with NO_SUCH_USER.  This may not be a latest instance.  Ignoring ..");
+                } else if (skipPublishingCheck && (result == PW_CANNOT_CONNECT) && (tag.equals("CA LDAP Publishing"))) {
+                    System.out.println(
+                        "Unable to connect to the publishing database to check password, " +
+                        "but continuing to start up.  Please check if publishing is operational.");
+                } else {
+                    // password test failed
+                    System.out.println("CMSEngine: init(): password test execution failed: " + result);
+                    throw new EBaseException("Password test execution failed. Is the database up?");
+                }
+            }
+        }
+    }
+
+    public int testLDAPConnection(String name, LdapConnInfo info, String binddn, String pwd) {
+        int ret = PW_OK;
+
+        if (StringUtils.isEmpty(pwd))
+            return PW_INVALID_PASSWORD;
+
+        String host = info.getHost();
+        int port = info.getPort();
+
+        LDAPConnection conn = info.getSecure() ?
+                new LDAPConnection(CMS.getLdapJssSSLSocketFactory()) :
+                new LDAPConnection();
+
+        System.out.println("testLDAPConnection connecting to " + host + ":" + port);
+
+        try {
+            conn.connect(host, port, binddn, pwd);
+        } catch (LDAPException e) {
+            switch (e.getLDAPResultCode()) {
+            case LDAPException.NO_SUCH_OBJECT:
+                System.out.println("testLDAPConnection: The specified user " + binddn + " does not exist");
+                ret = PW_NO_USER;
+                break;
+            case LDAPException.INVALID_CREDENTIALS:
+                System.out.println("testLDAPConnection: Invalid Password");
+                ret = PW_INVALID_PASSWORD;
+                break;
+            default:
+                System.out.println("testLDAPConnection: Unable to connect to " + name + ": " + e);
+                ret = PW_CANNOT_CONNECT;
+                break;
+            }
+        } finally {
+            try {
+                if (conn != null)
+                    conn.disconnect();
+            } catch (Exception e) {
+            }
+        }
+        return ret;
     }
 
     /**
@@ -329,6 +466,16 @@ public class CMSEngine implements ICMSEngine {
         int state = mConfig.getInteger("cs.state");
 
         serverStatus = "starting";
+
+        if (state == 1) {
+            // configuration is complete, initialize password store
+            try {
+                initializePasswordStore(config);
+            } catch (IOException e) {
+                e.printStackTrace();
+                throw new EBaseException("Exception while initializing password store: " + e);
+            }
+        }
 
         // my default is 1 day
         String flush_timeout = config.getString("securitydomain.flushinterval", "86400000");
@@ -866,32 +1013,34 @@ public class CMSEngine implements ICMSEngine {
         }
     }
 
+    private ArrayList<String> getDynSubsystemNames() throws EBaseException {
+        IConfigStore ssconfig = mConfig.getSubStore(PROP_SUBSYSTEM);
+        Enumeration<String> ssNames = ssconfig.getSubStoreNames();
+        ArrayList<String> ssNamesList = new ArrayList<String>();
+        while (ssNames.hasMoreElements())
+            ssNamesList.add(ssNames.nextElement());
+        return ssNamesList;
+    }
+
     /**
      * load dynamic subsystems
      */
     private void loadDynSubsystems()
             throws EBaseException {
-        IConfigStore ssconfig = mConfig.getSubStore(PROP_SUBSYSTEM);
-
-        // count number of dyn loaded subsystems.
-        Enumeration<String> ssnames = ssconfig.getSubStoreNames();
-        int nsubsystems = 0;
-
-        for (nsubsystems = 0; ssnames.hasMoreElements(); nsubsystems++)
-            ssnames.nextElement();
+        ArrayList<String> ssNames = getDynSubsystemNames();
         if (Debug.ON) {
-            Debug.trace(nsubsystems + " dyn subsystems loading..");
+            Debug.trace(ssNames.size() + " dyn subsystems loading..");
         }
-        if (nsubsystems == 0)
-            return;
 
         // load dyn subsystems.
-        mDynSubsystems = new SubsystemInfo[nsubsystems];
-        for (int i = 0; i < mDynSubsystems.length; i++) {
-            IConfigStore config =
-                    ssconfig.getSubStore(String.valueOf(i));
+        IConfigStore ssconfig = mConfig.getSubStore(PROP_SUBSYSTEM);
+        mDynSubsystems = new SubsystemInfo[ssNames.size()];
+        int i = 0;
+        for (String ssName : ssNames) {
+            IConfigStore config = ssconfig.getSubStore(ssName);
             String id = config.getString(PROP_ID);
             String classname = config.getString(PROP_CLASS);
+            boolean enabled = config.getBoolean(PROP_ENABLED, true);
             ISubsystem ss = null;
 
             try {
@@ -906,8 +1055,26 @@ public class CMSEngine implements ICMSEngine {
                 throw new EBaseException(
                         CMS.getUserMessage("CMS_BASE_LOAD_FAILED_1", id, e.toString()));
             }
-            mDynSubsystems[i] = new SubsystemInfo(id, ss);
+            mDynSubsystems[i++] = new SubsystemInfo(id, ss, enabled);
             Debug.trace("loaded dyn subsystem " + id);
+        }
+    }
+
+    /**
+     * Set whether the given subsystem is enabled.
+     *
+     * @param id The subsystem ID.
+     * @param enabled Whether the subsystem is enabled
+     */
+    public void setSubsystemEnabled(String id, boolean enabled)
+            throws EBaseException {
+        IConfigStore ssconfig = mConfig.getSubStore(PROP_SUBSYSTEM);
+        for (String ssName : getDynSubsystemNames()) {
+            IConfigStore config = ssconfig.getSubStore(ssName);
+            if (id.equalsIgnoreCase(config.getString(PROP_ID))) {
+                config.putBoolean(PROP_ENABLED, enabled);
+                break;
+            }
         }
     }
 
@@ -928,13 +1095,17 @@ public class CMSEngine implements ICMSEngine {
         IConfigStore ssConfig = mConfig.getSubStore(id);
 
         CMS.debug("CMSEngine: initSubsystem id=" + id);
+        mSSReg.put(id, ss);
         if (doSetId)
             ss.setId(id);
+        if (!ssinfo.enabled) {
+            CMS.debug("CMSEngine: subsystem disabled id=" + id);
+            return;
+        }
         CMS.debug("CMSEngine: ready to init id=" + id);
         ss.init(this, ssConfig);
         // add to id - subsystem hash table.
         CMS.debug("CMSEngine: done init id=" + id);
-        mSSReg.put(id, ss);
         CMS.debug("CMSEngine: initialized " + id);
 
         if (id.equals("ca") || id.equals("ocsp") ||
@@ -2001,10 +2172,16 @@ class WarningListener implements ILogEventListener {
 class SubsystemInfo {
     public final String mId;
     public final ISubsystem mInstance;
+    public final boolean enabled;
 
     public SubsystemInfo(String id, ISubsystem ssInstance) {
+        this(id, ssInstance, true);
+    }
+
+    public SubsystemInfo(String id, ISubsystem ssInstance, boolean enabled) {
         mId = id;
         mInstance = ssInstance;
+        this.enabled = enabled;
     }
 
 }

@@ -17,6 +17,7 @@
      --- END COPYRIGHT BLOCK --- -->
 <html>
 <head>
+    <title>Token Processing System</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/pki/css/patternfly.css" rel="stylesheet" media="screen, print">
     <link href="/pki/css/pki-ui.css" rel="stylesheet" type="text/css">
@@ -46,10 +47,26 @@ $(function() {
     var account = new Account();
     account.login({
         success: function(data, textStatus, jqXHR) {
+            tps.user = data;
+            var roles = tps.user.Roles.Role;
+
             var user = $("#user");
             user.text(data.FullName);
+
+            var accounts_menu = $("#navigation [name=accounts]");
+            var system_menu = $("#navigation [name=system]");
+
+            if (_.contains(roles, "Administrators")) {
+                accounts_menu.show();
+                $("li", system_menu).show();
+
+            } else if (_.contains(roles, "TPS Agents")) {
+                accounts_menu.hide();
+                $("li", system_menu).hide();
+                $("[name=profiles]", system_menu).show();
+            }
         },
-        error: function() {
+        error: function(jqXHR, textStatus, errorThrown) {
             window.location.href = "/tps";
         }
     });
@@ -59,7 +76,7 @@ $(function() {
     var router = new Backbone.Router();
 
     router.route("", "home", function() {
-        new Page({
+        new HomePage({
             el: content,
             url: "home.html"
         }).open();
@@ -117,7 +134,8 @@ $(function() {
     router.route("certs", "certs", function() {
         new CertificatesPage({
             el: content,
-            url: "certs.html"
+            url: "certs.html",
+            collection: new CertificateCollection()
         }).open();
     });
 
@@ -199,7 +217,7 @@ $(function() {
     });
 
     router.route("profiles/:id", "profile", function(id) {
-        new ConfigEntryPage({
+        new ProfilePage({
             el: content,
             url: "profile.html",
             model: new ProfileModel({ id: id })
@@ -207,7 +225,7 @@ $(function() {
     });
 
     router.route("new-profile", "new-profile", function() {
-        new ConfigEntryPage({
+        new ProfilePage({
             el: content,
             url: "profile.html",
             model: new ProfileModel(),
@@ -276,6 +294,14 @@ $(function() {
         }).open();
     });
 
+    router.route("tokens/:id/certs", "certs", function(id) {
+        new CertificatesPage({
+            el: content,
+            url: "certs.html",
+            collection: new CertificateCollection({ tokenID: id })
+        }).open();
+    });
+
     router.route("new-token", "new-token", function() {
         new TokenPage({
             el: content,
@@ -320,6 +346,7 @@ $(function() {
         // destroy server session
         account.logout({
             success: function() {
+                tps.user = null;
                 // clear browser cache
                 PKI.logout({
                     success: function() {
@@ -372,7 +399,7 @@ $(function() {
     <li><a href="#tokens">Tokens</a></li>
     <li><a href="#certs">Certificates</a></li>
     <li><a href="#activities">Activities</a></li>
-    <li class="dropdown context">
+    <li name="accounts" class="dropdown context" style="display: none;">
       <a href="#" class="dropdown-toggle" data-toggle="dropdown">
         Accounts
         <b class="caret"></b>
@@ -382,19 +409,19 @@ $(function() {
         <li><a href="#groups">Groups</a></li>
       </ul>
     </li>
-    <li class="dropdown context">
+    <li name="system" class="dropdown context">
       <a href="#" class="dropdown-toggle" data-toggle="dropdown">
         System
         <b class="caret"></b>
       </a>
       <ul class="dropdown-menu">
-        <li><a href="#config">General Configuration</a></li>
-        <li><a href="#authenticators">Authentication Sources</a></li>
-        <li><a href="#connectors">Subsystem Connections</a></li>
-        <li><a href="#profiles">Profiles</a></li>
-        <li><a href="#profile-mappings">Profile Mappings</a></li>
-        <li><a href="#audit">Audit Logging</a></li>
-        <li><a href="#selftests">Self Tests</a></li>
+        <li name="config" style="display: none;"><a href="#config">General Configuration</a></li>
+        <li name="authenticators" style="display: none;"><a href="#authenticators">Authentication Sources</a></li>
+        <li name="connectors" style="display: none;"><a href="#connectors">Subsystem Connections</a></li>
+        <li name="profiles" style="display: none;"><a href="#profiles">Profiles</a></li>
+        <li name="profile-mappings" style="display: none;"><a href="#profile-mappings">Profile Mappings</a></li>
+        <li name="audit" style="display: none;"><a href="#audit">Audit Logging</a></li>
+        <li name="selftests" style="display: none;"><a href="#selftests">Self Tests</a></li>
       </ul>
     </li>
     </ul>

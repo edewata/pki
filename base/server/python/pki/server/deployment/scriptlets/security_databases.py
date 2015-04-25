@@ -37,9 +37,15 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             return self.rv
         config.pki_log.info(log.SECURITY_DATABASES_SPAWN_1, __name__,
                             extra=config.PKI_INDENTATION_LEVEL_1)
-        deployer.password.create_password_conf(
-            deployer.mdict['pki_shared_password_conf'],
-            deployer.mdict['pki_pin'])
+        if config.str2bool(deployer.mdict['pki_hsm_enable']):
+            deployer.password.create_hsm_password_conf(
+                deployer.mdict['pki_shared_password_conf'],
+                deployer.mdict['pki_pin'],
+                deployer.mdict['pki_token_password'])
+        else:
+            deployer.password.create_password_conf(
+                deployer.mdict['pki_shared_password_conf'],
+                deployer.mdict['pki_pin'])
         # Since 'certutil' does NOT strip the 'token=' portion of
         # the 'token=password' entries, create a temporary server 'pfile'
         # which ONLY contains the 'password' for the purposes of
@@ -54,6 +60,11 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             deployer.mdict['pki_key_database'],
             deployer.mdict['pki_secmod_database'],
             password_file=deployer.mdict['pki_shared_pfile'])
+        if config.str2bool(deployer.mdict['pki_hsm_enable']):
+            deployer.modutil.register_security_module(
+                deployer.mdict['pki_database_path'],
+                deployer.mdict['pki_hsm_modulename'],
+                deployer.mdict['pki_hsm_libfile'])
         deployer.file.modify(
             deployer.mdict['pki_cert_database'],
             perms=config.PKI_DEPLOYMENT_DEFAULT_SECURITY_DATABASE_PERMISSIONS)
@@ -66,6 +77,11 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
 
         if len(deployer.instance.tomcat_instance_subsystems()) < 2:
             # only create a self signed cert for a new instance
+            #
+            # NOTE:  ALWAYS create the temporary sslserver certificate
+            #        in the software DB regardless of whether the
+            #        instance will utilize 'softokn' or an HSM
+            #
             rv = deployer.certutil.verify_certificate_exists(
                 deployer.mdict['pki_database_path'],
                 deployer.mdict['pki_cert_database'],
@@ -100,6 +116,10 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             if config.str2bool(deployer.mdict['pki_ds_secure_connection']):
                 # Check to see if a directory server CA certificate
                 # using the same nickname already exists
+                #
+                # NOTE:  ALWAYS use the software DB regardless of whether
+                #        the instance will utilize 'softokn' or an HSM
+                #
                 rv = deployer.certutil.verify_certificate_exists(
                     deployer.mdict['pki_database_path'],
                     deployer.mdict['pki_cert_database'],
@@ -115,7 +135,8 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
                         deployer.mdict['pki_ds_secure_connection_ca_trustargs'],
                         deployer.mdict['pki_ds_secure_connection_ca_pem_file'],
                         password_file=deployer.mdict['pki_shared_pfile'],
-                        path=deployer.mdict['pki_database_path'])
+                        path=deployer.mdict['pki_database_path'],
+                        token=deployer.mdict['pki_self_signed_token'])
 
         # Always delete the temporary 'pfile'
         deployer.file.delete(deployer.mdict['pki_shared_pfile'])

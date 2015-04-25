@@ -19,6 +19,8 @@
  * @author Endi S. Dewata
  */
 
+var tps = {};
+
 var PropertiesTableItem = TableItem.extend({
     initialize: function(options) {
         var self = this;
@@ -114,6 +116,24 @@ var PropertiesTable = Table.extend({
     }
 });
 
+var HomePage = Page.extend({
+    load: function() {
+        var roles = tps.user.Roles.Role;
+        var home_accounts = self.$("[name=home-accounts]");
+        var home_system = self.$("[name=home-system]");
+
+        if (_.contains(roles, "Administrators")) {
+            home_accounts.show();
+            $("li", home_system).show();
+
+        } else if (_.contains(roles, "TPS Agents")) {
+            home_accounts.hide();
+            $("li", home_system).hide();
+            $("[name=profiles]", home_system).show();
+        }
+    }
+});
+
 var ConfigEntryPage = EntryPage.extend({
     initialize: function(options) {
         var self = this;
@@ -126,16 +146,20 @@ var ConfigEntryPage = EntryPage.extend({
 
         ConfigEntryPage.__super__.setup.call(self);
 
-        self.enableLink = $("a[name='enable']", self.menu);
-        self.disableLink = $("a[name='disable']", self.menu);
+        self.submitAction = $("[name='submit']", self.viewMenu);
+        self.cancelAction = $("[name='cancel']", self.viewMenu);
+        self.approveAction = $("[name='approve']", self.viewMenu);
+        self.rejectAction = $("[name='reject']", self.viewMenu);
+        self.enableAction = $("[name='enable']", self.viewMenu);
+        self.disableAction = $("[name='disable']", self.viewMenu);
 
-        self.enableLink.click(function(e) {
+        $("a", self.submitAction).click(function(e) {
 
             e.preventDefault();
 
-            var message = "Are you sure you want to enable this entry?";
+            var message = "Are you sure you want to submit this entry?";
             if (!confirm(message)) return;
-            self.model.enable({
+            self.model.changeStatus("submit", {
                 success: function(data, textStatus, jqXHR) {
                     self.entry = _.clone(self.model.attributes);
                     self.render();
@@ -150,13 +174,97 @@ var ConfigEntryPage = EntryPage.extend({
             });
         });
 
-        self.disableLink.click(function(e) {
+        $("a", self.cancelAction).click(function(e) {
+
+            e.preventDefault();
+
+            var message = "Are you sure you want to cancel this entry?";
+            if (!confirm(message)) return;
+            self.model.changeStatus("cancel", {
+                success: function(data, textStatus, jqXHR) {
+                    self.entry = _.clone(self.model.attributes);
+                    self.render();
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    new ErrorDialog({
+                        el: $("#error-dialog"),
+                        title: "HTTP Error " + jqXHR.responseJSON.Code,
+                        content: jqXHR.responseJSON.Message
+                    }).open();
+                }
+            });
+        });
+
+        $("a", self.approveAction).click(function(e) {
+
+            e.preventDefault();
+
+            var message = "Are you sure you want to approve this entry?";
+            if (!confirm(message)) return;
+            self.model.changeStatus("approve", {
+                success: function(data, textStatus, jqXHR) {
+                    self.entry = _.clone(self.model.attributes);
+                    self.render();
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    new ErrorDialog({
+                        el: $("#error-dialog"),
+                        title: "HTTP Error " + jqXHR.responseJSON.Code,
+                        content: jqXHR.responseJSON.Message
+                    }).open();
+                }
+            });
+        });
+
+        $("a", self.rejectAction).click(function(e) {
+
+            e.preventDefault();
+
+            var message = "Are you sure you want to reject this entry?";
+            if (!confirm(message)) return;
+            self.model.changeStatus("reject", {
+                success: function(data, textStatus, jqXHR) {
+                    self.entry = _.clone(self.model.attributes);
+                    self.render();
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    new ErrorDialog({
+                        el: $("#error-dialog"),
+                        title: "HTTP Error " + jqXHR.responseJSON.Code,
+                        content: jqXHR.responseJSON.Message
+                    }).open();
+                }
+            });
+        });
+
+        $("a", self.enableAction).click(function(e) {
+
+            e.preventDefault();
+
+            var message = "Are you sure you want to enable this entry?";
+            if (!confirm(message)) return;
+            self.model.changeStatus("enable", {
+                success: function(data, textStatus, jqXHR) {
+                    self.entry = _.clone(self.model.attributes);
+                    self.render();
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    new ErrorDialog({
+                        el: $("#error-dialog"),
+                        title: "HTTP Error " + jqXHR.responseJSON.Code,
+                        content: jqXHR.responseJSON.Message
+                    }).open();
+                }
+            });
+        });
+
+        $("a", self.disableAction).click(function(e) {
 
             e.preventDefault();
 
             var message = "Are you sure you want to disable this entry?";
             if (!confirm(message)) return;
-            self.model.disable({
+            self.model.changeStatus("disable", {
                 success: function(data, textStatus, jqXHR) {
                     self.entry = _.clone(self.model.attributes);
                     self.render();
@@ -179,16 +287,35 @@ var ConfigEntryPage = EntryPage.extend({
             actions: ["cancel", "add"]
         });
 
-        var table = self.$("table[name='properties']");
-        self.addButton = $("button[name='add']", table);
-        self.removeButton = $("button[name='remove']", table);
+        var propertiesSection = self.$("[name='properties']");
+        self.propertiesList = $("[name='list']", propertiesSection);
+        self.propertiesEditor = $("[name='editor']", propertiesSection);
+        self.propertiesTextarea = $("textarea", self.propertiesEditor);
 
         self.propertiesTable = new PropertiesTable({
-            el: table,
+            el: self.propertiesList,
             addDialog: addDialog,
             tableItem: self.tableItem,
             pageSize: self.tableSize,
             parent: self
+        });
+
+        $("[name='showEditor']", propertiesSection).click(function(e) {
+
+            var properties = self.getProperties();
+            self.setProperties(properties);
+
+            self.propertiesList.hide();
+            self.propertiesEditor.show();
+        });
+
+        $("[name='showList']", propertiesSection).click(function(e) {
+
+            var properties = self.getProperties();
+            self.setProperties(properties);
+
+            self.propertiesList.show();
+            self.propertiesEditor.hide();
         });
     },
     renderContent: function() {
@@ -198,34 +325,83 @@ var ConfigEntryPage = EntryPage.extend({
 
         var status = self.entry.status;
         if (status == "Disabled") {
-            self.enableLink.show();
-            self.disableLink.hide();
+            self.editAction.show();
+            self.enableAction.show();
+            self.disableAction.hide();
 
-        } else if (status == "Enabled") {
-            self.enableLink.hide();
-            self.disableLink.show();
+        } else {
+            self.editAction.hide();
+            self.enableAction.hide();
+            self.disableAction.show();
         }
+
+        self.submitAction.hide();
+        self.cancelAction.hide();
+        self.approveAction.hide();
+        self.rejectAction.hide();
 
         if (self.mode == "add") {
             self.propertiesTable.mode = "edit";
-            self.propertiesTable.entries = [];
+            self.propertiesTextarea.removeAttr("readonly");
+            self.setProperties([]);
 
         } else if (self.mode == "edit") {
             self.propertiesTable.mode = "edit";
-            self.propertiesTable.entries = self.entry.properties;
+            self.propertiesTextarea.removeAttr("readonly");
+            self.setProperties(self.entry.properties);
 
         } else { // self.mode == "view"
             self.propertiesTable.mode = "view";
-            self.propertiesTable.entries = self.entry.properties;
+            self.propertiesTextarea.attr("readonly", "readonly");
+            self.setProperties(self.entry.properties);
         }
-
-        self.propertiesTable.render();
     },
     saveFields: function() {
         var self = this;
 
         ConfigEntryPage.__super__.saveFields.call(self);
 
-        self.entry.properties = self.propertiesTable.entries;
+        self.entry.properties = self.getProperties();
+    },
+    setProperties: function(properties) {
+        var self = this;
+
+        self.propertiesTable.entries = properties;
+        self.propertiesTable.render();
+
+        var text = "";
+        _.each(properties, function(property) {
+            var name = property.name;
+            var value = property.value;
+            text += name + "=" + value + "\n";
+        });
+        self.propertiesTextarea.val(text);
+    },
+    getProperties: function() {
+        var self = this;
+
+        if (self.propertiesList.is(":visible")) {
+            return self.propertiesTable.entries;
+
+        } else {
+            var properties = [];
+
+            var lines = self.propertiesTextarea.val().split("\n");
+            _.each(lines, function(line) {
+                var match = /^([^=]+)=(.*)$/.exec(line);
+                if (!match) return;
+
+                var name = match[1];
+                var value = match[2];
+
+                var property = {};
+                property["name"] = name;
+                property["value"] = value;
+
+                properties.push(property);
+            });
+
+            return properties;
+        }
     }
 });

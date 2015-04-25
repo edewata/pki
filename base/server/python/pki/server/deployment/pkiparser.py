@@ -588,6 +588,9 @@ class PKIConfigParser:
             if not 'pki_subordinate' in self.mdict or\
                not len(self.mdict['pki_subordinate']):
                 self.mdict['pki_subordinate'] = "false"
+            if not 'pki_san_inject' in self.mdict or\
+               not len(self.mdict['pki_san_inject']):
+                self.mdict['pki_san_inject'] = "false"
 
             # PKI Target (slot substitution) name/value pairs
             self.mdict['pki_target_cs_cfg'] = \
@@ -654,11 +657,6 @@ class PKIConfigParser:
                         self.mdict['pki_instance_configuration_path'],
                         "tomcat.conf")
                 # in-place slot substitution name/value pairs
-                self.mdict['pki_target_velocity_properties'] = \
-                    os.path.join(
-                        self.mdict['pki_tomcat_webapps_subsystem_path'],
-                        "WEB-INF",
-                        "velocity.properties")
                 self.mdict['pki_target_subsystem_web_xml'] = \
                     os.path.join(
                         self.mdict['pki_tomcat_webapps_subsystem_path'],
@@ -709,12 +707,10 @@ class PKIConfigParser:
                             self.mdict['pki_subsystem_configuration_path'],
                             "subsystemCert.profile")
                     # in-place slot substitution name/value pairs
-                    self.mdict['pki_target_profileselect_template'] = \
-                        os.path.join(
-                            self.mdict['pki_tomcat_webapps_subsystem_path'],
-                            "ee",
-                            self.mdict['pki_subsystem'].lower(),
-                            "ProfileSelect.template")
+                    if config.str2bool(self.mdict['pki_profiles_in_ldap']):
+                        self.mdict['PKI_PROFILE_SUBSYSTEM_SLOT'] = 'LDAPProfileSubsystem'
+                    else:
+                        self.mdict['PKI_PROFILE_SUBSYSTEM_SLOT'] = 'ProfileSubsystem'
                 elif self.mdict['pki_subsystem'] == "KRA":
                     # '*.profile'
                     self.mdict['pki_target_servercert_profile'] = \
@@ -1000,6 +996,13 @@ class PKIConfigParser:
                     "+TLS_DHE_RSA_WITH_AES_128_CBC_SHA," + \
                     "+TLS_DHE_RSA_WITH_AES_256_CBC_SHA"
 
+                if config.pki_architecture == 64:
+                    self.mdict['NUXWDOG_JNI_PATH_SLOT'] = (
+                        '/usr/lib64/nuxwdog-jni')
+                else:
+                    self.mdict['NUXWDOG_JNI_PATH_SLOT'] = (
+                        '/usr/lib/nuxwdog-jni')
+
                 # tps parameters
                 self.mdict['TOKENDB_HOST_SLOT'] = \
                     self.mdict['pki_ds_hostname']
@@ -1227,6 +1230,7 @@ class PKIConfigParser:
                     "restart" + " " + \
                     "pki-tomcatd" + "@" + \
                     self.mdict['pki_instance_name'] + "." + "service"
+
         except OSError as exc:
             config.pki_log.error(log.PKI_OSERROR_1, exc,
                                  extra=config.PKI_INDENTATION_LEVEL_2)

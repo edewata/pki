@@ -127,16 +127,14 @@ public abstract class EnrollProfile extends BasicProfile
     }
 
     public IProfileContext createContext() {
-        return new EnrollProfileContext();
+        return new ProfileContext();
     }
 
     /**
      * Creates request.
      */
-    public IRequest[] createRequests(IProfileContext context, Locale locale)
+    public IRequest[] createRequests(IProfileContext ctx, Locale locale)
             throws EProfileException {
-        EnrollProfileContext ctx = (EnrollProfileContext) context;
-
         // determine how many requests should be created
         String cert_request_type = ctx.get(CTX_CERT_REQUEST_TYPE);
         String cert_request = ctx.get(CTX_CERT_REQUEST);
@@ -334,8 +332,7 @@ public abstract class EnrollProfile extends BasicProfile
         //   }
         // }
 
-        IAuthority authority = getAuthority();
-        IRequestQueue queue = authority.getRequestQueue();
+        IRequestQueue queue = getRequestQueue();
 
         // this profile queues request that is authenticated
         // by NoAuth

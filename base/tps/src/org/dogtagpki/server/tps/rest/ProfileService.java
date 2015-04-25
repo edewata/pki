@@ -32,6 +32,7 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import org.apache.commons.lang.StringUtils;
 import org.dogtagpki.server.tps.TPSSubsystem;
 import org.dogtagpki.server.tps.config.ProfileDatabase;
 import org.dogtagpki.server.tps.config.ProfileRecord;
@@ -41,6 +42,7 @@ import com.netscape.certsrv.apps.CMS;
 import com.netscape.certsrv.base.BadRequestException;
 import com.netscape.certsrv.base.ForbiddenException;
 import com.netscape.certsrv.base.PKIException;
+import com.netscape.certsrv.common.Constants;
 import com.netscape.certsrv.tps.profile.ProfileCollection;
 import com.netscape.certsrv.tps.profile.ProfileData;
 import com.netscape.certsrv.tps.profile.ProfileResource;
@@ -139,11 +141,12 @@ public class ProfileService extends PKIService implements ProfileResource {
             return createOKResponse(response);
 
         } catch (PKIException e) {
+            CMS.debug("ProfileService: " + e);
             throw e;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException(e.getMessage());
+            CMS.debug(e);
+            throw new PKIException(e);
         }
     }
 
@@ -161,11 +164,12 @@ public class ProfileService extends PKIService implements ProfileResource {
             return createOKResponse(createProfileData(database.getRecord(profileID)));
 
         } catch (PKIException e) {
+            CMS.debug("ProfileService: " + e);
             throw e;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException(e.getMessage());
+            CMS.debug(e);
+            throw new PKIException(e);
         }
     }
 
@@ -183,9 +187,9 @@ public class ProfileService extends PKIService implements ProfileResource {
             String status = profileData.getStatus();
             Principal principal = servletRequest.getUserPrincipal();
 
-            if (status == null || database.requiresApproval() && !database.canApprove(principal)) {
+            if (StringUtils.isEmpty(status) || database.requiresApproval() && !database.canApprove(principal)) {
                 // if status is unspecified or user doesn't have rights to approve, the entry is disabled
-                profileData.setStatus("Disabled");
+                profileData.setStatus(Constants.CFG_DISABLED);
             }
 
             database.addRecord(profileData.getID(), createProfileRecord(profileData));
@@ -195,11 +199,12 @@ public class ProfileService extends PKIService implements ProfileResource {
             return createCreatedResponse(profileData, profileData.getLink().getHref());
 
         } catch (PKIException e) {
+            CMS.debug("ProfileService: " + e);
             throw e;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException(e.getMessage());
+            CMS.debug(e);
+            throw new PKIException(e);
         }
     }
 
@@ -218,21 +223,21 @@ public class ProfileService extends PKIService implements ProfileResource {
             ProfileRecord record = database.getRecord(profileID);
 
             // only disabled profile can be updated
-            if (!"Disabled".equals(record.getStatus())) {
+            if (!Constants.CFG_DISABLED.equals(record.getStatus())) {
                 throw new ForbiddenException("Unable to update profile " + profileID);
             }
 
             // update status if specified
             String status = profileData.getStatus();
-            if (status != null && !"Disabled".equals(status)) {
-                if (!"Enabled".equals(status)) {
+            if (status != null && !Constants.CFG_DISABLED.equals(status)) {
+                if (!Constants.CFG_ENABLED.equals(status)) {
                     throw new ForbiddenException("Invalid profile status: " + status);
                 }
 
                 // if user doesn't have rights, set to pending
                 Principal principal = servletRequest.getUserPrincipal();
                 if (database.requiresApproval() && !database.canApprove(principal)) {
-                    status = "Pending_Approval";
+                    status = Constants.CFG_PENDING_APPROVAL;
                 }
 
                 // enable profile
@@ -252,21 +257,22 @@ public class ProfileService extends PKIService implements ProfileResource {
             return createOKResponse(profileData);
 
         } catch (PKIException e) {
+            CMS.debug("ProfileService: " + e);
             throw e;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException(e.getMessage());
+            CMS.debug(e);
+            throw new PKIException(e);
         }
     }
 
     @Override
-    public Response changeProfileStatus(String profileID, String action) {
+    public Response changeStatus(String profileID, String action) {
 
         if (profileID == null) throw new BadRequestException("Profile ID is null.");
         if (action == null) throw new BadRequestException("Action is null.");
 
-        CMS.debug("ProfileService.changeProfileStatus(\"" + profileID + "\")");
+        CMS.debug("ProfileService.changeStatus(\"" + profileID + "\", \"" + action + "\")");
 
         try {
             TPSSubsystem subsystem = (TPSSubsystem)CMS.getSubsystem(TPSSubsystem.ID);
@@ -275,25 +281,52 @@ public class ProfileService extends PKIService implements ProfileResource {
             ProfileRecord record = database.getRecord(profileID);
             String status = record.getStatus();
 
-            if ("Disabled".equals(status)) {
-                if ("enable".equals(action)) {
-                    status = "Enabled";
+            Principal principal = servletRequest.getUserPrincipal();
+            boolean canApprove = database.canApprove(principal);
+
+            if (Constants.CFG_DISABLED.equals(status)) {
+
+                if (database.requiresApproval()) {
+
+                    if ("submit".equals(action) && !canApprove) {
+                        status = Constants.CFG_PENDING_APPROVAL;
+
+                    } else if ("enable".equals(action) && canApprove) {
+                        status = Constants.CFG_ENABLED;
+
+                    } else {
+                        throw new BadRequestException("Invalid action: " + action);
+                    }
+
                 } else {
-                    throw new BadRequestException("Invalid action: " + action);
+                    if ("enable".equals(action)) {
+                        status = Constants.CFG_ENABLED;
+
+                    } else {
+                        throw new BadRequestException("Invalid action: " + action);
+                    }
                 }
 
-            } else if ("Enabled".equals(status)) {
+            } else if (Constants.CFG_ENABLED.equals(status)) {
+
                 if ("disable".equals(action)) {
-                    status = "Disabled";
+                    status = Constants.CFG_DISABLED;
+
                 } else {
                     throw new BadRequestException("Invalid action: " + action);
                 }
 
-            } else if ("Pending_Approval".equals(status)) {
-                if ("approve".equals(action)) {
-                    status = "Enabled";
-                } else if ("reject".equals(action)) {
-                    status = "Disabled";
+            } else if (Constants.CFG_PENDING_APPROVAL.equals(status)) {
+
+                if ("approve".equals(action) && canApprove) {
+                    status = Constants.CFG_ENABLED;
+
+                } else if ("reject".equals(action) && canApprove) {
+                    status = Constants.CFG_DISABLED;
+
+                } else if ("cancel".equals(action) && !canApprove) {
+                    status = Constants.CFG_DISABLED;
+
                 } else {
                     throw new BadRequestException("Invalid action: " + action);
                 }
@@ -310,11 +343,12 @@ public class ProfileService extends PKIService implements ProfileResource {
             return createOKResponse(profileData);
 
         } catch (PKIException e) {
+            CMS.debug("ProfileService: " + e);
             throw e;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException(e.getMessage());
+            CMS.debug(e);
+            throw new PKIException(e);
         }
     }
 
@@ -332,8 +366,8 @@ public class ProfileService extends PKIService implements ProfileResource {
             ProfileRecord record = database.getRecord(profileID);
             String status = record.getStatus();
 
-            if (!"Disabled".equals(status)) {
-                throw new ForbiddenException("Unable to delete profile " + profileID);
+            if (!Constants.CFG_DISABLED.equals(status)) {
+                throw new ForbiddenException("Profile " + profileID + " is not disabled");
             }
 
             database.removeRecord(profileID);
@@ -341,11 +375,12 @@ public class ProfileService extends PKIService implements ProfileResource {
             return createNoContentResponse();
 
         } catch (PKIException e) {
+            CMS.debug("ProfileService: " + e);
             throw e;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException(e.getMessage());
+            CMS.debug(e);
+            throw new PKIException(e);
         }
     }
 }

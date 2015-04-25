@@ -110,9 +110,9 @@ var TokenPage = EntryPage.extend({
 
         TokenPage.__super__.setup.call(self);
 
-        self.changeStatusLink = $("a[name='changeStatus']", self.menu);
+        self.changeStatusAction = $("[name='changeStatus']", self.viewMenu);
 
-        self.changeStatusLink.click(function(e) {
+        $("a", self.changeStatusAction).click(function(e) {
 
             e.preventDefault();
 
@@ -153,6 +153,14 @@ var TokenPage = EntryPage.extend({
 
             dialog.open();
         });
+
+        self.showCertsAction = $("[name='showCerts']", self.viewMenu);
+
+        $("a", self.showCertsAction).click(function(e) {
+
+            e.preventDefault();
+            window.location.hash = window.location.hash + "/certs";
+        });
     },
     renderContent: function() {
         var self = this;
@@ -160,9 +168,9 @@ var TokenPage = EntryPage.extend({
         TokenPage.__super__.renderContent.call(self);
 
         if (self.mode == "add") {
-            self.changeStatusLink.hide();
+            self.changeStatusAction.hide();
         } else {
-            self.changeStatusLink.show();
+            self.changeStatusAction.show();
         }
     }
 });

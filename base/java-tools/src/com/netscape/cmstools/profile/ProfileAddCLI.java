@@ -1,11 +1,10 @@
 package com.netscape.cmstools.profile;
 
-import java.io.FileNotFoundException;
 import java.util.Arrays;
-
-import javax.xml.bind.JAXBException;
+import java.util.Properties;
 
 import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
 import org.apache.commons.cli.ParseException;
 
 import com.netscape.certsrv.profile.ProfileData;
@@ -19,13 +18,17 @@ public class ProfileAddCLI extends CLI {
     public ProfileAddCLI(ProfileCLI profileCLI) {
         super("add", "Add profiles", profileCLI);
         this.profileCLI = profileCLI;
+
+        Option optRaw = new Option(null, "raw", false, "Use raw format");
+        optRaw.setArgName("raw");
+        options.addOption(optRaw);
     }
 
     public void printHelp() {
         formatter.printHelp(getFullName() + " <file> [OPTIONS...]", options);
     }
 
-    public void execute(String[] args) {
+    public void execute(String[] args) throws Exception {
         // Always check for "--help" prior to parsing
         if (Arrays.asList(args).contains("--help")) {
             // Display usage
@@ -58,16 +61,18 @@ public class ProfileAddCLI extends CLI {
             System.exit(-1);
         }
 
-        try {
+        if (cmd.hasOption("raw")) {
+            Properties properties = ProfileCLI.readRawProfileFromFile(filename);
+            String profileId = properties.getProperty("profileId");
+            profileCLI.profileClient.createProfileRaw(properties).store(System.out, null);
+            MainCLI.printMessage("Added profile " + profileId);
+        } else {
             ProfileData data = ProfileCLI.readProfileFromFile(filename);
             data = profileCLI.profileClient.createProfile(data);
 
             MainCLI.printMessage("Added profile " + data.getId());
 
             ProfileCLI.printProfile(data, profileCLI.getClient().getConfig().getServerURI());
-        } catch (FileNotFoundException | JAXBException  e) {
-            System.err.println("Error: " + e.getMessage());
-            System.exit(-1);
         }
     }
 }

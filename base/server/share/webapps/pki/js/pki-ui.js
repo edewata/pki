@@ -485,6 +485,8 @@ var Table = Backbone.View.extend({
 
         self.thead = $("thead", self.$el);
         self.buttons = $(".pki-table-buttons", self.thead);
+        self.addButton = $("[name='add']", self.buttons);
+        self.removeButton = $("[name='remove']", self.buttons);
 
         // setup search field handler
         self.searchField = $("input[name='search']", self.thead);
@@ -497,12 +499,12 @@ var Table = Backbone.View.extend({
         });
 
         // setup add button handler
-        $("button[name='add']", self.buttons).click(function(e) {
+        self.addButton.click(function(e) {
             self.add();
         });
 
         // setup remove button handler
-        $("button[name='remove']", self.buttons).click(function(e) {
+        self.removeButton.click(function(e) {
             var items = [];
             var message = "Are you sure you want to remove the following entries?\n";
 
@@ -625,10 +627,12 @@ var Table = Backbone.View.extend({
         var self = this;
 
         if (self.mode == "view") {
-            self.buttons.hide();
+            self.addButton.hide();
+            self.removeButton.hide();
 
         } else { // self.mode == "edit"
-            self.buttons.show();
+            self.addButton.show();
+            self.removeButton.show();
         }
 
         // clear selection
@@ -925,28 +929,30 @@ var EntryPage = Page.extend({
     setup: function() {
         var self = this;
 
-        self.menu = self.$(".pki-menu");
-        self.editLink = $("a[name='edit']", self.menu);
+        self.actions = self.$(".pki-actions");
 
-        self.buttons = self.$(".pki-buttons");
-        self.cancelButton = $("button[name='cancel']", self.buttons);
-        self.saveButton = $("button[name='save']", self.buttons);
+        self.viewMenu = $(".pki-actions-menu[name='view']", self.actions);
+        self.editAction = $("[name='edit']", self.viewMenu);
+
+        self.editMenu = $(".pki-actions-menu[name='edit']", self.actions);
+        self.cancelAction = $("[name='cancel']", self.editMenu);
+        self.saveAction = $("[name='save']", self.editMenu);
 
         self.idField = self.$("input[name='id']");
         self.statusField = self.$("input[name='status']");
 
-        self.editLink.click(function(e) {
+        $("a", self.editAction).click(function(e) {
             self.mode = "edit";
             self.render();
             e.preventDefault();
         });
 
-        self.cancelButton.click(function(e) {
+        self.cancelAction.click(function(e) {
             self.cancel();
             e.preventDefault();
         });
 
-        self.saveButton.click(function(e) {
+        self.saveAction.click(function(e) {
             self.save();
             e.preventDefault();
         });
@@ -996,11 +1002,10 @@ var EntryPage = Page.extend({
                 input.attr("readonly", "readonly");
             });
 
-            self.buttons.hide();
-            self.menu.show();
+            self.viewMenu.show();
+            self.editMenu.hide();
 
         } else {
-            self.menu.hide();
 
             // Show editable fields.
             self.$(".pki-fields input").each(function(index) {
@@ -1013,7 +1018,8 @@ var EntryPage = Page.extend({
                 }
             });
 
-            self.buttons.show();
+            self.viewMenu.hide();
+            self.editMenu.show();
         }
 
         self.$(".pki-fields input").each(function(index) {

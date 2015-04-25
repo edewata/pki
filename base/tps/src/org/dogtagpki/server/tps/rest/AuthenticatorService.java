@@ -32,6 +32,7 @@ import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import org.apache.commons.lang.StringUtils;
 import org.dogtagpki.server.tps.TPSSubsystem;
 import org.dogtagpki.server.tps.config.AuthenticatorDatabase;
 import org.dogtagpki.server.tps.config.AuthenticatorRecord;
@@ -41,6 +42,7 @@ import com.netscape.certsrv.apps.CMS;
 import com.netscape.certsrv.base.BadRequestException;
 import com.netscape.certsrv.base.ForbiddenException;
 import com.netscape.certsrv.base.PKIException;
+import com.netscape.certsrv.common.Constants;
 import com.netscape.certsrv.tps.authenticator.AuthenticatorCollection;
 import com.netscape.certsrv.tps.authenticator.AuthenticatorData;
 import com.netscape.certsrv.tps.authenticator.AuthenticatorResource;
@@ -139,11 +141,12 @@ public class AuthenticatorService extends PKIService implements AuthenticatorRes
             return createOKResponse(response);
 
         } catch (PKIException e) {
+            CMS.debug("AuthenticatorService: " + e);
             throw e;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException(e.getMessage());
+            CMS.debug(e);
+            throw new PKIException(e);
         }
     }
 
@@ -161,11 +164,12 @@ public class AuthenticatorService extends PKIService implements AuthenticatorRes
             return createOKResponse(createAuthenticatorData(database.getRecord(authenticatorID)));
 
         } catch (PKIException e) {
+            CMS.debug("AuthenticatorService: " + e);
             throw e;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException(e.getMessage());
+            CMS.debug(e);
+            throw new PKIException(e);
         }
     }
 
@@ -183,9 +187,9 @@ public class AuthenticatorService extends PKIService implements AuthenticatorRes
             String status = authenticatorData.getStatus();
             Principal principal = servletRequest.getUserPrincipal();
 
-            if (status == null || database.requiresApproval() && !database.canApprove(principal)) {
+            if (StringUtils.isEmpty(status) || database.requiresApproval() && !database.canApprove(principal)) {
                 // if status is unspecified or user doesn't have rights to approve, the entry is disabled
-                authenticatorData.setStatus("Disabled");
+                authenticatorData.setStatus(Constants.CFG_DISABLED);
             }
 
             database.addRecord(authenticatorData.getID(), createAuthenticatorRecord(authenticatorData));
@@ -194,11 +198,12 @@ public class AuthenticatorService extends PKIService implements AuthenticatorRes
             return createCreatedResponse(authenticatorData, authenticatorData.getLink().getHref());
 
         } catch (PKIException e) {
+            CMS.debug("AuthenticatorService: " + e);
             throw e;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException(e.getMessage());
+            CMS.debug(e);
+            throw new PKIException(e);
         }
     }
 
@@ -217,21 +222,21 @@ public class AuthenticatorService extends PKIService implements AuthenticatorRes
             AuthenticatorRecord record = database.getRecord(authenticatorID);
 
             // only disabled authenticator can be updated
-            if (!"Disabled".equals(record.getStatus())) {
+            if (!Constants.CFG_DISABLED.equals(record.getStatus())) {
                 throw new ForbiddenException("Unable to update authenticator " + authenticatorID);
             }
 
             // update status if specified
             String status = authenticatorData.getStatus();
-            if (status != null && !"Disabled".equals(status)) {
-                if (!"Enabled".equals(status)) {
+            if (status != null && !Constants.CFG_DISABLED.equals(status)) {
+                if (!Constants.CFG_ENABLED.equals(status)) {
                     throw new ForbiddenException("Invalid authenticator status: " + status);
                 }
 
                 // if user doesn't have rights, set to pending
                 Principal principal = servletRequest.getUserPrincipal();
                 if (database.requiresApproval() && !database.canApprove(principal)) {
-                    status = "Pending_Approval";
+                    status = Constants.CFG_PENDING_APPROVAL;
                 }
 
                 // enable authenticator
@@ -251,21 +256,22 @@ public class AuthenticatorService extends PKIService implements AuthenticatorRes
             return createOKResponse(authenticatorData);
 
         } catch (PKIException e) {
+            CMS.debug("AuthenticatorService: " + e);
             throw e;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException(e.getMessage());
+            CMS.debug(e);
+            throw new PKIException(e);
         }
     }
 
     @Override
-    public Response changeAuthenticatorStatus(String authenticatorID, String action) {
+    public Response changeStatus(String authenticatorID, String action) {
 
         if (authenticatorID == null) throw new BadRequestException("Authenticator ID is null.");
         if (action == null) throw new BadRequestException("Action is null.");
 
-        CMS.debug("AuthenticatorService.changeAuthenticatorStatus(\"" + authenticatorID + "\")");
+        CMS.debug("AuthenticatorService.changeStatus(\"" + authenticatorID + "\", \"" + action + "\")");
 
         try {
             TPSSubsystem subsystem = (TPSSubsystem)CMS.getSubsystem(TPSSubsystem.ID);
@@ -274,31 +280,58 @@ public class AuthenticatorService extends PKIService implements AuthenticatorRes
             AuthenticatorRecord record = database.getRecord(authenticatorID);
             String status = record.getStatus();
 
-            if ("Disabled".equals(status)) {
-                if ("enable".equals(action)) {
-                    status = "Enabled";
+            Principal principal = servletRequest.getUserPrincipal();
+            boolean canApprove = database.canApprove(principal);
+
+            if (Constants.CFG_DISABLED.equals(status)) {
+
+                if (database.requiresApproval()) {
+
+                    if ("submit".equals(action) && !canApprove) {
+                        status = Constants.CFG_PENDING_APPROVAL;
+
+                    } else if ("enable".equals(action) && canApprove) {
+                        status = Constants.CFG_ENABLED;
+
+                    } else {
+                        throw new BadRequestException("Invalid action: " + action);
+                    }
+
                 } else {
-                    throw new BadRequestException("Invalid action: " + action);
+                    if ("enable".equals(action)) {
+                        status = Constants.CFG_ENABLED;
+
+                    } else {
+                        throw new BadRequestException("Invalid action: " + action);
+                    }
                 }
 
-            } else if ("Enabled".equals(status)) {
+            } else if (Constants.CFG_ENABLED.equals(status)) {
+
                 if ("disable".equals(action)) {
-                    status = "Disabled";
+                    status = Constants.CFG_DISABLED;
+
                 } else {
                     throw new BadRequestException("Invalid action: " + action);
                 }
 
-            } else if ("Pending_Approval".equals(status)) {
-                if ("approve".equals(action)) {
-                    status = "Enabled";
-                } else if ("reject".equals(action)) {
-                    status = "Disabled";
+            } else if (Constants.CFG_PENDING_APPROVAL.equals(status)) {
+
+                if ("approve".equals(action) && canApprove) {
+                    status = Constants.CFG_ENABLED;
+
+                } else if ("reject".equals(action) && canApprove) {
+                    status = Constants.CFG_DISABLED;
+
+                } else if ("cancel".equals(action) && !canApprove) {
+                    status = Constants.CFG_DISABLED;
+
                 } else {
                     throw new BadRequestException("Invalid action: " + action);
                 }
 
             } else {
-                throw new PKIException("Invalid authenticator status: " + status);
+                throw new PKIException("Invalid status: " + status);
             }
 
             record.setStatus(status);
@@ -309,11 +342,12 @@ public class AuthenticatorService extends PKIService implements AuthenticatorRes
             return createOKResponse(authenticatorData);
 
         } catch (PKIException e) {
+            CMS.debug("AuthenticatorService: " + e);
             throw e;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException(e.getMessage());
+            CMS.debug(e);
+            throw new PKIException(e);
         }
     }
 
@@ -331,7 +365,7 @@ public class AuthenticatorService extends PKIService implements AuthenticatorRes
             AuthenticatorRecord record = database.getRecord(authenticatorID);
             String status = record.getStatus();
 
-            if (!"Disabled".equals(status)) {
+            if (!Constants.CFG_DISABLED.equals(status)) {
                 throw new ForbiddenException("Unable to delete authenticator " + authenticatorID);
             }
 
@@ -340,11 +374,12 @@ public class AuthenticatorService extends PKIService implements AuthenticatorRes
             return createNoContentResponse();
 
         } catch (PKIException e) {
+            CMS.debug("AuthenticatorService: " + e);
             throw e;
 
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new PKIException(e.getMessage());
+            CMS.debug(e);
+            throw new PKIException(e);
         }
     }
 }

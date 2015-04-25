@@ -127,7 +127,6 @@ public class TPSEngine {
     public static final String CFG_DEF_NETKEY_OLD_INSTANCE_AID = "A00000000101";
     public static final String CFG_DEF_NETKEY_OLD_FILE_AID = "A000000001";
     public static final String CFG_DEF_APPLET_SO_PIN = "000000000000";
-    public static final String CFG_ENABLED = "Enabled";
 
     public static final int CFG_CHANNEL_DEF_BLOCK_SIZE = 242;
     public static final int CFG_CHANNEL_DEF_INSTANCE_SIZE = 18000;
@@ -540,7 +539,7 @@ public class TPSEngine {
             boolean isECC) throws TPSException {
 
         CMS.debug("TPSEngine.serverSideKeyGen entering... keySize: " + keySize + " cuid: " + cuid + " userid: "
-                + userid + " drConnId: " + drmConnId + " wrappedDesKey: " + wrappedDesKey + " archive: " + archive
+                + userid + " drmConnId: " + drmConnId + " wrappedDesKey: " + wrappedDesKey + " archive: " + archive
                 + " isECC: " + isECC);
 
         if (cuid == null || userid == null || drmConnId == null || wrappedDesKey == null) {

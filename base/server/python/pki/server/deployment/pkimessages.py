@@ -63,8 +63,7 @@ VERBOSITY FLAGS    CONSOLE MESSAGE LEVEL       LOG MESSAGE LEVEL
 PKI_BADZIPFILE_ERROR_1 = "zipfile.BadZipFile:  %s!"
 PKI_CONFIGURATION_STANDALONE_1 = '''
       Please obtain the necessary certificates for this stand-alone %s,
-      and re-run the configuration for step two.
-'''
+      and re-run the configuration for step two.'''
 PKI_DIRECTORY_ALREADY_EXISTS_1 = "Directory '%s' already exists!"
 PKI_DIRECTORY_ALREADY_EXISTS_NOT_A_DIRECTORY_1 = \
     "Directory '%s' already exists BUT it is NOT a directory!"
@@ -218,6 +217,11 @@ PKIHELPER_MKDIR_1 = "mkdir -p %s"
 PKIHELPER_MODIFY_DIR_1 = "modifying '%s'"
 PKIHELPER_MODIFY_FILE_1 = "modifying '%s'"
 PKIHELPER_MODIFY_SYMLINK_1 = "modifying '%s'"
+PKIHELPER_MODUTIL_MISSING_LIBFILE = \
+    "modutil:  Missing '-libfile libfile' option!"
+PKIHELPER_MODUTIL_MISSING_MODULENAME = \
+    "modutil:  Missing '-add modulename' option!"
+PKIHELPER_MODUTIL_MISSING_PATH = "modutil:  Missing '-dbdir path' option!"
 PKIHELPER_MUTUALLY_EXCLUSIVE_CLONE_EXTERNAL_CA = \
     "cloned CAs and external CAs MUST be MUTUALLY EXCLUSIVE in '%s'"
 PKIHELPER_MUTUALLY_EXCLUSIVE_CLONE_EXTERNAL_SUB_CA = \
@@ -245,6 +249,7 @@ PKIHELPER_PK12UTIL_MISSING_OUTFILE = \
     "pk12util missing -o output-file option!"
 PKIHELPER_PK12UTIL_MISSING_PWFILE = \
     "pk12util missing -w pw-file option!"
+PKIHELPER_REGISTER_SECURITY_MODULE_1 = "executing '%s'"
 
 PKIHELPER_PKI_INSTANCE_SUBSYSTEMS_2 = \
     "instance '%s' contains '%d' PKI subsystems"
@@ -299,6 +304,8 @@ PKIHELPER_UNDEFINED_CLIENT_DATABASE_PASSWORD_2 = \
     "the randomly generated client pin MUST be used"
 PKIHELPER_UNDEFINED_CONFIGURATION_FILE_ENTRY_2 = \
     "A value for '%s' MUST be defined in '%s'"
+PKIHELPER_UNDEFINED_HSM_TOKEN = \
+    "A value other than 'internal' MUST be defined for 'pki_token_name'"
 PKIHELPER_UNDEFINED_SUBSYSTEM_NICKNAME = "subsystem nickname not defined"
 PKIHELPER_UNDEFINED_TKS_HOST_PORT = "TKS Host or Port is undefined"
 PKIHELPER_UNDEFINED_TOKEN_PASSWD_1 = "Password for token '%s' not defined"
@@ -351,15 +358,16 @@ PKI_CONFIG_RESPONSE_STATUS = "status:"
 PKI_CONFIG_NOT_YET_IMPLEMENTED_1 = " %s NOT YET IMPLEMENTED"
 PKI_CHECK_STATUS_MESSAGE = '''
       To check the status of the subsystem:
-            systemctl status pki-tomcatd@%s.service
-'''
-PKI_ACCESS_URL = "      The URL for the subsystem is: \n"\
-                 "            https://%s:%s/%s/services"
-PKI_ACCESS_TPS_URL = "      The URL for the subsystem is: \n"\
-                     "            https://%s:%s/%s"
-PKI_INSTANCE_RESTART_MESSAGE = \
-    "      To restart the subsystem: \n"\
-    "            systemctl restart pki-tomcatd@%s.service"
+            systemctl status pki-tomcatd@%s.service'''
+PKI_ACCESS_URL = '''
+      The URL for the subsystem is:
+            https://%s:%s/%s/services'''
+PKI_ACCESS_TPS_URL = '''
+      The URL for the subsystem is:
+            https://%s:%s/%s'''
+PKI_INSTANCE_RESTART_MESSAGE = '''
+      To restart the subsystem:
+            systemctl restart pki-tomcatd@%s.service'''
 
 
 PKI_SPAWN_INFORMATION_HEADER = '''
@@ -371,6 +379,8 @@ PKI_SPAWN_INFORMATION_HEADER = '''
 PKI_SPAWN_INFORMATION_FOOTER = '''
     ==========================================================================
 '''
+PKI_SYSTEM_BOOT_STATUS_MESSAGE = '''
+      PKI instances will be %s upon system boot'''
 
 
 # PKI Deployment "Scriptlet" Messages

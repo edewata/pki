@@ -18,7 +18,8 @@
 
 package org.dogtagpki.server.ca.rest;
 
-import java.io.File;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.security.Principal;
@@ -28,6 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Vector;
 
 import javax.servlet.http.HttpServletRequest;
@@ -164,9 +166,7 @@ public class ProfileService extends PKIService implements ProfileResource {
         return createOKResponse(infos);
     }
 
-    @Override
-    public Response retrieveProfile(String profileId) throws ProfileNotFoundException {
-        ProfileData data = null;
+    private IProfile getProfile(String profileId) throws ProfileNotFoundException {
         boolean visibleOnly = true;
 
         if (profileId == null) {
@@ -186,24 +186,11 @@ public class ProfileService extends PKIService implements ProfileResource {
             visibleOnly = false;
         }
 
-        Enumeration<String> profileIds = ps.getProfileIds();
-
-        IProfile profile = null;
-        if (profileIds != null) {
-            while (profileIds.hasMoreElements()) {
-                String id = profileIds.nextElement();
-
-                if (id.equals(profileId)) {
-
-                    try {
-                        profile = ps.getProfile(profileId);
-                    } catch (EProfileException e) {
-                        e.printStackTrace();
-                        throw new ProfileNotFoundException(profileId);
-                    }
-                    break;
-                }
-            }
+        IProfile profile;
+        try {
+            profile = ps.getProfile(profileId);
+        } catch (EProfileException e) {
+            throw new ProfileNotFoundException(profileId, "Profile not found", e);
         }
 
         if (profile == null) {
@@ -214,6 +201,14 @@ public class ProfileService extends PKIService implements ProfileResource {
             throw new ProfileNotFoundException(profileId);
         }
 
+        return profile;
+    }
+
+    @Override
+    public Response retrieveProfile(String profileId) throws ProfileNotFoundException {
+        IProfile profile = getProfile(profileId);
+
+        ProfileData data = null;
         try {
             data = createProfileData(profileId);
         } catch (EBaseException e) {
@@ -228,6 +223,19 @@ public class ProfileService extends PKIService implements ProfileResource {
 
         return createOKResponse(data);
     }
+
+    @Override
+    public Response retrieveProfileRaw(String profileId)
+            throws ProfileNotFoundException {
+        IProfile profile = getProfile(profileId);
+        ByteArrayOutputStream data = new ByteArrayOutputStream();
+        // add profileId and classId "virtual" properties
+        profile.getConfigStore().put("profileId", profileId);
+        profile.getConfigStore().put("classId", ps.getProfileClassId(profileId));
+        profile.getConfigStore().save(data, null);
+        return createOKResponse(data.toByteArray());
+    }
+
 
     public ProfileData createProfileData(String profileId) throws EBaseException {
 
@@ -244,7 +252,7 @@ public class ProfileService extends PKIService implements ProfileResource {
 
         data.setAuthenticatorId(profile.getAuthenticatorId());
         data.setAuthzAcl(profile.getAuthzAcl());
-        data.setClassId(cs.getString(profileId + ".class_id"));
+        data.setClassId(ps.getProfileClassId(profileId));
         data.setDescription(profile.getDescription(getLocale(headers)));
         data.setEnabled(ps.isProfileEnable(profileId));
         data.setEnabledBy(ps.getProfileEnableBy(profileId));
@@ -472,18 +480,13 @@ public class ProfileService extends PKIService implements ProfileResource {
             auditParams.put("description", data.getDescription());
             auditParams.put("visible", Boolean.toString(data.isVisible()));
 
-            String config = CMS.getConfigStore().getString("instanceRoot") + "/ca/profiles/ca/" +
-                    profileId + ".cfg";
-            File configFile = new File(config);
-            configFile.createNewFile();
             IPluginInfo info = registry.getPluginInfo("profile", data.getClassId());
 
-            profile = ps.createProfile(profileId, data.getClassId(), info.getClassName(), config);
+            profile = ps.createProfile(profileId, data.getClassId(), info.getClassName());
             profile.setName(getLocale(headers), data.getName());
             profile.setDescription(getLocale(headers), data.getDescription());
             profile.setVisible(data.isVisible());
             profile.getConfigStore().commit(false);
-            ps.createProfileConfig(profileId, data.getClassId(), config);
 
             if (profile instanceof IProfileEx) {
                 // populates profile specific plugins such as
@@ -504,6 +507,81 @@ public class ProfileService extends PKIService implements ProfileResource {
 
             return createCreatedResponse(profileData, profileData.getLink().getHref());
 
+        } catch (EBaseException e) {
+            CMS.debug("createProfile: error creating profile");
+            CMS.debug(e);
+
+            auditProfileChange(
+                    ScopeDef.SC_PROFILE_RULES,
+                    OpDef.OP_ADD,
+                    profileId,
+                    ILogger.FAILURE,
+                    auditParams);
+
+            throw new PKIException("Error in creating profile", e);
+        }
+    }
+
+    @Override
+    public Response createProfileRaw(byte[] data) {
+        if (data == null) {
+            CMS.debug("createProfileRaw: profile data is null");
+            throw new BadRequestException("Unable to create profile: Invalid profile data.");
+        }
+
+        if (ps == null) {
+            CMS.debug("createProfile: ps is null");
+            throw new PKIException("Error creating profile.  Profile Service not available");
+        }
+
+        Map<String, String> auditParams = new LinkedHashMap<String, String>();
+        String profileId = null;
+        String classId = null;
+        Properties properties = new Properties();
+        try {
+            // load data and read profileId and classId
+            properties.load(new ByteArrayInputStream(data));
+            profileId = properties.getProperty("profileId");
+            classId = properties.getProperty("classId");
+        } catch (IOException e) {
+            throw new BadRequestException("Could not parse raw profile data.");
+        }
+        if (profileId == null) {
+            throw new BadRequestException("Profile data did not contain profileId attribute.");
+        }
+        if (classId == null) {
+            throw new BadRequestException("Profile data did not contain classId attribute.");
+        }
+        properties.remove("profileId");
+        properties.remove("classId");
+
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            properties.store(out, null);
+            data = out.toByteArray();  // original data sans profileId, classId
+
+            IProfile profile = ps.getProfile(profileId);
+            if (profile != null) {
+                throw new BadRequestException("Profile already exists");
+            }
+
+            auditParams.put("class_id", classId);
+
+            IPluginInfo info = registry.getPluginInfo("profile", classId);
+
+            profile = ps.createProfile(profileId, classId, info.getClassName());
+            profile.getConfigStore().commit(false);
+            profile.getConfigStore().load(new ByteArrayInputStream(data));
+            ps.disableProfile(profileId);
+
+            auditProfileChange(
+                    ScopeDef.SC_PROFILE_RULES,
+                    OpDef.OP_ADD,
+                    profileId,
+                    ILogger.SUCCESS,
+                    auditParams);
+
+            return createCreatedResponse(data, uriInfo.getAbsolutePath());
         } catch (EBaseException | IOException e) {
             CMS.debug("createProfile: error in creating profile: " + e);
             e.printStackTrace();
@@ -515,7 +593,7 @@ public class ProfileService extends PKIService implements ProfileResource {
                     ILogger.FAILURE,
                     auditParams);
 
-            throw new PKIException("Error in creating profile");
+            throw new PKIException("Error in creating profile", e);
         }
     }
 
@@ -553,6 +631,58 @@ public class ProfileService extends PKIService implements ProfileResource {
             CMS.debug("modifyProfile: error obtaining profile `" + profileId + "`: " + e);
             e.printStackTrace();
             throw new PKIException("Error modifying profile.  Cannot obtain profile.");
+        }
+    }
+
+    @Override
+    public Response modifyProfileRaw(String profileId, byte[] data) {
+        if (profileId == null) {
+            CMS.debug("modifyProfile: invalid request. profileId is null");
+            throw new BadRequestException("Unable to modify profile: Invalid Profile Id");
+        }
+
+        if (data == null) {
+            CMS.debug("modifyProfile: invalid request. data is null");
+            throw new BadRequestException("Unable to modify profile: Invalid profile data");
+        }
+
+        if (ps == null) {
+            CMS.debug("modifyProfile: ps is null");
+            throw new PKIException("Error modifying profile.  Profile Service not available");
+        }
+
+        if (ps.isProfileEnable(profileId)) {
+            throw new BadRequestException("Cannot change profile data.  Profile must be disabled");
+        }
+
+        Properties properties = new Properties();
+        try {
+            properties.load(new ByteArrayInputStream(data));
+        } catch (IOException e) {
+            throw new BadRequestException("Could not parse raw profile data.", e);
+        }
+        properties.remove("profileId");
+        properties.remove("classId");
+
+        try {
+            IProfile profile = ps.getProfile(profileId);
+            if (profile == null) {
+                throw new ProfileNotFoundException(profileId);
+            }
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            properties.store(out, null);
+            data = out.toByteArray();  // original data sans profileId, classId
+
+            profile.getConfigStore().load(new ByteArrayInputStream(data));
+            ps.disableProfile(profileId);
+            profile.getConfigStore().commit(false);
+
+            return createOKResponse(data);
+        } catch (EBaseException | IOException e) {
+            CMS.debug("modifyProfile: error modifying profile " + profileId);
+            CMS.debug(e);
+            throw new PKIException("Error modifying profile.", e);
         }
     }
 
@@ -983,9 +1113,7 @@ public class ProfileService extends PKIService implements ProfileResource {
                         "`.  Profile must be disabled first.");
             }
 
-            String configFile = CMS.getConfigStore().getString("profile." + profileId + ".config");
-
-            ps.deleteProfile(profileId, configFile);
+            ps.deleteProfile(profileId);
 
             auditProfileChange(
                     ScopeDef.SC_PROFILE_RULES,

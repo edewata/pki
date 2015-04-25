@@ -44,9 +44,9 @@ find_file(TOMCAT_CATALINA_JAR
         /usr/share/java/tomcat
 )
 
-find_file(TOMCAT_UTIL_JAR
+find_file(TOMCAT_UTIL_SCAN_JAR
     NAMES
-        tomcat-util.jar
+        tomcat-util-scan.jar
     PATHS
         /usr/share/java/tomcat
 )
@@ -118,41 +118,28 @@ find_file(HTTPCORE_JAR
         /usr/share/java/httpcomponents
 )
 
+find_file(TOMCATJSS_JAR
+    NAMES
+        tomcatjss.jar
+    PATHS
+        /usr/share/java
+)
+
+find_file(NUXWDOG_JAR
+    NAMES
+        nuxwdog.jar
+    PATHS
+        ${JAVA_LIB_INSTALL_DIR}
+        /usr/share/java
+)
+
 # build pki-tomcat
 javac(pki-tomcat-classes
     SOURCES
         com/netscape/cms/tomcat/*.java
     CLASSPATH
-        ${SERVLET_JAR} ${TOMCAT_CATALINA_JAR}
+        ${SERVLET_JAR} ${TOMCAT_CATALINA_JAR} ${TOMCAT_UTIL_SCAN_JAR}
+		${NUXWDOG_JAR} ${APACHE_COMMONS_LANG_JAR} ${TOMCATJSS_JAR}
     OUTPUT_DIR
-        ${CMAKE_BINARY_DIR}/classes
+        ${CMAKE_BINARY_DIR}/../../tomcat
 )
-
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/pki-tomcat.mf
-    ${CMAKE_CURRENT_BINARY_DIR}/pki-tomcat.mf
-)
-
-jar(pki-tomcat-jar
-    CREATE
-        ${CMAKE_BINARY_DIR}/dist/pki-tomcat.jar
-    OPTIONS
-        m
-    PARAMS
-        ${CMAKE_CURRENT_BINARY_DIR}/pki-tomcat.mf
-    INPUT_DIR
-        ${CMAKE_BINARY_DIR}/classes
-    FILES
-        com/netscape/cms/tomcat/*.class
-    DEPENDS
-        pki-tomcat-classes
-)
-
-install(
-    FILES
-        ${CMAKE_BINARY_DIR}/dist/pki-tomcat.jar
-    DESTINATION
-        ${JAVA_JAR_INSTALL_DIR}/pki
-)
-
-set(PKI_TOMCAT_JAR ${CMAKE_BINARY_DIR}/dist/pki-tomcat.jar CACHE INTERNAL "pki-tomcat jar file")

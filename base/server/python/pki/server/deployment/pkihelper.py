@@ -463,6 +463,11 @@ class ConfigurationFile:
             self.mdict['pki_skip_configuration'])
         self.standalone = config.str2bool(self.mdict['pki_standalone'])
         self.subordinate = config.str2bool(self.mdict['pki_subordinate'])
+        # server cert san injection support
+        self.san_inject = config.str2bool(self.mdict['pki_san_inject'])
+        if self.san_inject:
+            self.confirm_data_exists('pki_san_for_server_cert')
+            self.san_for_server_cert = self.mdict['pki_san_for_server_cert']
         # set useful 'string' object variables for this class
         self.subsystem = self.mdict['pki_subsystem']
 
@@ -577,6 +582,15 @@ class ConfigurationFile:
                 if not self.skip_configuration and not self.standalone:
                     self.confirm_data_exists("pki_security_domain_password")
             # If required, verify existence of Token Password
+            if config.str2bool(self.mdict['pki_hsm_enable']):
+                self.confirm_data_exists("pki_hsm_libfile")
+                self.confirm_data_exists("pki_hsm_modulename")
+                self.confirm_data_exists("pki_token_name")
+                if self.mdict['pki_token_name'] == "internal":
+                    config.pki_log.error(
+                        log.PKIHELPER_UNDEFINED_HSM_TOKEN,
+                        extra=config.PKI_INDENTATION_LEVEL_2)
+                    raise Exception(log.PKIHELPER_UNDEFINED_HSM_TOKEN)
             if not self.mdict['pki_token_name'] == "internal":
                 self.confirm_data_exists("pki_token_password")
         return
@@ -2039,6 +2053,38 @@ class Password:
                 raise
         return
 
+    def create_hsm_password_conf(self, path, pin, hsm_pin,
+                                 overwrite_flag=False, critical_failure=True):
+        try:
+            if os.path.exists(path):
+                if overwrite_flag:
+                    config.pki_log.info(
+                        log.PKIHELPER_PASSWORD_CONF_1, path,
+                        extra=config.PKI_INDENTATION_LEVEL_2)
+                    # overwrite the existing 'password.conf' file
+                    with open(path, "w") as fd:
+                        fd.write(self.mdict['pki_self_signed_token'] +
+                                 "=" + str(pin) + "\n")
+                        fd.write("hardware-" +
+                                 self.mdict['pki_token_name'] +
+                                 "=" + str(hsm_pin))
+            else:
+                config.pki_log.info(log.PKIHELPER_PASSWORD_CONF_1, path,
+                                    extra=config.PKI_INDENTATION_LEVEL_2)
+                # create a new 'password.conf' file
+                with open(path, "w") as fd:
+                    fd.write(self.mdict['pki_self_signed_token'] +
+                             "=" + str(pin) + "\n")
+                    fd.write("hardware-" +
+                             self.mdict['pki_token_name'] +
+                             "=" + str(hsm_pin))
+        except OSError as exc:
+            config.pki_log.error(log.PKI_OSERROR_1, exc,
+                                 extra=config.PKI_INDENTATION_LEVEL_2)
+            if critical_failure:
+                raise
+        return
+
     def create_client_pkcs12_password_conf(self, path, overwrite_flag=False,
                                            critical_failure=True):
         try:
@@ -2518,6 +2564,68 @@ class Certutil:
             # Execute this "certutil" command
             with open(os.devnull, "w") as fnull:
                 subprocess.check_call(command, stdout=fnull, stderr=fnull)
+        except subprocess.CalledProcessError as exc:
+            config.pki_log.error(log.PKI_SUBPROCESS_ERROR_1, exc,
+                                 extra=config.PKI_INDENTATION_LEVEL_2)
+            if critical_failure:
+                raise
+        except OSError as exc:
+            config.pki_log.error(log.PKI_OSERROR_1, exc,
+                                 extra=config.PKI_INDENTATION_LEVEL_2)
+            if critical_failure:
+                raise
+        return
+
+
+class Modutil:
+    """PKI Deployment NSS 'modutil' Class"""
+
+    def __init__(self, deployer):
+        self.mdict = deployer.mdict
+
+    def register_security_module(self, path, modulename, libfile,
+                                 prefix=None, critical_failure=True):
+        try:
+            # Compose this "modutil" command
+            command = ["modutil"]
+            #   Provide a path to the NSS security databases
+            if path:
+                command.extend(["-dbdir", path])
+            else:
+                config.pki_log.error(
+                    log.PKIHELPER_MODUTIL_MISSING_PATH,
+                    extra=config.PKI_INDENTATION_LEVEL_2)
+                raise Exception(log.PKIHELPER_MODUTIL_MISSING_PATH)
+            #   Add optional security database prefix
+            if prefix is not None:
+                command.extend(["--dbprefix", prefix])
+            #   Append '-nocertdb' switch
+            command.extend(["-nocertdb"])
+            #   Specify a 'modulename'
+            if modulename:
+                command.extend(["-add", modulename])
+            else:
+                config.pki_log.error(
+                    log.PKIHELPER_MODUTIL_MISSING_MODULENAME,
+                    extra=config.PKI_INDENTATION_LEVEL_2)
+                raise Exception(log.PKIHELPER_MODUTIL_MISSING_MODULENAME)
+            #   Specify a 'libfile'
+            if libfile:
+                command.extend(["-libfile", libfile])
+            else:
+                config.pki_log.error(
+                    log.PKIHELPER_MODUTIL_MISSING_LIBFILE,
+                    extra=config.PKI_INDENTATION_LEVEL_2)
+                raise Exception(log.PKIHELPER_MODUTIL_MISSING_LIBFILE)
+            #   Append '-force' switch
+            command.extend(["-force"])
+            # Display this "modutil" command
+            config.pki_log.info(
+                log.PKIHELPER_REGISTER_SECURITY_MODULE_1,
+                ' '.join(command),
+                extra=config.PKI_INDENTATION_LEVEL_2)
+            # Execute this "modutil" command
+            subprocess.check_call(command)
         except subprocess.CalledProcessError as exc:
             config.pki_log.error(log.PKI_SUBPROCESS_ERROR_1, exc,
                                  extra=config.PKI_INDENTATION_LEVEL_2)
@@ -3248,6 +3356,108 @@ class Systemd(object):
                 raise
         return
 
+    def disable(self, critical_failure=True):
+        # Legacy SysVinit shutdown (kill) script on system shutdown values:
+        #
+        #    /etc/rc3.d/K13<TPS instance>  --> /etc/init.d/<TPS instance>
+        #    /etc/rc3.d/K14<RA instance>   --> /etc/init.d/<RA instance>
+        #    /etc/rc3.d/K16<TKS instance>  --> /etc/init.d/<TKS instance>
+        #    /etc/rc3.d/K17<OCSP instance> --> /etc/init.d/<OCSP instance>
+        #    /etc/rc3.d/K18<KRA instance>  --> /etc/init.d/<KRA instance>
+        #    /etc/rc3.d/K19<CA instance>   --> /etc/init.d/<CA instance>
+        #
+        """PKI Deployment execution management 'disable' method.
+
+        Executes a 'systemd disable pki-tomcatd.target' system command, or
+        an 'rm /etc/rc3.d/*<instance>' system command on Debian systems.
+
+        Args:
+          critical_failure (boolean, optional):  Raise exception on failures;
+                                                 defaults to 'True'.
+
+        Attributes:
+
+        Returns:
+
+        Raises:
+          subprocess.CalledProcessError:  If 'critical_failure' is 'True'.
+
+        Examples:
+
+        """
+        try:
+            if pki.system.SYSTEM_TYPE == "debian":
+                command = ["rm", "/etc/rc3.d/*" +
+                           self.mdict['pki_instance_name']]
+            else:
+                command = ["systemctl", "disable", "pki-tomcatd.target"]
+
+            # Display this "systemd" execution managment command
+            config.pki_log.info(
+                log.PKIHELPER_SYSTEMD_COMMAND_1, ' '.join(command),
+                extra=config.PKI_INDENTATION_LEVEL_2)
+            # Execute this "systemd" execution management command
+            subprocess.check_call(command)
+        except subprocess.CalledProcessError as exc:
+            config.pki_log.error(log.PKI_SUBPROCESS_ERROR_1, exc,
+                                 extra=config.PKI_INDENTATION_LEVEL_2)
+            if critical_failure:
+                raise
+        return
+
+    def enable(self, critical_failure=True):
+        # Legacy SysVinit startup script on system boot values:
+        #
+        #    /etc/rc3.d/S81<CA instance>   --> /etc/init.d/<CA instance>
+        #    /etc/rc3.d/S82<KRA instance>  --> /etc/init.d/<KRA instance>
+        #    /etc/rc3.d/S83<OCSP instance> --> /etc/init.d/<OCSP instance>
+        #    /etc/rc3.d/S84<TKS instance>  --> /etc/init.d/<TKS instance>
+        #    /etc/rc3.d/S86<RA instance>   --> /etc/init.d/<RA instance>
+        #    /etc/rc3.d/S87<TPS instance>  --> /etc/init.d/<TPS instance>
+        #
+        """PKI Deployment execution management 'enable' method.
+
+           Executes a 'systemd enable pki-tomcatd.target' system command, or
+           an 'ln -s /etc/init.d/pki-tomcatd /etc/rc3.d/S89<instance>'
+           system command on Debian systems.
+
+        Args:
+          critical_failure (boolean, optional):  Raise exception on failures;
+                                                 defaults to 'True'.
+
+        Attributes:
+
+        Returns:
+
+        Raises:
+          subprocess.CalledProcessError:  If 'critical_failure' is 'True'.
+
+        Examples:
+
+        """
+        try:
+            if pki.system.SYSTEM_TYPE == "debian":
+                command = ["ln", "-s", "/etc/init.d/pki-tomcatd",
+                           "/etc/rc3.d/S89" + self.mdict['pki_instance_name']]
+            else:
+                command = ["systemctl", "enable", "pki-tomcatd.target"]
+
+            # Display this "systemd" execution managment command
+            config.pki_log.info(
+                log.PKIHELPER_SYSTEMD_COMMAND_1, ' '.join(command),
+                extra=config.PKI_INDENTATION_LEVEL_2)
+            # Execute this "systemd" execution management command
+            subprocess.check_call(command)
+        except subprocess.CalledProcessError as exc:
+            if pki.system.SYSTEM_TYPE == "debian":
+                if exc.returncode == 6:
+                    return
+            config.pki_log.error(log.PKI_SUBPROCESS_ERROR_1, exc,
+                                 extra=config.PKI_INDENTATION_LEVEL_2)
+            if critical_failure:
+                raise
+        return
+
     def start(self, critical_failure=True, reload_daemon=True):
         """PKI Deployment execution management 'start' method.
 
@@ -3432,6 +3642,7 @@ class ConfigClient:
         self.add_req_ext = config.str2bool(
             self.mdict['pki_req_ext_add'])
         self.security_domain_type = self.mdict['pki_security_domain_type']
+        self.san_inject = config.str2bool(self.mdict['pki_san_inject'])
 
     def configure_pki_data(self, data):
         config.pki_log.info(
@@ -3629,6 +3840,9 @@ class ConfigClient:
 
         # Miscellaneous Configuration Information
         data.pin = self.mdict['pki_one_time_pin']
+        if config.str2bool(self.mdict['pki_hsm_enable']):
+            data.token = self.mdict['pki_token_name']
+            data.tokenPassword = self.mdict['pki_token_password']
         data.subsystemName = self.mdict['pki_subsystem_name']
         data.standAlone = self.standalone
         data.stepTwo = self.external_step_two
@@ -4127,6 +4341,9 @@ class ConfigClient:
         cert.nickname = self.mdict["pki_%s_nickname" % tag]
         cert.subjectDN = self.mdict["pki_%s_subject_dn" % tag]
         cert.token = self.mdict["pki_%s_token" % tag]
+        if tag == 'ssl_server' and self.san_inject:
+            cert.san_for_server_cert = \
+                self.mdict['pki_san_for_server_cert']
         return cert
 
     def retrieve_existing_server_cert(self, cfg_file):
@@ -4180,6 +4397,7 @@ class PKIDeployer:
         self.war = War(self)
         self.password = Password(self)
         self.certutil = Certutil(self)
+        self.modutil = Modutil(self)
         self.pk12util = PK12util(self)
         self.kra_connector = KRAConnector(self)
         self.security_domain = SecurityDomain(self)

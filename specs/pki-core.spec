@@ -1,21 +1,43 @@
+# Python
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from
 distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from
 distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
+# Tomcat
+%if 0%{?fedora} >= 23
+%define with_tomcat7 0
+%define with_tomcat8 1
+%else
+# 0%{?rhel} || 0%{?fedora} <= 22
+%define with_tomcat7 1
+%define with_tomcat8 0
+%endif
+
+# RESTEasy
+%if 0%{?rhel}
+%define resteasy_lib /usr/share/java/resteasy-base
+%else
+# 0%{?fedora}
+%define resteasy_lib /usr/share/java/resteasy
+%endif
+
+# Dogtag
+%bcond_without    server
+%bcond_without    javadoc
+
+# ignore unpackaged files from native 'tpsclient'
+# REMINDER:  Remove this '%%define' once 'tpsclient' is rewritten as a Java app
+%define _unpackaged_files_terminate_build 0
+
+
 Name:             pki-core
-Version:          10.2.2
-Release:          1%{?dist}
+Version:          10.2.3
+Release:          2%{?dist}
 Summary:          Certificate System - PKI Core Components
 URL:              http://pki.fedoraproject.org/
 License:          GPLv2
 Group:            System Environment/Daemons
-
-%bcond_without    server
-%bcond_without    javadoc
-# ignore unpackaged files from native 'tpsclient'
-# REMINDER:  Remove this '%%define' once 'tpsclient' is rewritten as a Java app
-%define _unpackaged_files_terminate_build 0
 
 BuildRoot:        %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -27,9 +49,11 @@ BuildRequires:    ldapjdk
 BuildRequires:    apache-commons-cli
 BuildRequires:    apache-commons-codec
 BuildRequires:    apache-commons-io
+BuildRequires:    apache-commons-lang
 BuildRequires:    jakarta-commons-httpclient
 BuildRequires:    nspr-devel
 BuildRequires:    nss-devel >= 3.14.3
+BuildRequires:    nuxwdog-client-java >= 1.0.2
 BuildRequires:    openldap-devel
 BuildRequires:    pkgconfig
 BuildRequires:    policycoreutils
@@ -38,7 +62,7 @@ BuildRequires:    velocity
 BuildRequires:    xalan-j2
 BuildRequires:    xerces-j2
 
-%if  0%{?rhel}
+%if 0%{?rhel}
 # 'resteasy-base' is a subset of the complete set of
 # 'resteasy' packages and consists of what is needed to
 # support the PKI Restful interface on RHEL platforms
@@ -49,7 +73,7 @@ BuildRequires:    resteasy-base-jaxrs >= 3.0.6-1
 BuildRequires:    resteasy-base-jaxrs-api >= 3.0.6-1
 BuildRequires:    resteasy-base-jackson-provider >= 3.0.6-1
 %else
-%if  0%{?fedora} >= 22
+%if 0%{?fedora} >= 22
 # Starting from Fedora 22, resteasy packages were split into
 # subpackages.
 BuildRequires:    resteasy-atom-provider >= 3.0.6-7
@@ -76,11 +100,7 @@ BuildRequires:    junit
 BuildRequires:    jpackage-utils >= 0:1.7.5-10
 BuildRequires:    jss >= 4.2.6-35
 BuildRequires:    systemd-units
-%if 0%{?rhel}
-BuildRequires:    tomcatjss >= 7.1.0-5
-%else
-BuildRequires:    tomcatjss >= 7.1.1
-%endif
+BuildRequires:    tomcatjss >= 7.1.2
 
 # additional build requirements needed to build native 'tpsclient'
 # REMINDER:  Revisit these once 'tpsclient' is rewritten as a Java app
@@ -244,7 +264,7 @@ Requires:         python-ldap
 Requires:         python-lxml
 Requires:         python-requests >= 1.1.0-3
 
-%if  0%{?rhel}
+%if 0%{?rhel}
 # 'resteasy-base' is a subset of the complete set of
 # 'resteasy' packages and consists of what is needed to
 # support the PKI Restful interface on RHEL platforms
@@ -255,7 +275,7 @@ Requires:    resteasy-base-jaxrs >= 3.0.6-1
 Requires:    resteasy-base-jaxrs-api >= 3.0.6-1
 Requires:    resteasy-base-jackson-provider >= 3.0.6-1
 %else
-%if  0%{?fedora} >= 22
+%if 0%{?fedora} >= 22
 # Starting from Fedora 22, resteasy packages were split into
 # subpackages.
 Requires:    resteasy-atom-provider >= 3.0.6-7
@@ -325,6 +345,7 @@ Obsoletes:        pki-silent < %{version}-%{release}
 
 Requires:         java-headless >= 1:1.7.0
 Requires:         net-tools
+Requires:         nuxwdog-client-java >= 1.0.2
 Requires:         perl(File::Slurp)
 Requires:         policycoreutils
 Requires:         openldap-clients
@@ -332,7 +353,7 @@ Requires:         pki-base = %{version}-%{release}
 Requires:         pki-tools = %{version}-%{release}
 Requires:         policycoreutils-python
 
-%if  0%{?fedora} >= 21
+%if 0%{?fedora} >= 21
 Requires:         selinux-policy-targeted >= 3.13.1-9
 %else
 # 0%{?rhel} || 0%{?fedora} < 21
@@ -344,6 +365,15 @@ Obsoletes:        pki-selinux
 Requires:         tomcat >= 7.0.54
 %else
 Requires:         tomcat >= 7.0.47
+%if 0%{?fedora} >= 23
+Requires:         tomcat-el-3.0-api
+Requires:         tomcat-jsp-2.3-api
+Requires:         tomcat-servlet-3.1-api
+%else
+Requires:         tomcat-el-2.2-api
+Requires:         tomcat-jsp-2.2-api
+Requires:         tomcat-servlet-3.0-api
+%endif
 %endif
 
 Requires:         velocity
@@ -351,11 +381,7 @@ Requires(post):   systemd-units
 Requires(preun):  systemd-units
 Requires(postun): systemd-units
 
-%if 0%{?rhel}
-Requires:         tomcatjss >= 7.1.0-5
-%else
-Requires:         tomcatjss >= 7.1.1
-%endif
+Requires:         tomcatjss >= 7.1.2
 
 %description -n   pki-server
 The PKI Server Framework is required by the following four PKI subsystems:
@@ -593,10 +619,15 @@ cd build
 	-DBUILD_PKI_CORE:BOOL=ON \
 	-DJAVA_LIB_INSTALL_DIR=%{_jnidir} \
 	-DSYSTEMD_LIB_INSTALL_DIR=%{_unitdir} \
-%if 0%{?rhel}
-	-DRESTEASY_LIB=/usr/share/java/resteasy-base \
-%else
-	-DRESTEASY_LIB=/usr/share/java/resteasy \
+%if ! %{with_tomcat7}
+	-DWITH_TOMCAT7:BOOL=OFF \
+%endif
+%if ! %{with_tomcat8}
+	-DWITH_TOMCAT8:BOOL=OFF \
+%endif
+	-DRESTEASY_LIB=%{resteasy_lib} \
+%if ! %{with server}
+	-DWITH_SERVER:BOOL=OFF \
 %endif
 %if ! %{with server}
 	-DWITH_SERVER:BOOL=OFF \
@@ -614,15 +645,24 @@ cd build
 cd build
 %{__make} install DESTDIR=%{buildroot} INSTALL="install -p"
 
-# Create symlinks for TPS web application
-%{__mkdir_p} %{buildroot}%{_datadir}/pki/tps/webapps/tps/WEB-INF/lib
-ln -s %{_javadir}/pki/pki-nsutil.jar %{buildroot}%{_datadir}/pki/tps/webapps/tps/WEB-INF/lib
-ln -s %{_javadir}/pki/pki-cmsutil.jar %{buildroot}%{_datadir}/pki/tps/webapps/tps/WEB-INF/lib
-ln -s %{_javadir}/pki/pki-certsrv.jar %{buildroot}%{_datadir}/pki/tps/webapps/tps/WEB-INF/lib
-ln -s %{_javadir}/pki/pki-cms.jar %{buildroot}%{_datadir}/pki/tps/webapps/tps/WEB-INF/lib
-ln -s %{_javadir}/pki/pki-cmscore.jar %{buildroot}%{_datadir}/pki/tps/webapps/tps/WEB-INF/lib
-ln -s %{_javadir}/pki/pki-cmsbundle.jar %{buildroot}%{_datadir}/pki/tps/webapps/tps/WEB-INF/lib
-ln -s %{_javadir}/pki/pki-tps.jar %{buildroot}%{_datadir}/pki/tps/webapps/tps/WEB-INF/lib
+# Create symlinks for admin console (TPS does not use admin console)
+for subsystem in ca kra ocsp tks; do
+    %{__mkdir_p} %{buildroot}%{_datadir}/pki/$subsystem/webapps/$subsystem/admin
+    ln -s %{_datadir}/pki/server/webapps/pki/admin/console %{buildroot}%{_datadir}/pki/$subsystem/webapps/$subsystem/admin
+done
+
+# Create symlinks for subsystem libraries
+for subsystem in ca kra ocsp tks tps; do
+    %{__mkdir_p} %{buildroot}%{_datadir}/pki/$subsystem/webapps/$subsystem/WEB-INF/lib
+    ln -s %{_javadir}/pki/pki-nsutil.jar %{buildroot}%{_datadir}/pki/$subsystem/webapps/$subsystem/WEB-INF/lib
+    ln -s %{_javadir}/pki/pki-cmsutil.jar %{buildroot}%{_datadir}/pki/$subsystem/webapps/$subsystem/WEB-INF/lib
+    ln -s %{_javadir}/pki/pki-certsrv.jar %{buildroot}%{_datadir}/pki/$subsystem/webapps/$subsystem/WEB-INF/lib
+    ln -s %{_javadir}/pki/pki-cms.jar %{buildroot}%{_datadir}/pki/$subsystem/webapps/$subsystem/WEB-INF/lib
+    ln -s %{_javadir}/pki/pki-cmscore.jar %{buildroot}%{_datadir}/pki/$subsystem/webapps/$subsystem/WEB-INF/lib
+    ln -s %{_javadir}/pki/pki-cmsbundle.jar %{buildroot}%{_datadir}/pki/$subsystem/webapps/$subsystem/WEB-INF/lib
+    ln -s %{_javadir}/pki/pki-$subsystem.jar %{buildroot}%{_datadir}/pki/$subsystem/webapps/$subsystem/WEB-INF/lib
+done
+
 
 %if %{with server}
 
@@ -801,6 +841,8 @@ echo >> /var/log/pki/pki-server-upgrade-%{version}.log 2>&1
 %{_sysconfdir}/pki/default.cfg
 %{_sbindir}/pkispawn
 %{_sbindir}/pkidestroy
+%{_sbindir}/pki-server
+%{_sbindir}/pki-server-nuxwdog
 %{_sbindir}/pki-server-upgrade
 #%{_bindir}/pki-setup-proxy
 %{python_sitelib}/pki/server/
@@ -893,7 +935,23 @@ echo >> /var/log/pki/pki-server-upgrade-%{version}.log 2>&1
 %endif # %{with server}
 
 %changelog
-* Wed Mar 18 2015 Dogtag Team <pki-devel@redhat.com> 10.2.2-1
+* Fri Apr 24 2015 Dogtag Team <pki-devel@redhat.com> 10.2.3-2
+- Bump the release number to 2 to fix minor issues
+
+* Thu Apr 23 2015 Dogtag Team <pki-devel@redhat.com> 10.2.3-1
+- Update release number for release build
+
+* Thu Apr  9 2015 Dogtag Team <pki-devel@redhat.com> 10.2.3-0.1
+- Reverted version number back to 10.2.3-0.1
+- Added support for Tomcat 8.
+
+* Mon Apr  6 2015 Dogtag Team <pki-devel@redhat.com> 10.3.0-0.1
+- Updated version number to 10.3.0-0.1
+
+* Wed Mar 18 2015 Dogtag Team <pki-devel@redhat.com> 10.2.3-0.1
+- Updated version number to 10.2.3-0.1
+
+* Tue Mar 17 2015 Dogtag Team <pki-devel@redhat.com> 10.2.2-1
 - Update release number for release build
 
 * Mon Jan 19 2015 Dogtag Team <pki-devel@redhat.com> 10.2.1-1
