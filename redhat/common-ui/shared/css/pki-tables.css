@@ -1,0 +1,70 @@
+table {
+  width: 100%;
+  border: 1px #dcdcdc solid;
+  border-spacing: 0;
+
+}
+
+table caption {
+  text-align: left;
+  font-weight: bold;
+  padding: 11px;
+}
+
+table tbody tr:nth-child(even) {
+  background-color: #f6f6f6;
+}
+
+
+table tbody tr td,
+table thead tr th {
+  font-weight: normal;
+  padding: 6px 15px;
+  font-size: 11px;
+  border-top: 1px #ebebeb;
+  border-right: 1px #dcdcdc solid;
+  text-align: left;
+}
+
+table thead tr th {
+  font-weight: bold;
+  border: none;
+  border-right: 1px #dcdcdc solid;
+  background-image: linear-gradient(top, #fafafa 0%, #eee 100%);
+  background-image: -o-linear-gradient(top, #fafafa 0%, #eee 100%);
+  background-image: -moz-linear-gradient(top, #fafafa 0%, #eee 100%);
+  background-image: -webkit-linear-gradient(top, #fafafa 0%, #eee 100%);
+  background-image: -ms-linear-gradient(top, #fafafa 0%, #eee 100%);
+  background-image: -webkit-gradient(
+	  linear,
+	  left top,
+	  left bottom,
+	  color-stop(0.0, #fafafa),
+	  color-stop(1,0, #eee)
+  );
+  border-bottom: 1px #cedede solid;
+}
+
+table tbody tr td:first-child {
+  color: #0099d3;
+}
+
+
+table thead tr th:last-child {
+  border-right: none;
+}
+
+table tbody tr:first-child td {
+  border-top: 1px solid #f2f2f2;
+  padding-top: 9px;
+}
+
+
+table tbody tr td:last-child {
+  border-right: none;
+}
+
+table tbody tr:hover {
+  cursor: pointer;
+  background-color: #ebebeb;
+}
