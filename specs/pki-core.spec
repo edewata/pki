@@ -790,7 +790,7 @@ echo >> /var/log/pki/pki-server-upgrade-%{version}.log 2>&1
 %files -n pki-base
 %defattr(-,root,root,-)
 %doc base/common/LICENSE
-%doc base/common/html/
+%doc %{_datadir}/doc/pki-base/html
 %dir %{_datadir}/pki
 %{_datadir}/pki/VERSION
 %{_datadir}/pki/etc/
