@@ -1,7 +1,7 @@
 Summary:          Dogtag Public Key Infrastructure (PKI) Suite
 Name:             dogtag-pki
-Version:          10.2.3
-Release:          2%{?dist}
+Version:          10.2.4
+Release:          1%{?dist}
 # The entire source code is GPLv2 except for 'pki-tps' which is LGPLv2
 License:          GPLv2 and LGPLv2
 URL:              http://pki.fedoraproject.org/
@@ -98,8 +98,14 @@ rm -rf %{buildroot}
 %doc README
 
 %changelog
-* Fri Apr 24 2015 Dogtag Team <pki-devel@redhat.com> 10.2.3-2
+* Tue May 26 2015 Dogtag Team <pki-devel@redhat.com> 10.2.4-1
+- Update release number for release build
+
+* Fri Apr 24 2015 Dogtag Team <pki-devel@redhat.com> 10.2.4-0.2
 - Restored requirement for 'jss-javadocs'
+
+* Thu Apr 23 2015 Dogtag Team <pki-devel@redhat.com> 10.2.4-0.1
+- Updated version number to 10.2.4-0.1
 
 * Thu Apr 23 2015 Dogtag Team <pki-devel@redhat.com> 10.2.3-1
 - Update release number for release build

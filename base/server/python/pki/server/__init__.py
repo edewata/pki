@@ -50,6 +50,7 @@ class PKIServer(object):
 
         return instances
 
+
 class PKISubsystem(object):
 
     def __init__(self, instance, subsystem_name):
@@ -60,10 +61,10 @@ class PKISubsystem(object):
 
         if self.type >= 10:
             self.base_dir = os.path.join(self.instance.base_dir, self.name)
-            self.conf_dir = os.path.join(self.base_dir, 'conf')
         else:
             self.base_dir = instance.base_dir
-            self.conf_dir = os.path.join(self.base_dir, 'conf')
+
+        self.conf_dir = os.path.join(self.base_dir, 'conf')
 
         self.context_xml_template = os.path.join(
             pki.SHARE_DIR, self.name, 'conf', 'Catalina', 'localhost', self.name + '.xml')
@@ -71,6 +72,7 @@ class PKISubsystem(object):
         self.context_xml = os.path.join(
             instance.conf_dir, 'Catalina', 'localhost', self.name + '.xml')
 
+        # custom subsystem location
         self.doc_base = os.path.join(self.base_dir, 'webapps', self.name)
 
     def is_valid(self):
@@ -86,7 +88,16 @@ class PKISubsystem(object):
         return self.instance.is_deployed(self.name)
 
     def enable(self):
-        self.instance.deploy(self.name, self.context_xml_template, self.doc_base)
+        if os.path.exists(self.doc_base):
+            # deploy custom subsystem if exists
+            doc_base = self.doc_base
+
+        else:
+            # otherwise deploy default subsystem directly from
+            # /usr/share/pki/<subsystem>/webapps/<subsystem>
+            doc_base = None
+
+        self.instance.deploy(self.name, self.context_xml_template, doc_base)
 
     def disable(self):
         self.instance.undeploy(self.name)
@@ -104,10 +115,11 @@ class PKIInstance(object):
 
         if self.type >= 10:
             self.base_dir = os.path.join(INSTANCE_BASE_DIR, name)
-            self.conf_dir = os.path.join(self.base_dir, 'conf')
         else:
             self.base_dir = os.path.join(pki.BASE_DIR, name)
-            self.conf_dir = os.path.join(self.base_dir, 'conf')
+
+        self.conf_dir = os.path.join(self.base_dir, 'conf')
+        self.lib_dir = os.path.join(self.base_dir, 'lib')
 
         self.registry_dir = os.path.join(pki.server.REGISTRY_DIR, 'tomcat', self.name)
         self.registry_file = os.path.join(self.registry_dir, self.name)
@@ -116,6 +128,9 @@ class PKIInstance(object):
 
         self.user = None
         self.group = None
+
+        self.uid = None
+        self.gid = None
 
         self.subsystems = []
 
@@ -146,10 +161,12 @@ class PKIInstance(object):
             m = re.search('^PKI_USER=(.*)$', line)
             if m:
                 self.user = m.group(1)
+                self.uid = pwd.getpwnam(self.user).pw_uid
 
             m = re.search('^PKI_GROUP=(.*)$', line)
             if m:
                 self.group = m.group(1)
+                self.gid = grp.getgrnam(self.group).gr_gid
 
         for subsystem_name in os.listdir(self.registry_dir):
             if subsystem_name in pki.server.SUBSYSTEM_TYPES:
@@ -196,12 +213,8 @@ class PKIInstance(object):
         with open(context_xml, 'w') as f:
             f.write(etree.tostring(document, pretty_print=True))
 
-        # find uid and gid
-        uid = pwd.getpwnam(self.user).pw_uid
-        gid = grp.getgrnam(self.group).gr_gid
-
         # set deployment descriptor ownership and permission
-        os.chown(context_xml, uid, gid)
+        os.chown(context_xml, self.uid, self.gid)
         os.chmod(context_xml, 00660)
 
     def undeploy(self, webapp_name):

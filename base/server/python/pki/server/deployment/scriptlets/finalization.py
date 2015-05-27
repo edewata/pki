@@ -62,6 +62,9 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             deployer.systemd.disable()
         else:
             deployer.systemd.enable()
+        if len(deployer.instance.tomcat_instance_subsystems()) == 1:
+            # Modify contents of 'serverCertNick.conf' (if necessary)
+            deployer.servercertnick_conf.modify()
         # Optionally, programmatically 'restart' the configured PKI instance
         if config.str2bool(deployer.mdict['pki_restart_configured_instance']):
             deployer.systemd.restart()
@@ -96,8 +99,7 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
            deployer.instance.pki_instance_subsystems() == 0:
             deployer.systemd.disable()
         # Start this Tomcat PKI Process
-        if deployer.mdict['pki_subsystem'] in config.PKI_TOMCAT_SUBSYSTEMS \
-                and len(deployer.instance.tomcat_instance_subsystems()) >= 1:
+        if len(deployer.instance.tomcat_instance_subsystems()) >= 1:
             deployer.systemd.start()
         config.pki_log.info(log.PKIDESTROY_END_MESSAGE_2,
                             deployer.mdict['pki_subsystem'],

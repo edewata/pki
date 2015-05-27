@@ -32,8 +32,8 @@ distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 
 Name:             pki-core
-Version:          10.2.3
-Release:          2%{?dist}
+Version:          10.2.4
+Release:          1%{?dist}
 Summary:          Certificate System - PKI Core Components
 URL:              http://pki.fedoraproject.org/
 License:          GPLv2
@@ -53,7 +53,13 @@ BuildRequires:    apache-commons-lang
 BuildRequires:    jakarta-commons-httpclient
 BuildRequires:    nspr-devel
 BuildRequires:    nss-devel >= 3.14.3
-BuildRequires:    nuxwdog-client-java >= 1.0.2
+
+%if 0%{?rhel}
+BuildRequires:    nuxwdog-client-java >= 1.0.1-11
+%else
+BuildRequires:    nuxwdog-client-java >= 1.0.3
+%endif
+
 BuildRequires:    openldap-devel
 BuildRequires:    pkgconfig
 BuildRequires:    policycoreutils
@@ -100,7 +106,13 @@ BuildRequires:    junit
 BuildRequires:    jpackage-utils >= 0:1.7.5-10
 BuildRequires:    jss >= 4.2.6-35
 BuildRequires:    systemd-units
+
+%if 0%{?rhel}
+BuildRequires:    tomcatjss >= 7.1.0-6
+%else
 BuildRequires:    tomcatjss >= 7.1.2
+%endif
+
 
 # additional build requirements needed to build native 'tpsclient'
 # REMINDER:  Revisit these once 'tpsclient' is rewritten as a Java app
@@ -345,7 +357,13 @@ Obsoletes:        pki-silent < %{version}-%{release}
 
 Requires:         java-headless >= 1:1.7.0
 Requires:         net-tools
-Requires:         nuxwdog-client-java >= 1.0.2
+
+%if 0%{?rhel}
+Requires:    nuxwdog-client-java >= 1.0.1-11
+%else
+Requires:    nuxwdog-client-java >= 1.0.3
+%endif
+
 Requires:         perl(File::Slurp)
 Requires:         policycoreutils
 Requires:         openldap-clients
@@ -381,7 +399,11 @@ Requires(post):   systemd-units
 Requires(preun):  systemd-units
 Requires(postun): systemd-units
 
-Requires:         tomcatjss >= 7.1.2
+%if 0%{?rhel}
+Requires:    tomcatjss >= 7.1.0-6
+%else
+Requires:    tomcatjss >= 7.1.2
+%endif
 
 %description -n   pki-server
 The PKI Server Framework is required by the following four PKI subsystems:
@@ -855,6 +877,9 @@ echo >> /var/log/pki/pki-server-upgrade-%{version}.log 2>&1
 %dir %{_sysconfdir}/systemd/system/pki-tomcatd.target.wants
 %{_unitdir}/pki-tomcatd@.service
 %{_unitdir}/pki-tomcatd.target
+%dir %{_sysconfdir}/systemd/system/pki-tomcatd-nuxwdog.target.wants
+%{_unitdir}/pki-tomcatd-nuxwdog@.service
+%{_unitdir}/pki-tomcatd-nuxwdog.target
 %{_javadir}/pki/pki-cms.jar
 %{_javadir}/pki/pki-cmsbundle.jar
 %{_javadir}/pki/pki-cmscore.jar
@@ -935,8 +960,15 @@ echo >> /var/log/pki/pki-server-upgrade-%{version}.log 2>&1
 %endif # %{with server}
 
 %changelog
-* Fri Apr 24 2015 Dogtag Team <pki-devel@redhat.com> 10.2.3-2
-- Bump the release number to 2 to fix minor issues
+* Tue May 26 2015 Dogtag Team <pki-devel@redhat.com> 10.2.4-1
+- Update release number for release build
+
+* Tue May 12 2015 Dogtag Team <pki-devel@redhat.com> 10.2.4-0.2
+- Updated nuxwdog and tomcatjss requirements (alee)
+
+* Thu Apr 23 2015 Dogtag Team <pki-devel@redhat.com> 10.2.4-0.1
+- Updated version number to 10.2.4-0.1
+- Added nuxwdog systemd files
 
 * Thu Apr 23 2015 Dogtag Team <pki-devel@redhat.com> 10.2.3-1
 - Update release number for release build

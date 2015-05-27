@@ -1,6 +1,6 @@
 Name:             dogtag-pki-theme
-Version:          10.2.3
-Release:          2%{?dist}
+Version:          10.2.4
+Release:          1%{?dist}
 Summary:          Certificate System - Dogtag PKI Theme Components
 URL:              http://pki.fedoraproject.org/
 License:          GPLv2
@@ -170,8 +170,11 @@ cd build
 
 
 %changelog
-* Fri Apr 24 2015 Dogtag Team <pki-devel@redhat.com> 10.2.3-2
-- Bump the release number to 2 to fix minor issues
+* Tue May 26 2015 Dogtag Team <pki-devel@redhat.com> 10.2.4-1
+- Update release number for release build
+
+* Thu Apr 23 2015 Dogtag Team <pki-devel@redhat.com> 10.2.4-0.1
+- Updated version number to 10.2.4-0.1
 
 * Thu Apr 23 2015 Dogtag Team <pki-devel@redhat.com> 10.2.3-1
 - Update release number for release build
