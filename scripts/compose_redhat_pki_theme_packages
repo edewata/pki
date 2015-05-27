@@ -31,7 +31,7 @@ PKI_PWD=`pwd`
 ##
 
 REDHAT_PKI_THEME="redhat-pki-theme"
-REDHAT_PKI_THEME_VERSION="10.2.3"
+REDHAT_PKI_THEME_VERSION="10.2.4"
 
 
 ##
