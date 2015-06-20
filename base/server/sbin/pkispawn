@@ -226,21 +226,26 @@ def main(argv):
                 sign='?', case_sensitive=False).lower()
 
             if use_hsm == 'y' or use_hsm == 'yes':
-                parser.set_property(config.pki_subsystem,
-                                    'pki_hsm_enable',
-                                    'True')
-                modulename = parser.read_text(
-                    'HSM Module Name (e. g. - nethsm)', allow_empty=False)
-                parser.set_property(config.pki_subsystem,
-                                    'pki_hsm_modulename',
-                                    modulename)
-                libfile = parser.read_text(
-                    'HSM Lib File ' +
-                    '(e. g. - /opt/nfast/toolkits/pkcs11/libcknfast.so)',
-                    allow_empty=False)
-                parser.set_property(config.pki_subsystem,
-                                    'pki_hsm_libfile',
-                                    libfile)
+                # XXX:  Suppress interactive HSM installation
+                print "Interactive HSM installation is currently unsupported."
+                sys.exit(0)
+
+                # TBD:  Interactive HSM installation
+                # parser.set_property(config.pki_subsystem,
+                #                     'pki_hsm_enable',
+                #                     'True')
+                # modulename = parser.read_text(
+                #     'HSM Module Name (e. g. - nethsm)', allow_empty=False)
+                # parser.set_property(config.pki_subsystem,
+                #                     'pki_hsm_modulename',
+                #                     modulename)
+                # libfile = parser.read_text(
+                #     'HSM Lib File ' +
+                #     '(e. g. - /opt/nfast/toolkits/pkcs11/libcknfast.so)',
+                #     allow_empty=False)
+                # parser.set_property(config.pki_subsystem,
+                #                     'pki_hsm_libfile',
+                #                     libfile)
             print
 
             print "Directory Server:"
@@ -483,6 +488,8 @@ def main(argv):
                           config.pki_subsystem.lower() + \
                           "-" + "spawn" + "." + \
                           config.pki_timestamp + "." + "log"
+    print 'Log file: %s/%s' % (config.pki_log_dir, config.pki_log_name)
+
     rv = pkilogging.enable_pki_logger(config.pki_log_dir,
                                       config.pki_log_name,
                                       config.pki_log_level,
@@ -639,14 +646,9 @@ def print_install_information(mdict):
             # Stand-alone PKI KRA/OCSP (External CA Step 1)
             print log.PKI_CONFIGURATION_STANDALONE_1 % config.pki_subsystem
         else:
-            if (config.pki_subsystem == "TPS"):
-                print log.PKI_ACCESS_TPS_URL % (mdict['pki_hostname'],
-                                                mdict['pki_https_port'],
-                                                config.pki_subsystem.lower())
-            else:
-                print log.PKI_ACCESS_URL % (mdict['pki_hostname'],
-                                            mdict['pki_https_port'],
-                                            config.pki_subsystem.lower())
+            print log.PKI_ACCESS_URL % (mdict['pki_hostname'],
+                                        mdict['pki_https_port'],
+                                        config.pki_subsystem.lower())
             if not config.str2bool(mdict['pki_enable_on_system_boot']):
                 print log.PKI_SYSTEM_BOOT_STATUS_MESSAGE % "disabled"
             else:

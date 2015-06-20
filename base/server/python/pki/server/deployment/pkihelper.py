@@ -307,6 +307,46 @@ class Identity:
                 raise
             return None
 
+    def group_exists(self, pki_group):
+        try:
+            _ = getgrnam(pki_group)[1]
+            return True
+        except KeyError as _:
+            return False
+
+    def user_exists(self, pki_user):
+        try:
+            _ = getpwnam(pki_user)[1]
+            return True
+        except KeyError as _:
+            return False
+
+    def is_user_a_member_of_group(self, pki_user, pki_group):
+        if self.group_exists(pki_group) and self.user_exists(pki_user):
+            # Check to see if pki_user is a member of this pki_group
+            if pki_user in getgrnam(pki_group)[3]:
+                return True
+            else:
+                return False
+
+    def add_user_to_group(self, pki_user, pki_group):
+        if not self.is_user_a_member_of_group(pki_user, pki_group):
+            command = ["usermod", "-a", "-G", pki_group, pki_user]
+            try:
+                # Execute this "usermod" command.
+                with open(os.devnull, "w") as fnull:
+                    subprocess.check_call(command, stdout=fnull, stderr=fnull,
+                                          close_fds=True)
+            except subprocess.CalledProcessError as exc:
+                config.pki_log.error(log.PKI_SUBPROCESS_ERROR_1, exc,
+                                     extra=config.PKI_INDENTATION_LEVEL_2)
+                raise
+            except OSError as exc:
+                config.pki_log.error(log.PKI_OSERROR_1, exc,
+                                     extra=config.PKI_INDENTATION_LEVEL_2)
+                raise
+        return
+
 
 class Namespace:
     """PKI Deployment Namespace Class"""
@@ -2152,6 +2192,52 @@ class Password:
         return token_pwd
 
 
+class HSM:
+    """PKI Deployment HSM class"""
+
+    def __init__(self, deployer):
+        self.mdict = deployer.mdict
+        self.identity = deployer.identity
+        self.file = deployer.file
+
+    def initialize(self):
+        if config.str2bool(self.mdict['pki_hsm_enable']):
+            if (self.mdict['pki_hsm_libfile'] == config.PKI_HSM_NCIPHER_LIB):
+                self.initialize_ncipher()
+        return
+
+    def initialize_ncipher(self):
+        if (self.file.exists(config.PKI_HSM_NCIPHER_EXE) and
+            self.file.exists(config.PKI_HSM_NCIPHER_LIB) and
+            self.identity.group_exists(config.PKI_HSM_NCIPHER_GROUP)):
+            # Check if 'pki_user' is a member of the default "nCipher" group
+            if not self.identity.is_user_a_member_of_group(
+                self.mdict['pki_user'], config.PKI_HSM_NCIPHER_GROUP):
+                # Make 'pki_user' a member of the default "nCipher" group
+                self.identity.add_user_to_group(self.mdict['pki_user'],
+                                                config.PKI_HSM_NCIPHER_GROUP)
+                # Restart this "nCipher" HSM
+                self.restart_ncipher()
+        return
+
+    def restart_ncipher(self, critical_failure=True):
+        try:
+            command = [config.PKI_HSM_NCIPHER_EXE, "restart"]
+
+            # Display this "nCipher" HSM command
+            config.pki_log.info(
+                log.PKIHELPER_NCIPHER_RESTART_1, ' '.join(command),
+                extra=config.PKI_INDENTATION_LEVEL_2)
+            # Execute this "nCipher" HSM command
+            subprocess.check_call(command)
+        except subprocess.CalledProcessError as exc:
+            config.pki_log.error(log.PKI_SUBPROCESS_ERROR_1, exc,
+                                 extra=config.PKI_INDENTATION_LEVEL_2)
+            if critical_failure:
+                raise
+        return
+
+
 class Certutil:
     """PKI Deployment NSS 'certutil' Class"""
 
@@ -2602,9 +2688,63 @@ class Modutil:
     def __init__(self, deployer):
         self.mdict = deployer.mdict
 
+    def is_security_module_registered(self, path, modulename,
+                                      prefix=None, critical_failure=True):
+        status = False
+        try:
+            # Compose this "modutil" command
+            command = ["modutil"]
+            #   Provide a path to the NSS security databases
+            if path:
+                command.extend(["-dbdir", path])
+            else:
+                config.pki_log.error(
+                    log.PKIHELPER_MODUTIL_MISSING_PATH,
+                    extra=config.PKI_INDENTATION_LEVEL_2)
+                raise Exception(log.PKIHELPER_MODUTIL_MISSING_PATH)
+            #   Add optional security database prefix
+            if prefix is not None:
+                command.extend(["--dbprefix", prefix])
+            #   Append '-nocertdb' switch
+            command.extend(["-nocertdb"])
+            #   Specify a 'modulename'
+            if modulename:
+                command.extend(["-list", modulename])
+            else:
+                config.pki_log.error(
+                    log.PKIHELPER_MODUTIL_MISSING_MODULENAME,
+                    extra=config.PKI_INDENTATION_LEVEL_2)
+                raise Exception(log.PKIHELPER_MODUTIL_MISSING_MODULENAME)
+            # Display this "modutil" command
+            config.pki_log.info(
+                log.PKIHELPER_REGISTERED_SECURITY_MODULE_CHECK_1,
+                ' '.join(command),
+                extra=config.PKI_INDENTATION_LEVEL_2)
+            # Execute this "modutil" command
+            subprocess.check_call(command)
+            # 'modulename' is already registered
+            status = True
+            config.pki_log.info(
+                log.PKIHELPER_REGISTERED_SECURITY_MODULE_1, modulename,
+                extra=config.PKI_INDENTATION_LEVEL_2)
+        except subprocess.CalledProcessError as exc:
+            # 'modulename' is not registered
+            config.pki_log.info(
+                log.PKIHELPER_UNREGISTERED_SECURITY_MODULE_1, modulename,
+                extra=config.PKI_INDENTATION_LEVEL_2)
+        except OSError as exc:
+            config.pki_log.error(log.PKI_OSERROR_1, exc,
+                                 extra=config.PKI_INDENTATION_LEVEL_2)
+            if critical_failure:
+                raise
+        return status
+
     def register_security_module(self, path, modulename, libfile,
                                  prefix=None, critical_failure=True):
         try:
+            # First check if security module is already registered
+            if self.is_security_module_registered(path, modulename):
+                return
             # Compose this "modutil" command
             command = ["modutil"]
             #   Provide a path to the NSS security databases
@@ -4406,6 +4546,7 @@ class PKIDeployer:
         self.symlink = Symlink(self)
         self.war = War(self)
         self.password = Password(self)
+        self.hsm = HSM(self)
         self.certutil = Certutil(self)
         self.modutil = Modutil(self)
         self.pk12util = PK12util(self)

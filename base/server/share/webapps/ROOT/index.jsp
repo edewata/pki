@@ -84,171 +84,86 @@ $(function() {
 
 </div>
 
+<script>
+if (typeof(crypto) != "undefined" && typeof(crypto.version) != "undefined") {
+} else {
+    document.write('<p> <font color="red"> Warning: This version of Firefox no longer supports the crypto web object used to generate and archive keys from the browser. Although Certificate System will continue to work, some of the functionality may no longer be supported. </font> </p>');
+    document.write('<br>');
+}
+</script>
+
 
 <center>
 
-<%
-    ServletContext caContext = getServletContext().getContext("/ca");
-    String caName = caContext.getServletContextName();
-    String caPath = caContext.getContextPath();
-    if (!"".equals(caPath)) {
-%>
-<p>
-<font size="+1" face="PrimaSans BT, Verdana, Arial, Helvetica, sans-serif">
-<%= caName %>
-</font>
-</p>
+<br>
 
 <table border="0" cellspacing="0" cellpadding="0">
 <tr valign="TOP">
     <td>
-        <li><font size=4 face="PrimaSans BT, Verdana, sans-serif">
-        <a href="/ca/ee/ca">End Users Services</a></font>
-    </td>
-</tr>
 <%
-        if (request.isSecure()) {
+    ServletContext caContext = getServletContext().getContext("/ca");
+    if (caContext != null) {
+        String caName = caContext.getServletContextName();
+        String caPath = caContext.getContextPath();
+        if (!"".equals(caPath)) {
 %>
-<tr valign="TOP">
-    <td>
         <li><font size=4 face="PrimaSans BT, Verdana, sans-serif">
-        <a href="/ca/agent/ca">Agent Services</a></font>
-    </td>
-</tr>
-<tr valign="TOP">
-    <td>
-        <li><font size=4 face="PrimaSans BT, Verdana, sans-serif">
-        <a href="/ca/services">Admin Services</a></font>
-    </td>
-</tr>
+        <a href="/ca"><%= caName %></a></font>
 <%
         }
-%>
-</table>
-
-<br>
-
-<%
     }
 
     ServletContext kraContext = getServletContext().getContext("/kra");
-    String kraName = kraContext.getServletContextName();
-    String kraPath = kraContext.getContextPath();
-    if (!"".equals(kraPath) && request.isSecure()) {
+    if (kraContext != null) {
+        String kraName = kraContext.getServletContextName();
+        String kraPath = kraContext.getContextPath();
+        if (!"".equals(kraPath) && request.isSecure()) {
 %>
-<p>
-<font size="+1" face="PrimaSans BT, Verdana, Arial, Helvetica, sans-serif">
-<%= kraName %>
-</font>
-</p>
-
-<table border="0" cellspacing="0" cellpadding="0">
-<tr valign="TOP">
-    <td>
         <li><font size=4 face="PrimaSans BT, Verdana, sans-serif">
-        <a href="/kra/agent/kra">Agent Services</a></font>
-    </td>
-</tr>
-<tr valign="TOP">
-    <td>
-        <li><font size=4 face="PrimaSans BT, Verdana, sans-serif">
-        <a href="/kra/services">Admin Services</a></font>
-    </td>
-</tr>
-</table>
-
-<br>
-
+        <a href="/kra"><%= kraName %></a></font>
 <%
+        }
     }
 
     ServletContext ocspContext = getServletContext().getContext("/ocsp");
-    String ocspName = ocspContext.getServletContextName();
-    String ocspPath = ocspContext.getContextPath();
-    if (!"".equals(ocspPath) && request.isSecure()) {
+    if (ocspContext != null) {
+        String ocspName = ocspContext.getServletContextName();
+        String ocspPath = ocspContext.getContextPath();
+        if (!"".equals(ocspPath) && request.isSecure()) {
 %>
-<p>
-<font size="+1" face="PrimaSans BT, Verdana, Arial, Helvetica, sans-serif">
-<%= ocspName %>
-</font>
-</p>
-
-<table border="0" cellspacing="0" cellpadding="0">
-<tr valign="TOP">
-    <td>
         <li><font size=4 face="PrimaSans BT, Verdana, sans-serif">
-        <a href="/ocsp/agent/ocsp">Agent Services</a></font>
-    </td>
-</tr>
-<tr valign="TOP">
-    <td>
-        <li><font size=4 face="PrimaSans BT, Verdana, sans-serif">
-        <a href="/ocsp/services">Admin Services</a></font>
-    </td>
-</tr>
-</table>
-
-<br>
-
+        <a href="/ocsp"><%= ocspName %></a></font>
 <%
+        }
     }
 
     ServletContext tksContext = getServletContext().getContext("/tks");
-    String tksName = tksContext.getServletContextName();
-    String tksPath = tksContext.getContextPath();
-    if (!"".equals(tksPath) && request.isSecure()) {
+    if (tksContext != null) {
+        String tksName = tksContext.getServletContextName();
+        String tksPath = tksContext.getContextPath();
+        if (!"".equals(tksPath) && request.isSecure()) {
 %>
-<p>
-<font size="+1" face="PrimaSans BT, Verdana, Arial, Helvetica, sans-serif">
-<%= tksName %>
-</font>
-</p>
-
-<table border="0" cellspacing="0" cellpadding="0">
-<tr valign="TOP">
-    <td>
         <li><font size=4 face="PrimaSans BT, Verdana, sans-serif">
-        <a href="/tks/agent/tks">Agent Services</a></font>
-    </td>
-</tr>
-<tr valign="TOP">
-    <td>
-        <li><font size=4 face="PrimaSans BT, Verdana, sans-serif">
-        <a href="/tks/services">Admin Services</a></font>
-    </td>
-</tr>
-</table>
-
-<br>
-
+        <a href="/tks"><%= tksName %></a></font>
 <%
+        }
     }
 
     ServletContext tpsContext = getServletContext().getContext("/tps");
-    String tpsName = tpsContext.getServletContextName();
-    String tpsPath = tpsContext.getContextPath();
-    if (!"".equals(tpsPath) && request.isSecure()) {
+    if (tpsContext != null) {
+        String tpsName = tpsContext.getServletContextName();
+        String tpsPath = tpsContext.getContextPath();
+        if (!"".equals(tpsPath) && request.isSecure()) {
 %>
-<p>
-<font size="+1" face="PrimaSans BT, Verdana, Arial, Helvetica, sans-serif">
-<%= tpsName %>
-</font>
-</p>
-
-<table border="0" cellspacing="0" cellpadding="0">
-<tr valign="TOP">
-    <td>
         <li><font size=4 face="PrimaSans BT, Verdana, sans-serif">
-        <a href="/tps/">Agent and Admin Services</a></font>
+        <a href="/tps/"><%= tpsName %></a></font>
+<%
+        }
+    }
+%>
     </td>
 </tr>
 </table>
-
-<br>
-
-<%
-    }
-%>
 
 </center>
 

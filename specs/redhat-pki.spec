@@ -1,6 +1,6 @@
 Summary:          Red Hat Public Key Infrastructure (PKI) Suite
 Name:             redhat-pki
-Version:          10.2.4
+Version:          10.2.5
 Release:          1%{?dist}
 # The entire source code is GPLv2 except for 'pki-tps' which is LGPLv2
 License:          GPLv2 and LGPLv2
@@ -98,6 +98,9 @@ rm -rf %{buildroot}
 %doc README
 
 %changelog
+* Fri Jun 19 2015 Dogtag Team <pki-devel@redhat.com> 10.2.5-1
+- Update version number to 10.2.5
+
 * Tue May 26 2015 Dogtag Team <pki-devel@redhat.com> 10.2.4-1
 - Updated version number to 10.2.4
 

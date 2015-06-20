@@ -246,6 +246,7 @@ PKIHELPER_NAMESPACE_COLLISION_2 = \
     "PKI instance '%s' would produce a namespace collision with '%s'!"
 PKIHELPER_NAMESPACE_RESERVED_NAME_2 = \
     "PKI instance '%s' is already a reserved name under '%s'!"
+PKIHELPER_NCIPHER_RESTART_1 = "executing '%s'"
 PKIHELPER_NOISE_FILE_2 = \
     "generating noise file called '%s' and filling it with '%d' random bytes"
 PKIHELPER_PASSWORD_CONF_1 = "generating '%s'"
@@ -259,6 +260,11 @@ PKIHELPER_PK12UTIL_MISSING_OUTFILE = \
 PKIHELPER_PK12UTIL_MISSING_PWFILE = \
     "pk12util missing -w pw-file option!"
 PKIHELPER_REGISTER_SECURITY_MODULE_1 = "executing '%s'"
+PKIHELPER_REGISTERED_SECURITY_MODULE_CHECK_1 = "executing '%s'"
+PKIHELPER_REGISTERED_SECURITY_MODULE_1 = \
+    "security module '%s' is already registered."
+PKIHELPER_UNREGISTERED_SECURITY_MODULE_1 = \
+    "security module '%s' is not registered."
 
 PKIHELPER_PKI_INSTANCE_SUBSYSTEMS_2 = \
     "instance '%s' contains '%d' PKI subsystems"
@@ -370,9 +376,6 @@ PKI_CHECK_STATUS_MESSAGE = '''
       To check the status of the subsystem:
             systemctl status pki-tomcatd@%s.service'''
 PKI_ACCESS_URL = '''
-      The URL for the subsystem is:
-            https://%s:%s/%s/services'''
-PKI_ACCESS_TPS_URL = '''
       The URL for the subsystem is:
             https://%s:%s/%s'''
 PKI_INSTANCE_RESTART_MESSAGE = '''

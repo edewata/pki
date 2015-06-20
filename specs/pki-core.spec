@@ -32,8 +32,8 @@ distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 
 Name:             pki-core
-Version:          10.2.4
-Release:          2%{?dist}
+Version:          10.2.5
+Release:          1%{?dist}
 Summary:          Certificate System - PKI Core Components
 URL:              http://pki.fedoraproject.org/
 License:          GPLv2
@@ -685,7 +685,6 @@ for subsystem in ca kra ocsp tks tps; do
     ln -s %{_javadir}/pki/pki-$subsystem.jar %{buildroot}%{_datadir}/pki/$subsystem/webapps/$subsystem/WEB-INF/lib
 done
 
-
 %if %{with server}
 
 %if ! 0%{?rhel}
@@ -732,7 +731,6 @@ end
 %endif
 
 %post -n pki-base
-sed -i -e 's/^JNI_JAR_DIR=.*$/JNI_JAR_DIR=\/usr\/lib\/java/' %{_datadir}/pki/etc/pki.conf
 
 if [ $1 -eq 1 ]
 then
@@ -847,9 +845,11 @@ echo >> /var/log/pki/pki-server-upgrade-%{version}.log 2>&1
 %{_mandir}/man1/pki-cert.1.gz
 %{_mandir}/man1/pki-client.1.gz
 %{_mandir}/man1/pki-group.1.gz
+%{_mandir}/man1/pki-group-member.1.gz
 %{_mandir}/man1/pki-key.1.gz
 %{_mandir}/man1/pki-securitydomain.1.gz
 %{_mandir}/man1/pki-user.1.gz
+%{_mandir}/man1/pki-user-cert.1.gz
 %{_mandir}/man1/pki-ca-profile.1.gz
 
 
@@ -960,6 +960,9 @@ echo >> /var/log/pki/pki-server-upgrade-%{version}.log 2>&1
 %endif # %{with server}
 
 %changelog
+* Fri Jun 19 2015 Dogtag Team <pki-devel@redhat.com> 10.2.5-1
+- Update release number for release build
+
 * Fri May 29 2015 Dogtag Team <pki-devel@redhat.com> 10.2.4-2
 - Fixed issues found during testing previous build
 - Update release number for release build

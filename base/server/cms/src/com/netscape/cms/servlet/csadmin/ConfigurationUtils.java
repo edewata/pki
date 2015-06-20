@@ -1155,6 +1155,45 @@ public class ConfigurationUtils {
         }
     }
 
+    /* We need to import the audit signing cert and CA signing cert to the soft token in order to
+     * correctly set the trust permissions.
+     */
+    public static void importAndSetCertPermissionsFromHSM() throws EBaseException, NotInitializedException,
+            IOException, CertificateEncodingException, NicknameConflictException, UserCertConflictException,
+            NoSuchItemOnTokenException, TokenException {
+
+        CryptoManager cm = CryptoManager.getInstance();
+        IConfigStore cs = CMS.getConfigStore();
+
+        // nickname has no token prepended to it, so no need to strip
+        String nickname = cs.getString("preop.master.audit_signing.nickname");
+        String cstype = cs.getString("cs.type", "");
+        cstype = cstype.toLowerCase();
+
+        //audit signing cert
+        String certStr = cs.getString(cstype + ".audit_signing.cert");
+        byte[] cert = CryptoUtil.base64Decode(certStr);
+        X509Certificate xcert = cm.importUserCACertPackage(cert, nickname);
+
+        InternalCertificate icert = (InternalCertificate) xcert;
+        icert.setObjectSigningTrust(InternalCertificate.USER
+                | InternalCertificate.VALID_PEER
+                | InternalCertificate.TRUSTED_PEER);
+
+        // ca signing cert
+        if (cstype.equals("ca")) {
+            // nickname has no token prepended to it, so no need to strip
+            nickname = cs.getString("preop.master.signing.nickname");
+            certStr = cs.getString(cstype + ".signing.cert");
+            cert = CryptoUtil.base64Decode(certStr);
+            xcert = cm.importUserCACertPackage(cert, nickname);
+            icert = (InternalCertificate) xcert;
+            icert.setSSLTrust(InternalCertificate.TRUSTED_CA
+                    | InternalCertificate.TRUSTED_CLIENT_CA
+                    | InternalCertificate.VALID_CA);
+        }
+    }
+
     private static boolean importRequired(ArrayList<String> masterList, String nickname) {
         if (masterList.contains(nickname))
             return true;
@@ -1311,7 +1350,7 @@ public class ConfigurationUtils {
         boolean setupReplication = cs.getBoolean("preop.database.setupReplication", true);
 
         IConfigStore dbCfg = cs.getSubStore("internaldb");
-        ILdapConnFactory dbFactory = CMS.getLdapBoundConnFactory();
+        ILdapConnFactory dbFactory = CMS.getLdapBoundConnFactory("ConfigurationUtils");
         dbFactory.init(dbCfg);
         LDAPConnection conn = dbFactory.getConn();
 
@@ -1768,7 +1807,7 @@ public class ConfigurationUtils {
         IConfigStore cs = CMS.getConfigStore();
 
         IConfigStore dbCfg = cs.getSubStore("internaldb");
-        ILdapConnFactory dbFactory = CMS.getLdapBoundConnFactory();
+        ILdapConnFactory dbFactory = CMS.getLdapBoundConnFactory("ConfigurationUtils");
         dbFactory.init(dbCfg);
         LDAPConnection conn = dbFactory.getConn();
 
@@ -1787,7 +1826,7 @@ public class ConfigurationUtils {
         IConfigStore cs = CMS.getConfigStore();
 
         IConfigStore dbCfg = cs.getSubStore("internaldb");
-        ILdapConnFactory dbFactory = CMS.getLdapBoundConnFactory();
+        ILdapConnFactory dbFactory = CMS.getLdapBoundConnFactory("ConfigurationUtils");
         dbFactory.init(dbCfg);
         LDAPConnection conn = dbFactory.getConn();
 
@@ -1858,7 +1897,7 @@ public class ConfigurationUtils {
         ILdapConnFactory masterFactory = null;
         try {
             IConfigStore masterCfg = cs.getSubStore("preop.internaldb.master");
-            masterFactory = CMS.getLdapBoundConnFactory();
+            masterFactory = CMS.getLdapBoundConnFactory("ConfigurationUtils");
             masterFactory.init(masterCfg);
             masterConn = masterFactory.getConn();
         } catch (Exception e) {
@@ -1873,7 +1912,7 @@ public class ConfigurationUtils {
         ILdapConnFactory replicaFactory = null;
         try {
             IConfigStore replicaCfg = cs.getSubStore("internaldb");
-            replicaFactory = CMS.getLdapBoundConnFactory();
+            replicaFactory = CMS.getLdapBoundConnFactory("ConfigurationUtils");
             replicaFactory.init(replicaCfg);
             replicaConn = replicaFactory.getConn();
         } catch (Exception e) {
@@ -3577,7 +3616,7 @@ public class ConfigurationUtils {
             SAXException, ParserConfigurationException {
         IConfigStore cs = CMS.getConfigStore();
         IConfigStore dbCfg = cs.getSubStore("internaldb");
-        ILdapConnFactory dbFactory = CMS.getLdapBoundConnFactory();
+        ILdapConnFactory dbFactory = CMS.getLdapBoundConnFactory("ConfigurationUtils");
         dbFactory.init(dbCfg);
         LDAPConnection conn = dbFactory.getConn();
         LDAPEntry entry = null;
@@ -4204,7 +4243,7 @@ public class ConfigurationUtils {
         IConfigStore cs = CMS.getConfigStore();
         String userbasedn = "ou=people, " + cs.getString("internaldb.basedn");
         IConfigStore dbCfg = cs.getSubStore("internaldb");
-        ILdapConnFactory dbFactory = CMS.getLdapBoundConnFactory();
+        ILdapConnFactory dbFactory = CMS.getLdapBoundConnFactory("ConfigurationUtils");
         dbFactory.init(dbCfg);
         LDAPConnection conn = dbFactory.getConn();
 
@@ -4270,7 +4309,7 @@ public class ConfigurationUtils {
 
         // update global next range entries
         IConfigStore dbCfg = cs.getSubStore("internaldb");
-        ILdapConnFactory dbFactory = CMS.getLdapBoundConnFactory();
+        ILdapConnFactory dbFactory = CMS.getLdapBoundConnFactory("ConfigurationUtils");
         dbFactory.init(dbCfg);
         LDAPConnection conn = dbFactory.getConn();
 
