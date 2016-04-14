@@ -120,6 +120,8 @@ import com.netscape.certsrv.key.KeyData;
 import com.netscape.certsrv.ldap.ILdapConnFactory;
 import com.netscape.certsrv.ocsp.IDefStore;
 import com.netscape.certsrv.ocsp.IOCSPAuthority;
+import com.netscape.certsrv.profile.CertInfoProfile;
+import com.netscape.certsrv.request.IRequest;
 import com.netscape.certsrv.system.InstallToken;
 import com.netscape.certsrv.system.SecurityDomainClient;
 import com.netscape.certsrv.system.TPSConnectorClient;
@@ -170,7 +172,7 @@ import netscape.security.x509.X509Key;
  */
 public class ConfigurationUtils {
 
-    private static final String PCERT_PREFIX = "preop.cert.";
+    public static final String PCERT_PREFIX = "preop.cert.";
     public static String SUCCESS = "0";
     public static String FAILURE = "1";
     public static String AUTH_FAILURE = "2";
@@ -2490,11 +2492,13 @@ public class ConfigurationUtils {
     public static void configCert(HttpServletRequest request, HttpServletResponse response,
             Context context, Cert certObj) throws Exception {
 
+        String certTag = certObj.getCertTag();
+        CMS.debug("ConfigurationUtils.configCert(" + certTag + ")");
+
         IConfigStore config = CMS.getConfigStore();
         String caType = certObj.getType();
-        CMS.debug("configCert: caType is " + caType);
+        CMS.debug("configCert: cert type: " + caType);
         X509CertImpl cert = null;
-        String certTag = certObj.getCertTag();
 
         try {
             String selection = config.getString("preop.subsystem.select");
@@ -2530,7 +2534,7 @@ public class ConfigurationUtils {
 
                 // fetch revised caType
                 caType = certObj.getType();
-                CMS.debug("configCert: caType is " + caType + " (revised)");
+                CMS.debug("ConfigurationUtils: cert type: " + caType + " (revised)");
 
                 // set master/clone signature flag
                 sign_clone_sslserver_cert_using_master = true;
@@ -2593,10 +2597,11 @@ public class ConfigurationUtils {
             boolean sign_clone_sslserver_cert_using_master)
             throws Exception {
 
+        CMS.debug("ConfigurationUtils.configRemoteCert()");
+
         String caType;
         String v = config.getString("preop.ca.type", "");
 
-        CMS.debug("configCert: remote CA");
         String pkcs10 = CertUtil.getPKCS10(config, PCERT_PREFIX, certObj, context);
         certObj.setRequest(pkcs10);
 
@@ -2632,6 +2637,7 @@ public class ConfigurationUtils {
                 content.putSingle("xmlOutput", "true");
                 content.putSingle("sessionID", session_id);
 
+                CMS.debug("ConfigurationUtils: configRemoteCert(" + certTag + ")");
                 cert = CertUtil.createRemoteCert(sd_hostname, sd_ee_port, content, response);
 
                 if (cert == null) {
@@ -2678,6 +2684,7 @@ public class ConfigurationUtils {
             content.putSingle("xmlOutput", "true");
             content.putSingle("sessionID", session_id);
 
+            CMS.debug("ConfigurationUtils: configRemoteCert(" + certTag + ")");
             cert = CertUtil.createRemoteCert(ca_hostname, ca_port, content, response);
 
             if (cert == null) {
@@ -2780,6 +2787,7 @@ public class ConfigurationUtils {
             if (certTag.equals("signing")) {
 
                 X509Key x509key = CryptoUtil.getPublicX509ECCKey(CryptoUtil.string2byte(pubKeyEncoded));
+
                 cert = CertUtil.createLocalCert(config, x509key, PCERT_PREFIX, certTag, caType);
 
             } else {
@@ -2815,12 +2823,14 @@ public class ConfigurationUtils {
     }
 
     public static void updateConfig(IConfigStore config, String certTag)
-            throws EBaseException, IOException {
+            throws Exception {
+
+        CMS.debug("ConfigurationUtils.updateConfig(" + certTag + ")");
+
         String token = config.getString("preop.module.token");
         String subsystem = config.getString(PCERT_PREFIX + certTag + ".subsystem");
         String nickname = getNickname(config, certTag);
 
-        CMS.debug("ConfigurationUtils: updateConfig() for certTag " + certTag);
         if (certTag.equals("signing") || certTag.equals("ocsp_signing")) {
             CMS.debug("ConfigurationUtils: setting signing nickname=" + nickname);
             config.putString(subsystem + "." + certTag + ".cacertnickname", nickname);
@@ -2868,7 +2878,6 @@ public class ConfigurationUtils {
         }
 
         config.commit(false);
-        CMS.debug("updateConfig() done");
     }
 
     public static void updateServerCertNickConf() throws Exception {
@@ -3154,37 +3163,30 @@ public class ConfigurationUtils {
         return pubk;
     }
 
-    public static void loadCert(IConfigStore config, Cert cert) throws Exception {
+    public static void loadCert(
+            IConfigStore config,
+            String tag,
+            X509Certificate x509Cert,
+            CertInfoProfile profile,
+            IRequest req) throws Exception {
 
-        String tag = cert.getCertTag();
-        CMS.debug("ConfigurationUtils: loadCert(" + tag + ")");
+        CMS.debug("ConfigurationUtils.importCertIntoLDAP(" + tag + ")");
 
-        CryptoManager cm = CryptoManager.getInstance();
-        X509Certificate x509Cert = cm.findCertByNickname(cert.getNickname());
+        // When importing existing certificate, create a certificate record
+        // to reserve the serial number. Otherwise it might conflict with
+        // system certificates to be created later.
 
-        if (!x509Cert.getSubjectDN().equals(x509Cert.getIssuerDN())) {
-            CMS.debug("ConfigurationUtils: " + tag + " cert is not self-signed");
-
-            String subsystem = config.getString(PCERT_PREFIX + tag + ".subsystem");
-            String certChain = config.getString(subsystem + ".external_ca_chain.cert");
-            cert.setCertChain(certChain);
-
-            return;
-        }
-
-        CMS.debug("ConfigurationUtils: " + tag + " cert is self-signed");
-
-        // When importing existing self-signed CA certificate, create a
-        // certificate record to reserve the serial number. Otherwise it
-        // might conflict with system certificates to be created later.
+        BigInteger serialNo = x509Cert.getSerialNumber();
+        CMS.debug("ConfigurationUtils: creating cert record cn=" + serialNo);
 
         X509CertImpl x509CertImpl = new X509CertImpl(x509Cert.getEncoded());
 
         ICertificateAuthority ca = (ICertificateAuthority) CMS.getSubsystem(ICertificateAuthority.ID);
         ICertificateRepository cr = ca.getCertificateRepository();
 
-        BigInteger serialNo = x509Cert.getSerialNumber();
         MetaInfo meta = new MetaInfo();
+        meta.set(ICertRecord.META_REQUEST_ID, req.getRequestId().toString());
+        meta.set(ICertRecord.META_PROFILE_ID, profile.getProfileIDMapping());
 
         ICertRecord record = cr.createCertRecord(serialNo, x509CertImpl, meta);
         cr.addCertificateRecord(record);

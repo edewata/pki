@@ -352,6 +352,56 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
                         signing_csr, 'pem', 'base64')
                     subsystem.config['ca.signing.certreq'] = signing_csr
 
+                # If specified, import CA OCSP signing CSR into CS.cfg.
+                ocsp_signing_csr_path = \
+                    deployer.mdict['pki_ocsp_signing_csr_path']
+                if ocsp_signing_csr_path:
+                    config.pki_log.info(
+                        "importing CA OCSP signing CSR from %s",
+                        ocsp_signing_csr_path,
+                        extra=config.PKI_INDENTATION_LEVEL_2)
+                    with open(ocsp_signing_csr_path) as f:
+                        ocsp_signing_csr = f.read()
+                    ocsp_signing_csr = pki.nssdb.convert_csr(ocsp_signing_csr, 'pem', 'base64')
+                    subsystem.config['ca.ocsp_signing.certreq'] = ocsp_signing_csr
+
+                # If specified, import CA audit signing CSR into CS.cfg.
+                audit_signing_csr_path = \
+                    deployer.mdict['pki_audit_signing_csr_path']
+                if audit_signing_csr_path:
+                    config.pki_log.info(
+                        "importing CA audit signing CSR from %s",
+                        audit_signing_csr_path,
+                        extra=config.PKI_INDENTATION_LEVEL_2)
+                    with open(audit_signing_csr_path) as f:
+                        audit_signing_csr = f.read()
+                    audit_signing_csr = pki.nssdb.convert_csr(audit_signing_csr, 'pem', 'base64')
+                    subsystem.config['ca.audit_signing.certreq'] = audit_signing_csr
+
+                # If specified, import subsystem CSR into CS.cfg.
+                subsystem_csr_path = deployer.mdict['pki_subsystem_csr_path']
+                if subsystem_csr_path:
+                    config.pki_log.info(
+                        "importing subsystem CSR from %s",
+                        subsystem_csr_path,
+                        extra=config.PKI_INDENTATION_LEVEL_2)
+                    with open(subsystem_csr_path) as f:
+                        subsystem_csr = f.read()
+                    subsystem_csr = pki.nssdb.convert_csr(subsystem_csr, 'pem', 'base64')
+                    subsystem.config['ca.subsystem.certreq'] = subsystem_csr
+
+                # If specified, import SSL server CSR into CS.cfg.
+                sslserver_csr_path = deployer.mdict['pki_ssl_server_csr_path']
+                if sslserver_csr_path:
+                    config.pki_log.info(
+                        "importing SSL server CSR from %s",
+                        sslserver_csr_path,
+                        extra=config.PKI_INDENTATION_LEVEL_2)
+                    with open(sslserver_csr_path) as f:
+                        sslserver_csr = f.read()
+                    sslserver_csr = pki.nssdb.convert_csr(sslserver_csr, 'pem', 'base64')
+                    subsystem.config['ca.sslserver.certreq'] = sslserver_csr
+
                 # If specified, import CA signing cert into NSS database.
                 signing_nickname = deployer.mdict['pki_ca_signing_nickname']
                 signing_cert_file = deployer.mdict['pki_external_ca_cert_path']
@@ -364,6 +414,58 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
                         nickname=signing_nickname,
                         cert_file=signing_cert_file,
                         trust_attributes='CT,C,C')
+
+                # If specified, import OCSP signing cert into NSS database.
+                ocsp_signing_nickname = deployer.mdict['pki_ocsp_signing_nickname']
+                ocsp_signing_cert_file = deployer.mdict['pki_ocsp_signing_cert_path']
+                if ocsp_signing_cert_file:
+                    config.pki_log.info(
+                        "importing %s from %s",
+                        ocsp_signing_nickname, ocsp_signing_cert_file,
+                        extra=config.PKI_INDENTATION_LEVEL_2)
+                    nssdb.add_cert(
+                        nickname=ocsp_signing_nickname,
+                        cert_file=ocsp_signing_cert_file,
+                        trust_attributes=',,')
+
+                # If specified, import audit signing cert into NSS database.
+                audit_signing_nickname = deployer.mdict['pki_audit_signing_nickname']
+                audit_signing_cert_file = deployer.mdict['pki_audit_signing_cert_path']
+                if audit_signing_cert_file:
+                    config.pki_log.info(
+                        "importing %s from %s",
+                        audit_signing_nickname, audit_signing_cert_file,
+                        extra=config.PKI_INDENTATION_LEVEL_2)
+                    nssdb.add_cert(
+                        nickname=audit_signing_nickname,
+                        cert_file=audit_signing_cert_file,
+                        trust_attributes=',,P')
+
+                # If specified, import subsystem cert into NSS database.
+                subsystem_nickname = deployer.mdict['pki_subsystem_nickname']
+                subsystem_cert_file = deployer.mdict['pki_subsystem_cert_path']
+                if subsystem_cert_file:
+                    config.pki_log.info(
+                        "importing %s from %s",
+                        subsystem_nickname, subsystem_cert_file,
+                        extra=config.PKI_INDENTATION_LEVEL_2)
+                    nssdb.add_cert(
+                        nickname=subsystem_nickname,
+                        cert_file=subsystem_cert_file,
+                        trust_attributes=',,')
+
+                # If specified, import SSL server cert into NSS database.
+                sslserver_nickname = deployer.mdict['pki_ssl_server_nickname']
+                sslserver_cert_file = deployer.mdict['pki_ssl_server_cert_path']
+                if sslserver_cert_file:
+                    config.pki_log.info(
+                        "importing %s from %s",
+                        sslserver_nickname, sslserver_cert_file,
+                        extra=config.PKI_INDENTATION_LEVEL_2)
+                    nssdb.add_cert(
+                        nickname=sslserver_nickname,
+                        cert_file=sslserver_cert_file,
+                        trust_attributes=',,')
 
                 # If specified, import certs and keys from PKCS #12 file
                 # into NSS database.
@@ -398,6 +500,10 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
 
                 # Export CA signing cert from NSS database and import
                 # it into CS.cfg.
+                config.pki_log.info(
+                    "importing certificate %s",
+                    signing_nickname,
+                    extra=config.PKI_INDENTATION_LEVEL_2)
                 signing_cert_data = nssdb.get_cert(
                     nickname=signing_nickname,
                     output_format='base64')
@@ -408,6 +514,101 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
                 subsystem.config['ca.signing.cacertnickname'] = signing_nickname
                 subsystem.config['ca.signing.defaultSigningAlgorithm'] = (
                     deployer.mdict['pki_ca_signing_signing_algorithm'])
+
+                # Export CA OCSP signing cert from NSS database and import it into CS.cfg.
+                ocsp_signing_nickname = deployer.mdict['pki_ocsp_signing_nickname']
+                config.pki_log.info(
+                    "importing certificate %s",
+                    ocsp_signing_nickname,
+                    extra=config.PKI_INDENTATION_LEVEL_2)
+                ocsp_signing_cert_data = nssdb.get_cert(
+                    nickname=ocsp_signing_nickname,
+                    output_format='base64')
+
+                if ocsp_signing_cert_data:
+                    subsystem.config['ca.ocsp_signing.nickname'] = ocsp_signing_nickname
+                    subsystem.config['ca.ocsp_signing.tokenname'] = \
+                        deployer.mdict['pki_ocsp_signing_token']
+                    subsystem.config['ca.ocsp_signing.cert'] = ocsp_signing_cert_data
+                    subsystem.config['ca.ocsp_signing.cacertnickname'] = ocsp_signing_nickname
+                    subsystem.config['ca.ocsp_signing.certnickname'] = ocsp_signing_nickname
+                    subsystem.config['ca.ocsp_signing.newNickname'] = ocsp_signing_nickname
+                    subsystem.config['ca.ocsp_signing.defaultSigningAlgorithm'] = \
+                        deployer.mdict['pki_ocsp_signing_signing_algorithm']
+                else:
+                    config.pki_log.info(
+                        "certificate not found: %s",
+                        ocsp_signing_nickname,
+                        extra=config.PKI_INDENTATION_LEVEL_2)
+                    # TODO: ignore only if the cert does not exist
+
+                # Export CA audit signing cert from NSS database and import it into CS.cfg.
+                audit_signing_nickname = deployer.mdict['pki_audit_signing_nickname']
+                config.pki_log.info(
+                    "importing certificate %s",
+                    audit_signing_nickname,
+                    extra=config.PKI_INDENTATION_LEVEL_2)
+                audit_signing_cert_data = nssdb.get_cert(
+                    nickname=audit_signing_nickname,
+                    output_format='base64')
+
+                if audit_signing_cert_data:
+                    subsystem.config['ca.audit_signing.nickname'] = audit_signing_nickname
+                    subsystem.config['ca.audit_signing.tokenname'] = \
+                        deployer.mdict['pki_audit_signing_token']
+                    subsystem.config['ca.audit_signing.cert'] = audit_signing_cert_data
+                else:
+                    config.pki_log.info(
+                        "certificate not found: %s",
+                        audit_signing_nickname,
+                        extra=config.PKI_INDENTATION_LEVEL_2)
+                    # TODO: ignore only if the cert does not exist
+
+                # Export subsystem cert from NSS database and import it into CS.cfg.
+                subsystem_nickname = deployer.mdict['pki_subsystem_nickname']
+                config.pki_log.info(
+                    "importing certificate %s",
+                    subsystem_nickname,
+                    extra=config.PKI_INDENTATION_LEVEL_2)
+                subsystem_cert_data = nssdb.get_cert(
+                    nickname=subsystem_nickname,
+                    output_format='base64')
+
+                if subsystem_cert_data:
+                    subsystem.config['ca.subsystem.nickname'] = subsystem_nickname
+                    subsystem.config['ca.subsystem.tokenname'] = \
+                        deployer.mdict['pki_subsystem_token']
+                    subsystem.config['ca.subsystem.cert'] = subsystem_cert_data
+                    subsystem.config['ca.subsystem.cacertnickname'] = subsystem_nickname
+                else:
+                    config.pki_log.info(
+                        "certificate not found: %s",
+                        subsystem_nickname,
+                        extra=config.PKI_INDENTATION_LEVEL_2)
+                    # TODO: ignore only if the cert does not exist
+
+                # Export SSL server cert from NSS database and import it into CS.cfg.
+                sslserver_nickname = deployer.mdict['pki_ssl_server_nickname']
+                config.pki_log.info(
+                    "importing certificate %s",
+                    sslserver_nickname,
+                    extra=config.PKI_INDENTATION_LEVEL_2)
+                sslserver_cert_data = nssdb.get_cert(
+                    nickname=sslserver_nickname,
+                    output_format='base64')
+
+                if sslserver_cert_data:
+                    subsystem.config['ca.sslserver.nickname'] = sslserver_nickname
+                    subsystem.config['ca.sslserver.tokenname'] = \
+                        deployer.mdict['pki_ssl_server_token']
+                    subsystem.config['ca.sslserver.cert'] = sslserver_cert_data
+                    subsystem.config['ca.sslserver.cacertnickname'] = sslserver_nickname
+                else:
+                    config.pki_log.info(
+                        "certificate not found: %s",
+                        sslserver_nickname,
+                        extra=config.PKI_INDENTATION_LEVEL_2)
+                    # TODO: ignore only if the cert does not exist
 
                 subsystem.save()
 

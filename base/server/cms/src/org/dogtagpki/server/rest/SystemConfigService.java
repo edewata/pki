@@ -46,6 +46,11 @@ import com.netscape.certsrv.base.IConfigStore;
 import com.netscape.certsrv.base.PKIException;
 import com.netscape.certsrv.ca.ICertificateAuthority;
 import com.netscape.certsrv.dbs.certdb.ICertificateRepository;
+import com.netscape.certsrv.profile.CertInfoProfile;
+import com.netscape.certsrv.profile.IEnrollProfile;
+import com.netscape.certsrv.request.IRequest;
+import com.netscape.certsrv.request.IRequestQueue;
+import com.netscape.certsrv.request.RequestId;
 import com.netscape.certsrv.system.ConfigurationRequest;
 import com.netscape.certsrv.system.ConfigurationResponse;
 import com.netscape.certsrv.system.SystemCertData;
@@ -54,12 +59,15 @@ import com.netscape.certsrv.usrgrp.IUGSubsystem;
 import com.netscape.certsrv.usrgrp.IUser;
 import com.netscape.cms.servlet.base.PKIService;
 import com.netscape.cms.servlet.csadmin.Cert;
+import com.netscape.cms.servlet.csadmin.CertUtil;
 import com.netscape.cms.servlet.csadmin.ConfigurationUtils;
 import com.netscape.cms.servlet.csadmin.SystemCertDataFactory;
 import com.netscape.cmsutil.crypto.CryptoUtil;
 import com.netscape.cmsutil.util.Utils;
 
 import netscape.security.x509.X509CertImpl;
+import netscape.security.x509.X509CertInfo;
+import netscape.security.x509.X509Key;
 
 /**
  * @author alee
@@ -373,6 +381,15 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
                 continue;
             }
 
+            X509Certificate x509Cert = null;
+            try {
+                CMS.debug("SystemConfigService: searching for cert " + certData.getNickname());
+                CryptoManager cm = CryptoManager.getInstance();
+                x509Cert = cm.findCertByNickname(certData.getNickname());
+            } catch (ObjectNotFoundException e) {
+                CMS.debug("SystemConfigService: cert does not exist");
+            }
+
             processKeyPair(
                     request,
                     token,
@@ -382,7 +399,8 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
                     request,
                     hasSigningCert,
                     certData,
-                    tokenName);
+                    tokenName,
+                    x509Cert);
 
             certs.add(cert);
         }
@@ -470,7 +488,8 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
             ConfigurationRequest request,
             MutableBoolean hasSigningCert,
             SystemCertData certData,
-            String tokenName) throws Exception {
+            String tokenName,
+            X509Certificate x509Cert) throws Exception {
 
         String tag = certData.getTag();
         CMS.debug("SystemConfigService.processCert(" + tag + ")");
@@ -483,7 +502,7 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
         cert.setSubsystem(cs.getString("preop.cert." + tag + ".subsystem"));
         cert.setType(cs.getString("preop.cert." + tag + ".type"));
 
-        if (request.isExternal() && tag.equals("signing")) { // external/existing CA
+        if (request.isExternal() && x509Cert != null) { // external/existing cert
 
             // update configuration for existing or externally-signed signing certificate
             String certStr = cs.getString("ca." + tag + ".cert" );
@@ -495,12 +514,70 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
             CMS.debug("SystemConfigService: Loading cert request from CS.cfg");
             ConfigurationUtils.loadCertRequest(cs, tag, cert);
 
-            CMS.debug("SystemConfigService: Loading cert " + tag);
-            ConfigurationUtils.loadCert(cs, cert);
+            CMS.debug("SystemConfigService: Creating cert request record for cert " + tag);
+            ICertificateAuthority ca = (ICertificateAuthority) CMS.getSubsystem(ICertificateAuthority.ID);
+            IRequestQueue queue = ca.getRequestQueue();
 
-            CMS.debug("SystemConfigService: External CA has signing cert");
-            hasSigningCert.setValue(true);
-            return cert;
+            byte[] bytes = x509Cert.getEncoded();
+            X509CertImpl impl = new X509CertImpl(bytes);
+            X509CertInfo info = impl.getInfo();
+
+            //X509Key x509key = (X509Key)impl.getPublicKey();
+
+            String pubKeyModulus = cs.getString(ConfigurationUtils.PCERT_PREFIX + tag + ".pubkey.modulus");
+            String pubKeyPublicExponent = cs.getString(ConfigurationUtils.PCERT_PREFIX + tag + ".pubkey.exponent");
+            String subsystem = cs.getString(ConfigurationUtils.PCERT_PREFIX + tag + ".subsystem");
+
+            X509Key x509key = CryptoUtil.getPublicX509Key(
+                    CryptoUtil.string2byte(pubKeyModulus),
+                    CryptoUtil.string2byte(pubKeyPublicExponent));
+/*
+            String certreq = cs.getString(subsystem + "." + tag + ".certreq");
+            byte[] b = CMS.AtoB(certreq);
+            PKCS10 pkcs10 = new PKCS10(b);
+            X509Key x509key = pkcs10.getSubjectPublicKeyInfo();
+*/
+            String instanceRoot = cs.getString("instanceRoot");
+            String configurationRoot = cs.getString("configurationRoot");
+
+            String profileName = cs.getString(ConfigurationUtils.PCERT_PREFIX + tag + ".profile");
+            CMS.debug("CertUtil: profile: " + profileName);
+
+            CertInfoProfile profile = new CertInfoProfile(instanceRoot + configurationRoot + profileName);
+
+            IRequest req = CertUtil.createLocalRequest(
+                    cs,
+                    queue,
+                    tag,
+                    profile,
+                    info,
+                    x509key);
+
+            req.setExtData(IEnrollProfile.REQUEST_ISSUED_CERT, impl);
+            req.setExtData("cert_request", cert.getRequest());
+            req.setExtData("cert_request_type", "pkcs10");
+
+            RequestId reqId = req.getRequestId();
+            cs.putString("preop.cert." + tag + ".reqId", reqId.toString());
+
+            queue.updateRequest(req);
+
+            // if CA signing cert is externally signed, load the cert chain
+            if (tag.equals("signing") && !x509Cert.getSubjectDN().equals(x509Cert.getIssuerDN())) {
+                CMS.debug("ConfigurationUtils: Loading cert chain for externally-signed CA signing cert");
+
+                String certChain = cs.getString(subsystem + ".external_ca_chain.cert");
+                cert.setCertChain(certChain);
+
+            } else {
+                CMS.debug("SystemConfigService: Loading cert " + tag);
+                ConfigurationUtils.loadCert(cs, tag, x509Cert, profile, req);
+            }
+
+            if (tag.equals("signing")) { // external/existing CA
+                CMS.debug("SystemConfigService: External CA has signing cert");
+                hasSigningCert.setValue(true);
+            }
         }
 
         if (!request.getStepTwo()) {
