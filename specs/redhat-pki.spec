@@ -65,7 +65,7 @@ this machine, or remotely over the attached network connection.
 
 Finally, although they are no longer supplied by this 'meta' package,
 javadocs are available for both JSS (jss-javadoc) and portions of
-the Dogtag API (pki-javadoc).
+the Red Hat PKI API (pki-javadoc).
 
 NOTE:  As a convenience for standalone deployments, this 'redhat-pki'
        top-level meta package supplies Red Hat themes for use by the
