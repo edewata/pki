@@ -1,0 +1,201 @@
+#!/bin/sh
+# BEGIN COPYRIGHT BLOCK
+# (C) 2010 Red Hat, Inc.
+# All rights reserved.
+# END COPYRIGHT BLOCK
+
+##
+## Include common 'compose' functions
+##
+
+COMPOSE_PWD=`dirname $0`
+. ${COMPOSE_PWD}/compose_functions
+
+
+## Always switch into the base directory three levels
+## above this shell script prior to executing it so
+## that all of its output is written to this directory
+
+cd `dirname $0`/../..
+
+
+##
+## Retrieve the name of this base directory
+##
+
+PKI_PWD=`pwd`
+
+
+##
+## Establish the 'redhat-pki' name and version information
+##
+
+REDHAT_PKI_THEME="redhat-pki-theme"
+REDHAT_PKI_THEME_VERSION="10.3.1"
+
+
+##
+## Establish the SOURCE files/directories of the 'redhat-pki' source directory
+##
+
+PKI_SPECS_FILE="${PKI_DIR}/specs/${REDHAT_PKI_THEME}.spec"
+PKI_COMPONENT_LIST="common-ui console-ui"
+
+
+##
+## Establish the TARGET files/directories of the 'redhat-pki' source/spec files
+##
+
+if [ $WORK_DIR ]; then
+    PKI_PACKAGES="`cd $WORK_DIR ; pwd`"
+else
+    PKI_PACKAGES="${PKI_PWD}/packages"
+fi
+
+REDHAT_PKI_THEME_BUILD_DIR="${PKI_PACKAGES}/BUILD"
+REDHAT_PKI_THEME_RPMS_DIR="${PKI_PACKAGES}/RPMS"
+REDHAT_PKI_THEME_SOURCES_DIR="${PKI_PACKAGES}/SOURCES"
+REDHAT_PKI_THEME_SPECS_DIR="${PKI_PACKAGES}/SPECS"
+REDHAT_PKI_THEME_SRPMS_DIR="${PKI_PACKAGES}/SRPMS"
+
+REDHAT_PKI_THEME_TARBALL="${REDHAT_PKI_THEME}-${REDHAT_PKI_THEME_VERSION}.tar.gz"
+REDHAT_PKI_THEME_SPEC_FILE="${REDHAT_PKI_THEME_SPECS_DIR}/${REDHAT_PKI_THEME}.spec"
+REDHAT_PKI_THEME_PACKAGE_SCRIPT="${PKI_PACKAGES}/package_${REDHAT_PKI_THEME}"
+REDHAT_PKI_THEME_PACKAGE_COMMAND="${RPMBUILD_CMD} SPECS/${REDHAT_PKI_THEME}.spec"
+
+REDHAT_PKI_THEME_STAGING_DIR="${PKI_PACKAGES}/staging"
+REDHAT_PKI_THEME_DIR="${REDHAT_PKI_THEME_STAGING_DIR}/${REDHAT_PKI_THEME}-${REDHAT_PKI_THEME_VERSION}"
+REDHAT_PKI_THEME_REDHAT_DIR="${REDHAT_PKI_THEME_DIR}/redhat"
+
+
+##
+## Always create a top-level 'packages' directory
+##
+
+mkdir -p ${PKI_PACKAGES}
+
+
+
+##
+## Always create 'redhat-pki' package directories
+##
+
+mkdir -p ${REDHAT_PKI_THEME_BUILD_DIR}
+mkdir -p ${REDHAT_PKI_THEME_RPMS_DIR}
+mkdir -p ${REDHAT_PKI_THEME_SOURCES_DIR}
+mkdir -p ${REDHAT_PKI_THEME_SPECS_DIR}
+mkdir -p ${REDHAT_PKI_THEME_SRPMS_DIR}
+
+
+##
+## Always start with new 'redhat-pki' package files
+##
+
+rm -rf ${REDHAT_PKI_THEME_BUILD_DIR}/${REDHAT_PKI_THEME}-${REDHAT_PKI_THEME_VERSION}
+rm -f  ${REDHAT_PKI_THEME_RPMS_DIR}/${REDHAT_PKI_THEME}-${REDHAT_PKI_THEME_VERSION}*.rpm
+rm -f  ${REDHAT_PKI_THEME_SOURCES_DIR}/${REDHAT_PKI_THEME_TARBALL}
+rm -f  ${REDHAT_PKI_THEME_SPEC_FILE}
+rm -f  ${REDHAT_PKI_THEME_SRPMS_DIR}/${REDHAT_PKI_THEME}-${REDHAT_PKI_THEME_VERSION}*.rpm
+
+
+##
+## Copy a new 'redhat-pki' spec file from the
+## current contents of the PKI working repository
+##
+
+cp -p ${PKI_SPECS_FILE} ${REDHAT_PKI_THEME_SPECS_DIR}
+
+
+##
+## If specified, copy all Patches from the spec file URL to SOURCES
+##
+
+if [ ${FETCH_PATCH_FILES} -eq 1 ] ; then
+	Fetch_Patch_Files ${PKI_SPECS_FILE} ${REDHAT_PKI_THEME_SOURCES_DIR}
+fi
+
+
+##
+## Copy the specified Source Tarball from the spec file URL to SOURCES, or
+## Generate a fresh Source Tarball from the local source
+##
+
+if [ ${FETCH_SOURCE_TARBALL} -eq 1 ] ; then
+	Fetch_Source_Tarball ${PKI_SPECS_FILE} ${REDHAT_PKI_THEME_SOURCES_DIR}
+else
+	##
+	## Always start with a new 'redhat-pki' staging directory
+	##
+
+	rm -rf ${REDHAT_PKI_THEME_STAGING_DIR}
+
+
+	##
+	## To generate the 'redhat-pki' tarball, construct a staging area
+	## consisting of the 'redhat-pki' source components from the
+	## current contents of the PKI working repository
+	##
+
+	mkdir -p ${REDHAT_PKI_THEME_DIR}
+	cd ${PKI_DIR}
+	for file in "${PKI_FILE_LIST}" ;
+	do
+		cp -p ${file} ${REDHAT_PKI_THEME_DIR}
+	done
+	find ${PKI_CMAKE_DIR}             \
+		-name .svn -prune -o          \
+		-name *.swp -prune -o         \
+		-print | cpio -pdum ${REDHAT_PKI_THEME_DIR} > /dev/null 2>&1
+	cd - > /dev/null 2>&1
+
+	mkdir -p ${REDHAT_PKI_THEME_REDHAT_DIR}
+	cd ${PKI_REDHAT_DIR}
+	cp -p ${PKI_REDHAT_MANIFEST} ${REDHAT_PKI_THEME_REDHAT_DIR}
+	for component in "${PKI_COMPONENT_LIST}" ;
+	do
+		find ${component}             \
+		-name .svn -prune -o          \
+		-name *.spec -prune -o        \
+		-name *.swp -prune -o         \
+		-print | cpio -pdum ${REDHAT_PKI_THEME_REDHAT_DIR} > /dev/null 2>&1
+	done
+	cd - > /dev/null 2>&1
+
+
+	##
+	## Create the 'redhat-pki' tarball
+	##
+
+	mkdir -p ${REDHAT_PKI_THEME_SOURCES_DIR}
+	cd ${REDHAT_PKI_THEME_STAGING_DIR}
+	gtar -zcvf ${REDHAT_PKI_THEME_TARBALL}    \
+		"${REDHAT_PKI_THEME}-${REDHAT_PKI_THEME_VERSION}" > /dev/null 2>&1
+	mv ${REDHAT_PKI_THEME_TARBALL} ${REDHAT_PKI_THEME_SOURCES_DIR}
+	cd - > /dev/null 2>&1
+
+
+	##
+	## Always remove the PKI staging area
+	##
+
+	rm -rf ${REDHAT_PKI_THEME_STAGING_DIR}
+fi
+
+
+##
+## Always generate a fresh 'redhat-pki' package script
+##
+
+rm -rf ${REDHAT_PKI_THEME_PACKAGE_SCRIPT}
+printf "#!/bin/sh\n\n"                >  ${REDHAT_PKI_THEME_PACKAGE_SCRIPT}
+printf "${REDHAT_PKI_THEME_PACKAGE_COMMAND}\n\n" >> ${REDHAT_PKI_THEME_PACKAGE_SCRIPT}
+chmod 775 ${REDHAT_PKI_THEME_PACKAGE_SCRIPT}
+
+
+##
+## Automatically invoke RPM/SRPM creation
+##
+
+cd ${PKI_PACKAGES} ;
+sh ./package_${REDHAT_PKI_THEME} | tee package_${REDHAT_PKI_THEME}.log 2>&1
+

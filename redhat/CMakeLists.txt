@@ -1,0 +1,6 @@
+project(redhat)
+
+if (APPLICATION_FLAVOR_REDHAT_PKI_THEME)
+    add_subdirectory(common-ui)
+    add_subdirectory(console-ui)
+endif (APPLICATION_FLAVOR_REDHAT_PKI_THEME)
