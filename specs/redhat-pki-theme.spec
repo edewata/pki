@@ -1,6 +1,6 @@
 Name:             redhat-pki-theme
 Version:          10.3.1
-Release:          1%{?dist}
+Release:          2%{?dist}
 Summary:          Certificate System - Red Hat PKI Theme Components
 URL:              http://pki.fedoraproject.org/
 License:          GPLv2
@@ -22,6 +22,9 @@ Source0:          http://pki.fedoraproject.org/pki/sources/%{name}/%{version}/%{
 %else
 Source0:          http://pki.fedoraproject.org/pki/sources/%{name}/%{version}/%{release}/%{name}-%{version}%{?prerel}.tar.gz
 %endif
+
+## redhat-pki-theme-10.3.1-2
+# Patch1:         redhat-pki-theme-Show-TPS-UI-warning-message.patch
 
 %global overview                                                       \
 Several PKI packages utilize a "virtual" theme component.  These       \
@@ -118,6 +121,7 @@ This package is used by the Red Hat Certificate System.
 
 %setup -q -n %{name}-%{version}%{?prerel}
 
+#%patch1 -p1
 
 %clean
 %{__rm} -rf %{buildroot}
@@ -159,6 +163,9 @@ cd build
 
 
 %changelog
+* Wed May 18 2016 Dogtag Team <pki-devel@redhat.com> 10.3.1-2
+- PKI TRAC Ticket #2287 - Adding token UNFORMATTED state [edewata]
+
 * Tue May 17 2016 Dogtag Team <pki-devel@redhat.com> 10.3.1-1
 - Update version number to 10.3.1
 
