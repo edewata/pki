@@ -24,7 +24,7 @@ Source0:          http://pki.fedoraproject.org/pki/sources/%{name}/%{version}/%{
 %endif
 
 ## redhat-pki-theme-10.3.1-2
-# Patch1:         redhat-pki-theme-Show-TPS-UI-warning-message.patch
+#Patch1:           redhat-pki-theme-Show-TPS-UI-warning-message.patch
 
 %global overview                                                       \
 Several PKI packages utilize a "virtual" theme component.  These       \
