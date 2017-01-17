@@ -28,9 +28,12 @@ import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.ProcessingException;
 
@@ -38,6 +41,8 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.UnrecognizedOptionException;
 import org.apache.commons.lang.StringUtils;
+import org.dogtagpki.rest.ServerInfo;
+import org.dogtagpki.rest.ServerInfoClient;
 import org.mozilla.jss.CryptoManager;
 import org.mozilla.jss.CryptoManager.NotInitializedException;
 import org.mozilla.jss.crypto.CryptoToken;
@@ -128,7 +133,7 @@ public class MainCLI extends CLI {
 
     public void printHelp() {
 
-        formatter.printHelp(name+" [OPTIONS..] <command> [ARGS..]", options);
+        formatter.printHelp(name + " [OPTIONS..] [command] [ARGS..]", options);
         System.out.println();
 
         int leftPadding = 1;
@@ -519,7 +524,7 @@ public class MainCLI extends CLI {
             return;
         }
 
-        if (cmdArgs.length == 0 || cmd.hasOption("help")) {
+        if (cmd.hasOption("help")) {
             // Print 'pki' usage
             printHelp();
             return;
@@ -527,6 +532,13 @@ public class MainCLI extends CLI {
 
         parseOptions(cmd);
 
+        if (cmdArgs.length == 0) {
+            // enter shell mode
+            runShell(cmd);
+            return;
+        }
+
+        // execute a single command
         if (verbose) {
             System.out.print("Command:");
             for (String arg : cmdArgs) {
@@ -544,6 +556,85 @@ public class MainCLI extends CLI {
         }
 
         super.execute(cmdArgs);
+    }
+
+    public void runShell(CommandLine cmd) throws Exception {
+
+        init();
+
+        ServerInfoClient serverInfoClient = new ServerInfoClient(client);
+        ServerInfo serverInfo = serverInfoClient.getServerInfo();
+        String warning = serverInfo.getWarning();
+
+        if (warning != null) {
+
+            System.out.println(warning);
+            System.out.print("Do you want to continue (y/N)? ");
+            System.out.flush();
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            String line = reader.readLine().trim();
+
+            if (!line.equalsIgnoreCase("Y")) {
+                return;
+            }
+        }
+
+        // prepare pattern to parse quoted and unquoted command arguments
+        Pattern p = Pattern.compile("\"([^\"]*)\"|(\\S+)");
+
+        Console console = System.console();
+
+        while (true) {
+
+            String line = console.readLine("pki> ");
+
+            if (line == null) {
+                System.out.println();
+                return;
+            }
+
+            // parse command arguments
+            ArrayList<String> list = new ArrayList<String>();
+            Matcher m = p.matcher(line);
+
+            while (m.find()) {
+
+                if (m.group(1) != null) { // quoted
+                    list.add(m.group(1));
+
+                } else { // unquoted
+                    list.add(m.group(2));
+                }
+            }
+
+            if (list.isEmpty()) {
+                continue;
+            }
+
+            if (verbose) {
+                System.out.println("Command: " + list);
+            }
+
+            String cmdArgs[] = list.toArray(new String[list.size()]);
+
+            String command = cmdArgs[0];
+            if ("exit".equals(command)) {
+                return;
+            }
+
+            if (RESTRICTED_COMMANDS.contains(command)) {
+                System.err.println("This command is not supported in shell mode.");
+                continue;
+            }
+
+            try {
+                super.execute(cmdArgs);
+
+            } catch (Throwable t) {
+                handleException(t);
+            }
+        }
     }
 
     public static void printMessage(String message) {
