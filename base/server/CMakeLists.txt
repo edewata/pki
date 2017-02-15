@@ -63,11 +63,33 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E create_symlink /usr/share/java/xml-commons-resolver.jar common/lib/xml-commons-resolver.jar
 )
 
+# Create /usr/share/pki/server/webapps/pki/WEB-INF/lib. This can be customized for different platforms in RPM spec.
+
+add_custom_target(pki-server-webapp-lib ALL)
+
+add_custom_command(
+    TARGET pki-server-webapp-lib
+    COMMAND ${CMAKE_COMMAND} -E make_directory webapp/lib
+    COMMAND ${CMAKE_COMMAND} -E create_symlink /usr/share/java/pki/pki-nsutil.jar webapp/lib/pki-nsutil.jar
+    COMMAND ${CMAKE_COMMAND} -E create_symlink /usr/share/java/pki/pki-cmsutil.jar webapp/lib/pki-cmsutil.jar
+    COMMAND ${CMAKE_COMMAND} -E create_symlink /usr/share/java/pki/pki-certsrv.jar webapp/lib/pki-certsrv.jar
+    COMMAND ${CMAKE_COMMAND} -E create_symlink /usr/share/java/pki/pki-cms.jar webapp/lib/pki-cms.jar
+    COMMAND ${CMAKE_COMMAND} -E create_symlink /usr/share/java/pki/pki-cmscore.jar webapp/lib/pki-cmscore.jar
+    COMMAND ${CMAKE_COMMAND} -E create_symlink /usr/share/java/pki/pki-cmsbundle.jar webapp/lib/pki-cmsbundle.jar
+)
+
 install(
     DIRECTORY
         ${CMAKE_CURRENT_BINARY_DIR}/common/lib/
     DESTINATION
         ${DATA_INSTALL_DIR}/server/common/lib
+)
+
+install(
+    DIRECTORY
+        ${CMAKE_CURRENT_BINARY_DIR}/webapp/lib/
+    DESTINATION
+        ${DATA_INSTALL_DIR}/server/webapps/pki/WEB-INF/lib
 )
 
 install(
