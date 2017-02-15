@@ -392,8 +392,9 @@ public class PKIConnection {
     }
 
     public <T> T createProxy(URI uri, Class<T> clazz) throws URISyntaxException {
+
         ResteasyWebTarget target = resteasyClient.target(uri);
-        ProxyBuilder<T> builder = ProxyBuilder.builder(clazz, target);
+        ProxyBuilder<T> builder = target.proxyBuilder(clazz);
 
         String messageFormat = config.getMessageFormat();
         if (messageFormat == null) messageFormat = PKIClient.MESSAGE_FORMATS[0];
