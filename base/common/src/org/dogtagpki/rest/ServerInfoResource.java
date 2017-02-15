@@ -16,36 +16,23 @@
 // All rights reserved.
 // --- END COPYRIGHT BLOCK ---
 
-package org.dogtagpki.server.rest;
+package org.dogtagpki.rest;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.core.Response;
 
-import javax.ws.rs.core.Application;
+import org.jboss.resteasy.annotations.ClientResponseType;
 
-public class PKIApplication extends Application {
+/**
+ * @author Endi S. Dewata
+ */
+@Path("server-info")
+public interface ServerInfoResource {
 
-    private Set<Object> singletons = new LinkedHashSet<Object>();
-    private Set<Class<?>> classes = new LinkedHashSet<Class<?>>();
+    public final static String PKI_WARNING = "PKI_WARNING";
 
-    public PKIApplication() {
-
-        // services
-        classes.add(ServerInfoService.class);
-
-        // exception mappers
-        classes.add(PKIExceptionMapper.class);
-
-        // interceptors
-        singletons.add(new MessageFormatInterceptor());
-    }
-
-    public Set<Class<?>> getClasses() {
-        return classes;
-    }
-
-    public Set<Object> getSingletons() {
-        return singletons;
-    }
-
+    @GET
+    @ClientResponseType(entityType=ServerInfo.class)
+    public Response getServerInfo() throws Exception;
 }

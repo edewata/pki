@@ -17,8 +17,12 @@
 // --- END COPYRIGHT BLOCK ---
 package com.netscape.cms.servlet.base;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +30,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import javax.servlet.ServletContext;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.core.CacheControl;
@@ -78,8 +83,18 @@ public class PKIService {
     @Context
     protected ServletContext servletContext;
 
-    public String getInstanceDir() {
+    public static Path warningFile = Paths.get(getInstanceDir(), "conf", "warning.txt");
+
+    public static String getInstanceDir() {
         return System.getProperty("catalina.base");
+    }
+
+    public static boolean isWarningEnabled() {
+        return Files.exists(warningFile);
+    }
+
+    public static String getWarningMessage() throws IOException {
+        return new String(Files.readAllBytes(warningFile));
     }
 
     public static MediaType resolveFormat(MediaType format) {
@@ -142,10 +157,13 @@ public class PKIService {
     }
 
     public Response createOKResponse(Object entity) {
+        return createOKResponseBuilder(entity).build();
+    }
+
+    public ResponseBuilder createOKResponseBuilder(Object entity) {
         return Response
                 .ok(entity)
-                .type(getResponseFormat())
-                .build();
+                .type(getResponseFormat());
     }
 
     public Response createCreatedResponse(Object entity, URI link) {
@@ -157,10 +175,13 @@ public class PKIService {
     }
 
     public Response createNoContentResponse() {
+        return createNoContentResponseBuilder().build();
+    }
+
+    public ResponseBuilder createNoContentResponseBuilder() {
         return Response
                 .noContent()
-                .type(getResponseFormat())
-                .build();
+                .type(getResponseFormat());
     }
 
     public Response sendConditionalGetResponse(int ctime, Object object, Request request) {
@@ -219,5 +240,29 @@ public class PKIService {
         }
 
         return map;
+    }
+
+    public Cookie getCookie(String cookieName) {
+        return PKIService.getCookie(servletRequest, cookieName);
+    }
+
+    public static Cookie getCookie(HttpServletRequest servletRequest, String cookieName) {
+
+        Cookie[] cookies = servletRequest.getCookies();
+
+        if (cookies == null) {
+            return null;
+        }
+
+        for (Cookie cookie : cookies) {
+
+            String name = cookie.getName();
+
+            if (cookieName.equals(name)) {
+                return cookie;
+            }
+        }
+
+        return null;
     }
 }
