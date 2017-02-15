@@ -32,12 +32,21 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import javax.ws.rs.client.ClientRequestContext;
+import javax.ws.rs.client.ClientRequestFilter;
+import javax.ws.rs.client.ClientResponseContext;
+import javax.ws.rs.client.ClientResponseFilter;
 import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status.Family;
 import javax.ws.rs.core.Response.StatusType;
@@ -98,6 +107,8 @@ public class PKIConnection {
     ApacheHttpClient4Engine engine;
     ResteasyClient resteasyClient;
     ResteasyProviderFactory providerFactory;
+
+    Map<String, Cookie> cookies = new HashMap<>();
 
     int requestCounter;
     int responseCounter;
@@ -207,6 +218,25 @@ public class PKIConnection {
 
         engine = new ApacheHttpClient4Engine(httpClient);
         resteasyClient = new ResteasyClientBuilder().httpEngine(engine).build();
+
+        resteasyClient.register(new ClientRequestFilter() {
+            @Override
+            public void filter(ClientRequestContext clientRequestContext) throws IOException {
+                MultivaluedMap<String, Object> headers = clientRequestContext.getHeaders();
+                headers.put("Cookie", new ArrayList<>(cookies.values()));
+            }
+        });
+
+        resteasyClient.register(new ClientResponseFilter() {
+            @Override
+            public void filter(
+                    ClientRequestContext clientRequestContext,
+                    ClientResponseContext clientResponseContext) throws IOException {
+                for (NewCookie cookie : clientResponseContext.getCookies().values()) {
+                    cookies.put(cookie.getName(), new Cookie(cookie.getName(), cookie.getValue()));
+                }
+            }
+        });
     }
 
     public boolean isVerbose() {
@@ -216,6 +246,14 @@ public class PKIConnection {
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
 
+    }
+
+    public Collection<Cookie> getCookies() {
+        return cookies.values();
+    }
+
+    public void addCookie(String name, String value) {
+        cookies.put(name, new Cookie(name, value));
     }
 
     public void setCallback(SSLCertificateApprovalCallback callback) {
