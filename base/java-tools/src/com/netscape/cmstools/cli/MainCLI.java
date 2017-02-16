@@ -490,7 +490,7 @@ public class MainCLI extends CLI {
 
         }
 
-        client = new PKIClient(config, null);
+        client = new PKIClient(config);
         client.setVerbose(verbose);
 
         client.setRejectedCertStatuses(rejectedCertStatuses);
@@ -556,7 +556,10 @@ public class MainCLI extends CLI {
 
         } else if (t.getClass() == Exception.class) {
             // display a generic error
-            System.err.println("Error: " + t.getMessage());
+            String message = t.getMessage();
+            if (StringUtils.isNotEmpty(message)) {
+                System.err.println("Error: " + message);
+            }
 
         } else if (t.getClass() == UnrecognizedOptionException.class) {
             // display only the error message
@@ -564,7 +567,9 @@ public class MainCLI extends CLI {
 
         } else if (t instanceof ProcessingException) {
             // display the cause of the exception
-            t = t.getCause();
+            if (t.getCause() != null) {
+                t = t.getCause();
+            }
             System.err.println(t.getClass().getSimpleName() + ": " + t.getMessage());
 
         } else {
