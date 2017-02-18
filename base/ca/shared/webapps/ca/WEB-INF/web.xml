@@ -1809,6 +1809,15 @@
                          <param-value> /agent/ca/doRevoke       </param-value> </init-param>
    </servlet>
 
+    <filter>
+        <filter-name>PKIServletFilter</filter-name>
+        <filter-class>org.dogtagpki.server.servlet.PKIServletFilter</filter-class>
+        <init-param>
+            <param-name>paths</param-name>
+            <param-value>/,/admin/,/agent/,/agent/ca/,/ee/,/ee/ca/,/services</param-value>
+        </init-param>
+    </filter>
+
    <!-- ==================== RESTEasy Configuration =============== -->
 
    <listener>
@@ -2365,6 +2374,11 @@
       <servlet-name>  caRASCEP </servlet-name>
       <url-pattern>   /ee/ca/pkiclient </url-pattern>
    </servlet-mapping>
+
+    <filter-mapping>
+        <filter-name>PKIServletFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
 
    <!-- ==================== Default Session Configuration =============== -->
    <!-- You can set the default session timeout (in minutes) for all newly -->
