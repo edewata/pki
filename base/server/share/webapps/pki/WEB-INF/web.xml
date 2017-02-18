@@ -30,10 +30,20 @@
          </init-param>
     </servlet>
 
+    <filter>
+        <filter-name>PKIServletFilter</filter-name>
+        <filter-class>org.dogtagpki.server.servlet.PKIServletFilter</filter-class>
+    </filter>
+
     <servlet-mapping>
         <servlet-name>Resteasy</servlet-name>
         <url-pattern>/rest/*</url-pattern>
     </servlet-mapping>
+
+    <filter-mapping>
+        <filter-name>PKIServletFilter</filter-name>
+        <url-pattern>/ui/*</url-pattern>
+    </filter-mapping>
 
     <session-config>
         <session-timeout>30</session-timeout>
