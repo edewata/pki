@@ -55,6 +55,7 @@ import com.netscape.cmstools.group.GroupCLI;
 import com.netscape.cmstools.key.KeyCLI;
 import com.netscape.cmstools.pkcs12.PKCS12CLI;
 import com.netscape.cmstools.system.SecurityDomainCLI;
+import com.netscape.cmstools.system.StatusCLI;
 import com.netscape.cmstools.user.UserCLI;
 import com.netscape.cmsutil.crypto.CryptoUtil;
 
@@ -91,6 +92,8 @@ public class MainCLI extends CLI {
         addModule(new HelpCLI(this));
 
         addModule(new ClientCLI(this));
+
+        addModule(new StatusCLI(this));
 
         addModule(new ProxyCLI(new CertCLI(this), "ca"));
         addModule(new ProxyCLI(new GroupCLI(this), "ca"));
