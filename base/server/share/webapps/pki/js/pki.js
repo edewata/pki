@@ -47,6 +47,17 @@ var PKI = {
 
         return newContent;
     },
+    getServerInfo: function(options) {
+        $.ajax({
+            type: "GET",
+            url: "/pki/rest/server-info",
+            dataType: "json"
+        }).done(function(data, textStatus, jqXHR) {
+            if (options.success) options.success.call(self, data, textStatus, jqXHR);
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+            if (options.error) options.error.call(self, jqXHR, textStatus, errorThrown);
+        });
+    },
     logout: function(options) {
         options = options || {};
         if (window.crypto && typeof window.crypto.logout === "function") { // Firefox
@@ -62,6 +73,17 @@ var PKI = {
                 if (options.error) options.error.call();
             }
         }
+    },
+    getParameterByName: function(name, url) {
+        if (!url) {
+          url = window.location.href;
+        }
+        name = name.replace(/[\[\]]/g, "\\$&");
+        var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+            results = regex.exec(url);
+        if (!results) return null;
+        if (!results[2]) return '';
+        return decodeURIComponent(results[2].replace(/\+/g, " "));
     }
 };
 
