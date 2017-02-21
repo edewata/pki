@@ -84,6 +84,21 @@ var PKI = {
         if (!results) return null;
         if (!results[2]) return '';
         return decodeURIComponent(results[2].replace(/\+/g, " "));
+    },
+    getCookie: function(name) {
+        var prefix = name + "=";
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (!cookie.startsWith(prefix)) {
+                continue;
+            }
+            return cookie.substring(prefix.length);
+        }
+        return null;
+    },
+    setCookie: function(name, value) {
+        document.cookie = name + "=" + value + "; Path=/";
     }
 };
 
