@@ -75,6 +75,15 @@
         <servlet-class>org.dogtagpki.server.tps.TPSServlet</servlet-class>
     </servlet>
 
+    <filter>
+        <filter-name>PKIServletFilter</filter-name>
+        <filter-class>org.dogtagpki.server.servlet.PKIServletFilter</filter-class>
+        <init-param>
+            <param-name>paths</param-name>
+            <param-value>/ui/</param-value>
+        </init-param>
+    </filter>
+
     <listener>
         <listener-class>org.jboss.resteasy.plugins.server.servlet.ResteasyBootstrap</listener-class>
     </listener>
@@ -132,6 +141,11 @@
         <servlet-name>tps</servlet-name>
         <url-pattern>/tps</url-pattern>
     </servlet-mapping>
+
+    <filter-mapping>
+        <filter-name>PKIServletFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
 
     <!-- ==================== Default Session Configuration =============== -->
     <!-- You can set the default session timeout (in minutes) for all newly -->

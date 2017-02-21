@@ -246,6 +246,15 @@
                          <param-value> tksGetStatus </param-value> </init-param>
    </servlet>
 
+    <filter>
+        <filter-name>PKIServletFilter</filter-name>
+        <filter-class>org.dogtagpki.server.servlet.PKIServletFilter</filter-class>
+        <init-param>
+            <param-name>paths</param-name>
+            <param-value>/,/services</param-value>
+        </init-param>
+    </filter>
+
    <listener>
       <listener-class> org.jboss.resteasy.plugins.server.servlet.ResteasyBootstrap </listener-class>
    </listener>
@@ -367,6 +376,11 @@
       <servlet-name>  tksGetStatus  </servlet-name>
       <url-pattern>   /admin/tks/getStatus  </url-pattern>
    </servlet-mapping>
+
+    <filter-mapping>
+        <filter-name>PKIServletFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
 
    <!-- ==================== Default Session Configuration =============== -->
    <!-- You can set the default session timeout (in minutes) for all newly -->

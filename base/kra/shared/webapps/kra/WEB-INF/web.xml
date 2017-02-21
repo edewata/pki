@@ -778,6 +778,15 @@
    [PKI_CLOSE_STANDALONE_COMMENT]
 
 
+    <filter>
+        <filter-name>PKIServletFilter</filter-name>
+        <filter-class>org.dogtagpki.server.servlet.PKIServletFilter</filter-class>
+        <init-param>
+            <param-name>paths</param-name>
+            <param-value>/,/agent/,/agent/kra/,/services</param-value>
+        </init-param>
+    </filter>
+
    <!-- ==================== RESTEasy Configuration =============== -->
 
    <listener>
@@ -1054,6 +1063,11 @@
       <url-pattern>   /admin/kra/tokenAuthenticate  </url-pattern>
    </servlet-mapping>
    [PKI_CLOSE_STANDALONE_COMMENT]
+
+    <filter-mapping>
+        <filter-name>PKIServletFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
 
    <!-- ==================== Default Session Configuration =============== -->
    <!-- You can set the default session timeout (in minutes) for all newly -->
