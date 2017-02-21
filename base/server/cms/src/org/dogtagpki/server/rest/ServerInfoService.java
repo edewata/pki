@@ -19,7 +19,6 @@
 package org.dogtagpki.server.rest;
 
 import javax.servlet.http.HttpSession;
-import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
@@ -55,11 +54,11 @@ public class ServerInfoService extends PKIService implements ServerInfoResource 
         }
 
         ResponseBuilder builder = createOKResponseBuilder(serverInfo);
-
+/*
         if (warningEnabled) {
             builder.cookie(NewCookie.valueOf(PKI_WARNING + "=received; Path=/"));
         }
-
+*/
         return builder.build();
     }
 }
