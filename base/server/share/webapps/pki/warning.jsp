@@ -51,6 +51,7 @@ $(function() {
     });
 
     $("button[name=proceed]").click(function(e) {
+        PKI.setCookie("PKI_WARNING", "acknowledged");
         var nextURL = PKI.getParameterByName("next");
         window.location.href = nextURL;
     });
