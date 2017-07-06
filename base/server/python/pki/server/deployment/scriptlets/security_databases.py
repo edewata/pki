@@ -211,19 +211,43 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             config_tag = cert['id']
             deploy_tag = config_tag
 
+            config.pki_log.info(
+                "retrieving %s cert params:", config_tag,
+                extra=config.PKI_INDENTATION_LEVEL_2)
+
             if config_tag == 'signing':  # for CA and OCSP
                 deploy_tag = subsystem.name + '_signing'
 
             elif config_tag == 'sslserver':
                 deploy_tag = 'ssl_server'
 
-            # store nickname
+            # nickname
             nickname = deployer.mdict['pki_%s_nickname' % deploy_tag]
+            cert['nickname'] = nickname
             subsystem.config['preop.cert.%s.nickname' % config_tag] = nickname
 
-            # store subject DN
+            config.pki_log.info(
+                " - nickname: %s", nickname,
+                extra=config.PKI_INDENTATION_LEVEL_2)
+
+            # token
+            token = deployer.mdict['pki_%s_token' % deploy_tag]
+            cert['token'] = token
+
+            config.pki_log.info(
+                " - token: %s", token,
+                extra=config.PKI_INDENTATION_LEVEL_2)
+
+            # subject DN
             subject_dn = deployer.mdict['pki_%s_subject_dn' % deploy_tag]
+            subsystem.config['%s.%s.dn' % (subsystem.name, config_tag)] = subject_dn
             subsystem.config['preop.cert.%s.dn' % config_tag] = subject_dn
+
+            config.pki_log.info(
+                " - DN: %s", subject_dn,
+                extra=config.PKI_INDENTATION_LEVEL_2)
+
+            subsystem.update_subsystem_cert(cert)
 
             # TODO: move more system cert params here
 
@@ -241,6 +265,36 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
                     deployer.configuration_file.req_ext_data
                 subsystem.config['preop.cert.signing.ext.critical'] = \
                     deployer.configuration_file.req_ext_critical.lower()
+
+        # Set internal database parameters
+        subsystem.config['internaldb.ldapconn.host'] = \
+            deployer.mdict['pki_ds_hostname']
+
+        if config.str2bool(deployer.mdict['pki_ds_secure_connection']):
+            subsystem.config['internaldb.ldapconn.secureConn'] = 'true'
+            subsystem.config['internaldb.ldapconn.port'] = \
+                deployer.mdict['pki_ds_ldaps_port']
+        else:
+            subsystem.config['internaldb.ldapconn.secureConn'] = 'false'
+            subsystem.config['internaldb.ldapconn.port'] = \
+                deployer.mdict['pki_ds_ldap_port']
+
+        subsystem.config['internaldb.database'] = deployer.mdict['pki_ds_database']
+        subsystem.config['internaldb.basedn'] = deployer.mdict['pki_ds_base_dn']
+        subsystem.config['internaldb.ldapauth.bindDN'] = deployer.mdict['pki_ds_bind_dn']
+
+        if config.str2bool(deployer.mdict['pki_ds_remove_data']):
+            subsystem.config['preop.database.removeData'] = 'true'
+        else:
+            subsystem.config['preop.database.removeData'] = 'false'
+
+        if config.str2bool(deployer.mdict['pki_ds_create_new_db']):
+            subsystem.config['preop.database.createNewDB'] = 'true'
+        else:
+            subsystem.config['preop.database.createNewDB'] = 'false'
+
+        subsystem.config['preop.database.setupReplication'] = deployer.mdict['pki_clone_setup_replication']
+        subsystem.config['preop.database.reindexData'] = deployer.mdict['pki_clone_reindex_data']
 
         subsystem.save()
 

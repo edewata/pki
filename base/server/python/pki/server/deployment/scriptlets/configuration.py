@@ -228,7 +228,7 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         clone = deployer.configuration_file.clone
 
         try:
-            if external and step_one:  # external CA step 1 only
+            if (external or standalone) and step_one:
 
                 external_csr_path = deployer.mdict['pki_external_csr_path']
                 if external_csr_path:
@@ -243,6 +243,89 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
                         deployer.mdict['pki_ca_signing_key_size']
                     )
 
+                if standalone:  # standalone KRA or OCSP
+
+                    self.generate_system_csr(
+                        nssdb,
+                        subsystem,
+                        'audit_signing',
+                        deployer.mdict['pki_external_audit_signing_csr_path'],
+                        deployer.mdict['pki_audit_signing_key_type'],
+                        deployer.mdict['pki_audit_signing_key_algorithm'],
+                        deployer.mdict['pki_audit_signing_key_size']
+                    )
+
+                    self.generate_system_csr(
+                        nssdb,
+                        subsystem,
+                        'sslserver',
+                        deployer.mdict['pki_external_sslserver_csr_path'],
+                        deployer.mdict['pki_ssl_server_key_type'],
+                        deployer.mdict['pki_ssl_server_key_algorithm'],
+                        deployer.mdict['pki_ssl_server_key_size']
+                    )
+
+                    self.generate_system_csr(
+                        nssdb,
+                        subsystem,
+                        'subsystem',
+                        deployer.mdict['pki_external_subsystem_csr_path'],
+                        deployer.mdict['pki_subsystem_key_type'],
+                        deployer.mdict['pki_subsystem_key_algorithm'],
+                        deployer.mdict['pki_subsystem_key_size']
+                    )
+
+                    client_nssdb = pki.nssdb.NSSDatabase(
+                        directory=deployer.mdict['pki_client_database_dir'],
+                        password=deployer.mdict['pki_client_database_password'])
+
+                    try:
+                        self.generate_csr(
+                            client_nssdb,
+                            deployer.mdict['pki_admin_subject_dn'],
+                            deployer.mdict['pki_external_admin_csr_path'],
+                            deployer.mdict['pki_admin_key_type'],
+                            deployer.mdict['pki_admin_key_algorithm'],
+                            deployer.mdict['pki_admin_key_size']
+                        )
+
+                    finally:
+                        client_nssdb.close()
+
+                    if subsystem.name == 'kra':
+
+                        self.generate_system_csr(
+                            nssdb,
+                            subsystem,
+                            'storage',
+                            deployer.mdict['pki_external_storage_csr_path'],
+                            deployer.mdict['pki_storage_key_type'],
+                            deployer.mdict['pki_storage_key_algorithm'],
+                            deployer.mdict['pki_storage_key_size']
+                        )
+
+                        self.generate_system_csr(
+                            nssdb,
+                            subsystem,
+                            'transport',
+                            deployer.mdict['pki_external_transport_csr_path'],
+                            deployer.mdict['pki_transport_key_type'],
+                            deployer.mdict['pki_transport_key_algorithm'],
+                            deployer.mdict['pki_transport_key_size']
+                        )
+
+                    elif subsystem.name == 'ocsp':
+
+                        self.generate_system_csr(
+                            nssdb,
+                            subsystem,
+                            'signing',
+                            deployer.mdict['pki_external_audit_signing_csr_path'],
+                            deployer.mdict['pki_ocsp_signing_key_type'],
+                            deployer.mdict['pki_ocsp_signing_key_algorithm'],
+                            deployer.mdict['pki_ocsp_signing_key_size']
+                        )
+
                 # This is needed by IPA to detect step 1 completion.
                 # See is_step_one_done() in ipaserver/install/cainstance.py.
 
@@ -250,7 +333,10 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
 
                 subsystem.save()
 
+                return
+
             if existing or external and step_two:
+
                 # existing CA or external CA step 2
 
                 # If specified, import CA signing CSR into CS.cfg.
@@ -346,8 +432,8 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         finally:
             nssdb.close()
 
-        if external and step_one:
-            return
+        config.pki_log.info("checking SSL server certificate",
+                            extra=config.PKI_INDENTATION_LEVEL_2)
 
         if len(deployer.instance.tomcat_instance_subsystems()) < 2:
 
@@ -371,6 +457,9 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
                 password_file=deployer.mdict['pki_shared_pfile'])
 
             if not rv:
+
+                config.pki_log.info("creating SSL server certificate",
+                                     extra=config.PKI_INDENTATION_LEVEL_2)
 
                 # note: in the function below, certutil is used to generate
                 # the request for the self signed cert.  The keys are generated
