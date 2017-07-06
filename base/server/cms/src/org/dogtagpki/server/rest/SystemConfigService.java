@@ -271,8 +271,7 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
 
         Collection<String> certList = new ArrayList<String>();
 
-        if (request.getStandAlone() && request.getStepTwo()) {
-            // Stand-alone PKI (Step 2)
+        if (request.getStandAlone()) {
             // Special case to import the external CA and its Chain
             certList.add("external_signing");
         }
@@ -323,8 +322,8 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
             }
 
             String tokenName = certData.getToken() != null ? certData.getToken() : token;
-            if (request.getStandAlone() && request.getStepTwo()) {
-                // Stand-alone PKI (Step 2)
+
+            if (request.getStandAlone()) {
                 if (tag.equals("external_signing")) {
 
                     String b64 = certData.getCert();
@@ -424,7 +423,7 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
         }
         cs.commit(false);
 
-        if (request.isExternal() && tag.equals("signing")) { // external/existing CA
+        try {
 
             CMS.debug("SystemConfigService: loading existing key pair from NSS database");
             KeyPair pair = ConfigurationUtils.loadKeyPair(certData.getNickname(), certData.getToken());
@@ -432,9 +431,9 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
             CMS.debug("SystemConfigService: storing key pair into CS.cfg");
             ConfigurationUtils.storeKeyPair(cs, tag, pair);
 
-        } else if (!request.getStepTwo()) {
+        } catch (ObjectNotFoundException e) {
 
-            CMS.debug("SystemConfigService: generating key pair");
+            CMS.debug("SystemConfigService: key pair not found, generating new key pair");
 
             KeyPair pair;
             if (keytype.equals("ecc")) {
@@ -452,9 +451,6 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
 
             CMS.debug("SystemConfigService: storing key pair into CS.cfg");
             ConfigurationUtils.storeKeyPair(cs, tag, pair);
-
-        } else {
-            CMS.debug("SystemConfigService: key pair already generated in step one");
         }
     }
 
@@ -495,44 +491,33 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
             return cert;
         }
 
-        if (!request.getStepTwo()) {
-            ConfigurationUtils.configCert(null, null, null, cert);
+        ConfigurationUtils.configCert(null, null, null, cert);
 
-        } else {
-
-            String subsystem = cs.getString("preop.cert." + tag + ".subsystem");
-            String certStr;
-
-            if (request.getStandAlone()) {
-                // Stand-alone PKI (Step 2)
-                certStr = certData.getCert();
-                certStr = CryptoUtil.stripCertBrackets(certStr.trim());
-                certStr = CryptoUtil.normalizeCertStr(certStr);
-                cs.putString(subsystem + "." + tag + ".cert", certStr);
-
-            } else {
-                certStr = cs.getString(subsystem + "." + tag + ".cert" );
-            }
-
-            cert.setCert(certStr);
-            CMS.debug("SystemConfigService: cert: " + certStr);
-        }
+        String subsystem = cs.getString("preop.cert." + tag + ".subsystem");
+        String certStr;
 
         if (request.getStandAlone()) {
-            // Handle Cert Requests for everything EXCEPT Stand-alone PKI (Step 2)
-            if (!request.getStepTwo()) {
-                // Stand-alone PKI (Step 1)
-                ConfigurationUtils.generateCertRequest(cs, tag, cert);
+            certStr = certData.getCert();
+            certStr = CryptoUtil.stripCertBrackets(certStr.trim());
+            certStr = CryptoUtil.normalizeCertStr(certStr);
 
-                CMS.debug("SystemConfigService: Standalone " + csType + " Admin CSR");
-                String adminSubjectDN = request.getAdminSubjectDN();
-                String certreqStr = request.getAdminCertRequest();
-                certreqStr = CryptoUtil.normalizeCertAndReq(certreqStr);
+        } else {
+            certStr = cs.getString(subsystem + "." + tag + ".cert" );
+        }
 
-                cs.putString("preop.cert.admin.dn", adminSubjectDN);
-                cs.putString(csSubsystem + ".admin.certreq", certreqStr);
-                cs.putString(csSubsystem + ".admin.cert", "...paste certificate here...");
-            }
+        cert.setCert(certStr);
+        CMS.debug("SystemConfigService: cert: " + certStr);
+
+        if (request.getStandAlone()) {
+
+            String adminSubjectDN = request.getAdminSubjectDN();
+            cs.putString("preop.cert.admin.dn", adminSubjectDN);
+
+            String certreqStr = request.getAdminCertRequest();
+            certreqStr = CryptoUtil.normalizeCertAndReq(certreqStr);
+
+            //cs.putString(csSubsystem + ".admin.certreq", certreqStr);
+            //cs.putString(csSubsystem + ".admin.cert", "...paste certificate here...");
 
         } else {
             ConfigurationUtils.generateCertRequest(cs, tag, cert);
@@ -621,12 +606,7 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
                 if (data.getImportAdminCert().equalsIgnoreCase("true")) {
                     String b64 = CryptoUtil.stripCertBrackets(data.getAdminCert().trim());
                     b64 = CryptoUtil.normalizeCertStr(b64);
-                    if (data.getStandAlone() && data.getStepTwo()) {
-                        // Stand-alone PKI (Step 2)
-                        CMS.debug("SystemConfigService:  Stand-alone " + csType + " Admin Cert");
-                        cs.putString(csSubsystem + ".admin.cert", b64);
-                        cs.commit(false);
-                    }
+
                     // Convert Admin Cert to X509CertImpl
                     byte[] b = CryptoUtil.base64Decode(b64);
                     admincerts[0] = new X509CertImpl(b);
@@ -755,25 +735,24 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
             }
             psStore.commit(false);
 
-            if (!data.getStepTwo()) {
-                ConfigurationUtils.enableUSNPlugin();
-                ConfigurationUtils.populateDB();
+            ConfigurationUtils.enableUSNPlugin();
+            ConfigurationUtils.populateDB();
 
-                cs.putString("preop.internaldb.replicationpwd", replicationPassword);
-                cs.putString("preop.database.removeData", "false");
-                if (data.getSharedDB()) {
-                    cs.putString("preop.internaldb.dbuser", data.getSharedDBUserDN());
-                }
-                cs.commit(false);
-
-                if (data.isClone() && data.getSetupReplication()) {
-                    CMS.debug("Start setting up replication.");
-                    ConfigurationUtils.setupReplication();
-                }
-
-                ConfigurationUtils.populateDBManager();
-                ConfigurationUtils.populateVLVIndexes();
+            cs.putString("preop.internaldb.replicationpwd", replicationPassword);
+            cs.putString("preop.database.removeData", "false");
+            if (data.getSharedDB()) {
+                cs.putString("preop.internaldb.dbuser", data.getSharedDBUserDN());
             }
+            cs.commit(false);
+
+            if (data.isClone() && data.getSetupReplication()) {
+                CMS.debug("Start setting up replication.");
+                ConfigurationUtils.setupReplication();
+            }
+
+            ConfigurationUtils.populateDBManager();
+            ConfigurationUtils.populateVLVIndexes();
+
         } catch (Exception e) {
             CMS.debug(e);
             throw new PKIException("Error in populating database: " + e, e);
@@ -927,7 +906,7 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
         cs.putString("securitydomain.httpsagentport", CMS.getAgentPort());
         cs.putString("securitydomain.httpseeport", CMS.getEESSLPort());
         cs.putString("securitydomain.httpsadminport", CMS.getAdminPort());
-        // Stand-alone PKI (Step 1)
+
         if (data.getStandAlone()) {
             cs.putString("preop.cert.subsystem.type", "remote");
         } else {
