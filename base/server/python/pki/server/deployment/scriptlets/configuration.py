@@ -38,6 +38,127 @@ import pki.util
 # PKI Deployment Configuration Scriptlet
 class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
 
+    def get_key_params(self, key_type, key_alg, key_size):
+
+        if key_type == 'rsa':
+
+            key_size = int(key_size)
+            curve = None
+
+            m = re.match(r'(.*)withRSA', key_alg)
+            if not m:
+                raise Exception('Invalid key algorithm: %s' % key_alg)
+
+            hash_alg = m.group(1)
+
+        elif key_type == 'ec' or key_type == 'ecc':
+
+            key_type = 'ec'
+            curve = key_size
+            key_size = None
+
+            m = re.match(r'(.*)withEC', key_alg)
+            if not m:
+                raise Exception('Invalid key algorithm: %s' % key_alg)
+
+            hash_alg = m.group(1)
+
+        else:
+            raise Exception('Invalid key type: %s' % key_type)
+
+        return (key_type, key_size, curve, hash_alg)
+
+    def generate_csr(self, nssdb, subject_dn,
+                     csr_path, key_type, key_alg, key_size,
+                     basic_constraints_ext=None,
+                     key_usage_ext=None,
+                     generic_exts=None):
+
+        if not csr_path:
+            return
+
+        config.pki_log.info(
+            "generating CSR for %s", subject_dn,
+            extra=config.PKI_INDENTATION_LEVEL_2)
+
+        # Determine CA signing key type and algorithm
+
+        (key_type, key_size, curve, hash_alg) = self.get_key_params(
+            key_type, key_alg, key_size
+        )
+
+        nssdb.create_request(
+            subject_dn=subject_dn,
+            request_file=csr_path,
+            key_type=key_type,
+            key_size=key_size,
+            curve=curve,
+            hash_alg=hash_alg,
+            basic_constraints_ext=basic_constraints_ext,
+            key_usage_ext=key_usage_ext,
+            generic_exts=generic_exts)
+
+    def generate_system_csr(self, nssdb, subsystem, tag,
+                            csr_path, key_type, key_alg, key_size,
+                            basic_constraints_ext=None,
+                            key_usage_ext=None,
+                            generic_exts=None):
+
+        subject_dn = subsystem.config['preop.cert.%s.dn' % tag]
+
+        self.generate_csr(
+            nssdb, subject_dn,
+            csr_path, key_type, key_alg, key_size,
+            basic_constraints_ext, key_usage_ext, generic_exts
+        )
+
+        with open(csr_path) as f:
+            csr = f.read()
+
+        csr = pki.nssdb.convert_csr(csr, 'pem', 'base64')
+        subsystem.config['%s.%s.certreq' % (subsystem.name, tag)] = csr
+
+    def generate_ca_signing_csr(self, nssdb, subsystem,
+                                tag, csr_path,
+                                key_type, key_alg, key_size):
+
+        basic_constraints_ext = {
+            'ca': True,
+            'path_length': None,
+            'critical': True
+        }
+
+        key_usage_ext = {
+            'digitalSignature': True,
+            'nonRepudiation': True,
+            'certSigning': True,
+            'crlSigning': True,
+            'critical': True
+        }
+
+        # if specified, add generic CSR extension
+        generic_exts = None
+
+        if 'preop.cert.signing.ext.oid' in subsystem.config and \
+           'preop.cert.signing.ext.data' in subsystem.config:
+
+            data = subsystem.config['preop.cert.signing.ext.data']
+            critical = subsystem.config['preop.cert.signing.ext.critical']
+
+            generic_ext = {
+                'oid': subsystem.config['preop.cert.signing.ext.oid'],
+                'data': binascii.unhexlify(data),
+                'critical': config.str2bool(critical)
+            }
+
+            generic_exts = [generic_ext]
+
+        self.generate_system_csr(
+            nssdb, subsystem,
+            tag, csr_path, key_type, key_alg, key_size,
+            basic_constraints_ext, key_usage_ext, generic_exts
+        )
+
     def spawn(self, deployer):
 
         if config.str2bool(deployer.mdict['pki_skip_configuration']):
@@ -104,94 +225,18 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         try:
             if external and step_one:  # external CA step 1 only
 
-                subject_dn = subsystem.config['preop.cert.signing.dn']
-
-                # Determine CA signing key type and algorithm
-
-                key_type = deployer.mdict['pki_ca_signing_key_type']
-                key_alg = deployer.mdict['pki_ca_signing_key_algorithm']
-
-                if key_type == 'rsa':
-                    key_size = int(deployer.mdict['pki_ca_signing_key_size'])
-                    curve = None
-
-                    m = re.match(r'(.*)withRSA', key_alg)
-                    if not m:
-                        raise Exception('Invalid key algorithm: %s' % key_alg)
-                    hash_alg = m.group(1)
-
-                elif key_type == 'ec' or key_type == 'ecc':
-                    key_type = 'ec'
-                    key_size = None
-                    curve = deployer.mdict['pki_ca_signing_key_size']
-
-                    m = re.match(r'(.*)withEC', key_alg)
-                    if not m:
-                        raise Exception('Invalid key algorithm: %s' % key_alg)
-                    hash_alg = m.group(1)
-
-                else:
-                    raise Exception('Invalid key type: %s' % key_type)
-
-                # If filename specified, generate CA cert request and
-                # import it into CS.cfg.
-
                 external_csr_path = deployer.mdict['pki_external_csr_path']
                 if external_csr_path:
 
-                    config.pki_log.info(
-                        "generating CA signing certificate request in %s",
+                    self.generate_ca_signing_csr(
+                        nssdb,
+                        subsystem,
+                        'signing',
                         external_csr_path,
-                        extra=config.PKI_INDENTATION_LEVEL_2)
-
-                    basic_constraints_ext = {
-                        'ca': True,
-                        'path_length': None,
-                        'critical': True
-                    }
-
-                    key_usage_ext = {
-                        'digitalSignature': True,
-                        'nonRepudiation': True,
-                        'certSigning': True,
-                        'crlSigning': True,
-                        'critical': True
-                    }
-
-                    # if specified, add generic CSR extension
-                    generic_exts = None
-
-                    if 'preop.cert.signing.ext.oid' in subsystem.config and \
-                       'preop.cert.signing.ext.data' in subsystem.config:
-
-                        data = subsystem.config['preop.cert.signing.ext.data']
-                        critical = subsystem.config['preop.cert.signing.ext.critical']
-
-                        generic_ext = {
-                            'oid': subsystem.config['preop.cert.signing.ext.oid'],
-                            'data': binascii.unhexlify(data),
-                            'critical': config.str2bool(critical)
-                        }
-
-                        generic_exts = [generic_ext]
-
-                    nssdb.create_request(
-                        subject_dn=subject_dn,
-                        request_file=external_csr_path,
-                        key_type=key_type,
-                        key_size=key_size,
-                        curve=curve,
-                        hash_alg=hash_alg,
-                        basic_constraints_ext=basic_constraints_ext,
-                        key_usage_ext=key_usage_ext,
-                        generic_exts=generic_exts)
-
-                    with open(external_csr_path) as f:
-                        signing_csr = f.read()
-
-                    signing_csr = pki.nssdb.convert_csr(
-                        signing_csr, 'pem', 'base64')
-                    subsystem.config['ca.signing.certreq'] = signing_csr
+                        deployer.mdict['pki_ca_signing_key_type'],
+                        deployer.mdict['pki_ca_signing_key_algorithm'],
+                        deployer.mdict['pki_ca_signing_key_size']
+                    )
 
                 # This is needed by IPA to detect step 1 completion.
                 # See is_step_one_done() in ipaserver/install/cainstance.py.
