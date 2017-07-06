@@ -239,9 +239,11 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
     private void setupSecurityDomain(ConfigurationRequest data) {
         try {
             String securityDomainType = data.getSecurityDomainType();
+
             if (securityDomainType.equals(ConfigurationRequest.NEW_DOMAIN)) {
                 CMS.debug("Creating new security domain");
                 ConfigurationUtils.createSecurityDomain();
+
             } else if (securityDomainType.equals(ConfigurationRequest.NEW_SUBDOMAIN)) {
                 CMS.debug("Creating subordinate CA security domain");
 
@@ -254,13 +256,16 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
                 cs.putString("securitydomain.httpseeport", CMS.getEESSLPort());
                 cs.putString("securitydomain.httpsadminport", CMS.getAdminPort());
                 ConfigurationUtils.createSecurityDomain();
+
             } else {
                 CMS.debug("Updating existing security domain");
                 ConfigurationUtils.updateSecurityDomain();
             }
+
             cs.putString("service.securityDomainPort", CMS.getAgentPort());
             cs.putString("securitydomain.store", "ldap");
             cs.commit(false);
+
         } catch (Exception e) {
             CMS.debug(e);
             throw new PKIException("Error while updating security domain: " + e);
@@ -620,6 +625,7 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
                         admincerts[0] = new X509CertImpl(b);
                     }
                 }
+
                 CMS.reinit(IUGSubsystem.ID);
 
                 IUGSubsystem ug = (IUGSubsystem) CMS.getSubsystem(IUGSubsystem.ID);
@@ -857,12 +863,15 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
         String securityDomainName = data.getSecurityDomainName();
 
         if (securityDomainType.equals(ConfigurationRequest.NEW_DOMAIN)) {
+            CMS.debug("Configuring new security domain");
             configureNewSecurityDomain(data, securityDomainName);
+
         } else if (securityDomainType.equals(ConfigurationRequest.NEW_SUBDOMAIN)){
             CMS.debug("Configuring new subordinate root CA");
             configureNewSecurityDomain(data, data.getSubordinateSecurityDomainName());
             String securityDomainURL = data.getSecurityDomainUri();
             domainXML = logIntoSecurityDomain(data, securityDomainURL);
+
         } else {
             CMS.debug("Joining existing security domain");
             cs.putString("preop.securitydomain.select", "existing");
@@ -876,7 +885,6 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
     }
 
     private void configureNewSecurityDomain(ConfigurationRequest data, String securityDomainName) {
-        CMS.debug("Creating new security domain");
         cs.putString("preop.securitydomain.select", "new");
         cs.putString("securitydomain.select", "new");
         cs.putString("preop.securitydomain.name", securityDomainName);
@@ -892,6 +900,7 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
         } else {
             cs.putString("preop.cert.subsystem.type", "local");
         }
+
         cs.putString("preop.cert.subsystem.profile", "subsystemCert.profile");
     }
 

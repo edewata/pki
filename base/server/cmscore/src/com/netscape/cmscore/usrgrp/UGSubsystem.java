@@ -764,6 +764,8 @@ public final class UGSubsystem implements IUGSubsystem {
                 new Object[] { adminId, id.getUserID() }
                 );
 
+        CMS.debug("UGSubsystem: Adding " + entry.getDN());
+
         LDAPConnection ldapconn = null;
 
         try {

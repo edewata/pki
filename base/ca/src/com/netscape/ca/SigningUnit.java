@@ -167,9 +167,9 @@ public final class SigningUnit implements ISigningUnit {
 
             try {
                 mCert = mManager.findCertByNickname(mNickname);
-                CMS.debug("Found cert by nickname: '" + mNickname + "' with serial number: " + mCert.getSerialNumber());
+                CMS.debug("SigningUnit: Found cert by nickname: '" + mNickname + "' with serial number: " + mCert.getSerialNumber());
             } catch (ObjectNotFoundException e) {
-                CMS.debug("Unable to find certificate " + mNickname);
+                CMS.debug("SigningUnit: Unable to find certificate " + mNickname);
                 throw new CAMissingCertException(CMS.getUserMessage("CMS_CA_CERT_OBJECT_NOT_FOUND"), e);
             }
 
@@ -178,21 +178,20 @@ public final class SigningUnit implements ISigningUnit {
 
             try {
                 mPrivk = mManager.findPrivKeyByCert(mCert);
-                CMS.debug("Got private key from cert");
+                CMS.debug("SigningUnit: Got private key from cert");
             } catch (ObjectNotFoundException e) {
-                CMS.debug("Unable to find private key for " + mNickname);
+                CMS.debug("SigningUnit: Unable to find private key for " + mNickname);
                 throw new CAMissingKeyException(CMS.getUserMessage("CMS_CA_CERT_OBJECT_NOT_FOUND"), e);
             }
 
             mPubk = mCert.getPublicKey();
-            CMS.debug("Got public key from cert");
+            CMS.debug("SigningUnit: Got public key from cert");
 
             // get def alg and check if def sign alg is valid for token.
             mDefSigningAlgname = config.getString(PROP_DEFAULT_SIGNALG);
             mDefSigningAlgorithm =
                     checkSigningAlgorithmFromName(mDefSigningAlgname);
-            CMS.debug(
-                    "got signing algorithm " + mDefSigningAlgorithm);
+            CMS.debug("SigningUnit: Got signing algorithm " + mDefSigningAlgorithm);
             mInited = true;
 
         } catch (java.security.cert.CertificateException e) {

@@ -2707,6 +2707,8 @@ public class ConfigurationUtils {
             String certTag)
             throws Exception {
 
+        CMS.debug("ConfigurationUtils.configLocalCert(" + certTag + ")");
+
         ISubsystem ca = CMS.getSubsystem(ICertificateAuthority.ID);
 
         if (ca == null) {
@@ -2725,6 +2727,8 @@ public class ConfigurationUtils {
 
             if (certTag.equals("signing")) {
 
+                CMS.debug("ConfigurationUtils: creating local signing certificate");
+
                 X509Key x509key = CryptoUtil.getPublicX509Key(
                         CryptoUtil.string2byte(pubKeyModulus),
                         CryptoUtil.string2byte(pubKeyPublicExponent));
@@ -2737,11 +2741,15 @@ public class ConfigurationUtils {
 
                 if (cacert.equals("") || cacert.startsWith("...")) {
 
+                    CMS.debug("ConfigurationUtils: preparing to create internal local certificate");
+
                     certObj.setCert("...certificate be generated internally...");
                     config.putString(subsystem + "." + certTag + ".cert",
                             "...certificate be generated internally...");
 
                 } else {
+
+                    CMS.debug("ConfigurationUtils: creating local certificate");
 
                     X509Key x509key = CryptoUtil.getPublicX509Key(
                             CryptoUtil.string2byte(pubKeyModulus),
@@ -3285,6 +3293,7 @@ public class ConfigurationUtils {
             nickname = tokenname + ":" + nickname;
 
         CryptoManager cm = CryptoManager.getInstance();
+
         CMS.debug("ConfigurationUtils: nickname: " + nickname);
         X509Certificate c = cm.findCertByNickname(nickname);
 
@@ -3579,6 +3588,9 @@ public class ConfigurationUtils {
 
     public static void createSecurityDomain() throws EBaseException, LDAPException, NumberFormatException, IOException,
             SAXException, ParserConfigurationException {
+
+        CMS.debug("Creating security domain LDAP entries");
+
         IConfigStore cs = CMS.getConfigStore();
         IConfigStore dbCfg = cs.getSubStore("internaldb");
         ILdapConnFactory dbFactory = CMS.getLdapBoundConnFactory("ConfigurationUtils");
