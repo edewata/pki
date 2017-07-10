@@ -3293,16 +3293,22 @@ public class ConfigurationUtils {
 
     public static void setCertPermissions(String tag) throws EBaseException, NotInitializedException,
             ObjectNotFoundException, TokenException {
-        if (tag.equals("signing") || tag.equals("external_signing"))
+
+        if (tag.equals("signing")
+                || tag.equals("external_signing")
+                || tag.equals("sslserver")) {
             return;
+        }
 
         IConfigStore cs = CMS.getConfigStore();
         String nickname = cs.getString("preop.cert." + tag + ".nickname", "");
         String tokenname = cs.getString("preop.module.token", "");
+
         if (!CryptoUtil.isInternalToken(tokenname))
             nickname = tokenname + ":" + nickname;
 
         CryptoManager cm = CryptoManager.getInstance();
+        CMS.debug("ConfigurationUtils: Searching for cert " + nickname);
         X509Certificate c = cm.findCertByNickname(nickname);
 
         if (c instanceof InternalCertificate) {

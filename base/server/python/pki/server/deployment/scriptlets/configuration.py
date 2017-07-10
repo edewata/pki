@@ -20,8 +20,13 @@
 
 from __future__ import absolute_import
 import binascii
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
 import json
+import os
 import re
+import shutil
+import tempfile
 
 # PKI Deployment Imports
 from .. import pkiconfig as config
@@ -450,7 +455,12 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         if not isinstance(certs, list):
             certs = [certs]
 
+        sslcert = None
+
         for cdata in certs:
+
+            if cdata['tag'] == 'sslserver':
+                sslcert = cdata
 
             if standalone and not step_two:
 
@@ -535,15 +545,74 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
                 admin_cert = response['adminCert']['cert']
                 deployer.config_client.process_admin_cert(admin_cert)
 
+        if sslcert and not external and not standalone or step_two:
+            self.replace_sslcert(deployer, instance, sslcert)
+
+    def replace_sslcert(self, deployer, instance, sslcert):
+
+        config.pki_log.info(
+            "replacing temporary SSL server cert with the permanent cert",
+            extra=config.PKI_INDENTATION_LEVEL_2)
+
+        deployer.systemd.stop()
+
         if len(deployer.instance.tomcat_instance_subsystems()) == 1:
             # Modify contents of 'serverCertNick.conf' (if necessary)
             deployer.servercertnick_conf.modify()
 
-        # Optionally, programmatically 'restart' the configured PKI instance
-        if not config.str2bool(deployer.mdict['pki_restart_configured_instance']):
-            return
+        tmpdir = tempfile.mkdtemp()
 
-        deployer.systemd.restart()
+        try:
+            config.pki_log.info(
+                "checking current SSL server cert in internal token",
+                extra=config.PKI_INDENTATION_LEVEL_2)
+
+            nickname = sslcert['nickname']
+            nssdb = instance.open_nssdb()
+
+            try:
+                pem_cert = nssdb.get_cert(nickname)
+                cert = x509.load_pem_x509_certificate(pem_cert, default_backend())
+
+                if cert.subject != cert.issuer:  # if not self-signed, skip
+                    config.pki_log.error(
+                        "already using permanent SSL server cert",
+                        extra=config.PKI_INDENTATION_LEVEL_2)
+                    return
+
+                config.pki_log.info(
+                    "removing temporary SSL server cert",
+                    extra=config.PKI_INDENTATION_LEVEL_2)
+
+                nssdb.remove_cert(nickname)
+
+            finally:
+                nssdb.close()
+
+            token = deployer.mdict['pki_token_name']
+
+            config.pki_log.info(
+                "importing permanent SSL server cert into %s" % token,
+                extra=config.PKI_INDENTATION_LEVEL_2)
+
+            nssdb = instance.open_nssdb(token)
+
+            try:
+                pem_cert = pki.nssdb.convert_cert(sslcert['cert'], 'base64', 'pem').encode('utf8')
+
+                cert_file = os.path.join(tmpdir, 'sslcert.crt')
+                with open(cert_file, 'w') as f:
+                    f.write(pem_cert)
+
+                nssdb.add_cert(nickname, cert_file)
+
+            finally:
+                nssdb.close()
+
+        finally:
+            shutil.rmtree(tmpdir)
+
+        deployer.systemd.start()
 
         # wait for startup
         status = None
