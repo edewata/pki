@@ -17,16 +17,20 @@
 // --- END COPYRIGHT BLOCK ---
 package netscape.security.pkcs;
 
+import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.StringReader;
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Vector;
+
+import org.apache.commons.codec.binary.Base64;
 
 import netscape.security.util.BigInt;
 import netscape.security.util.DerInputStream;
@@ -49,6 +53,9 @@ import netscape.security.x509.X509CertImpl;
  */
 public class PKCS7 {
 
+    public final static String HEADER = "-----BEGIN PKCS7-----";
+    public final static String FOOTER = "-----END PKCS7-----";
+
     private ObjectIdentifier contentType;
 
     // the ASN.1 members for a signedData (and other) contentTypes
@@ -66,6 +73,47 @@ public class PKCS7 {
      * @exception ParsingException on parsing errors.
      * @exception IOException on other errors.
      */
+    public PKCS7(String input) throws ParsingException, IOException {
+
+        StringBuilder sb = new StringBuilder();
+
+        try (StringReader sr = new StringReader(input.trim());
+                BufferedReader in = new BufferedReader(sr)) {
+
+            String line;
+
+            // skip everything up to header
+            String header = null;
+            while ((line = in.readLine()) != null) {
+                if (HEADER.equals(line)) {
+                    header = line;
+                    break;
+                }
+            }
+
+            if (header == null) {
+                throw new ParsingException("Missing PKCS #7 header");
+            }
+
+            // store everything up to footer
+            String footer = null;
+            while ((line = in.readLine()) != null) {
+                if (FOOTER.equals(line)) {
+                    footer = line;
+                    break;
+                }
+                sb.append(line);
+            }
+
+            if (footer == null) {
+                throw new ParsingException("Missing PKCS #7 footer");
+            }
+        }
+
+        byte[] bytes = Base64.decodeBase64(sb.toString());
+        parse(new DerInputStream(bytes));
+    }
+
     public PKCS7(InputStream in) throws ParsingException, IOException {
         DataInputStream dis = new DataInputStream(in);
 
