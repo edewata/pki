@@ -301,4 +301,7 @@ public class SystemCertData {
         return san_for_server_cert;
     }
 
+    public String toString() {
+        return "SystemCertData [tag=" + tag + ", nickname=" + nickname + ", cert=" + cert + "]";
+    }
 }

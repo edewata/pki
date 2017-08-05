@@ -389,9 +389,9 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             "importing ca_signing certificate from %s" % cert_file,
             extra=config.PKI_INDENTATION_LEVEL_2)
 
-        nssdb.add_cert(
+        nssdb.import_cert_chain(
             nickname=nickname,
-            cert_file=cert_file,
+            cert_chain_file=cert_file,
             trust_attributes='CT,C,C')
 
     def import_external_ca_signing_cert(self, deployer, nssdb):
@@ -406,9 +406,9 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             "importing external certificate from %s" % cert_file,
             extra=config.PKI_INDENTATION_LEVEL_2)
 
-        nssdb.add_cert(
+        nssdb.import_cert_chain(
             nickname=nickname,
-            cert_file=cert_file,
+            cert_chain_file=cert_file,
             trust_attributes='CT,C,C')
 
     def import_sslserver_cert(self, deployer, nssdb):
@@ -423,9 +423,9 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             "importing sslserver certificate from %s" % cert_file,
             extra=config.PKI_INDENTATION_LEVEL_2)
 
-        nssdb.add_cert(
+        nssdb.import_cert_chain(
             nickname=nickname,
-            cert_file=cert_file,
+            cert_chain_file=cert_file,
             trust_attributes=',,')
 
     def import_subsystem_cert(self, deployer, nssdb):
@@ -440,9 +440,9 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             "importing subsystem certificate from %s" % cert_file,
             extra=config.PKI_INDENTATION_LEVEL_2)
 
-        nssdb.add_cert(
+        nssdb.import_cert_chain(
             nickname=nickname,
-            cert_file=cert_file,
+            cert_chain_file=cert_file,
             trust_attributes=',,')
 
     def import_audit_signing_cert(self, deployer, nssdb):
@@ -457,9 +457,9 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             "importing audit_signing certificate from %s" % cert_file,
             extra=config.PKI_INDENTATION_LEVEL_2)
 
-        nssdb.add_cert(
+        nssdb.import_cert_chain(
             nickname=nickname,
-            cert_file=cert_file,
+            cert_chain_file=cert_file,
             trust_attributes=',,P')
 
     def import_admin_cert(self, deployer):
@@ -479,9 +479,9 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
                 "importing admin certificate from %s" % cert_file,
                 extra=config.PKI_INDENTATION_LEVEL_2)
 
-            client_nssdb.add_cert(
+            client_nssdb.import_cert_chain(
                 nickname=nickname,
-                cert_file=cert_file,
+                cert_chain_file=cert_file,
                 trust_attributes=',,')
 
         finally:
@@ -499,9 +499,9 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             "importing kra_storage certificate from %s" % cert_file,
             extra=config.PKI_INDENTATION_LEVEL_2)
 
-        nssdb.add_cert(
+        nssdb.import_cert_chain(
             nickname=nickname,
-            cert_file=cert_file,
+            cert_chain_file=cert_file,
             trust_attributes=',,')
 
     def import_kra_transport_cert(self, deployer, nssdb):
@@ -516,9 +516,9 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             "importing kra_transport certificate from %s" % cert_file,
             extra=config.PKI_INDENTATION_LEVEL_2)
 
-        nssdb.add_cert(
+        nssdb.import_cert_chain(
             nickname=nickname,
-            cert_file=cert_file,
+            cert_chain_file=cert_file,
             trust_attributes=',,')
 
     def import_ocsp_signing_cert(self, deployer, nssdb):
@@ -533,9 +533,9 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             "importing ocsp_signing certificate from %s" % cert_file,
             extra=config.PKI_INDENTATION_LEVEL_2)
 
-        nssdb.add_cert(
+        nssdb.import_cert_chain(
             nickname=nickname,
-            cert_file=cert_file,
+            cert_chain_file=cert_file,
             trust_attributes=',,')
 
     def import_certs_and_keys(self, deployer, nssdb):
@@ -572,10 +572,12 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
 
         if subsystem.name == 'ca':
 
+            ca_signing_nickname = deployer.mdict['pki_ca_signing_nickname']
             self.import_ca_signing_cert(deployer, nssdb)
 
         if subsystem.name in ['kra', 'ocsp']:
 
+            ca_signing_nickname = deployer.mdict['pki_cert_chain_nickname']
             self.import_external_ca_signing_cert(deployer, nssdb)
             self.import_sslserver_cert(deployer, nssdb)
             self.import_subsystem_cert(deployer, nssdb)
@@ -602,6 +604,12 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         # the correct nicknames.
 
         self.import_cert_chain(deployer, nssdb)
+
+        # NSS may override CA signing cert trust flags while importing other
+        # PKCS #7 certs, so the flags need to be reset.
+        nssdb.modify_cert(
+            nickname=ca_signing_nickname,
+            trust_attributes='CT,C,C')
 
     def configure_system_cert(self, deployer, nssdb, subsystem, tag):
 

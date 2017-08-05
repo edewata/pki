@@ -3204,7 +3204,13 @@ public class ConfigurationUtils {
             byte[] certb = CryptoUtil.base64Decode(certs);
             X509CertImpl impl = new X509CertImpl(certb);
 
-            CertUtil.importCert(subsystem, certTag, tokenname, nickname, impl);
+            CryptoManager cm = CryptoManager.getInstance();
+            try {
+                cm.findCertByNickname(nickname);
+                CMS.debug("ConfigurationUtils: cert " + nickname + " already loaded");
+            } catch (ObjectNotFoundException e) {
+                CertUtil.importCert(subsystem, certTag, tokenname, nickname, impl);
+            }
         }
 
         //update requests in request queue for local certs to allow renewal
