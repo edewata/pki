@@ -100,7 +100,20 @@ BuildRequires:    gcc-c++
 BuildRequires:    zip
 BuildRequires:    java-1.8.0-openjdk-devel
 BuildRequires:    redhat-rpm-config
-BuildRequires:    ldapjdk
+
+%if 0%{?rhel}
+# yum copr enable @pki/10.5
+BuildRequires:    ldapjdk >= 4.19-1.1
+%endif
+%if 0%{?fedora} >= 27
+# dnf config-manager --set-enabled updates-testing
+BuildRequires:    ldapjdk >= 4.19-5
+%endif
+%if 0%{?fedora} == 26
+# dnf copr enable @pki/10.5
+BuildRequires:    ldapjdk >= 4.19-5
+%endif
+
 BuildRequires:    apache-commons-cli
 BuildRequires:    apache-commons-codec
 BuildRequires:    apache-commons-io
@@ -461,7 +474,20 @@ Requires:         jss >= 4.4.2-2
 Requires:         jss >= 4.2.6-44
 %endif
 %endif
-Requires:         ldapjdk
+
+%if 0%{?rhel}
+# yum copr enable @pki/10.5
+Requires:         ldapjdk >= 4.19-1.1
+%endif
+%if 0%{?fedora} >= 27
+# dnf config-manager --set-enabled updates-testing
+Requires:         ldapjdk >= 4.19-5
+%endif
+%if 0%{?fedora} == 26
+# dnf copr enable @pki/10.5
+Requires:         ldapjdk >= 4.19-5
+%endif
+
 Requires:         pki-base = %{version}-%{release}
 
 %if 0%{?rhel}
