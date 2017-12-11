@@ -2215,8 +2215,7 @@ class Certutil:
     def __init__(self, deployer):
         self.mdict = deployer.mdict
 
-    def create_security_databases(self, path, pki_cert_database,
-                                  pki_key_database, pki_secmod_database,
+    def create_security_databases(self, path,
                                   password_file=None, prefix=None,
                                   critical_failure=True):
         try:
@@ -2240,34 +2239,23 @@ class Certutil:
                     extra=config.PKI_INDENTATION_LEVEL_2)
                 raise Exception(
                     log.PKI_DIRECTORY_MISSING_OR_NOT_A_DIRECTORY_1 % path)
-            if os.path.exists(pki_cert_database) or\
-               os.path.exists(pki_key_database) or\
-               os.path.exists(pki_secmod_database):
-                # Simply notify user that the security databases exist
-                config.pki_log.info(
-                    log.PKI_SECURITY_DATABASES_ALREADY_EXIST_3,
-                    pki_cert_database,
-                    pki_key_database,
-                    pki_secmod_database,
-                    extra=config.PKI_INDENTATION_LEVEL_2)
-            else:
-                if password_file is not None:
-                    if not os.path.exists(password_file) or\
-                       not os.path.isfile(password_file):
-                        config.pki_log.error(
-                            log.PKI_FILE_MISSING_OR_NOT_A_FILE_1,
-                            password_file,
-                            extra=config.PKI_INDENTATION_LEVEL_2)
-                        raise Exception(
-                            log.PKI_FILE_MISSING_OR_NOT_A_FILE_1 %
-                            password_file)
-                # Display this "certutil" command
-                config.pki_log.info(
-                    log.PKIHELPER_CREATE_SECURITY_DATABASES_1,
-                    ' '.join(command),
-                    extra=config.PKI_INDENTATION_LEVEL_2)
-                # Execute this "certutil" command
-                subprocess.check_call(command)
+            if password_file is not None:
+                if not os.path.exists(password_file) or\
+                   not os.path.isfile(password_file):
+                    config.pki_log.error(
+                        log.PKI_FILE_MISSING_OR_NOT_A_FILE_1,
+                        password_file,
+                        extra=config.PKI_INDENTATION_LEVEL_2)
+                    raise Exception(
+                        log.PKI_FILE_MISSING_OR_NOT_A_FILE_1 %
+                        password_file)
+            # Display this "certutil" command
+            config.pki_log.info(
+                log.PKIHELPER_CREATE_SECURITY_DATABASES_1,
+                ' '.join(command),
+                extra=config.PKI_INDENTATION_LEVEL_2)
+            # Execute this "certutil" command
+            subprocess.check_call(command)
         except subprocess.CalledProcessError as exc:
             config.pki_log.error(log.PKI_SUBPROCESS_ERROR_1, exc,
                                  extra=config.PKI_INDENTATION_LEVEL_2)
@@ -2280,8 +2268,7 @@ class Certutil:
                 raise
         return
 
-    def verify_certificate_exists(self, path, pki_cert_database,
-                                  pki_key_database, pki_secmod_database,
+    def verify_certificate_exists(self, path,
                                   token, nickname, password_file=None,
                                   silent=True, critical_failure=True):
         try:
@@ -2320,21 +2307,6 @@ class Certutil:
                     extra=config.PKI_INDENTATION_LEVEL_2)
                 raise Exception(
                     log.PKI_DIRECTORY_MISSING_OR_NOT_A_DIRECTORY_1 % path)
-            if not os.path.exists(pki_cert_database) or\
-               not os.path.exists(pki_key_database) or\
-               not os.path.exists(pki_secmod_database):
-                # NSS security databases MUST exist!
-                config.pki_log.error(
-                    log.PKI_SECURITY_DATABASES_DO_NOT_EXIST_3,
-                    pki_cert_database,
-                    pki_key_database,
-                    pki_secmod_database,
-                    extra=config.PKI_INDENTATION_LEVEL_2)
-                raise Exception(
-                    log.PKI_SECURITY_DATABASES_DO_NOT_EXIST_3 % (
-                        pki_cert_database,
-                        pki_key_database,
-                        pki_secmod_database))
             if password_file is not None:
                 if not os.path.exists(password_file) or\
                    not os.path.isfile(password_file):
@@ -2364,8 +2336,7 @@ class Certutil:
                 raise
         return True
 
-    def generate_self_signed_certificate(self, path, pki_cert_database,
-                                         pki_key_database, pki_secmod_database,
+    def generate_self_signed_certificate(self, path,
                                          token, nickname,
                                          subject, serial_number,
                                          validity_period, issuer_name,
@@ -2462,21 +2433,6 @@ class Certutil:
                     extra=config.PKI_INDENTATION_LEVEL_2)
                 raise Exception(
                     log.PKI_DIRECTORY_MISSING_OR_NOT_A_DIRECTORY_1 % path)
-            if not os.path.exists(pki_cert_database) or\
-               not os.path.exists(pki_key_database) or\
-               not os.path.exists(pki_secmod_database):
-                # NSS security databases MUST exist!
-                config.pki_log.error(
-                    log.PKI_SECURITY_DATABASES_DO_NOT_EXIST_3,
-                    pki_cert_database,
-                    pki_key_database,
-                    pki_secmod_database,
-                    extra=config.PKI_INDENTATION_LEVEL_2)
-                raise Exception(
-                    log.PKI_SECURITY_DATABASES_DO_NOT_EXIST_3 % (
-                        pki_cert_database,
-                        pki_key_database,
-                        pki_secmod_database))
             if not os.path.exists(noise_file):
                 config.pki_log.error(
                     log.PKI_DIRECTORY_MISSING_OR_NOT_A_DIRECTORY_1,

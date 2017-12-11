@@ -1226,15 +1226,6 @@ class PKIConfigParser:
                 os.path.join(
                     self.mdict['pki_instance_configuration_path'],
                     "password.conf")
-            self.mdict['pki_cert_database'] = \
-                os.path.join(self.mdict['pki_database_path'],
-                             "cert8.db")
-            self.mdict['pki_key_database'] = \
-                os.path.join(self.mdict['pki_database_path'],
-                             "key3.db")
-            self.mdict['pki_secmod_database'] = \
-                os.path.join(self.mdict['pki_database_path'],
-                             "secmod.db")
             self.mdict['pki_self_signed_nickname'] = \
                 self.mdict['pki_sslserver_nickname']
             self.mdict['pki_self_signed_subject'] = \

@@ -22,12 +22,15 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import os
+import shutil
+
 import pki.nssdb
 import pki.pkcs12
 import pki.server
 
 # PKI Deployment Imports
 from .. import pkiconfig as config
+from .. import pkimanifest as manifest
 from .. import pkimessages as log
 from .. import pkiscriptlet
 
@@ -72,9 +75,6 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
 
         deployer.certutil.create_security_databases(
             deployer.mdict['pki_database_path'],
-            deployer.mdict['pki_cert_database'],
-            deployer.mdict['pki_key_database'],
-            deployer.mdict['pki_secmod_database'],
             password_file=deployer.mdict['pki_shared_pfile'])
 
         if config.str2bool(deployer.mdict['pki_hsm_enable']):
@@ -82,15 +82,21 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
                 deployer.mdict['pki_database_path'],
                 deployer.mdict['pki_hsm_modulename'],
                 deployer.mdict['pki_hsm_libfile'])
-        deployer.file.modify(
-            deployer.mdict['pki_cert_database'],
-            perms=config.PKI_DEPLOYMENT_DEFAULT_SECURITY_DATABASE_PERMISSIONS)
-        deployer.file.modify(
-            deployer.mdict['pki_key_database'],
-            perms=config.PKI_DEPLOYMENT_DEFAULT_SECURITY_DATABASE_PERMISSIONS)
-        deployer.file.modify(
-            deployer.mdict['pki_secmod_database'],
-            perms=config.PKI_DEPLOYMENT_DEFAULT_SECURITY_DATABASE_PERMISSIONS)
+
+        # set NSS database file ownership and permissions
+
+        uid = deployer.identity.get_uid()
+        gid = deployer.identity.get_gid()
+        perms = config.PKI_DEPLOYMENT_DEFAULT_SECURITY_DATABASE_PERMISSIONS
+
+        for name in os.listdir(deployer.mdict['pki_database_path']):
+
+            path = os.path.join(deployer.mdict['pki_database_path'], name)
+
+            pki.util.chown(path, uid, gid)
+            pki.util.chmod(path, perms)
+
+            deployer.record(name, manifest.RECORD_TYPE_FILE, uid, gid, perms)
 
         # import system certificates before starting the server
 
@@ -181,9 +187,6 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
                 #
                 rv = deployer.certutil.verify_certificate_exists(
                     deployer.mdict['pki_database_path'],
-                    deployer.mdict['pki_cert_database'],
-                    deployer.mdict['pki_key_database'],
-                    deployer.mdict['pki_secmod_database'],
                     deployer.mdict['pki_self_signed_token'],
                     deployer.mdict['pki_ds_secure_connection_ca_nickname'],
                     password_file=deployer.mdict['pki_shared_pfile'])
@@ -259,7 +262,5 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         config.pki_log.info(log.SECURITY_DATABASES_DESTROY_1, __name__,
                             extra=config.PKI_INDENTATION_LEVEL_1)
         if len(deployer.instance.tomcat_instance_subsystems()) == 0:
-            deployer.file.delete(deployer.mdict['pki_cert_database'])
-            deployer.file.delete(deployer.mdict['pki_key_database'])
-            deployer.file.delete(deployer.mdict['pki_secmod_database'])
+            shutil.rmtree(deployer.mdict['pki_database_path'])
             deployer.file.delete(deployer.mdict['pki_shared_password_conf'])
