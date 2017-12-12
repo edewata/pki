@@ -7,6 +7,8 @@ Type=forking
 EnvironmentFile=/etc/tomcat/tomcat.conf
 Environment="NAME=%i"
 Environment="STARTED_BY_SYSTEMD=1"
+EnvironmentFile=-/usr/share/pki/etc/pki.conf
+EnvironmentFile=-/etc/pki/pki.conf
 EnvironmentFile=-/etc/sysconfig/%i
 ExecStartPre=/usr/bin/pkidaemon start %i
 ExecStart=/bin/nuxwdog -f /etc/pki/%i/nuxwdog.conf

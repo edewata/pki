@@ -6,6 +6,8 @@ PartOf=pki-tomcatd.target
 Type=simple
 EnvironmentFile=/etc/tomcat/tomcat.conf
 Environment="NAME=%i"
+EnvironmentFile=-/usr/share/pki/etc/pki.conf
+EnvironmentFile=-/etc/pki/pki.conf
 EnvironmentFile=-/etc/sysconfig/%i
 ExecStartPre=/usr/bin/pkidaemon start %i
 ExecStart=/usr/libexec/tomcat/server start

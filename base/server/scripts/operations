@@ -30,15 +30,6 @@
 #  200-254 reserved
 #
 
-# default PKI configuration
-. /usr/share/pki/etc/pki.conf
-
-# system-wide PKI configuration
-if [ -f /etc/pki/pki.conf ]
-then
-    . /etc/pki/pki.conf
-fi
-
 default_error=0
 
 if [ -f /etc/debian_version ]; then
