@@ -148,7 +148,7 @@ Usage(const char *progName)
              "    where:\n\n"
              "        -n rsa_nickname             nickname of the Agent Certificate\n"
              "        [-p password | -w pwfile]   password OR file containing password\n"
-             "        [-d dbdir]                  database directory\n"
+             "        [-d dbdir]                  NSS database directory\n"
              "        [-v]                        verbose mode\n"
              "        [-V]                        version of %s\n"
              "        [-f inputFile]              file containing an http request\n"
@@ -160,16 +160,12 @@ Usage(const char *progName)
     fprintf( stderr,
              "    (1) cd <server-root>/bin/cert/tools\n" );
     fprintf( stderr,
-             "    (2) cp <client-database>/cert8.db .\n" );
-    fprintf( stderr,
-             "    (3) cp <client-database>/key3.db .\n" );
-    fprintf( stderr,
-             "    (4) Ensure that the agent certificate is\n"
-             "        inside these cert8.db/key3.db databases.\n"
+             "    (2) Ensure that the agent certificate is\n"
+             "        inside the NSS database.\n"
              "        (for this example, call it \"CS Agent\'s CS ID\")\n" );
     fprintf( stderr,
-             "    (5) ./bulkissuance.sh -n \"CS Agent\'s CS ID\" -p password\n"
-             "        -d . -f bulkissuance.data example.com:8100\n\n" );
+             "    (3) ./bulkissuance.sh -n \"CS Agent\'s CS ID\" -p password\n"
+             "        -d <NSS database> -f bulkissuance.data example.com:8100\n\n" );
     exit( 1 );
 }
 

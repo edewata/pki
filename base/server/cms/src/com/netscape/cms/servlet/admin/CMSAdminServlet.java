@@ -881,7 +881,7 @@ public final class CMSAdminServlet extends AdminServlet {
     }
 
     /**
-     * Reads secmod.db
+     * Reads TKS keys
      */
     private void getTKSKeys(HttpServletRequest req,
             HttpServletResponse resp) throws ServletException,
