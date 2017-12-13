@@ -65,13 +65,13 @@
 
 Name:             pki
 %if 0%{?rhel}
-Version:                10.6.0
+Version:                10.6.1
 %define redhat_release  5
 %define redhat_stage    0
 %define default_release %{redhat_release}.%{redhat_stage}
 #%define default_release %{redhat_release}
 %else
-Version:                10.6.0
+Version:                10.6.1
 %define fedora_release  1
 %define fedora_stage    0
 %define default_release %{fedora_release}.%{fedora_stage}
@@ -1330,6 +1330,11 @@ fi
 %endif # %{with server}
 
 %changelog
+* Wed Dec 13 2017 Endi S. Dewata <edewata@redhat.com> 10.6.1-1
+- Updated test.txt again. (edewata@redhat.com)
+- Added test.txt. (edewata@redhat.com)
+- Updated README. (edewata@redhat.com)
+
 * Wed Dec 13 2017 Endi S. Dewata <edewata@redhat.com> 10.6.0-1
 - new package built with tito
 
