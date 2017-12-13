@@ -79,9 +79,9 @@ Version:                10.6.1
 %endif
 
 %if 0%{?use_pki_release}
-Release:          %{pki_release}%{?dist}
+Release:          2
 %else
-Release:          %{default_release}%{?dist}
+Release:          2
 %endif
 
 Summary:          Certificate System - PKI Core Components
@@ -1330,7 +1330,7 @@ fi
 %endif # %{with server}
 
 %changelog
-* Wed Dec 13 2017 Endi S. Dewata <edewata@redhat.com> 10.6.1-1
+* Wed Dec 13 2017 Endi S. Dewata <edewata@redhat.com> 10.6.1-2
 - Updated test.txt again. (edewata@redhat.com)
 - Added test.txt. (edewata@redhat.com)
 - Updated README. (edewata@redhat.com)
