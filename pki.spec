@@ -63,7 +63,7 @@
 %define pki_release %{getenv:PKI_RELEASE}
 %endif
 
-Name:             pki-core
+Name:             pki
 %if 0%{?rhel}
 Version:                10.5.1
 %define redhat_release  5
