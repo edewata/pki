@@ -65,13 +65,13 @@
 
 Name:             pki-core
 %if 0%{?rhel}
-Version:                10.5.2
+Version:                10.6.0
 %define redhat_release  5
 %define redhat_stage    0
 %define default_release %{redhat_release}.%{redhat_stage}
 #%define default_release %{redhat_release}
 %else
-Version:                10.5.4
+Version:                10.6.0
 %define fedora_release  1
 %define fedora_stage    0
 %define default_release %{fedora_release}.%{fedora_stage}
@@ -1330,6 +1330,9 @@ fi
 %endif # %{with server}
 
 %changelog
+* Wed Dec 13 2017 Endi S. Dewata <edewata@redhat.com> 10.6.0-1
+- 
+
 * Wed Dec 13 2017 Endi S. Dewata <edewata@redhat.com> 10.5.4-1
 - new package built with tito
 
