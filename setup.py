@@ -49,7 +49,7 @@ setup(
     author='Dogtag Certificate System Team',
     author_email='pki-devel@redhat.com',
     name='Dogtag PKI',
-    version='10',
+    version='10.6.0',
     description='Dogtag Certificate System',
     license='GPL',
     keywords='pki',
