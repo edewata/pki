@@ -94,7 +94,9 @@ import com.netscape.certsrv.base.EPropertyNotFound;
 import com.netscape.certsrv.base.IConfigStore;
 import com.netscape.certsrv.common.Constants;
 import com.netscape.certsrv.logging.AuditEvent;
+import com.netscape.certsrv.logging.ILogger;
 import com.netscape.certsrv.logging.LogEvent;
+import com.netscape.certsrv.logging.event.TokenAppletUpgradeEvent;
 import com.netscape.certsrv.tps.token.TokenStatus;
 import com.netscape.cms.logging.Logger;
 import com.netscape.cms.logging.SignedAuditLogger;
@@ -4164,27 +4166,30 @@ public class TPSProcessor {
             String newVersion,
             String info) {
 
-        String auditType = "";
-        switch (status) {
-        case "success":
-            auditType = AuditEvent.TOKEN_APPLET_UPGRADE_SUCCESS;
-            break;
-        default:
-            auditType = AuditEvent.TOKEN_APPLET_UPGRADE_FAILURE;
+        String messageID;
+        String outcome;
+
+        if ("success".equals(status)) {
+            messageID = TokenAppletUpgradeEvent.TOKEN_APPLET_UPGRADE_SUCCESS;
+            outcome = ILogger.SUCCESS;
+        } else {
+            messageID = TokenAppletUpgradeEvent.TOKEN_APPLET_UPGRADE_FAILURE;
+            outcome = ILogger.FAILURE;
         }
 
-        String auditMessage = CMS.getLogMessage(
-                auditType,
-                (session != null) ? session.getIpAddress() : null,
+        TokenAppletUpgradeEvent event = new TokenAppletUpgradeEvent(
+                messageID,
+                session != null ? session.getIpAddress() : null,
                 userid,
-                (aInfo != null) ? aInfo.getCUIDhexStringPlain() : null,
-                (aInfo != null) ? aInfo.getMSNString() : null,
-                status,
+                aInfo != null ? aInfo.getCUIDhexStringPlain() : null,
+                aInfo != null ? aInfo.getMSNString() : null,
+                outcome,
                 keyVersion,
-                (aInfo != null) ? aInfo.getFinalAppletVersion() : null,
+                aInfo != null ? aInfo.getFinalAppletVersion() : null,
                 newVersion,
                 info);
-        audit(auditMessage);
+
+        signedAuditLogger.log(event);
     }
 
     protected void auditKeyChangeoverRequired(AppletInfo aInfo,
