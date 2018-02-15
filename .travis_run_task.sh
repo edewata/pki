@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 #
 # Authors:
 #     Dinesh Prasanth M K <dmoluguw@redhat.com>
@@ -22,7 +22,8 @@
 
 PYTHON="/usr/bin/python${TRAVIS_PYTHON_VERSION}"
 
-test_set="test_caacl_plugin.py test_caacl_profile_enforcement.py test_cert_plugin.py test_certprofile_plugin.py test_vault_plugin.py"
+#test_set="test_caacl_plugin.py test_caacl_profile_enforcement.py test_cert_plugin.py test_certprofile_plugin.py test_vault_plugin.py"
+test_set="test_cert_plugin.py"
 developer_mode_opt="--developer-mode"
 cert_test_file_loc=""
 
