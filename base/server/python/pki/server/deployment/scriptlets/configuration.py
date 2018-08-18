@@ -1078,6 +1078,12 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         response = client.configure(request)
 
         config.pki_log.info(
+            "Setup security domain",
+            extra=config.PKI_INDENTATION_LEVEL_0)
+
+        client.setupSecurityDomain(request)
+
+        config.pki_log.info(
             "Creating database user",
             extra=config.PKI_INDENTATION_LEVEL_0)
 
