@@ -278,6 +278,18 @@ class SystemConfigClient(object):
                                         headers)
         return response.json()
 
+    def createDatabaseUser(self, data):
+        """
+        Create database user.
+
+        :param data: Configuration request
+        :type data: ConfigurationRequest
+        """
+        headers = {'Content-type': 'application/json',
+                   'Accept': 'application/json'}
+        self.connection.post('/rest/installer/createDatabaseUser', data,
+                             headers)
+
     def finalizeConfiguration(self, data):
         """
         Finalize server configuration.
