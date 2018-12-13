@@ -34,7 +34,7 @@ The session timeout for PKI Web UI can be configured in the **&lt;session-timeou
 &lt;/web-app&gt;
 </pre>
 
-The default value is set to 30 minutes.
+By default the value is set to 30 minutes.
 To change the value, edit the web.xml then restart the server.
 Note that this value affects all sessions in all web applications on the server.
 
@@ -66,7 +66,7 @@ in the **Secure** &lt;Connector&gt; element in /etc/pki/&lt;instance&gt;/server.
 &lt;/Server&gt;
 </pre>
 
-The default value is set to 300000 milliseconds (i.e. 5 minutes).
+By default the value is set to 300000 milliseconds (i.e. 5 minutes).
 To change this value, edit the server.xml then restart the server.
 Note that this value affects all connections to the server.
 
