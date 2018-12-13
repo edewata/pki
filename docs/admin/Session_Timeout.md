@@ -41,10 +41,10 @@ Note that this value affects all sessions in all web applications on the server.
 ### Session Timeout for PKI Console
 
 PKI Console is a standalone graphical UI client.
-When the console is started, it will create a single connection to the server and keep it alive as long as it is running.
+When the console is started, it will create a single connection to the server and keep it alive as long as the console is running.
 If access banner is enabled, it will be displayed to the user during console startup.
 
-Unlike a web browser, the console does not use cookies to maintain a session on the server.
+Unlike the Web UI, the console does not use cookies to maintain a session on the server.
 If the connection is terminated by the server, the console will exit immediately to the system.
 If the user wants to continue, the user will need to restart the console.
 
@@ -74,10 +74,9 @@ See also [Tomcat HTTP Connector](https://tomcat.apache.org/tomcat-8.5-doc/config
 
 ### Session Timeout for PKI CLI
 
-PKI CLI is a command-line client which executes a set of operations, then exits immediately.
+PKI CLI is a command-line client which executes a set of operations, then exits immediately to the system.
 If access banner is enabled, it will be displayed at the beginning of each CLI execution.
 
 Session timeout is generally irrelevant to PKI CLI since the operations are executed in sequence without delay.
-However, if the CLI waits for user inputs or for some reason hangs, the session may time out
-and the remaining operations may fail.
+However, if the CLI waits for user inputs or for some reason hangs, the session may time out and the remaining operations may fail.
 If such delay is expected, the web.xml and server.xml should be configured to accommodate that delay.
