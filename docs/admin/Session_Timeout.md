@@ -18,7 +18,7 @@ When the Web UI is opened, the browser may use multiple connections to communica
 These connections are associated to the same session using cookies.
 If access banner is enabled, the Web UI will display it when the new session is created.
 
-If the session times out, the Web UI can only detect that when the user executes another operation.
+If the session times out, the Web UI can only detect that when the user tries to execute another operation.
 When that happens the browser will automatically re-authenticate the user, and the server will create a new session.
 If access banner is enabled, it will be displayed again.
 
