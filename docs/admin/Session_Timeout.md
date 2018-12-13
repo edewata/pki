@@ -16,7 +16,7 @@ Due to differences in the way some clients work, there are several ways to confi
 PKI Web UI is a web-based client that runs in a browser.
 When the Web UI is opened, the browser may use multiple connections to communicate with the server.
 These connections are associated to the same session using cookies.
-If access banner is enabled, the Web UI will display it when a new session is created.
+If access banner is enabled, the Web UI will display it when the new session is created.
 
 If the session times out on the server, the Web UI can only detect that when the user executes another operation.
 When that happens the browser will automatically re-authenticate the user, and the server will create a new session.
