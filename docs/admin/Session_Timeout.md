@@ -80,4 +80,4 @@ If access banner is enabled, it will be displayed at the beginning of each CLI e
 Session timeout is generally irrelevant to PKI CLI since the operations are executed in sequence without delay.
 However, if the CLI waits for user inputs or for some reason hangs, the session may time out
 and the remaining operations may fail.
-If such delay is expected, the web.xml and server.xml should be configured to accommodate that.
+If such delay is expected, the web.xml and server.xml should be configured to accommodate that delay.
