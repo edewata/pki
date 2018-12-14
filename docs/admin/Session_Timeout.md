@@ -13,6 +13,8 @@ There are two types of sessions:
 * TLS session
 * HTTP session
 
+Due to differences in the way the clients works, these sessions affect the clients differently.
+
 ### TLS Session
 
 TLS session is a secure communication channel through a TLS connection established via TLS handshake protocol.
