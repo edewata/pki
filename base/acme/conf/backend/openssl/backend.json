@@ -1,0 +1,9 @@
+{
+    "class": "org.dogtagpki.acme.backend.OpenSSLBackend",
+    "parameters": {
+        "ca_conf": "ca.conf",
+        "ext_conf": "ext.conf",
+        "ca_cert": "ca.crt",
+        "ca_key": "ca.key"
+    }
+}
