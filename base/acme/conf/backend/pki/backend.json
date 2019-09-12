@@ -1,0 +1,9 @@
+{
+    "class": "org.dogtagpki.acme.backend.PKIBackend",
+    "parameters": {
+        "url": "http://localhost:8080",
+        "profile": "acmeServerCert",
+        "username": "caadmin",
+        "password": "Secret.123"
+    }
+}
