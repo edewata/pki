@@ -191,6 +191,14 @@ find_file(LDAPJDK_JAR
         /usr/share/java
 )
 
+find_file(MONGO_JAR
+    NAMES
+        mongo.jar
+    PATHS
+        /usr/share/java/mongo-java-driver
+        /usr/share/java
+)
+
 find_file(RESTEASY_JAXRS_JAR
     NAMES
         resteasy-jaxrs.jar

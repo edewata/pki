@@ -1,0 +1,7 @@
+{
+    "class": "org.dogtagpki.acme.database.MongoDatabase",
+    "parameters": {
+        "hostname": "localhost",
+        "database": "acme"
+    }
+}

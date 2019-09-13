@@ -370,6 +370,8 @@ BuildRequires:    golang-github-cpuguy83-md2man
 BuildRequires:    nss-tools
 BuildRequires:    openssl
 
+BuildRequires:    mongo-java-driver
+
 # description for top-level package (if there is a separate meta package)
 %if "%{name}" != "%{vendor_id}-pki"
 %description
@@ -725,6 +727,8 @@ Requires:         tomcatjss >= 7.2.1-4
 %else
 Requires:         tomcatjss >= 7.4.1
 %endif
+
+Requires:         mongo-java-driver
 
 # https://pagure.io/freeipa/issue/7742
 %if 0%{?rhel}
