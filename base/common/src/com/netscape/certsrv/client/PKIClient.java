@@ -18,7 +18,7 @@
 
 package com.netscape.certsrv.client;
 
-import java.io.IOException;
+import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -29,19 +29,17 @@ import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.Response;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
 import org.dogtagpki.common.InfoClient;
+import org.mozilla.jss.netscape.security.pkcs.PKCS7;
+import org.mozilla.jss.netscape.security.util.Utils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
+import org.xml.sax.InputSource;
 
 import com.netscape.certsrv.base.PKIException;
 import com.netscape.certsrv.util.CryptoProvider;
-import org.mozilla.jss.netscape.security.util.Utils;
-
-import org.mozilla.jss.netscape.security.pkcs.PKCS7;
 
 
 public class PKIClient {
@@ -136,21 +134,24 @@ public class PKIClient {
         connection.setVerbose(verbose);
     }
 
-    public byte[] downloadCACertChain(String serverURI) throws ParserConfigurationException, SAXException, IOException {
+    public byte[] downloadCACertChain(String serverURI) throws Exception {
         return downloadCACertChain(serverURI, "/ee/ca/getCertChain");
     }
 
-    public byte[] downloadCACertChain(String uri, String servletPath)
-            throws ParserConfigurationException, SAXException, IOException {
+    public byte[] downloadCACertChain(String serverURI, String servletPath)
+            throws Exception {
 
-        URL url = new URL(uri + servletPath);
+        URL servletURL = new URL(serverURI + servletPath);
 
-        if (verbose) System.out.println("Retrieving CA certificate chain from " + url + ".");
+        if (verbose) System.out.println("Retrieving CA certificate chain from " + servletURL + ".");
 
         DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder documentBuilder = documentFactory.newDocumentBuilder();
 
-        Document document = documentBuilder.parse(url.openStream());
+        String response = connection.get(servletURL.getPath(), String.class);
+        if (verbose) System.out.println("Response:\n" + response);
+
+        Document document = documentBuilder.parse(new InputSource(new StringReader(response)));
         NodeList list = document.getElementsByTagName("ChainBase64");
         Element element = (Element)list.item(0);
 
