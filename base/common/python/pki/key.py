@@ -30,7 +30,9 @@ import inspect
 import json
 import logging
 import os
+import shutil
 import subprocess
+import tempfile
 import warnings
 
 from six import iteritems
@@ -1031,11 +1033,38 @@ class KeyClient(object):
         if data is None:
             raise TypeError("Key Recovery Request must be specified")
 
-        url = self.key_url + '/retrieve'
         key_request = json.dumps(data, cls=encoder.CustomTypeEncoder,
                                  sort_keys=True)
-        response = self.connection.post(url, key_request, self.headers)
-        key_data = KeyData.from_json(response.json())
+        print('REST Request: %s' % key_request)
+
+        tmpdir = tempfile.mkdtemp()
+        try:
+            request_json = os.path.join(tmpdir, 'request.json')
+            with open(request_json, 'w') as f:
+                f.write(key_request)
+
+            # submit retrieval request
+            cmd = [
+                'pki',
+                '-d', self.connection.certdb_dir,
+                '-C', self.connection.password_file,
+                '-n', self.connection.nickname,
+                '--ignore-cert-status', 'UNTRUSTED_ISSUER',
+                'kra-key-retrieve',
+                '--input-format', 'json',
+                '--input', request_json,
+                '--output-format', 'json',
+            ]
+            print('Command: %s' % ' '.join(cmd))
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, check=True)
+
+        finally:
+            shutil.rmtree(tmpdir)
+
+        print('REST Response: %s' % result.stdout.decode('utf-8'))
+        key = json.loads(result.stdout.decode('utf-8'))
+
+        key_data = KeyData.from_json(key)
         return Key(key_data)
 
     @pki.handle_exceptions()
