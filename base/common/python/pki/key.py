@@ -30,6 +30,7 @@ import inspect
 import json
 import logging
 import os
+import subprocess
 import warnings
 
 from six import iteritems
@@ -586,12 +587,31 @@ class KeyClient(object):
             See KRAClient.list_keys for the valid values of status.
             Returns a KeyInfoCollection object.
         """
-        query_params = {'clientKeyID': client_key_id, 'status': status,
-                        'maxResults': max_results, 'maxTime': max_time,
-                        'start': start, 'size': size, 'realm': realm}
-        response = self.connection.get(self.key_url, self.headers,
-                                       params=query_params)
-        return KeyInfoCollection.from_json(response.json())
+
+        cmd = [
+            'pki',
+            '-d', self.connection.certdb_dir,
+            '-C', self.connection.password_file,
+            '-n', self.connection.nickname,
+            '--ignore-cert-status', 'UNTRUSTED_ISSUER',
+            'kra-key-find',
+            '--clientKeyID', client_key_id,
+            '--status', status,
+            '--maxResults', max_results,
+            '--maxTime', max_time,
+            '--start', start,
+            '--size', size,
+            '--realm', realm,
+            '--output-format', 'json'
+        ]
+
+        print('Command: %s' % ' '.join(cmd))
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, check=True)
+
+        result_json = json.loads(result.stdout.decode('utf-8'))
+        print('Result: %s' % result_json)
+
+        return KeyInfoCollection.from_json(result_json)
 
     @pki.handle_exceptions()
     def list_requests(self, request_state=None, request_type=None,

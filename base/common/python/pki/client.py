@@ -120,6 +120,7 @@ class PKIConnection:
 
         self.nssdb_dir = None
         self.password_file = None
+        self.nickname = None
 
     def authenticate(self, username=None, password=None):
         """
@@ -161,6 +162,7 @@ class PKIConnection:
         # TODO: create nssdb if doesn't exist yet
         self.nssdb_dir = self.crypto.nssdb_dir
         self.password_file = self.crypto.password_file
+        self.nickname = nickname
 
         tmpdir = tempfile.mkdtemp()
         try:
