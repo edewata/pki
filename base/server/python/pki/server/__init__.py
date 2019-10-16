@@ -286,6 +286,24 @@ class PKIServer(object):
         java_opts = self.config['JAVA_OPTS']
         security_manager = self.config['SECURITY_MANAGER']
 
+        pkcs12_file = os.environ.get('PKI_PKCS12_FILE')
+        pkcs12_password = os.environ.get('PKI_PKCS12_PASSWORD')
+        pkcs12_password_file = os.environ.get('PKI_PKCS12_PASSWORD_FILE')
+
+        if pkcs12_file:
+
+            # self.create_nssdb(force=True)
+
+            nssdb = self.open_nssdb()
+            try:
+                nssdb.import_pkcs12(
+                    pkcs12_file=pkcs12_file,
+                    pkcs12_password=pkcs12_password,
+                    pkcs12_password_file=pkcs12_password_file,
+                    overwrite=True)
+            finally:
+                nssdb.close()
+
         classpath = [
             Tomcat.SHARE_DIR + '/bin/bootstrap.jar',
             Tomcat.SHARE_DIR + '/bin/tomcat-juli.jar',

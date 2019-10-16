@@ -95,12 +95,14 @@ def replace_params(line, params=None):
 
 def makedirs(path, uid=-1, gid=-1, force=False):
 
-    logger.debug('Command: mkdir -p %s', path)
+    if os.path.islink(path):
+        path = os.path.realpath(path)
 
     if force and os.path.exists(path):
         logger.warning('Directory already exists: %s', path)
         return
 
+    logger.debug('Command: mkdir -p %s', path)
     os.makedirs(path)
     os.chown(path, uid, gid)
 
