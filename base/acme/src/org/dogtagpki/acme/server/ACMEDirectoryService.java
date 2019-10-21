@@ -49,8 +49,14 @@ public class ACMEDirectoryService {
         URI newOrder = uriInfo.getBaseUriBuilder().path("new-order").build();
         directory.setNewOrder(newOrder);
 
+        URI newAuthz = uriInfo.getBaseUriBuilder().path("new-authz").build();
+        directory.setNewAuthz(newAuthz);
+
         URI revokeCert = uriInfo.getBaseUriBuilder().path("revoke-cert").build();
         directory.setRevokeCert(revokeCert);
+
+        URI keyChange = uriInfo.getBaseUriBuilder().path("key-change").build();
+        directory.setKeyChange(keyChange);
 
         logger.info("Directory:\n" + directory);
 
