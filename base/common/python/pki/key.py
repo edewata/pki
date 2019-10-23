@@ -666,12 +666,22 @@ class KeyClient(object):
     @pki.handle_exceptions()
     def modify_key_status(self, key_id, status):
         """ Modify the status of a key """
+
         if (key_id is None) or (status is None):
             raise TypeError("Key ID and status must be specified")
 
-        url = self.key_url + '/' + key_id
-        params = {'status': status}
-        self.connection.post(url, None, headers=self.headers, params=params)
+        cmd = [
+            'pki',
+            '-d', self.connection.certdb_dir,
+            '-C', self.connection.password_file,
+            '-n', self.connection.nickname,
+            '--ignore-cert-status', 'UNTRUSTED_ISSUER',
+            'kra-key-mod', key_id,
+            '--status', status
+        ]
+
+        print('Command: %s' % ' '.join(cmd))
+        subprocess.run(cmd, check=True)
 
     @pki.handle_exceptions()
     def approve_request(self, request_id):
