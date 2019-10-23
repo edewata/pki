@@ -24,6 +24,10 @@ from __future__ import print_function
 import functools
 import inspect
 import logging
+import os
+import shutil
+import subprocess
+import tempfile
 import warnings
 
 import requests
@@ -114,6 +118,9 @@ class PKIConnection:
 
         self.crypto = crypto
 
+        self.nssdb_dir = None
+        self.password_file = None
+
     def authenticate(self, username=None, password=None):
         """
         Set the parameters used for authentication if username/password is to
@@ -128,7 +135,7 @@ class PKIConnection:
         if username is not None and password is not None:
             self.session.auth = (username, password)
 
-    def set_authentication_cert(self, pem_cert_path, pem_key_path=None):
+    def set_authentication_cert(self, pem_cert_path, pem_key_path=None, nickname=None):
         """
         Set the path to the PEM file containing the certificate and private key
         for the client certificate to be used for authentication to the server,
@@ -150,6 +157,45 @@ class PKIConnection:
             self.session.cert = (pem_cert_path, pem_key_path)
         else:
             self.session.cert = pem_cert_path
+
+        # TODO: create nssdb if doesn't exist yet
+        self.nssdb_dir = self.crypto.nssdb_dir
+        self.password_file = self.crypto.password_file
+
+        tmpdir = tempfile.mkdtemp()
+        try:
+            tmp_p12 = os.path.join(tmpdir, 'tmp.p12')
+
+            # import cert and key into PKCS #12 file
+            cmd = [
+                'openssl',
+                'pkcs12',
+                '-export',
+                '-in', pem_cert_path,
+                '-inkey', pem_key_path,
+                '-out', tmp_p12,
+                '-name', nickname,
+                '-passout', 'file:' + self.password_file
+            ]
+
+            print('Command: %s' % ' '.join(cmd))
+            subprocess.run(cmd, check=True)
+
+            # import PKCS #12 file into NSS database
+            cmd = [
+                'pki',
+                '-d', self.nssdb_dir,
+                '-C', self.password_file,
+                'pkcs12-import',
+                '--pkcs12-file', tmp_p12,
+                '--pkcs12-password-file', self.password_file
+            ]
+
+            print('Command: %s' % ' '.join(cmd))
+            subprocess.run(cmd, check=True)
+
+        finally:
+            shutil.rmtree(tmpdir)
 
     @catch_insecure_warning
     def get(self, path, headers=None, params=None, payload=None,
