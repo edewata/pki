@@ -93,13 +93,14 @@ def run_test(protocol, hostname, port, client_cert, certdb_dir,
              certdb_password):
     """ test code execution """
 
+    crypto = pki.crypto.NSSCryptoProvider(certdb_dir, certdb_password)
+
     # set up the connection to the DRM, including authentication credentials
-    connection = PKIConnection(protocol, hostname, port)
+    connection = PKIConnection(protocol, hostname, port, crypto=crypto)
     connection.set_authentication_cert(client_cert)
 
     # create kraclient
-    crypto = pki.crypto.NSSCryptoProvider(certdb_dir, certdb_password)
-    kraclient = KRAClient(connection, crypto)
+    kraclient = KRAClient(connection)
     keyclient = kraclient.keys
 
     # Get transport cert and insert in the certdb

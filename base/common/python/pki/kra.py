@@ -26,10 +26,15 @@ KeyRequestResource REST APIs.
 """
 
 from __future__ import absolute_import
+import inspect
+import logging
+
 from pki.info import InfoClient
 import pki.key as key
 
 from pki.systemcert import SystemCertClient
+
+logger = logging.getLogger(__name__)
 
 
 class KRAClient(object):
@@ -38,11 +43,11 @@ class KRAClient(object):
     KeyRequest REST APIs.
     """
 
-    def __init__(self, connection, crypto, transport_cert_nick=None):
+    def __init__(self, connection, crypto=None, transport_cert_nick=None):
         """ Constructor
 
         :param connection - PKIConnection object with DRM connection info.
-        :param crypto - CryptoProvider object.  NSSCryptoProvider is provided
+        :param crypto - DEPRECATED: CryptoProvider object.  NSSCryptoProvider is provided
                         by default.  If a different crypto implementation is
                         desired, a different subclass of CryptoProvider must be
                         provided.
@@ -56,12 +61,25 @@ class KRAClient(object):
                         been initialized beforehand.
         """
         self.connection = connection
-        self.crypto = crypto
+
+        if crypto is not None:
+            logger.warning(
+                '%s:%s: The crypto in KRAClient.__init__() has been deprecated '
+                '(https://www.dogtagpki.org/wiki/PKI_10.8_Python_Changes).',
+                inspect.stack()[1].filename, inspect.stack()[1].lineno)
+            self.crypto = crypto
+
+            # store crypto in connection
+            connection.crypto = crypto
+
+        else:
+            # get crypto from connection
+            self.crypto = connection.crypto
+
         self.info = InfoClient(connection)
         self.keys = key.KeyClient(
             connection,
-            crypto,
-            transport_cert_nick,
-            self.info
+            transport_cert_nick=transport_cert_nick,
+            info_client=self.info
         )
         self.system_certs = SystemCertClient(connection)

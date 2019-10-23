@@ -59,7 +59,7 @@ class PKIConnection:
 
     def __init__(self, protocol='http', hostname='localhost', port='8080',
                  subsystem=None, accept='application/json',
-                 trust_env=None, verify=False):
+                 trust_env=None, verify=False, crypto=None):
         """
         Set the parameters for a python-requests based connection to a
         Dogtag subsystem.
@@ -81,6 +81,11 @@ class PKIConnection:
         :param verify: verify TLS/SSL connections and configure CA certs
            (default: no)
         :type verify: None, bool, str
+        :param crypto - Crypto provider. NSSCryptoProvider is provided
+                        by default. If a different crypto implementation is
+                        desired, a different subclass of CryptoProvider must be
+                        provided.
+        :type crypto: CryptoProvider
         :return: PKIConnection object.
         """
 
@@ -106,6 +111,8 @@ class PKIConnection:
 
         if accept:
             self.session.headers.update({'Accept': accept})
+
+        self.crypto = crypto
 
     def authenticate(self, username=None, password=None):
         """

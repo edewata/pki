@@ -26,7 +26,9 @@ KeyRequestClient REST API on a DRM
 from __future__ import absolute_import
 from __future__ import print_function
 import base64
+import inspect
 import json
+import logging
 import os
 import warnings
 
@@ -38,6 +40,8 @@ import pki.crypto
 import pki.encoder as encoder
 from pki.info import Version
 import pki.util
+
+logger = logging.getLogger(__name__)
 
 
 # should be moved to request.py
@@ -481,11 +485,26 @@ class KeyClient(object):
     RSA_ALGORITHM = "RSA"
     DSA_ALGORITHM = "DSA"
 
-    def __init__(self, connection, crypto, transport_cert_nick=None,
+    def __init__(self, connection, crypto=None, transport_cert_nick=None,
                  info_client=None):
         """ Constructor """
 
         self.connection = connection
+
+        if crypto is not None:
+            logger.warning(
+                '%s:%s: The crypto in KeyClient.__init__() has been deprecated '
+                '(https://www.dogtagpki.org/wiki/PKI_10.8_Python_Changes).',
+                inspect.stack()[1].filename, inspect.stack()[1].lineno)
+
+            self.crypto = crypto
+
+            # store crypto in connection
+            connection.crypto = crypto
+
+        else:
+            # get crypto from connection
+            self.crypto = connection.crypto
 
         self.key_url = '/rest/agent/keys'
         self.key_requests_url = '/rest/agent/keyrequests'
@@ -496,8 +515,6 @@ class KeyClient(object):
 
         self.headers = {'Content-type': 'application/json',
                         'Accept': 'application/json'}
-
-        self.crypto = crypto
 
         if transport_cert_nick is not None:
             self.crypto.initialize()
