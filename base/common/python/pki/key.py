@@ -939,9 +939,9 @@ class KeyClient(object):
         if not nonce_iv:
             raise TypeError('Missing nonce IV')
 
-        data = base64.b64encode(encrypted_data).decode('ascii')
-        twsk = base64.b64encode(wrapped_session_key).decode('ascii')
-        symkey_params = base64.b64encode(nonce_iv).decode('ascii')
+        data = base64.b64encode(encrypted_data).decode('utf-8')
+        twsk = base64.b64encode(wrapped_session_key).decode('utf-8')
+        symkey_params = base64.b64encode(nonce_iv).decode('utf-8')
 
         request = KeyArchivalRequest(client_key_id=client_key_id,
                                      data_type=data_type,
@@ -953,7 +953,39 @@ class KeyClient(object):
                                      key_size=key_size,
                                      realm=realm)
 
-        return self.submit_request(request)
+        key_request = json.dumps(request, cls=encoder.CustomTypeEncoder,
+                                 sort_keys=True)
+        print('REST Request: %s' % key_request)
+
+        tmpdir = tempfile.mkdtemp()
+        try:
+            request_json = os.path.join(tmpdir, 'request.json')
+            with open(request_json, 'w') as f:
+                f.write(key_request)
+
+            # submit archival request
+            cmd = [
+                'pki',
+                '-d', self.connection.certdb_dir,
+                '-C', self.connection.password_file,
+                '-n', self.connection.nickname,
+                '--ignore-cert-status', 'UNTRUSTED_ISSUER',
+                'kra-key-archive',
+                '--clientKeyID', client_key_id,
+                '--input-format', 'json',
+                '--input', request_json,
+                '--output-format', 'json'
+            ]
+            print('Command: %s' % ' '.join(cmd))
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, check=True)
+
+        finally:
+            shutil.rmtree(tmpdir)
+
+        print('REST Response: %s' % result.stdout.decode('utf-8'))
+        response = json.loads(result.stdout.decode('utf-8'))
+
+        return KeyRequestResponse.from_json(response)
 
     @pki.handle_exceptions()
     def archive_pki_options(self, client_key_id, data_type, pki_archive_options,
