@@ -592,20 +592,30 @@ class KeyClient(object):
 
         cmd = [
             'pki',
-            '-d', self.connection.certdb_dir,
+            '-d', self.connection.nssdb_dir,
             '-C', self.connection.password_file,
             '-n', self.connection.nickname,
             '--ignore-cert-status', 'UNTRUSTED_ISSUER',
             'kra-key-find',
             '--clientKeyID', client_key_id,
             '--status', status,
-            '--maxResults', max_results,
-            '--maxTime', max_time,
-            '--start', start,
-            '--size', size,
-            '--realm', realm,
             '--output-format', 'json'
         ]
+
+        if max_results is not None:
+            cmd.extend(['--maxResults', max_results])
+
+        if max_time is not None:
+            cmd.extend(['--maxTime', max_time])
+
+        if start is not None:
+            cmd.extend(['--start', start])
+
+        if size is not None:
+            cmd.extend(['--size', size])
+
+        if realm is not None:
+            cmd.extend(['--realm', realm])
 
         print('Command: %s' % ' '.join(cmd))
         result = subprocess.run(cmd, stdout=subprocess.PIPE, check=True)
@@ -674,7 +684,7 @@ class KeyClient(object):
 
         cmd = [
             'pki',
-            '-d', self.connection.certdb_dir,
+            '-d', self.connection.nssdb_dir,
             '-C', self.connection.password_file,
             '-n', self.connection.nickname,
             '--ignore-cert-status', 'UNTRUSTED_ISSUER',
@@ -966,7 +976,7 @@ class KeyClient(object):
             # submit archival request
             cmd = [
                 'pki',
-                '-d', self.connection.certdb_dir,
+                '-d', self.connection.nssdb_dir,
                 '-C', self.connection.password_file,
                 '-n', self.connection.nickname,
                 '--ignore-cert-status', 'UNTRUSTED_ISSUER',
@@ -1078,7 +1088,7 @@ class KeyClient(object):
             # submit retrieval request
             cmd = [
                 'pki',
-                '-d', self.connection.certdb_dir,
+                '-d', self.connection.nssdb_dir,
                 '-C', self.connection.password_file,
                 '-n', self.connection.nickname,
                 '--ignore-cert-status', 'UNTRUSTED_ISSUER',

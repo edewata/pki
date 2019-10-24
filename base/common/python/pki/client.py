@@ -136,7 +136,7 @@ class PKIConnection:
         if username is not None and password is not None:
             self.session.auth = (username, password)
 
-    def set_authentication_cert(self, pem_cert_path, pem_key_path=None, nickname=None):
+    def set_authentication_cert(self, pem_cert_path, pem_key_path=None):
         """
         Set the path to the PEM file containing the certificate and private key
         for the client certificate to be used for authentication to the server,
@@ -159,10 +159,12 @@ class PKIConnection:
         else:
             self.session.cert = pem_cert_path
 
+    def import_cert(self, nickname, cert, key):
+
         # TODO: create nssdb if doesn't exist yet
-        self.nssdb_dir = self.crypto.nssdb_dir
-        self.password_file = self.crypto.password_file
         self.nickname = nickname
+        self.nssdb_dir = self.crypto.certdb_dir
+        self.password_file = self.crypto.password_file
 
         tmpdir = tempfile.mkdtemp()
         try:
@@ -173,8 +175,8 @@ class PKIConnection:
                 'openssl',
                 'pkcs12',
                 '-export',
-                '-in', pem_cert_path,
-                '-inkey', pem_key_path,
+                '-in', cert,
+                '-inkey', key,
                 '-out', tmp_p12,
                 '-name', nickname,
                 '-passout', 'file:' + self.password_file

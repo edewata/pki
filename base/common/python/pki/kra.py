@@ -77,10 +77,7 @@ class KRAClient(object):
             self.crypto = connection.crypto
 
         (client_cert, client_key) = connection.session.cert
-        connection.set_authentication_cert(
-            pem_cert_path=client_cert,
-            pem_key_path=client_key,
-            nickname='client')
+        connection.import_cert('client', client_cert, client_key)
 
         self.info = InfoClient(connection)
         self.keys = key.KeyClient(

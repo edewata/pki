@@ -157,6 +157,7 @@ class NSSCryptoProvider(CryptoProvider):
         """
         CryptoProvider.__init__(self)
         self.certdb_dir = certdb_dir
+        self.password_file = password_file
 
         if certdb_password:
             self.certdb_password = certdb_password
