@@ -529,6 +529,12 @@ public class ACMEEngine implements ServletContextListener {
         logger.info("Valid order: " + orderID);
     }
 
+    public ACMEOrder getOrder(ACMEAccount account, String orderID) throws Exception {
+        ACMEOrder order = database.getOrder(orderID);
+        validateOrder(account, order);
+        return order;
+    }
+
     public ACMEOrder getOrderByAuthorization(ACMEAccount account, URI authzURL) throws Exception {
         ACMEOrder order = database.getOrderByAuthorization(authzURL);
         validateOrder(account, order);
