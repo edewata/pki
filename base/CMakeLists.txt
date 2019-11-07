@@ -199,6 +199,14 @@ find_file(MONGO_JAR
         /usr/share/java
 )
 
+find_file(POSTGRESQL_JAR
+    NAMES
+        postgresql.jar
+    PATHS
+        /usr/share/java/postgresql-jdbc
+        /usr/share/java
+)
+
 find_file(RESTEASY_JAXRS_JAR
     NAMES
         resteasy-jaxrs.jar

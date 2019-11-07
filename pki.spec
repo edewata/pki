@@ -371,6 +371,7 @@ BuildRequires:    nss-tools
 BuildRequires:    openssl
 
 BuildRequires:    mongo-java-driver
+BuildRequires:    postgresql-jdbc
 
 # description for top-level package (if there is a separate meta package)
 %if "%{name}" != "%{vendor_id}-pki"
@@ -729,6 +730,7 @@ Requires:         tomcatjss >= 7.4.1
 %endif
 
 Requires:         mongo-java-driver
+Requires:         postgresql-jdbc
 
 # https://pagure.io/freeipa/issue/7742
 %if 0%{?rhel}
