@@ -6,8 +6,6 @@
 package org.dogtagpki.acme.database;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 
 import org.bson.Document;
@@ -72,63 +70,6 @@ public class MongoDatabase extends ACMEDatabase {
 
     public void close() throws Exception {
         mongoClient.close();
-    }
-
-    public Collection<ACMENonce> getNonces() throws Exception {
-
-        try {
-            MongoCollection<Document> nonces = mongoDatabase.getCollection("nonces");
-
-            FindIterable<Document> documents = nonces.find();
-
-            MongoCursor<Document> cursor = documents.iterator();
-
-            Collection<ACMENonce> list = new ArrayList<>();
-            while (cursor.hasNext()) {
-                Document document = cursor.next();
-                String json = document.toJson();
-                logger.info("Mongo nonce: " + json);
-
-                ACMENonce nonce = ACMENonce.fromJSON(json);
-                logger.info("ACME nonce: " + nonce.toJSON());
-
-                list.add(nonce);
-            }
-
-            return list;
-
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            throw e;
-        }
-    }
-
-    public ACMENonce getNonce(String value) throws Exception {
-
-        try {
-            MongoCollection<Document> nonces = mongoDatabase.getCollection("nonces");
-
-            Bson query = Filters.eq("value", value);
-            FindIterable<Document> documents = nonces.find(query);
-
-            MongoCursor<Document> cursor = documents.iterator();
-            if (!cursor.hasNext()) {
-                return null;
-            }
-
-            Document document = cursor.next();
-            String json = document.toJson();
-            logger.info("Mongo nonce: " + json);
-
-            ACMENonce nonce = ACMENonce.fromJSON(json);
-            logger.info("ACME nonce: " + nonce.toJSON());
-
-            return nonce;
-
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            throw e;
-        }
     }
 
     public void addNonce(ACMENonce nonce) throws Exception {

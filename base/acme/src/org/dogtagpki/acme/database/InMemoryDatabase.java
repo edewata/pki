@@ -6,7 +6,6 @@
 package org.dogtagpki.acme.database;
 
 import java.net.URI;
-import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,14 +25,6 @@ public class InMemoryDatabase extends ACMEDatabase {
     private Map<String, ACMEAccount> accounts = new ConcurrentHashMap<>();
     private Map<String, ACMEOrder> orders = new ConcurrentHashMap<>();
     private Map<String, ACMEAuthorization> authorizations = new ConcurrentHashMap<>();
-
-    public Collection<ACMENonce> getNonces() throws Exception {
-        return nonces.values();
-    }
-
-    public ACMENonce getNonce(String value) throws Exception {
-        return nonces.get(value);
-    }
 
     public void addNonce(ACMENonce nonce) throws Exception {
         nonces.put(nonce.getValue(), nonce);
