@@ -1,60 +1,60 @@
-create table "nonces" (
-    "value"   varchar primary key,
-    "expires" timestamp not null
+CREATE TABLE nonces (
+    "value"   VARCHAR PRIMARY KEY,
+    "expires" TIMESTAMP NOT NULL
 );
 
-create table "accounts" (
-    "id"     varchar primary key,
-    "status" varchar not null,
-    "orders" varchar not null,
-    "jwk" varchar not null
+CREATE TABLE accounts (
+    "id"     VARCHAR PRIMARY KEY,
+    "status" VARCHAR NOT NULL,
+    "orders" VARCHAR NOT NULL,
+    "jwk" VARCHAR NOT NULL
 );
 
-create table "account_contacts" (
-    "account_id" varchar not null,
-    "contact"    varchar not null
+CREATE TABLE account_contacts (
+    "account_id" VARCHAR NOT NULL,
+    "contact"    VARCHAR NOT NULL
 );
 
-create table "orders" (
-    "id"          varchar primary key,
-    "account_id"  varchar not null,
-    "status"      varchar not null,
-    "expires"     timestamp not null,
-    "not_before"  timestamp,
-    "not_after"   timestamp,
-    "finalize"    varchar,
-    "csr"         varchar,
-    "certificate" varchar,
-    "resource"    varchar
+CREATE TABLE orders (
+    "id"          VARCHAR primary key,
+    "account_id"  VARCHAR NOT NULL,
+    "status"      VARCHAR NOT NULL,
+    "expires"     TIMESTAMP NOT NULL,
+    "not_before"  TIMESTAMP,
+    "not_after"   TIMESTAMP,
+    "finalize"    VARCHAR,
+    "csr"         VARCHAR,
+    "certificate" VARCHAR,
+    "resource"    VARCHAR
 );
 
-create table "order_identifiers" (
-    "order_id" varchar not null,
-    "type"     varchar not null,
-    "value"    varchar not null
+CREATE TABLE order_identifiers (
+    "order_id" VARCHAR NOT NULL,
+    "type"     VARCHAR NOT NULL,
+    "value"    VARCHAR NOT NULL
 );
 
-create table "order_authorizations" (
-    "order_id" varchar not null,
-    "url"    varchar not null
+CREATE TABLE order_authorizations (
+    "order_id" VARCHAR NOT NULL,
+    "url"    VARCHAR NOT NULL
 );
 
-create table "authorizations" (
-    "id"               varchar primary key,
-    "account_id"       varchar not null,
-    "status"           varchar not null,
-    "expires"          timestamp not null,
-    "identifier_type"  varchar,
-    "identifier_value" varchar,
-    "wildcard"         boolean
+CREATE TABLE authorizations (
+    "id"               VARCHAR primary key,
+    "account_id"       VARCHAR NOT NULL,
+    "status"           VARCHAR NOT NULL,
+    "expires"          TIMESTAMP NOT NULL,
+    "identifier_type"  VARCHAR,
+    "identifier_value" VARCHAR,
+    "wildcard"         BOOLEAN
 );
 
-create table "authorization_challenges" (
-    "id"         varchar not null,
-    "authz_id"   varchar not null,
-    "type"       varchar not null,
-    "url"        varchar not null,
-    "token"      varchar not null,
-    "status"     varchar not null,
-    "validated"  timestamp
+CREATE TABLE authorization_challenges (
+    "id"         VARCHAR NOT NULL,
+    "authz_id"   VARCHAR NOT NULL,
+    "type"       VARCHAR NOT NULL,
+    "url"        VARCHAR NOT NULL,
+    "token"      VARCHAR NOT NULL,
+    "status"     VARCHAR NOT NULL,
+    "validated"  TIMESTAMP
 );
