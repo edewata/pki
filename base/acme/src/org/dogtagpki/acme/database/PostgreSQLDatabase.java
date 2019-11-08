@@ -5,6 +5,7 @@
 //
 package org.dogtagpki.acme.database;
 
+import java.io.FileReader;
 import java.net.URI;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -33,6 +34,7 @@ public class PostgreSQLDatabase extends ACMEDatabase {
 
     public static org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(PostgreSQLDatabase.class);
 
+    protected Properties statements = new Properties();
     protected Connection connection;
 
     public void init() throws Exception {
@@ -65,6 +67,19 @@ public class PostgreSQLDatabase extends ACMEDatabase {
         } finally {
             if (rs != null) rs.close();
         }
+
+        String statementsFilename = info.getProperty("statements",
+                "/usr/share/pki/acme/conf/database/postgresql/statements.sql");
+        logger.info("Statements:");
+
+        try (FileReader reader = new FileReader(statementsFilename)) {
+            statements.load(reader);
+        }
+
+        for (String name : statements.stringPropertyNames()) {
+            String value = statements.getProperty(name);
+            logger.info("- " + name + ": " + value);
+        }
     }
 
     public void close() throws Exception {
@@ -75,7 +90,7 @@ public class PostgreSQLDatabase extends ACMEDatabase {
 
         logger.info("Getting nonce " + value);
 
-        String sql = "select \"expires\" from \"nonces\" where \"value\"=?";
+        String sql = statements.getProperty("getNonce");
         logger.info("SQL: " + sql);
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -103,7 +118,7 @@ public class PostgreSQLDatabase extends ACMEDatabase {
         String json = nonce.toJSON();
         logger.info("Adding nonce: " + json);
 
-        String sql = "insert into \"nonces\" (\"value\", \"expires\") values (?, ?)";
+        String sql = statements.getProperty("addNonce");
         logger.info("SQL: " + sql);
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -120,14 +135,11 @@ public class PostgreSQLDatabase extends ACMEDatabase {
     public ACMENonce removeNonce(String value) throws Exception {
 
         ACMENonce nonce = getNonce(value);
-
-        if (nonce == null) {
-            return null;
-        }
+        if (nonce == null) return null;
 
         logger.info("Removing nonce: " + value);
 
-        String sql = "delete from \"nonces\" where \"value\"=?";
+        String sql = statements.getProperty("removeNonce");
         logger.info("SQL: " + sql);
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -144,7 +156,7 @@ public class PostgreSQLDatabase extends ACMEDatabase {
 
         Collection<ACMENonce> list = new ArrayList<>();
 
-        String sql = "select \"value\", \"expires\" from \"nonces\" where \"expires\"<=?";
+        String sql = statements.getProperty("removeExpiredNonces");
         logger.info("SQL: " + sql);
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -178,7 +190,7 @@ public class PostgreSQLDatabase extends ACMEDatabase {
 
         ACMEAccount account = new ACMEAccount();
 
-        String sql = "select \"status\", \"orders\", \"jwk\" from \"accounts\" where \"id\"=?";
+        String sql = statements.getProperty("getAccount");
         logger.info("SQL: " + sql);
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -199,11 +211,18 @@ public class PostgreSQLDatabase extends ACMEDatabase {
             }
         }
 
-        sql = "select \"contact\" from \"account_contacts\" where \"account_id\"=?";
+        getAccountContacts(account);
+
+        return account;
+    }
+
+    public void getAccountContacts(ACMEAccount account) throws Exception {
+
+        String sql = statements.getProperty("getAccountContacts");
         logger.info("SQL: " + sql);
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, accountID);
+            ps.setString(1, account.getID());
 
             try (ResultSet rs = ps.executeQuery()) {
 
@@ -219,8 +238,6 @@ public class PostgreSQLDatabase extends ACMEDatabase {
                 }
             }
         }
-
-        return account;
     }
 
     public void addAccount(ACMEAccount account) throws Exception {
@@ -230,7 +247,7 @@ public class PostgreSQLDatabase extends ACMEDatabase {
         String json = account.toJSON();
         logger.info("Adding account: " + json);
 
-        String sql = "insert into \"accounts\" (\"id\", \"status\", \"orders\", \"jwk\") values (?, ?, ?, ?)";
+        String sql = statements.getProperty("addAccount");
         logger.info("SQL: " + sql);
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -243,20 +260,25 @@ public class PostgreSQLDatabase extends ACMEDatabase {
             ps.executeUpdate();
         }
 
+        addAccountContacts(account);
+    }
+
+    public void addAccountContacts(ACMEAccount account) throws Exception {
+
         String[] contacts = account.getContact();
-        if (contacts != null) {
+        if (contacts == null) return;
+
+        String sql = statements.getProperty("addAccountContacts");
+        logger.info("SQL: " + sql);
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
             for (String contact : contacts) {
 
-                sql = "insert into \"account_contacts\" (\"account_id\", \"contact\") values (?, ?)";
-                logger.info("SQL: " + sql);
+                ps.setString(1, account.getID());
+                ps.setString(2, contact);
 
-                try (PreparedStatement ps = connection.prepareStatement(sql)) {
-
-                    ps.setString(1, accountID);
-                    ps.setString(2, contact);
-
-                    ps.executeUpdate();
-                }
+                ps.executeUpdate();
             }
         }
     }
@@ -267,8 +289,7 @@ public class PostgreSQLDatabase extends ACMEDatabase {
 
         ACMEOrder order = new ACMEOrder();
 
-        String sql = "select \"account_id\", \"status\", \"expires\", \"not_before\", \"not_after\", " +
-                "\"finalize\", \"csr\", \"certificate\", \"resource\" from \"orders\" where \"id\"=?";
+        String sql = statements.getProperty("getOrder");
         logger.info("SQL: " + sql);
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -306,49 +327,8 @@ public class PostgreSQLDatabase extends ACMEDatabase {
             }
         }
 
-        sql = "select \"type\", \"value\" from \"order_identifiers\" where \"order_id\"=?";
-        logger.info("SQL: " + sql);
-
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, orderID);
-
-            try (ResultSet rs = ps.executeQuery()) {
-
-                List<ACMEIdentifier> identifiers = new ArrayList<>();
-
-                while (rs.next()) {
-                    ACMEIdentifier identifier = new ACMEIdentifier();
-                    identifier.setType(rs.getString("type"));
-                    identifier.setValue(rs.getString("value"));
-                    identifiers.add(identifier);
-                }
-
-                if (!identifiers.isEmpty()) {
-                    order.setIdentifiers(identifiers.toArray(new ACMEIdentifier[identifiers.size()]));
-                }
-            }
-        }
-
-        sql = "select \"url\" from \"order_authorizations\" where \"order_id\"=?";
-        logger.info("SQL: " + sql);
-
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, orderID);
-
-            try (ResultSet rs = ps.executeQuery()) {
-
-                List<URI> authorizations = new ArrayList<>();
-
-                while (rs.next()) {
-                    URI authorization = new URI(rs.getString("url"));
-                    authorizations.add(authorization);
-                }
-
-                if (!authorizations.isEmpty()) {
-                    order.setAuthorizations(authorizations.toArray(new URI[authorizations.size()]));
-                }
-            }
-        }
+        getOrderIdentifiers(order);
+        getOrderAuthorizations(order);
 
         return order;
     }
@@ -359,9 +339,7 @@ public class PostgreSQLDatabase extends ACMEDatabase {
 
         ACMEOrder order = new ACMEOrder();
 
-        String sql = "select o.\"id\", o.\"account_id\", o.\"status\", o.\"expires\", o.\"not_before\", o.\"not_after\", " +
-                "o.\"finalize\", o.\"csr\", o.\"certificate\", o.\"resource\" from \"orders\" o, \"order_authorizations\" oa " +
-                "where o.\"id\"=oa.\"order_id\" and oa.\"url\"=?";
+        String sql = statements.getProperty("getOrderByAuthorization");
         logger.info("SQL: " + sql);
 
         String orderID;
@@ -403,11 +381,19 @@ public class PostgreSQLDatabase extends ACMEDatabase {
             }
         }
 
-        sql = "select \"type\", \"value\" from \"order_identifiers\" where \"order_id\"=?";
+        getOrderIdentifiers(order);
+        getOrderAuthorizations(order);
+
+        return order;
+    }
+
+    public void getOrderIdentifiers(ACMEOrder order) throws Exception {
+
+        String sql = statements.getProperty("getOrderIdentifiers");
         logger.info("SQL: " + sql);
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, orderID);
+            ps.setString(1, order.getID());
 
             try (ResultSet rs = ps.executeQuery()) {
 
@@ -425,12 +411,15 @@ public class PostgreSQLDatabase extends ACMEDatabase {
                 }
             }
         }
+    }
 
-        sql = "select \"url\" from \"order_authorizations\" where \"order_id\"=?";
+    public void getOrderAuthorizations(ACMEOrder order) throws Exception {
+
+        String sql = statements.getProperty("getOrderAuthorizations");
         logger.info("SQL: " + sql);
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, orderID);
+            ps.setString(1, order.getID());
 
             try (ResultSet rs = ps.executeQuery()) {
 
@@ -446,8 +435,6 @@ public class PostgreSQLDatabase extends ACMEDatabase {
                 }
             }
         }
-
-        return order;
     }
 
     public void addOrder(ACMEOrder order) throws Exception {
@@ -457,10 +444,7 @@ public class PostgreSQLDatabase extends ACMEDatabase {
         String json = order.toJSON();
         logger.info("Adding order: " + json);
 
-        String sql = "insert into \"orders\" " +
-                "(\"id\", \"account_id\", \"status\", \"expires\", \"not_before\", \"not_after\", " +
-                "\"finalize\", \"csr\", \"certificate\", \"resource\") values " +
-                "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = statements.getProperty("addOrder");
         logger.info("SQL: " + sql);
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -492,38 +476,47 @@ public class PostgreSQLDatabase extends ACMEDatabase {
             ps.executeUpdate();
         }
 
+        addOrderIdentifiers(order);
+        addOrderAuthorizations(order);
+    }
+
+    public void addOrderIdentifiers(ACMEOrder order) throws Exception {
+
         ACMEIdentifier[] identifiers = order.getIdentifiers();
-        if (identifiers != null) {
-            for (ACMEIdentifier identifier : identifiers) {
+        if (identifiers == null) return;
 
-                sql = "insert into \"order_identifiers\" (\"order_id\", \"type\", \"value\") values (?, ?, ?)";
-                logger.info("SQL: " + sql);
+        String sql = statements.getProperty("addOrderIdentifiers");
+        logger.info("SQL: " + sql);
 
-                try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        for (ACMEIdentifier identifier : identifiers) {
 
-                    ps.setString(1, orderID);
-                    ps.setString(2, identifier.getType());
-                    ps.setString(3, identifier.getValue());
+            try (PreparedStatement ps = connection.prepareStatement(sql)) {
 
-                    ps.executeUpdate();
-                }
+                ps.setString(1, order.getID());
+                ps.setString(2, identifier.getType());
+                ps.setString(3, identifier.getValue());
+
+                ps.executeUpdate();
             }
         }
+    }
+
+    public void addOrderAuthorizations(ACMEOrder order) throws Exception {
 
         URI[] authorizations = order.getAuthorizations();
-        if (authorizations != null) {
+        if (authorizations == null) return;
+
+        String sql = statements.getProperty("addOrderAuthorizations");
+        logger.info("SQL: " + sql);
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
             for (URI authorization : authorizations) {
 
-                sql = "insert into \"order_authorizations\" (\"order_id\", \"url\") values (?, ?)";
-                logger.info("SQL: " + sql);
+                ps.setString(1, order.getID());
+                ps.setString(2, authorization.toString());
 
-                try (PreparedStatement ps = connection.prepareStatement(sql)) {
-
-                    ps.setString(1, orderID);
-                    ps.setString(2, authorization.toString());
-
-                    ps.executeUpdate();
-                }
+                ps.executeUpdate();
             }
         }
     }
@@ -535,7 +528,7 @@ public class PostgreSQLDatabase extends ACMEDatabase {
         String json = order.toJSON();
         logger.info("Updating order: " + json);
 
-        String sql = "update \"orders\" set \"status\"=?, \"certificate\"=? where \"id\"=?";
+        String sql = statements.getProperty("updateOrder");
         logger.info("SQL: " + sql);
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -557,8 +550,7 @@ public class PostgreSQLDatabase extends ACMEDatabase {
 
         ACMEAuthorization authorization = new ACMEAuthorization();
 
-        String sql = "select \"account_id\", \"status\", \"expires\", \"identifier_type\", \"identifier_value\", " +
-                "\"wildcard\" from \"authorizations\" where \"id\"=?";
+        String sql = statements.getProperty("getAuthorization");
         logger.info("SQL: " + sql);
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -587,49 +579,18 @@ public class PostgreSQLDatabase extends ACMEDatabase {
             }
         }
 
-        sql = "select \"id\", \"type\", \"url\", \"token\", \"status\", \"validated\" from \"authorization_challenges\" where \"authz_id\"=?";
-        logger.info("SQL: " + sql);
-
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, authzID);
-
-            try (ResultSet rs = ps.executeQuery()) {
-
-                List<ACMEChallenge> challenges = new ArrayList<>();
-
-                while (rs.next()) {
-                    ACMEChallenge challenge = new ACMEChallenge();
-
-                    challenge.setID(rs.getString("id"));
-                    challenge.setAuthzID(authzID);
-                    challenge.setType(rs.getString("type"));
-                    challenge.setURL(new URI(rs.getString("url")));
-                    challenge.setToken(rs.getString("token"));
-                    challenge.setStatus(rs.getString("status"));
-
-                    Timestamp validated = rs.getTimestamp("validated");
-                    challenge.setValidationTime(validated == null ? null : new Date(validated.getTime()));
-
-                    challenges.add(challenge);
-                }
-
-                if (!challenges.isEmpty()) {
-                    authorization.setChallenges(challenges);
-                }
-            }
-        }
+        getAuthorizationChallenges(authorization);
 
         return authorization;
     }
 
     public ACMEAuthorization getAuthorizationByChallenge(URI challengeURI) throws Exception {
 
-        logger.info("Getting authorization: " + challengeURI);
+        logger.info("Getting authorization by challenge: " + challengeURI);
 
         ACMEAuthorization authorization = new ACMEAuthorization();
 
-        String sql = "select a.\"id\", a.\"account_id\", a.\"status\", a.\"expires\", a.\"identifier_type\", a.\"identifier_value\", " +
-                "a.\"wildcard\" from \"authorizations\" a, \"authorization_challenges\" ac where a.\"id\"=ac.\"authz_id\" and ac.\"url\"=?";
+        String sql = statements.getProperty("getAuthorizationByChallenge");
         logger.info("SQL: " + sql);
 
         String authzID;
@@ -661,11 +622,18 @@ public class PostgreSQLDatabase extends ACMEDatabase {
             }
         }
 
-        sql = "select \"id\", \"type\", \"url\", \"token\", \"status\", \"validated\" from \"authorization_challenges\" where \"authz_id\"=?";
+        getAuthorizationChallenges(authorization);
+
+        return authorization;
+    }
+
+    public void getAuthorizationChallenges(ACMEAuthorization authorization) throws Exception {
+
+        String sql = statements.getProperty("getAuthorizationChallenges");
         logger.info("SQL: " + sql);
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, authzID);
+            ps.setString(1, authorization.getID());
 
             try (ResultSet rs = ps.executeQuery()) {
 
@@ -675,7 +643,7 @@ public class PostgreSQLDatabase extends ACMEDatabase {
                     ACMEChallenge challenge = new ACMEChallenge();
 
                     challenge.setID(rs.getString("id"));
-                    challenge.setAuthzID(authzID);
+                    challenge.setAuthzID(authorization.getAccountID());
                     challenge.setType(rs.getString("type"));
                     challenge.setURL(new URI(rs.getString("url")));
                     challenge.setToken(rs.getString("token"));
@@ -692,8 +660,6 @@ public class PostgreSQLDatabase extends ACMEDatabase {
                 }
             }
         }
-
-        return authorization;
     }
 
     public void addAuthorization(ACMEAuthorization authorization) throws Exception {
@@ -703,9 +669,7 @@ public class PostgreSQLDatabase extends ACMEDatabase {
         String json = authorization.toJSON();
         logger.info("Adding authorization: " + json);
 
-        String sql = "insert into \"authorizations\" " +
-                "(\"id\", \"account_id\", \"status\", \"expires\", \"identifier_type\", \"identifier_value\", \"wildcard\") values " +
-                "(?, ?, ?, ?, ?, ?, ?)";
+        String sql = statements.getProperty("addAuthorization");
         logger.info("SQL: " + sql);
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -727,31 +691,7 @@ public class PostgreSQLDatabase extends ACMEDatabase {
             ps.executeUpdate();
         }
 
-        Collection<ACMEChallenge> challenges = authorization.getChallenges();
-        if (challenges != null) {
-            for (ACMEChallenge challenge : challenges) {
-
-                sql = "insert into \"authorization_challenges\" (\"id\", \"authz_id\", \"type\", \"url\", " +
-                        "\"token\", \"status\", \"validated\") values " +
-                        "(?, ?, ?, ?, ?, ?, ?)";
-                logger.info("SQL: " + sql);
-
-                try (PreparedStatement ps = connection.prepareStatement(sql)) {
-
-                    ps.setString(1, challenge.getID());
-                    ps.setString(2, authzID);
-                    ps.setString(3, challenge.getType());
-                    ps.setString(4, challenge.getURL().toString());
-                    ps.setString(5, challenge.getToken());
-                    ps.setString(6, challenge.getStatus());
-
-                    Date validationTime = challenge.getValidationTime();
-                    ps.setTimestamp(7, validationTime == null ? null : new Timestamp(validationTime.getTime()));
-
-                    ps.executeUpdate();
-                }
-            }
-        }
+        addAuthorizationChallenges(authorization);
     }
 
     public void updateAuthorization(ACMEAuthorization authorization) throws Exception {
@@ -761,7 +701,7 @@ public class PostgreSQLDatabase extends ACMEDatabase {
         String json = authorization.toJSON();
         logger.info("Updating authorization: " + json);
 
-        String sql = "update \"authorizations\" set \"status\"=? where \"id\"=?";
+        String sql = statements.getProperty("updateAuthorization");
         logger.info("SQL: " + sql);
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -772,39 +712,46 @@ public class PostgreSQLDatabase extends ACMEDatabase {
             ps.executeUpdate();
         }
 
-        sql = "delete from \"authorization_challenges\" where \"authz_id\"=?";
+        deleteAuthorizationChallenges(authorization);
+        addAuthorizationChallenges(authorization);
+    }
+
+    public void deleteAuthorizationChallenges(ACMEAuthorization authorization) throws Exception {
+
+        String sql = statements.getProperty("deleteAuthorizationChallenges");
         logger.info("SQL: " + sql);
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
 
-            ps.setString(1, authzID);
+            ps.setString(1, authorization.getID());
 
             ps.executeUpdate();
         }
+    }
+
+    public void addAuthorizationChallenges(ACMEAuthorization authorization) throws Exception {
 
         Collection<ACMEChallenge> challenges = authorization.getChallenges();
-        if (challenges != null) {
+        if (challenges == null) return;
+
+        String sql = statements.getProperty("addAuthorizationChallenges");
+        logger.info("SQL: " + sql);
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
             for (ACMEChallenge challenge : challenges) {
 
-                sql = "insert into \"authorization_challenges\" (\"id\", \"authz_id\", \"type\", \"url\", " +
-                        "\"token\", \"status\", \"validated\") values " +
-                        "(?, ?, ?, ?, ?, ?, ?)";
-                logger.info("SQL: " + sql);
+                ps.setString(1, challenge.getID());
+                ps.setString(2, authorization.getID());
+                ps.setString(3, challenge.getType());
+                ps.setString(4, challenge.getURL().toString());
+                ps.setString(5, challenge.getToken());
+                ps.setString(6, challenge.getStatus());
 
-                try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                Date validationTime = challenge.getValidationTime();
+                ps.setTimestamp(7, validationTime == null ? null : new Timestamp(validationTime.getTime()));
 
-                    ps.setString(1, challenge.getID());
-                    ps.setString(2, authzID);
-                    ps.setString(3, challenge.getType());
-                    ps.setString(4, challenge.getURL().toString());
-                    ps.setString(5, challenge.getToken());
-                    ps.setString(6, challenge.getStatus());
-
-                    Date validationTime = challenge.getValidationTime();
-                    ps.setTimestamp(7, validationTime == null ? null : new Timestamp(validationTime.getTime()));
-
-                    ps.executeUpdate();
-                }
+                ps.executeUpdate();
             }
         }
     }
