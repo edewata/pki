@@ -341,6 +341,8 @@ public class PKIConnection {
                 socket = new SSLSocket(sock, hostName, callback, null);
             }
 
+            socket.setUseClientMode(true);
+
             // SSLSocket.setSSLVersionRange() needs to be exposed in JSS
             // socket.setSSLVersionRange(SSLVersionRange.tls1_0, SSLVersionRange.tls1_2);
 
@@ -348,6 +350,7 @@ public class PKIConnection {
             if (certNickname != null) {
                 logger.info("Client certificate: "+certNickname);
                 socket.setClientCertNickname(certNickname);
+                socket.requestClientAuth(true);
             }
 
             socket.addSocketListener(new SSLSocketListener() {
@@ -385,6 +388,9 @@ public class PKIConnection {
                 }
 
             });
+
+            logger.debug("Options: " + socket.getSSLOptions());
+            logger.debug("Status: " + socket.getStatus());
             return socket;
         }
 
