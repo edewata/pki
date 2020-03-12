@@ -7,10 +7,14 @@ package org.dogtagpki.server.rest;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.Response;
 
+import com.netscape.certsrv.base.BadRequestException;
+import com.netscape.certsrv.base.PKIException;
 import com.netscape.certsrv.base.ResourceNotFoundException;
 import com.netscape.certsrv.system.DomainInfo;
 import com.netscape.certsrv.system.SecurityDomainHost;
@@ -74,5 +78,67 @@ public class SecurityDomainHostService extends PKIService implements SecurityDom
         }
 
         throw new ResourceNotFoundException("Security domain host not found: " + hostID);
+    }
+
+    @Override
+    public Response addHost(SecurityDomainHost host) throws Exception {
+
+        String hostID = host.getId();
+        logger.info("SecurityDomainService: Adding security domain host \"" + hostID + "\"");
+
+        // Host ID: <type> <hostname> <port>
+        Pattern pattern = Pattern.compile("^(\\S+) (\\S+) (\\d+)$");
+        Matcher matcher = pattern.matcher(hostID);
+
+        if (!matcher.find()) {
+            throw new BadRequestException("Invalid security domain host: " + hostID);
+        }
+
+        String type = matcher.group(1);
+        logger.debug("SecurityDomainService: type: " + type);
+
+        String hostname = matcher.group(2);
+        logger.debug("SecurityDomainService: hostname: " + hostname);
+
+        String port = matcher.group(3);
+        logger.debug("SecurityDomainService: port: " + port);
+
+        String unsecurePort = host.getPort();
+        logger.debug("SecurityDomainService: unsecure port: " + unsecurePort);
+
+        String eeCAPort = host.getSecureEEClientAuthPort();
+        logger.debug("SecurityDomainService: EE port: " + eeCAPort);
+
+        String adminSecurePort = host.getSecureAdminPort();
+        logger.debug("SecurityDomainService: admin port: " + adminSecurePort);
+
+        String agentSecurePort = host.getSecureAgentPort();
+        logger.debug("SecurityDomainService: agent port: " + agentSecurePort);
+
+        String domainManager = host.getDomainManager();
+        logger.debug("SecurityDomainService: domain manager: " + domainManager);
+
+        String clone = host.getClone();
+        logger.debug("SecurityDomainService: clone: " + clone);
+
+        SecurityDomainProcessor processor = new SecurityDomainProcessor(getLocale(headers));
+        String status = processor.addHost(
+                hostID,
+                type,
+                hostname,
+                port,
+                unsecurePort,
+                eeCAPort,
+                adminSecurePort,
+                agentSecurePort,
+                domainManager,
+                clone);
+        logger.debug("SecurityDomainService: status: " + status);
+
+        if (!SecurityDomainProcessor.SUCCESS.equals(status)) {
+            throw new PKIException("Unable to remove security domain host: " + hostID);
+        }
+
+        return createNoContentResponse();
     }
 }
