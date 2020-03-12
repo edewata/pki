@@ -83,14 +83,14 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         instance = pki.server.instance.PKIInstance(deployer.mdict['pki_instance_name'])
         instance.load()
 
-        # If this is the last remaining PKI instance, ALWAYS remove the
-        # link to start configured PKI instances upon system reboot
+        # If this is the last subsystem, shutdown and disable the instance
         if deployer.instance.pki_instance_subsystems() == 0:
-            instance.disable()
 
-        # Start this Tomcat PKI Process back if there are any subsystems still existing
-        if len(deployer.instance.tomcat_instance_subsystems()) >= 1:
-            instance.start()
+            logger.info('Shutting down server')
+            instance.stop()
+
+            logger.info('Disabling server')
+            instance.disable()
 
         logger.info(log.PKIDESTROY_END_MESSAGE_2,
                     deployer.mdict['pki_subsystem'],

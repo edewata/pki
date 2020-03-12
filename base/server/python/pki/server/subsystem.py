@@ -416,8 +416,8 @@ class PKISubsystem(object):
 
         self.instance.deploy_webapp(self.name, self.default_context_xml, doc_base)
 
-    def disable(self):
-        self.instance.undeploy_webapp(self.name)
+    def disable(self, force=False):
+        self.instance.undeploy_webapp(self.name, force=force)
 
     def open_database(self, name='internaldb', bind_dn=None,
                       bind_password=None):

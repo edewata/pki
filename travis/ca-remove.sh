@@ -1,3 +1,5 @@
 #!/bin/bash -ex
 
-pkidestroy -i pkitest -s CA
+pki securitydomain-host-find
+
+pkidestroy -v -i pkitest -s CA

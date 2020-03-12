@@ -21,7 +21,6 @@
 # System Imports
 from __future__ import absolute_import
 import logging
-import os
 
 import pki
 import pki.server.instance
@@ -47,6 +46,8 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         instance = pki.server.instance.PKIInstance(deployer.mdict['pki_instance_name'])
         instance.load()
 
+        subsystem = instance.get_subsystem(deployer.mdict['pki_subsystem'].lower())
+
         # Create subsystem webapps folder to store custom webapps:
         # <instance>/<subsystem>/webapps.
         deployer.directory.create(
@@ -56,27 +57,17 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         deployer.directory.set_mode(
             deployer.mdict['pki_tomcat_subsystem_webapps_path'])
 
-        # Deploy web application directly from /usr/share/pki.
-        instance.deploy_webapp(
-            deployer.mdict['pki_subsystem'].lower(),
-            os.path.join(
-                config.PKI_DEPLOYMENT_SOURCE_ROOT,
-                deployer.mdict['pki_subsystem'].lower(),
-                "conf",
-                "Catalina",
-                "localhost",
-                deployer.mdict['pki_subsystem'].lower() + ".xml"))
+        # Deploy web application
+        subsystem.enable()
 
     def destroy(self, deployer):
 
         logger.info('Undeploying /%s web application', deployer.mdict['pki_subsystem'].lower())
 
-        # Delete <instance>/Catalina/localhost/<subsystem>.xml
-        pki.util.remove(
-            path=os.path.join(
-                deployer.mdict['pki_instance_configuration_path'],
-                "Catalina",
-                "localhost",
-                deployer.mdict['pki_subsystem'].lower() + ".xml"),
+        instance = pki.server.instance.PKIInstance(deployer.mdict['pki_instance_name'])
+        instance.load()
+
+        subsystem = instance.get_subsystem(deployer.mdict['pki_subsystem'].lower())
+        subsystem.disable(
             force=deployer.mdict['pki_force_destroy']
         )

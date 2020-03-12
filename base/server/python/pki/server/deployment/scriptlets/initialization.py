@@ -221,7 +221,3 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             # If it is a normal destroy, pass any exception
             if not deployer.mdict['pki_force_destroy']:
                 raise
-
-        finally:
-            # ALWAYS Stop this Tomcat PKI Process
-            instance.stop()
