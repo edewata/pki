@@ -35,6 +35,7 @@ endif(WITH_SYSTEMD_NOTIFICATION)
 install(
     FILES
         Dockerfile
+        README.md
     DESTINATION
         ${DATA_INSTALL_DIR}/ca/
 )

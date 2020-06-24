@@ -42,6 +42,9 @@ RUN ln -s /usr/share/java/postgresql-jdbc/postgresql.jar /usr/share/pki/server/c
 COPY RPMS /tmp/RPMS/
 RUN dnf localinstall -y /tmp/RPMS/* && rm -rf /tmp/RPMS
 
+# Install README.md
+RUN cp /usr/share/pki/ca/README.md .
+
 # Create PKI server
 RUN pki-server create tomcat@pki --user tomcat --group root
 
