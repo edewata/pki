@@ -383,6 +383,7 @@ if (BUILD_PKI_CORE OR BUILD_PKI_CONSOLE)
 
         add_subdirectory(server)
 
+        add_subdirectory(acme)
         add_subdirectory(ca)
         add_subdirectory(kra)
         add_subdirectory(ocsp)
@@ -392,21 +393,23 @@ if (BUILD_PKI_CORE OR BUILD_PKI_CONSOLE)
         # required for native 'tpsclient' utility
         add_subdirectory(tps-client)
 
-        add_subdirectory(acme)
-
         list(APPEND PKI_JAVADOC_SOURCEPATH
-            ${CMAKE_SOURCE_DIR}/base/server/src)
+            ${CMAKE_SOURCE_DIR}/base/server/src
+            ${CMAKE_SOURCE_DIR}/base/acme/src/main/java)
 
         list(APPEND PKI_JAVADOC_SUBPACKAGES
-            com.netscape.cms)
+            com.netscape.cms
+            org.dogtagpki.acme)
 
         list(APPEND PKI_JAVADOC_CLASSPATH
             ${PKI_TOMCAT_JAR}
-            ${PKI_CMS_JAR})
+            ${PKI_CMS_JAR}
+            ${PKI_ACME_JAR})
 
         list(APPEND PKI_JAVADOC_DEPENDS
             pki-tomcat-jar
             pki-cms-jar
+            pki-acme-jar
             pki-ca-jar
             pki-kra-jar
             pki-ocsp-jar
