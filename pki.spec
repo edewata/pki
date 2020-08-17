@@ -165,7 +165,7 @@ BuildRequires:    ldapjdk >= 4.22.0
 BuildRequires:    apache-commons-cli
 BuildRequires:    apache-commons-codec
 BuildRequires:    apache-commons-io
-BuildRequires:    apache-commons-lang
+BuildRequires:    apache-commons-lang3 >= 3.10
 BuildRequires:    apache-commons-net
 BuildRequires:    jakarta-commons-httpclient
 BuildRequires:    glassfish-jaxb-api
@@ -407,7 +407,7 @@ Requires:         java-headless >= %{min_java_version}
 Requires:         apache-commons-cli
 Requires:         apache-commons-codec
 Requires:         apache-commons-io
-Requires:         apache-commons-lang
+Requires:         apache-commons-lang3 >= 3.10
 Requires:         apache-commons-logging
 Requires:         apache-commons-net
 Requires:         jakarta-commons-httpclient

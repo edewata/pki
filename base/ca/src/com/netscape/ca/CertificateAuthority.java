@@ -49,7 +49,7 @@ import java.util.Vector;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.dogtag.util.cert.CertUtil;
 import org.dogtagpki.legacy.ca.CAPolicy;
 import org.dogtagpki.legacy.policy.IPolicyProcessor;

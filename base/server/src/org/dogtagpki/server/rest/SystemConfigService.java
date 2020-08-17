@@ -20,7 +20,7 @@ package org.dogtagpki.server.rest;
 import java.security.KeyPair;
 import java.security.Principal;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.dogtagpki.server.ca.ICertificateAuthority;
 import org.mozilla.jss.CryptoManager;
 import org.mozilla.jss.crypto.CryptoToken;
