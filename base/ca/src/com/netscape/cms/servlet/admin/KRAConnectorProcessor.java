@@ -20,7 +20,7 @@ package com.netscape.cms.servlet.admin;
 import java.util.ArrayList;
 import java.util.Locale;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.dogtagpki.server.ca.ICAService;
 import org.dogtagpki.server.ca.ICertificateAuthority;
 
