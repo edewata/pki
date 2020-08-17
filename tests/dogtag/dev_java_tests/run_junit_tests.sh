@@ -55,7 +55,7 @@ run_dev_junit_tests() {
     CLASSPATH=$CLASSPATH:/usr/share/java/jakarta-commons-httpclient.jar
     CLASSPATH=$CLASSPATH:/usr/share/java/jaxb-api.jar
     CLASSPATH=$CLASSPATH:/usr/share/java/ldapjdk.jar
-    CLASSPATH=$CLASSPATH:/usr/share/java/apache-commons-lang.jar
+    CLASSPATH=$CLASSPATH:/usr/share/java/apache-commons-lang3.jar
     CLASSPATH=$CLASSPATH:/usr/share/java/istack-commons-runtime.jar
     CLASSPATH=$CLASSPATH:/usr/share/java/servlet.jar
     CLASSPATH=$CLASSPATH:/usr/share/java/velocity.jar

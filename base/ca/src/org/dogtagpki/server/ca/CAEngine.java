@@ -21,7 +21,7 @@ package org.dogtagpki.server.ca;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.mozilla.jss.netscape.security.x509.CertificateChain;
 
 import com.netscape.ca.CertificateAuthority;
