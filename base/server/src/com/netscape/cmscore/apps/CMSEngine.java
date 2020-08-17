@@ -39,7 +39,7 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.http.HttpServlet;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.net.jss.TomcatJSS;
 import org.dogtagpki.server.PKIServerSocketListener;
 import org.dogtagpki.server.ca.ICertificateAuthority;
