@@ -34,6 +34,17 @@ endif(WITH_SYSTEMD_NOTIFICATION)
 
 install(
     DIRECTORY
+        bin/
+    DESTINATION
+        ${DATA_INSTALL_DIR}/ca/bin/
+    FILE_PERMISSIONS
+        OWNER_EXECUTE OWNER_READ
+        GROUP_EXECUTE GROUP_READ
+        WORLD_EXECUTE WORLD_READ
+)
+
+install(
+    DIRECTORY
         conf/
     DESTINATION
         ${DATA_INSTALL_DIR}/ca/conf/
