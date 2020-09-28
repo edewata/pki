@@ -24,6 +24,24 @@ add_custom_command(
     COMMAND ln -sf /usr/share/java/pki/pki-ca.jar ${CMAKE_CURRENT_BINARY_DIR}/webapp/lib/pki-ca.jar
 )
 
+install(
+    DIRECTORY
+        bin/
+    DESTINATION
+        ${DATA_INSTALL_DIR}/ca/bin/
+    FILE_PERMISSIONS
+        OWNER_EXECUTE OWNER_READ
+        GROUP_EXECUTE GROUP_READ
+        WORLD_EXECUTE WORLD_READ
+)
+
+install(
+    DIRECTORY
+        exts/
+    DESTINATION
+        ${DATA_INSTALL_DIR}/ca/exts/
+)
+
 # install directories
 install(
     DIRECTORY
