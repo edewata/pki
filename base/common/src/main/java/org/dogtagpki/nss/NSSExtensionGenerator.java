@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 
 import org.mozilla.jss.netscape.security.extensions.AuthInfoAccessExtension;
 import org.mozilla.jss.netscape.security.extensions.ExtendedKeyUsageExtension;
+import org.mozilla.jss.netscape.security.extensions.OCSPNoCheckExtension;
 import org.mozilla.jss.netscape.security.pkcs.PKCS10;
 import org.mozilla.jss.netscape.security.util.ObjectIdentifier;
 import org.mozilla.jss.netscape.security.util.Utils;
@@ -341,6 +342,9 @@ public class NSSExtensionGenerator {
             } else if ("clientAuth".equals(option)) {
                 oids.add(ObjectIdentifier.getObjectIdentifier("1.3.6.1.5.5.7.3.2"));
 
+            } else if ("OCSPSigning".equals(option)) {
+                oids.add(ObjectIdentifier.getObjectIdentifier("1.3.6.1.5.5.7.3.9"));
+
             } else {
                 throw new Exception("Unsupported extended key usage: " + option);
             }
@@ -413,6 +417,16 @@ public class NSSExtensionGenerator {
         return new CertificatePoliciesExtension(infos);
     }
 
+    public OCSPNoCheckExtension createOCSPNoCheckExtension() throws Exception {
+
+        String noCheck = getParameter("noCheck");
+        if (noCheck == null) return null;
+
+        logger.info("Creating OCSP No Check extension");
+
+        return new OCSPNoCheckExtension();
+    }
+
     public CertificateExtensions createExtensions() throws Exception {
         return createExtensions(null, null);
     }
@@ -456,6 +470,11 @@ public class NSSExtensionGenerator {
         CertificatePoliciesExtension certificatePoliciesExtension = createCertificatePoliciesExtension();
         if (certificatePoliciesExtension != null) {
             extensions.parseExtension(certificatePoliciesExtension);
+        }
+
+        OCSPNoCheckExtension ocspNoCheckExtension = createOCSPNoCheckExtension();
+        if (ocspNoCheckExtension != null) {
+            extensions.parseExtension(ocspNoCheckExtension);
         }
 
         return extensions;

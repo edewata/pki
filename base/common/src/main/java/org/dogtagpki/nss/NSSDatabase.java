@@ -40,6 +40,7 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Set;
@@ -53,6 +54,7 @@ import org.mozilla.jss.CryptoManager;
 import org.mozilla.jss.netscape.security.extensions.AccessDescription;
 import org.mozilla.jss.netscape.security.extensions.AuthInfoAccessExtension;
 import org.mozilla.jss.netscape.security.extensions.ExtendedKeyUsageExtension;
+import org.mozilla.jss.netscape.security.extensions.OCSPNoCheckExtension;
 import org.mozilla.jss.netscape.security.pkcs.PKCS10;
 import org.mozilla.jss.netscape.security.util.Cert;
 import org.mozilla.jss.netscape.security.util.DerOutputStream;
@@ -667,6 +669,10 @@ public class NSSDatabase {
                 logger.info("- clientAuth");
                 options.add("clientAuth");
 
+            } else if (ObjectIdentifier.getObjectIdentifier("1.3.6.1.5.5.7.3.9").equals(oid)) {
+                logger.info("- OCSPSigning");
+                options.add("ocspResponder");
+
             } else {
                 throw new Exception("Unsupported extended key usage: " + oid);
             }
@@ -759,10 +765,45 @@ public class NSSDatabase {
         stdin.println();
     }
 
+    /**
+     * This method provides the arguments and the standard input for certutil
+     * to create a cert/CSR with OCSP No Check extension.
+     *
+     * @param cmd certutil command and arguments
+     * @param stdin certutil's standard input
+     * @param extension The extension to add
+     * @param tmpDir Temporary directory to store extension value
+     */
+    public void addOCSPNoCheckExtension(
+            List<String> cmd,
+            PrintWriter stdin,
+            OCSPNoCheckExtension extension,
+            Path tmpDir) throws Exception {
+
+        logger.info("Adding OCSP No Check extension:");
+
+        cmd.add("--extGeneric");
+
+        ObjectIdentifier oid = extension.getExtensionId();
+        logger.info("- OID: " + oid);
+
+        boolean critical = extension.isCritical();
+        logger.info("- critical: " + critical);
+        String flag = critical ? "critical" : "not-critical";
+
+        byte[] value = extension.getExtensionValue();
+        logger.info("- value: " + (value == null ? null : Utils.base64encodeSingleLine(value)));
+        Path file = tmpDir.resolve("ocsp-no-check.ext");
+        Files.write(file, value);
+
+        cmd.add(oid + ":" + flag + ":" + file);
+    }
+
     public void addExtensions(
             List<String> cmd,
             StringWriter sw,
-            CertificateExtensions extensions) throws Exception {
+            CertificateExtensions extensions,
+            Path tmpDir) throws Exception {
 
         PrintWriter stdin = new PrintWriter(sw, true);
 
@@ -795,6 +836,10 @@ public class NSSDatabase {
             } else if (extension instanceof CertificatePoliciesExtension) {
                 CertificatePoliciesExtension certificatePoliciesExtension = (CertificatePoliciesExtension) extension;
                 addCertificatePoliciesExtension(cmd, stdin, certificatePoliciesExtension);
+
+            } else if (extension instanceof OCSPNoCheckExtension) {
+                OCSPNoCheckExtension ocspNoCheckExtension = (OCSPNoCheckExtension) extension;
+                addOCSPNoCheckExtension(cmd, stdin, ocspNoCheckExtension, tmpDir);
             }
         }
     }
@@ -826,12 +871,11 @@ public class NSSDatabase {
             logger.info("- curve: " + curve);
         }
 
-        Path csrPath = null;
-        Path passwordPath = null;
-        Path noisePath = null;
+        Path tmpDir = null;
 
         try {
-            csrPath = Files.createTempFile("nss-request-", ".csr", FILE_PERMISSIONS);
+            tmpDir = Files.createTempDirectory("pki-nss-", FILE_PERMISSIONS);
+            Path csrPath = tmpDir.resolve("request.der");
 
             // TODO: Use JSS to generate the request.
 
@@ -847,7 +891,7 @@ public class NSSDatabase {
                 String password = passwordStore.getPassword("internal", 0);
 
                 if (password != null) {
-                    passwordPath = Files.createTempFile("nss-password-", ".txt", FILE_PERMISSIONS);
+                    Path passwordPath = tmpDir.resolve("password.txt");
                     logger.info("Storing password into " + passwordPath);
 
                     Files.write(passwordPath, password.getBytes());
@@ -886,7 +930,7 @@ public class NSSDatabase {
                     cmd.add(curve);
                 }
 
-                noisePath = Files.createTempFile("nss-noise-", ".bin", FILE_PERMISSIONS);
+                Path noisePath = tmpDir.resolve("noise.bin");
                 logger.info("Storing noise into " + noisePath);
 
                 byte[] bytes = new byte[2048];
@@ -906,7 +950,7 @@ public class NSSDatabase {
 
             StringWriter stdin = new StringWriter();
             if (extensions != null) {
-                addExtensions(cmd, stdin, extensions);
+                addExtensions(cmd, stdin, extensions, tmpDir);
             }
 
             debug(cmd);
@@ -930,9 +974,12 @@ public class NSSDatabase {
             return new PKCS10(csrBytes);
 
         } finally {
-            if (noisePath != null) Files.delete(noisePath);
-            if (passwordPath != null) Files.delete(passwordPath);
-            if (csrPath != null) Files.delete(csrPath);
+            if (tmpDir != null) {
+                Files.walk(tmpDir).
+                    sorted(Comparator.reverseOrder()).
+                    map(Path::toFile).
+                    forEach(File::delete);
+            }
         }
     }
 
@@ -942,13 +989,12 @@ public class NSSDatabase {
             Integer monthsValid,
             CertificateExtensions extensions) throws Exception {
 
-        Path csrPath = null;
-        Path certPath = null;
-        Path passwordPath = null;
+        Path tmpDir = null;
 
         try {
-            csrPath = Files.createTempFile("nss-request-", ".csr", FILE_PERMISSIONS);
-            certPath = Files.createTempFile("nss-cert-", ".crt", FILE_PERMISSIONS);
+            tmpDir = Files.createTempDirectory("pki-nss-", FILE_PERMISSIONS);
+            Path csrPath = tmpDir.resolve("request.der");
+            Path certPath = tmpDir.resolve("cert.der");
 
             logger.info("Storing CSR into " + csrPath);
             Files.write(csrPath, pkcs10.toByteArray());
@@ -967,7 +1013,7 @@ public class NSSDatabase {
                 String password = passwordStore.getPassword("internal", 0);
 
                 if (password != null) {
-                    passwordPath = Files.createTempFile("nss-password-", ".txt", FILE_PERMISSIONS);
+                    Path passwordPath = tmpDir.resolve("password.txt");
                     logger.info("Storing password into " + passwordPath);
 
                     Files.write(passwordPath, password.getBytes());
@@ -998,7 +1044,7 @@ public class NSSDatabase {
 
             StringWriter stdin = new StringWriter();
             if (extensions != null) {
-                addExtensions(cmd, stdin, extensions);
+                addExtensions(cmd, stdin, extensions, tmpDir);
             }
 
             debug(cmd);
@@ -1022,9 +1068,12 @@ public class NSSDatabase {
             return new X509CertImpl(certBytes);
 
         } finally {
-            if (passwordPath != null) Files.delete(passwordPath);
-            if (certPath != null) Files.delete(certPath);
-            if (csrPath != null) Files.delete(csrPath);
+            if (tmpDir != null) {
+                Files.walk(tmpDir).
+                    sorted(Comparator.reverseOrder()).
+                    map(Path::toFile).
+                    forEach(File::delete);
+            }
         }
     }
 
