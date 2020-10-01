@@ -33,6 +33,13 @@ add_custom_target(pki-ca-links-systemd-jar ALL
 endif(WITH_SYSTEMD_NOTIFICATION)
 
 install(
+    FILES
+        Dockerfile
+    DESTINATION
+        ${DATA_INSTALL_DIR}/ca/
+)
+
+install(
     DIRECTORY
         bin/
     DESTINATION
