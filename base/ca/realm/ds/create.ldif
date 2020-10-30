@@ -1,0 +1,7 @@
+dn: ou=people,dc=ca,dc=pki,dc=example,dc=com
+objectClass: organizationalUnit
+ou: users
+
+dn: ou=groups,dc=ca,dc=pki,dc=example,dc=com
+objectClass: organizationalUnit
+ou: groups

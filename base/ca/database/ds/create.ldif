@@ -1,0 +1,3 @@
+dn: dc=ca,dc=pki,dc=example,dc=com
+objectClass: domain
+dc: ca

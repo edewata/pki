@@ -83,15 +83,15 @@ def replace_params(line, params=None):
             # replace parameter with value, keep the rest of the line
             line = line[0:begin] + value + line[end + 1:]
 
-            # calculate the new end position
-            end = begin + len(value) + 1
+            # find the next parameter in the remainder of the line
+            begin = line.find('[', begin + len(value))
 
         except KeyError:
             # undefined parameter, skip
-            logger.warning('Ignoring [%s] parameter', line[begin:end + 1])
+            logger.warning('Ignoring %s parameter', line[begin:end + 1])
 
-        # find the next parameter in the remainder of the line
-        begin = line.find('[', end + 1)
+            # find the next parameter in the remainder of the line
+            begin = line.find('[', end + 1)
 
     return line
 

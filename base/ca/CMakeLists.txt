@@ -32,7 +32,27 @@ add_custom_target(pki-ca-links-systemd-jar ALL
 )
 endif(WITH_SYSTEMD_NOTIFICATION)
 
-# install directories
+install(
+    DIRECTORY
+        conf/
+    DESTINATION
+        ${DATA_INSTALL_DIR}/ca/conf/
+)
+
+install(
+    DIRECTORY
+        database/
+    DESTINATION
+        ${DATA_INSTALL_DIR}/ca/database/
+)
+
+install(
+    DIRECTORY
+        realm/
+    DESTINATION
+        ${DATA_INSTALL_DIR}/ca/realm/
+)
+
 install(
     DIRECTORY
         shared/
@@ -56,7 +76,6 @@ install(
         ${DATA_INSTALL_DIR}/ca/webapps/ca/WEB-INF/lib
 )
 
-# install empty directories
 install(
     DIRECTORY
     DESTINATION
@@ -68,4 +87,3 @@ install(
     DESTINATION
         ${VAR_INSTALL_DIR}/run/pki/ca
 )
-
