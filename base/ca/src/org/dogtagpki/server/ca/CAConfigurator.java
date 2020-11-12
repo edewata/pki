@@ -246,7 +246,12 @@ public class CAConfigurator extends Configurator {
 
             certImpl = createRemoteCert(hostname, port, sessionID, profileID, certreq, dnsNames);
 
+        } else if ("remote".equals(certType)) {
+            // issue subordinate CA signing cert using remote root CA
+            certImpl = super.createCert(tag, request, keyPair, certreq, certType, profileID, dnsNames);
+
         } else {
+            // issue other system certs using local root/subordinate CA signing cert
             certImpl = createLocalCert(tag, keyPair, certType, profileID, certreq, dnsNames);
         }
 
