@@ -1,0 +1,187 @@
+name: Cloning Tests
+
+on: [push, pull_request]
+
+jobs:
+    # "Build" job
+    build:
+      # This job tries to build PKI from src on a fresh docker container.
+      # The docker container is spawned by github itself and we merely just
+      # run the build commands. We then upload the artifact for consumption
+      # by the test jobs + for the public to consume. This job **does not**
+      # upload any build logs as they are visible in the log console itself.
+
+      name: Build PKI
+      runs-on: ubuntu-latest
+      container: registry.fedoraproject.org/fedora:${{ matrix.os }}
+      strategy:
+          matrix:
+            os: ['31', '32']
+      steps:
+          - name: Update base image
+            run: |
+                  set -x &&
+                  dnf update -y &&
+                  dnf install -y dnf-plugins-core rpm-build git
+
+          - name: Clone the repository
+            uses: actions/checkout@v2
+
+          - name: Install PKI build deps
+            run: |
+                  dnf copr enable -y @pki/master
+                  dnf builddep -y --allowerasing --spec ./pki.spec
+
+          - name: Build PKI packages
+            run: ./build.sh --with-timestamp --with-commit-id --work-dir=../packages rpm
+
+          - name: Compress RPMS
+            run: tar -czf pki-rpms.tar.gz ../packages/RPMS/*
+
+          # upload-artifact runs on host-vm rather than inside the container. Fixed in v2 (unreleased)
+          # Bug: https://github.com/actions/upload-artifact/issues/13#issuecomment-532936650
+          - name: Upload RPM artifacts
+            uses: actions/upload-artifact@v1
+            with:
+              name: pki-build-${{ matrix.os }}
+              path: pki-rpms.tar.gz
+
+    installation:
+      name: Installation
+      needs: build
+      runs-on: ubuntu-latest
+      env:
+        BUILDDIR: /tmp/workdir
+        PKIDIR: /tmp/workdir/pki
+        LOGS: ${GITHUB_WORKSPACE}/logs.txt
+        COPR_REPO: "@pki/master"
+      strategy:
+        matrix:
+          os: ['31', '32']
+      steps:
+        - name: Clone the repository
+          uses: actions/checkout@v2
+
+        - name: Build PKI container image with systemd
+          run: docker build ci/ -t pki-fedora-${{ matrix.os }} --build-arg OS_VERSION=${{ matrix.os }}
+
+        - name: Create network
+          run: docker network create example.com
+
+        - name: Run master container
+          run: |
+            IMAGE=pki-fedora-${{ matrix.os }} \
+            NAME=master.example.com \
+            HOSTNAME=master.example.com \
+            ci/runner-init.sh
+
+        - name: Connect master container to network
+          run: docker network connect example.com master.example.com
+
+        - name: Download PKI binaries from Build job
+          uses: actions/download-artifact@v1
+          with:
+            name: pki-build-${{ matrix.os }}
+
+        - name: Extract tar.gz for rpms
+          run: tar -xzf pki-build-${{ matrix.os }}/pki-rpms.tar.gz
+
+        - name: Install required packages
+          run: docker exec -i master.example.com dnf install -y findutils dnf-plugins-core wget 389-ds-base
+
+        - name: Enable PKI COPR repo
+          run: docker exec -i master.example.com dnf copr enable -y ${COPR_REPO}
+
+        - name: Install PKI packages
+          run: docker exec -i master.example.com bash -c "find ${PKIDIR} -name '*.rpm' -and -not -name '*debuginfo*' | xargs dnf -y install"
+
+        - name: Install DS in master container
+          run: docker exec -i master.example.com ${PKIDIR}/ci/ds-create.sh
+
+        - name: Install master CA in master container
+          run: docker exec -i master.example.com pkispawn -f ${PKIDIR}/base/server/examples/installation/ca.cfg -s CA -v
+
+        - name: Gather master CA config files
+          if: always()
+          run: docker exec -i master.example.com bash -c "cp -rf /etc/pki /var/log/pki/etc-pki"
+
+        - name: Setup replica container
+          run: |
+            IMAGE=pki-fedora-${{ matrix.os }} \
+            NAME=replica.example.com \
+            HOSTNAME=replica.example.com \
+            ci/runner-init.sh
+
+        - name: Connect replica container to network
+          run: docker network connect example.com replica.example.com
+
+        - name: Install dependencies on replica container
+          run: docker exec -i replica.example.com dnf install -y findutils dnf-plugins-core wget 389-ds-base
+
+        - name: Enable PKI COPR repo on replica container
+          run: docker exec -i replica.example.com dnf copr enable -y ${COPR_REPO}
+
+        - name: Install PKI packages on replica container
+          run: docker exec -i replica.example.com bash -c "find ${PKIDIR} -name '*.rpm' -and -not -name '*debuginfo*' | xargs dnf -y install"
+
+        - name: Install DS in replica container
+          run: docker exec -i replica.example.com ${PKIDIR}/ci/ds-create.sh
+
+        - name: Install CA clone in replica container
+          run: |
+            docker exec -i master.example.com pki-server cert-export ca_signing --cert-file ${PKIDIR}/master-ca_signing.crt
+            docker exec -i master.example.com pki-server ca-clone-prepare --pkcs12-file ${PKIDIR}/master-ca-certs.p12 --pkcs12-password Secret.123
+            docker exec -i replica.example.com cp ${PKIDIR}/master-ca_signing.crt .
+            docker exec -i replica.example.com cp ${PKIDIR}/master-ca-certs.p12 .
+            docker exec -i replica.example.com pkispawn -f ${PKIDIR}/base/server/examples/installation/ca-clone.cfg -s CA -v
+
+        - name: Gather CA clone config files
+          if: always()
+          run: docker exec -i replica.example.com bash -c "cp -rf /etc/pki /var/log/pki/etc-pki"
+
+        - name: Remove CA clone from replica container
+          run: docker exec -i replica.example.com pkidestroy -i pki-tomcat -s CA -v
+
+        - name: Remove DS from replica container
+          run: docker exec -i replica.example.com ${PKIDIR}/ci/ds-remove.sh
+
+        - name: Disconnect replica container from network
+          run: docker network disconnect example.com replica.example.com
+
+        - name: Remove master CA from master container
+          run: docker exec -i master.example.com pkidestroy -i pki-tomcat -s CA -v
+
+        - name: Remove DS from master container
+          run: docker exec -i master.example.com ${PKIDIR}/ci/ds-remove.sh
+
+        - name: Disconnect master container from network
+          run: docker network disconnect example.com master.example.com
+
+        - name: Remove network
+          run: docker network rm example.com
+
+        - name: Gather logs from master container
+          if: always()
+          run: |
+            docker exec -i master.example.com bash -c "journalctl -u pki-tomcatd@pki-tomcat > /var/log/pki/pki-journalctl.log"
+            docker exec -i master.example.com bash -c "tar -czf ${PKIDIR}/master-logs.tar.gz /var/log/pki"
+
+        - name: Upload logs from master container
+          if: always()
+          uses: actions/upload-artifact@v1
+          with:
+            name: master-logs-${{ matrix.os }}
+            path: master-logs.tar.gz
+
+        - name: Gather logs from replica container
+          if: always()
+          run: |
+            docker exec -i replica.example.com bash -c "journalctl -u pki-tomcatd@pki-tomcat > /var/log/pki/pki-journalctl.log"
+            docker exec -i replica.example.com bash -c "tar -czf ${PKIDIR}/replica-logs.tar.gz /var/log/pki"
+
+        - name: Upload logs from replica container
+          if: always()
+          uses: actions/upload-artifact@v1
+          with:
+            name: replica-logs-${{ matrix.os }}
+            path: replica-logs.tar.gz
