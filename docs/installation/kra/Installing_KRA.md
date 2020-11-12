@@ -9,7 +9,8 @@ This page describes the process to install a KRA subsystem.
 KRA Subsystem Installation
 --------------------------
 
-Prepare a file (e.g. kra.cfg) that contains the deployment configuration, for example:
+Prepare a file (e.g. kra.cfg) that contains the deployment configuration.
+A sample deployment configuration is available at [/usr/share/pki/server/examples/installation/kra.cfg](../../../base/server/examples/installation/kra.cfg).
 
 ```
 [DEFAULT]
