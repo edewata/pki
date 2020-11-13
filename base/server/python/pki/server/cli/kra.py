@@ -35,6 +35,7 @@ import pki.server.cli.config
 import pki.server.cli.db
 import pki.server.cli.group
 import pki.server.cli.range
+import pki.server.cli.replication
 import pki.server.cli.user
 import pki.server.instance
 
@@ -53,6 +54,7 @@ class KRACLI(pki.cli.CLI):
         self.add_module(pki.server.cli.db.SubsystemDBCLI(self))
         self.add_module(pki.server.cli.group.GroupCLI(self))
         self.add_module(pki.server.cli.range.RangeCLI(self))
+        self.add_module(pki.server.cli.replication.ReplicationCLI(self))
         self.add_module(pki.server.cli.user.UserCLI(self))
 
 

@@ -887,18 +887,6 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         setup_replication = clone and \
             config.str2bool(deployer.mdict['pki_clone_setup_replication'])
 
-        ds_port = subsystem.config['internaldb.ldapconn.port']
-        secure_conn = subsystem.config['internaldb.ldapconn.secureConn']
-        replication_security = deployer.mdict['pki_clone_replication_security']
-        replication_port = deployer.mdict['pki_clone_replication_clone_port']
-        master_replication_port = deployer.mdict['pki_clone_replication_master_port']
-
-        if replication_port == ds_port and secure_conn == 'true':
-            replication_security = 'SSL'
-
-        elif not replication_security:
-            replication_security = 'None'
-
         # If the database is already replicated but not yet indexed, rebuild the indexes.
 
         rebuild_indexes = config.str2bool(deployer.mdict['pki_clone']) and \
@@ -910,11 +898,27 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             create_database=create_database,
             create_base=create_base,
             create_containers=create_containers,
-            rebuild_indexes=rebuild_indexes,
-            setup_replication=setup_replication,
-            replication_security=replication_security,
-            replication_port=replication_port,
-            master_replication_port=master_replication_port)
+            rebuild_indexes=rebuild_indexes)
+
+        if setup_replication:
+
+            master_replication_port = deployer.mdict['pki_clone_replication_master_port']
+            replication_port = deployer.mdict['pki_clone_replication_clone_port']
+            ds_port = subsystem.config['internaldb.ldapconn.port']
+
+            secure_conn = subsystem.config['internaldb.ldapconn.secureConn']
+            replication_security = deployer.mdict['pki_clone_replication_security']
+
+            if replication_port == ds_port and secure_conn == 'true':
+                replication_security = 'SSL'
+
+            elif not replication_security:
+                replication_security = 'None'
+
+            subsystem.add_replication(
+                master_replication_port=master_replication_port,
+                replication_port=replication_port,
+                replication_security=replication_security)
 
         subsystem.add_vlv()
         subsystem.reindex_vlv()

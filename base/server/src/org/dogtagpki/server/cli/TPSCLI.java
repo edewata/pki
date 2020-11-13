@@ -30,6 +30,7 @@ public class TPSCLI extends CLI {
 
         addModule(new SubsystemDBCLI(this));
         addModule(new SubsystemGroupCLI(this));
+        addModule(new SubsystemReplicationCLI(this));
         addModule(new SubsystemUserCLI(this));
     }
 }
