@@ -16,7 +16,7 @@ jobs:
       container: registry.fedoraproject.org/fedora:${{ matrix.os }}
       strategy:
           matrix:
-            os: ['31', '32']
+            os: ['31', '32', '33']
       steps:
           - name: Update base image
             run: |
@@ -57,7 +57,7 @@ jobs:
         COPR_REPO: "@pki/master"
       strategy:
         matrix:
-          os: ['31', '32']
+          os: ['31', '32', '33']
       steps:
         - name: Clone the repository
           uses: actions/checkout@v2
