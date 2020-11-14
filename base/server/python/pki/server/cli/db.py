@@ -862,7 +862,7 @@ class SubsystemDBInitCLI(pki.cli.CLI):
                 self.print_help()
                 sys.exit(1)
 
-        instance = pki.server.instance.PKIInstance(instance_name)
+        instance = pki.server.instance.PKIServerFactory.create(instance_name)
         if not instance.exists():
             logger.error('Invalid instance: %s', instance_name)
             sys.exit(1)
@@ -1034,7 +1034,7 @@ class SubsystemDBVLVFindCLI(pki.cli.CLI):
                 self.print_help()
                 sys.exit(1)
 
-        instance = pki.server.instance.PKIInstance(instance_name)
+        instance = pki.server.instance.PKIServerFactory.create(instance_name)
 
         if not instance.exists():
             logger.error('Invalid instance: %s', instance_name)
@@ -1109,7 +1109,7 @@ class SubsystemDBVLVAddCLI(pki.cli.CLI):
                 self.print_help()
                 sys.exit(1)
 
-        instance = pki.server.instance.PKIInstance(instance_name)
+        instance = pki.server.instance.PKIServerFactory.create(instance_name)
 
         if not instance.exists():
             logger.error('Invalid instance: %s', instance_name)
@@ -1184,7 +1184,7 @@ class SubsystemDBVLVDeleteCLI(pki.cli.CLI):
                 self.print_help()
                 sys.exit(1)
 
-        instance = pki.server.instance.PKIInstance(instance_name)
+        instance = pki.server.instance.PKIServerFactory.create(instance_name)
 
         if not instance.exists():
             logger.error('Invalid instance: %s', instance_name)
@@ -1259,7 +1259,7 @@ class SubsystemDBVLVReindexCLI(pki.cli.CLI):
                 self.print_help()
                 sys.exit(1)
 
-        instance = pki.server.instance.PKIInstance(instance_name)
+        instance = pki.server.instance.PKIServerFactory.create(instance_name)
 
         if not instance.exists():
             logger.error('Invalid instance: %s', instance_name)
