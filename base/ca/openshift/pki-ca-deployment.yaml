@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: pki-ca
+  name: pki-ca
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pki-ca
+  template:
+    metadata:
+      labels:
+        app: pki-ca
+    spec:
+      containers:
+        - name: pki-ca
+          image: 'quay.io/edewata/pki-ca:latest'
+          imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /var/lib/tomcats/pki/conf/certs
+              name: pki-ca-certs
+            - mountPath: /var/lib/tomcats/pki/conf/ca/database
+              name: pki-ca-database
+            - mountPath: /var/lib/tomcats/pki/conf/ca/realm
+              name: pki-ca-realm
+      volumes:
+        - name: pki-ca-certs
+          secret:
+            secretName: pki-ca-certs
+        - name: pki-ca-database
+          secret:
+            secretName: pki-ca-database
+        - name: pki-ca-realm
+          secret:
+            secretName: pki-ca-realm
+  triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+          - pki-ca
+        from:
+          kind: ImageStreamTag
+          name: 'pki-ca:latest'
+      type: ImageChange
+    - type: ConfigChange
