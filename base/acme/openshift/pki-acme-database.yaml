@@ -7,5 +7,5 @@ stringData:
   class: org.dogtagpki.acme.database.InMemoryDatabase
   # class: org.dogtagpki.acme.database.PostgreSQLDatabase
   # password: Secret.123
-  # url: jdbc:postgresql://postgresql:5432/acme
-  # user: acme
+  # url: jdbc:postgresql://postgresql:5432/pki-acme
+  # user: admin

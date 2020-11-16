@@ -86,9 +86,9 @@ $ podman run \
     --name postgresql \
     --rm \
     --pod pki \
-    -e POSTGRES_USER=acme \
+    -e POSTGRES_USER=admin \
     -e POSTGRES_PASSWORD=Secret.123 \
-    -e POSTGRES_DB=acme \
+    -e POSTGRES_DB=pki-acme \
     -it \
     postgres
 ```
@@ -98,8 +98,8 @@ Prepare a folder (e.g. database) and store the configuration parameters in separ
 For example:
 
 - **class**: org.dogtagpki.acme.database.PostgreSQLDatabase
-- **url**: jdbc:postgresql://localhost.localdomain:5432/acme
-- **user**: acme
+- **url**: jdbc:postgresql://localhost.localdomain:5432/pki-acme
+- **user**: admin
 - **password**: Secret.123
 
 Restart the responder with the following command:
@@ -120,7 +120,7 @@ Verify the database connection with the following command:
 
 ```
 $ podman exec -ti pki-acme \
-    psql postgres://acme:Secret.123@localhost.localdomain/acme
+    psql postgres://admin:Secret.123@localhost.localdomain/pki-acme
 ```
 
 ## Deploying Permanent Realm
@@ -129,8 +129,8 @@ Prepare a folder (e.g. realm) and store the configuration parameters in separate
 For example:
 
 - **class**: org.dogtagpki.acme.realm.PostgreSQLRealm
-- **url**: jdbc:postgresql://localhost.localdomain:5432/acme
-- **user**: acme
+- **url**: jdbc:postgresql://localhost.localdomain:5432/pki-acme
+- **user**: admin
 - **password**: Secret.123
 
 Restart the responder with the following command:

@@ -101,9 +101,9 @@ For example, deploy a PostgreSQL database with the following command:
 
 ```
 $ oc new-app postgresql-persistent \
-    -p POSTGRESQL_USER=acme \
+    -p POSTGRESQL_USER=admin \
     -p POSTGRESQL_PASSWORD=Secret.123 \
-    -p POSTGRESQL_DATABASE=acme
+    -p POSTGRESQL_DATABASE=pki-acme
 ```
 
 Next, configure the PKI ACME responder to use the permanent database.
@@ -132,7 +132,7 @@ Select one of the pods, then execute the following command:
 
 ```
 $ oc rsh <pod name> \
-    psql postgres://acme:Secret.123@postgresql/acme
+    psql postgres://admin:Secret.123@postgresql/pki-acme
 ```
 
 ## Deploying Permanent Realm
