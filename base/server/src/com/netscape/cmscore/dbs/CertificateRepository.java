@@ -25,7 +25,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Random;
 import java.util.Vector;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -43,6 +42,7 @@ import com.netscape.certsrv.base.EBaseException;
 import com.netscape.certsrv.base.IConfigStore;
 import com.netscape.certsrv.base.MetaInfo;
 import com.netscape.certsrv.base.SessionContext;
+import com.netscape.certsrv.dbs.EDBException;
 import com.netscape.certsrv.dbs.EDBRecordNotFoundException;
 import com.netscape.certsrv.dbs.IDBSSession;
 import com.netscape.certsrv.dbs.IDBSearchResults;
@@ -109,7 +109,6 @@ public class CertificateRepository extends Repository {
     private int mTransitMaxRecords = 1000000;
     private int mTransitRecordPageSize = 200;
 
-    public Random random;
     private int mBitLength = 0;
     private BigInteger mRangeSize = null;
     private int mMinRandomBitLength = 4;
@@ -126,12 +125,11 @@ public class CertificateRepository extends Repository {
      * Constructs a certificate repository.
      */
     public CertificateRepository(DBSubsystem dbSubsystem, String certRepoBaseDN, int increment, String baseDN)
-            throws Exception {
+            throws EDBException {
         super(dbSubsystem, increment, baseDN);
         mBaseDN = certRepoBaseDN;
         this.dbSubsystem = dbSubsystem;
         mDBConfig = dbSubsystem.getDBConfigStore();
-        random = SecureRandom.getInstance("pkcs11prng", "Mozilla-JSS");
     }
 
     /**
@@ -299,8 +297,6 @@ public class CertificateRepository extends Repository {
     public synchronized BigInteger getNextSerialNumber()
             throws EBaseException {
 
-        return new BigInteger(160, random);
-/*
         BigInteger nextSerialNumber = null;
         BigInteger randomNumber = null;
 
@@ -340,7 +336,6 @@ public class CertificateRepository extends Repository {
         }
 
         return nextSerialNumber;
-*/
     }
 
     public void updateCounter() {
