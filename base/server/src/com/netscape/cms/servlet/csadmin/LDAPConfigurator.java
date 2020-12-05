@@ -117,28 +117,18 @@ public class LDAPConfigurator {
         importLDIF("/usr/share/pki/" + subsystem + "/conf/index.ldif", true);
     }
 
-    public void rebuildIndexes(String subsystem) throws Exception {
+    public void rebuildIndexes(File file) throws Exception {
 
         logger.info("Rebuilding indexes");
 
-        File file = new File("/usr/share/pki/" + subsystem + "/conf/indextasks.ldif");
-        File tmpFile = File.createTempFile("pki-" + subsystem + "-reindex-", ".ldif");
+        LDIF ldif = new LDIF(file.getAbsolutePath());
+        LDIFRecord record = ldif.nextRecord();
+        if (record == null) return;
 
-        try {
-            customizeFile(file, tmpFile);
+        importLDIFRecord(record, false);
 
-            LDIF ldif = new LDIF(tmpFile.getAbsolutePath());
-            LDIFRecord record = ldif.nextRecord();
-            if (record == null) return;
-
-            importLDIFRecord(record, false);
-
-            String dn = record.getDN();
-            waitForTask(dn);
-
-        } finally {
-            tmpFile.delete();
-        }
+        String dn = record.getDN();
+        waitForTask(dn);
     }
 
     public void setupDatabaseManager() throws Exception {

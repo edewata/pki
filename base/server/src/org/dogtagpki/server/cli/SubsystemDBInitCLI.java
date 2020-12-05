@@ -145,7 +145,16 @@ public class SubsystemDBInitCLI extends CommandCLI {
             ldapConfigurator.createIndexes(subsystem);
 
             if (cmd.hasOption("rebuild-indexes")) {
-                ldapConfigurator.rebuildIndexes(subsystem);
+
+                File file = new File("/usr/share/pki/" + subsystem + "/conf/indextasks.ldif");
+                File tmpFile = File.createTempFile("pki-" + subsystem + "-reindex-", ".ldif");
+
+                try {
+                    ldapConfigurator.customizeFile(file, tmpFile);
+                    ldapConfigurator.rebuildIndexes(tmpFile);
+                } finally {
+                    tmpFile.delete();
+                }
             }
 
             ldapConfigurator.setupDatabaseManager();
