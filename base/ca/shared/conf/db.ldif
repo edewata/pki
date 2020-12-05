@@ -21,7 +21,7 @@ objectClass: groupOfUniqueNames
 cn: Registration Manager Agents
 description: Agents for Registration Manager
 
-dn: cn=Subsystem Group, ou=groups, {rootSuffix}
+dn: cn=Subsystem Group,ou=groups,{rootSuffix}
 objectClass: top
 objectClass: groupOfUniqueNames
 cn: Subsystem Group
@@ -126,7 +126,7 @@ objectClass: repository
 ou: crlIssuingPoints
 serialno: 010
 
-dn: ou=ca, ou=requests,{rootSuffix}
+dn: ou=ca,ou=requests,{rootSuffix}
 objectClass: top
 objectClass: repository
 ou: ca
@@ -145,17 +145,17 @@ objectClass: top
 objectClass: organizationalUnit
 ou: ranges
 
-dn: ou=replica, ou=ranges,{rootSuffix}
+dn: ou=replica,ou=ranges,{rootSuffix}
 objectClass: top
 objectClass: organizationalUnit
 ou: replica
 
-dn: ou=requests, ou=ranges,{rootSuffix}
+dn: ou=requests,ou=ranges,{rootSuffix}
 objectClass: top
 objectClass: organizationalUnit
 ou: requests
 
-dn: ou=certificateRepository, ou=ranges,{rootSuffix}
+dn: ou=certificateRepository,ou=ranges,{rootSuffix}
 objectClass: top
 objectClass: organizationalUnit
 ou: certificateRepository
