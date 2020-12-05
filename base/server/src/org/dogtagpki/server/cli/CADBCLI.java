@@ -34,6 +34,7 @@ public class CADBCLI extends CLI {
         addModule(new SubsystemDBRemoveCLI(this));
         addModule(new CADBUpgradeCLI(this));
 
+        addModule(new SubsystemDBACLCLI(this));
         addModule(new SubsystemDBVLVCLI(this));
     }
 }

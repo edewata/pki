@@ -1,4 +1,4 @@
-# acis for cert manager
+# Add ACIs for database manager
 
 dn: {rootSuffix}
 changetype: modify

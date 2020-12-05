@@ -140,11 +140,6 @@ public class LDAPConfigurator {
         waitForTask(dn);
     }
 
-    public void setupDatabaseManager() throws Exception {
-        logger.info("Setting up database manager");
-        importLDIF("/usr/share/pki/server/conf/manager.ldif", true);
-    }
-
     public List<LDAPEntry> findVLVs() throws Exception {
 
         String database = config.getDatabase();

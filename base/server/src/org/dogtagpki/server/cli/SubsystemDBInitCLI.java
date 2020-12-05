@@ -157,8 +157,6 @@ public class SubsystemDBInitCLI extends CommandCLI {
                 }
             }
 
-            ldapConfigurator.setupDatabaseManager();
-
         } finally {
             conn.disconnect();
         }

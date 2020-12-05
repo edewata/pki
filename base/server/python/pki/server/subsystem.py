@@ -936,6 +936,30 @@ class PKISubsystem(object):
 
         self.run(cmd, as_current_user=as_current_user)
 
+    def add_database_acl(self, as_current_user=False):
+
+        cmd = [self.name + '-db-acl-add']
+
+        if logger.isEnabledFor(logging.DEBUG):
+            cmd.append('--debug')
+
+        elif logger.isEnabledFor(logging.INFO):
+            cmd.append('--verbose')
+
+        self.run(cmd, as_current_user=as_current_user)
+
+    def delete_database_acl(self, as_current_user=False):
+
+        cmd = [self.name + '-db-acl-del']
+
+        if logger.isEnabledFor(logging.DEBUG):
+            cmd.append('--debug')
+
+        elif logger.isEnabledFor(logging.INFO):
+            cmd.append('--verbose')
+
+        self.run(cmd, as_current_user=as_current_user)
+
     def add_replication(
             self,
             master_replication_port=None,
