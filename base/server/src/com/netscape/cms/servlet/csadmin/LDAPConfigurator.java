@@ -110,17 +110,44 @@ public class LDAPConfigurator {
 
     public void createContainers(String subsystem) throws Exception {
         logger.info("Creating container entries");
-        importLDIF("/usr/share/pki/" + subsystem + "/conf/db.ldif", true);
+
+        File file = new File("/usr/share/pki/" + subsystem + "/conf/db.ldif");
+        File tmpFile = File.createTempFile(file.getName(), ".tmp");
+
+        try {
+            customizeFile(file, tmpFile);
+            importLDIF(tmpFile, true);
+        } finally {
+            tmpFile.delete();
+        }
     }
 
     public void setupACL(String subsystem) throws Exception {
         logger.info("Setting up ACL");
-        importLDIF("/usr/share/pki/" + subsystem + "/conf/acl.ldif", true);
+
+        File file = new File("/usr/share/pki/" + subsystem + "/conf/acl.ldif");
+        File tmpFile = File.createTempFile(file.getName(), ".tmp");
+
+        try {
+            customizeFile(file, tmpFile);
+            importLDIF(tmpFile, true);
+        } finally {
+            tmpFile.delete();
+        }
     }
 
     public void createIndexes(String subsystem) throws Exception {
         logger.info("Creating indexes");
-        importLDIF("/usr/share/pki/" + subsystem + "/conf/index.ldif", true);
+
+        File file = new File("/usr/share/pki/" + subsystem + "/conf/index.ldif");
+        File tmpFile = File.createTempFile(file.getName(), ".tmp");
+
+        try {
+            customizeFile(file, tmpFile);
+            importLDIF(tmpFile, true);
+        } finally {
+            tmpFile.delete();
+        }
     }
 
     public void rebuildIndexes(File file) throws Exception {
@@ -163,7 +190,16 @@ public class LDAPConfigurator {
 
     public void addVLVs(String subsystem) throws Exception {
         logger.info("Add VLVs");
-        importLDIF("/usr/share/pki/" + subsystem + "/conf/vlv.ldif", true);
+
+        File file = new File("/usr/share/pki/" + subsystem + "/conf/vlv.ldif");
+        File tmpFile = File.createTempFile(file.getName(), ".tmp");
+
+        try {
+            customizeFile(file, tmpFile);
+            importLDIF(tmpFile, true);
+        } finally {
+            tmpFile.delete();
+        }
     }
 
     public void deleteVLVs() throws Exception {
@@ -180,15 +216,21 @@ public class LDAPConfigurator {
     }
 
     public void reindexVLVs(String subsystem) throws Exception {
-
         logger.info("Reindex VLVs");
 
-        Collection<LDIFRecord> records = importLDIF(
-                "/usr/share/pki/" + subsystem + "/conf/vlvtasks.ldif", false);
+        File file = new File("/usr/share/pki/" + subsystem + "/conf/vlvtasks.ldif");
+        File tmpFile = File.createTempFile(file.getName(), ".tmp");
 
-        for (LDIFRecord record : records) {
-            String dn = record.getDN();
-            waitForTask(dn);
+        try {
+            customizeFile(file, tmpFile);
+            Collection<LDIFRecord> records = importLDIF(tmpFile, true);
+
+            for (LDIFRecord record : records) {
+                String dn = record.getDN();
+                waitForTask(dn);
+            }
+        } finally {
+            tmpFile.delete();
         }
     }
 
@@ -423,30 +465,20 @@ public class LDAPConfigurator {
         }
     }
 
-    public Collection<LDIFRecord> importLDIF(String filename, boolean ignoreErrors) throws Exception {
+    public Collection<LDIFRecord> importLDIF(File file, boolean ignoreErrors) throws Exception {
 
-        logger.info("Importing " + filename);
-
-        File file = new File(filename);
-        File tmpFile = File.createTempFile("pki-import-", ".ldif");
+        logger.info("Importing " + file.getAbsolutePath());
 
         Collection<LDIFRecord> records = new ArrayList<>();
 
-        try {
-            customizeFile(file, tmpFile);
+        LDIF ldif = new LDIF(file.getAbsolutePath());
 
-            LDIF ldif = new LDIF(tmpFile.getAbsolutePath());
+        while (true) {
+            LDIFRecord record = ldif.nextRecord();
+            if (record == null) break;
 
-            while (true) {
-                LDIFRecord record = ldif.nextRecord();
-                if (record == null) break;
-
-                records.add(record);
-                importLDIFRecord(record, ignoreErrors);
-            }
-
-        } finally {
-            tmpFile.delete();
+            records.add(record);
+            importLDIFRecord(record, ignoreErrors);
         }
 
         return records;
