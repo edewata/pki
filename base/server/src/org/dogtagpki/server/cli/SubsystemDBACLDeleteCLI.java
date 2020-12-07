@@ -6,8 +6,10 @@
 package org.dogtagpki.server.cli;
 
 import java.io.File;
+import java.util.Map;
 
 import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
 import org.apache.tomcat.util.net.jss.TomcatJSS;
 import org.dogtagpki.cli.CLI;
 import org.dogtagpki.cli.CommandCLI;
@@ -27,6 +29,9 @@ import com.netscape.cmscore.ldapconn.LdapBoundConnection;
 import com.netscape.cmscore.ldapconn.LdapConnInfo;
 import com.netscape.cmscore.ldapconn.PKISocketConfig;
 import com.netscape.cmscore.ldapconn.PKISocketFactory;
+import com.netscape.cmscore.usrgrp.UGSubsystem;
+import com.netscape.cmscore.usrgrp.UGSubsystemConfig;
+import com.netscape.cmsutil.ldap.LDAPUtil;
 import com.netscape.cmsutil.password.IPasswordStore;
 import com.netscape.cmsutil.password.PasswordStoreConfig;
 
@@ -38,16 +43,32 @@ public class SubsystemDBACLDeleteCLI extends CommandCLI {
     public static Logger logger = LoggerFactory.getLogger(SubsystemDBACLDeleteCLI.class);
 
     public SubsystemDBACLDeleteCLI(CLI parent) {
-        super("del", "Delete " + parent.parent.parent.getName().toUpperCase() + " database ACLs", parent);
+        super("del", "Delete " + parent.parent.parent.getName().toUpperCase() + " manager ACLs", parent);
+    }
+
+    public void createOptions() {
+        Option option = new Option(null, "user-id", true, "User ID");
+        option.setArgName("ID");
+        options.addOption(option);
+
+        option = new Option(null, "user-dn", true, "User DN");
+        option.setArgName("DN");
+        options.addOption(option);
     }
 
     public void execute(CommandLine cmd) throws Exception {
 
+        String userID = cmd.getOptionValue("user-id");
+        String userDN = cmd.getOptionValue("user-dn");
+
+        if (userID == null && userDN == null) {
+            throw new Exception("Missing user ID or DN");
+        }
+
         String catalinaBase = System.getProperty("catalina.base");
-        String serverXml = catalinaBase + "/conf/server.xml";
 
         TomcatJSS tomcatjss = TomcatJSS.getInstance();
-        tomcatjss.loadTomcatConfig(serverXml);
+        tomcatjss.loadConfig();
         tomcatjss.init();
 
         String subsystem = parent.parent.parent.getName();
@@ -92,20 +113,33 @@ public class SubsystemDBACLDeleteCLI extends CommandCLI {
         LdapBoundConnection conn = new LdapBoundConnection(socketFactory, connInfo, authInfo);
         LDAPConfigurator ldapConfigurator = new LDAPConfigurator(conn, ldapConfig, instanceId);
 
+        UGSubsystemConfig ugConfig = cs.getUGSubsystemConfig();
+        UGSubsystem ugSubsystem = new UGSubsystem();
+
         try {
-            logger.info("Deleting database ACLs");
+            Map<String, String> params = ldapConfigurator.getParams();
+
+            if (userID != null) {
+                ugSubsystem.init(socketConfig, ugConfig, passwordStore);
+                userDN = "uid=" + LDAPUtil.escapeRDNValue(userID) + "," + ugSubsystem.getUserBaseDN();
+            }
+
+            params.put("dbuser", userDN);
+
+            logger.info("Deleting ACLs for " + userDN);
 
             File file = new File("/usr/share/pki/server/conf/manager-acl-del.ldif");
             File tmpFile = File.createTempFile("manager-acl-del-", ".ldif");
 
             try {
-                ldapConfigurator.customizeFile(file, tmpFile);
+                ldapConfigurator.customizeFile(file, tmpFile, params);
                 ldapConfigurator.importLDIF(tmpFile, true);
             } finally {
                 tmpFile.delete();
             }
 
         } finally {
+            ugSubsystem.shutdown();
             conn.disconnect();
         }
     }

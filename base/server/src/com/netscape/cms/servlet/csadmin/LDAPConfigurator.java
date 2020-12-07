@@ -72,9 +72,6 @@ public class LDAPConfigurator {
 
         String database = config.getDatabase();
         params.put("database", database);
-
-        String dbuser = config.getDBUser("uid=pkidbuser,ou=people," + baseDN);
-        params.put("dbuser", dbuser);
     }
 
     public LDAPConfigurator(LDAPConnection connection, LDAPConfig config, String instanceID) throws Exception {

@@ -936,7 +936,7 @@ class PKISubsystem(object):
 
         self.run(cmd, as_current_user=as_current_user)
 
-    def add_database_acl(self, as_current_user=False):
+    def add_manager_acl(self, user_id=None, user_dn=None, as_current_user=False):
 
         cmd = [self.name + '-db-acl-add']
 
@@ -946,9 +946,15 @@ class PKISubsystem(object):
         elif logger.isEnabledFor(logging.INFO):
             cmd.append('--verbose')
 
+        if user_id:
+            cmd.extend(['--user-id', user_id])
+
+        elif user_dn:
+            cmd.extend(['--user-dn', user_dn])
+
         self.run(cmd, as_current_user=as_current_user)
 
-    def delete_database_acl(self, as_current_user=False):
+    def delete_manager_acl(self, user_id=None, user_dn=None, as_current_user=False):
 
         cmd = [self.name + '-db-acl-del']
 
@@ -957,6 +963,12 @@ class PKISubsystem(object):
 
         elif logger.isEnabledFor(logging.INFO):
             cmd.append('--verbose')
+
+        if user_id:
+            cmd.extend(['--user-id', user_id])
+
+        elif user_dn:
+            cmd.extend(['--user-dn', user_dn])
 
         self.run(cmd, as_current_user=as_current_user)
 

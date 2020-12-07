@@ -981,14 +981,16 @@ class SubsystemDBACLAddCLI(pki.cli.CLI):
     def __init__(self, parent):
         super(SubsystemDBACLAddCLI, self).__init__(
             'add',
-            'Add %s database ACLs' % parent.parent.parent.name.upper())
+            'Add %s manager ACLs' % parent.parent.parent.name.upper())
 
         self.parent = parent
 
     def print_help(self):
-        print('Usage: pki-server %s-db-acl-add [OPTIONS]' % self.parent.parent.parent.name)
+        print('Usage: pki-server %s-db-acl-add [OPTIONS] ' % self.parent.parent.parent.name)
         print()
         print('  -i, --instance <instance ID>       Instance ID (default: pki-tomcat).')
+        print('      --user-id <ID>                 User ID')
+        print('      --user-dn <DN>                 User ID')
         print('      --as-current-user              Run as current user.')
         print('  -v, --verbose                      Run in verbose mode.')
         print('      --debug                        Run in debug mode.')
@@ -1009,11 +1011,19 @@ class SubsystemDBACLAddCLI(pki.cli.CLI):
 
         instance_name = 'pki-tomcat'
         subsystem_name = self.parent.parent.parent.name
+        user_id = None
+        user_dn = None
         as_current_user = False
 
         for o, a in opts:
             if o in ('-i', '--instance'):
                 instance_name = a
+
+            elif o == '--user-id':
+                user_id = a
+
+            elif o == '--user-dn':
+                user_dn = a
 
             elif o == '--as-current-user':
                 as_current_user = True
@@ -1033,6 +1043,11 @@ class SubsystemDBACLAddCLI(pki.cli.CLI):
                 self.print_help()
                 sys.exit(1)
 
+        if not user_id and not user_dn:
+            logger.error('Missing user ID or DN')
+            self.print_help()
+            sys.exit(1)
+
         instance = pki.server.instance.PKIServerFactory.create(instance_name)
 
         if not instance.exists():
@@ -1048,7 +1063,10 @@ class SubsystemDBACLAddCLI(pki.cli.CLI):
                          subsystem_name.upper(), instance_name)
             sys.exit(1)
 
-        subsystem.add_database_acl(as_current_user=as_current_user)
+        subsystem.add_manager_acl(
+            user_id=user_id,
+            user_dn=user_dn,
+            as_current_user=as_current_user)
 
 
 class SubsystemDBACLDeleteCLI(pki.cli.CLI):
@@ -1056,14 +1074,16 @@ class SubsystemDBACLDeleteCLI(pki.cli.CLI):
     def __init__(self, parent):
         super(SubsystemDBACLDeleteCLI, self).__init__(
             'del',
-            'Delete %s database ACLs' % parent.parent.parent.name.upper())
+            'Delete %s manager ACLs' % parent.parent.parent.name.upper())
 
         self.parent = parent
 
     def print_help(self):
-        print('Usage: pki-server %s-db-acl-del [OPTIONS]' % self.parent.parent.parent.name)
+        print('Usage: pki-server %s-db-acl-del [OPTIONS] ' % self.parent.parent.parent.name)
         print()
         print('  -i, --instance <instance ID>       Instance ID (default: pki-tomcat).')
+        print('      --user-id <ID>                 User ID')
+        print('      --user-dn <DN>                 User ID')
         print('      --as-current-user              Run as current user.')
         print('  -v, --verbose                      Run in verbose mode.')
         print('      --debug                        Run in debug mode.')
@@ -1084,11 +1104,19 @@ class SubsystemDBACLDeleteCLI(pki.cli.CLI):
 
         instance_name = 'pki-tomcat'
         subsystem_name = self.parent.parent.parent.name
+        user_id = None
+        user_dn = None
         as_current_user = False
 
         for o, a in opts:
             if o in ('-i', '--instance'):
                 instance_name = a
+
+            elif o == '--user-id':
+                user_id = a
+
+            elif o == '--user-dn':
+                user_dn = a
 
             elif o == '--as-current-user':
                 as_current_user = True
@@ -1108,6 +1136,11 @@ class SubsystemDBACLDeleteCLI(pki.cli.CLI):
                 self.print_help()
                 sys.exit(1)
 
+        if not user_id and not user_dn:
+            logger.error('Missing user ID or DN')
+            self.print_help()
+            sys.exit(1)
+
         instance = pki.server.instance.PKIServerFactory.create(instance_name)
 
         if not instance.exists():
@@ -1123,7 +1156,10 @@ class SubsystemDBACLDeleteCLI(pki.cli.CLI):
                          subsystem_name.upper(), instance_name)
             sys.exit(1)
 
-        subsystem.delete_database_acl(as_current_user=as_current_user)
+        subsystem.delete_manager_acl(
+            user_id=user_id,
+            user_dn=user_dn,
+            as_current_user=as_current_user)
 
 
 class SubsystemDBVLVCLI(pki.cli.CLI):

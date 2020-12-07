@@ -1865,7 +1865,7 @@ public class UGSubsystem {
     /**
      * Retrieves user base dn.
      */
-    private String getUserBaseDN() {
+    public String getUserBaseDN() {
         return "ou=People," + mBaseDN;
     }
 
@@ -1876,7 +1876,7 @@ public class UGSubsystem {
     /**
      * Retrieves group base dn.
      */
-    private String getGroupBaseDN() {
+    public String getGroupBaseDN() {
         return "ou=Groups," + mBaseDN;
     }
 

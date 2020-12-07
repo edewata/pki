@@ -900,8 +900,6 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             create_containers=create_containers,
             rebuild_indexes=rebuild_indexes)
 
-        subsystem.add_database_acl()
-
         if setup_replication:
 
             master_replication_port = deployer.mdict['pki_clone_replication_master_port']
@@ -1081,6 +1079,11 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         if not config.str2bool(deployer.mdict['pki_share_db']) and not clone:
             logger.info('Setting up database user')
             deployer.setup_database_user(instance, subsystem)
+
+        if not config.str2bool(deployer.mdict['pki_share_db']):
+            subsystem.add_manager_acl(user_id='pkidbuser')
+        else:
+            subsystem.add_manager_acl(user_dn=deployer.mdict['pki_share_dbuser_dn'])
 
         logger.info('Finalizing %s configuration', subsystem.type)
         finalize_config_request = deployer.config_client.create_finalize_config_request()
