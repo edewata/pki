@@ -94,7 +94,16 @@ public class LDAPConfigurator {
 
     public void initDatabase() throws Exception {
         logger.info("Initialize database");
-        importLDIF("/usr/share/pki/server/conf/database.ldif", true);
+
+        File file = new File("/usr/share/pki/server/conf/database.ldif");
+        File tmpFile = File.createTempFile("database-", ".ldif");
+
+        try {
+            customizeFile(file, tmpFile);
+            importLDIF(tmpFile, true);
+        } finally {
+            tmpFile.delete();
+        }
     }
 
     public void setupSchema() throws Exception {
@@ -373,6 +382,11 @@ public class LDAPConfigurator {
     }
 
     public void customizeFile(File file, File tmpFile) throws Exception {
+        Map<String, String> params = getParams();
+        customizeFile(file, tmpFile, params);
+    }
+
+    public void customizeFile(File file, File tmpFile, Map<String, String> params) throws Exception {
 
         logger.info("Creating " + tmpFile);
 
