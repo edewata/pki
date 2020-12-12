@@ -444,21 +444,6 @@ class ConfigurationFile:
                 raise Exception(log.PKI_EXTERNAL_UNSUPPORTED_1,
                                 self.subsystem)
 
-    def confirm_standalone(self):
-        # ALWAYS defined via 'pkiparser.py'
-        if self.standalone:
-            # Only allowed for Stand-alone PKI
-            #
-            # ADD checks for valid types of Stand-alone PKI subsystems here
-            # Java method located in the file called 'SystemConfigService.java'
-            #
-            if self.subsystem != "KRA" and self.subsystem != "OCSP":
-                logger.error(
-                    log.PKI_STANDALONE_UNSUPPORTED_1,
-                    self.subsystem)
-                raise Exception(log.PKI_STANDALONE_UNSUPPORTED_1,
-                                self.subsystem)
-
     def confirm_subordinate(self):
         # ALWAYS defined via 'pkiparser.py'
         if self.subordinate:
@@ -556,7 +541,6 @@ class ConfigurationFile:
         #          'True' or 'False', etc.) of ALL required "value" parameters.
         #
         self.confirm_external()
-        self.confirm_standalone()
         self.confirm_subordinate()
         self.confirm_external_step_two()
         if self.clone:

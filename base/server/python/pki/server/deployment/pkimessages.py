@@ -74,8 +74,6 @@ PKI_EXTERNAL_UNSUPPORTED_1 = \
     "PKI '%s' subsystems do NOT support the 'pki_external' parameter!"
 PKI_EXTERNAL_STEP_TWO_UNSUPPORTED_1 = \
     "PKI '%s' subsystems do NOT support the 'pki_external_step_two' parameter!"
-PKI_STANDALONE_UNSUPPORTED_1 = \
-    "PKI '%s' subsystems do NOT support the 'pki_standalone' parameter!"
 PKI_SUBORDINATE_UNSUPPORTED_1 = \
     "PKI '%s' subsystems do NOT support the 'pki_subordinate' parameter!"
 

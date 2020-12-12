@@ -707,8 +707,6 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         finally:
             nssdb.close()
 
-        create_temp_sslserver_cert = self.create_temp_sslserver_cert(deployer, instance)
-
         server_config = instance.get_server_config()
         unsecurePort = server_config.get_unsecure_port()
         securePort = server_config.get_secure_port()
@@ -721,45 +719,47 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         if not proxySecurePort:
             proxySecurePort = securePort
 
-        if deployer.mdict['pki_security_domain_type'] == 'existing':
+        if not config.str2bool(deployer.mdict['pki_standalone']):
 
-            logger.info('Joining existing domain')
+            if deployer.mdict['pki_security_domain_type'] == 'existing':
 
-            deployer.join_domain()
+                logger.info('Joining existing domain')
 
-            subsystem.configure_security_domain(
-                'existing',
-                deployer.domain_info.id,
-                deployer.sd_host.Hostname,
-                deployer.sd_host.Port,
-                deployer.sd_host.SecurePort)
+                deployer.join_domain()
 
-        elif config.str2bool(deployer.mdict['pki_subordinate']) and \
-                config.str2bool(deployer.mdict['pki_subordinate_create_new_security_domain']):
+                subsystem.configure_security_domain(
+                    'existing',
+                    deployer.domain_info.id,
+                    deployer.sd_host.Hostname,
+                    deployer.sd_host.Port,
+                    deployer.sd_host.SecurePort)
 
-            logger.info('Creating new subordinate security domain')
+            elif config.str2bool(deployer.mdict['pki_subordinate']) and \
+                    config.str2bool(deployer.mdict['pki_subordinate_create_new_security_domain']):
 
-            deployer.join_domain()
+                logger.info('Creating new subordinate security domain')
 
-            subsystem.configure_security_domain(
-                'new',
-                deployer.mdict['pki_subordinate_security_domain_name'],
-                deployer.mdict['pki_hostname'],
-                unsecurePort,
-                securePort)
+                deployer.join_domain()
 
-        else:
+                subsystem.configure_security_domain(
+                    'new',
+                    deployer.mdict['pki_subordinate_security_domain_name'],
+                    deployer.mdict['pki_hostname'],
+                    unsecurePort,
+                    securePort)
 
-            logger.info('Creating new security domain')
+            else:
 
-            subsystem.configure_security_domain(
-                'new',
-                deployer.mdict['pki_security_domain_name'],
-                deployer.mdict['pki_hostname'],
-                unsecurePort,
-                securePort)
+                logger.info('Creating new security domain')
 
-        subsystem.config['service.securityDomainPort'] = securePort
+                subsystem.configure_security_domain(
+                    'new',
+                    deployer.mdict['pki_security_domain_name'],
+                    deployer.mdict['pki_hostname'],
+                    unsecurePort,
+                    securePort)
+
+            subsystem.config['service.securityDomainPort'] = securePort
 
         hierarchy = subsystem.config.get('hierarchy.select')
         issuing_ca = deployer.mdict['pki_issuing_ca']
@@ -829,6 +829,8 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
                 nssdb.close()
 
         subsystem.save()
+
+        create_temp_sslserver_cert = self.create_temp_sslserver_cert(deployer, instance)
 
         if clone:
 
@@ -1001,6 +1003,26 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             logger.info('Setting up admin user')
             deployer.setup_admin(subsystem, client)
 
+            # if not config.str2bool(deployer.mdict['pki_standalone']):
+
+            #     if subsystem.config['securitydomain.select'] == 'new':
+
+            #         uid = deployer.mdict['pki_admin_uid']
+
+            #         groups = [
+            #             'Security Domain Administrators',
+            #             'Enterprise CA Administrators',
+            #             'Enterprise KRA Administrators',
+            #             'Enterprise RA Administrators',
+            #             'Enterprise TKS Administrators',
+            #             'Enterprise OCSP Administrators',
+            #             'Enterprise TPS Administrators'
+            #         ]
+
+            #         for group in groups:
+            #             logger.info('Adding %s into %s', uid, group)
+            #             subsystem.add_group_member(group, uid)
+
         if config.str2bool(deployer.mdict['pki_backup_keys']):
 
             # by default store the backup file in the NSS databases directory
@@ -1025,28 +1047,30 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
                 if sd_host.DomainManager and sd_host.DomainManager.lower() == 'true':
                     domain_manager = True
 
-        if deployer.mdict['pki_security_domain_type'] == 'existing':
-            logger.info('Joining security domain')
-            subsystem.join_security_domain(
-                deployer.install_token,
-                deployer.mdict['pki_subsystem_name'],
-                deployer.mdict['pki_hostname'],
-                unsecure_port=proxyUnsecurePort,
-                secure_port=proxySecurePort,
-                domain_manager=domain_manager,
-                clone=clone)
+        if not config.str2bool(deployer.mdict['pki_standalone']):
 
-        else:
-            logger.info('Creating security domain')
-            subsystem.create_security_domain()
+            if deployer.mdict['pki_security_domain_type'] == 'existing':
+                logger.info('Joining security domain')
+                subsystem.join_security_domain(
+                    deployer.install_token,
+                    deployer.mdict['pki_subsystem_name'],
+                    deployer.mdict['pki_hostname'],
+                    unsecure_port=proxyUnsecurePort,
+                    secure_port=proxySecurePort,
+                    domain_manager=domain_manager,
+                    clone=clone)
 
-            logger.info('Adding security domain manager')
-            subsystem.add_security_domain_host(
-                deployer.mdict['pki_subsystem_name'],
-                deployer.mdict['pki_hostname'],
-                unsecure_port=proxyUnsecurePort,
-                secure_port=proxySecurePort,
-                domain_manager=True)
+            else:
+                logger.info('Creating security domain')
+                subsystem.create_security_domain()
+
+                logger.info('Adding security domain manager')
+                subsystem.add_security_domain_host(
+                    deployer.mdict['pki_subsystem_name'],
+                    deployer.mdict['pki_hostname'],
+                    unsecure_port=proxyUnsecurePort,
+                    secure_port=proxySecurePort,
+                    domain_manager=True)
 
         if not config.str2bool(deployer.mdict['pki_share_db']) and not clone:
             logger.info('Setting up database user')

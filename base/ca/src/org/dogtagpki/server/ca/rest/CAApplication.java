@@ -31,7 +31,7 @@ public class CAApplication extends Application {
     private Set<Object> singletons = new LinkedHashSet<Object>();
     private Set<Class<?>> classes = new LinkedHashSet<Class<?>>();
 
-    public CAApplication() {
+    public CAApplication() throws Exception {
 
         // account
         classes.add(AccountService.class);
@@ -86,13 +86,7 @@ public class CAApplication extends Application {
 
         // if server is configured, check security domain selection
         if (state == 1) {
-            String select;
-            try {
-                select = cs.getString("securitydomain.select");
-            } catch (EBaseException e) {
-                logger.error("CAApplication: " + e.getMessage(), e);
-                throw new RuntimeException(e);
-            }
+            String select = cs.getString("securitydomain.select", null);
 
             // if it's a new security domain, register the service
             if ("new".equals(select)) {

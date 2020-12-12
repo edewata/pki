@@ -590,12 +590,12 @@ public class CMSEngine implements ServletContextListener {
             return;
         }
 
-        String sd = config.getString("securitydomain.select", "");
-        if (sd.equals("existing")) {
+        String sd = config.getString("securitydomain.select", null);
+        if (sd == null || sd.equals("existing")) {
             return;
         }
 
-        // monitor security domain sessions
+        logger.info("Monitoring security domain sessions");
 
         // my default is 1 day
         String source = config.getString("securitydomain.source", "memory");

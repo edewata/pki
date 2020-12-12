@@ -178,7 +178,7 @@ class PKIServerCLI(pki.cli.CLI):
                 subsystem_type = 'CA Clone'
             else:
                 subsystem_type = ca.config['hierarchy.select'] + ' CA'
-            if ca.config['securitydomain.select'] == 'new':
+            if ca.config.get('securitydomain.select') == 'new':
                 subsystem_type += ' (Security Domain)'
             print('    Type:                %s' % subsystem_type)
 

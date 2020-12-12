@@ -67,8 +67,8 @@ public class SystemConfigService extends PKIService implements SystemConfigResou
         csSubsystem = csType.toLowerCase();
         csState = cs.getState() + "";
 
-        String domainType = cs.getString("securitydomain.select", "existingdomain");
-        if (csType.equals("CA") && domainType.equals("new")) {
+        String domainType = cs.getString("securitydomain.select", null);
+        if (csType.equals("CA") && "new".equals(domainType)) {
             isMasterCA = true;
         }
 

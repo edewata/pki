@@ -386,7 +386,7 @@ class PKIDeployer:
         admin_groups = subsystem.config['preop.admin.group']
         groups = [x.strip() for x in admin_groups.split(',')]
 
-        if subsystem.config['securitydomain.select'] == 'new':
+        if subsystem.config.get('securitydomain.select') == 'new':
             groups.extend([
                 'Security Domain Administrators',
                 'Enterprise CA Administrators',
