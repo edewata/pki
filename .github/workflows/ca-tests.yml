@@ -805,3 +805,248 @@ jobs:
         with:
           name: ca-standalone-logs-${{ matrix.os }}
           path: ca-standalone-logs.tar
+
+  ca-container-test:
+    name: Installing CA Container
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      BUILDDIR: /tmp/workdir
+      PKIDIR: /tmp/workdir/pki
+      LOGS: ${GITHUB_WORKSPACE}/logs.txt
+      COPR_REPO: "@pki/master"
+    strategy:
+      matrix:
+        os: ['32', '33']
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+
+      - name: Build container with systemd
+        run: docker build ci -t pki --build-arg OS_VERSION=${{ matrix.os }}
+
+      - name: Create network
+        run: docker network create example
+
+      - name: Setup DS container
+        run: |
+          IMAGE=pki \
+          NAME=ds \
+          HOSTNAME=ds.example.com \
+          ci/runner-init.sh
+
+      - name: Connect DS container to network
+        run: docker network connect example ds --alias ds.example.com
+
+      - name: Install dependencies
+        run: |
+          docker exec ds dnf install -y 389-ds-base
+
+      - name: Install DS
+        run: docker exec ds ${PKIDIR}/ci/ds-create.sh
+
+      - name: Setup CA container
+        run: |
+          IMAGE=pki \
+          NAME=ca \
+          HOSTNAME=ca.example.com \
+          ci/runner-init.sh
+
+      - name: Connect CA container to network
+        run: docker network connect example ca --alias ca.example.com
+
+      - name: Install dependencies
+        run: |
+          docker exec ca dnf install -y findutils dnf-plugins-core wget
+          docker exec ca dnf copr enable -y ${COPR_REPO}
+
+      - name: Download PKI packages
+        uses: actions/download-artifact@v2
+        with:
+          name: pki-build-${{ matrix.os }}
+          path: build/RPMS
+
+      - name: Install PKI packages
+        run: docker exec ca bash -c "dnf -y localinstall ${PKIDIR}/build/RPMS/*"
+
+      - name: Create CA signing cert
+        run: |
+          docker exec ca pki -d nssdb nss-cert-request \
+              --subject "CN=CA Signing Certificate" \
+              --ext /usr/share/pki/server/certs/ca_signing.conf \
+              --csr ca_signing.csr
+          docker exec ca pki -d nssdb nss-cert-issue \
+              --csr ca_signing.csr \
+              --ext /usr/share/pki/server/certs/ca_signing.conf \
+              --serial 1 \
+              --cert ca_signing.crt
+          docker exec ca pki -d nssdb nss-cert-import \
+              --cert ca_signing.crt \
+              --trust CT,C,C \
+              ca_signing
+          docker exec ca bash -c "certutil -K -d nssdb | grep ca_signing | sed 's/<.*>\s\+\S\+\s\+\(\S\+\).*/\1/' > ca_signing.key"
+
+      - name: Create CA OCSP signing cert
+        run: |
+          docker exec ca pki -d nssdb nss-cert-request \
+              --subject "CN=OCSP Signing Certificate" \
+              --ext /usr/share/pki/server/certs/ocsp_signing.conf \
+              --csr ca_ocsp_signing.csr
+          docker exec ca pki -d nssdb nss-cert-issue \
+              --issuer ca_signing \
+              --csr ca_ocsp_signing.csr \
+              --ext /usr/share/pki/server/certs/ocsp_signing.conf \
+              --serial 2 \
+              --cert ca_ocsp_signing.crt
+          docker exec ca pki -d nssdb nss-cert-import \
+              --cert ca_ocsp_signing.crt \
+              ca_ocsp_signing
+          docker exec ca bash -c "certutil -K -d nssdb | grep ca_ocsp_signing | sed 's/<.*>\s\+\S\+\s\+\(\S\+\).*/\1/' > ca_ocsp_signing.key"
+
+      - name: Create CA audit signing cert
+        run: |
+          docker exec ca pki -d nssdb nss-cert-request \
+              --subject "CN=Audit Signing Certificate" \
+              --ext /usr/share/pki/server/certs/audit_signing.conf \
+              --csr ca_audit_signing.csr
+          docker exec ca pki -d nssdb nss-cert-issue \
+              --issuer ca_signing \
+              --csr ca_audit_signing.csr \
+              --ext /usr/share/pki/server/certs/audit_signing.conf \
+              --serial 3 \
+              --cert ca_audit_signing.crt
+          docker exec ca pki -d nssdb nss-cert-import \
+              --cert ca_audit_signing.crt \
+              --trust ,,P \
+              ca_audit_signing
+          docker exec ca bash -c "certutil -K -d nssdb | grep ca_audit_signing | sed 's/<.*>\s\+\S\+\s\+\(\S\+\).*/\1/' > ca_audit_signing.key"
+
+      - name: Create subsystem cert
+        run: |
+          docker exec ca pki -d nssdb nss-cert-request \
+              --subject "CN=Subsystem Certificate" \
+              --ext /usr/share/pki/server/certs/subsystem.conf \
+              --csr subsystem.csr
+          docker exec ca pki -d nssdb nss-cert-issue \
+              --issuer ca_signing \
+              --csr subsystem.csr \
+              --ext /usr/share/pki/server/certs/subsystem.conf \
+              --serial 4 \
+              --cert subsystem.crt
+          docker exec ca pki -d nssdb nss-cert-import \
+              --cert subsystem.crt \
+              subsystem
+          docker exec ca bash -c "certutil -K -d nssdb | grep subsystem | sed 's/<.*>\s\+\S\+\s\+\(\S\+\).*/\1/' > subsystem.key"
+
+      - name: Create SSL server cert
+        run: |
+          docker exec ca pki -d nssdb nss-cert-request \
+              --subject "CN=ca.example.com" \
+              --ext /usr/share/pki/server/certs/sslserver.conf \
+              --csr sslserver.csr
+          docker exec ca pki -d nssdb nss-cert-issue \
+              --issuer ca_signing \
+              --csr sslserver.csr \
+              --ext /usr/share/pki/server/certs/sslserver.conf \
+              --serial 5 \
+              --cert sslserver.crt
+          docker exec ca pki -d nssdb nss-cert-import \
+              --cert sslserver.crt \
+              sslserver
+          docker exec ca bash -c "certutil -K -d nssdb | grep sslserver | sed 's/<.*>\s\+\S\+\s\+\(\S\+\).*/\1/' > sslserver.key"
+
+      - name: Export CA certs
+        run: |
+          docker exec ca pki -d nssdb pkcs12-export \
+              --pkcs12 ca-certs.p12 \
+              --password Secret.123
+          docker exec ca pki pkcs12-cert-find \
+              --pkcs12 ca-certs.p12 \
+              --password Secret.123
+
+      - name: Create CA admin cert
+        run: |
+          docker exec ca pki nss-cert-request \
+              --subject "uid=caadmin" \
+              --ext /usr/share/pki/server/certs/admin.conf \
+              --csr caadmin.csr
+          docker exec ca pki -d nssdb nss-cert-issue \
+              --issuer ca_signing \
+              --csr caadmin.csr \
+              --ext /usr/share/pki/server/certs/admin.conf \
+              --serial 6 \
+              --cert caadmin.crt
+          docker exec ca pki nss-cert-import \
+              --cert ca_signing.crt \
+              --trust CT,C,C \
+              ca_signing
+          docker exec ca pki nss-cert-import \
+              --cert caadmin.crt \
+              caadmin
+
+      - name: Install CA with existing database and certs
+        run: |
+          docker exec ca pkispawn -f /usr/share/pki/server/examples/installation/ca-container-step1.cfg -s CA -v
+          sleep 1  # avoid pkispawn log conflict due to identical timestamps
+          docker exec ca pkispawn -f /usr/share/pki/server/examples/installation/ca-container-step2.cfg -s CA -v
+
+      - name: Gather config files
+        if: always()
+        run: docker exec ca tar cvf ${PKIDIR}/ca-container-conf.tar -C / etc/pki
+
+      - name: Upload config files
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ca-container-conf-${{ matrix.os }}
+          path: ca-container-conf.tar
+
+      # - name: Run PKI healthcheck
+      #  run: docker exec ca pki-healthcheck --debug
+
+      - name: Verify CA keys
+        run: |
+          docker exec ca bash -c "echo Secret.123 > password.txt"
+          docker exec ca bash -c "certutil -K -d /etc/pki/pki-tomcat/alias -f password.txt | grep ca_signing | sed 's/<.*>\s\+\S\+\s\+\(\S\+\).*/\1/' > ca_signing.key.new"
+          docker exec ca diff ca_signing.key ca_signing.key.new
+          docker exec ca bash -c "certutil -K -d /etc/pki/pki-tomcat/alias -f password.txt | grep ca_ocsp_signing | sed 's/<.*>\s\+\S\+\s\+\(\S\+\).*/\1/' > ca_ocsp_signing.key.new"
+          docker exec ca diff ca_ocsp_signing.key ca_ocsp_signing.key.new
+          docker exec ca bash -c "certutil -K -d /etc/pki/pki-tomcat/alias -f password.txt | grep ca_audit_signing | sed 's/<.*>\s\+\S\+\s\+\(\S\+\).*/\1/' > ca_audit_signing.key.new"
+          docker exec ca diff ca_audit_signing.key ca_audit_signing.key.new
+          docker exec ca bash -c "certutil -K -d /etc/pki/pki-tomcat/alias -f password.txt | grep subsystem | sed 's/<.*>\s\+\S\+\s\+\(\S\+\).*/\1/' > subsystem.key.new"
+          docker exec ca diff subsystem.key subsystem.key.new
+          docker exec ca bash -c "certutil -K -d /etc/pki/pki-tomcat/alias -f password.txt | grep sslserver | sed 's/<.*>\s\+\S\+\s\+\(\S\+\).*/\1/' > sslserver.key.new"
+          docker exec ca diff sslserver.key sslserver.key.new
+
+      - name: Verify CA admin
+        run: |
+          docker exec pki pki client-cert-import ca_signing --ca-cert ca_signing.crt
+          docker exec pki pki -n caadmin ca-user-show caadmin
+
+      - name: Remove CA
+        run: docker exec ca pkidestroy -i pki-tomcat -s CA -v
+
+      - name: Disconnect CA container from network
+        run: docker network disconnect example ca
+
+      - name: Remove DS
+        run: docker exec ds ${PKIDIR}/ci/ds-remove.sh
+
+      - name: Disconnect DS container from network
+        run: docker network disconnect example ds
+
+      - name: Gather log files
+        if: always()
+        run: |
+          docker exec ca bash -c "journalctl -u pki-tomcatd@pki-tomcat > /var/log/pki/pki-tomcat/systemd.log"
+          docker exec ca tar cvf ${PKIDIR}/ca-container-logs.tar -C / var/log/pki
+
+      - name: Upload log files
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ca-container-logs-${{ matrix.os }}
+          path: ca-container-logs.tar
+
+      - name: Remove network
+        run: docker network rm example
