@@ -827,7 +827,8 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
 
         subsystem.save()
 
-        create_temp_sslserver_cert = self.create_temp_sslserver_cert(deployer, instance)
+        if config.str2bool(deployer.mdict['pki_container']):
+            instance.set_sslserver_cert_nickname('sslserver')
 
         if clone:
 
@@ -839,214 +840,218 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             logger.info('Updating configuration for %s clone', subsystem.type)
             subsystem.update_config(master_url, deployer.install_token)
 
-        if config.str2bool(deployer.mdict['pki_ds_remove_data']):
+        if not config.str2bool(deployer.mdict['pki_container']):
 
-            if config.str2bool(deployer.mdict['pki_ds_create_new_db']):
-                logger.info('Removing existing database')
-                subsystem.remove_database(force=True)
+            create_temp_sslserver_cert = self.create_temp_sslserver_cert(deployer, instance)
 
-            elif not config.str2bool(deployer.mdict['pki_clone']) or \
-                    config.str2bool(deployer.mdict['pki_clone_setup_replication']):
-                logger.info('Emptying existing database')
-                subsystem.empty_database(force=True)
+            if config.str2bool(deployer.mdict['pki_ds_remove_data']):
 
-            else:
-                logger.info('Reusing replicated database')
+                if config.str2bool(deployer.mdict['pki_ds_create_new_db']):
+                    logger.info('Removing existing database')
+                    subsystem.remove_database(force=True)
 
-        logger.info('Initializing database')
+                elif not config.str2bool(deployer.mdict['pki_clone']) or \
+                        config.str2bool(deployer.mdict['pki_clone_setup_replication']):
+                    logger.info('Emptying existing database')
+                    subsystem.empty_database(force=True)
 
-        # In most cases, we want to replicate the schema and therefore not add it here.
-        # We provide this option though in case the clone already has schema
-        # and we want to replicate back to the master.
+                else:
+                    logger.info('Reusing replicated database')
 
-        # On the other hand, if we are not setting up replication,
-        # then we are assuming that replication is already taken care of,
-        # and schema has already been replicated.
+            logger.info('Initializing database')
 
-        setup_schema = not config.str2bool(deployer.mdict['pki_clone']) or \
-            not config.str2bool(deployer.mdict['pki_clone_setup_replication']) or \
-            not config.str2bool(deployer.mdict['pki_clone_replicate_schema'])
+            # In most cases, we want to replicate the schema and therefore not add it here.
+            # We provide this option though in case the clone already has schema
+            # and we want to replicate back to the master.
 
-        create_database = config.str2bool(deployer.mdict['pki_ds_create_new_db'])
+            # On the other hand, if we are not setting up replication,
+            # then we are assuming that replication is already taken care of,
+            # and schema has already been replicated.
 
-        # When cloning a subsystem without setting up the replication agreements,
-        # the database is a subtree of an existing tree and is already replicated,
-        # so there is no need to set up the base entry.
+            setup_schema = not config.str2bool(deployer.mdict['pki_clone']) or \
+                not config.str2bool(deployer.mdict['pki_clone_setup_replication']) or \
+                not config.str2bool(deployer.mdict['pki_clone_replicate_schema'])
 
-        create_base = config.str2bool(deployer.mdict['pki_ds_create_new_db']) or \
-            not config.str2bool(deployer.mdict['pki_clone']) or \
-            config.str2bool(deployer.mdict['pki_clone_setup_replication'])
+            create_database = config.str2bool(deployer.mdict['pki_ds_create_new_db'])
 
-        create_containers = not config.str2bool(deployer.mdict['pki_clone'])
+            # When cloning a subsystem without setting up the replication agreements,
+            # the database is a subtree of an existing tree and is already replicated,
+            # so there is no need to set up the base entry.
 
-        # Set up replication if required for cloning.
+            create_base = config.str2bool(deployer.mdict['pki_ds_create_new_db']) or \
+                not config.str2bool(deployer.mdict['pki_clone']) or \
+                config.str2bool(deployer.mdict['pki_clone_setup_replication'])
 
-        setup_replication = clone and \
-            config.str2bool(deployer.mdict['pki_clone_setup_replication'])
+            create_containers = not config.str2bool(deployer.mdict['pki_clone'])
 
-        # If the database is already replicated but not yet indexed, rebuild the indexes.
+            # Set up replication if required for cloning.
 
-        rebuild_indexes = config.str2bool(deployer.mdict['pki_clone']) and \
-            not config.str2bool(deployer.mdict['pki_clone_setup_replication']) and \
-            config.str2bool(deployer.mdict['pki_clone_reindex_data'])
+            setup_replication = clone and \
+                config.str2bool(deployer.mdict['pki_clone_setup_replication'])
 
-        subsystem.init_database(
-            setup_schema=setup_schema,
-            create_database=create_database,
-            create_base=create_base,
-            create_containers=create_containers,
-            rebuild_indexes=rebuild_indexes)
+            # If the database is already replicated but not yet indexed, rebuild the indexes.
 
-        if setup_replication:
+            rebuild_indexes = config.str2bool(deployer.mdict['pki_clone']) and \
+                not config.str2bool(deployer.mdict['pki_clone_setup_replication']) and \
+                config.str2bool(deployer.mdict['pki_clone_reindex_data'])
 
-            master_replication_port = deployer.mdict['pki_clone_replication_master_port']
-            replication_port = deployer.mdict['pki_clone_replication_clone_port']
-            ds_port = subsystem.config['internaldb.ldapconn.port']
+            subsystem.init_database(
+                setup_schema=setup_schema,
+                create_database=create_database,
+                create_base=create_base,
+                create_containers=create_containers,
+                rebuild_indexes=rebuild_indexes)
 
-            secure_conn = subsystem.config['internaldb.ldapconn.secureConn']
-            replication_security = deployer.mdict['pki_clone_replication_security']
+            if setup_replication:
 
-            if replication_port == ds_port and secure_conn == 'true':
-                replication_security = 'SSL'
+                master_replication_port = deployer.mdict['pki_clone_replication_master_port']
+                replication_port = deployer.mdict['pki_clone_replication_clone_port']
+                ds_port = subsystem.config['internaldb.ldapconn.port']
 
-            elif not replication_security:
-                replication_security = 'None'
+                secure_conn = subsystem.config['internaldb.ldapconn.secureConn']
+                replication_security = deployer.mdict['pki_clone_replication_security']
 
-            subsystem.add_replication(
-                master_replication_port=master_replication_port,
-                replication_port=replication_port,
-                replication_security=replication_security)
+                if replication_port == ds_port and secure_conn == 'true':
+                    replication_security = 'SSL'
 
-        subsystem.add_vlv()
-        subsystem.reindex_vlv()
+                elif not replication_security:
+                    replication_security = 'None'
 
-        subsystem.load()
+                subsystem.add_replication(
+                    master_replication_port=master_replication_port,
+                    replication_port=replication_port,
+                    replication_security=replication_security)
 
-        if not clone and subsystem.type == 'CA':
-            subsystem.import_profiles(
-                input_folder='/usr/share/pki/ca/profiles/ca')
+            subsystem.add_vlv()
+            subsystem.reindex_vlv()
 
-        # Start/Restart this Tomcat PKI Process
-        # Optionally prepare to enable a java debugger
-        # (e. g. - 'eclipse'):
-        if config.str2bool(deployer.mdict['pki_enable_java_debugger']):
-            config.prepare_for_an_external_java_debugger(
-                deployer.mdict['pki_target_tomcat_conf_instance_id'])
-        tomcat_instance_subsystems = \
-            len(deployer.instance.tomcat_instance_subsystems())
+            subsystem.load()
 
-        if tomcat_instance_subsystems == 1:
-            logger.info('Starting server')
-            instance.start()
+            if not clone and subsystem.type == 'CA':
+                subsystem.import_profiles(
+                    input_folder='/usr/share/pki/ca/profiles/ca')
 
-        elif tomcat_instance_subsystems > 1:
-            logger.info('Restarting server')
-            instance.restart()
+            # Start/Restart this Tomcat PKI Process
+            # Optionally prepare to enable a java debugger
+            # (e. g. - 'eclipse'):
+            if config.str2bool(deployer.mdict['pki_enable_java_debugger']):
+                config.prepare_for_an_external_java_debugger(
+                    deployer.mdict['pki_target_tomcat_conf_instance_id'])
+            tomcat_instance_subsystems = \
+                len(deployer.instance.tomcat_instance_subsystems())
 
-        deployer.instance.wait_for_startup(
-            subsystem,
-            startup_timeout,
-            request_timeout,
-        )
+            if tomcat_instance_subsystems == 1:
+                logger.info('Starting server')
+                instance.start()
 
-        # Optionally wait for debugger to attach (e. g. - 'eclipse'):
-        if config.str2bool(deployer.mdict['pki_enable_java_debugger']):
-            config.wait_to_attach_an_external_java_debugger()
+            elif tomcat_instance_subsystems > 1:
+                logger.info('Restarting server')
+                instance.restart()
 
-        ca_cert = os.path.join(instance.nssdb_dir, "ca.crt")
+            deployer.instance.wait_for_startup(
+                subsystem,
+                startup_timeout,
+                request_timeout,
+            )
 
-        connection = pki.client.PKIConnection(
-            protocol='https',
-            hostname=deployer.mdict['pki_hostname'],
-            port=deployer.mdict['pki_https_port'],
-            trust_env=False,
-            cert_paths=ca_cert)
+            # Optionally wait for debugger to attach (e. g. - 'eclipse'):
+            if config.str2bool(deployer.mdict['pki_enable_java_debugger']):
+                config.wait_to_attach_an_external_java_debugger()
 
-        client = pki.system.SystemConfigClient(
-            connection,
-            subsystem=deployer.mdict['pki_subsystem_type'])
+            ca_cert = os.path.join(instance.nssdb_dir, "ca.crt")
 
-        # If pki_one_time_pin is not already defined, load from CS.cfg
-        if 'pki_one_time_pin' not in deployer.mdict:
-            deployer.mdict['pki_one_time_pin'] = subsystem.config['preop.pin']
+            connection = pki.client.PKIConnection(
+                protocol='https',
+                hostname=deployer.mdict['pki_hostname'],
+                port=deployer.mdict['pki_https_port'],
+                trust_env=False,
+                cert_paths=ca_cert)
 
-        sslserver = subsystem.get_subsystem_cert('sslserver')
+            client = pki.system.SystemConfigClient(
+                connection,
+                subsystem=deployer.mdict['pki_subsystem_type'])
 
-        for tag in subsystem.config['preop.cert.list'].split(','):
+            # If pki_one_time_pin is not already defined, load from CS.cfg
+            if 'pki_one_time_pin' not in deployer.mdict:
+                deployer.mdict['pki_one_time_pin'] = subsystem.config['preop.pin']
 
-            if tag != 'sslserver' and clone:
-                logger.info('%s certificate is already set up', tag)
-                continue
+            sslserver = subsystem.get_subsystem_cert('sslserver')
 
-            if tag == 'sslserver' and tomcat_instance_subsystems > 1:
-                logger.info('sslserver certificate is already set up')
-                continue
+            for tag in subsystem.config['preop.cert.list'].split(','):
 
-            if tag == 'subsystem' and tomcat_instance_subsystems > 1:
-                logger.info('subsystem certificate is already set up')
-                continue
+                if tag != 'sslserver' and clone:
+                    logger.info('%s certificate is already set up', tag)
+                    continue
 
-            logger.info('Setting up %s certificate', tag)
-            cert = deployer.setup_cert(client, tag)
+                if tag == 'sslserver' and tomcat_instance_subsystems > 1:
+                    logger.info('sslserver certificate is already set up')
+                    continue
 
-            if not cert:
-                continue
+                if tag == 'subsystem' and tomcat_instance_subsystems > 1:
+                    logger.info('subsystem certificate is already set up')
+                    continue
 
-            logger.debug('- cert: %s', cert['cert'])
-            logger.debug('- request: %s', cert['request'])
+                logger.info('Setting up %s certificate', tag)
+                cert = deployer.setup_cert(client, tag)
 
-            if tag == 'sslserver':
-                sslserver['data'] = cert['cert']
-                sslserver['request'] = cert['request']
-                sslserver['token'] = cert['token']
+                if not cert:
+                    continue
 
-        if not clone:
-            logger.info('Setting up admin user')
-            deployer.setup_admin(subsystem, client)
+                logger.debug('- cert: %s', cert['cert'])
+                logger.debug('- request: %s', cert['request'])
 
-            # if not config.str2bool(deployer.mdict['pki_standalone']):
+                if tag == 'sslserver':
+                    sslserver['data'] = cert['cert']
+                    sslserver['request'] = cert['request']
+                    sslserver['token'] = cert['token']
 
-            #     if subsystem.config['securitydomain.select'] == 'new':
+            if not clone:
+                logger.info('Setting up admin user')
+                deployer.setup_admin(subsystem, client)
 
-            #         uid = deployer.mdict['pki_admin_uid']
+                # if not config.str2bool(deployer.mdict['pki_standalone']):
 
-            #         groups = [
-            #             'Security Domain Administrators',
-            #             'Enterprise CA Administrators',
-            #             'Enterprise KRA Administrators',
-            #             'Enterprise RA Administrators',
-            #             'Enterprise TKS Administrators',
-            #             'Enterprise OCSP Administrators',
-            #             'Enterprise TPS Administrators'
-            #         ]
+                #     if subsystem.config['securitydomain.select'] == 'new':
 
-            #         for group in groups:
-            #             logger.info('Adding %s into %s', uid, group)
-            #             subsystem.add_group_member(group, uid)
+                #         uid = deployer.mdict['pki_admin_uid']
 
-        if config.str2bool(deployer.mdict['pki_backup_keys']):
+                #         groups = [
+                #             'Security Domain Administrators',
+                #             'Enterprise CA Administrators',
+                #             'Enterprise KRA Administrators',
+                #             'Enterprise RA Administrators',
+                #             'Enterprise TKS Administrators',
+                #             'Enterprise OCSP Administrators',
+                #             'Enterprise TPS Administrators'
+                #         ]
 
-            # by default store the backup file in the NSS databases directory
-            if not deployer.mdict['pki_backup_file']:
-                deployer.mdict['pki_backup_file'] = \
-                    deployer.mdict['pki_server_database_path'] + '/' + \
-                    deployer.mdict['pki_subsystem'].lower() + '_backup_keys.p12'
+                #         for group in groups:
+                #             logger.info('Adding %s into %s', uid, group)
+                #             subsystem.add_group_member(group, uid)
 
-            logger.info('Backing up keys into %s', deployer.mdict['pki_backup_file'])
-            deployer.backup_keys(instance, subsystem)
+            if config.str2bool(deployer.mdict['pki_backup_keys']):
 
-        domain_manager = False
+                # by default store the backup file in the NSS databases directory
+                if not deployer.mdict['pki_backup_file']:
+                    deployer.mdict['pki_backup_file'] = \
+                        deployer.mdict['pki_server_database_path'] + '/' + \
+                        deployer.mdict['pki_subsystem'].lower() + '_backup_keys.p12'
 
-        if subsystem.type == 'CA':
-            if clone:
-                sd_hostname = subsystem.config['securitydomain.host']
-                sd_port = subsystem.config['securitydomain.httpsadminport']
+                logger.info('Backing up keys into %s', deployer.mdict['pki_backup_file'])
+                deployer.backup_keys(instance, subsystem)
 
-                sd_subsystem = deployer.domain_info.subsystems['CA']
-                sd_host = sd_subsystem.get_host(sd_hostname, sd_port)
+            domain_manager = False
 
-                if sd_host.DomainManager and sd_host.DomainManager.lower() == 'true':
-                    domain_manager = True
+            if subsystem.type == 'CA':
+                if clone:
+                    sd_hostname = subsystem.config['securitydomain.host']
+                    sd_port = subsystem.config['securitydomain.httpsadminport']
+
+                    sd_subsystem = deployer.domain_info.subsystems['CA']
+                    sd_host = sd_subsystem.get_host(sd_hostname, sd_port)
+
+                    if sd_host.DomainManager and sd_host.DomainManager.lower() == 'true':
+                        domain_manager = True
 
         if not config.str2bool(deployer.mdict['pki_standalone']):
 
@@ -1073,75 +1078,77 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
                     secure_port=proxySecurePort,
                     domain_manager=True)
 
-        if not config.str2bool(deployer.mdict['pki_share_db']) and not clone:
-            logger.info('Setting up database user')
-            deployer.setup_database_user(instance, subsystem)
+        if not config.str2bool(deployer.mdict['pki_container']):
 
-        if not config.str2bool(deployer.mdict['pki_share_db']):
-            subsystem.add_manager_acl(user_id='pkidbuser')
-        else:
-            subsystem.add_manager_acl(user_dn=deployer.mdict['pki_share_dbuser_dn'])
+            if not config.str2bool(deployer.mdict['pki_share_db']) and not clone:
+                logger.info('Setting up database user')
+                deployer.setup_database_user(instance, subsystem)
 
-        logger.info('Finalizing %s configuration', subsystem.type)
-        finalize_config_request = deployer.config_client.create_finalize_config_request()
-        finalize_config_request.domainInfo = deployer.domain_info
-        finalize_config_request.installToken = deployer.install_token
-        client.finalizeConfiguration(finalize_config_request)
+            if not config.str2bool(deployer.mdict['pki_share_db']):
+                subsystem.add_manager_acl(user_id='pkidbuser')
+            else:
+                subsystem.add_manager_acl(user_dn=deployer.mdict['pki_share_dbuser_dn'])
 
-        subsystem.load()
+            logger.info('Finalizing %s configuration', subsystem.type)
+            finalize_config_request = deployer.config_client.create_finalize_config_request()
+            finalize_config_request.domainInfo = deployer.domain_info
+            finalize_config_request.installToken = deployer.install_token
+            client.finalizeConfiguration(finalize_config_request)
 
-        if subsystem.type == 'CA':
+            subsystem.load()
 
-            if not clone:
-                logger.info('Updating CA ranges')
-                subsystem.update_ranges()
+            if subsystem.type == 'CA':
 
-            if clone:
-                if sd_host.DomainManager and sd_host.DomainManager.lower() == 'true':
+                if not clone:
+                    logger.info('Updating CA ranges')
+                    subsystem.update_ranges()
 
-                    logger.info('Cloning security domain master')
+                if clone:
+                    if sd_host.DomainManager and sd_host.DomainManager.lower() == 'true':
 
-                    subsystem.config['securitydomain.select'] = 'new'
-                    subsystem.config['securitydomain.host'] = deployer.mdict['pki_hostname']
-                    subsystem.config['securitydomain.httpport'] = unsecurePort
-                    subsystem.config['securitydomain.httpsadminport'] = securePort
-                    subsystem.config['securitydomain.httpsagentport'] = securePort
-                    subsystem.config['securitydomain.httpseeport'] = securePort
+                        logger.info('Cloning security domain master')
 
-                logger.info('Disabling CRL caching and generation on clone')
+                        subsystem.config['securitydomain.select'] = 'new'
+                        subsystem.config['securitydomain.host'] = deployer.mdict['pki_hostname']
+                        subsystem.config['securitydomain.httpport'] = unsecurePort
+                        subsystem.config['securitydomain.httpsadminport'] = securePort
+                        subsystem.config['securitydomain.httpsagentport'] = securePort
+                        subsystem.config['securitydomain.httpseeport'] = securePort
 
-                subsystem.config['ca.certStatusUpdateInterval'] = '0'
-                subsystem.config['ca.listenToCloneModifications'] = 'false'
-                subsystem.config['ca.crl.MasterCRL.enableCRLCache'] = 'false'
-                subsystem.config['ca.crl.MasterCRL.enableCRLUpdates'] = 'false'
+                    logger.info('Disabling CRL caching and generation on clone')
 
-                url = urllib.parse.urlparse(master_url)
+                    subsystem.config['ca.certStatusUpdateInterval'] = '0'
+                    subsystem.config['ca.listenToCloneModifications'] = 'false'
+                    subsystem.config['ca.crl.MasterCRL.enableCRLCache'] = 'false'
+                    subsystem.config['ca.crl.MasterCRL.enableCRLUpdates'] = 'false'
 
-                subsystem.config['master.ca.agent.host'] = url.hostname
-                subsystem.config['master.ca.agent.port'] = str(url.port)
+                    url = urllib.parse.urlparse(master_url)
 
-            crl_number = deployer.mdict['pki_ca_starting_crl_number']
-            logger.info('Starting CRL number: %s', crl_number)
-            subsystem.config['ca.crl.MasterCRL.startingCrlNumber'] = crl_number
+                    subsystem.config['master.ca.agent.host'] = url.hostname
+                    subsystem.config['master.ca.agent.port'] = str(url.port)
 
-            logger.info('Enabling profile subsystem')
-            subsystem.enable_subsystem('profile')
+                crl_number = deployer.mdict['pki_ca_starting_crl_number']
+                logger.info('Starting CRL number: %s', crl_number)
+                subsystem.config['ca.crl.MasterCRL.startingCrlNumber'] = crl_number
 
-            # Delete CA signing cert record to avoid migration conflict
-            if not config.str2bool(deployer.mdict['pki_ca_signing_record_create']):
-                logger.info('Deleting CA signing cert record')
-                serial_number = deployer.mdict['pki_ca_signing_serial_number']
-                subsystem.remove_cert(serial_number)
+                logger.info('Enabling profile subsystem')
+                subsystem.enable_subsystem('profile')
 
-        if subsystem.type == 'KRA':
+                # Delete CA signing cert record to avoid migration conflict
+                if not config.str2bool(deployer.mdict['pki_ca_signing_record_create']):
+                    logger.info('Deleting CA signing cert record')
+                    serial_number = deployer.mdict['pki_ca_signing_serial_number']
+                    subsystem.remove_cert(serial_number)
 
-            if not clone:
-                logger.info('Updating KRA ranges')
-                subsystem.update_ranges()
+            if subsystem.type == 'KRA':
 
-        if subsystem.type == 'TPS':
-            logger.info('Setting up shared secret')
-            deployer.setup_shared_secret(instance, subsystem)
+                if not clone:
+                    logger.info('Updating KRA ranges')
+                    subsystem.update_ranges()
+
+            if subsystem.type == 'TPS':
+                logger.info('Setting up shared secret')
+                deployer.setup_shared_secret(instance, subsystem)
 
         deployer.finalize_subsystem(subsystem)
 
@@ -1151,43 +1158,47 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         # this server instance has been configured, it has NOT yet
         # been restarted!
 
-        restart_server = os.path.join(instance.conf_dir, 'restart_server_after_configuration')
-        logger.debug('Creating %s', restart_server)
+        if not config.str2bool(deployer.mdict['pki_container']):
+            restart_server = os.path.join(instance.conf_dir, 'restart_server_after_configuration')
+            logger.debug('Creating %s', restart_server)
 
-        open(restart_server, 'a').close()
-        os.chown(restart_server, instance.uid, instance.gid)
-        os.chmod(restart_server, 0o660)
+            open(restart_server, 'a').close()
+            os.chown(restart_server, instance.uid, instance.gid)
+            os.chmod(restart_server, 0o660)
 
-        # If temp SSL server cert was created and there's a new perm cert,
-        # replace it with the perm cert.
-        if create_temp_sslserver_cert and sslserver and sslserver['data']:
-            logger.info('Stopping server')
-            instance.stop()
+            # If temp SSL server cert was created and there's a new perm cert,
+            # replace it with the perm cert.
+            if create_temp_sslserver_cert and sslserver and sslserver['data']:
+                logger.info('Stopping server')
+                instance.stop()
 
-            # Remove temp SSL server cert.
-            self.remove_temp_sslserver_cert(instance, sslserver)
+                # Remove temp SSL server cert.
+                self.remove_temp_sslserver_cert(instance, sslserver)
 
-            # Import perm SSL server cert unless it's already imported
-            # earlier in external/standalone installation.
+                # Import perm SSL server cert unless it's already imported
+                # earlier in external/standalone installation.
 
-            if not (standalone or external and subsystem.name in ['kra', 'ocsp']):
+                if not (standalone or external and subsystem.name in ['kra', 'ocsp']):
 
-                nickname = sslserver['nickname']
-                token = pki.nssdb.normalize_token(sslserver['token'])
+                    nickname = sslserver['nickname']
+                    token = pki.nssdb.normalize_token(sslserver['token'])
 
-                if not token:
-                    token = deployer.mdict['pki_token_name']
+                    if not token:
+                        token = deployer.mdict['pki_token_name']
 
-                instance.set_sslserver_cert_nickname(nickname, token)
+                    instance.set_sslserver_cert_nickname(nickname, token)
 
-                self.import_perm_sslserver_cert(deployer, instance, sslserver)
+                    self.import_perm_sslserver_cert(deployer, instance, sslserver)
 
-            logger.info('Starting server')
+                logger.info('Starting server')
+                instance.start()
+
+            elif config.str2bool(deployer.mdict['pki_restart_configured_instance']):
+                logger.info('Restarting server')
+                instance.restart()
+
+        else:
             instance.start()
-
-        elif config.str2bool(deployer.mdict['pki_restart_configured_instance']):
-            logger.info('Restarting server')
-            instance.restart()
 
         deployer.instance.wait_for_startup(
             subsystem,
