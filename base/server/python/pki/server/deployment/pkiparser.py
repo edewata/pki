@@ -789,7 +789,8 @@ class PKIConfigParser:
                     "<!--"
                 self.mdict['PKI_OPEN_ENABLE_PROXY_COMMENT_SLOT'] = \
                     "<!--"
-            if config.str2bool(self.mdict['pki_standalone']):
+            if config.str2bool(self.mdict['pki_standalone']) and \
+                    self.deployer.subsystem_name in ['KRA', 'OCSP']:
                 # Stand-alone PKI
                 self.mdict['PKI_CLOSE_STANDALONE_COMMENT_SLOT'] = \
                     ""
@@ -979,7 +980,8 @@ class PKIConfigParser:
                     self.mdict['pki_security_domain_user'] = "caadmin"
 
             if not config.str2bool(self.mdict['pki_skip_configuration']) and \
-                    config.str2bool(self.mdict['pki_standalone']):
+                    config.str2bool(self.mdict['pki_standalone']) and \
+                    self.deployer.subsystem_name in ['KRA', 'OCSP']:
 
                 # Stand-alone PKI
                 self.mdict['pki_security_domain_type'] = "new"
@@ -1020,8 +1022,10 @@ class PKIConfigParser:
 
             if 'pki_import_admin_cert' not in self.mdict:
                 self.mdict['pki_import_admin_cert'] = 'false'
+
             elif not config.str2bool(self.mdict['pki_skip_configuration']) and \
-                    (config.str2bool(self.mdict['pki_standalone'])):
+                    config.str2bool(self.mdict['pki_standalone']) and \
+                    self.deployer.subsystem_name in ['KRA', 'OCSP']:
                 # Stand-alone PKI
                 self.mdict['pki_import_admin_cert'] = 'false'
 

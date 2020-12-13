@@ -150,10 +150,18 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             # - Stand-alone PKI (Step 2)
             # - Two-step installation (Step 2)
 
-            if (deployer.subsystem_name in ['CA', 'KRA', 'OCSP'] or
-                config.str2bool(deployer.mdict['pki_standalone'])) and \
-                    config.str2bool(deployer.mdict['pki_external_step_two']) or \
-               config.str2bool(deployer.mdict['pki_skip_installation']):
+            if config.str2bool(deployer.mdict['pki_skip_installation']):
+                deployer.instance.verify_subsystem_exists()
+                deployer.mdict['pki_skip_installation'] = "True"
+
+            elif config.str2bool(deployer.mdict['pki_standalone']) and \
+                    deployer.subsystem_name in ['KRA', 'OCSP'] and \
+                    config.str2bool(deployer.mdict['pki_external_step_two']):
+                deployer.instance.verify_subsystem_exists()
+                deployer.mdict['pki_skip_installation'] = "True"
+
+            elif deployer.subsystem_name in ['CA', 'KRA', 'OCSP'] and \
+                    config.str2bool(deployer.mdict['pki_external_step_two']):
                 deployer.instance.verify_subsystem_exists()
                 deployer.mdict['pki_skip_installation'] = "True"
 
@@ -163,6 +171,7 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
                 deployer.instance.verify_subsystem_does_not_exist()
                 # detect and avoid any namespace collisions
                 deployer.namespace.collision_detection()
+
         # verify existence of SENSITIVE configuration file data
         self.verify_sensitive_data(deployer)
         # verify existence of MUTUALLY EXCLUSIVE configuration file data

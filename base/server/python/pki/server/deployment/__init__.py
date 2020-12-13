@@ -345,7 +345,8 @@ class PKIDeployer:
         # Process existing CA installation like external CA
         request.external = config.str2bool(self.mdict['pki_external']) or \
             config.str2bool(self.mdict['pki_existing'])
-        request.standAlone = config.str2bool(self.mdict['pki_standalone'])
+        request.standAlone = config.str2bool(self.mdict['pki_standalone']) and \
+            self.subsystem_name in ['KRA', 'OCSP']
         request.clone = config.str2bool(self.mdict['pki_clone'])
         request.masterURL = self.mdict['pki_clone_uri']
 
@@ -406,10 +407,14 @@ class PKIDeployer:
         logger.info('Adding certificate for %s', uid)
         subsystem.add_user_cert(uid, cert_data=cert_data, cert_format='DER')
 
-        if config.str2bool(self.mdict['pki_external']) \
-                or config.str2bool(self.mdict['pki_standalone']) \
-                or not config.str2bool(self.mdict['pki_import_admin_cert']):
+        if not config.str2bool(self.mdict['pki_import_admin_cert']):
+            self.config_client.process_admin_cert(admin_cert)
 
+        elif config.str2bool(self.mdict['pki_external']):
+            self.config_client.process_admin_cert(admin_cert)
+
+        elif config.str2bool(self.mdict['pki_standalone']) and \
+                self.subsystem_name in ['KRA', 'OCSP']:
             self.config_client.process_admin_cert(admin_cert)
 
     def backup_keys(self, instance, subsystem):
