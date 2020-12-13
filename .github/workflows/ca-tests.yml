@@ -775,6 +775,9 @@ jobs:
           name: ca-standalone-conf-${{ matrix.os }}
           path: ca-standalone-conf.tar
 
+      - name: Run PKI healthcheck
+        run: docker exec pki pki-healthcheck --debug
+
       - name: Verify CA admin
         run: |
           docker exec pki pki-server cert-export ca_signing --cert-file ca_signing.crt
