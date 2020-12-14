@@ -426,8 +426,7 @@ class ConfigurationFile:
 
         self.skip_configuration = config.str2bool(
             self.mdict['pki_skip_configuration'])
-        self.standalone = config.str2bool(self.mdict['pki_standalone']) and \
-            deployer.subsystem_name in ['KRA', 'OCSP']
+        self.standalone = config.str2bool(self.mdict['pki_standalone'])
         self.subordinate = config.str2bool(self.mdict['pki_subordinate'])
 
         # set useful 'string' object variables for this class
@@ -2629,8 +2628,7 @@ class ConfigClient:
         self.external_step_two = config.str2bool(
             self.mdict['pki_external_step_two'])
 
-        self.standalone = config.str2bool(self.mdict['pki_standalone']) and \
-            deployer.subsystem_name in ['KRA', 'OCSP']
+        self.standalone = config.str2bool(self.mdict['pki_standalone'])
         self.subordinate = config.str2bool(self.mdict['pki_subordinate'])
         # set useful 'string' object variables for this class
         self.subsystem = self.mdict['pki_subsystem']

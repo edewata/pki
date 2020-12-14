@@ -466,10 +466,14 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         standalone = deployer.configuration_file.standalone
         step_one = deployer.configuration_file.external_step_one
 
-        if (external or standalone) and step_one:
+        if external and step_one:
 
             self.generate_system_cert_requests(deployer, subsystem)
+            subsystem.save()
 
+        elif standalone and subsystem.type in ['KRA', 'OCSP'] and step_one:
+
+            self.generate_system_cert_requests(deployer, subsystem)
             subsystem.save()
 
     def destroy(self, deployer):
