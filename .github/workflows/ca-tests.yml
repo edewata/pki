@@ -122,6 +122,101 @@ jobs:
           name: pki-logs-${{ matrix.os }}
           path: pki-logs.tar
 
+  # https://www.dogtagpki.org/wiki/SCEP_Setup
+  # https://www.dogtagpki.org/wiki/SSCEP
+  ca-scep-test:
+    name: Installing CA with SCEP
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      BUILDDIR: /tmp/workdir
+      PKIDIR: /tmp/workdir/pki
+      LOGS: ${GITHUB_WORKSPACE}/logs.txt
+      COPR_REPO: "@pki/master"
+    strategy:
+      matrix:
+        os: ['32', '33']
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+
+      - name: Download PKI packages
+        uses: actions/download-artifact@v2
+        with:
+          name: pki-build-${{ matrix.os }}
+          path: build/RPMS
+
+      - name: Build container with systemd
+        run: docker build ci -t pki --build-arg OS_VERSION=${{ matrix.os }}
+
+      - name: Run container
+        run: |
+          IMAGE=pki \
+          NAME=pki \
+          HOSTNAME=pki.example.com \
+          ci/runner-init.sh
+
+      - name: Install dependencies
+        run: |
+          docker exec pki dnf install -y findutils dnf-plugins-core wget 389-ds-base sscep
+          docker exec pki dnf copr enable -y ${COPR_REPO}
+
+      - name: Install PKI packages
+        run: docker exec pki bash -c "dnf -y localinstall ${PKIDIR}/build/RPMS/*"
+
+      - name: Install DS
+        run: docker exec pki ${PKIDIR}/ci/ds-create.sh
+
+      - name: Install CA
+        run: docker exec pki pkispawn -f /usr/share/pki/server/examples/installation/ca.cfg -s CA -v
+
+      - name: Configure SCEP
+        run: |
+          docker exec pki pki-server ca-config-set ca.scep.enable true
+          docker exec pki pki-server ca-config-set ca.scep.allowedEncryptionAlgorithms DES
+          docker exec pki pki-server ca-config-set ca.scep.allowedHashAlgorithms MD5
+          docker exec pki pki-server ca-config-set ca.scep.encryptionAlgorithm DES
+          docker exec pki pki-server ca-config-set ca.scep.hashAlgorithm MD5
+          docker exec pki bash -c "echo UID:172.16.24.238 > /etc/pki/pki-tomcat/ca/flatfile.txt"
+          docker exec pki bash -c "echo PWD:1212 >> /etc/pki/pki-tomcat/ca/flatfile.txt"
+          docker exec pki pki-server restart
+
+      - name: Gather config files
+        if: always()
+        run: docker exec pki tar cvf ${PKIDIR}/ca-scep-conf.tar -C / etc/pki
+
+      - name: Upload config files
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ca-scep-conf-${{ matrix.os }}
+          path: ca-scep-conf.tar
+
+      - name: Verify SCEP
+        run: |
+          docker exec pki sscep getca -c ca.crt -u http://localhost:8080/ca/cgi-bin/pkiclient.exe
+          docker exec pki mkrequest -ip 172.16.24.238 1212
+          docker exec pki sscep enroll -u http://localhost:8080/ca/cgi-bin/pkiclient.exe -c ca.crt -k local.key -r local.csr -l cert.crt
+
+      - name: Remove CA
+        run: docker exec pki pkidestroy -i pki-tomcat -s CA -v
+
+      - name: Remove DS
+        run: docker exec pki ${PKIDIR}/ci/ds-remove.sh
+
+      - name: Gather log files
+        if: always()
+        run: |
+          docker exec pki bash -c "journalctl -u pki-tomcatd@pki-tomcat > /var/log/pki/pki-tomcat/systemd.log"
+          docker exec pki tar cvf ${PKIDIR}/ca-scep-logs.tar -C / var/log/pki
+
+      - name: Upload log files
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ca-scep-logs-${{ matrix.os }}
+          path: ca-scep-logs.tar
+
   # docs/installation/ca/Installing_Subordinate_CA.md
   subca-test:
     name: Installing Subordinate CA
