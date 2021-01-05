@@ -39,6 +39,10 @@ ipa-server-install -U \
     --setup-kra \
     --no-host-dns
 
+# Run ipa-healthcheck before IPA tests due to the following issue:
+# https://github.com/freeipa/freeipa-healthcheck/issues/163
+ipa-healthcheck --debug
+
 # Test whether IPA server is reachable
 echo ${server_password} | kinit admin && ipa ping
 
@@ -64,10 +68,6 @@ ipa-run-tests \
 -k-test_dns_soa \
 --verbose \
 ${cert_test_file_loc} 2>&1
-
-# TODO: Re-enable ipa-healthcheck test once the following issue is fixed.
-# https://github.com/freeipa/freeipa-healthcheck/issues/163
-#ipa-healthcheck --debug
 
 echo "Test complete"
 
