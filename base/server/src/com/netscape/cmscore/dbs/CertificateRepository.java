@@ -163,14 +163,14 @@ public class CertificateRepository extends Repository {
      * @param forceModeChange "true" forces certificate repository mode change
      */
     public void setEnableRandomSerialNumbers(boolean random, boolean updateMode, boolean forceModeChange) {
-        logger.debug("CertificateRepository:  setEnableRandomSerialNumbers   random="+random+"  updateMode="+updateMode);
+        logger.info("CertificateRepository:  setEnableRandomSerialNumbers   random="+random+"  updateMode="+updateMode);
 
         CMSEngine engine = CMS.getCMSEngine();
         EngineConfig cs = engine.getConfig();
 
         if (mEnableRandomSerialNumbers ^ random || forceModeChange) {
             mEnableRandomSerialNumbers = random;
-            logger.debug("CertificateRepository:  setEnableRandomSerialNumbers   switching to " +
+            logger.info("CertificateRepository:  setEnableRandomSerialNumbers   switching to " +
                       ((random)?PROP_RANDOM_MODE:PROP_SEQUENTIAL_MODE) + " mode");
             if (updateMode) {
                 setCertificateRepositoryMode((mEnableRandomSerialNumbers)? PROP_RANDOM_MODE: PROP_SEQUENTIAL_MODE);
@@ -186,7 +186,7 @@ public class CertificateRepository extends Repository {
                 super.setLastSerialNo(lastSerialNumber);
                 if (mEnableRandomSerialNumbers) {
                     mCounter = lastSerialNumber.subtract(mMinSerialNo).add(BigInteger.ONE);
-                    logger.debug("CertificateRepository:  setEnableRandomSerialNumbers  mCounter="+
+                    logger.info("CertificateRepository:  setEnableRandomSerialNumbers  mCounter="+
                                mCounter+"="+lastSerialNumber+"-"+mMinSerialNo+"+1");
                     long t = System.currentTimeMillis();
                     mDBConfig.putString(PROP_RANDOM_SERIAL_NUMBER_COUNTER, mCounter.toString()+","+t);
@@ -209,15 +209,15 @@ public class CertificateRepository extends Repository {
 
         if (mRangeSize == null) {
             mRangeSize = (mMaxSerialNo.subtract(mMinSerialNo)).add(BigInteger.ONE);
-            logger.debug("CertificateRepository: getRandomNumber  mRangeSize="+mRangeSize);
+            logger.info("CertificateRepository: getRandomNumber  mRangeSize="+mRangeSize);
             mBitLength = mRangeSize.bitLength();
-            logger.debug("CertificateRepository: getRandomNumber  mBitLength="+mBitLength+
+            logger.info("CertificateRepository: getRandomNumber  mBitLength="+mBitLength+
                       " >mMinRandomBitLength="+mMinRandomBitLength);
         }
         if (mBitLength < mMinRandomBitLength) {
-            logger.debug("CertificateRepository: getRandomNumber  mBitLength="+mBitLength+
+            logger.info("CertificateRepository: getRandomNumber  mBitLength="+mBitLength+
                       " <mMinRandomBitLength="+mMinRandomBitLength);
-            logger.debug("CertificateRepository: getRandomNumber:  Range size is too small to support random certificate serial numbers.");
+            logger.info("CertificateRepository: getRandomNumber:  Range size is too small to support random certificate serial numbers.");
             throw new EBaseException ("Range size is too small to support random certificate serial numbers.");
         }
 
@@ -227,7 +227,7 @@ public class CertificateRepository extends Repository {
         SecureRandom random = jssSubsystem.getRandomNumberGenerator();
         BigInteger randomNumber = new BigInteger(mBitLength, random);
         randomNumber = (randomNumber.multiply(mRangeSize)).shiftRight(mBitLength);
-        logger.debug("CertificateRepository: getRandomNumber  randomNumber="+randomNumber);
+        logger.info("CertificateRepository: getRandomNumber  randomNumber="+randomNumber);
 
         return randomNumber;
     }
@@ -236,7 +236,7 @@ public class CertificateRepository extends Repository {
         BigInteger nextSerialNumber = null;
 
         nextSerialNumber = randomNumber.add(mMinSerialNo);
-        logger.debug("CertificateRepository: getRandomSerialNumber  nextSerialNumber="+nextSerialNumber);
+        logger.info("CertificateRepository: getRandomSerialNumber  nextSerialNumber="+nextSerialNumber);
 
         return nextSerialNumber;
     }
@@ -249,13 +249,13 @@ public class CertificateRepository extends Repository {
         int n = mMaxCollisionRecoverySteps;
 
         do {
-            logger.debug("CertificateRepository: checkSerialNumbers  checking("+(i+1)+")="+serialNumber);
+            logger.info("CertificateRepository: checkSerialNumbers  checking("+(i+1)+")="+serialNumber);
             try {
                 if (readCertificateRecord(serialNumber) != null) {
-                    logger.debug("CertificateRepository: checkSerialNumbers  collision detected for serialNumber="+serialNumber);
+                    logger.info("CertificateRepository: checkSerialNumbers  collision detected for serialNumber="+serialNumber);
                 }
             } catch (EDBRecordNotFoundException nfe) {
-                logger.debug("CertificateRepository: checkSerialNumbers  serial number "+serialNumber+" is available");
+                logger.info("CertificateRepository: checkSerialNumbers  serial number "+serialNumber+" is available");
                 nextSerialNumber = serialNumber;
             } catch (Exception e) {
                 logger.warn("CertificateRepository: checkSerialNumbers: " + e.getMessage(), e);
@@ -301,13 +301,13 @@ public class CertificateRepository extends Repository {
         BigInteger randomNumber = null;
 
         super.initCacheIfNeeded();
-        logger.debug("CertificateRepository: getNextSerialNumber  mEnableRandomSerialNumbers="+mEnableRandomSerialNumbers);
+        logger.info("CertificateRepository: getNextSerialNumber  mEnableRandomSerialNumbers="+mEnableRandomSerialNumbers);
 
         if (mEnableRandomSerialNumbers) {
             int i = 0;
             do {
                 if (i > 0) {
-                    logger.debug("CertificateRepository: getNextSerialNumber  regenerating serial number");
+                    logger.info("CertificateRepository: getNextSerialNumber  regenerating serial number");
                 }
                 randomNumber = getRandomNumber();
                 nextSerialNumber = getRandomSerialNumber(randomNumber);
@@ -327,7 +327,7 @@ public class CertificateRepository extends Repository {
                 nextSerialNumber.compareTo(mMaxSerialNo) <= 0) {
                 mCounter = mCounter.add(BigInteger.ONE);
             }
-            logger.debug("CertificateRepository: getNextSerialNumber  nextSerialNumber="+
+            logger.info("CertificateRepository: getNextSerialNumber  nextSerialNumber="+
                       nextSerialNumber+"  mCounter="+mCounter);
 
             super.checkRange();
@@ -339,7 +339,7 @@ public class CertificateRepository extends Repository {
     }
 
     public void updateCounter() {
-        logger.debug("CertificateRepository: updateCounter  mEnableRandomSerialNumbers="+
+        logger.info("CertificateRepository: updateCounter  mEnableRandomSerialNumbers="+
                   mEnableRandomSerialNumbers+"  mCounter="+mCounter);
 
         CMSEngine engine = CMS.getCMSEngine();
@@ -355,9 +355,9 @@ public class CertificateRepository extends Repository {
 
         boolean modeChange = (mEnableRandomSerialNumbers && crMode != null && crMode.equals(PROP_SEQUENTIAL_MODE)) ||
                              ((!mEnableRandomSerialNumbers) && crMode != null && crMode.equals(PROP_RANDOM_MODE));
-        logger.debug("CertificateRepository: updateCounter  mEnableRandomSerialNumbers="+mEnableRandomSerialNumbers);
-        logger.debug("CertificateRepository: updateCounter  CertificateRepositoryMode ="+crMode);
-        logger.debug("CertificateRepository: updateCounter  modeChange="+modeChange);
+        logger.info("CertificateRepository: updateCounter  mEnableRandomSerialNumbers="+mEnableRandomSerialNumbers);
+        logger.info("CertificateRepository: updateCounter  CertificateRepositoryMode ="+crMode);
+        logger.info("CertificateRepository: updateCounter  modeChange="+modeChange);
         if (modeChange) {
             if (mForceModeChange) {
                 setEnableRandomSerialNumbers(mEnableRandomSerialNumbers, true, mForceModeChange);
@@ -374,7 +374,7 @@ public class CertificateRepository extends Repository {
                 logger.warn("CertificateRepository: updateCounter: " + e.getMessage(), e);
             }
         }
-        logger.debug("CertificateRepository: UpdateCounter  mEnableRandomSerialNumbers="+
+        logger.info("CertificateRepository: UpdateCounter  mEnableRandomSerialNumbers="+
                   mEnableRandomSerialNumbers+"  mCounter="+mCounter);
     }
 
@@ -389,7 +389,7 @@ public class CertificateRepository extends Repository {
             filter = "(&("+ICertRecord.ATTR_ID+">="+minSerialNo+")("+
                            ICertRecord.ATTR_ID+"<="+maxSerialNo+"))";
         }
-        logger.debug("CertificateRepository: getInRangeCount  filter="+filter+
+        logger.info("CertificateRepository: getInRangeCount  filter="+filter+
                   "  minSerialNo="+minSerialNo+"  maxSerialNo="+maxSerialNo);
 
         Enumeration<Object> e = findCertRecs(filter, new String[] {ICertRecord.ATTR_ID, "objectclass"});
@@ -405,7 +405,7 @@ public class CertificateRepository extends Repository {
                 }
             }
         }
-        logger.debug("CertificateRepository: getInRangeCount  count=" + count);
+        logger.info("CertificateRepository: getInRangeCount  count=" + count);
 
         return count;
     }
@@ -419,7 +419,7 @@ public class CertificateRepository extends Repository {
         String c = null;
         String t = null;
         String s = (mDBConfig.getString(PROP_RANDOM_SERIAL_NUMBER_COUNTER, "-1")).trim();
-        logger.debug("CertificateRepository: getInRangeCounter:  saved counter string="+s);
+        logger.info("CertificateRepository: getInRangeCounter:  saved counter string="+s);
         int i = s.indexOf(',');
         int n = s.length();
         if (i > -1) {
@@ -434,12 +434,12 @@ public class CertificateRepository extends Repository {
         } else {
             c = s;
         }
-        logger.debug("CertificateRepository: getInRangeCounter:  c="+c+"  t="+((t != null)?t:"null"));
+        logger.info("CertificateRepository: getInRangeCounter:  c="+c+"  t="+((t != null)?t:"null"));
 
         BigInteger counter = new BigInteger(c);
         BigInteger count = BigInteger.ZERO;
         if (engine.isPreOpMode()) {
-            logger.debug("CertificateRepository: getInRangeCounter:  CMS.isPreOpMode");
+            logger.info("CertificateRepository: getInRangeCounter:  CMS.isPreOpMode");
             counter = new BigInteger("-2");
             mDBConfig.putString(PROP_RANDOM_SERIAL_NUMBER_COUNTER, "-2");
             try {
@@ -458,7 +458,7 @@ public class CertificateRepository extends Repository {
                 counter = count;
             }
         }
-        logger.debug("CertificateRepository: getInRangeCounter:  counter=" + counter);
+        logger.info("CertificateRepository: getInRangeCounter:  counter=" + counter);
 
         return counter;
     }
@@ -466,7 +466,7 @@ public class CertificateRepository extends Repository {
     public BigInteger getLastSerialNumberInRange(BigInteger serial_low_bound, BigInteger serial_upper_bound)
             throws EBaseException {
 
-        logger.debug("CertificateRepository:  in getLastSerialNumberInRange: low "
+        logger.info("CertificateRepository:  in getLastSerialNumberInRange: low "
                 + serial_low_bound + " high " + serial_upper_bound);
 
         if (serial_low_bound == null
@@ -488,11 +488,11 @@ public class CertificateRepository extends Repository {
                              ((!mEnableRandomSerialNumbers) && crMode != null && crMode.equals(PROP_RANDOM_MODE));
         boolean enableRsnAtConfig = mEnableRandomSerialNumbers && engine.isPreOpMode() &&
                                     (crMode == null || crMode.length() == 0);
-        logger.debug("CertificateRepository: getLastSerialNumberInRange"+
+        logger.info("CertificateRepository: getLastSerialNumberInRange"+
                   "  mEnableRandomSerialNumbers="+mEnableRandomSerialNumbers+
                   "  mMinRandomBitLength="+mMinRandomBitLength+
                   "  CollisionRecovery="+mMaxCollisionRecoveryRegenerations+","+mMaxCollisionRecoverySteps);
-        logger.debug("CertificateRepository: getLastSerialNumberInRange  modeChange="+modeChange+
+        logger.info("CertificateRepository: getLastSerialNumberInRange  modeChange="+modeChange+
                   "  enableRsnAtConfig="+enableRsnAtConfig+"  mForceModeChange="+mForceModeChange+
                   ((crMode != null)?"  mode="+crMode:""));
         if (modeChange || enableRsnAtConfig) {
@@ -517,7 +517,7 @@ public class CertificateRepository extends Repository {
             cs.commit(false);
         } catch (Exception e) {
         }
-        logger.debug("CertificateRepository: getLastSerialNumberInRange  mEnableRandomSerialNumbers="+mEnableRandomSerialNumbers);
+        logger.info("CertificateRepository: getLastSerialNumberInRange  mEnableRandomSerialNumbers="+mEnableRandomSerialNumbers);
 
         String ldapfilter = "("+ICertRecord.ATTR_CERT_STATUS+"=*"+")";
 
@@ -528,20 +528,20 @@ public class CertificateRepository extends Repository {
 
         int size = recList.getSize();
 
-        logger.debug("CertificateRepository:getLastSerialNumberInRange: recList size " + size);
+        logger.info("CertificateRepository:getLastSerialNumberInRange: recList size " + size);
 
         if (size <= 0) {
-            logger.debug("CertificateRepository:getLastSerialNumberInRange: index may be empty");
+            logger.info("CertificateRepository:getLastSerialNumberInRange: index may be empty");
 
             BigInteger ret = new BigInteger(serial_low_bound.toString(10));
 
             ret = ret.subtract(BigInteger.ONE);
-            logger.debug("CertificateRepository:getLastCertRecordSerialNo: returning " + ret);
+            logger.info("CertificateRepository:getLastCertRecordSerialNo: returning " + ret);
             return ret;
         }
         int ltSize = recList.getSizeBeforeJumpTo();
 
-        logger.debug("CertificateRepository:getLastSerialNumberInRange: ltSize " + ltSize);
+        logger.info("CertificateRepository:getLastSerialNumberInRange: ltSize " + ltSize);
 
         CertRecord curRec = null;
 
@@ -556,14 +556,14 @@ public class CertificateRepository extends Repository {
 
                 BigInteger serial = curRec.getSerialNumber();
 
-                logger.debug("CertificateRepository:getLastCertRecordSerialNo:  serialno  " + serial);
+                logger.info("CertificateRepository:getLastCertRecordSerialNo:  serialno  " + serial);
 
                 if (((serial.compareTo(serial_low_bound) == 0) || (serial.compareTo(serial_low_bound) == 1)) &&
                         ((serial.compareTo(serial_upper_bound) == 0) || (serial.compareTo(serial_upper_bound) == -1))) {
-                    logger.debug("getLastSerialNumberInRange returning: " + serial);
+                    logger.info("getLastSerialNumberInRange returning: " + serial);
                     if (modeChange && mEnableRandomSerialNumbers) {
                         mCounter = serial.subtract(serial_low_bound).add(BigInteger.ONE);
-                        logger.debug("getLastSerialNumberInRange mCounter: " + mCounter);
+                        logger.info("getLastSerialNumberInRange mCounter: " + mCounter);
                     }
                     return serial;
                 }
@@ -576,10 +576,10 @@ public class CertificateRepository extends Repository {
 
         ret = ret.subtract(BigInteger.ONE);
 
-        logger.debug("CertificateRepository:getLastCertRecordSerialNo: returning " + ret);
+        logger.info("CertificateRepository:getLastCertRecordSerialNo: returning " + ret);
         if (modeChange && mEnableRandomSerialNumbers) {
             mCounter = BigInteger.ZERO;
-            logger.debug("getLastSerialNumberInRange mCounter: " + mCounter);
+            logger.info("getLastSerialNumberInRange mCounter: " + mCounter);
         }
         return ret;
 
@@ -648,7 +648,7 @@ public class CertificateRepository extends Repository {
     public void setCertStatusUpdateInterval(IRepository requestRepository, int interval,
             boolean listenToCloneModifications) {
 
-        logger.debug("In setCertStatusUpdateInterval " + interval);
+        logger.info("In setCertStatusUpdateInterval " + interval);
 
         // stop running tasks
         if (certStatusUpdateTask != null) {
@@ -659,19 +659,19 @@ public class CertificateRepository extends Repository {
         }
 
         if (interval == 0) {
-            logger.debug("In setCertStatusUpdateInterval interval = 0");
+            logger.info("In setCertStatusUpdateInterval interval = 0");
             return;
         }
 
-        logger.debug("In setCertStatusUpdateInterval listenToCloneModifications=" + listenToCloneModifications);
+        logger.info("In setCertStatusUpdateInterval listenToCloneModifications=" + listenToCloneModifications);
 
         if (listenToCloneModifications) {
-            logger.debug("In setCertStatusUpdateInterval listening to modifications");
+            logger.info("In setCertStatusUpdateInterval listening to modifications");
             retrieveModificationsTask = new RetrieveModificationsTask(this);
             retrieveModificationsTask.start();
         }
 
-        logger.debug("In setCertStatusUpdateInterval scheduling cert status update every " + interval + " seconds.");
+        logger.info("In setCertStatusUpdateInterval scheduling cert status update every " + interval + " seconds.");
         certStatusUpdateTask = new CertStatusUpdateTask(this, requestRepository, interval);
         certStatusUpdateTask.start();
     }
@@ -682,7 +682,7 @@ public class CertificateRepository extends Repository {
      * >0 - enable
      */
     public void setSerialNumberUpdateInterval(IRepository requestRepository, int interval) {
-        logger.debug("In setCertStatusUpdateInterval " + interval);
+        logger.info("In setCertStatusUpdateInterval " + interval);
 
         // stop running tasks
         if (serialNumberUpdateTask != null) {
@@ -690,11 +690,11 @@ public class CertificateRepository extends Repository {
         }
 
         if (interval <= 0) {
-            logger.debug("In setSerialNumberUpdateInterval interval <= 0");
+            logger.info("In setSerialNumberUpdateInterval interval <= 0");
             return;
         }
 
-        logger.debug("In setSerialNumberUpdateInterval scheduling serial number update every " + interval + " seconds.");
+        logger.info("In setSerialNumberUpdateInterval scheduling serial number update every " + interval + " seconds.");
         serialNumberUpdateTask = new SerialNumberUpdateTask(this, requestRepository, interval);
         serialNumberUpdateTask.start();
     }
@@ -706,19 +706,19 @@ public class CertificateRepository extends Repository {
      */
     public void updateCertStatus() throws EBaseException {
 
-        logger.debug("In updateCertStatus()");
+        logger.info("In updateCertStatus()");
 
-        logger.debug(CMS.getLogMessage("CMSCORE_DBS_START_VALID_SEARCH"));
+        logger.info(CMS.getLogMessage("CMSCORE_DBS_START_VALID_SEARCH"));
         transitInvalidCertificates();
-        logger.debug(CMS.getLogMessage("CMSCORE_DBS_FINISH_VALID_SEARCH"));
+        logger.info(CMS.getLogMessage("CMSCORE_DBS_FINISH_VALID_SEARCH"));
 
-        logger.debug(CMS.getLogMessage("CMSCORE_DBS_START_EXPIRED_SEARCH"));
+        logger.info(CMS.getLogMessage("CMSCORE_DBS_START_EXPIRED_SEARCH"));
         transitValidCertificates();
-        logger.debug(CMS.getLogMessage("CMSCORE_DBS_FINISH_EXPIRED_SEARCH"));
+        logger.info(CMS.getLogMessage("CMSCORE_DBS_FINISH_EXPIRED_SEARCH"));
 
-        logger.debug(CMS.getLogMessage("CMSCORE_DBS_START_REVOKED_EXPIRED_SEARCH"));
+        logger.info(CMS.getLogMessage("CMSCORE_DBS_START_REVOKED_EXPIRED_SEARCH"));
         transitRevokedExpiredCertificates();
-        logger.debug(CMS.getLogMessage("CMSCORE_DBS_FINISH_REVOKED_EXPIRED_SEARCH"));
+        logger.info(CMS.getLogMessage("CMSCORE_DBS_FINISH_REVOKED_EXPIRED_SEARCH"));
     }
 
     /**
@@ -838,7 +838,7 @@ public class CertificateRepository extends Repository {
         int size = recList.getSize();
 
         if (size <= 0) {
-            logger.debug("index may be empty");
+            logger.info("index may be empty");
             return;
         }
         int ltSize = recList.getSizeBeforeJumpTo();
@@ -847,8 +847,8 @@ public class CertificateRepository extends Repository {
 
         Vector<Serializable> cList = new Vector<Serializable>(ltSize);
 
-        logger.debug("transidValidCertificates: list size: " + size);
-        logger.debug("transitValidCertificates: ltSize " + ltSize);
+        logger.info("transidValidCertificates: list size: " + size);
+        logger.info("transitValidCertificates: ltSize " + ltSize);
 
         CertRecord curRec = null;
 
@@ -863,13 +863,13 @@ public class CertificateRepository extends Repository {
 
                 Date notAfter = curRec.getNotAfter();
 
-                //logger.debug("notAfter " + notAfter.toString() + " now " + now.toString());
+                //logger.info("notAfter " + notAfter.toString() + " now " + now.toString());
                 if (notAfter.after(now)) {
-                    logger.debug("Record does not qualify,notAfter " + notAfter.toString() + " date " + now.toString());
+                    logger.info("Record does not qualify,notAfter " + notAfter.toString() + " date " + now.toString());
                     continue;
                 }
 
-                logger.debug("transitValid: curRec: " + i + " " + curRec.toString());
+                logger.info("transitValid: curRec: " + i + " " + curRec.toString());
 
                 if (mConsistencyCheck) {
                     cList.add(curRec);
@@ -895,7 +895,7 @@ public class CertificateRepository extends Repository {
         int size = recList.getSize();
 
         if (size <= 0) {
-            logger.debug("index may be empty");
+            logger.info("index may be empty");
             return;
         }
 
@@ -904,8 +904,8 @@ public class CertificateRepository extends Repository {
 
         ltSize = Math.min(ltSize, mTransitMaxRecords);
 
-        logger.debug("transitRevokedExpiredCertificates: list size: " + size);
-        logger.debug("transitRevokedExpiredCertificates: ltSize " + ltSize);
+        logger.info("transitRevokedExpiredCertificates: list size: " + size);
+        logger.info("transitRevokedExpiredCertificates: ltSize " + ltSize);
 
         CertRecord curRec = null;
         int i;
@@ -915,13 +915,13 @@ public class CertificateRepository extends Repository {
             obj = recList.getCertRecord(i);
             if (obj != null) {
                 curRec = (CertRecord) obj;
-                logger.debug("transitRevokedExpired: curRec: " + i + " " + curRec.toString());
+                logger.info("transitRevokedExpired: curRec: " + i + " " + curRec.toString());
 
                 Date notAfter = curRec.getNotAfter();
 
-                // logger.debug("notAfter " + notAfter.toString() + " now " + now.toString());
+                // logger.info("notAfter " + notAfter.toString() + " now " + now.toString());
                 if (notAfter.after(now)) {
-                    logger.debug("Record does not qualify,notAfter " + notAfter.toString() + " date " + now.toString());
+                    logger.info("Record does not qualify,notAfter " + notAfter.toString() + " date " + now.toString());
                     continue;
                 }
 
@@ -952,7 +952,7 @@ public class CertificateRepository extends Repository {
         int size = recList.getSize();
 
         if (size <= 0) {
-            logger.debug("index may be empty");
+            logger.info("index may be empty");
             return;
         }
         int ltSize = recList.getSizeBeforeJumpTo();
@@ -961,8 +961,8 @@ public class CertificateRepository extends Repository {
 
         Vector<Serializable> cList = new Vector<Serializable>(ltSize);
 
-        logger.debug("transidInValidCertificates: list size: " + size);
-        logger.debug("transitInValidCertificates: ltSize " + ltSize);
+        logger.info("transidInValidCertificates: list size: " + size);
+        logger.info("transitInValidCertificates: ltSize " + ltSize);
 
         CertRecord curRec = null;
 
@@ -978,13 +978,13 @@ public class CertificateRepository extends Repository {
 
                 Date notBefore = curRec.getNotBefore();
 
-                //logger.debug("notBefore " + notBefore.toString() + " now " + now.toString());
+                //logger.info("notBefore " + notBefore.toString() + " now " + now.toString());
                 if (notBefore.after(now)) {
-                    logger.debug("Record does not qualify,notBefore " + notBefore.toString() + " date " + now.toString());
+                    logger.info("Record does not qualify,notBefore " + notBefore.toString() + " date " + now.toString());
                     continue;
 
                 }
-                logger.debug("transitInValid: curRec: " + i + " " + curRec.toString());
+                logger.info("transitInValid: curRec: " + i + " " + curRec.toString());
 
                 if (mConsistencyCheck) {
                     cList.add(curRec);
@@ -1007,7 +1007,7 @@ public class CertificateRepository extends Repository {
 
         int i;
 
-        logger.debug("transitCertList " + newCertStatus);
+        logger.info("transitCertList " + newCertStatus);
 
         for (i = 0; i < cList.size(); i++) {
             if (mConsistencyCheck) {
@@ -1039,7 +1039,7 @@ public class CertificateRepository extends Repository {
 
             }
 
-            logger.debug("transitCertList number at: " + i + " = " + serial);
+            logger.info("transitCertList number at: " + i + " = " + serial);
         }
 
         cList.removeAllElements();
@@ -1131,7 +1131,7 @@ public class CertificateRepository extends Repository {
     private void setCertificateRepositoryMode(String mode) {
         IDBSSession s = null;
 
-        logger.debug("CertificateRepository: setCertificateRepositoryMode   setting mode: "+mode);
+        logger.info("CertificateRepository: setCertificateRepositoryMode   setting mode: "+mode);
         try {
             s = dbSubsystem.createSession();
             ModificationSet mods = new ModificationSet();
@@ -1290,7 +1290,7 @@ public class CertificateRepository extends Repository {
      */
     public void updateStatus(BigInteger id, String status)
             throws EBaseException {
-        logger.debug("updateStatus: " + id + " status " + status);
+        logger.info("updateStatus: " + id + " status " + status);
         ModificationSet mods = new ModificationSet();
 
         mods.add(CertRecord.ATTR_CERT_STATUS, Modification.MOD_REPLACE,
@@ -1313,7 +1313,7 @@ public class CertificateRepository extends Repository {
         IDBSSession s = dbSubsystem.createSession();
         Enumeration<Object> e = null;
 
-        logger.debug("searchCertificates filter " + filter + " maxSize " + maxSize);
+        logger.info("searchCertificates filter " + filter + " maxSize " + maxSize);
         try {
             e = s.search(getDN(), filter, maxSize,sortAttribute);
         } finally {
@@ -1357,7 +1357,7 @@ public class CertificateRepository extends Repository {
         IDBSSession s = dbSubsystem.createSession();
         Enumeration<Object> e = null;
 
-        logger.debug("searchCertificates filter " + filter + " maxSize " + maxSize);
+        logger.info("searchCertificates filter " + filter + " maxSize " + maxSize);
         try {
             e = s.search(getDN(), filter, maxSize);
         } finally {
@@ -1382,7 +1382,7 @@ public class CertificateRepository extends Repository {
         IDBSSession s = dbSubsystem.createSession();
         Vector<ICertRecord> v = new Vector<ICertRecord>();
 
-        logger.debug("searchCertificateswith time limit filter " + filter);
+        logger.info("searchCertificateswith time limit filter " + filter);
         try {
             IDBSearchResults sr = s.search(getDN(), filter, maxSize, timeLimit);
             while (sr.hasMoreElements()) {
@@ -1411,7 +1411,7 @@ public class CertificateRepository extends Repository {
         IDBSSession s = dbSubsystem.createSession();
         Vector<ICertRecord> v = new Vector<ICertRecord>();
 
-        logger.debug("searchCertificateswith time limit filter " + filter);
+        logger.info("searchCertificateswith time limit filter " + filter);
         try {
             IDBSearchResults sr = s.search(getDN(), filter, maxSize, timeLimit,sortAttribute);
             while (sr.hasMoreElements()) {
@@ -1437,7 +1437,7 @@ public class CertificateRepository extends Repository {
      */
     public Enumeration<Object> findCertRecs(String filter)
             throws EBaseException {
-        logger.debug("findCertRecs " + filter);
+        logger.info("findCertRecs " + filter);
         IDBSSession s = dbSubsystem.createSession();
         Enumeration<Object> e = null;
         try {
@@ -1452,7 +1452,7 @@ public class CertificateRepository extends Repository {
     public Enumeration<Object> findCertRecs(String filter, String[] attrs)
             throws EBaseException {
 
-        logger.debug("findCertRecs " + filter
+        logger.info("findCertRecs " + filter
                  + "attrs " + Arrays.toString(attrs));
         IDBSSession s = dbSubsystem.createSession();
         Enumeration<Object> e = null;
@@ -1565,7 +1565,7 @@ public class CertificateRepository extends Repository {
             String attrs[], String sortKey, int pageSize)
             throws EBaseException {
 
-        logger.debug("CertificateRepository.findCertRecordsInList()");
+        logger.info("CertificateRepository.findCertRecordsInList()");
 
         IDBSSession session = dbSubsystem.createSession();
 
@@ -1624,12 +1624,12 @@ public class CertificateRepository extends Repository {
         IDBSSession s = dbSubsystem.createSession();
         CertRecordList list = null;
 
-        logger.debug("In findCertRecordsInList with Jumpto " + jumpTo);
+        logger.info("In findCertRecordsInList with Jumpto " + jumpTo);
         try {
             String jumpToVal = null;
 
             if (hardJumpTo) {
-                logger.debug("In findCertRecordsInList with hardJumpto ");
+                logger.info("In findCertRecordsInList with hardJumpto ");
                 jumpToVal = "99";
             } else {
                 int len = jumpTo.length();
@@ -1670,7 +1670,7 @@ public class CertificateRepository extends Repository {
         IDBSSession s = dbSubsystem.createSession();
         CertRecordList list = null;
 
-        logger.debug("In findCertRecordsInListRawJumpto with Jumpto " + jumpTo);
+        logger.info("In findCertRecordsInListRawJumpto with Jumpto " + jumpTo);
 
         try {
 
@@ -1942,12 +1942,12 @@ public class CertificateRepository extends Repository {
 
             for (int i = 0;; i++) {
                 CertRecord rec = (CertRecord) list.getCertRecord(i);
-                logger.debug("processing record: " + i);
+                logger.info("processing record: " + i);
                 if (rec == null) {
                     break; // no element returned
                 } else {
 
-                    logger.debug("processing record: " + i + " " + rec.getSerialNumber());
+                    logger.info("processing record: " + i + " " + rec.getSerialNumber());
                     // Check if we are past the 'to' marker
                     if (toInt != null) {
                         if (rec.getSerialNumber().compareTo(toInt) > 0) {
@@ -1962,7 +1962,7 @@ public class CertificateRepository extends Repository {
             if (s != null)
                 s.close();
         }
-        logger.debug("returning " + v.size() + " elements");
+        logger.info("returning " + v.size() + " elements");
         return v.elements();
     }
 
@@ -2254,9 +2254,9 @@ public class CertificateRepository extends Repository {
                 attrs = new String[] { "objectclass", CertRecord.ATTR_ID, CertRecord.ATTR_X509CERT };
             }
 
-            logger.debug("getInvalidCertificatesByNotBeforeDate filter " + ldapfilter);
+            logger.info("getInvalidCertificatesByNotBeforeDate filter " + ldapfilter);
             //e = s.search(getDN(), ldapfilter);
-            logger.debug("getInvalidCertificatesByNotBeforeDate: about to call findCertRecordsInList");
+            logger.info("getInvalidCertificatesByNotBeforeDate: about to call findCertRecordsInList");
 
             list = findCertRecordsInListRawJumpto(ldapfilter, attrs,
                         DateMapper.dateToDB(date), "notBefore", pageSize);
@@ -2266,7 +2266,7 @@ public class CertificateRepository extends Repository {
         } finally {
             // XXX - transaction is not done at this moment
 
-            logger.debug("In getInvalidCertsByNotBeforeDate finally.");
+            logger.info("In getInvalidCertsByNotBeforeDate finally.");
 
             if (s != null)
                 s.close();
@@ -2299,7 +2299,7 @@ public class CertificateRepository extends Repository {
                 attrs = new String[] { "objectclass", CertRecord.ATTR_ID, CertRecord.ATTR_X509CERT };
             }
 
-            logger.debug("getValidCertsByNotAfterDate filter " + ldapfilter);
+            logger.info("getValidCertsByNotAfterDate filter " + ldapfilter);
             //e = s.search(getDN(), ldapfilter);
             list = findCertRecordsInListRawJumpto(ldapfilter, attrs, DateMapper.dateToDB(date), "notAfter", pageSize);
 
@@ -2337,9 +2337,9 @@ public class CertificateRepository extends Repository {
                             CertRecord.ATTR_REVO_INFO, CertificateValidity.NOT_AFTER, CertRecord.ATTR_X509CERT };
             }
 
-            logger.debug("getRevokedCertificatesByNotAfterDate filter " + ldapfilter);
+            logger.info("getRevokedCertificatesByNotAfterDate filter " + ldapfilter);
             //e = s.search(getDN(), ldapfilter);
-            logger.debug("getRevokedCertificatesByNotAfterDate: about to call findCertRecordsInList");
+            logger.info("getRevokedCertificatesByNotAfterDate: about to call findCertRecordsInList");
 
             list = findCertRecordsInListRawJumpto(ldapfilter, attrs,
                         DateMapper.dateToDB(date), "notafter", pageSize);
@@ -2553,7 +2553,7 @@ public class CertificateRepository extends Repository {
     }
 
     LDAPSearchResults searchForModifiedCertificateRecords(IDBSSession session) throws EBaseException {
-        logger.debug("Starting persistent search.");
+        logger.info("Starting persistent search.");
         String filter = "(" + CertRecord.ATTR_CERT_STATUS + "=*)";
         return session.persistentSearch(getDN(), filter, null);
     }
@@ -2565,7 +2565,7 @@ public class CertificateRepository extends Repository {
      */
     public void getModifications(LDAPEntry entry) {
         if (entry != null) {
-            logger.debug("getModifications  entry DN=" + entry.getDN());
+            logger.info("getModifications  entry DN=" + entry.getDN());
 
             LDAPAttributeSet entryAttrs = entry.getAttributeSet();
             ICertRecord certRec = null;
@@ -2575,7 +2575,7 @@ public class CertificateRepository extends Repository {
             }
             if (certRec != null) {
                 String status = certRec.getStatus();
-                logger.debug("getModifications  serialNumber=" + certRec.getSerialNumber() +
+                logger.info("getModifications  serialNumber=" + certRec.getSerialNumber() +
                           "  status=" + status);
                 if (status != null && (status.equals(ICertRecord.STATUS_VALID) ||
                         status.equals(ICertRecord.STATUS_REVOKED))) {
@@ -2703,7 +2703,7 @@ class CertStatusUpdateTask implements Runnable {
 
     public void run() {
         try {
-            logger.debug("About to start updateCertStatus");
+            logger.info("About to start updateCertStatus");
             updateCertStatus();
 
         } catch (EBaseException e) {
@@ -2712,9 +2712,9 @@ class CertStatusUpdateTask implements Runnable {
     }
 
     public synchronized void updateCertStatus() throws EBaseException {
-        logger.debug("Starting updateCertStatus (entered lock)");
+        logger.info("Starting updateCertStatus (entered lock)");
         repository.updateCertStatus();
-        logger.debug("updateCertStatus done");
+        logger.info("updateCertStatus done");
     }
 
     public void stop() {
@@ -2761,15 +2761,15 @@ class SerialNumberUpdateTask implements Runnable {
     }
 
     public synchronized void updateSerialNumbers() throws EBaseException {
-        logger.debug("Starting updateSerialNumbers (entered lock)");
+        logger.info("Starting updateSerialNumbers (entered lock)");
         repository.updateCounter();
 
-        logger.debug("Starting cert checkRanges");
+        logger.info("Starting cert checkRanges");
         repository.checkRanges();
 
-        logger.debug("Starting request checkRanges");
+        logger.info("Starting request checkRanges");
         requestRepository.checkRanges();
-        logger.debug("updateSerialNumbers done");
+        logger.info("updateSerialNumbers done");
     }
 
     public void stop() {
@@ -2840,26 +2840,26 @@ class RetrieveModificationsTask implements Runnable {
             // results.hasMoreElements() will block until next result becomes available
             // or return false if the search is abandoned or the connection is closed
 
-            logger.debug("Waiting for next result.");
+            logger.info("Waiting for next result.");
             if (results.hasMoreElements()) {
                 LDAPEntry entry = results.next();
 
-                logger.debug("Processing "+entry.getDN()+".");
+                logger.info("Processing "+entry.getDN()+".");
                 repository.getModifications(entry);
-                logger.debug("Done processing "+entry.getDN()+".");
+                logger.info("Done processing "+entry.getDN()+".");
 
                 // wait for next result immediately
                 executorService.schedule(this, 0, TimeUnit.MINUTES);
 
             } else {
                 if (executorService.isShutdown()) {
-                    logger.debug("Task has been shutdown.");
+                    logger.info("Task has been shutdown.");
 
                 } else {
-                    logger.debug("Persistence search ended.");
+                    logger.info("Persistence search ended.");
                     close();
 
-                    logger.debug("Retrying in 1 minute.");
+                    logger.info("Retrying in 1 minute.");
                     executorService.schedule(this, 1, TimeUnit.MINUTES);
                 }
             }
