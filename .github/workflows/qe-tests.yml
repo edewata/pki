@@ -33,6 +33,84 @@ jobs:
           name: pki-build-${{ matrix.os }}
           path: build/RPMS/
 
+  docker-test:
+    name: Docker Test
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      BUILDDIR: /tmp/workdir
+      PKIDIR: /tmp/workdir/pki
+      LOGS: ${GITHUB_WORKSPACE}/logs.txt
+      COPR_REPO: "@pki/master"
+    strategy:
+      matrix:
+        os: ['32']
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+
+      - name: Download PKI packages
+        uses: actions/download-artifact@v2
+        with:
+          name: pki-build-${{ matrix.os }}
+          path: build/RPMS
+
+      - name: Build container with systemd
+        run: docker build ci -t pki --build-arg OS_VERSION=${{ matrix.os }}
+
+      - name: Create network
+        run: docker network create example
+
+      - name: Run controller container
+        run: |
+          IMAGE=pki \
+          NAME=controller \
+          HOSTNAME=controller.example.com \
+          ci/runner-init.sh
+
+      - name: Connect controller container to network
+        run: docker network connect example controller --alias controller.example.com
+
+      - name: Run master container
+        run: |
+          IMAGE=pki \
+          NAME=master \
+          HOSTNAME=master.example.com \
+          ci/runner-init.sh
+
+      - name: Connect master container to network
+        run: docker network connect example master --alias master.example.com
+
+      - name: Install dependencies in master container
+        run: |
+          docker exec master dnf install -y findutils dnf-plugins-core wget 389-ds-base
+          docker exec master dnf copr enable -y ${COPR_REPO}
+
+      - name: Install PKI packages in master container
+        run: docker exec master bash -c "dnf -y localinstall ${PKIDIR}/build/RPMS/*"
+
+      - name: Disconnect master container from network
+        run: docker network disconnect example master
+
+      - name: Gather log files from master container
+        if: always()
+        run: |
+          docker exec master bash -c "journalctl -u pki-tomcatd@pki-tomcat > /var/log/pki/pki-tomcat/systemd.log"
+          docker exec master tar cvf ${PKIDIR}/master-logs.tar -C / var/log/pki
+
+      - name: Upload log files from master container
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: master-logs-${{ matrix.os }}
+          path: master-logs.tar
+
+      - name: Disconnect controller container from network
+        run: docker network disconnect example controller
+
+      - name: Remove network
+        run: docker network rm example
+
   # Tier 0
   installation-sanity:
     # This job uses Ansible playbooks in the tests/ dir to setup a PKI deployment.
