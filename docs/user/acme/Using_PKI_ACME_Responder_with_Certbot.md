@@ -84,6 +84,14 @@ Once the TXT record is propagated properly, complete the enrollment using certbo
 
 ## Certificate Revocation
 
+To revoke a certificate by the DNS name:
+
+```
+$ certbot revoke \
+    --server http://$HOSTNAME:8080/acme/directory \
+    --cert-name server.example.com
+```
+
 To revoke a certificate owned by the ACME account:
 
 ```
@@ -92,7 +100,7 @@ $ certbot revoke \
     --cert-path /etc/letsencrypt/live/server.example.com/cert.pem
 ```
 
-To revoke a certificate associated with a private key:
+To revoke a certificate owned by another ACME account:
 
 ```
 $ certbot revoke \
