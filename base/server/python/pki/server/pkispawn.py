@@ -706,6 +706,10 @@ def create_master_dictionary(parser):
 
 def check_security_domain():
 
+    if deployer.mdict['pki_security_domain_type'] == 'none':
+        # Don't connect to security domain
+        return
+
     # If the subsystem being installed is joining an existing security domain,
     # or it is a subordinate CA (either joining the security domain or creating
     # a new one), connect to and authenticate against the security domain.

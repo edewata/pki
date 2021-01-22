@@ -251,8 +251,11 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             elif keytype.lower() == 'rsa':
                 subsystem.config['preop.cert.sslserver.profile'] = 'caInternalAuthServerCert'
 
-        # configure subsystem cert
-        if deployer.mdict['pki_security_domain_type'] == 'new':
+        if deployer.mdict['pki_security_domain_type'] == 'none':
+            # Don't configure subsystem cert
+            pass
+
+        elif deployer.mdict['pki_security_domain_type'] == 'new':
 
             subsystem.config['preop.cert.subsystem.type'] = 'local'
             subsystem.config['preop.cert.subsystem.profile'] = 'subsystemCert.profile'

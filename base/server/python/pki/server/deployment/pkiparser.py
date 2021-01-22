@@ -978,7 +978,11 @@ class PKIConfigParser:
                 else:
                     self.mdict['pki_security_domain_user'] = "caadmin"
 
-            if not config.str2bool(self.mdict['pki_skip_configuration']) and \
+            if self.mdict['pki_security_domain_type'] == 'none':
+                # Don't use security domain
+                pass
+
+            elif not config.str2bool(self.mdict['pki_skip_configuration']) and \
                     config.str2bool(self.mdict['pki_standalone']):
 
                 # Stand-alone PKI

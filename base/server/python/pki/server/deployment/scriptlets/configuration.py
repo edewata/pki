@@ -350,7 +350,10 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         if not proxySecurePort:
             proxySecurePort = securePort
 
-        if deployer.mdict['pki_security_domain_type'] == 'existing':
+        if deployer.mdict['pki_security_domain_type'] == 'none':
+            subsystem.configure_security_domain('', '', '', '', '')
+
+        elif deployer.mdict['pki_security_domain_type'] == 'existing':
 
             logger.info('Joining existing domain')
 
@@ -668,7 +671,11 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
                 if sd_host.DomainManager and sd_host.DomainManager.lower() == 'true':
                     domain_manager = True
 
-        if deployer.mdict['pki_security_domain_type'] == 'existing':
+        if deployer.mdict['pki_security_domain_type'] == 'none':
+            # Don't create/join security domain
+            pass
+
+        elif deployer.mdict['pki_security_domain_type'] == 'existing':
             logger.info('Joining security domain')
             subsystem.join_security_domain(
                 deployer.install_token,
