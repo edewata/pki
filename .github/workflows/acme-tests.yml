@@ -184,6 +184,11 @@ jobs:
               -d client.example.com \
                --standalone \
               --non-interactive
+          docker exec client certbot renew \
+              --server http://pki.example.com:8080/acme/directory \
+              --cert-name client.example.com \
+              --force-renewal \
+              --non-interactive
           docker exec client certbot revoke \
               --server http://pki.example.com:8080/acme/directory \
               --cert-name client.example.com \

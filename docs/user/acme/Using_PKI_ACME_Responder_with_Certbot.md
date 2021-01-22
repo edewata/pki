@@ -82,6 +82,16 @@ $ dig _acme-challenge.<DNS name> TXT
 
 Once the TXT record is propagated properly, complete the enrollment using certbot.
 
+## Certificate Renewal
+
+To renew a certificate by the DNS name:
+
+```
+$ certbot renew \
+    --server http://$HOSTNAME:8080/acme/directory \
+    --cert-name server.example.com
+```
+
 ## Certificate Revocation
 
 To revoke a certificate by the DNS name:
