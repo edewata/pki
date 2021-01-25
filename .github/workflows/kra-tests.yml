@@ -157,6 +157,120 @@ jobs:
           name: pki-logs-${{ matrix.os }}
           path: pki-logs.tar
 
+  # docs/installation/kra/Installing_KRA_with_HSM.md
+  kra-hsm-test:
+    name: Installing KRA with HSM
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      BUILDDIR: /tmp/workdir
+      PKIDIR: /tmp/workdir/pki
+      LOGS: ${GITHUB_WORKSPACE}/logs.txt
+      COPR_REPO: "@pki/master"
+    strategy:
+      matrix:
+        # NSS cannot find the SoftHSM token on F32
+        os: ['33']
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+
+      - name: Download PKI packages
+        uses: actions/download-artifact@v2
+        with:
+          name: pki-build-${{ matrix.os }}
+          path: build/RPMS
+
+      - name: Build container with systemd
+        run: docker build ci -t pki --build-arg OS_VERSION=${{ matrix.os }}
+
+      - name: Run container
+        run: |
+          IMAGE=pki \
+          NAME=pki \
+          HOSTNAME=pki.example.com \
+          ci/runner-init.sh
+
+      - name: Install dependencies
+        run: |
+          docker exec pki dnf install -y findutils dnf-plugins-core wget 389-ds-base softhsm
+          docker exec pki dnf copr enable -y ${COPR_REPO}
+
+      - name: Install PKI packages
+        run: docker exec pki bash -c "dnf -y localinstall ${PKIDIR}/build/RPMS/*"
+
+      - name: Create HSM token
+        run: |
+          docker exec pki usermod pkiuser -a -G ods
+          docker exec pki runuser -u pkiuser -- \
+              softhsm2-util --init-token --label HSM --so-pin Secret.123 --pin Secret.123 --free
+          docker exec pki ls -laR /var/lib/softhsm/tokens
+
+      - name: Install DS
+        run: docker exec pki ${PKIDIR}/ci/ds-create.sh
+
+      - name: Install CA
+        run: docker exec pki pkispawn -f /usr/share/pki/server/examples/installation/ca-hsm.cfg -s CA -v
+
+      #- name: Install KRA
+      #  run: docker exec pki pkispawn -f /usr/share/pki/server/examples/installation/kra-hsm.cfg -s KRA -v
+
+      - name: Gather config files
+        if: always()
+        run: docker exec pki tar cvf ${PKIDIR}/pki-hsm-conf.tar -C / etc/pki
+
+      - name: Upload config files
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: pki-hsm-conf-${{ matrix.os }}
+          path: pki-hsm-conf.tar
+
+      # TODO: Fix PKI healthcheck to work with HSM
+      # - name: Run PKI healthcheck
+      #   run: docker exec pki pki-healthcheck --debug
+
+      - name: Verify KRA admin
+        run: |
+          docker exec pki pki client-cert-import \
+              --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
+              --pkcs12-password-file /root/.dogtag/pki-tomcat/ca/pkcs12_password.conf
+          docker exec pki certutil -L -d /root/.dogtag/nssdb
+          docker exec pki pki -n caadmin kra-user-show kraadmin
+
+      - name: Verify KRA connector in CA
+        run: |
+          docker exec pki bash -c "pki -n caadmin ca-kraconnector-show | sed -n 's/\s*Host:\s\+\(\S\+\):.*/\1/p' > ${PKIDIR}/kraconnector.host"
+          echo pki.example.com > kra.hostname
+          diff kra.hostname kraconnector.host
+
+      - name: Remove KRA
+        run: docker exec pki pkidestroy -i pki-tomcat -s KRA -v
+
+      - name: Remove CA
+        run: docker exec pki pkidestroy -i pki-tomcat -s CA -v
+
+      - name: Remove DS
+        run: docker exec pki ${PKIDIR}/ci/ds-remove.sh
+
+      - name: Remove HSM token
+        run: |
+          docker exec pki ls -laR /var/lib/softhsm/tokens > /var/log/pki/HSM.log
+          docker exec pki runuser -u pkiuser -- softhsm2-util --delete-token --token HSM
+
+      - name: Gather log files
+        if: always()
+        run: |
+          docker exec pki bash -c "journalctl -u pki-tomcatd@pki-tomcat > /var/log/pki/pki-tomcat/systemd.log"
+          docker exec pki tar cvf ${PKIDIR}/pki-hsm-logs.tar -C / var/log/pki
+
+      - name: Upload log files
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: pki-hsm-logs-${{ matrix.os }}
+          path: pki-hsm-logs.tar
+
   # docs/installation/kra/Installing_KRA_on_Separate_Instance.md
   kra-separate-test:
     name: Installing KRA on Separate Instance

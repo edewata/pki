@@ -10,49 +10,15 @@ where the system certificates and their keys will be stored in HSM.
 KRA Subsystem Installation
 --------------------------
 
-Prepare a file (e.g. kra.cfg) that contains the deployment configuration, for example:
+Prepare a file (e.g. kra-hsm.cfg) that contains the deployment configuration, for example:
 
-```
-[DEFAULT]
-pki_server_database_password=Secret.123
-
-pki_hsm_enable=True
-pki_hsm_libfile=/usr/lib64/pkcs11/libsofthsm2.so
-pki_hsm_modulename=softhsm
-pki_token_name=token
-pki_token_password=Secret.123
-
-[KRA]
-pki_admin_cert_file=ca_admin.cert
-pki_admin_email=kraadmin@example.com
-pki_admin_name=kraadmin
-pki_admin_nickname=kraadmin
-pki_admin_password=Secret.123
-pki_admin_uid=kraadmin
-
-pki_client_database_password=Secret.123
-pki_client_database_purge=False
-pki_client_pkcs12_password=Secret.123
-
-pki_ds_base_dn=dc=kra,dc=pki,dc=example,dc=com
-pki_ds_database=kra
-pki_ds_password=Secret.123
-
-pki_security_domain_name=EXAMPLE
-pki_security_domain_user=caadmin
-pki_security_domain_password=Secret.123
-
-pki_storage_nickname=kra_storage
-pki_transport_nickname=kra_transport
-pki_audit_signing_nickname=kra_audit_signing
-pki_sslserver_nickname=sslserver/server.example.com
-pki_subsystem_nickname=subsystem
-```
+A sample deployment configuration is available at [/usr/share/pki/server/examples/installation/kra-hsm.cfg](../../../base/server/examples/installation/kra-hsm.cfg).
+It assumes that a PKCS #11 token called HSM is available on the system.
 
 Then execute the following command:
 
 ```
-$ pkispawn -f kra.cfg -s KRA
+$ pkispawn -f kra-hsm.cfg -s KRA
 ```
 
 It will install KRA subsystem in a Tomcat instance (default is pki-tomcat) and create the following NSS databases:
@@ -77,16 +43,16 @@ kra_audit_signing                                            ,,P
 Verify that the HSM contains the following certificates:
 
 ```
-$ certutil -L -d /etc/pki/pki-tomcat/alias -h token -f token.pwd
+$ certutil -L -d /etc/pki/pki-tomcat/alias -h HSM -f password.txt
 
 Certificate Nickname                                         Trust Attributes
                                                              SSL,S/MIME,JAR/XPI
 
-token:kra_transport                                          u,u,u
-token:kra_storage                                            u,u,u
-token:subsystem                                              u,u,u
-token:kra_audit_signing                                      u,u,Pu
-token:sslserver/server.example.com                           u,u,u
+HSM:kra_transport                                            u,u,u
+HSM:kra_storage                                              u,u,u
+HSM:subsystem                                                u,u,u
+HSM:kra_audit_signing                                        u,u,Pu
+HSM:sslserver/server.example.com                             u,u,u
 ```
 
 Verifying Admin Certificate
