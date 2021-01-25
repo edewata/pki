@@ -10,46 +10,15 @@ where the system certificates and their keys will be stored in HSM.
 CA Subsystem Installation
 -------------------------
 
-Prepare a file (e.g. ca.cfg) that contains the deployment configuration, for example:
+Prepare a file (e.g. ca-hsm.cfg) that contains the deployment configuration.
 
-```
-[DEFAULT]
-pki_server_database_password=Secret.123
-
-pki_hsm_enable=True
-pki_hsm_libfile=/usr/lib64/pkcs11/libsofthsm2.so
-pki_hsm_modulename=softhsm
-pki_token_name=token
-pki_token_password=Secret.123
-
-[CA]
-pki_admin_email=caadmin@example.com
-pki_admin_name=caadmin
-pki_admin_nickname=caadmin
-pki_admin_password=Secret.123
-pki_admin_uid=caadmin
-
-pki_client_database_password=Secret.123
-pki_client_database_purge=False
-pki_client_pkcs12_password=Secret.123
-
-pki_ds_base_dn=dc=ca,dc=pki,dc=example,dc=com
-pki_ds_database=ca
-pki_ds_password=Secret.123
-
-pki_security_domain_name=EXAMPLE
-
-pki_ca_signing_nickname=ca_signing
-pki_ocsp_signing_nickname=ca_ocsp_signing
-pki_audit_signing_nickname=ca_audit_signing
-pki_sslserver_nickname=sslserver/server.example.com
-pki_subsystem_nickname=subsystem
-```
+A sample deployment configuration is available at [/usr/share/pki/server/examples/installation/ca-hsm.cfg](../../../base/server/examples/installation/ca-hsm.cfg).
+It assumes that a PKCS #11 token called HSM is available on the system.
 
 Then execute the following command:
 
 ```
-$ pkispawn -f ca.cfg -s CA
+$ pkispawn -f ca-hsm.cfg -s CA
 ```
 
 It will install CA subsystem in a Tomcat instance (default is pki-tomcat) and create the following NSS databases:
@@ -74,16 +43,16 @@ ca_audit_signing                                             ,,P
 Verify that the HSM contains the following certificates:
 
 ```
-$ certutil -L -d /etc/pki/pki-tomcat/alias -h token -f token.pwd
+$ certutil -L -d /etc/pki/pki-tomcat/alias -h HSM -f password.txt
 
 Certificate Nickname                                         Trust Attributes
                                                              SSL,S/MIME,JAR/XPI
 
-token:ca_signing                                             CTu,Cu,Cu
-token:ca_ocsp_signing                                        u,u,u
-token:subsystem                                              u,u,u
-token:ca_audit_signing                                       u,u,Pu
-token:sslserver/server.example.com                           u,u,u
+HSM:ca_signing                                               CTu,Cu,Cu
+HSM:ca_ocsp_signing                                          u,u,u
+HSM:subsystem                                                u,u,u
+HSM:ca_audit_signing                                         u,u,Pu
+HSM:sslserver                                                u,u,u
 ```
 
 Verifying Admin Certificate
