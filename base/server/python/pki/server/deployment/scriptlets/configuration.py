@@ -165,9 +165,13 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             with open(cert_file, 'w') as f:
                 f.write(pem_cert)
 
+            os.chown(cert_file, instance.uid, -1)
+            os.chown(tmpdir, instance.uid, -1)
+
             nssdb.add_cert(
                 nickname=nickname,
-                cert_file=cert_file)
+                cert_file=cert_file,
+                user=instance.user)
 
         finally:
             nssdb.close()

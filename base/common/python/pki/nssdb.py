@@ -25,6 +25,7 @@ import base64
 import binascii
 import logging
 import os
+import pwd
 import re
 import shutil
 import stat
@@ -184,7 +185,8 @@ class NSSDatabase(object):
                  internal_password=None,
                  internal_password_file=None,
                  passwords=None,
-                 password_conf=None):
+                 password_conf=None,
+                 user=None):
 
         if not directory:
             directory = os.path.join(
@@ -195,10 +197,16 @@ class NSSDatabase(object):
 
         self.tmpdir = tempfile.mkdtemp()
 
+        if user:
+            uid = pwd.getpwnam(user).pw_uid
+
         if password:
             # if token password is provided, store it in a temp file
             self.password_file = self.create_password_file(
                 self.tmpdir, password)
+            if user:
+                logger.info('Updating %s ownership', self.password_file)
+                os.chown(self.password_file, uid, -1)
 
         elif password_file:
             # if token password file is provided, use the file
@@ -212,6 +220,9 @@ class NSSDatabase(object):
             # if internal password is provided, store it in a temp file
             self.internal_password_file = self.create_password_file(
                 self.tmpdir, internal_password, 'internal_password.txt')
+            if user:
+                logger.info('Updating %s ownership', self.internal_password_file)
+                os.chown(self.internal_password_file, uid, -1)
 
         elif internal_password_file:
             # if internal password file is provided, use the file
@@ -223,6 +234,10 @@ class NSSDatabase(object):
 
         self.passwords = passwords
         self.password_conf = password_conf
+
+        if user:
+            logger.info('Updating %s ownership', self.tmpdir)
+            os.chown(self.tmpdir, uid, -1)
 
     def create(self, enable_trust_policy=False):
 
@@ -450,24 +465,41 @@ class NSSDatabase(object):
             stdout=subprocess.DEVNULL,
             check=True)
 
-    def add_cert(self, nickname, cert_file, token=None, trust_attributes=None):
+    def add_cert(self, nickname, cert_file,
+                 token=None,
+                 trust_attributes=None,
+                 user=None):
 
         tmpdir = tempfile.mkdtemp()
+        if user:
+            uid = pwd.getpwnam(user).pw_uid
+            logger.info('Updating %s ownership', tmpdir)
+            os.chown(tmpdir, uid, -1)
+
         try:
             token = self.get_effective_token(token)
             password_file = self.get_password_file(tmpdir, token)
+
+            if user:
+                logger.info('Updating %s ownership', password_file)
+                os.chown(password_file, uid, -1)
 
             # Add cert in two steps due to bug #1393668.
 
             # If HSM is used, import cert into HSM without trust attributes.
             if token:
-                cmd = [
+                cmd = []
+
+                if user:
+                    cmd.extend(['runuser', '-u', user, '--'])
+
+                cmd.extend([
                     'certutil',
                     '-A',
                     '-d', self.directory,
                     '-h', token,
                     '-P', token
-                ]
+                ])
 
                 if password_file:
                     cmd.extend(['-f', password_file])
@@ -491,11 +523,16 @@ class NSSDatabase(object):
             # If HSM is not used, or cert has trust attributes,
             # import cert into internal token.
             if not token or trust_attributes != ',,':
-                cmd = [
+                cmd = []
+
+                if user:
+                    cmd.extend(['runuser', '-u', user, '--'])
+
+                cmd.extend([
                     'certutil',
                     '-A',
                     '-d', self.directory
-                ]
+                ])
 
                 if self.internal_password_file:
                     cmd.extend(['-f', self.internal_password_file])
@@ -1195,10 +1232,16 @@ class NSSDatabase(object):
             if p.returncode != 0:
                 logger.warning('certutil returned non-zero exit code (bug #1539996)')
 
-            re_compile = re.compile(r'^' + fullname + r'\s+(\S+)$', re.MULTILINE)
-            cert_trust = re.search(re_compile, output.decode()).group(1)
+            output = output.decode('utf-8')
+            logger.info('Output:\n%s', output)
 
-            return cert_trust
+            re_compile = re.compile(r'^' + fullname + r'\s+(\S+)$', re.MULTILINE)
+            match = re.search(re_compile, output)
+
+            if not match:
+                return ',,'
+
+            return match.group(1)
 
         finally:
             shutil.rmtree(tmpdir)
@@ -1324,15 +1367,49 @@ class NSSDatabase(object):
         finally:
             shutil.rmtree(tmpdir)
 
+    def get_pem_cert(self, nickname, token=None):
+
+        tmpdir = tempfile.mkdtemp()
+        try:
+            token = self.get_effective_token(token)
+            password_file = self.get_password_file(tmpdir, token)
+
+            cmd = [
+                'pki',
+                '-d', self.directory
+            ]
+
+            if token:
+                cmd.extend(['--token', token])
+                fullname = token + ':' + nickname
+            else:
+                fullname = nickname
+
+            cmd.extend([
+                '-C', password_file,
+                'nss-cert-export',
+                fullname
+            ])
+
+            logger.debug('Command: %s', ' '.join(map(str, cmd)))
+
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, check=True)
+            return result.stdout.decode('utf-8')
+
+        finally:
+            shutil.rmtree(tmpdir)
+
     def get_cert_info(self, nickname, token=None):
 
-        cert_pem = self.get_cert(nickname=nickname, token=token)
-
-        if not cert_pem:
+        try:
+            cert_pem = self.get_pem_cert(nickname=nickname, token=token)
+        except subprocess.CalledProcessError:
             return None
 
+        logger.info('%s certificate:\n%s', nickname, cert_pem)
+
         cert_obj = x509.load_pem_x509_certificate(
-            cert_pem, backend=default_backend())
+            cert_pem.encode('utf-8'), backend=default_backend())
 
         cert = {}
         cert['object'] = cert_obj

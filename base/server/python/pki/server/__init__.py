@@ -639,7 +639,8 @@ class PKIServer(object):
             token=token,
             password=self.get_token_password(token),
             internal_password=self.get_token_password(),
-            passwords=self.passwords)
+            passwords=self.passwords,
+            user=self.user)
 
     def get_webapps(self):
 
