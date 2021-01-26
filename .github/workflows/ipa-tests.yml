@@ -145,8 +145,7 @@ jobs:
               --name=client \
               --hostname=client.example.com \
               --privileged \
-              ipa:latest \
-              /usr/sbin/init
+              ipa:latest
 
       - name: Connect client container to network
         run: docker network connect example client --alias client.example.com
