@@ -148,7 +148,6 @@ jobs:
               --tmpfs /tmp \
               --tmpfs /run \
               --volume /sys/fs/cgroup:/sys/fs/cgroup:ro \
-              --interactive \
               ipa:latest \
               /usr/sbin/init
 
