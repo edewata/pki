@@ -145,9 +145,6 @@ jobs:
               --name=client \
               --hostname=client.example.com \
               --privileged \
-              --tmpfs /tmp \
-              --tmpfs /run \
-              --volume /sys/fs/cgroup:/sys/fs/cgroup:ro \
               ipa:latest \
               /usr/sbin/init
 
