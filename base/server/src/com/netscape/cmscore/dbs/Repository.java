@@ -533,7 +533,7 @@ public abstract class Repository implements IRepository {
         }
 
         CMSEngine engine = CMS.getCMSEngine();
-        if (engine.getEESSLPort() == null) {
+        if (engine.isPreOpMode()) {
             logger.warn("Repository: Server not completely started.  Returning ..");
             return;
         }
