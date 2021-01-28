@@ -334,3 +334,214 @@ jobs:
         with:
           name: primary-logs-${{ matrix.os }}
           path: primary-logs.tar
+
+  # docs/installation/tks/Installing_TKS_Clone.md
+  # This test installs DS and CA in the CA container,
+  # then installs DS  and TKS in the primary TKS container.
+  # then installs DS clone and TKS clone in the secondary TKS container.
+  tks-clone-separate-test:
+    name: Installing TKS Clone in Separate Instances
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      BUILDDIR: /tmp/workdir
+      PKIDIR: /tmp/workdir/pki
+      LOGS: ${GITHUB_WORKSPACE}/logs.txt
+      COPR_REPO: "@pki/master"
+    strategy:
+      matrix:
+        os: ['32', '33']
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+
+      - name: Download PKI packages
+        uses: actions/download-artifact@v2
+        with:
+          name: pki-build-${{ matrix.os }}
+          path: build/RPMS
+
+      - name: Download container
+        uses: actions/download-artifact@v2
+        with:
+          name: pki-${{ matrix.os }}
+          path: /tmp
+
+      - name: Load container
+        run: docker load --input /tmp/pki.tar
+
+      - name: Create network
+        run: docker network create example
+
+      - name: Run CA container
+        run: |
+          IMAGE=pki \
+          NAME=ca \
+          HOSTNAME=ca.example.com \
+          ci/runner-init.sh
+
+      - name: Connect CA container to network
+        run: docker network connect example ca --alias ca.example.com
+
+      - name: Install dependencies in CA container
+        run: |
+          docker exec ca dnf install -y findutils dnf-plugins-core wget 389-ds-base
+          docker exec ca dnf copr enable -y ${COPR_REPO}
+
+      - name: Install PKI packages in CA container
+        run: docker exec ca bash -c "dnf -y localinstall ${PKIDIR}/build/RPMS/*"
+
+      - name: Install DS in CA container
+        run: docker exec ca ${PKIDIR}/ci/ds-create.sh
+
+      - name: Install CA in CA container
+        run: docker exec ca pkispawn -f /usr/share/pki/server/examples/installation/ca.cfg -s CA -v
+
+      - name: Run primary TKS container
+        run: |
+          IMAGE=pki \
+          NAME=primary \
+          HOSTNAME=tks-primary.example.com \
+          ci/runner-init.sh
+
+      - name: Connect primary TKS container to network
+        run: docker network connect example primary --alias tks-primary.example.com
+
+      - name: Install dependencies in primary TKS container
+        run: |
+          docker exec primary dnf install -y findutils dnf-plugins-core wget 389-ds-base
+          docker exec primary dnf copr enable -y ${COPR_REPO}
+
+      - name: Install PKI packages in primary TKS container
+        run: docker exec primary bash -c "dnf -y localinstall ${PKIDIR}/build/RPMS/*"
+
+      - name: Install DS in primary TKS container
+        run: docker exec primary ${PKIDIR}/ci/ds-create.sh
+
+      - name: Install TKS in primary TKS container
+        run: |
+          docker exec ca pki-server cert-export ca_signing --cert-file ${PKIDIR}/ca_signing.crt
+          docker exec ca cp /root/.dogtag/pki-tomcat/ca_admin.cert ${PKIDIR}/ca_admin.cert
+          docker exec primary cp ${PKIDIR}/ca_signing.crt .
+          docker exec primary cp ${PKIDIR}/ca_admin.cert .
+          docker exec primary pkispawn -f /usr/share/pki/server/examples/installation/tks-separate.cfg -s TKS -v
+
+      - name: Gather config files from primary TKS container
+        if: always()
+        run: docker exec primary tar cvf ${PKIDIR}/tks-primary-conf.tar -C / etc/pki
+
+      - name: Upload config files from primary TKS container
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: tks-primary-conf-${{ matrix.os }}
+          path: tks-primary-conf.tar
+
+      - name: Setup secondary TKS container
+        run: |
+          IMAGE=pki \
+          NAME=secondary \
+          HOSTNAME=tks-secondary.example.com \
+          ci/runner-init.sh
+
+      - name: Connect secondary TKS container to network
+        run: docker network connect example secondary --alias tks-secondary.example.com
+
+      - name: Install dependencies in secondary TKS container
+        run: |
+          docker exec secondary dnf install -y findutils dnf-plugins-core wget 389-ds-base
+          docker exec secondary dnf copr enable -y ${COPR_REPO}
+
+      - name: Install PKI packages on secondary TKS container
+        run: docker exec secondary bash -c "dnf -y localinstall ${PKIDIR}/build/RPMS/*"
+
+      - name: Install DS in secondary TKS container
+        run: docker exec secondary ${PKIDIR}/ci/ds-create.sh
+
+      - name: Install TKS in secondary TKS container
+        run: |
+          docker exec primary pki-server tks-clone-prepare --pkcs12-file ${PKIDIR}/tks-certs.p12 --pkcs12-password Secret.123
+          docker exec primary pki pkcs12-cert-find \
+              --pkcs12-file ${PKIDIR}/tks-certs.p12 \
+              --pkcs12-password Secret.123
+          docker exec secondary cp ${PKIDIR}/ca_signing.crt .
+          docker exec secondary cp ${PKIDIR}/ca_admin.cert .
+          docker exec secondary cp ${PKIDIR}/tks-certs.p12 .
+          docker exec secondary pkispawn -f /usr/share/pki/server/examples/installation/tks-clone-separate.cfg -s TKS -v
+
+      - name: Gather config files from secondary TKS container
+        if: always()
+        run: docker exec secondary tar cvf ${PKIDIR}/tks-secondary-conf.tar -C / etc/pki
+
+      - name: Upload config files from secondary TKS container
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: tks-secondary-conf-${{ matrix.os }}
+          path: tks-secondary-conf.tar
+
+      - name: Verify admin user
+        run: |
+          docker exec ca cp /root/.dogtag/pki-tomcat/ca_admin_cert.p12 ${PKIDIR}/ca_admin_cert.p12
+          docker exec ca cp /root/.dogtag/pki-tomcat/ca/pkcs12_password.conf ${PKIDIR}/pkcs12_password.conf
+          docker exec secondary pki client-cert-import ca_signing --ca-cert ca_signing.crt
+          docker exec secondary pki client-cert-import \
+              --pkcs12 ${PKIDIR}/ca_admin_cert.p12 \
+              --pkcs12-password-file ${PKIDIR}/pkcs12_password.conf
+          docker exec secondary pki -n caadmin tks-user-show tksadmin
+
+      - name: Remove TKS from secondary TKS container
+        run: docker exec secondary pkidestroy -i pki-tomcat -s TKS -v
+
+      - name: Remove DS from secondary container
+        run: docker exec secondary ${PKIDIR}/ci/ds-remove.sh
+
+      - name: Disconnect secondary TKS container from network
+        run: docker network disconnect example secondary
+
+      - name: Gather log files from secondary TKS container
+        if: always()
+        run: |
+          docker exec secondary bash -c "journalctl -u pki-tomcatd@pki-tomcat > /var/log/pki/pki-tomcat/systemd.log"
+          docker exec secondary tar cvf ${PKIDIR}/tks-secondary-logs.tar -C / var/log/pki
+
+      - name: Upload log files from secondary TKS container
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: tks-secondary-logs-${{ matrix.os }}
+          path: tks-secondary-logs.tar
+
+      - name: Remove TKS from primary TKS container
+        run: docker exec primary pkidestroy -i pki-tomcat -s TKS -v
+
+      - name: Remove DS from primary TKS container
+        run: docker exec primary ${PKIDIR}/ci/ds-remove.sh
+
+      - name: Disconnect primary TKS container from network
+        run: docker network disconnect example primary
+
+      - name: Gather log files from primary TKS container
+        if: always()
+        run: |
+          docker exec primary bash -c "journalctl -u pki-tomcatd@pki-tomcat > /var/log/pki/pki-tomcat/systemd.log"
+          docker exec primary tar cvf ${PKIDIR}/tks-primary-logs.tar -C / var/log/pki
+
+      - name: Upload log files from primary TKS container
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: tks-primary-logs-${{ matrix.os }}
+          path: tks-primary-logs.tar
+
+      - name: Remove CA from CA container
+        run: docker exec ca pkidestroy -i pki-tomcat -s CA -v
+
+      - name: Remove DS from primary CA container
+        run: docker exec ca ${PKIDIR}/ci/ds-remove.sh
+
+      - name: Disconnect CA  container from network
+        run: docker network disconnect example ca
+
+      - name: Remove network
+        run: docker network rm example
