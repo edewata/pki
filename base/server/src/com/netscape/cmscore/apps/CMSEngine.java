@@ -1071,6 +1071,7 @@ public class CMSEngine implements ServletContextListener {
         initRequestSubsystem();
 
         init();
+        configurePorts();
 
         startupSubsystems();
 
@@ -1079,7 +1080,6 @@ public class CMSEngine implements ServletContextListener {
         configureAutoShutdown();
         configureServerCertNickname();
         configureExcludedLdapAttrs();
-        configurePorts();
 
         initSecurityDomain();
 
