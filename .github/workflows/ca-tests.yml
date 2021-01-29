@@ -25,7 +25,7 @@ jobs:
           dnf builddep -y --allowerasing --spec ./pki.spec --nogpgcheck
 
       - name: Build PKI packages
-        run: ./build.sh --with-pkgs=base,server,ca --with-timestamp --with-commit-id --work-dir=build rpm
+        run: ./build.sh --with-pkgs=base,server,acme,ca --with-timestamp --with-commit-id --work-dir=build rpm
 
       - name: Upload PKI packages
         uses: actions/upload-artifact@v2
