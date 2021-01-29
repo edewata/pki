@@ -607,6 +607,11 @@ public class CMSEngine implements ServletContextListener {
 
         loadSubsystems();
         initSubsystems();
+
+        // The ports must be configured here to avoid problems
+        // when installing a clone of an existing clone.
+        // https://github.com/dogtagpki/pki/issues/3330
+        configurePorts();
     }
 
     public Configurator createConfigurator() throws Exception {
@@ -1059,7 +1064,6 @@ public class CMSEngine implements ServletContextListener {
         configureAutoShutdown();
         configureServerCertNickname();
         configureExcludedLdapAttrs();
-        configurePorts();
 
         initSecurityDomain();
 
