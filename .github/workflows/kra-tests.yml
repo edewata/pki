@@ -735,6 +735,9 @@ jobs:
               --pkcs12-password-file pkcs12_password.conf
           docker exec tertiary pki -n caadmin kra-user-show kraadmin
 
+      - name: Remove KRA from tertiary container
+        run: docker exec tertiary pkidestroy -i pki-tomcat -s KRA -v
+
       - name: Remove CA from tertiary container
         run: docker exec tertiary pkidestroy -i pki-tomcat -s CA -v
 
