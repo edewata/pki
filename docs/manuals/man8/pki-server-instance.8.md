@@ -16,8 +16,8 @@ pki-server-instance - Command-line interface for managing PKI server instances.
 **pki-server** [*CLI-options*] **instance-migrate** **--tomcat** *version* *instance-ID*  
 **pki-server** [*CLI-options*] **instance-nuxwdog-enable** *instance-ID*  
 **pki-server** [*CLI-options*] **instance-nuxwdog-disable** *instance-ID*  
-**pki-server** [*CLI-options*] **instance-externalcert-add** **-i** *instance-ID* **--cert-file** *path* **--trust-args** *args* **--nickname** *nickname* **--token** *token*  
-**pki-server** [*CLI-options*] **instance-externalcert-del** **-i** *instance-ID* **--nickname** *nickname* **--token** *token*  
+**DEPRECATED:** **pki-server** [*CLI-options*] **instance-externalcert-add** **-i** *instance-ID* **--cert-file** *path* **--trust-args** *args* **--nickname** *nickname* **--token** *token*  
+**DEPRECATED:** **pki-server** [*CLI-options*] **instance-externalcert-del** **-i** *instance-ID* **--nickname** *nickname* **--token** *token*  
 
 ## DESCRIPTION
 
@@ -72,6 +72,7 @@ and enabling or disabling password prompted instance startup using **nuxwdog**.
     rather than using the **nuxwdog** daemon.  See **pki-server nuxwdog(8)** for further details.
 
 **pki-server** [*CLI-options*] **instance-externalcert-add** **-i** *instance-ID* **--cert-file** *path* **--trust-args** *args* **--nickname** *nickname* **--token** *token*  
+    **DEPRECATED:** This command is no longer required for cloning.  
     This command is to add a certificate to the certificate database for a PKI server instance.
     The certificate will be kept track of in the configuration file **external_certs.conf**,
     and will automatically be exported when the system certificates are exported.
@@ -80,6 +81,7 @@ and enabling or disabling password prompted instance startup using **nuxwdog**.
     See **certutil(1)** for more details.  
 
 **pki-server** [*CLI-options*] **instance-externalcert-del** **-i** *instance-ID* **--nickname** *nickname* **--token** *token*  
+    **DEPRECATED:** This command is no longer required for cloning.  
     This command is to remove a certificate from the certificate database for a PKI server instance.
 
 ## OPTIONS

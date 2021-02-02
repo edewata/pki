@@ -646,7 +646,8 @@ class InstanceExternalCertAddCLI(pki.cli.CLI):
     def __init__(self):
         super(InstanceExternalCertAddCLI, self).__init__(
             'externalcert-add',
-            'Add external certificate or chain to the instance')
+            'Add external certificate or chain to the instance',
+            deprecated=True)
 
     def print_help(self):
         print('Usage: pki-server instance-externalcert-add [OPTIONS]')
@@ -663,6 +664,9 @@ class InstanceExternalCertAddCLI(pki.cli.CLI):
         print()
 
     def execute(self, argv):
+
+        logger.warning('The pki-server instance-externalcert-add has been deprecated. It is no longer required for cloning.')
+
         try:
             opts, _ = getopt.gnu_getopt(argv, 'i:v', [
                 'instance=',
@@ -762,7 +766,8 @@ class InstanceExternalCertDeleteCLI(pki.cli.CLI):
     def __init__(self):
         super(InstanceExternalCertDeleteCLI, self).__init__(
             'externalcert-del',
-            'Delete external certificate from the instance')
+            'Delete external certificate from the instance',
+            deprecated=True)
 
     def print_help(self):
         print('Usage: pki-server instance-externalcert-del [OPTIONS]')
@@ -776,6 +781,9 @@ class InstanceExternalCertDeleteCLI(pki.cli.CLI):
         print()
 
     def execute(self, argv):
+
+        logger.warning('The pki-server instance-externalcert-del has been deprecated. It is no longer required for cloning.')
+
         try:
             opts, _ = getopt.gnu_getopt(argv, 'i:v', [
                 'instance=', 'nickname=', 'token=',
