@@ -18,6 +18,7 @@
 package com.netscape.cmscore.dbs;
 
 import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.Hashtable;
 
 import com.netscape.certsrv.base.EBaseException;
@@ -54,6 +55,8 @@ public abstract class Repository implements IRepository {
 
     public static org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(Repository.class);
 
+    public static final int TYPE_RANDOMv3 = 3;
+
     // (the next serialNo to be issued) - 1
     private BigInteger mSerialNo = null;
 
@@ -82,6 +85,11 @@ public abstract class Repository implements IRepository {
     protected Hashtable<String, String> repositoryConfig = new Hashtable<>();
 
     private BigInteger mLastSerialNo = null;
+
+    protected int serialNumberType;
+    protected int serialNumberLength;
+
+    protected SecureRandom random;
 
     /**
      * Constructs a repository.
@@ -267,6 +275,17 @@ public abstract class Repository implements IRepository {
     @Override
     public synchronized BigInteger getNextSerialNumber() throws
             EBaseException {
+
+        if (serialNumberType == TYPE_RANDOMv3) {
+
+            logger.debug("Repository: Generating random serial number");
+
+            byte[] bytes = new byte[serialNumberLength];
+            random.nextBytes(bytes);
+
+            bytes[serialNumberLength - 1] = (byte)(bytes[serialNumberLength - 1] & 0x7f);
+            return new BigInteger(bytes);
+        }
 
         logger.debug("Repository: in getNextSerialNumber. ");
 

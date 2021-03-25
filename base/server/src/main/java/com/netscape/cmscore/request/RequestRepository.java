@@ -54,6 +54,9 @@ public class RequestRepository extends Repository {
 
     public static org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(RequestRepository.class);
 
+    public static final String PROP_REQUEST_ID_TYPE = "requestIDType";
+    public static final String PROP_REQUEST_ID_LENGTH = "requestIDLength";
+
     protected String filter;
 
     /**
@@ -77,6 +80,17 @@ public class RequestRepository extends Repository {
 
         mBaseDN = dbConfig.getRequestDN() + "," + dbSubsystem.getBaseDN();
         logger.info("RequestRepository: - base DN: " + mBaseDN);
+
+        serialNumberType = dbConfig.getInteger(PROP_REQUEST_ID_TYPE, 0);
+        logger.info("RequestRepository: - request ID type: " + serialNumberType);
+
+        if (serialNumberType == TYPE_RANDOMv3) {
+
+            serialNumberLength = dbConfig.getInteger(PROP_REQUEST_ID_LENGTH);
+            logger.info("RequestRepository: - request ID length: " + serialNumberLength);
+
+            random = SecureRandom.getInstance("pkcs11prng", "Mozilla-JSS");
+        }
 
         rangeDN = dbConfig.getRequestRangeDN() + "," + dbSubsystem.getBaseDN();
         logger.info("RequestRepository: - range DN: " + rangeDN);

@@ -72,6 +72,7 @@ public class CertificateRepository extends Repository {
     public final static String PROP_TRANS_PAGESIZE = "transitRecordPageSize";
 
     public final String CERT_X509ATTRIBUTE = "x509signedcert";
+
     private static final String PROP_ENABLE_RANDOM_SERIAL_NUMBERS = "enableRandomSerialNumbers";
     private static final String PROP_RANDOM_SERIAL_NUMBER_COUNTER = "randomSerialNumberCounter";
     private static final String PROP_FORCE_MODE_CHANGE = "forceModeChange";
@@ -81,6 +82,9 @@ public class CertificateRepository extends Repository {
     private static final String PROP_COLLISION_RECOVERY_REGENERATIONS = "collisionRecoveryRegenerations";
     private static final String PROP_MINIMUM_RANDOM_BITS = "minimumRandomBits";
     private static final BigInteger BI_MINUS_ONE = (BigInteger.ZERO).subtract(BigInteger.ONE);
+
+    public static final String PROP_SERIAL_NUMBER_TYPE = "serialNumberType";
+    public static final String PROP_SERIAL_NUMBER_LENGTH = "serialNumberLength";
 
     private boolean mConsistencyCheck = false;
 
@@ -108,6 +112,17 @@ public class CertificateRepository extends Repository {
 
         mBaseDN = mDBConfig.getSerialDN() + "," + dbSubsystem.getBaseDN();
         logger.info("CertificateRepository: - base DN: " + mBaseDN);
+
+        serialNumberType = mDBConfig.getInteger(PROP_SERIAL_NUMBER_TYPE, 0);
+        logger.info("CertificateRepository: - serial number type: " + serialNumberType);
+
+        if (serialNumberType == TYPE_RANDOMv3) {
+
+            serialNumberLength = mDBConfig.getInteger(PROP_SERIAL_NUMBER_LENGTH);
+            logger.info("CertificateRepository: - serial number length: " + serialNumberLength);
+
+            random = SecureRandom.getInstance("pkcs11prng", "Mozilla-JSS");
+        }
 
         rangeDN = mDBConfig.getSerialRangeDN() + "," + dbSubsystem.getBaseDN();
         logger.info("CertificateRepository: - range DN: " + rangeDN);
@@ -375,6 +390,11 @@ public class CertificateRepository extends Repository {
     }
 
     public void updateCounter() {
+
+        if (serialNumberType == TYPE_RANDOMv3) {
+            return;
+        }
+
         logger.debug("CertificateRepository: updateCounter  mEnableRandomSerialNumbers="+
                   mEnableRandomSerialNumbers+"  mCounter="+mCounter);
 

@@ -19,6 +19,7 @@ package com.netscape.cmscore.dbs;
 
 import java.math.BigInteger;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Vector;
@@ -46,6 +47,9 @@ public class KeyRepository extends Repository implements IKeyRepository {
 
     public static org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(KeyRepository.class);
 
+    public static final String PROP_KEY_ID_TYPE = "serialNumberType";
+    public static final String PROP_KEY_ID_LENGTH = "serialNumberLength";
+
     /**
      * Constructs a key repository. It checks if the key repository
      * does exist. If not, it creates the repository.
@@ -66,6 +70,17 @@ public class KeyRepository extends Repository implements IKeyRepository {
 
         mBaseDN = dbConfig.getSerialDN() + "," + dbSubsystem.getBaseDN();
         logger.info("KeyRepository: - base DN: " + mBaseDN);
+
+        serialNumberType = dbConfig.getInteger(PROP_KEY_ID_TYPE, 0);
+        logger.info("CertificateRepository: - key ID type: " + serialNumberType);
+
+        if (serialNumberType == TYPE_RANDOMv3) {
+
+            serialNumberLength = dbConfig.getInteger(PROP_KEY_ID_LENGTH);
+            logger.info("CertificateRepository: - key ID length: " + serialNumberLength);
+
+            random = SecureRandom.getInstance("pkcs11prng", "Mozilla-JSS");
+        }
 
         rangeDN = dbConfig.getSerialRangeDN() + "," + dbSubsystem.getBaseDN();
         logger.info("KeyRepository: - range DN: " + rangeDN);
