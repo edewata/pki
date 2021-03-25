@@ -18,6 +18,8 @@
 package com.netscape.cmscore.dbs;
 
 import java.math.BigInteger;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.util.Arrays;
@@ -352,6 +354,19 @@ public class CertificateRepository extends Repository {
             super.checkRange();
         } else {
             nextSerialNumber = super.getNextSerialNumber();
+        }
+
+        try {
+            SecureRandom random = SecureRandom.getInstance("pkcs11prng", "Mozilla-JSS");
+            byte[] bytes = new byte[16];
+            random.nextBytes(bytes);
+            nextSerialNumber = new BigInteger(1, bytes);
+
+        } catch (NoSuchAlgorithmException e) {
+            throw new EBaseException(e);
+
+        } catch (NoSuchProviderException e) {
+            throw new EBaseException(e);
         }
 
         return nextSerialNumber;
