@@ -18,6 +18,9 @@
 package com.netscape.cmscore.request;
 
 import java.math.BigInteger;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.SecureRandom;
 import java.util.Hashtable;
 
 import com.netscape.certsrv.base.EBaseException;
@@ -283,6 +286,22 @@ public class RequestRepository extends Repository {
         logger.info("RequestRepository: No request found, returning " + requestID);
 
         return requestID;
+    }
+
+    public BigInteger getNextSerialNumber() throws EBaseException {
+
+        try {
+            SecureRandom random = SecureRandom.getInstance("pkcs11prng", "Mozilla-JSS");
+            byte[] bytes = new byte[16];
+            random.nextBytes(bytes);
+            return new BigInteger(1, bytes);
+
+        } catch (NoSuchAlgorithmException e) {
+            throw new EBaseException(e);
+
+        } catch (NoSuchProviderException e) {
+            throw new EBaseException(e);
+        }
     }
 
     public String getPublishingStatus() {

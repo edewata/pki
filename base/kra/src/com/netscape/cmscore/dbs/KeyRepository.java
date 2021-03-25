@@ -18,7 +18,10 @@
 package com.netscape.cmscore.dbs;
 
 import java.math.BigInteger;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Vector;
@@ -559,6 +562,22 @@ public class KeyRepository extends Repository implements IKeyRepository {
         logger.debug("KeyRepository: getLastSerialNumberInRange returning: " + ret);
         return ret;
 
+    }
+
+    public BigInteger getNextSerialNumber() throws EBaseException {
+
+        try {
+            SecureRandom random = SecureRandom.getInstance("pkcs11prng", "Mozilla-JSS");
+            byte[] bytes = new byte[16];
+            random.nextBytes(bytes);
+            return new BigInteger(1, bytes);
+
+        } catch (NoSuchAlgorithmException e) {
+            throw new EBaseException(e);
+
+        } catch (NoSuchProviderException e) {
+            throw new EBaseException(e);
+        }
     }
 
     public void shutdown() {
