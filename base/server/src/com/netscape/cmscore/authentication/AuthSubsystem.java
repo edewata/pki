@@ -38,7 +38,6 @@ import com.netscape.certsrv.authentication.IAuthToken;
 import com.netscape.certsrv.base.EBaseException;
 import com.netscape.certsrv.base.IConfigStore;
 import com.netscape.certsrv.base.ISubsystem;
-import com.netscape.cms.authentication.CMCAuth;
 import com.netscape.cmscore.apps.CMS;
 import com.netscape.cmscore.apps.CMSEngine;
 import com.netscape.cmscore.apps.EngineConfig;
@@ -111,25 +110,10 @@ public class AuthSubsystem implements ISubsystem {
      */
     public final static String SSLCLIENTCERT_AUTHMGR_ID = "sslClientCertAuthMgr";
 
-    /**
-     * Constant for CMC authentication plugin ID.
-     */
-    public final static String CMCAUTH_PLUGIN_ID = "CMCAuth";
-
-    /**
-     * Constant for CMC authentication manager ID.
-     */
-    public final static String CMCAUTH_AUTHMGR_ID = "CMCAuth";
-
-    /**
-     * Constant for CMC user-signed authentication manager ID.
-     */
-    public final static String CMC_USER_SIGNED_AUTH_AUTHMGR_ID = "CMCUserSignedAuth";
-
     public Hashtable<String, AuthMgrPlugin> mAuthMgrPlugins = new Hashtable<String, AuthMgrPlugin>();
     public Hashtable<String, AuthManagerProxy> mAuthMgrInsts = new Hashtable<String, AuthManagerProxy>();
     private String mId = "auths";
-    private AuthenticationConfig mConfig;
+    public AuthenticationConfig mConfig;
 
     public AuthSubsystem() {
     }
@@ -213,13 +197,6 @@ public class AuthSubsystem implements ISubsystem {
         challengeAuth.setAuthenticationConfig(mConfig);
         challengeAuth.init(CHALLENGE_AUTHMGR_ID, CHALLENGE_PLUGIN_ID, null);
         mAuthMgrInsts.put(CHALLENGE_AUTHMGR_ID, new AuthManagerProxy(true, challengeAuth));
-
-        logger.info("AuthSubsystem: Loading auth manager " + CMCAUTH_AUTHMGR_ID);
-
-        CMCAuth cmcAuth = new CMCAuth();
-        cmcAuth.setAuthenticationConfig(mConfig);
-        cmcAuth.init(CMCAUTH_AUTHMGR_ID, CMCAUTH_PLUGIN_ID, null);
-        mAuthMgrInsts.put(CMCAUTH_AUTHMGR_ID, new AuthManagerProxy(true, cmcAuth));
 
         // #56659
         // logger.info("AuthSubsystem: Loading auth manager " + NULL_AUTHMGR_ID);

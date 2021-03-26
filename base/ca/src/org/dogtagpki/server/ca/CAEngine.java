@@ -39,6 +39,7 @@ import javax.servlet.annotation.WebListener;
 
 import org.apache.commons.lang3.StringUtils;
 import org.dogtagpki.legacy.ca.CAPolicy;
+import org.dogtagpki.server.authentication.AuthenticationConfig;
 import org.mozilla.jss.CryptoManager;
 import org.mozilla.jss.crypto.PrivateKey;
 import org.mozilla.jss.netscape.security.x509.CertificateChain;
@@ -70,6 +71,7 @@ import com.netscape.certsrv.util.AsyncLoader;
 import com.netscape.cmscore.apps.CMS;
 import com.netscape.cmscore.apps.CMSEngine;
 import com.netscape.cmscore.apps.EngineConfig;
+import com.netscape.cmscore.authentication.CAAuthSubsystem;
 import com.netscape.cmscore.authentication.VerifiedCert;
 import com.netscape.cmscore.base.ConfigStorage;
 import com.netscape.cmscore.cert.CertUtils;
@@ -189,6 +191,13 @@ public class CAEngine extends CMSEngine implements ServletContextListener {
         PKISocketConfig socketConfig = config.getSocketConfig();
         LDAPConfig ldapConfig = config.getInternalDBConfig();
         connectionFactory.init(socketConfig, ldapConfig, getPasswordStore());
+    }
+
+    public void initAuthSubsystem() throws Exception {
+        AuthenticationConfig authConfig = config.getAuthenticationConfig();
+        authSubsystem = new CAAuthSubsystem();
+        authSubsystem.init(authConfig);
+        authSubsystem.startup();
     }
 
     public CertificateRepository getCertificateRepository() {
