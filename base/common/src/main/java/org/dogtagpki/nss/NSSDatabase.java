@@ -976,7 +976,11 @@ public class NSSDatabase {
             logger.info("NSSDatabase: - type: EC");
             logger.info("NSSDatabase: - curve: " + curve);
 
-            keyPair = CryptoUtil.generateECCKeyPair(token, curve);
+            keyPair = CryptoUtil.generateECCKeyPair(
+                    token,
+                    curve,
+                    null,
+                    CryptoUtil.ECDHE_USAGES_MASK);
 
         } else {
             throw new Exception("Unsupported key type: " + keyType);
