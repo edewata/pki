@@ -208,6 +208,19 @@ public class CertificateRepository extends Repository {
         }
     }
 
+    protected void checkRange() throws EBaseException {
+
+        BigInteger rangeLength = null;
+        BigInteger randomLimit = null;
+
+        if (dbSubsystem.getEnableSerialMgmt() && mEnableRandomSerialNumbers) {
+            rangeLength = mMaxSerialNo.subtract(mMinSerialNo).add(BigInteger.ONE);
+            randomLimit = rangeLength.subtract(mLowWaterMarkNo.shiftRight(1));
+        }
+
+        checkRange(rangeLength, randomLimit);
+    }
+
     private BigInteger getRandomNumber() throws EBaseException {
 
         super.initCacheIfNeeded();
@@ -335,7 +348,7 @@ public class CertificateRepository extends Repository {
             logger.debug("CertificateRepository: getNextSerialNumber  nextSerialNumber="+
                       nextSerialNumber+"  mCounter="+mCounter);
 
-            super.checkRange();
+            checkRange();
         } else {
             nextSerialNumber = super.getNextSerialNumber();
         }

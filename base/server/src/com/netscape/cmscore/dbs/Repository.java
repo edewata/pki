@@ -303,40 +303,47 @@ public abstract class Repository implements IRepository {
      * @exception EDBException thrown when range switch is needed
      *                           but next range is not allocated
      */
-    protected void checkRange() throws EBaseException
-    {
-        CMSEngine engine = CMS.getCMSEngine();
-        // check if we have reached the end of the range
-        // if so, move to next range
-        BigInteger randomLimit = null;
-        BigInteger rangeLength = null;
-        if ((this instanceof CertificateRepository) &&
-            dbSubsystem.getEnableSerialMgmt() && mEnableRandomSerialNumbers) {
-            rangeLength = mMaxSerialNo.subtract(mMinSerialNo).add(BigInteger.ONE);
-            randomLimit = rangeLength.subtract(mLowWaterMarkNo.shiftRight(1));
-            logger.debug("Repository: checkRange  rangeLength=" + rangeLength);
-            logger.debug("Repository: checkRange  randomLimit=" + randomLimit);
-        }
-        logger.debug("Repository: checkRange  mLastSerialNo="+mLastSerialNo);
-        if (mLastSerialNo.compareTo( mMaxSerialNo ) > 0 ||
-            ((!engine.isPreOpMode()) && randomLimit != null && mCounter.compareTo(randomLimit) > 0)) {
+    protected void checkRange() throws EBaseException {
+        checkRange(null, null);
+    }
 
-            if (dbSubsystem.getEnableSerialMgmt()) {
-                logger.debug("Reached the end of the range.  Attempting to move to next range");
-                if (!hasNextRange()) {
-                    if (rangeLength != null && mCounter.compareTo(rangeLength) < 0) {
-                        return;
-                    } else {
-                        throw new EDBException(CMS.getUserMessage("CMS_DBS_LIMIT_REACHED",
-                                                                  mLastSerialNo.toString()));
-                    }
-                }
-                switchToNextRange();
-            } else {
-                throw new EDBException(CMS.getUserMessage("CMS_DBS_LIMIT_REACHED",
-                        mLastSerialNo.toString()));
+    protected void checkRange(BigInteger rangeLength, BigInteger randomLimit) throws EBaseException {
+
+        logger.info("Repository: Checking range");
+        logger.info("Repository: - last number: " + mLastSerialNo);
+        logger.info("Repository: - max number: " + mMaxSerialNo);
+        logger.info("Repository: - range length: " + rangeLength);
+        logger.info("Repository: - random limit: " + randomLimit);
+        logger.info("Repository: - counter: " + mCounter);
+
+        CMSEngine engine = CMS.getCMSEngine();
+
+        if (mLastSerialNo.compareTo(mMaxSerialNo) <= 0) {
+            if (engine.isPreOpMode() || randomLimit == null || mCounter.compareTo(randomLimit) <= 0) {
+                logger.info("Repository: End of range not reached yet");
+                return;
             }
         }
+
+        logger.info("Repository: End of the range reached");
+
+        if (!dbSubsystem.getEnableSerialMgmt()) {
+            logger.error("Repository: Range management not enabled");
+            throw new EDBException(CMS.getUserMessage("CMS_DBS_LIMIT_REACHED", mLastSerialNo.toString()));
+        }
+
+        if (!hasNextRange()) {
+            if (rangeLength != null && mCounter.compareTo(rangeLength) < 0) {
+                logger.info("Repository: Next range not available yet");
+                return;
+            }
+
+            logger.error("Repository: Unable to get next range");
+            throw new EDBException(CMS.getUserMessage("CMS_DBS_LIMIT_REACHED", mLastSerialNo.toString()));
+        }
+
+        logger.info("Repository: Moving to next range");
+        switchToNextRange();
     }
 
     /**
