@@ -18,6 +18,8 @@
 package com.netscape.cmscore.dbs;
 
 import java.math.BigInteger;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Date;
@@ -91,6 +93,9 @@ public class CertificateRepository extends Repository {
     private DatabaseConfig mDBConfig = null;
     private boolean mForceModeChange = false;
 
+    boolean idRandom;
+    int idLength;
+
     /**
      * Constructs a certificate repository.
      */
@@ -149,6 +154,9 @@ public class CertificateRepository extends Repository {
         if (incrementNo != null) {
             mIncrementNo = new BigInteger(incrementNo, mRadix);
         }
+
+        idRandom = mDBConfig.getBoolean("certs.id.random", true);
+        idLength = mDBConfig.getInteger("certs.id.length", 16);
     }
 
     /**
@@ -303,6 +311,24 @@ public class CertificateRepository extends Repository {
      */
     public synchronized BigInteger getNextSerialNumber()
             throws EBaseException {
+
+        if (idRandom) {
+
+            logger.info("CertificateRepository: Generating random serial number");
+
+            try {
+                SecureRandom random = SecureRandom.getInstance("pkcs11prng", "Mozilla-JSS");
+                byte[] bytes = new byte[idLength];
+                random.nextBytes(bytes);
+                return new BigInteger(1, bytes);
+
+            } catch (NoSuchAlgorithmException e) {
+                throw new EBaseException(e);
+
+            } catch (NoSuchProviderException e) {
+                throw new EBaseException(e);
+            }
+        }
 
         BigInteger nextSerialNumber = null;
         BigInteger randomNumber = null;

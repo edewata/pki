@@ -215,6 +215,14 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             subsystem.config['ca.defaultOcspUri'] = ocsp_uri
 
         if subsystem.name == 'ca':
+            certs_id_random = deployer.mdict.get('pki_certs_id_random')
+            if certs_id_random:
+                subsystem.config['dbs.certs.id.random'] = certs_id_random
+
+            certs_id_length = deployer.mdict.get('pki_certs_id_length')
+            if certs_id_length:
+                subsystem.config['dbs.certs.id.length'] = certs_id_length
+
             serial_number_range_start = deployer.mdict.get('pki_serial_number_range_start')
             if serial_number_range_start:
                 subsystem.config['dbs.beginSerialNumber'] = serial_number_range_start
