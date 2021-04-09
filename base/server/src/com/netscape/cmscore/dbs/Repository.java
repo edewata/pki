@@ -69,7 +69,6 @@ public abstract class Repository implements IRepository {
     protected String nextMaxSerialName;
     protected BigInteger mNextMaxSerialNo;
 
-    protected boolean mEnableRandomSerialNumbers = false;
     protected BigInteger mCounter = null;
 
     protected BigInteger mIncrementNo;
@@ -82,7 +81,7 @@ public abstract class Repository implements IRepository {
     protected int mRadix;
     protected Hashtable<String, String> repositoryConfig = new Hashtable<>();
 
-    private BigInteger mLastSerialNo = null;
+    protected BigInteger mLastSerialNo;
 
     /**
      * Constructs a repository.
@@ -577,6 +576,10 @@ public abstract class Repository implements IRepository {
         return conflict;
     }
 
+    public BigInteger getNumbersInRange() {
+        return mMaxSerialNo.subtract(mLastSerialNo);
+    }
+
     /**
      * Checks to see if a new range is needed, or if we have reached the end of the
      * current range, or if a range conflict has occurred.
@@ -599,13 +602,7 @@ public abstract class Repository implements IRepository {
         if (mLastSerialNo == null)
             initCache();
 
-        BigInteger numsInRange = null;
-        if ((this instanceof CertificateRepository) &&
-            dbSubsystem.getEnableSerialMgmt() && mEnableRandomSerialNumbers) {
-            numsInRange = (mMaxSerialNo.subtract(mMinSerialNo)).subtract(mCounter);
-        } else {
-            numsInRange = mMaxSerialNo.subtract(mLastSerialNo);
-        }
+        BigInteger numsInRange = getNumbersInRange();
 
         logger.debug("Repository: Serial numbers left in range: " + numsInRange);
         logger.debug("Repository: Last serial number: " + mLastSerialNo);

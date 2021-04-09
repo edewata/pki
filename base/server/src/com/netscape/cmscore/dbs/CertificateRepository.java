@@ -79,6 +79,7 @@ public class CertificateRepository extends Repository {
     private static final String PROP_MINIMUM_RANDOM_BITS = "minimumRandomBits";
     private static final BigInteger BI_MINUS_ONE = (BigInteger.ZERO).subtract(BigInteger.ONE);
 
+    protected boolean mEnableRandomSerialNumbers;
     private boolean mConsistencyCheck = false;
 
     private int mBitLength = 0;
@@ -219,6 +220,16 @@ public class CertificateRepository extends Repository {
         }
 
         checkRange(rangeLength, randomLimit);
+    }
+
+    public BigInteger getNumbersInRange() {
+
+        if (dbSubsystem.getEnableSerialMgmt() && mEnableRandomSerialNumbers) {
+            return mMaxSerialNo.subtract(mMinSerialNo).subtract(mCounter);
+
+        } else {
+            return mMaxSerialNo.subtract(mLastSerialNo);
+        }
     }
 
     private BigInteger getRandomNumber() throws EBaseException {
