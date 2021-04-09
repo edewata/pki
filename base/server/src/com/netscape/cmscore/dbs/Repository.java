@@ -164,43 +164,40 @@ public abstract class Repository implements IRepository {
     /**
      * init serial number cache
      */
-    private void initCache() throws EBaseException {
+    protected void initCache() throws EBaseException {
 
-        logger.debug("Repository: in InitCache");
+        logger.info("Repository: Updating last serial number");
+
+        if (mLastSerialNo != null) {
+            return;
+        }
 
         logger.info("Repository: Getting last serial number in range " + mMinSerialNo + ".." + mMaxSerialNo);
-        BigInteger theSerialNo = getLastSerialNumberInRange(mMinSerialNo, mMaxSerialNo);
+        BigInteger lastSerialNo = getLastSerialNumberInRange(mMinSerialNo, mMaxSerialNo);
 
-        if (theSerialNo == null) {
+        if (lastSerialNo == null) {
             // This arises when range has been depleted by servicing
-            // UpdateNumberRange requests for clones.  Attempt to
-            // move to next range.
-            logger.warn("Repository: Range " + mMinSerialNo + ".." + mMaxSerialNo + " has been depleted");
+            // UpdateNumberRange requests for clones.
+            logger.info("Repository: Range has been depleted");
 
             if (hasNextRange()) {
-                logger.info("Repository: Switching to next range");
+                logger.info("Repository: Moving to next range");
                 switchToNextRange();
 
                 logger.info("Repository: Getting last serial number in new range " + mMinSerialNo + ".." + mMaxSerialNo);
-                theSerialNo = getLastSerialNumberInRange(mMinSerialNo, mMaxSerialNo);
+                lastSerialNo = getLastSerialNumberInRange(mMinSerialNo, mMaxSerialNo);
 
             } else {
                 logger.warn("Repository: Next range not available");
             }
         }
 
-        if (theSerialNo != null) {
-            mLastSerialNo = new BigInteger(theSerialNo.toString());
-            logger.debug("Repository: Last serial number: " + mLastSerialNo);
-
-        } else {
-            throw new EBaseException("Error in obtaining the last serial number in the repository!");
+        if (lastSerialNo == null) {
+            throw new EBaseException("Unable to update last serial number");
         }
-    }
 
-    protected void initCacheIfNeeded() throws EBaseException {
-        if (mLastSerialNo == null)
-            initCache();
+        mLastSerialNo = lastSerialNo;
+        logger.info("Repository: Last serial number: " + mLastSerialNo);
     }
 
     /**
@@ -217,8 +214,9 @@ public abstract class Repository implements IRepository {
     public synchronized BigInteger peekNextSerialNumber() throws EBaseException {
 
         logger.debug("Repository:In getTheSerialNumber ");
-        if (mLastSerialNo == null)
-            initCache();
+
+        initCache();
+
         BigInteger serial = mLastSerialNo.add(BigInteger.ONE);
 
         if (mMaxSerialNo != null && serial.compareTo(mMaxSerialNo) > 0)
@@ -237,8 +235,8 @@ public abstract class Repository implements IRepository {
         // mSerialNo is already set. But just in case
 
         logger.debug("Repository:In setTheSerialNumber " + num);
-        if (mLastSerialNo == null)
-            initCache();
+
+        initCache();
 
         if (num.compareTo(mSerialNo) <= 0) {
             throw new EDBException(CMS.getUserMessage("CMS_DBS_SETBACK_SERIAL",
@@ -263,9 +261,8 @@ public abstract class Repository implements IRepository {
 
         logger.debug("Repository: in getNextSerialNumber. ");
 
-        if (mLastSerialNo == null) {
-            initCache();
-        }
+        initCache();
+
         if (mLastSerialNo == null) {
             logger.error("Repository::getNextSerialNumber() " +
                        "- mLastSerialNo is null!");
@@ -599,8 +596,7 @@ public abstract class Repository implements IRepository {
             return;
         }
 
-        if (mLastSerialNo == null)
-            initCache();
+        initCache();
 
         BigInteger numsInRange = getNumbersInRange();
 
