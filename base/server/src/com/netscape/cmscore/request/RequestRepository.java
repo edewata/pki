@@ -18,6 +18,8 @@
 package com.netscape.cmscore.request;
 
 import java.math.BigInteger;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.util.Hashtable;
 
@@ -52,6 +54,9 @@ import com.netscape.cmscore.security.JssSubsystem;
 public class RequestRepository extends Repository {
 
     public static org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(RequestRepository.class);
+
+    boolean idRandom;
+    int idLength;
 
     /**
      * Create a request repository that uses the LDAP database
@@ -116,6 +121,9 @@ public class RequestRepository extends Repository {
             mIncrementNo = new BigInteger(incrementNo, mRadix);
         }
 
+        idRandom = dbConfig.getBoolean("requests.id.random", true);
+        idLength = dbConfig.getInteger("requests.id.length", 16);
+
         // Let RequestRecord class register its
         // database mapping and object mapping values
         RequestRecord.register(dbSubsystem);
@@ -132,6 +140,29 @@ public class RequestRepository extends Repository {
         // Let RequestRecord class register its
         // database mapping and object mapping values
         RequestRecord.register(dbSubsystem);
+    }
+
+    public synchronized BigInteger getNextSerialNumber() throws EBaseException {
+
+        if (idRandom) {
+
+            logger.info("RequestRepository: Generating random serial number");
+
+            try {
+                SecureRandom random = SecureRandom.getInstance("pkcs11prng", "Mozilla-JSS");
+                byte[] bytes = new byte[idLength];
+                random.nextBytes(bytes);
+                return new BigInteger(1, bytes);
+
+            } catch (NoSuchAlgorithmException e) {
+                throw new EBaseException(e);
+
+            } catch (NoSuchProviderException e) {
+                throw new EBaseException(e);
+            }
+        }
+
+        return super.getNextSerialNumber();
     }
 
     public RequestId createRequestID() throws EBaseException {

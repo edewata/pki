@@ -223,6 +223,14 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             if certs_id_length:
                 subsystem.config['dbs.certs.id.length'] = certs_id_length
 
+            requests_id_random = deployer.mdict.get('pki_requests_id_random')
+            if requests_id_random:
+                subsystem.config['dbs.requests.id.random'] = requests_id_random
+
+            requests_id_length = deployer.mdict.get('pki_requests_id_length')
+            if requests_id_length:
+                subsystem.config['dbs.requests.id.length'] = requests_id_length
+
             serial_number_range_start = deployer.mdict.get('pki_serial_number_range_start')
             if serial_number_range_start:
                 subsystem.config['dbs.beginSerialNumber'] = serial_number_range_start
