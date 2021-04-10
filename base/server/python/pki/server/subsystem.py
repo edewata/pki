@@ -1687,6 +1687,30 @@ class CASubsystem(PKISubsystem):
 
         self.run(cmd, as_current_user=as_current_user)
 
+    def add_cert(self, cert_path, cert_format, cert_profile, as_current_user=False):
+
+        cmd = ['ca-cert-add']
+
+        if cert_path:
+            cmd.append('--cert')
+            cmd.append(cert_path)
+
+        if cert_format:
+            cmd.append('--format')
+            cmd.append(cert_format)
+
+        if cert_profile:
+            cmd.append('--profile')
+            cmd.append(cert_profile)
+
+        if logger.isEnabledFor(logging.DEBUG):
+            cmd.append('--debug')
+
+        elif logger.isEnabledFor(logging.INFO):
+            cmd.append('--verbose')
+
+        self.run(cmd, as_current_user=as_current_user)
+
     def remove_cert(self, serial_number, as_current_user=False):
 
         cmd = ['ca-cert-del']
