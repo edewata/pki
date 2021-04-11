@@ -256,6 +256,22 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
                 subsystem.config['dbs.endReplicaNumber'] = replica_number_range_end
 
         if subsystem.name == 'kra':
+            keys_id_random = deployer.mdict.get('pki_keys_id_random')
+            if keys_id_random:
+                subsystem.config['dbs.keys.id.random'] = keys_id_random
+
+            keys_id_length = deployer.mdict.get('pki_keys_id_length')
+            if keys_id_length:
+                subsystem.config['dbs.keys.id.length'] = keys_id_length
+
+            requests_id_random = deployer.mdict.get('pki_requests_id_random')
+            if requests_id_random:
+                subsystem.config['dbs.requests.id.random'] = requests_id_random
+
+            requests_id_length = deployer.mdict.get('pki_requests_id_length')
+            if requests_id_length:
+                subsystem.config['dbs.requests.id.length'] = requests_id_length
+
             if config.str2bool(deployer.mdict['pki_kra_ephemeral_requests']):
                 logger.debug('Setting ephemeral requests to true')
                 subsystem.config['kra.ephemeralRequests'] = 'true'

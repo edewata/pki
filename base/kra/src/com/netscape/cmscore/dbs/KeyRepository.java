@@ -18,7 +18,10 @@
 package com.netscape.cmscore.dbs;
 
 import java.math.BigInteger;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Vector;
@@ -45,6 +48,9 @@ import com.netscape.cmscore.apps.DatabaseConfig;
 public class KeyRepository extends Repository implements IKeyRepository {
 
     public static org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(KeyRepository.class);
+
+    boolean idRandom;
+    int idLength;
 
     /**
      * Constructs a key repository. It checks if the key repository
@@ -109,6 +115,9 @@ public class KeyRepository extends Repository implements IKeyRepository {
         if (incrementNo != null) {
             mIncrementNo = new BigInteger(incrementNo, mRadix);
         }
+
+        idRandom = dbConfig.getBoolean("keys.id.random", true);
+        idLength = dbConfig.getInteger("keys.id.length", 16);
 
         // register key record schema
         DBRegistry reg = dbSubsystem.getRegistry();
@@ -197,6 +206,29 @@ public class KeyRepository extends Repository implements IKeyRepository {
      */
     public String getDN() {
         return mBaseDN;
+    }
+
+    public synchronized BigInteger getNextSerialNumber() throws EBaseException {
+
+        if (idRandom) {
+
+            logger.info("KeyRepository: Generating random serial number");
+
+            try {
+                SecureRandom random = SecureRandom.getInstance("pkcs11prng", "Mozilla-JSS");
+                byte[] bytes = new byte[idLength];
+                random.nextBytes(bytes);
+                return new BigInteger(1, bytes);
+
+            } catch (NoSuchAlgorithmException e) {
+                throw new EBaseException(e);
+
+            } catch (NoSuchProviderException e) {
+                throw new EBaseException(e);
+            }
+        }
+
+        return super.getNextSerialNumber();
     }
 
     /**
