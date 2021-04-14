@@ -29,8 +29,10 @@ import org.mozilla.jss.crypto.X509Certificate;
 import org.mozilla.jss.netscape.security.pkcs.PKCS10;
 import org.mozilla.jss.netscape.security.util.Utils;
 import org.mozilla.jss.netscape.security.x509.CertificateExtensions;
+import org.mozilla.jss.netscape.security.x509.CertificateIssuerName;
 import org.mozilla.jss.netscape.security.x509.Extension;
 import org.mozilla.jss.netscape.security.x509.Extensions;
+import org.mozilla.jss.netscape.security.x509.X500Name;
 import org.mozilla.jss.netscape.security.x509.X509CertImpl;
 import org.mozilla.jss.netscape.security.x509.X509CertInfo;
 import org.mozilla.jss.netscape.security.x509.X509Key;
@@ -161,20 +163,28 @@ public class CAConfigurator extends Configurator {
 
         logger.info("CAConfigurator: Creating local certificate");
         logger.info("CAConfigurator: - subject DN: " + dn);
-        logger.info("CAConfigurator: - issuer DN: " + issuerDN);
         logger.info("CAConfigurator: - key algorithm: " + keyAlgorithm);
 
         CAEngine engine = CAEngine.getInstance();
         CertificateAuthority ca = engine.getCA();
 
+        CertificateIssuerName issuerName;
+        if (certType.equals("selfsign")) {
+            // create new issuer object for self-signed cert
+            issuerName = new CertificateIssuerName(new X500Name(dn));
+        } else {
+            // use CA issuer object to preserve DN encoding
+            issuerName = ca.getIssuerObj();
+        }
+        logger.info("CAConfigurator: - issuer DN: " + issuerName);
+
         CertificateExtensions extensions = new CertificateExtensions();
 
         X509CertInfo info = ca.createCertInfo(
                 dn,
-                issuerDN,
+                issuerName,
                 keyAlgorithm,
                 x509key,
-                certType,
                 extensions);
         logger.info("CAConfigurator: Cert info:\n" + info);
 
