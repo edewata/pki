@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.security.KeyPair;
 import java.security.Principal;
+import java.util.Enumeration;
 
 import org.mozilla.jss.CryptoManager;
 import org.mozilla.jss.asn1.SEQUENCE;
@@ -28,6 +29,8 @@ import org.mozilla.jss.crypto.X509Certificate;
 import org.mozilla.jss.netscape.security.pkcs.PKCS10;
 import org.mozilla.jss.netscape.security.util.Utils;
 import org.mozilla.jss.netscape.security.x509.CertificateExtensions;
+import org.mozilla.jss.netscape.security.x509.Extension;
+import org.mozilla.jss.netscape.security.x509.Extensions;
 import org.mozilla.jss.netscape.security.x509.X509CertImpl;
 import org.mozilla.jss.netscape.security.x509.X509CertInfo;
 import org.mozilla.jss.netscape.security.x509.X509Key;
@@ -65,7 +68,8 @@ public class CAConfigurator extends Configurator {
             boolean installAdjustValidity,
             String certRequestType,
             byte[] certRequest,
-            String subjectName) throws Exception {
+            String subjectName,
+            Extensions extensions) throws Exception {
 
         logger.info("CAConfigurator: Importing certificate and request into database");
         logger.info("CAConfigurator: - subject DN: " + cert.getSubjectDN());
@@ -103,7 +107,15 @@ public class CAConfigurator extends Configurator {
         RequestRepository requestRepository = engine.getRequestRepository();
         IRequest req = requestRepository.createRequest("enrollment");
 
-        CertificateExtensions extensions = new CertificateExtensions();
+        logger.info("CAConfigurator: Request extensions:");
+        CertificateExtensions certExts = new CertificateExtensions();
+        Enumeration<String> names = extensions.getAttributeNames();
+        while (names.hasMoreElements()) {
+            String name = names.nextElement();
+            Extension extension = (Extension) extensions.get(name);
+            logger.info("CAConfigurator: - " + name + ": " + extension.getClass().getSimpleName());
+            certExts.set(name, extension);
+        }
 
         engine.initCertRequest(
                 req,
@@ -112,7 +124,7 @@ public class CAConfigurator extends Configurator {
                 x509key,
                 dnsNames,
                 installAdjustValidity,
-                extensions);
+                certExts);
 
         engine.updateCertRequest(
                 req,

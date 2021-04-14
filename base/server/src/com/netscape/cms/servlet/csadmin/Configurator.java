@@ -35,9 +35,12 @@ import org.mozilla.jss.crypto.ObjectNotFoundException;
 import org.mozilla.jss.crypto.PrivateKey;
 import org.mozilla.jss.crypto.X509Certificate;
 import org.mozilla.jss.netscape.security.pkcs.PKCS10;
+import org.mozilla.jss.netscape.security.pkcs.PKCS10Attribute;
+import org.mozilla.jss.netscape.security.pkcs.PKCS10Attributes;
 import org.mozilla.jss.netscape.security.util.DerOutputStream;
 import org.mozilla.jss.netscape.security.util.ObjectIdentifier;
 import org.mozilla.jss.netscape.security.x509.BasicConstraintsExtension;
+import org.mozilla.jss.netscape.security.x509.CertAttrSet;
 import org.mozilla.jss.netscape.security.x509.Extension;
 import org.mozilla.jss.netscape.security.x509.Extensions;
 import org.mozilla.jss.netscape.security.x509.KeyUsageExtension;
@@ -610,7 +613,8 @@ public class Configurator {
             boolean installAdjustValidity,
             String certRequestType,
             byte[] certRequest,
-            String subjectName) throws Exception {
+            String subjectName,
+            Extensions extensions) throws Exception {
     }
 
     public void loadCert(
@@ -635,6 +639,19 @@ public class Configurator {
 
         PKCS10 pkcs10 = new PKCS10(binCertRequest);
         X509Key x509key = pkcs10.getSubjectPublicKeyInfo();
+
+        PKCS10Attributes attributes = pkcs10.getAttributes();
+        Extensions extensions = null;
+
+        for (PKCS10Attribute attribute : attributes) {
+            CertAttrSet attrValues = attribute.getAttributeValue();
+
+            if (attrValues instanceof Extensions) {
+                extensions = (Extensions) attrValues;
+                break;
+            }
+        }
+
         X509CertImpl certImpl = new X509CertImpl(binCert);
 
         importCert(
@@ -645,7 +662,8 @@ public class Configurator {
                 installAdjustValidity,
                 certRequestType,
                 binCertRequest,
-                subjectName);
+                subjectName,
+                extensions);
 
         trustCert(type, tag, x509Cert);
     }
