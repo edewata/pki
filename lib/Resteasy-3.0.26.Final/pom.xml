@@ -89,29 +89,9 @@
                 </property>
             </activation>
             <modules>
-                <module>tjws</module>
                 <module>resteasy-jaxrs</module>
-                <module>resteasy-jaxrs-testsuite</module>
                 <module>resteasy-client</module>
                 <module>providers</module>
-                <module>resteasy-bom</module>
-                <module>resteasy-cache</module>
-                <module>resteasy-dependencies-bom</module>
-                <module>resteasy-guice</module>
-                <module>eagledns</module>
-                <module>security</module>
-                <module>resteasy-links</module>
-                <module>resteasy-spring</module>
-                <module>resteasy-jsapi</module>
-                <module>resteasy-cdi</module>
-                <module>resteasy-servlet-initializer</module>
-                <module>server-adapters</module>
-                <module>jboss-modules</module>
-                <module>resteasy-wadl</module>
-                <module>resteasy-wadl-undertow-connector</module>
-                <module>arquillian</module>
-                <module>profiling-tests</module>
-                <module>testsuite</module>
             </modules>
             <dependencyManagement>
                 <dependencies>
@@ -128,7 +108,6 @@
         <profile>
             <id>jsapi-testing</id>
             <modules>
-                <module>resteasy-jsapi-testing</module>
             </modules>
         </profile>
         <profile>
@@ -139,29 +118,9 @@
                 </property>
             </activation>
             <modules>
-                <module>tjws</module>
                 <module>resteasy-jaxrs</module>
-                <module>resteasy-jaxrs-testsuite</module>
                 <module>resteasy-client</module>
                 <module>providers</module>
-                <module>resteasy-bom</module>
-                <module>resteasy-cache</module>
-                <module>resteasy-dependencies-bom</module>
-                <module>resteasy-guice</module>
-                <module>eagledns</module>
-                <module>security</module>
-                <module>resteasy-links</module>
-                <module>resteasy-spring</module>
-                <module>resteasy-jsapi</module>
-                <module>resteasy-cdi</module>
-                <module>resteasy-servlet-initializer</module>
-                <module>server-adapters</module>
-                <module>jboss-modules</module>
-                <module>resteasy-wadl</module>
-                <module>resteasy-wadl-undertow-connector</module>
-                <module>arquillian</module>
-                <module>profiling-tests</module>
-                <module>testsuite</module>
             </modules>
             <dependencyManagement>
                 <dependencies>
@@ -234,31 +193,11 @@
         </pluginManagement>
         <plugins>
             <plugin>
-                <groupId>com.atlassian.maven.plugins</groupId>
-                <artifactId>maven-clover2-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <artifactId>maven-clean-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>i18n cleanup</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>clean</goal>
-                        </goals>
-                        <configuration>
-                            <excludeDefaultDirectories>true</excludeDefaultDirectories>
-                            <filesets>
-                                <fileset>
-                                    <directory>src/main/resources</directory>
-                                    <includes>
-                                        <include>org/**</include>
-                                    </includes>
-                                </fileset>
-                            </filesets>
-                        </configuration>
-                    </execution>
-                </executions>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <configuration>
+                    <skipSource>true</skipSource>
+                </configuration>
             </plugin>
         </plugins>
     </build>

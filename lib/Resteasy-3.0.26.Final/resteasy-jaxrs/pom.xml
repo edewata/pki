@@ -18,13 +18,20 @@
     
     <dependencies>
         <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>2.2.12</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.jboss.spec.javax.ws.rs</groupId>
             <artifactId>jboss-jaxrs-api_2.0_spec</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>org.jboss.spec.javax.servlet</groupId>
-            <artifactId>jboss-servlet-api_3.1_spec</artifactId>
+            <groupId>org.apache.tomcat</groupId>
+            <artifactId>tomcat-servlet-api</artifactId>
+            <version>9.0.44</version>
         </dependency>
 
         <dependency>
@@ -49,9 +56,9 @@
            detected runtime?
         -->
         <dependency>
-            <groupId>org.jboss.spec.javax.annotation</groupId>
-            <artifactId>jboss-annotations-api_1.2_spec</artifactId>
-            <scope>compile</scope>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+            <version>1.2</version>
         </dependency>
 
         <!-- javax.activation.DataSource provider is required by spec -->
@@ -69,11 +76,6 @@
         <dependency>
             <groupId>commons-io</groupId>
 	        <artifactId>commons-io</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>net.jcip</groupId>
-            <artifactId>jcip-annotations</artifactId>
         </dependency>
 
         <!-- Used by org.jboss.resteasy.plugins.server.tjws.* -->

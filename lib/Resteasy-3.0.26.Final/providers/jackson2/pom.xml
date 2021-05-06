@@ -53,8 +53,9 @@
             <artifactId>jackson-jaxrs-json-provider</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.jboss.spec.javax.servlet</groupId>
-            <artifactId>jboss-servlet-api_3.1_spec</artifactId>
+            <groupId>org.apache.tomcat</groupId>
+            <artifactId>tomcat-servlet-api</artifactId>
+            <version>9.0.44</version>
         </dependency>
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
