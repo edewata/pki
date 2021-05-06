@@ -135,12 +135,12 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E create_symlink ${LDAPJDK_JAR} common/lib/ldapjdk.jar
     COMMAND ln -sf /usr/share/java/pki/pki-cmsutil.jar ${CMAKE_CURRENT_BINARY_DIR}/common/lib/pki-cmsutil.jar
     COMMAND ln -sf /usr/share/java/pki/pki-tomcat.jar ${CMAKE_CURRENT_BINARY_DIR}/common/lib/pki-tomcat.jar
-    COMMAND ${CMAKE_COMMAND} -E create_symlink ${RESTEASY_ATOM_PROVIDER_JAR} common/lib/resteasy-atom-provider.jar
-    COMMAND ${CMAKE_COMMAND} -E create_symlink ${RESTEASY_CLIENT_JAR} common/lib/resteasy-client.jar
-    COMMAND ${CMAKE_COMMAND} -E create_symlink ${RESTEASY_LIB}/resteasy-jackson2-provider.jar common/lib/resteasy-jackson2-provider.jar
-    COMMAND ${CMAKE_COMMAND} -E create_symlink ${RESTEASY_LIB}/resteasy-jaxb-provider.jar common/lib/resteasy-jaxb-provider.jar
     COMMAND ${CMAKE_COMMAND} -E create_symlink ${JAXRS_API_JAR} common/lib/jaxrs-api.jar
-    COMMAND ${CMAKE_COMMAND} -E create_symlink ${RESTEASY_JAXRS_JAR} common/lib/resteasy-jaxrs.jar
+    COMMAND ln -sf ../../../lib/resteasy-atom-provider.jar common/lib
+    COMMAND ln -sf ../../../lib/resteasy-client.jar common/lib
+    COMMAND ln -sf ../../../lib/resteasy-jackson2-provider.jar common/lib
+    COMMAND ln -sf ../../../lib/resteasy-jaxb-provider.jar common/lib
+    COMMAND ln -sf ../../../lib/resteasy-jaxrs.jar common/lib
     COMMAND ln -sf /usr/lib/java/symkey.jar ${CMAKE_CURRENT_BINARY_DIR}/common/lib/symkey.jar
     COMMAND ${CMAKE_COMMAND} -E create_symlink ${TOMCATJSS_JAR} common/lib/tomcatjss.jar
     COMMAND ${CMAKE_COMMAND} -E create_symlink ${XERCES_JAR} common/lib/xerces-j2.jar

@@ -41,14 +41,10 @@
 	<classpathentry kind="lib" path="/usr/share/java/httpcomponents/httpclient.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/httpcomponents/httpcore.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/jboss-jaxrs-2.0-api.jar"/>
-	<classpathentry kind="lib" path="/usr/share/java/resteasy/resteasy-client.jar"/>
-	<classpathentry kind="lib" path="/usr/share/java/resteasy/resteasy-jaxb-provider.jar"/>
-	<classpathentry kind="lib" path="/usr/share/java/resteasy/resteasy-jaxrs.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/servlet.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/xerces-j2.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/xml-commons-apis.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/apache-commons-lang3.jar"/>
-	<classpathentry kind="lib" path="/usr/share/java/resteasy/resteasy-atom-provider.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/tomcat/catalina.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/tomcat/tomcat-util.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/commons-io.jar"/>
@@ -65,7 +61,11 @@
 	<classpathentry kind="lib" path="/usr/share/java/tomcat/jaspic-api.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/jackson-databind.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/jackson-core.jar"/>
-	<classpathentry kind="lib" path="/usr/share/java/resteasy/resteasy-jackson2-provider.jar"/>
+	<classpathentry kind="lib" path="lib/Resteasy-3.0.26.Final/providers/resteasy-atom/target/resteasy-atom-provider-3.0.26.Final.jar"/>
+	<classpathentry kind="lib" path="lib/Resteasy-3.0.26.Final/resteasy-client/target/resteasy-client-3.0.26.Final.jar"/>
+	<classpathentry kind="lib" path="lib/Resteasy-3.0.26.Final/providers/jackson2/target/resteasy-jackson2-provider-3.0.26.Final.jar"/>
+	<classpathentry kind="lib" path="lib/Resteasy-3.0.26.Final/providers/jaxb/target/resteasy-jaxb-provider-3.0.26.Final.jar"/>
+	<classpathentry kind="lib" path="lib/Resteasy-3.0.26.Final/resteasy-jaxrs/target/resteasy-jaxrs-3.0.26.Final.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/slf4j/slf4j-simple.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/jackson-annotations.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/jackson-modules/jackson-module-jaxb-annotations.jar"/>

@@ -168,6 +168,8 @@ fi;
 BuildRequires:    git
 BuildRequires:    make
 
+BuildRequires:    maven
+BuildRequires:    maven-local
 BuildRequires:    cmake >= 3.0.2
 BuildRequires:    gcc-c++
 BuildRequires:    zip
@@ -195,19 +197,6 @@ BuildRequires:    python3-sphinx
 
 BuildRequires:    xalan-j2
 BuildRequires:    xerces-j2
-
-%if 0%{?rhel} && ! 0%{?eln}
-BuildRequires:    resteasy >= 3.0.26
-%else
-BuildRequires:    jboss-annotations-1.2-api
-BuildRequires:    jboss-jaxrs-2.0-api
-BuildRequires:    jboss-logging
-BuildRequires:    resteasy-atom-provider >= 3.0.17-1
-BuildRequires:    resteasy-client >= 3.0.17-1
-BuildRequires:    resteasy-jaxb-provider >= 3.0.17-1
-BuildRequires:    resteasy-core >= 3.0.17-1
-BuildRequires:    resteasy-jackson2-provider >= 3.0.17-1
-%endif
 
 BuildRequires:    python3 >= 3.5
 BuildRequires:    python3-devel
@@ -435,16 +424,6 @@ Requires:         jpackage-utils >= 0:1.7.5-10
 Requires:         jss >= 4.9.0
 Requires:         ldapjdk >= 4.22.0
 Requires:         pki-base = %{version}-%{release}
-
-%if 0%{?rhel} && 0%{?rhel} <= 8
-Requires:         resteasy >= 3.0.26
-%else
-Requires:         resteasy-atom-provider >= 3.0.17-1
-Requires:         resteasy-client >= 3.0.17-1
-Requires:         resteasy-jaxb-provider >= 3.0.17-1
-Requires:         resteasy-core >= 3.0.17-1
-Requires:         resteasy-jackson2-provider >= 3.0.17-1
-%endif
 
 %if 0%{?fedora} >= 33 || 0%{?rhel} > 8
 Requires:         jaxb-impl >= 2.3.3
@@ -845,6 +824,15 @@ This package contains PKI test suite.
 ################################################################################
 %build
 ################################################################################
+
+pushd lib/Resteasy-3.0.26.Final
+mvn package -Dmaven.test.skip=true
+mv resteasy-jaxrs/target/resteasy-jaxrs-3.0.26.Final.jar ../resteasy-jaxrs.jar
+mv providers/resteasy-atom/target/resteasy-atom-provider-3.0.26.Final.jar ../resteasy-atom-provider.jar
+mv providers/jaxb/target/resteasy-jaxb-provider-3.0.26.Final.jar ../resteasy-jaxb-provider.jar
+mv providers/jackson2/target/resteasy-jackson2-provider-3.0.26.Final.jar ../resteasy-jackson2-provider.jar
+mv resteasy-client/target/resteasy-client-3.0.26.Final.jar ../resteasy-client.jar
+popd
 
 # get Java <major>.<minor> version number
 java_version=`%{java_home}/bin/java -XshowSettings:properties -version 2>&1 | sed -n 's/ *java.version *= *\([0-9]\+\.[0-9]\+\).*/\1/p'`

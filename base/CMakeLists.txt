@@ -224,6 +224,7 @@ find_file(RESTEASY_JAXRS_JAR
     NAMES
         resteasy-jaxrs.jar
     PATHS
+        ${CMAKE_SOURCE_DIR}/lib
         ${RESTEASY_LIB}
 )
 
@@ -231,6 +232,7 @@ find_file(RESTEASY_ATOM_PROVIDER_JAR
     NAMES
         resteasy-atom-provider.jar
     PATHS
+        ${CMAKE_SOURCE_DIR}/lib
         ${RESTEASY_LIB}
 )
 
@@ -238,6 +240,7 @@ find_file(RESTEASY_CLIENT_JAR
     NAMES
         resteasy-client.jar
     PATHS
+        ${CMAKE_SOURCE_DIR}/lib
         ${RESTEASY_LIB}
 )
 
