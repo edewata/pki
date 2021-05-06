@@ -14,7 +14,6 @@ find_file(JAXRS_API_JAR
         jboss-jaxrs-2.0-api.jar
         javax.ws.rs-api.jar
     PATHS
-        ${RESTEASY_LIB}
         /usr/share/java
 )
 
@@ -217,7 +216,6 @@ find_file(RESTEASY_JAXRS_JAR
         resteasy-jaxrs.jar
     PATHS
         ${CMAKE_SOURCE_DIR}/lib
-        ${RESTEASY_LIB}
 )
 
 find_file(RESTEASY_ATOM_PROVIDER_JAR
@@ -225,7 +223,6 @@ find_file(RESTEASY_ATOM_PROVIDER_JAR
         resteasy-atom-provider.jar
     PATHS
         ${CMAKE_SOURCE_DIR}/lib
-        ${RESTEASY_LIB}
 )
 
 find_file(RESTEASY_CLIENT_JAR
@@ -233,7 +230,6 @@ find_file(RESTEASY_CLIENT_JAR
         resteasy-client.jar
     PATHS
         ${CMAKE_SOURCE_DIR}/lib
-        ${RESTEASY_LIB}
 )
 
 find_file(SYMKEY_JAR

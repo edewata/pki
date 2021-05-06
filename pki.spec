@@ -198,6 +198,11 @@ BuildRequires:    python3-sphinx
 BuildRequires:    xalan-j2
 BuildRequires:    xerces-j2
 
+BuildRequires:    jackson-annotations
+BuildRequires:    jackson-databind
+BuildRequires:    jackson-module-jaxb-annotations
+BuildRequires:    jboss-jaxrs-2.0-api
+
 BuildRequires:    python3 >= 3.5
 BuildRequires:    python3-devel
 BuildRequires:    python3-setuptools
@@ -424,6 +429,11 @@ Requires:         jpackage-utils >= 0:1.7.5-10
 Requires:         jss >= 4.9.0
 Requires:         ldapjdk >= 4.22.0
 Requires:         pki-base = %{version}-%{release}
+
+Requires:         jackson-annotations
+Requires:         jackson-databind
+Requires:         jackson-module-jaxb-annotations
+Requires:         jboss-jaxrs-2.0-api
 
 %if 0%{?fedora} >= 33 || 0%{?rhel} > 8
 Requires:         jaxb-impl >= 2.3.3
