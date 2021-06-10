@@ -8,7 +8,7 @@ jobs:
     name: Building PKI
     runs-on: ubuntu-latest
     env:
-      COPR_REPO: "@pki/master"
+      COPR_REPO: ${{ secrets.COPR_REPO }}
     strategy:
       matrix:
         os: ['latest', 'rawhide']
@@ -25,7 +25,7 @@ jobs:
           context: .
           build-args: |
             OS_VERSION=${{ matrix.os }}
-            COPR_REPO=${{ env.COPR_REPO }}
+            COPR_REPO=${{ secrets.COPR_REPO }}
             BUILD_OPTS=--with-pkgs=base,server,ca --with-timestamp --with-commit-id
           tags: pki-runner
           target: pki-runner
@@ -45,7 +45,7 @@ jobs:
     env:
       BUILDDIR: /tmp/workdir
       PKIDIR: /tmp/workdir/pki
-      COPR_REPO: "@pki/master"
+      COPR_REPO: ${{ secrets.COPR_REPO }}
     strategy:
       matrix:
         os: ['latest', 'rawhide']
@@ -156,7 +156,7 @@ jobs:
     env:
       BUILDDIR: /tmp/workdir
       PKIDIR: /tmp/workdir/pki
-      COPR_REPO: "@pki/master"
+      COPR_REPO: ${{ secrets.COPR_REPO }}
     strategy:
       matrix:
         os: ['latest', 'rawhide']
@@ -245,7 +245,7 @@ jobs:
     env:
       BUILDDIR: /tmp/workdir
       PKIDIR: /tmp/workdir/pki
-      COPR_REPO: "@pki/master"
+      COPR_REPO: ${{ secrets.COPR_REPO }}
     strategy:
       matrix:
         os: ['latest', 'rawhide']
@@ -374,7 +374,7 @@ jobs:
     env:
       BUILDDIR: /tmp/workdir
       PKIDIR: /tmp/workdir/pki
-      COPR_REPO: "@pki/master"
+      COPR_REPO: ${{ secrets.COPR_REPO }}
     strategy:
       matrix:
         os: ['latest', 'rawhide']
@@ -468,7 +468,7 @@ jobs:
     env:
       BUILDDIR: /tmp/workdir
       PKIDIR: /tmp/workdir/pki
-      COPR_REPO: "@pki/master"
+      COPR_REPO: ${{ secrets.COPR_REPO }}
     strategy:
       matrix:
         os: ['latest', 'rawhide']
@@ -615,7 +615,7 @@ jobs:
     env:
       BUILDDIR: /tmp/workdir
       PKIDIR: /tmp/workdir/pki
-      COPR_REPO: "@pki/master"
+      COPR_REPO: ${{ secrets.COPR_REPO }}
     strategy:
       matrix:
         os: ['latest', 'rawhide']
@@ -800,7 +800,7 @@ jobs:
     env:
       BUILDDIR: /tmp/workdir
       PKIDIR: /tmp/workdir/pki
-      COPR_REPO: "@pki/master"
+      COPR_REPO: ${{ secrets.COPR_REPO }}
     strategy:
       matrix:
         os: ['latest', 'rawhide']
@@ -945,7 +945,7 @@ jobs:
     env:
       BUILDDIR: /tmp/workdir
       PKIDIR: /tmp/workdir/pki
-      COPR_REPO: "@pki/master"
+      COPR_REPO: ${{ secrets.COPR_REPO }}
     strategy:
       matrix:
         os: ['latest', 'rawhide']

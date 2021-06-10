@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     container: registry.fedoraproject.org/fedora:${{ matrix.os }}
     env:
-      COPR_REPO: "@pki/master"
+      COPR_REPO: ${{ secrets.COPR_REPO }}
     strategy:
       matrix:
         os: ['latest', 'rawhide']
@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     container: registry.fedoraproject.org/fedora:${{ matrix.os }}
     env:
-      COPR_REPO: "@pki/master"
+      COPR_REPO: ${{ secrets.COPR_REPO }}
     strategy:
       matrix:
         os: ['latest', 'rawhide']
@@ -71,7 +71,7 @@ jobs:
     runs-on: ubuntu-latest
     container: registry.fedoraproject.org/fedora:${{ matrix.os }}
     env:
-      COPR_REPO: "@pki/master"
+      COPR_REPO: ${{ secrets.COPR_REPO }}
     strategy:
       matrix:
         os: ['latest', 'rawhide']
@@ -220,7 +220,7 @@ jobs:
     runs-on: ubuntu-latest
     container: registry.fedoraproject.org/fedora:${{ matrix.os }}
     env:
-      COPR_REPO: "@pki/master"
+      COPR_REPO: ${{ secrets.COPR_REPO }}
     strategy:
       matrix:
         os: ['latest', 'rawhide']
@@ -371,7 +371,7 @@ jobs:
     runs-on: ubuntu-latest
     container: registry.fedoraproject.org/fedora:${{ matrix.os }}
     env:
-      COPR_REPO: "@pki/master"
+      COPR_REPO: ${{ secrets.COPR_REPO }}
     strategy:
       matrix:
         os: ['latest', 'rawhide']
@@ -447,7 +447,7 @@ jobs:
     runs-on: ubuntu-latest
     container: registry.fedoraproject.org/fedora:${{ matrix.os }}
     env:
-      COPR_REPO: "@pki/master"
+      COPR_REPO: ${{ secrets.COPR_REPO }}
     strategy:
       matrix:
         os: ['latest', 'rawhide']
