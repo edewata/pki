@@ -81,6 +81,7 @@ if(WITH_TEST)
             ${CMAKE_BINARY_DIR}/test/classes
         TESTS
             com.netscape.certsrv.user.UserCertDataTest
+            com.netscape.certsrv.user.UserDataTest
         REPORTS_DIR
             reports
         DEPENDS

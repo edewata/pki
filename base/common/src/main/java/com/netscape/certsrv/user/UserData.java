@@ -249,12 +249,8 @@ public class UserData {
     }
 
     public static UserData fromXML(String string) throws Exception {
-        try {
-            Unmarshaller unmarshaller = JAXBContext.newInstance(UserData.class).createUnmarshaller();
-            return (UserData)unmarshaller.unmarshal(new StringReader(string));
-        } catch (Exception e) {
-            return null;
-        }
+        Unmarshaller unmarshaller = JAXBContext.newInstance(UserData.class).createUnmarshaller();
+        return (UserData)unmarshaller.unmarshal(new StringReader(string));
     }
 
     public String toJSON() throws Exception {
@@ -270,7 +266,7 @@ public class UserData {
     @Override
     public String toString() {
         try {
-            return toXML();
+            return toJSON();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -312,32 +308,5 @@ public class UserData {
 
         @XmlValue
         public String value;
-    }
-
-    public static void main(String args[]) throws Exception {
-
-        UserData before = new UserData();
-        before.setID("testuser");
-        before.setFullName("Test User");
-        before.setEmail("testuser@example.com");
-        before.setPassword("12345");
-        before.setPhone("1234567890");
-        before.setState("1");
-
-        String xml = before.toXML();
-        System.out.println("Before (XML): " + xml);
-
-        UserData afterXML = UserData.fromXML(xml);
-        System.out.println("After (XML): " + afterXML);
-
-        System.out.println(before.equals(afterXML));
-
-        String json = before.toJSON();
-        System.out.println("Before (JSON): " + json);
-
-        UserData afterJSON = UserData.fromJSON(json);
-        System.out.println("After (JSON): " + afterJSON.toJSON());
-
-        System.out.println(before.equals(afterJSON));
     }
 }
