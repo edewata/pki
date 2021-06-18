@@ -231,7 +231,7 @@ public class HttpConnection implements IHttpConnection {
 
     /**
      * sends a request to a remote authority, returning the result.
-     * @author cfu (multi-uri support)
+     *
      * @throws EBaseException for any failure
      */
     @Override
