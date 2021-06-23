@@ -18,20 +18,8 @@
 
 package com.netscape.certsrv.account;
 
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.TreeSet;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.adapters.XmlAdapter;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -42,7 +30,6 @@ import com.netscape.certsrv.base.ResourceMessage;
 /**
  * @author Endi S. Dewata
  */
-@XmlRootElement(name="Account")
 @JsonInclude(Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown=true)
 public class Account extends ResourceMessage {
@@ -52,7 +39,6 @@ public class Account extends ResourceMessage {
     String email;
     Collection<String> roles = new TreeSet<>();
 
-    @XmlAttribute(name="id")
     public String getID() {
         return id;
     }
@@ -61,7 +47,6 @@ public class Account extends ResourceMessage {
         this.id = id;
     }
 
-    @XmlElement(name="FullName")
     public String getFullName() {
         return fullName;
     }
@@ -70,7 +55,6 @@ public class Account extends ResourceMessage {
         this.fullName = fullName;
     }
 
-    @XmlElement(name="Email")
     public String getEmail() {
         return email;
     }
@@ -79,8 +63,6 @@ public class Account extends ResourceMessage {
         this.email = email;
     }
 
-    @XmlElement(name="Roles")
-    @XmlJavaTypeAdapter(RolesAdapter.class)
     public Collection<String> getRoles() {
         return roles;
     }
@@ -133,20 +115,6 @@ public class Account extends ResourceMessage {
         return true;
     }
 
-    public String toXML() throws Exception {
-        Marshaller marshaller = JAXBContext.newInstance(Account.class).createMarshaller();
-        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-
-        StringWriter sw = new StringWriter();
-        marshaller.marshal(this, sw);
-        return sw.toString();
-    }
-
-    public static Account fromXML(String xml) throws Exception {
-        Unmarshaller unmarshaller = JAXBContext.newInstance(Account.class).createUnmarshaller();
-        return (Account) unmarshaller.unmarshal(new StringReader(xml));
-    }
-
     public String toJSON() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         return mapper.writeValueAsString(this);
@@ -165,30 +133,4 @@ public class Account extends ResourceMessage {
             throw new RuntimeException(e);
         }
     }
-
-    public static class RolesAdapter extends XmlAdapter<RoleList, Collection<String>> {
-
-        @Override
-        public RoleList marshal(Collection<String> roles) {
-            RoleList list = new RoleList();
-            list.roles = roles.toArray(new String[roles.size()]);
-            return list;
-        }
-
-        @Override
-        public Collection<String> unmarshal(RoleList list) {
-            Collection<String> roles = new TreeSet<>();
-            if (list.roles != null) {
-                roles.addAll(Arrays.asList(list.roles));
-            }
-            return roles;
-        }
-    }
-
-    public static class RoleList {
-
-        @XmlElement(name="Role")
-        public String[] roles;
-    }
-
 }
