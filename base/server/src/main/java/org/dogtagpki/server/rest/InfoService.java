@@ -19,11 +19,12 @@
 package org.dogtagpki.server.rest;
 
 import javax.servlet.http.HttpSession;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
 import javax.xml.bind.UnmarshalException;
 
 import org.dogtagpki.common.Info;
-import org.dogtagpki.common.InfoResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXParseException;
@@ -35,11 +36,12 @@ import com.netscape.cmscore.apps.CMS;
 /**
  * @author Endi S. Dewata
  */
-public class InfoService extends PKIService implements InfoResource {
+@Path("info")
+public class InfoService extends PKIService {
 
     private static Logger logger = LoggerFactory.getLogger(InfoService.class);
 
-    @Override
+    @GET
     public Response getInfo() throws Exception {
 
         HttpSession session = servletRequest.getSession();
