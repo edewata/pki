@@ -202,27 +202,39 @@ public class PKIClient implements AutoCloseable {
     }
 
     public Response get(String path) throws Exception {
-        return target.path(path).request().get();
+        return target.path(path).request(messageFormat).get();
     }
 
     public <T> T get(String path, Class<T> responseType) throws Exception {
-        return target.path(path).request().get(responseType);
+        MediaType messageFormat = this.messageFormat;
+        if (responseType.equals(String.class)) {
+            messageFormat = MediaType.TEXT_PLAIN_TYPE;
+        }
+        return target.path(path).request(messageFormat).get(responseType);
     }
 
     public Response post(String path) throws Exception {
-        return target.path(path).request().post(null);
+        return target.path(path).request(messageFormat).post(null);
     }
 
     public <T> T post(String path, Class<T> responseType) throws Exception {
-        return target.path(path).request().post(null, responseType);
+        MediaType messageFormat = this.messageFormat;
+        if (responseType.equals(String.class)) {
+            messageFormat = MediaType.TEXT_PLAIN_TYPE;
+        }
+        return target.path(path).request(messageFormat).post(null, responseType);
     }
 
     public Response post(String path, MultivaluedMap<String, String> content) throws Exception {
-        return target.path(path).request().post(Entity.form(content));
+        return target.path(path).request(messageFormat).post(Entity.form(content));
     }
 
     public <T> T post(String path, MultivaluedMap<String, String> content, Class<T> responseType) throws Exception {
-        return target.path(path).request().post(Entity.form(content), responseType);
+        MediaType messageFormat = this.messageFormat;
+        if (responseType.equals(String.class)) {
+            messageFormat = MediaType.TEXT_PLAIN_TYPE;
+        }
+        return target.path(path).request(messageFormat).post(Entity.form(content), responseType);
     }
 
     public Info getInfo() throws Exception {
