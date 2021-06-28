@@ -143,6 +143,80 @@ jobs:
           path: |
             /tmp/artifacts/pki
 
+  # docs/installation/ca/Installing_CA.md
+  ca-fips-test:
+    name: Installing CA in FIPS mode
+    needs: [init, build]
+    runs-on: ubuntu-latest
+    env:
+      BUILDDIR: /tmp/workdir
+      PKIDIR: /tmp/workdir/pki
+      COPR_REPO: "@pki/master"
+    strategy:
+      matrix: ${{ fromJSON(needs.init.outputs.matrix) }}
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+
+      - name: Download runner image
+        uses: actions/download-artifact@v2
+        with:
+          name: pki-runner-${{ matrix.os }}
+          path: /tmp
+
+      - name: Load runner image
+        run: docker load --input /tmp/pki-runner.tar
+
+      - name: Run container
+        run: |
+          IMAGE=pki-runner \
+          NAME=pki \
+          HOSTNAME=pki.example.com \
+          tests/bin/runner-init.sh
+
+      - name: Enable FIPS mode
+        run: docker exec pki ${PKIDIR}/tests/bin/fips-enable.sh
+
+      - name: Install dependencies
+        run: docker exec pki dnf install -y 389-ds-base
+
+      - name: Install DS
+        run: docker exec pki ${PKIDIR}/tests/bin/ds-create.sh
+
+      - name: Install CA
+        run: docker exec pki pkispawn -f /usr/share/pki/server/examples/installation/ca.cfg -s CA -v
+
+      - name: Run PKI healthcheck
+        run: docker exec pki pki-healthcheck --debug
+
+      - name: Verify CA admin
+        run: |
+          docker exec pki pki-server cert-export ca_signing --cert-file ca_signing.crt
+          docker exec pki pki client-cert-import ca_signing --ca-cert ca_signing.crt
+          docker exec pki pki client-cert-import \
+              --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
+              --pkcs12-password-file /root/.dogtag/pki-tomcat/ca/pkcs12_password.conf
+          docker exec pki pki -n caadmin ca-user-show caadmin
+
+      - name: Gather artifacts
+        if: always()
+        run: |
+          tests/bin/ds-artifacts-save.sh pki
+          tests/bin/pki-artifacts-save.sh pki
+
+      - name: Remove CA
+        run: docker exec pki pkidestroy -i pki-tomcat -s CA -v
+
+      - name: Remove DS
+        run: docker exec pki ${PKIDIR}/tests/bin/ds-remove.sh
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ca-fips-${{ matrix.os }}
+          path: /tmp/artifacts/pki
+
   # docs/installation/ca/Installing_CA_with_ECC.md
   ca-ecc-test:
     name: Installing CA with ECC
