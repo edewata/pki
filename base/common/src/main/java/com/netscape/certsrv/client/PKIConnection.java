@@ -31,8 +31,6 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.ws.rs.client.WebTarget;
-
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
@@ -82,8 +80,6 @@ public class PKIConnection implements AutoCloseable {
     SSLCertificateApprovalCallback callback;
 
     ApacheHttpClient4Engine engine;
-    javax.ws.rs.client.Client client;
-    WebTarget target;
 
     int requestCounter;
     int responseCounter;
@@ -195,12 +191,12 @@ public class PKIConnection implements AutoCloseable {
         });
 
         engine = new ApacheHttpClient4Engine(httpClient);
+    }
 
-        client = new ResteasyClientBuilder().httpEngine(engine).build();
+    public javax.ws.rs.client.Client createClient() {
+        javax.ws.rs.client.Client client = new ResteasyClientBuilder().httpEngine(engine).build();
         client.register(PKIRESTProvider.class);
-
-        URI uri = config.getServerURL().toURI();
-        target = client.target(uri);
+        return client;
     }
 
     public void setCallback(SSLCertificateApprovalCallback callback) {
@@ -388,10 +384,6 @@ public class PKIConnection implements AutoCloseable {
 
     }
 
-    public WebTarget target(String path) {
-        return target.path(path);
-    }
-
     public File getOutput() {
         return output;
     }
@@ -402,7 +394,6 @@ public class PKIConnection implements AutoCloseable {
 
     @Override
     public void close() {
-        client.close();
         engine.close();
         httpClient.close();
     }

@@ -20,6 +20,7 @@ package com.netscape.certsrv.client;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -50,6 +51,9 @@ public class PKIClient implements AutoCloseable {
 
     public ClientConfig config;
     public PKIConnection connection;
+    public javax.ws.rs.client.Client client;
+    public WebTarget target;
+
     public MediaType messageFormat;
     public CryptoProvider crypto;
     public InfoClient infoClient;
@@ -74,6 +78,10 @@ public class PKIClient implements AutoCloseable {
         this.crypto = crypto;
 
         connection = new PKIConnection(config);
+        client = connection.createClient();
+
+        URI uri = config.getServerURL().toURI();
+        target = client.target(uri);
 
         if (callback == null) {
             callback = new PKICertificateApprovalCallback(this);
@@ -97,7 +105,7 @@ public class PKIClient implements AutoCloseable {
 
     public <T> T createProxy(String path, Class<T> clazz) throws Exception {
 
-        WebTarget target = connection.target(path);
+        WebTarget target = this.target.path(path);
 
         ProxyBuilder<T> builder = ProxyBuilder.builder(clazz, target);
         builder.defaultConsumes(messageFormat);
@@ -193,32 +201,28 @@ public class PKIClient implements AutoCloseable {
         this.crypto = crypto;
     }
 
-    public PKIConnection getConnection() {
-        return connection;
-    }
-
     public Response get(String path) throws Exception {
-        return connection.target(path).request().get();
+        return target.path(path).request().get();
     }
 
     public <T> T get(String path, Class<T> responseType) throws Exception {
-        return connection.target(path).request().get(responseType);
+        return target.path(path).request().get(responseType);
     }
 
     public Response post(String path) throws Exception {
-        return connection.target(path).request().post(null);
+        return target.path(path).request().post(null);
     }
 
     public <T> T post(String path, Class<T> responseType) throws Exception {
-        return connection.target(path).request().post(null, responseType);
+        return target.path(path).request().post(null, responseType);
     }
 
     public Response post(String path, MultivaluedMap<String, String> content) throws Exception {
-        return connection.target(path).request().post(Entity.form(content));
+        return target.path(path).request().post(Entity.form(content));
     }
 
     public <T> T post(String path, MultivaluedMap<String, String> content, Class<T> responseType) throws Exception {
-        return connection.target(path).request().post(Entity.form(content), responseType);
+        return target.path(path).request().post(Entity.form(content), responseType);
     }
 
     public Info getInfo() throws Exception {
@@ -263,6 +267,7 @@ public class PKIClient implements AutoCloseable {
 
     @Override
     public void close() {
+        client.close();
         connection.close();
     }
 }
