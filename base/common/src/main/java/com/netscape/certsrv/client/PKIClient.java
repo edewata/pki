@@ -201,16 +201,24 @@ public class PKIClient implements AutoCloseable {
         this.crypto = crypto;
     }
 
+    public WebTarget target(String path) {
+        return target.path(path);
+    }
+
     public Response get(String path) throws Exception {
         return target.path(path).request(messageFormat).get();
     }
 
     public <T> T get(String path, Class<T> responseType) throws Exception {
+        return get(target.path(path), responseType);
+    }
+
+    public <T> T get(WebTarget target, Class<T> responseType) throws Exception {
         MediaType messageFormat = this.messageFormat;
         if (responseType.equals(String.class)) {
             messageFormat = MediaType.TEXT_PLAIN_TYPE;
         }
-        return target.path(path).request(messageFormat).get(responseType);
+        return target.request(messageFormat).get(responseType);
     }
 
     public Response post(String path) throws Exception {
@@ -218,11 +226,15 @@ public class PKIClient implements AutoCloseable {
     }
 
     public <T> T post(String path, Class<T> responseType) throws Exception {
+        return post(target.path(path), responseType);
+    }
+
+    public <T> T post(WebTarget target, Class<T> responseType) throws Exception {
         MediaType messageFormat = this.messageFormat;
         if (responseType.equals(String.class)) {
             messageFormat = MediaType.TEXT_PLAIN_TYPE;
         }
-        return target.path(path).request(messageFormat).post(null, responseType);
+        return target.request(messageFormat).post(null, responseType);
     }
 
     public Response post(String path, MultivaluedMap<String, String> content) throws Exception {

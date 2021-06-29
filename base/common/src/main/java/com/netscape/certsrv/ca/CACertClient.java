@@ -20,6 +20,7 @@ package com.netscape.certsrv.ca;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -36,7 +37,6 @@ import com.netscape.certsrv.cert.CertEnrollmentRequest;
 import com.netscape.certsrv.cert.CertRequestInfo;
 import com.netscape.certsrv.cert.CertRequestInfos;
 import com.netscape.certsrv.cert.CertRequestResource;
-import com.netscape.certsrv.cert.CertResource;
 import com.netscape.certsrv.cert.CertReviewResponse;
 import com.netscape.certsrv.cert.CertRevokeRequest;
 import com.netscape.certsrv.cert.CertSearchRequest;
@@ -56,7 +56,6 @@ public class CACertClient extends Client {
 
     public final static Logger logger = LoggerFactory.getLogger(CACertClient.class);
 
-    public CertResource certClient;
     public CertRequestResource certRequestClient;
 
     public CACertClient(SubsystemClient subsystemClient) throws Exception {
@@ -69,43 +68,54 @@ public class CACertClient extends Client {
     }
 
     public void init() throws Exception {
-        certClient = createProxy(CertResource.class);
         certRequestClient = createProxy(CertRequestResource.class);
     }
 
     public CertData getCert(CertId id) throws Exception {
-        Response response = certClient.getCert(id);
-        return client.getEntity(response, CertData.class);
+        WebTarget target = client.target("/ca/rest/certs/{id}")
+                .resolveTemplate("id", id.toHexString());
+        return client.get(target, CertData.class);
     }
 
     public CertData reviewCert(CertId id) throws Exception {
-        Response response = certClient.reviewCert(id);
-        return client.getEntity(response, CertData.class);
+        WebTarget target = client.target("/ca/rest/agent/certs/{id}")
+                .resolveTemplate("id", id.toHexString());
+        return client.get(target, CertData.class);
     }
 
     public CertDataInfos listCerts(String status, Integer maxResults, Integer maxTime, Integer start, Integer size) throws Exception {
-        Response response = certClient.listCerts(status, maxResults, maxTime, start, size);
-        return client.getEntity(response, CertDataInfos.class);
+        WebTarget target = client.target("/ca/rest/certs")
+                .queryParam("status", status)
+                .queryParam("maxResults", maxResults)
+                .queryParam("maxTime", maxTime)
+                .queryParam("start", start)
+                .queryParam("size", size);
+        return client.get(target, CertDataInfos.class);
     }
 
     public CertDataInfos findCerts(CertSearchRequest data, Integer start, Integer size) throws Exception {
-        Response response = certClient.searchCerts(data, start, size);
-        return client.getEntity(response, CertDataInfos.class);
+        WebTarget target = client.target("/ca/rest/certs/search")
+                .queryParam("start", start)
+                .queryParam("size", size);
+        return client.post(target, CertDataInfos.class);
     }
 
     public CertRequestInfo revokeCert(CertId id, CertRevokeRequest request) throws Exception {
-        Response response = certClient.revokeCert(id, request);
-        return client.getEntity(response, CertRequestInfo.class);
+        WebTarget target = client.target("/ca/rest/agent/certs/{id}/revoke")
+                .resolveTemplate("id", id.toHexString());
+        return client.post(target, CertRequestInfo.class);
     }
 
     public CertRequestInfo revokeCACert(CertId id, CertRevokeRequest request) throws Exception {
-        Response response = certClient.revokeCACert(id, request);
-        return client.getEntity(response, CertRequestInfo.class);
+        WebTarget target = client.target("/ca/rest/agent/certs/{id}/revoke-ca")
+                .resolveTemplate("id", id.toHexString());
+        return client.post(target, CertRequestInfo.class);
     }
 
     public CertRequestInfo unrevokeCert(CertId id) throws Exception {
-        Response response = certClient.unrevokeCert(id);
-        return client.getEntity(response, CertRequestInfo.class);
+        WebTarget target = client.target("/ca/rest/agent/certs/{id}/unrevoke")
+                .resolveTemplate("id", id.toHexString());
+        return client.post(target, CertRequestInfo.class);
     }
 
     public CertRequestInfos enrollRequest(
