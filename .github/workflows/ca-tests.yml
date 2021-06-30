@@ -113,6 +113,9 @@ jobs:
       - name: Test CA signing cert
         run: docker exec pki /usr/share/pki/tests/ca/bin/test-ca-signing-cert.sh
 
+      - name: Test subsystem cert
+        run: docker exec pki /usr/share/pki/tests/ca/bin/test-subsystem-cert.sh
+
       - name: Test CA admin
         run: |
           docker exec pki pki client-cert-import \
