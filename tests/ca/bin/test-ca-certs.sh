@@ -7,5 +7,5 @@ pki ca-cert-find > /tmp/certs.txt
 sed -n "s/^\(\S*\) entries found$/\1/p" /tmp/certs.txt > /tmp/certs.count
 
 # by default there should be 6 certs initially
-echo 6 > /tmp/expected
+echo 7 > /tmp/expected
 diff /tmp/certs.count /tmp/expected
