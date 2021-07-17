@@ -246,7 +246,7 @@ BuildRequires:    openssl
 %{brand} PKI is an enterprise software system designed
 to manage enterprise Public Key Infrastructure deployments.
 
-PKI consists of the following components:
+%{brand} PKI consists of the following components:
 
   * Automatic Certificate Management Environment (ACME) Responder
   * Certificate Authority (CA)
@@ -275,19 +275,19 @@ Requires:         %{vendor_id}-pki-console-theme = %{version}
 
 # Make certain that this 'meta' package requires the latest version(s)
 # of ALL PKI core packages
-Requires:         pki-acme = %{version}
-Requires:         pki-ca = %{version}
-Requires:         pki-kra = %{version}
-Requires:         pki-ocsp = %{version}
-Requires:         pki-tks = %{version}
-Requires:         pki-tps = %{version}
+Requires:         %{vendor_id}-pki-acme = %{version}
+Requires:         %{vendor_id}-pki-ca = %{version}
+Requires:         %{vendor_id}-pki-kra = %{version}
+Requires:         %{vendor_id}-pki-ocsp = %{version}
+Requires:         %{vendor_id}-pki-tks = %{version}
+Requires:         %{vendor_id}-pki-tps = %{version}
 
 # Make certain that this 'meta' package requires the latest version(s)
 # of PKI console
 %if %{with console}
-Requires:         pki-console = %{version}
+Requires:         %{vendor_id}-pki-console = %{version}
 %endif
-Requires:         pki-javadoc = %{version}
+Requires:         %{vendor_id}-pki-javadoc = %{version}
 
 # Make certain that this 'meta' package requires the latest version(s)
 # of ALL PKI clients -- except for s390/s390x where 'esc' is not built
@@ -305,7 +305,7 @@ Requires:         esc >= 1.1.1
 %{brand} PKI is an enterprise software system designed
 to manage enterprise Public Key Infrastructure deployments.
 
-PKI consists of the following components:
+%{brand} PKI consists of the following components:
 
   * Automatic Certificate Management Environment (ACME) Responder
   * Certificate Authority (CA)
@@ -319,10 +319,13 @@ PKI consists of the following components:
 
 %if %{with base}
 ################################################################################
-%package -n       pki-symkey
+%package -n       %{vendor_id}-pki-symkey
 ################################################################################
 
-Summary:          PKI Symmetric Key Package
+Summary:          %{brand} PKI Symmetric Key Package
+
+Obsoletes:        pki-symkey < %{version}
+Provides:         pki-symkey = %{version}
 
 Requires:         %{java_headless}
 Requires:         jpackage-utils >= 0:1.7.5-10
@@ -337,16 +340,19 @@ Conflicts:        pki-server-theme < %{version}
 Conflicts:        pki-console-theme < %{version}
 %endif
 
-%description -n   pki-symkey
-The PKI Symmetric Key Java Package supplies various native
+%description -n   %{vendor_id}-pki-symkey
+%{brand} PKI Symmetric Key Java Package supplies various native
 symmetric key operations to Java programs.
 
 ################################################################################
-%package -n       pki-base
+%package -n       %{vendor_id}-pki-base
 ################################################################################
 
-Summary:          PKI Base Package
+Summary:          %{brand} PKI Base Package
 BuildArch:        noarch
+
+Obsoletes:        pki-base < %{version}
+Provides:         pki-base = %{version}
 
 Requires:         nss >= 3.36.1
 
@@ -361,16 +367,19 @@ Conflicts:        pki-server-theme < %{version}
 Conflicts:        pki-console-theme < %{version}
 %endif
 
-%description -n   pki-base
-The PKI Base Package contains the common and client libraries and utilities
+%description -n   %{vendor_id}-pki-base
+%{brand} PKI Base Package contains the common and client libraries and utilities
 written in Python.
 
 ################################################################################
-%package -n       python3-pki
+%package -n       python3-%{vendor_id}-pki
 ################################################################################
 
-Summary:          PKI Python 3 Package
+Summary:          %{brand} PKI Python 3 Package
 BuildArch:        noarch
+
+Obsoletes:        python3-pki < %{version}
+Provides:         python3-pki = %{version}
 
 Obsoletes:        pki-base-python3 < %{version}
 Provides:         pki-base-python3 = %{version}
@@ -378,7 +387,7 @@ Provides:         pki-base-python3 = %{version}
 %{?python_provide:%python_provide python3-pki}
 %endif
 
-Requires:         pki-base = %{version}-%{release}
+Requires:         %{vendor_id}-pki-base = %{version}-%{release}
 Requires:         python3 >= 3.5
 Requires:         python3-cryptography
 Requires:         python3-ldap
@@ -389,15 +398,18 @@ Requires:         python3-six
 Recommends:       python3-nss
 %endif
 
-%description -n   python3-pki
-This package contains PKI client library for Python 3.
+%description -n   python3-%{vendor_id}-pki
+This package contains %{brand} PKI client library for Python 3.
 
 ################################################################################
-%package -n       pki-base-java
+%package -n       %{vendor_id}-pki-base-java
 ################################################################################
 
-Summary:          PKI Base Java Package
+Summary:          %{brand} PKI Base Java Package
 BuildArch:        noarch
+
+Obsoletes:        pki-base-java < %{version}
+Provides:         pki-base-java = %{version}
 
 Requires:         %{java_headless}
 Requires:         apache-commons-cli
@@ -412,7 +424,7 @@ Requires:         slf4j-jdk14
 Requires:         jpackage-utils >= 0:1.7.5-10
 Requires:         jss >= 5.0.0
 Requires:         ldapjdk >= 5.0.0
-Requires:         pki-base = %{version}-%{release}
+Requires:         %{vendor_id}-pki-base = %{version}-%{release}
 
 %if 0%{?rhel} && 0%{?rhel} <= 8
 Requires:         resteasy >= 3.0.26
@@ -431,27 +443,30 @@ Requires:         xalan-j2
 Requires:         xerces-j2
 Requires:         xml-commons-resolver
 
-%description -n   pki-base-java
-The PKI Base Java Package contains the common and client libraries and utilities
+%description -n   %{vendor_id}-pki-base-java
+%{brand} PKI Base Java Package contains the common and client libraries and utilities
 written in Java.
 
 ################################################################################
-%package -n       pki-tools
+%package -n       %{vendor_id}-pki-tools
 ################################################################################
 
-Summary:          PKI Tools Package
+Summary:          %{brand} PKI Tools Package
+
+Obsoletes:        pki-tools < %{version}
+Provides:         pki-tools = %{version}
 
 Requires:         openldap-clients
 Requires:         nss-tools >= 3.36.1
-Requires:         pki-base-java = %{version}-%{release}
+Requires:         %{vendor_id}-pki-base-java = %{version}-%{release}
 Requires:         p11-kit-trust
 
 # PKICertImport depends on certutil and openssl
 Requires:         nss-tools
 Requires:         openssl
 
-%description -n   pki-tools
-This package contains PKI executables that can be used to help make
+%description -n   %{vendor_id}-pki-tools
+This package contains %{brand} PKI executables that can be used to help make
 Certificate System into a more complete and robust PKI solution.
 
 # with base
@@ -459,11 +474,14 @@ Certificate System into a more complete and robust PKI solution.
 
 %if %{with server}
 ################################################################################
-%package -n       pki-server
+%package -n       %{vendor_id}-pki-server
 ################################################################################
 
-Summary:          PKI Server Package
+Summary:          %{brand} PKI Server Package
 BuildArch:        noarch
+
+Obsoletes:        pki-server < %{version}
+Provides:         pki-server = %{version}
 
 Requires:         hostname
 
@@ -471,8 +489,8 @@ Requires:         policycoreutils
 Requires:         procps-ng
 Requires:         openldap-clients
 Requires:         openssl
-Requires:         pki-symkey = %{version}-%{release}
-Requires:         pki-tools = %{version}-%{release}
+Requires:         %{vendor_id}-pki-symkey = %{version}-%{release}
+Requires:         %{vendor_id}-pki-tools = %{version}-%{release}
 
 Requires:         keyutils
 
@@ -518,25 +536,28 @@ Provides:         bundled(js-jquery-i18n-properties) = 1.2.7
 Provides:         bundled(js-patternfly) = 3.59.2
 Provides:         bundled(js-underscore) = 1.9.2
 
-%description -n   pki-server
-The PKI Server Package contains libraries and utilities needed by other
-PKI subsystems.
+%description -n   %{vendor_id}-pki-server
+%{brand} PKI Server Package contains libraries and utilities needed by other
+%{brand} PKI subsystems.
 
 # with server
 %endif
 
 %if %{with acme}
 ################################################################################
-%package -n       pki-acme
+%package -n       %{vendor_id}-pki-acme
 ################################################################################
 
-Summary:          PKI ACME Package
+Summary:          %{brand} PKI ACME Package
 BuildArch:        noarch
 
-Requires:         pki-server = %{version}-%{release}
+Obsoletes:        pki-acme < %{version}
+Provides:         pki-acme = %{version}
 
-%description -n   pki-acme
-The PKI ACME responder is a service that provides an automatic certificate
+Requires:         %{vendor_id}-pki-server = %{version}-%{release}
+
+%description -n   %{vendor_id}-pki-acme
+%{brand} PKI ACME responder is a service that provides an automatic certificate
 management via ACME v2 protocol defined in RFC 8555.
 
 # with acme
@@ -544,19 +565,22 @@ management via ACME v2 protocol defined in RFC 8555.
 
 %if %{with ca}
 ################################################################################
-%package -n       pki-ca
+%package -n       %{vendor_id}-pki-ca
 ################################################################################
 
-Summary:          PKI CA Package
+Summary:          %{brand} PKI CA Package
 BuildArch:        noarch
 
-Requires:         pki-server = %{version}-%{release}
+Obsoletes:        pki-ca < %{version}
+Provides:         pki-ca = %{version}
+
+Requires:         %{vendor_id}-pki-server = %{version}-%{release}
 Requires(post):   systemd-units
 Requires(preun):  systemd-units
 Requires(postun): systemd-units
 
-%description -n   pki-ca
-The Certificate Authority (CA) is a required PKI subsystem which issues,
+%description -n   %{vendor_id}-pki-ca
+%{brand} Certificate Authority (CA) is a required subsystem which issues,
 renews, revokes, and publishes certificates as well as compiling and
 publishing Certificate Revocation Lists (CRLs).
 
@@ -569,19 +593,22 @@ where it obtains its own signing certificate from a public CA.
 
 %if %{with kra}
 ################################################################################
-%package -n       pki-kra
+%package -n       %{vendor_id}-pki-kra
 ################################################################################
 
-Summary:          PKI KRA Package
+Summary:          %{brand} PKI KRA Package
 BuildArch:        noarch
 
-Requires:         pki-server = %{version}-%{release}
+Obsoletes:        pki-kra < %{version}
+Provides:         pki-kra = %{version}
+
+Requires:         %{vendor_id}-pki-server = %{version}-%{release}
 Requires(post):   systemd-units
 Requires(preun):  systemd-units
 Requires(postun): systemd-units
 
-%description -n   pki-kra
-The Key Recovery Authority (KRA) is an optional PKI subsystem that can act
+%description -n   %{vendor_id}-pki-kra
+%{brand} Key Recovery Authority (KRA) is an optional subsystem that can act
 as a key archival facility.  When configured in conjunction with the
 Certificate Authority (CA), the KRA stores private encryption keys as part of
 the certificate enrollment process.  The key archival mechanism is triggered
@@ -600,19 +627,22 @@ since such archival would undermine non-repudiation properties of signing keys.
 
 %if %{with ocsp}
 ################################################################################
-%package -n       pki-ocsp
+%package -n       %{vendor_id}-pki-ocsp
 ################################################################################
 
-Summary:          PKI OCSP Package
+Summary:          %{brand} PKI OCSP Package
 BuildArch:        noarch
 
-Requires:         pki-server = %{version}
+Obsoletes:        pki-ocsp < %{version}
+Provides:         pki-ocsp = %{version}
+
+Requires:         %{vendor_id}-pki-server = %{version}
 Requires(post):   systemd-units
 Requires(preun):  systemd-units
 Requires(postun): systemd-units
 
-%description -n   pki-ocsp
-The Online Certificate Status Protocol (OCSP) Manager is an optional PKI
+%description -n   %{vendor_id}-pki-ocsp
+%{brand} Online Certificate Status Protocol (OCSP) Manager is an optional
 subsystem that can act as a stand-alone OCSP service.  The OCSP Manager
 performs the task of an online certificate validation authority by enabling
 OCSP-compliant clients to do real-time verification of certificates.  Note
@@ -638,19 +668,22 @@ whenever they are issued or updated.
 
 %if %{with tks}
 ################################################################################
-%package -n       pki-tks
+%package -n       %{vendor_id}-pki-tks
 ################################################################################
 
-Summary:          PKI TKS Package
+Summary:          %{brand} PKI TKS Package
 BuildArch:        noarch
 
-Requires:         pki-server = %{version}
+Obsoletes:        pki-tks < %{version}
+Provides:         pki-tks = %{version}
+
+Requires:         %{vendor_id}-pki-server = %{version}
 Requires(post):   systemd-units
 Requires(preun):  systemd-units
 Requires(postun): systemd-units
 
-%description -n   pki-tks
-The Token Key Service (TKS) is an optional PKI subsystem that manages the
+%description -n   %{vendor_id}-pki-tks
+%{brand} Token Key Service (TKS) is an optional subsystem that manages the
 master key(s) and the transport key(s) required to generate and distribute
 keys for hardware tokens.  TKS provides the security between tokens and an
 instance of Token Processing System (TPS), where the security relies upon the
@@ -670,12 +703,15 @@ behind the firewall with restricted access.
 
 %if %{with tps}
 ################################################################################
-%package -n       pki-tps
+%package -n       %{vendor_id}-pki-tps
 ################################################################################
 
-Summary:          PKI TPS Package
+Summary:          %{brand} PKI TPS Package
 
-Requires:         pki-server = %{version}
+Obsoletes:        pki-tps < %{version}
+Provides:         pki-tps = %{version}
+
+Requires:         %{vendor_id}-pki-server = %{version}
 Requires(post):   systemd-units
 Requires(preun):  systemd-units
 Requires(postun): systemd-units
@@ -686,8 +722,8 @@ Requires(postun): systemd-units
 Requires:         nss-tools >= 3.36.1
 Requires:         openldap-clients
 
-%description -n   pki-tps
-The Token Processing System (TPS) is an optional PKI subsystem that acts
+%description -n   %{vendor_id}-pki-tps
+%{brand} Token Processing System (TPS) is an optional subsystem that acts
 as a Registration Authority (RA) for authenticating and processing
 enrollment requests, PIN reset requests, and formatting requests from
 the Enterprise Security Client (ESC).
@@ -711,11 +747,14 @@ smart card.
 
 %if %{with javadoc}
 ################################################################################
-%package -n       pki-javadoc
+%package -n       %{vendor_id}-pki-javadoc
 ################################################################################
 
-Summary:          PKI Javadoc Package
+Summary:          %{brand} PKI Javadoc Package
 BuildArch:        noarch
+
+Obsoletes:        pki-javadoc < %{version}
+Provides:         pki-javadoc = %{version}
 
 # Ensure we end up with a useful installation
 Conflicts:        pki-base < %{version}
@@ -725,28 +764,31 @@ Conflicts:        pki-server-theme < %{version}
 Conflicts:        pki-console-theme < %{version}
 %endif
 
-%description -n   pki-javadoc
-This package contains PKI API documentation.
+%description -n   %{vendor_id}-pki-javadoc
+This package contains %{brand} PKI API documentation.
 
 # with javadoc
 %endif
 
 %if %{with console}
 ################################################################################
-%package -n       pki-console
+%package -n       %{vendor_id}-pki-console
 ################################################################################
 
-Summary:          PKI Console Package
+Summary:          %{brand} PKI Console Package
 BuildArch:        noarch
+
+Obsoletes:        pki-console < %{version}
+Provides:         pki-console = %{version}
 
 BuildRequires:    idm-console-framework >= 1.2.0
 
 Requires:         idm-console-framework >= 1.2.0
-Requires:         pki-base-java = %{version}
-Requires:         pki-console-theme = %{version}
+Requires:         %{vendor_id}-pki-base-java = %{version}
+Requires:         %{vendor_id}-pki-console-theme = %{version}
 
-%description -n   pki-console
-The PKI Console is a Java application used to administer PKI server.
+%description -n   %{vendor_id}-pki-console
+%{brand} PKI Console is a Java application used to administer PKI server.
 
 # with console
 %endif
@@ -759,6 +801,7 @@ The PKI Console is a Java application used to administer PKI server.
 Summary:          %{brand} PKI Server Theme Package
 BuildArch:        noarch
 
+Obsoletes:        pki-server-theme < %{version}
 Provides:         pki-server-theme = %{version}
 
 # Ensure we end up with a useful installation
@@ -770,8 +813,7 @@ Conflicts:        pki-console-theme < %{version}
 Conflicts:        pki-javadoc < %{version}
 
 %description -n   %{vendor_id}-pki-server-theme
-This PKI Server Theme Package contains
-%{brand} textual and graphical user interface for PKI Server.
+This package contains textual and graphical user interface for %{brand} PKI Server.
 
 %if %{with console}
 ################################################################################
@@ -781,6 +823,7 @@ This PKI Server Theme Package contains
 Summary:          %{brand} PKI Console Theme Package
 BuildArch:        noarch
 
+Obsoletes:        pki-console-theme < %{version}
 Provides:         pki-console-theme = %{version}
 
 # Ensure we end up with a useful installation
@@ -790,8 +833,7 @@ Conflicts:        pki-server-theme < %{version}
 Conflicts:        pki-javadoc < %{version}
 
 %description -n   %{vendor_id}-pki-console-theme
-This PKI Console Theme Package contains
-%{brand} textual and graphical user interface for PKI Console.
+This package contains textual and graphical user interface for %{brand} PKI Console.
 
 # with console
 %endif
@@ -801,14 +843,17 @@ This PKI Console Theme Package contains
 
 %if %{with tests}
 ################################################################################
-%package -n       pki-tests
+%package -n       %{vendor_id}-pki-tests
 ################################################################################
 
-Summary:          PKI Tests
+Summary:          %{brand} PKI Tests
 BuildArch:        noarch
 
-%description -n   pki-tests
-This package contains PKI test suite.
+Obsoletes:        pki-tests < %{version}
+Provides:         pki-tests = %{version}
+
+%description -n   %{vendor_id}-pki-tests
+This package contains %{brand} PKI test suite.
 
 # with tests
 %endif
@@ -943,7 +988,7 @@ ln -sf /usr/share/java/jakarta-annotations/jakarta.annotation-api.jar %{buildroo
 
 %if %{with server}
 
-%pre -n pki-server
+%pre -n %{vendor_id}-pki-server
 getent group %{pki_groupname} >/dev/null || groupadd -f -g %{pki_gid} -r %{pki_groupname}
 if ! getent passwd %{pki_username} >/dev/null ; then
     useradd -r -u %{pki_uid} -g %{pki_groupname} -d %{pki_homedir} -s /sbin/nologin -c "Certificate System" %{pki_username}
@@ -955,7 +1000,7 @@ exit 0
 
 %if %{with base}
 
-%post -n pki-base
+%post -n %{vendor_id}-pki-base
 
 if [ $1 -eq 1 ]
 then
@@ -969,7 +1014,7 @@ else
     echo >> /var/log/pki/pki-upgrade-%{version}.log
 fi
 
-%postun -n pki-base
+%postun -n %{vendor_id}-pki-base
 
 if [ $1 -eq 0 ]
 then
@@ -982,7 +1027,7 @@ fi
 
 %if %{with server}
 
-%post -n pki-server
+%post -n %{vendor_id}-pki-server
 ## NOTE:  At this time, NO attempt has been made to update ANY PKI subsystem
 ##        from EITHER 'sysVinit' OR previous 'systemd' processes to the new
 ##        PKI deployment process
@@ -997,13 +1042,13 @@ then
     systemctl daemon-reload
 fi
 
-## preun -n pki-server
+## preun -n %{vendor_id}-pki-server
 ## NOTE:  At this time, NO attempt has been made to update ANY PKI subsystem
 ##        from EITHER 'sysVinit' OR previous 'systemd' processes to the new
 ##        PKI deployment process
 
 
-## postun -n pki-server
+## postun -n %{vendor_id}-pki-server
 ## NOTE:  At this time, NO attempt has been made to update ANY PKI subsystem
 ##        from EITHER 'sysVinit' OR previous 'systemd' processes to the new
 ##        PKI deployment process
@@ -1027,7 +1072,7 @@ fi
 
 %if %{with base}
 ################################################################################
-%files -n pki-symkey
+%files -n %{vendor_id}-pki-symkey
 ################################################################################
 
 %license base/symkey/LICENSE
@@ -1035,7 +1080,7 @@ fi
 %{_libdir}/symkey/
 
 ################################################################################
-%files -n pki-base
+%files -n %{vendor_id}-pki-base
 ################################################################################
 
 %license base/common/LICENSE
@@ -1061,7 +1106,7 @@ fi
 %{_mandir}/man8/pki-upgrade.8.gz
 
 ################################################################################
-%files -n pki-base-java
+%files -n %{vendor_id}-pki-base-java
 ################################################################################
 
 %license base/common/LICENSE
@@ -1073,7 +1118,7 @@ fi
 %{_javadir}/pki/pki-certsrv.jar
 
 ################################################################################
-%files -n python3-pki
+%files -n python3-%{vendor_id}-pki
 ################################################################################
 
 %license base/common/LICENSE
@@ -1084,7 +1129,7 @@ fi
 %{python3_sitelib}/pki
 
 ################################################################################
-%files -n pki-tools
+%files -n %{vendor_id}-pki-tools
 ################################################################################
 
 %license base/tools/LICENSE
@@ -1158,7 +1203,7 @@ fi
 
 %if %{with server}
 ################################################################################
-%files -n pki-server
+%files -n %{vendor_id}-pki-server
 ################################################################################
 
 %license base/common/THIRD_PARTY_LICENSES
@@ -1219,7 +1264,7 @@ fi
 
 %if %{with acme}
 ################################################################################
-%files -n pki-acme
+%files -n %{vendor_id}-pki-acme
 ################################################################################
 
 %{_javadir}/pki/pki-acme.jar
@@ -1230,7 +1275,7 @@ fi
 
 %if %{with ca}
 ################################################################################
-%files -n pki-ca
+%files -n %{vendor_id}-pki-ca
 ################################################################################
 
 %license base/ca/LICENSE
@@ -1242,7 +1287,7 @@ fi
 
 %if %{with kra}
 ################################################################################
-%files -n pki-kra
+%files -n %{vendor_id}-pki-kra
 ################################################################################
 
 %license base/kra/LICENSE
@@ -1254,7 +1299,7 @@ fi
 
 %if %{with ocsp}
 ################################################################################
-%files -n pki-ocsp
+%files -n %{vendor_id}-pki-ocsp
 ################################################################################
 
 %license base/ocsp/LICENSE
@@ -1266,7 +1311,7 @@ fi
 
 %if %{with tks}
 ################################################################################
-%files -n pki-tks
+%files -n %{vendor_id}-pki-tks
 ################################################################################
 
 %license base/tks/LICENSE
@@ -1278,7 +1323,7 @@ fi
 
 %if %{with tps}
 ################################################################################
-%files -n pki-tps
+%files -n %{vendor_id}-pki-tps
 ################################################################################
 
 %license base/tps/LICENSE
@@ -1300,7 +1345,7 @@ fi
 
 %if %{with javadoc}
 ################################################################################
-%files -n pki-javadoc
+%files -n %{vendor_id}-pki-javadoc
 ################################################################################
 
 %{_javadocdir}/pki-%{version}/
@@ -1310,7 +1355,7 @@ fi
 
 %if %{with console}
 ################################################################################
-%files -n pki-console
+%files -n %{vendor_id}-pki-console
 ################################################################################
 
 %license base/console/LICENSE
@@ -1355,7 +1400,7 @@ fi
 
 %if %{with tests}
 ################################################################################
-%files -n pki-tests
+%files -n %{vendor_id}-pki-tests
 ################################################################################
 
 %{_datadir}/pki/tests/
