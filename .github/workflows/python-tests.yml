@@ -6,7 +6,7 @@ jobs:
   init:
     name: Initializing Workflow
     runs-on: ubuntu-latest
-    container: fedora:latest
+    container: registry.fedoraproject.org/fedora-minimal:latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
@@ -86,4 +86,7 @@ jobs:
           tests/bin/runner-init.sh
 
       - name: Run Python lint
-        run: docker exec pki /usr/share/pki/tests/bin/pki-lint
+        run: |
+          docker exec pki ls -la /usr/share/pki
+          docker exec pki ls -la /usr/share/pki/tests/bin
+          docker exec pki /usr/share/pki/tests/bin/pki-lint

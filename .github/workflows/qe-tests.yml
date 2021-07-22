@@ -6,7 +6,7 @@ jobs:
   init:
     name: Initializing Workflow
     runs-on: ubuntu-latest
-    container: fedora:latest
+    container: registry.fedoraproject.org/fedora-minimal:latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
@@ -96,7 +96,7 @@ jobs:
           tests/bin/runner-init.sh
 
       - name: Install dependencies in master container
-        run: docker exec pki1 dnf install -y 389-ds-base python3-pip
+        run: docker exec pki1 microdnf install -y 389-ds-base python3-pip
 
       - name: Set up inventory
         run: |

@@ -6,7 +6,7 @@ jobs:
   init:
     name: Initializing Workflow
     runs-on: ubuntu-latest
-    container: fedora:latest
+    container: registry.fedoraproject.org/fedora-minimal:latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
@@ -93,8 +93,8 @@ jobs:
 
       - name: Install IPA packages in IPA container
         run: |
-          docker exec ipa dnf copr enable -y @freeipa/freeipa-master-nightly
-          docker exec ipa dnf install -y freeipa-server freeipa-server-dns \
+          docker exec -w /etc/yum.repos.d ipa curl -O https://copr.fedorainfracloud.org/coprs/g/freeipa/freeipa-master-nightly/repo/fedora-34/group_freeipa-freeipa-master-nightly-fedora-34.repo
+          docker exec ipa microdnf install -y freeipa-server freeipa-server-dns \
               python3-ipatests freeipa-healthcheck
 
       - name: Install IPA server in IPA container
@@ -146,8 +146,8 @@ jobs:
 
       - name: Install dependencies in client container
         run: |
-          docker exec client dnf copr enable -y @freeipa/freeipa-master-nightly
-          docker exec client dnf install -y freeipa-client certbot
+          docker exec -w /etc/yum.repos.d client curl -O https://copr.fedorainfracloud.org/coprs/g/freeipa/freeipa-master-nightly/repo/fedora-34/group_freeipa-freeipa-master-nightly-fedora-34.repo
+          docker exec client microdnf install -y freeipa-client certbot
 
       - name: Install IPA client in client container
         run: |
@@ -258,8 +258,8 @@ jobs:
 
       - name: Install IPA packages in primary container
         run: |
-          docker exec primary dnf copr enable -y @freeipa/freeipa-master-nightly
-          docker exec primary dnf install -y freeipa-server freeipa-server-dns
+          docker exec -w /etc/yum.repos.d primary curl -O https://copr.fedorainfracloud.org/coprs/g/freeipa/freeipa-master-nightly/repo/fedora-34/group_freeipa-freeipa-master-nightly-fedora-34.repo
+          docker exec primary microdnf install -y freeipa-server freeipa-server-dns
 
       - name: Install IPA server in primary container
         run: |
@@ -288,8 +288,8 @@ jobs:
 
       - name: Install IPA packages in secondary container
         run: |
-          docker exec secondary dnf copr enable -y @freeipa/freeipa-master-nightly
-          docker exec secondary dnf install -y freeipa-server freeipa-server-dns
+          docker exec -w /etc/yum.repos.d secondary curl -O https://copr.fedorainfracloud.org/coprs/g/freeipa/freeipa-master-nightly/repo/fedora-34/group_freeipa-freeipa-master-nightly-fedora-34.repo
+          docker exec secondary microdnf install -y freeipa-server freeipa-server-dns
 
       - name: Install IPA client in secondary container
         run: |

@@ -4,8 +4,12 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
 # https://docs.fedoraproject.org/en-US/containers/guidelines/guidelines/
+#
+# This file is used to create an ACME image automatically in Quay.io.
+# The build is done in a single stage since Quay.io does not support
+# multi-stage build.
 
-FROM registry.fedoraproject.org/fedora:latest
+FROM registry.fedoraproject.org/fedora-minimal:latest
 
 ARG NAME="pki-acme"
 ARG SUMMARY="Dogtag PKI ACME Responder"
@@ -30,22 +34,76 @@ LABEL name="$NAME" \
 EXPOSE 8080 8443
 
 # Enable COPR repo if specified
-RUN if [ -n "$COPR_REPO" ]; then dnf install -y dnf-plugins-core; dnf copr enable -y $COPR_REPO; fi
-
-# Install packages
-RUN dnf install -y bind-utils iputils abrt-java-connector postgresql postgresql-jdbc
+RUN if [ -n "$COPR_REPO" ]; then \
+    cd /etc/yum.repos.d; \
+    curl -O https://copr.fedorainfracloud.org/coprs/g/pki/master/repo/fedora-34/group_pki-master-fedora-34.repo; \
+    fi
 
 # Import PKI sources
 COPY . /tmp/pki/
 WORKDIR /tmp/pki
 
+# Install build and runtime dependencies
+RUN microdnf install -y systemd git rpm-build tzdata bind-utils iputils abrt-java-connector postgresql postgresql-jdbc
+RUN tools/bin/microdnf-builddep.sh
+RUN microdnf install -y \
+nss \
+apache-commons-cli \
+apache-commons-codec \
+apache-commons-io \
+apache-commons-lang3 \
+apache-commons-logging \
+apache-commons-net \
+glassfish-jaxb-api \
+java-11-openjdk-headless \
+jaxb-impl \
+jpackage-utils \
+jss \
+ldapjdk \
+resteasy-client \
+resteasy-core \
+resteasy-jackson2-provider \
+resteasy-jaxb-provider \
+slf4j \
+slf4j-jdk14 \
+xalan-j2 \
+xerces-j2 \
+xml-commons-resolver \
+freeipa-healthcheck-core \
+hostname \
+keyutils \
+openldap-clients \
+openssl \
+policycoreutils \
+policycoreutils-python-utils \
+procps-ng \
+python3-libselinux \
+python3-lxml \
+python3-policycoreutils \
+selinux-policy-targeted \
+tomcat \
+tomcatjss \
+java-11-openjdk-headless \
+jpackage-utils \
+jss \
+nss \
+python3-flake8 \
+python3-pylint \
+nss-tools \
+nss-tools \
+openldap-clients \
+openssl \
+python3-cryptography \
+python3-ldap \
+python3-lxml \
+python3-requests \
+python3-six
+
 # Build PKI packages
-RUN dnf install -y dnf-plugins-core rpm-build
-RUN dnf builddep -y --spec pki.spec
 RUN ./build.sh --with-pkgs=base,server,acme --work-dir=/tmp/build rpm
 
 # Install PKI packages
-RUN dnf localinstall -y /tmp/build/RPMS/*
+RUN cd /tmp/build/RPMS; ls -la; rpm -ivh *.rpm
 
 # Install PostgreSQL JDBC driver
 RUN ln -s /usr/share/java/postgresql-jdbc/postgresql.jar /usr/share/pki/server/common/lib/postgresql.jar

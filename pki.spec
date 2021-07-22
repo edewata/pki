@@ -1043,7 +1043,7 @@ fi
 
 %license base/common/LICENSE
 %license base/common/LICENSE.LESSER
-%doc %{_datadir}/doc/pki-base/html
+# doc %{_datadir}/doc/pki-base/html
 %dir %{_datadir}/pki
 %{_datadir}/pki/VERSION
 %{_datadir}/pki/pom.xml
@@ -1059,7 +1059,7 @@ fi
 %config(noreplace) %{_sysconfdir}/pki/pki.conf
 %dir %{_localstatedir}/log/pki
 %{_sbindir}/pki-upgrade
-%{_mandir}/man1/pki-python-client.1.gz
+# {_mandir}/man1/pki-python-client.1.gz
 %{_mandir}/man5/pki-logging.5.gz
 %{_mandir}/man8/pki-upgrade.8.gz
 
