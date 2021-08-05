@@ -90,7 +90,6 @@ public class CASystemCertClient extends Client {
         if (c == null) {
             throw new Exception("Unable to get subsystem certificate: No response");
         }
-        System.out.print("certString: " + c);
         ByteArrayInputStream bis = new ByteArrayInputStream(c.getBytes());
         JSONObject jsonObj = new JSONObject(bis);
         JsonNode responseNode = jsonObj.getJsonNode().get("Response");

@@ -1671,7 +1671,7 @@ class PKIDeployer:
                 logger.info('Getting subsystem certificate from %s', ca_url)
                 subsystem_cert_data = self.get_ca_subsystem_cert(instance, ca_url)
 
-                logger.info('Adding subsystem certificate into %s', uid)
+                logger.info('Adding subsystem certificate into %s: %s', uid, str(subsystem_cert_data))
                 subsystem.add_user_cert(uid, cert_data=subsystem_cert_data, cert_format='PEM')
 
                 logger.info('Adding %s into Trusted Managers', uid)
