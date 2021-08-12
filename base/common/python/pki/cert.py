@@ -41,11 +41,17 @@ class CertData(object):
     """
 
     json_attribute_names = {
-        'id': 'serial_number', 'IssuerDN': 'issuer_dn',
-        'SubjectDN': 'subject_dn', 'PrettyPrint': 'pretty_repr',
-        'Encoded': 'encoded', 'NotBefore': 'not_before',
-        'NotAfter': 'not_after', 'Status': 'status', 'Nonce': 'nonce',
-        'Link': 'link', 'PKCS7CertChain': 'pkcs7_cert_chain'
+        'serialNumber': 'serial_number',
+        'issuerDN': 'issuer_dn',
+        'subjectDN': 'subject_dn',
+        'prettyPrint': 'pretty_repr',
+        'encoded': 'encoded',
+        'notBefore': 'not_before',
+        'notAfter': 'not_after',
+        'status': 'status',
+        'nonce': 'nonce',
+        'link': 'link',
+        'pkcs7CertChain': 'pkcs7_cert_chain'
     }
 
     def __init__(self):
@@ -99,12 +105,19 @@ class CertDataInfo(object):
     """
 
     json_attribute_names = {
-        'id': 'serial_number', 'SubjectDN': 'subject_dn', 'Status': 'status',
-        'Type': 'type', 'Version': 'version', 'KeyLength': 'key_length',
-        'KeyAlgorithmOID': 'key_algorithm_oid', 'Link': 'link',
-        'NotValidBefore': 'not_valid_before',
-        'NotValidAfter': 'not_valid_after', 'IssuedOn': 'issued_on',
-        'IssuedBy': 'issued_by'}
+        'id': 'serial_number',
+        'subjectDN': 'subject_dn',
+        'status': 'status',
+        'type': 'type',
+        'version': 'version',
+        'keyLength': 'key_length',
+        'keyAlgorithmOID': 'key_algorithm_oid',
+        'link': 'link',
+        'notValidBefore': 'not_valid_before',
+        'notValidAfter': 'not_valid_after',
+        'issuedOn': 'issued_on',
+        'issuedBy': 'issued_by'
+    }
 
     def __init__(self):
         """ Constructor """
@@ -168,6 +181,9 @@ class CertDataInfoCollection(object):
     def from_json(cls, json_value):
         """ Populate object from JSON input """
         ret = cls()
+
+        logger.info('JSON: %s', json.dumps(json_value))
+
         cert_infos = json_value['entries']
         if not isinstance(cert_infos, list):
             ret.cert_data_info_list.append(CertDataInfo.from_json(cert_infos))
@@ -176,7 +192,7 @@ class CertDataInfoCollection(object):
                 ret.cert_data_info_list.append(
                     CertDataInfo.from_json(cert_info))
 
-        links = json_value['Link']
+        links = json_value['links']
         if not isinstance(links, list):
             ret.links.append(pki.Link.from_json(links))
         else:

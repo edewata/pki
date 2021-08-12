@@ -4,6 +4,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.netscape.certsrv.base.Link;
 import com.netscape.certsrv.request.RequestStatus;
 import com.netscape.certsrv.util.JSONSerializer;
 
@@ -20,6 +21,8 @@ public class CertRequestInfosTest {
 
         before.addEntry(request);
         before.setTotal(1);
+
+        before.addLink(new Link("self", "https://localhost.localdomain/ca/rest/certs", "application/json"));
     }
 
     @Test
