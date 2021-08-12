@@ -18,6 +18,9 @@ class DogtagCACertsConnectivityCheck(MetaPlugin):
 
     @duration
     def check(self):
+
+        logger.info('Checking CA connectivity in %s instance', self.instance.name)
+
         if not self.instance.exists():
             logger.debug('Invalid instance: %s', self.instance.name)
             yield Result(self, constants.CRITICAL,
@@ -29,7 +32,7 @@ class DogtagCACertsConnectivityCheck(MetaPlugin):
         ca = self.instance.get_subsystem('ca')
 
         if not ca:
-            logger.info("No CA configured, skipping dogtag CA connectivity check")
+            logger.info('No CA in %s instance', self.instance.name)
             return
 
         try:
@@ -90,6 +93,9 @@ class DogtagKRAConnectivityCheck(MetaPlugin):
 
     @duration
     def check(self):
+
+        logger.info('Checking KRA connectivity in %s instance', self.instance.name)
+
         if not self.instance.exists():
             logger.debug('Invalid instance: %s', self.instance.name)
             yield Result(self, constants.CRITICAL,
@@ -101,7 +107,7 @@ class DogtagKRAConnectivityCheck(MetaPlugin):
         kra = self.instance.get_subsystem('kra')
 
         if not kra:
-            logger.info("No KRA configured, skipping dogtag KRA connectivity check")
+            logger.info('No KRA in %s instance', self.instance.name)
             return
 
         try:
@@ -169,6 +175,9 @@ class DogtagOCSPConnectivityCheck(MetaPlugin):
 
     @duration
     def check(self):
+
+        logger.info('Checking OCSP connectivity in %s instance', self.instance.name)
+
         if not self.instance.exists():
             logger.debug('Invalid instance: %s', self.instance.name)
             yield Result(self, constants.CRITICAL,
@@ -180,7 +189,7 @@ class DogtagOCSPConnectivityCheck(MetaPlugin):
         ocsp = self.instance.get_subsystem('ocsp')
 
         if not ocsp:
-            logger.info("No OCSP configured, skipping dogtag OCSP connectivity check")
+            logger.info('No OCSP in %s instance', self.instance.name)
             return
 
         try:
@@ -217,6 +226,9 @@ class DogtagTKSConnectivityCheck(MetaPlugin):
 
     @duration
     def check(self):
+
+        logger.info('Checking TKS connectivity in %s instance', self.instance.name)
+
         if not self.instance.exists():
             logger.debug('Invalid instance: %s', self.instance.name)
             yield Result(self, constants.CRITICAL,
@@ -228,7 +240,7 @@ class DogtagTKSConnectivityCheck(MetaPlugin):
         tks = self.instance.get_subsystem('tks')
 
         if not tks:
-            logger.info("No TKS configured, skipping dogtag TKS connectivity check")
+            logger.info('No TKS in %s instance', self.instance.name)
             return
 
         try:
@@ -265,6 +277,9 @@ class DogtagTPSConnectivityCheck(MetaPlugin):
 
     @duration
     def check(self):
+
+        logger.info('Checking TPS connectivity in %s instance', self.instance.name)
+
         if not self.instance.exists():
             logger.debug('Invalid instance: %s', self.instance.name)
             yield Result(self, constants.CRITICAL,
@@ -276,7 +291,7 @@ class DogtagTPSConnectivityCheck(MetaPlugin):
         tps = self.instance.get_subsystem('tps')
 
         if not tps:
-            logger.info("No TPS configured, skipping dogtag TPS connectivity check")
+            logger.info('No TPS in %s instance', self.instance.name)
             return
 
         try:

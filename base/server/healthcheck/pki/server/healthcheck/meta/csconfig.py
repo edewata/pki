@@ -81,6 +81,9 @@ class CADogtagCertsConfigCheck(MetaPlugin):
 
     @duration
     def check(self):
+
+        logger.info('Checking CA config in %s instance', self.instance.name)
+
         if not self.instance.exists():
             logger.debug('Invalid instance: %s', self.instance.name)
             yield Result(self, constants.CRITICAL,
@@ -92,7 +95,7 @@ class CADogtagCertsConfigCheck(MetaPlugin):
         ca = self.instance.get_subsystem('ca')
 
         if not ca:
-            logger.info("No CA configured, skipping dogtag config check")
+            logger.info('No CA in %s instance', self.instance.name)
             return
 
         cert_nicknames = [
@@ -118,6 +121,9 @@ class KRADogtagCertsConfigCheck(MetaPlugin):
 
     @duration
     def check(self):
+
+        logger.info('Checking KRA config in %s instance', self.instance.name)
+
         if not self.instance.exists():
             logger.debug('Invalid instance: %s', self.instance.name)
             yield Result(self, constants.CRITICAL,
@@ -129,7 +135,7 @@ class KRADogtagCertsConfigCheck(MetaPlugin):
         kra = self.instance.get_subsystem('kra')
 
         if not kra:
-            logger.info("No KRA configured, skipping dogtag config check")
+            logger.info('No KRA in %s instance', self.instance.name)
             return
 
         cert_nicknames = [
@@ -155,6 +161,9 @@ class OCSPDogtagCertsConfigCheck(MetaPlugin):
 
     @duration
     def check(self):
+
+        logger.info('Checking OCSP config in %s instance', self.instance.name)
+
         if not self.instance.exists():
             logger.debug('Invalid instance: %s', self.instance.name)
             yield Result(self, constants.CRITICAL,
@@ -166,7 +175,7 @@ class OCSPDogtagCertsConfigCheck(MetaPlugin):
         ocsp = self.instance.get_subsystem('ocsp')
 
         if not ocsp:
-            logger.info("No OCSP configured, skipping dogtag config check")
+            logger.info('No OCSP in %s instance', self.instance.name)
             return
 
         cert_nicknames = [
@@ -191,6 +200,9 @@ class TKSDogtagCertsConfigCheck(MetaPlugin):
 
     @duration
     def check(self):
+
+        logger.info('Checking TKS config in %s instance', self.instance.name)
+
         if not self.instance.exists():
             logger.debug('Invalid instance: %s', self.instance.name)
             yield Result(self, constants.CRITICAL,
@@ -202,7 +214,7 @@ class TKSDogtagCertsConfigCheck(MetaPlugin):
         tks = self.instance.get_subsystem('tks')
 
         if not tks:
-            logger.info("No TKS configured, skipping dogtag config check")
+            logger.info('No TKS in %s instance', self.instance.name)
             return
 
         cert_nicknames = [
@@ -226,6 +238,9 @@ class TPSDogtagCertsConfigCheck(MetaPlugin):
 
     @duration
     def check(self):
+
+        logger.info('Checking TPS config in %s instance', self.instance.name)
+
         if not self.instance.exists():
             logger.debug('Invalid instance: %s', self.instance.name)
             yield Result(self, constants.CRITICAL,
@@ -237,7 +252,7 @@ class TPSDogtagCertsConfigCheck(MetaPlugin):
         tps = self.instance.get_subsystem('tps')
 
         if not tps:
-            logger.info("No TPS configured, skipping dogtag config check")
+            logger.info('No TPS in %s instance', self.instance.name)
             return
 
         cert_nicknames = [
