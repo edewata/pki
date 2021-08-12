@@ -273,6 +273,7 @@ class SecurityDomainClient(object):
             'Accept': 'application/json'
         }
         response = self.connection.get(self.domain_info_url, headers=headers)
+        logger.info('json 31')
         info = DomainInfo.from_json(response.json())
         return info
 
@@ -301,6 +302,7 @@ class SecurityDomainClient(object):
             'subsystem': subsystem
         }
         response = self.connection.get(self.install_token_url, params=params)
+        logger.info('json 32')
         return InstallToken.from_json(response.json())
 
 
@@ -405,6 +407,7 @@ class SystemConfigClient(object):
         if not response.content:
             return None
 
+        logger.info('json 33')
         return response.json()
 
     def setupAdmin(self, request):
@@ -422,6 +425,7 @@ class SystemConfigClient(object):
             self.setup_admin_url,
             data,
             headers)
+        logger.info('json 34')
         return response.json()
 
 

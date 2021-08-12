@@ -22,10 +22,13 @@
 Module containing the Python client classes for the SystemCert REST API
 """
 from __future__ import absolute_import
+import logging
 
 import pki
 from pki.cert import CertData
 from pki.encoder import decode_cert
+
+logger = logging.getLogger(__name__)
 
 
 class SystemCertClient(object):
@@ -60,6 +63,7 @@ class SystemCertClient(object):
         """
         url = self.cert_url + '/transport'
         response = self.connection.get(url, self.headers)
+        logger.info('json 35')
         cert_data = CertData.from_json(response.json())
 
         pem = cert_data.encoded

@@ -23,7 +23,6 @@ This module contains top-level classes and functions used by the Dogtag project.
 """
 from __future__ import absolute_import
 from __future__ import print_function
-
 from functools import wraps
 import cryptography.x509
 import ldap.dn
@@ -434,8 +433,10 @@ def handle_exceptions():
                 # exception. We want to re-raise the HTTPError.
                 exc_type, exc_val, exc_tb = sys.exc_info()
                 try:
+                    logger.info('json 1')
                     json = exc_val.response.json()
-                except ValueError:
+                except ValueError as e:
+                    logger.error('Unable to parse JSON response: %s\n%s', e, exc_val.response)
                     # json raises ValueError. simplejson raises
                     # JSONDecodeError, which is a subclass of ValueError.
                     # re-raise original exception

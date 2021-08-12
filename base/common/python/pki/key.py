@@ -27,6 +27,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import base64
 import json
+import logging
 import os
 import warnings
 
@@ -38,6 +39,8 @@ import pki.crypto
 import pki.encoder as encoder
 from pki.info import Version
 import pki.util
+
+logger = logging.getLogger(__name__)
 
 
 # should be moved to request.py
@@ -574,6 +577,7 @@ class KeyClient(object):
                         'start': start, 'size': size, 'realm': realm}
         response = self.connection.get(self.key_url, self.headers,
                                        params=query_params)
+        logger.info('json 20')
         return KeyInfoCollection.from_json(response.json())
 
     @pki.handle_exceptions()
@@ -594,6 +598,7 @@ class KeyClient(object):
                         'realm': realm}
         response = self.connection.get(self.key_requests_url, self.headers,
                                        params=query_params)
+        logger.info('json 21')
         return KeyRequestInfoCollection.from_json(response.json())
 
     @pki.handle_exceptions()
@@ -604,6 +609,7 @@ class KeyClient(object):
 
         url = self.key_requests_url + '/' + request_id
         response = self.connection.get(url, self.headers)
+        logger.info('json 22')
         return KeyRequestInfo.from_json(response.json())
 
     @pki.handle_exceptions()
@@ -614,6 +620,7 @@ class KeyClient(object):
 
         url = self.key_url + '/' + key_id
         response = self.connection.get(url, headers=self.headers)
+        logger.info('json 23')
         return KeyInfo.from_json(response.json())
 
     @pki.handle_exceptions()
@@ -624,6 +631,7 @@ class KeyClient(object):
 
         url = self.key_url + '/active/' + quote(client_key_id)
         response = self.connection.get(url, headers=self.headers)
+        logger.info('json 24')
         return KeyInfo.from_json(response.json())
 
     @pki.handle_exceptions()
@@ -681,6 +689,7 @@ class KeyClient(object):
         key_request = json.dumps(request, cls=encoder.CustomTypeEncoder,
                                  sort_keys=True)
         response = self.connection.post(url, key_request, self.headers)
+        logger.info('json 25')
         return KeyRequestResponse.from_json(response.json())
 
     @pki.handle_exceptions()
@@ -988,6 +997,7 @@ class KeyClient(object):
         key_request = json.dumps(data, cls=encoder.CustomTypeEncoder,
                                  sort_keys=True)
         response = self.connection.post(url, key_request, self.headers)
+        logger.info('json 26')
         key_data = KeyData.from_json(response.json())
         return Key(key_data)
 

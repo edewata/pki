@@ -26,6 +26,7 @@ KeyRequestResource REST APIs.
 """
 
 from __future__ import absolute_import
+
 from pki.info import InfoClient
 import pki.key as key
 

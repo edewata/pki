@@ -20,6 +20,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import json
+import logging
 import os
 
 from six import iteritems
@@ -28,6 +29,8 @@ import pki
 import pki.client as client
 import pki.account as account
 import pki.encoder as encoder
+
+logger = logging.getLogger(__name__)
 
 
 class ProfileDataInfo(object):
@@ -1036,6 +1039,7 @@ class ProfileClient(object):
             'size': size
         }
         r = self._get(self.profiles_url, query_params)
+        logger.info('json 27')
         return ProfileDataInfoCollection.from_json(r.json())
 
     @pki.handle_exceptions()
@@ -1048,6 +1052,7 @@ class ProfileClient(object):
             raise ValueError("Profile ID must be specified.")
         url = self.profiles_url + '/' + str(profile_id)
         r = self._get(url)
+        logger.info('json 28')
         return Profile.from_json(r.json())
 
     def _modify_profile_state(self, profile_id, action):
@@ -1088,6 +1093,7 @@ class ProfileClient(object):
 
         r = self._post(self.profiles_url, profile_object)
 
+        logger.info('json 29')
         return Profile.from_json(r.json())
 
     def _send_profile_modify(self, profile_data):
@@ -1100,6 +1106,7 @@ class ProfileClient(object):
         url = self.profiles_url + '/' + str(profile_data.profile_id)
         r = self._put(url, profile_object)
 
+        logger.info('json 30')
         return Profile.from_json(r.json())
 
     @pki.handle_exceptions()

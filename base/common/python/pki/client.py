@@ -21,7 +21,6 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
-
 import functools
 import inspect
 import logging
@@ -366,6 +365,7 @@ def main():
     headers = {'Content-type': 'application/json',
                'Accept': 'application/json'}
     conn.set_authentication_cert('/root/temp4.pem')
+    logger.info('json 16')
     print(conn.get("", headers).json())
 
 

@@ -20,8 +20,8 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
-
 import json
+import logging
 from six import iteritems
 import uuid
 
@@ -29,6 +29,8 @@ import pki
 import pki.client as client
 import pki.encoder as encoder
 import pki.cert as cert
+
+logger = logging.getLogger(__name__)
 
 
 class AuthorityData(object):
@@ -146,6 +148,7 @@ class AuthorityClient(object):
         headers = {'Content-type': 'application/json',
                    'Accept': 'application/json'}
         r = self.connection.get(url, headers=headers)
+        logger.info('json 2')
         return AuthorityData.from_json(r.json())
 
     @pki.handle_exceptions()
@@ -212,6 +215,7 @@ class AuthorityClient(object):
             path=self.ca_url,
             headers=headers,
             params=query_params)
+        logger.info('json 3')
         return AuthorityDataCollection.from_json(response.json())
 
     @pki.handle_exceptions()
@@ -245,6 +249,7 @@ class AuthorityClient(object):
             create_request,
             headers=headers)
 
+        logger.info('json 4')
         new_ca = AuthorityData.from_json(response.json())
         return new_ca
 

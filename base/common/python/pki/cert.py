@@ -653,6 +653,7 @@ class CertClient(object):
         url = self.cert_url + '/' + str(cert_serial_number)
         r = self.connection.get(url, self.headers)
         # print r.json()
+        logger.info('json 5')
         return CertData.from_json(r.json())
 
     @pki.handle_exceptions()
@@ -671,6 +672,7 @@ class CertClient(object):
                                     sort_keys=True)
         response = self.connection.post(url, search_request, self.headers,
                                         query_params)
+        logger.info('json 6')
         return CertDataInfoCollection.from_json(response.json())
 
     @pki.handle_exceptions()
@@ -684,6 +686,7 @@ class CertClient(object):
 
         url = self.agent_cert_url + '/' + str(cert_serial_number)
         r = self.connection.get(url, self.headers)
+        logger.info('json 7')
         return CertData.from_json(r.json())
 
     def _submit_revoke_request(self, url, cert_serial_number,
@@ -720,6 +723,7 @@ class CertClient(object):
             headers=self.headers,
             params=params)
 
+        logger.info('json 8')
         return CertRequestInfo.from_json(r.json())
 
     @pki.handle_exceptions()
@@ -785,6 +789,7 @@ class CertClient(object):
             headers=self.headers,
             params=params)
 
+        logger.info('json 9')
         return CertRequestInfo.from_json(r.json())
 
     @pki.handle_exceptions()
@@ -799,6 +804,7 @@ class CertClient(object):
         url = self.cert_requests_url + '/' + str(request_id)
         r = self.connection.get(url, headers=self.headers)
 
+        logger.info('json 10')
         return CertRequestInfo.from_json(r.json())
 
     @pki.handle_exceptions()
@@ -820,6 +826,7 @@ class CertClient(object):
         }
         r = self.connection.get(self.agent_cert_requests_url, self.headers,
                                 query_params)
+        logger.info('json 11')
         return CertRequestInfoCollection.from_json(r.json())
 
     @pki.handle_exceptions()
@@ -834,6 +841,7 @@ class CertClient(object):
 
         url = self.agent_cert_requests_url + '/' + str(request_id)
         r = self.connection.get(url, headers=self.headers)
+        logger.info('json 12')
         return CertReviewResponse.from_json(r.json())
 
     @pki.handle_exceptions()
@@ -937,6 +945,7 @@ class CertClient(object):
             'size': size
         }
         r = self.connection.get(url, self.headers, query_params)
+        logger.info('json 13')
         return profile.ProfileDataInfoCollection.from_json(r.json())
 
     @pki.handle_exceptions()
@@ -955,6 +964,7 @@ class CertClient(object):
             return copy.deepcopy(self.enrollment_templates[profile_id])
         url = self.cert_requests_url + '/profiles/' + str(profile_id)
         r = self.connection.get(url, self.headers)
+        logger.info('json 14')
         enrollment_request = r.json()
         logger.info('Enrollment request: %s', enrollment_request)
         # Caching the enrollment template object in-memory for future use.
@@ -1001,6 +1011,7 @@ class CertClient(object):
         # print request_object
         r = self.connection.post(self.cert_requests_url, request_object,
                                  self.headers, params)
+        logger.info('json 15')
         return CertRequestInfoCollection.from_json(r.json())
 
     @pki.handle_exceptions()

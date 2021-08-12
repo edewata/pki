@@ -20,12 +20,14 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
-
+import logging
 from six import iteritems
 
 import pki
 import pki.client as client
 import pki.encoder as encoder
+
+logger = logging.getLogger(__name__)
 
 
 class Feature(object):
@@ -128,6 +130,7 @@ class FeatureClient(object):
 
         url = self.feature_url + '/' + str(feature_id)
         r = self.connection.get(url, self.headers)
+        logger.info('json 17')
         return Feature.from_json(r.json())
 
     @pki.handle_exceptions()
@@ -137,6 +140,7 @@ class FeatureClient(object):
         response = self.connection.get(
             path=self.feature_url,
             headers=self.headers)
+        logger.info('json 18')
         return FeatureCollection.from_json(response.json())
 
 
