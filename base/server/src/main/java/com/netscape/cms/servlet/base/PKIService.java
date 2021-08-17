@@ -200,10 +200,31 @@ public class PKIService {
                 .build();
     }
 
-    public Response sendConditionalGetResponse(int ctime, Object object, Request request) {
+    public Response sendConditionalGetResponse(int ctime, Object entity, Request request) {
+
+        MediaType responseFormat = getResponseFormat();
+        logger.info("PKIService: Response format: " + responseFormat);
+
+        if (MediaType.APPLICATION_XML_TYPE.isCompatible(responseFormat)) {
+            Class<?> clazz = entity.getClass();
+            try {
+                Method method = clazz.getMethod("toXML");
+                entity = method.invoke(entity);
+                logger.info("PKIService: XML response:\n" + entity);
+
+            } catch (NoSuchMethodException e) {
+                logger.info("PKIService: " + clazz.getSimpleName() + " has no custom XML mapping");
+                // use JAXB mapping by default
+
+            } catch (Exception e) {
+                logger.error("PKIService: Unable to generate XML response: " + e.getMessage(), e);
+                throw new RuntimeException(e);
+            }
+        }
+
         CacheControl cc = new CacheControl();
         cc.setMaxAge(ctime);
-        EntityTag tag = new EntityTag(Integer.toString(object.hashCode()));
+        EntityTag tag = new EntityTag(Integer.toString(entity.hashCode()));
 
         ResponseBuilder builder = request.evaluatePreconditions(tag);
         if (builder != null) {
@@ -211,7 +232,7 @@ public class PKIService {
             return builder.build();
         }
 
-        builder = Response.ok(object);
+        builder = Response.ok(entity);
         builder.cacheControl(cc);
         builder.tag(tag);
         builder.type(getResponseFormat());
