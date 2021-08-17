@@ -52,6 +52,8 @@ import com.netscape.certsrv.base.PKIException;
  */
 public class PKIService {
 
+    public static org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(PKIService.class);
+
     // caching parameters
     public static final int DEFAULT_LONG_CACHE_LIFETIME = 1000;
 
@@ -157,6 +159,26 @@ public class PKIService {
     }
 
     public Response createOKResponse(Object entity) {
+
+        MediaType responseFormat = getResponseFormat();
+
+        if (MediaType.APPLICATION_XML_TYPE.isCompatible(responseFormat)) {
+            Class<?> clazz = entity.getClass();
+            try {
+                Method method = clazz.getMethod("toXML");
+                entity = method.invoke(entity);
+                logger.info("PKIService: XML response:\n" + entity);
+
+            } catch (NoSuchMethodException e) {
+                logger.info("PKIService: " + clazz.getSimpleName() + " has no custom XML mapping");
+                // use JAXB mapping by default
+
+            } catch (Exception e) {
+                logger.error("PKIService: Unable to generate XML response: " + e.getMessage(), e);
+                throw new RuntimeException(e);
+            }
+        }
+
         return Response
                 .ok(entity)
                 .type(getResponseFormat())
