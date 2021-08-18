@@ -29,6 +29,10 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -158,6 +162,68 @@ public class CMSRequestInfo implements JSONSerializer {
         } else if (!requestURL.equals(other.requestURL))
             return false;
         return true;
+    }
+
+    public Element toDOM(Document document) {
+
+        Element infoElement = document.createElement("CMSRequestInfo");
+
+        if (requestType != null) {
+            Element requestTypeElement = document.createElement("requestType");
+            requestTypeElement.appendChild(document.createTextNode(requestType));
+            infoElement.appendChild(requestTypeElement);
+        }
+
+        if (requestStatus != null) {
+            Element requestStatusElement = document.createElement("requestStatus");
+            requestStatusElement.appendChild(document.createTextNode(requestStatus.toString()));
+            infoElement.appendChild(requestStatusElement);
+        }
+
+        if (requestURL != null) {
+            Element requestURLElement = document.createElement("requestURL");
+            requestURLElement.appendChild(document.createTextNode(requestURL));
+            infoElement.appendChild(requestURLElement);
+        }
+
+        if (realm != null) {
+            Element realmElement = document.createElement("realm");
+            realmElement.appendChild(document.createTextNode(realm));
+            infoElement.appendChild(realmElement);
+        }
+
+        return infoElement;
+    }
+
+    public static CMSRequestInfo fromDOM(Element infoElement) {
+
+        CMSRequestInfo info = new CMSRequestInfo();
+
+        NodeList requestTypeList = infoElement.getElementsByTagName("requestType");
+        if (requestTypeList.getLength() > 0) {
+            String value = requestTypeList.item(0).getTextContent();
+            info.setRequestType(value);
+        }
+
+        NodeList requestStatusList = infoElement.getElementsByTagName("requestStatus");
+        if (requestStatusList.getLength() > 0) {
+            String value = requestStatusList.item(0).getTextContent();
+            info.setRequestStatus(RequestStatus.valueOf(value));
+        }
+
+        NodeList requestURLList = infoElement.getElementsByTagName("requestURL");
+        if (requestURLList.getLength() > 0) {
+            String value = requestURLList.item(0).getTextContent();
+            info.setRequestURL(value);
+        }
+
+        NodeList realmList = infoElement.getElementsByTagName("realm");
+        if (realmList.getLength() > 0) {
+            String value = realmList.item(0).getTextContent();
+            info.setRealm(value);
+        }
+
+        return info;
     }
 
     public String toXML() throws Exception {
