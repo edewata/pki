@@ -21,6 +21,14 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Locale;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
@@ -40,14 +48,18 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.netscape.certsrv.property.Descriptor;
 import com.netscape.certsrv.util.JSONSerializer;
 
+@XmlRootElement
+@XmlAccessorType(XmlAccessType.FIELD)
 @JsonInclude(Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown=true)
 public class PolicyConstraintValue implements JSONSerializer {
-
+    @XmlAttribute(name="id")
     private String name;
 
+    @XmlElement
     private Descriptor descriptor;
 
+    @XmlElement
     private String value;
 
     public PolicyConstraintValue() {
