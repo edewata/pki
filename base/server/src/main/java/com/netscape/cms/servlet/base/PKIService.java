@@ -43,6 +43,7 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.UriInfo;
 
 import com.netscape.certsrv.base.PKIException;
+import com.netscape.certsrv.util.JSONSerializer;
 
 /**
  * Base class for CMS RESTful resources
@@ -159,35 +160,82 @@ public class PKIService {
     }
 
     /**
-     * Convert entity to the requested format using custom mapping if available.
+     * Marshall response object with custom mapping if available.
+     *
+     * This method is called for by all services. It will use
+     * custom mapping if available, otherwise it will use JAXB.
      */
-    public Object convert(Object entity) {
+    public Object marshall(Object response) {
 
-        MediaType responseFormat = getResponseFormat();
+        Class<?> clazz = response.getClass();
+        logger.info("PKIService: Response class: " + clazz.getSimpleName());
 
-        if (MediaType.APPLICATION_XML_TYPE.isCompatible(responseFormat)) {
-            Class<?> clazz = entity.getClass();
-            try {
+        try {
+            MediaType responseFormat = getResponseFormat();
+            logger.info("PKIService: Response format: " + responseFormat);
+
+            if (MediaType.APPLICATION_XML_TYPE.isCompatible(responseFormat)) {
                 Method method = clazz.getMethod("toXML");
-                entity = method.invoke(entity);
-                logger.info("PKIService: XML response:\n" + entity);
+                response = method.invoke(response);
+                logger.info("PKIService: XML response:\n" + response);
 
-            } catch (NoSuchMethodException e) {
-                logger.info("PKIService: " + clazz.getSimpleName() + " has no custom XML mapping");
-                // use JAXB mapping by default
-
-            } catch (Exception e) {
-                logger.error("PKIService: Unable to generate XML response: " + e.getMessage(), e);
-                throw new RuntimeException(e);
+            } else if (MediaType.APPLICATION_JSON_TYPE.isCompatible(responseFormat)) {
+                // TODO: enable support for JSON
+                // Method method = clazz.getMethod("toJSON");
+                // response = method.invoke(response);
+                // logger.info("PKIService: JSON response:\n" + response);
             }
+
+        } catch (NoSuchMethodException e) {
+            logger.info("PKIService: " + clazz.getSimpleName() + " has no custom response mapping");
+            // use JAXB mapping by default
+
+        } catch (Exception e) {
+            logger.error("PKIService: Unable to generate XML response: " + e.getMessage(), e);
+            throw new RuntimeException(e);
         }
 
-        return entity;
+        return response;
+    }
+
+    /**
+     * Unmarshall request object with custom mapping.
+     *
+     * This method is called specifically by services that
+     * support custom mapping, so it will fail if the request
+     * class does not provide the custom mapping.
+     */
+    public <T> T unmarshall(String request, Class<T> clazz) throws Exception {
+
+        logger.info("PKIService: Request class: " + clazz.getSimpleName());
+
+        try {
+            MediaType requestFormat = headers.getMediaType();
+            logger.info("PKIService: Request format: " + requestFormat);
+
+            if (MediaType.APPLICATION_XML_TYPE.isCompatible(requestFormat)) {
+                logger.info("PKIService: XML request:\n" + request);
+                Method method = clazz.getMethod("fromXML", String.class);
+                return (T) method.invoke(null, request);
+
+            } else if (MediaType.APPLICATION_JSON_TYPE.isCompatible(requestFormat)) {
+                logger.info("PKIService: JSON request:\n" + request);
+                Method method = JSONSerializer.class.getMethod("fromJSON", String.class, Class.class);
+                return (T) method.invoke(null, request, clazz);
+
+            } else {
+                throw new Exception("Unsupported request format: " + requestFormat);
+            }
+
+        } catch (NoSuchMethodException e) {
+            logger.error("PKIService: " + clazz.getSimpleName() + " has no custom request mapping");
+            throw e;
+        }
     }
 
     public Response createOKResponse(Object entity) {
 
-        entity = convert(entity);
+        entity = marshall(entity);
 
         return Response
                 .ok(entity)
@@ -197,7 +245,7 @@ public class PKIService {
 
     public Response createCreatedResponse(Object entity, URI link) {
 
-        entity = convert(entity);
+        entity = marshall(entity);
 
         return Response
                 .created(link)
@@ -215,7 +263,7 @@ public class PKIService {
 
     public Response sendConditionalGetResponse(int ctime, Object entity, Request request) {
 
-        entity = convert(entity);
+        entity = marshall(entity);
 
         CacheControl cc = new CacheControl();
         cc.setMaxAge(ctime);

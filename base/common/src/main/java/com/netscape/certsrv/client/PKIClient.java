@@ -112,6 +112,32 @@ public class PKIClient implements AutoCloseable {
     }
 
     /**
+    * Marshall request object with custom mapping.
+    *
+    * This method is called specifically by clients that
+    * support custom mapping, so it will fail if the
+    * request class does not provide custom mapping.
+    */
+   public Object marshall(Object request) throws Exception {
+
+       Class<?> clazz = request.getClass();
+
+       if (MediaType.APPLICATION_XML_TYPE.isCompatible(messageFormat)) {
+           Method method = clazz.getMethod("toXML");
+           request = method.invoke(request);
+
+       } else if (MediaType.APPLICATION_JSON_TYPE.isCompatible(messageFormat)) {
+           Method method = clazz.getMethod("toJSON");
+           request = method.invoke(request);
+
+       } else {
+           throw new Exception("Unsupported request format: " + messageFormat);
+       }
+
+       return request;
+   }
+
+    /**
      * Unmarshall response object using custom mapping if available.
      */
     public <T> T unmarshall(Response response, Class<T> clazz) throws Exception {
