@@ -1,6 +1,7 @@
 package com.netscape.certsrv.cert;
 
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.netscape.certsrv.util.JSONSerializer;
@@ -8,6 +9,14 @@ import com.netscape.certsrv.util.JSONSerializer;
 public class CertSearchRequestTest {
 
     private static CertSearchRequest before = new CertSearchRequest();
+
+    @BeforeClass
+    public static void setUpBefore() {
+        before.setValidNotBeforeFrom("1111");
+        before.setValidNotBeforeTo("2222");
+        before.setValidNotAfterFrom("3333");
+        before.setValidNotAfterTo("4444");
+    }
 
     @Test
     public void testXML() throws Exception {
