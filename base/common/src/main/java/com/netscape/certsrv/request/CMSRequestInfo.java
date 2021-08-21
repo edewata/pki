@@ -164,9 +164,7 @@ public class CMSRequestInfo implements JSONSerializer {
         return true;
     }
 
-    public Element toDOM(Document document) {
-
-        Element infoElement = document.createElement("CMSRequestInfo");
+    public void toDOM(Document document, Element infoElement) {
 
         if (requestType != null) {
             Element requestTypeElement = document.createElement("requestType");
@@ -191,13 +189,15 @@ public class CMSRequestInfo implements JSONSerializer {
             realmElement.appendChild(document.createTextNode(realm));
             infoElement.appendChild(realmElement);
         }
+    }
 
+    public Element toDOM(Document document) {
+        Element infoElement = document.createElement("CMSRequestInfo");
+        toDOM(document, infoElement);
         return infoElement;
     }
 
-    public static CMSRequestInfo fromDOM(Element infoElement) {
-
-        CMSRequestInfo info = new CMSRequestInfo();
+    public static void fromDOM(Element infoElement, CMSRequestInfo info) {
 
         NodeList requestTypeList = infoElement.getElementsByTagName("requestType");
         if (requestTypeList.getLength() > 0) {
@@ -222,7 +222,12 @@ public class CMSRequestInfo implements JSONSerializer {
             String value = realmList.item(0).getTextContent();
             info.setRealm(value);
         }
+    }
 
+    public static CMSRequestInfo fromDOM(Element infoElement) {
+
+        CMSRequestInfo info = new CMSRequestInfo();
+        fromDOM(infoElement, info);
         return info;
     }
 
