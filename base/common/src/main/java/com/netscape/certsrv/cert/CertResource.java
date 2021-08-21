@@ -26,9 +26,10 @@ public interface CertResource {
     @POST
     @Path("certs/search")
     public Response searchCerts(
-            CertSearchRequest data,
+            String searchRequest,
             @QueryParam("start") Integer start,
-            @QueryParam("size") Integer size);
+            @QueryParam("size") Integer size)
+            throws Exception;
 
     @GET
     @Path("certs/{id}")
