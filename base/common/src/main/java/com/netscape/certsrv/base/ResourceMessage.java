@@ -10,14 +10,6 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.core.MultivaluedMap;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlValue;
-import javax.xml.bind.annotation.adapters.XmlAdapter;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
@@ -82,8 +74,6 @@ import com.netscape.certsrv.util.JSONSerializer;
  *
  * @author Ade Lee
  */
-@XmlRootElement(name = "ResourceMessage")
-@XmlAccessorType(XmlAccessType.NONE)
 @JsonInclude(Include.NON_EMPTY)
 @JsonIgnoreProperties(ignoreUnknown=true)
 public class ResourceMessage implements JSONSerializer {
@@ -100,7 +90,6 @@ public class ResourceMessage implements JSONSerializer {
         }
     }
 
-    @XmlElement(name = "ClassName")
     @JsonProperty("ClassName")
     public String getClassName() {
         return className;
@@ -110,8 +99,6 @@ public class ResourceMessage implements JSONSerializer {
         this.className = className;
     }
 
-    @XmlElement(name = "Attributes")
-    @XmlJavaTypeAdapter(MapAdapter.class)
     @JsonIgnore
     public Map<String, String> getAttributes() {
         return attributes;
@@ -158,44 +145,15 @@ public class ResourceMessage implements JSONSerializer {
         return attributes.remove(name);
     }
 
-    public static class MapAdapter extends XmlAdapter<AttributeList, Map<String, String>> {
-
-        @Override
-        public AttributeList marshal(Map<String, String> map) {
-            AttributeList list = new AttributeList();
-            for (Map.Entry<String, String> entry : map.entrySet()) {
-                Attribute attribute = new Attribute();
-                attribute.name = entry.getKey();
-                attribute.value = entry.getValue();
-                list.attrs.add(attribute);
-            }
-            return list;
-        }
-
-        @Override
-        public Map<String, String> unmarshal(AttributeList list) {
-            Map<String, String> map = new LinkedHashMap<>();
-            for (Attribute attribute : list.attrs) {
-                map.put(attribute.name, attribute.value);
-            }
-            return map;
-        }
-    }
-
     @JsonSerialize(using=AttributeListSerializer.class)
     @JsonDeserialize(using=AttributeListDeserializer.class)
     public static class AttributeList {
-        @XmlElement(name = "Attribute")
         @JsonProperty("Attribute")
         public List<Attribute> attrs = new ArrayList<>();
     }
 
     public static class Attribute {
-
-        @XmlAttribute
         public String name;
-
-        @XmlValue
         public String value;
     }
 
