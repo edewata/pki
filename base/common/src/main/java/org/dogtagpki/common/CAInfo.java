@@ -18,6 +18,15 @@
 
 package org.dogtagpki.common;
 
+import java.io.StringReader;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.InputSource;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -98,5 +107,26 @@ public class CAInfo extends RESTMessage {
         return true;
     }
 
+    public Element toDOM(Document document) {
+        Element element = document.createElement("CAInfo");
+        toDOM(document, element);
+        return element;
+    }
+
+    public static CAInfo fromDOM(Element element) {
+        CAInfo info = new CAInfo();
+        fromDOM(element, info);
+        return info;
+    }
+
+    public static CAInfo fromXML(String xml) throws Exception {
+
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        Document document = builder.parse(new InputSource(new StringReader(xml)));
+
+        Element element = document.getDocumentElement();
+        return fromDOM(element);
+    }
 }
 
