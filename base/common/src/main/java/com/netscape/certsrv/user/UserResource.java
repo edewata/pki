@@ -77,7 +77,7 @@ public interface UserResource {
 
     @POST
     @Path("{userID}/certs")
-    public Response addUserCert(@PathParam("userID") String userID, UserCertData userCertData);
+    public Response addUserCert(@PathParam("userID") String userID, String addUserCertRequest);
 
     @GET
     @Path("{userID}/certs/{certID}")

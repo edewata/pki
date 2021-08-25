@@ -824,7 +824,9 @@ public class UserService extends SubsystemService implements UserResource {
      * </ul>
      */
     @Override
-    public Response addUserCert(String userID, UserCertData userCertData) {
+    public Response addUserCert(String userID, String addUserCertRequest) {
+
+        UserCertData userCertData = unmarshall(addUserCertRequest, UserCertData.class);
 
         if (userCertData == null) throw new BadRequestException("Certificate data is null.");
 

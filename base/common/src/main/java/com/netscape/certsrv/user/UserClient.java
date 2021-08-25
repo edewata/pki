@@ -79,7 +79,8 @@ public class UserClient extends Client {
     }
 
     public UserCertData addUserCert(String userID, UserCertData userCertData) throws Exception {
-        Response response = userClient.addUserCert(userID, userCertData);
+        String addUserCertRequest = (String) client.marshall(userCertData);
+        Response response = userClient.addUserCert(userID, addUserCertRequest);
         return client.getEntity(response, UserCertData.class);
     }
 
