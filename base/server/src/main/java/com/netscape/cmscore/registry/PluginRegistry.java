@@ -282,7 +282,9 @@ public class PluginRegistry {
      * Retrieves the plugin information.
      */
     public IPluginInfo getPluginInfo(String type, String id) {
+        logger.info("PluginRegistry: Getting " + id + " in " + type);
         Hashtable<String, IPluginInfo> plugins = mTypes.get(type);
+        logger.info("PluginRegistry: Plugin: " + plugins);
 
         if (plugins == null)
             return null;

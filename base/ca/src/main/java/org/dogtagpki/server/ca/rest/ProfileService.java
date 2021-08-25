@@ -1116,9 +1116,11 @@ public class ProfileService extends SubsystemService implements ProfileResource 
             // perform the operations
             profile.deleteAllProfileInputs();
 
+            logger.info("ProfileService: Creating profile inputs:");
             for (ProfileInput input : inputs) {
                 String id = input.getId();
                 String classId = input.getClassId();
+                logger.info("ProfileService: - " + id + ":" + classId);
 
                 NameValuePairs nvp = new NameValuePairs();
                 // TODO - add a field for params in ProfileInput.

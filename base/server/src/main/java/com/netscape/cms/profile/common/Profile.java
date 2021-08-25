@@ -271,19 +271,17 @@ public abstract class Profile {
 
         while (input_st.hasMoreTokens()) {
             String input_id = input_st.nextToken();
-            String inputClassId = inputStore.getString(input_id + "." +
-                    PROP_CLASS_ID);
-            IPluginInfo inputInfo = registry.getPluginInfo("profileInput",
-                    inputClassId);
+            String inputClassId = inputStore.getString(input_id + "." + PROP_CLASS_ID);
+            IPluginInfo inputInfo = registry.getPluginInfo("profileInput", inputClassId);
             String inputClass = inputInfo.getClassName();
+            logger.info("Profile: Creating input plugin " + inputClassId + ": " + inputClass);
 
             EnrollInput input = null;
             try {
                 input = (EnrollInput) Class.forName(inputClass).getDeclaredConstructor().newInstance();
             } catch (Exception e) {
-                // throw Exception
-                logger.error("Profile: input plugin Class.forName " + inputClass + " " + e.getMessage(), e);
-                throw new EBaseException(e.toString());
+                logger.error("Profile: Unable to create " + inputClass + ": " + e.getMessage(), e);
+                throw new EBaseException("Unable to create " + inputClass + ": " + e.getMessage(), e);
             }
 
             IConfigStore inputConfig = inputStore.getSubStore(input_id);
@@ -299,23 +297,20 @@ public abstract class Profile {
 
         while (output_st.hasMoreTokens()) {
             String output_id = output_st.nextToken();
-
-            String outputClassId = outputStore.getString(output_id + "." +
-                    PROP_CLASS_ID);
-            IPluginInfo outputInfo = registry.getPluginInfo("profileOutput",
-                    outputClassId);
+            String outputClassId = outputStore.getString(output_id + "." + PROP_CLASS_ID);
+            IPluginInfo outputInfo = registry.getPluginInfo("profileOutput", outputClassId);
             String outputClass = outputInfo.getClassName();
+            logger.info("Profile: Creating output plugin " + outputClassId + ": " + outputClass);
 
             ProfileOutput output = null;
 
             try {
                 output = (ProfileOutput) Class.forName(outputClass).getDeclaredConstructor().newInstance();
             } catch (Exception e) {
-                // throw Exception
-                logger.error("Profile: output plugin Class.forName " +
-                        outputClass + " " + e.getMessage(), e);
-                throw new EBaseException(e.toString());
+                logger.error("Profile: Unable to create " + outputClass + ": " + e.getMessage(), e);
+                throw new EBaseException("Unable to create " + outputClass + ": " + e.getMessage(), e);
             }
+
             IConfigStore outputConfig = outputStore.getSubStore(output_id);
             output.init(outputConfig);
             mOutputs.put(output_id, output);
