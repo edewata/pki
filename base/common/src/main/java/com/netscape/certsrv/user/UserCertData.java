@@ -18,24 +18,38 @@
 
 package com.netscape.certsrv.user;
 
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.StringTokenizer;
 
 import javax.ws.rs.FormParam;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netscape.certsrv.base.Link;
 import com.netscape.certsrv.common.Constants;
 import com.netscape.certsrv.dbs.certdb.CertId;
+import com.netscape.certsrv.util.JSONSerializer;
 
 /**
  * @author Endi S. Dewata
  */
 @JsonInclude(Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown=true)
-public class UserCertData {
+public class UserCertData implements JSONSerializer {
 
     Integer version;
     CertId serialNumber;
@@ -174,14 +188,136 @@ public class UserCertData {
         return true;
     }
 
-    public String toJSON() throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
-        return mapper.writeValueAsString(this);
+    public Element toDOM(Document document) {
+
+        Element element = document.createElement("UserCertData");
+
+        element.setAttribute("id", getID());
+
+        if (version != null) {
+            Element versionElement = document.createElement("Version");
+            versionElement.appendChild(document.createTextNode(Integer.toString(version)));
+            element.appendChild(versionElement);
+        }
+
+        if (serialNumber != null) {
+            Element serialNumberElement = document.createElement("SerialNumber");
+            serialNumberElement.appendChild(document.createTextNode(serialNumber.toHexString()));
+            element.appendChild(serialNumberElement);
+        }
+
+        if (issuerDN != null) {
+            Element issuerDNElement = document.createElement("IssuerDN");
+            issuerDNElement.appendChild(document.createTextNode(issuerDN));
+            element.appendChild(issuerDNElement);
+        }
+
+        if (subjectDN != null) {
+            Element subjectDNElement = document.createElement("SubjectDN");
+            subjectDNElement.appendChild(document.createTextNode(subjectDN));
+            element.appendChild(subjectDNElement);
+        }
+
+        if (prettyPrint != null) {
+            Element prettyPrintElement = document.createElement("PrettyPrint");
+            prettyPrintElement.appendChild(document.createTextNode(prettyPrint));
+            element.appendChild(prettyPrintElement);
+        }
+
+        if (encoded != null) {
+            Element encodedElement = document.createElement("Encoded");
+            encodedElement.appendChild(document.createTextNode(encoded));
+            element.appendChild(encodedElement);
+        }
+
+        if (link != null) {
+            Element linkElement = link.toDOM(document);
+            element.appendChild(linkElement);
+        }
+
+        return element;
     }
 
-    public static UserCertData fromJSON(String json) throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(json, UserCertData.class);
+    public static UserCertData fromDOM(Element element) {
+
+        UserCertData data = new UserCertData();
+
+        NodeList versionList = element.getElementsByTagName("Version");
+        if (versionList.getLength() > 0) {
+            String value = versionList.item(0).getTextContent();
+            data.setVersion(Integer.parseInt(value));
+        }
+
+        NodeList serialNumberList = element.getElementsByTagName("SerialNumber");
+        if (serialNumberList.getLength() > 0) {
+            String value = serialNumberList.item(0).getTextContent();
+            data.setSerialNumber(new CertId(value));
+        }
+
+        NodeList issuerDNList = element.getElementsByTagName("IssuerDN");
+        if (issuerDNList.getLength() > 0) {
+            String value = issuerDNList.item(0).getTextContent();
+            data.setIssuerDN(value);
+        }
+
+        NodeList subjectDNList = element.getElementsByTagName("SubjectDN");
+        if (subjectDNList.getLength() > 0) {
+            String value = subjectDNList.item(0).getTextContent();
+            data.setSubjectDN(value);
+        }
+
+        NodeList prettyPrintList = element.getElementsByTagName("PrettyPrint");
+        if (prettyPrintList.getLength() > 0) {
+            String value = prettyPrintList.item(0).getTextContent();
+            data.setPrettyPrint(value);
+        }
+
+        NodeList encodedList = element.getElementsByTagName("Encoded");
+        if (encodedList.getLength() > 0) {
+            String value = encodedList.item(0).getTextContent();
+            data.setEncoded(value);
+        }
+
+        NodeList linkList = element.getElementsByTagName("Link");
+        if (linkList.getLength() > 0) {
+            Element linkElement = (Element) linkList.item(0);
+            Link link = Link.fromDOM(linkElement);
+            data.setLink(link);
+        }
+
+        return data;
+    }
+
+    public String toXML() throws Exception {
+
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        Document document = builder.newDocument();
+
+        Element element = toDOM(document);
+        document.appendChild(element);
+
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        Transformer transformer = transformerFactory.newTransformer();
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+        transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+
+        DOMSource domSource = new DOMSource(document);
+        StringWriter sw = new StringWriter();
+        StreamResult streamResult = new StreamResult(sw);
+        transformer.transform(domSource, streamResult);
+
+        return sw.toString();
+    }
+
+    public static UserCertData fromXML(String xml) throws Exception {
+
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        Document document = builder.parse(new InputSource(new StringReader(xml)));
+
+        Element element = document.getDocumentElement();
+        return fromDOM(element);
     }
 
     @Override
