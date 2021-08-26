@@ -113,13 +113,13 @@ class CertSetup(object):
         """
         Create various role users needed for cli tests
         """
-        role_user_dict = {'CA': ['Administrators', 'Auditors', 'Certificate Manager Agents'],
-                          'KRA': ['Administrators', 'Auditors', 'Data Recovery Manager Agents'],
-                          'OCSP': ['Administrators', 'Auditors', 'Online Certificate Status Manager Agents'],
-                          'TKS': ['Administrators', 'Auditors', 'Token Key Service Manager Agents'],
-                          'TPS': ['TPS Agents', 'Administrators', 'TPS Auditors']}  # 'UnPrivileged'
-        user_identifier = ['E', 'R', 'V']  # 'UnTrusted'
-        roles = ['Agent', 'Admin', 'Audit']  # 'UnPrivileged'
+        role_user_dict = {'CA': ['Administrators', 'Auditors', 'Certificate Manager Agents']}
+        #                  'KRA': ['Administrators', 'Auditors', 'Data Recovery Manager Agents'],
+        #                  'OCSP': ['Administrators', 'Auditors', 'Online Certificate Status Manager Agents'],
+        #                  'TKS': ['Administrators', 'Auditors', 'Token Key Service Manager Agents'],
+        #                  'TPS': ['TPS Agents', 'Administrators', 'TPS Auditors']}  # 'UnPrivileged'
+        user_identifier = ['V']  # ['E', 'R', 'V']  # 'UnTrusted'
+        roles = ['Admin']  # ['Agent', 'Admin', 'Audit']  # 'UnPrivileged'
         common_groups = role_user_dict[subsystem.upper()]
 
         # create a group UnPrivileged
@@ -131,25 +131,34 @@ class CertSetup(object):
         #                                         extra_args="UnPrivileged")
 
         if subsystem.lower() == 'ca':
+            print('#### adding expired profile')
             self.add_expired_profile_to_ca(ansible_module, duration)
 
         for role in roles:
             for u_id in user_identifier:
                 user_name = "{}_{}{}".format(subsystem.upper(), role, u_id)
                 group_name = [i for i in common_groups if role in i][0]
-                if self.create_role_user(ansible_module, subsystem, user_name, group_name):
+                print('#### Testing with ' + user_name + ' and ' + group_name)
+                create = self.create_role_user(ansible_module, subsystem, user_name, group_name)
+                print('#### create: ' + str(create))
+                if create:
                     subject_dn = "UID={},E={}@example.org,CN={},OU=IDMQE,C=US".format(user_name, user_name, user_name)
+                    print('#### subject dn: ' + subject_dn)
                     if u_id is 'E':
+                        print('#### creating cert with caAgentFoobar')
                         cert_serial = userop.process_certificate_request(ansible_module, subject=subject_dn,
                                                                          profile='caAgentFoobar')
                     else:
+                        print('#### creating cert with caUserCert')
                         cert_serial = userop.process_certificate_request(ansible_module, subject=subject_dn,
                                                                          profile='caUserCert')
                     if u_id is 'R':
                         userop.revoke_certificate(ansible_module, cert_serial, 'Key_Compromise')
 
+                    print('#### adding cert to user')
                     added = userop.add_cert_to_user(ansible_module, user_name, cert_serial, subsystem=subsystem,
                                                     remove_cert=False)
+                    print('#### added: ' + str(added))
                     if not added:
                         return False
                 else:

@@ -57,10 +57,10 @@ def test_setup(ansible_module):
 @pytest.mark.parametrize("certnick,expected", [
     ("CA_AdminV", ['Status: Enabled', 'Signed: true',
                    'Interval (seconds): 5',
-                   'Buffer size (bytes): 512']),
-    (pytest.param("CA_AdminE", ['FATAL: SSL alert received: CERTIFICATE_EXPIRED'], marks=pytest.mark.xfail)),
-    ("CA_AdminR", ['PKIException: Unauthorized'])
+                   'Buffer size (bytes): 512'])
 ])
+#    (pytest.param("CA_AdminE", ['FATAL: SSL alert received: CERTIFICATE_EXPIRED'], marks=pytest.mark.xfail)),
+#    ("CA_AdminR", ['PKIException: Unauthorized'])
 def test_ca_audit_with_role_users(ansible_module, certnick, expected):
     """
     Test and verify pki ca-audit-show with CA_AdminV

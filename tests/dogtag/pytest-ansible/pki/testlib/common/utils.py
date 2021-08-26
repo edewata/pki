@@ -266,6 +266,7 @@ class UserOperations(object):
             user_params += " --state '{}'".format(kwargs.get('state', ''))
         if kwargs.get('type', '') != '':
             user_params += " --type '{}'".format(kwargs.get('type', ''))
+        print('#### calling pki {}-user-{}'.format(subsystem.lower(), op.lower()))
         user_add = ansible_module.pki(cli='{}-user-{}'.format(subsystem.lower(), op.lower()),
                                       nssdb=self.nssdb,
                                       dbpassword=self.db_pass,
@@ -275,6 +276,8 @@ class UserOperations(object):
                                       extra_args=' {} --fullName "{}" '
                                                  '{}'.format(userid, user_name, user_params))
         for result in user_add.values():
+            print('#### stdout: ' + result['stdout'])
+            print('#### stderr: ' + result['stderr'])
             try:
                 if result['rc'] == 0:
                     assert 'Added user' in result['stdout']
@@ -318,7 +321,7 @@ class UserOperations(object):
         cli_params += " --type {}".format(kwargs.get('request_type', 'pkcs10'))
 
         transport_file = kwargs.get('transport_file', '/tmp/transport.pem')
-
+        print('#### calling pki client-cert-request {}'.format(cli_params))
         try:
             cert_request = ansible_module.pki(cli='client-cert-request',
                                               nssdb=self.nssdb,
@@ -328,6 +331,8 @@ class UserOperations(object):
                                               certnick=self.nick,
                                               extra_args=' {}'.format(cli_params))
             for host, result in cert_request.items():
+                print('#### stdout: ' + result['stdout'])
+                print('#### stderr: ' + result['stderr'])
                 if result['rc'] == 0:
                     request_id = re.search('Request ID: [\w]*', result['stdout'])
                     pkcs10_req_id = request_id.group().split(':')[1].strip()
@@ -360,6 +365,7 @@ class UserOperations(object):
         if 'request_id' in kwargs.keys():
             request_id, base64_req = kwargs['request_id'], None
         else:
+            print('#### create cert request')
             request_id = self.create_certificate_request(ansible_module,
                                                          request_type=request_type,
                                                          algo=algo,
@@ -372,6 +378,9 @@ class UserOperations(object):
                                                          transport_file=transport_file,
                                                          crmf_request_file=crmf_request_file)
 
+        print('#### approver: ' + approver_nickname)
+        print('#### request ID: ' + str(request_id))
+        print('#### action: ' + action)
         approve_request = ansible_module.pki(cli='ca-cert-request-review',
                                              nssdb=self.nssdb,
                                              dbpassword=self.db_pass,
@@ -381,6 +390,8 @@ class UserOperations(object):
                                              extra_args=' {} --action {}'.format(request_id, action))
 
         for result in approve_request.values():
+            print('#### stdout: ' + result['stdout'])
+            print('#### stderr: ' + result['stderr'])
             if result['rc'] == 0:
                 if action not in ['cancel', 'reject']:
                     request_id = re.findall('Certificate ID: [\w]*', result['stdout'])
@@ -411,8 +422,13 @@ class UserOperations(object):
 
     def get_cert(self, ansible_module, user, serial, remove_cert=True):
         import_cert = basic_pki_cmd + ' client-cert-import {} --serial {}'.format(user, serial)
+        print('#### command: ' + import_cert)
+
         import_out = ansible_module.command(import_cert)
+
         for result in import_out.values():
+            print('#### stdout: ' + result['stdout'])
+            print('#### stderr: ' + result['stderr'])
             if result['rc'] == 0:
                 assert 'Imported certificate "{}"'.format(user) in result['stdout']
                 pem_file = '/tmp/{}_{}.pem'.format(user, serial)
@@ -432,6 +448,8 @@ class UserOperations(object):
                 sys.exit(1)
 
     def add_cert_to_user(self, ansible_module, user, serial, subsystem='ca', remove_cert=True):
+
+        print('#### add cert to user in system: ' + subsystem)
         if subsystem.lower() in ['kra', 'ocsp', 'tks', 'tps']:
             system = subsystem.upper()
             nick = eval("constants.{}_ADMIN_NICK".format(system))
@@ -439,7 +457,10 @@ class UserOperations(object):
         else:
             nick = constants.CA_ADMIN_NICK
             port = constants.CA_HTTPS_PORT
+        print('#### nick: ' + nick)
         cert_file = self.get_cert(ansible_module, user, serial, remove_cert=remove_cert)
+
+        print('#### add user cert file: ' + cert_file)
         cmd_out = ansible_module.pki(cli='{}-user-cert-add'.format(subsystem.lower()),
                                      nssdb=constants.NSSDB,
                                      dbpassword=constants.CLIENT_DATABASE_PASSWORD,
@@ -450,6 +471,8 @@ class UserOperations(object):
                                      extra_args='{} --input {}'.format(user, cert_file))
 
         for result in cmd_out.values():
+            print('#### stdout: ' + result['stdout'])
+            print('#### stderr: ' + result['stderr'])
             log.info("Running: {}".format(result['cmd']))
             if result['rc'] == 0:
                 assert 'Added certificate' in result['stdout']

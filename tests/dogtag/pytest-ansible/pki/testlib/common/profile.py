@@ -1632,6 +1632,7 @@ class Setup(object):
         policy_set_element = self.add_policy_set_element(root_element, policy_sets_element,
                                                          profile_input['PolicySet'])
         et = self.add_policies(root_element, policy_set_element, profile_input)
+        print('#### profile:\n' + etree.tostring(et, encoding='unicode', pretty_print=True))
         output1_fd, output1_path = tempfile.mkstemp(
             suffix='cfg.xml', prefix='profile')
         et.write(output1_path, pretty_print=True)
