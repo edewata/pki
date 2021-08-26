@@ -79,41 +79,41 @@ public interface CertRequestResource {
     @Path("agent/certrequests/{id}/approve")
     @ACLMapping("certrequests")
     @AuthMethodMapping("certrequests")
-    public Response approveRequest(@PathParam("id") RequestId id, CertReviewResponse data);
+    public Response approveRequest(@PathParam("id") RequestId id, String approveRequest);
 
     @POST
     @Path("agent/certrequests/{id}/reject")
     @ACLMapping("certrequests")
     @AuthMethodMapping("certrequests")
-    public Response rejectRequest(@PathParam("id") RequestId id, CertReviewResponse data);
+    public Response rejectRequest(@PathParam("id") RequestId id, String rejectRequest);
 
     @POST
     @Path("agent/certrequests/{id}/cancel")
     @ACLMapping("certrequests")
     @AuthMethodMapping("certrequests")
-    public Response cancelRequest(@PathParam("id") RequestId id, CertReviewResponse data);
+    public Response cancelRequest(@PathParam("id") RequestId id, String cancelRequest);
 
     @POST
     @Path("agent/certrequests/{id}/update")
     @ACLMapping("certrequests")
     @AuthMethodMapping("certrequests")
-    public Response updateRequest(@PathParam("id") RequestId id, CertReviewResponse data);
+    public Response updateRequest(@PathParam("id") RequestId id, String updateRequest);
 
     @POST
     @Path("agent/certrequests/{id}/validate")
     @ACLMapping("certrequests")
     @AuthMethodMapping("certrequests")
-    public Response validateRequest(@PathParam("id") RequestId id, CertReviewResponse data);
+    public Response validateRequest(@PathParam("id") RequestId id, String validateRequest);
 
     @POST
     @Path("agent/certrequests/{id}/unassign")
     @ACLMapping("certrequests")
     @AuthMethodMapping("certrequests")
-    public Response unassignRequest(@PathParam("id") RequestId id, CertReviewResponse data);
+    public Response unassignRequest(@PathParam("id") RequestId id, String unassignRequest);
 
     @POST
     @Path("agent/certrequests/{id}/assign")
     @ACLMapping("certrequests")
     @AuthMethodMapping("certrequests")
-    public Response assignRequest(@PathParam("id") RequestId id, CertReviewResponse data);
+    public Response assignRequest(@PathParam("id") RequestId id, String assignRequest);
 }

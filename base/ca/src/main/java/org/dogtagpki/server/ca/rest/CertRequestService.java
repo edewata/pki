@@ -208,64 +208,71 @@ public class CertRequestService extends PKIService implements CertRequestResourc
     }
 
     @Override
-    public Response approveRequest(RequestId id, CertReviewResponse data) {
+    public Response approveRequest(RequestId id, String approveRequest) {
 
         logger.info("CertRequestService: Approving certificate request " + id);
 
+        CertReviewResponse data = unmarshall(approveRequest, CertReviewResponse.class);
         changeRequestState(id, data, "approve");
         return createNoContentResponse();
     }
 
     @Override
-    public Response rejectRequest(RequestId id, CertReviewResponse data) {
+    public Response rejectRequest(RequestId id, String rejectRequest) {
 
         logger.info("CertRequestService: Rejecting certificate request " + id);
 
+        CertReviewResponse data = unmarshall(rejectRequest, CertReviewResponse.class);
         changeRequestState(id, data, "reject");
         return createNoContentResponse();
     }
 
     @Override
-    public Response cancelRequest(RequestId id, CertReviewResponse data) {
+    public Response cancelRequest(RequestId id, String cancelRequest) {
 
         logger.info("CertRequestService: Canceling certificate request " + id);
 
+        CertReviewResponse data = unmarshall(cancelRequest, CertReviewResponse.class);
         changeRequestState(id, data, "cancel");
         return createNoContentResponse();
     }
 
     @Override
-    public Response updateRequest(RequestId id, CertReviewResponse data) {
+    public Response updateRequest(RequestId id, String updateRequest) {
 
         logger.info("CertRequestService: Updating certificate request " + id);
 
+        CertReviewResponse data = unmarshall(updateRequest, CertReviewResponse.class);
         changeRequestState(id, data, "update");
         return createNoContentResponse();
     }
 
     @Override
-    public Response validateRequest(RequestId id, CertReviewResponse data) {
+    public Response validateRequest(RequestId id, String validateRequest) {
 
         logger.info("CertRequestService: Validating certificate request " + id);
 
+        CertReviewResponse data = unmarshall(validateRequest, CertReviewResponse.class);
         changeRequestState(id, data, "validate");
         return createNoContentResponse();
     }
 
     @Override
-    public Response unassignRequest(RequestId id, CertReviewResponse data) {
+    public Response unassignRequest(RequestId id, String unassignRequest) {
 
         logger.info("CertRequestService: Unassigning certificate request " + id);
 
+        CertReviewResponse data = unmarshall(unassignRequest, CertReviewResponse.class);
         changeRequestState(id, data, "unassign");
         return createNoContentResponse();
     }
 
     @Override
-    public Response assignRequest(RequestId id, CertReviewResponse data) {
+    public Response assignRequest(RequestId id, String assignRequest) {
 
         logger.info("CertRequestService: Assigning certificate request " + id);
 
+        CertReviewResponse data = unmarshall(assignRequest, CertReviewResponse.class);
         changeRequestState(id, data, "assign");
         return createNoContentResponse();
     }

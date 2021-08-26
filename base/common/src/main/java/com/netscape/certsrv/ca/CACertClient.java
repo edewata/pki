@@ -135,37 +135,44 @@ public class CACertClient extends Client {
     }
 
     public void approveRequest(RequestId id, CertReviewResponse data) throws Exception {
-        Response response = certRequestClient.approveRequest(id, data);
+        String approveRequest = (String) client.marshall(data);
+        Response response = certRequestClient.approveRequest(id, approveRequest);
         client.getEntity(response, Void.class);
     }
 
     public void rejectRequest(RequestId id, CertReviewResponse data) throws Exception {
-        Response response = certRequestClient.rejectRequest(id, data);
+        String rejectRequest = (String) client.marshall(data);
+        Response response = certRequestClient.rejectRequest(id, rejectRequest);
         client.getEntity(response, Void.class);
     }
 
     public void cancelRequest(RequestId id, CertReviewResponse data) throws Exception {
-        Response response = certRequestClient.cancelRequest(id, data);
+        String cancelRequest = (String) client.marshall(data);
+        Response response = certRequestClient.cancelRequest(id, cancelRequest);
         client.getEntity(response, Void.class);
     }
 
     public void updateRequest(RequestId id, CertReviewResponse data) throws Exception {
-        Response response = certRequestClient.updateRequest(id, data);
+        String updateRequest = (String) client.marshall(data);
+        Response response = certRequestClient.updateRequest(id, updateRequest);
         client.getEntity(response, Void.class);
     }
 
     public void validateRequest(RequestId id, CertReviewResponse data) throws Exception {
-        Response response = certRequestClient.validateRequest(id, data);
+        String validateRequest = (String) client.marshall(data);
+        Response response = certRequestClient.validateRequest(id, validateRequest);
         client.getEntity(response, Void.class);
     }
 
     public void assignRequest(RequestId id, CertReviewResponse data) throws Exception {
-        Response response = certRequestClient.assignRequest(id, data);
+        String assignRequest = (String) client.marshall(data);
+        Response response = certRequestClient.assignRequest(id, assignRequest);
         client.getEntity(response, Void.class);
     }
 
     public void unassignRequest(RequestId id, CertReviewResponse data) throws Exception {
-        Response response = certRequestClient.unassignRequest(id, data);
+        String unassignRequest = (String) client.marshall(data);
+        Response response = certRequestClient.unassignRequest(id, unassignRequest);
         client.getEntity(response, Void.class);
     }
 
