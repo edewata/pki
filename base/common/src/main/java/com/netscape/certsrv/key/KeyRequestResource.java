@@ -1,18 +1,14 @@
 package com.netscape.certsrv.key;
 
-import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import com.netscape.certsrv.acls.ACLMapping;
 import com.netscape.certsrv.authentication.AuthMethodMapping;
-import com.netscape.certsrv.base.RESTMessage;
 import com.netscape.certsrv.request.RequestId;
 
 @Path("agent/keyrequests")
@@ -52,11 +48,7 @@ public interface KeyRequestResource {
                                             @QueryParam("realm") String realm);
 
     @POST
-    @Consumes({ MediaType.APPLICATION_FORM_URLENCODED})
-    public Response submitRequest(MultivaluedMap<String, String> form) throws Exception;
-
-    @POST
-    public Response submitRequest(RESTMessage data) throws Exception;
+    public Response submitRequest(String stringRequest) throws Exception;
 
     /**
      * Used to retrieve key request info for a specific request

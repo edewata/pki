@@ -316,7 +316,8 @@ public class KeyClient extends Client {
 
         logger.info("Submitting " + request.getClassName() + " to KRA");
 
-        Response response = keyRequestClient.submitRequest(request);
+        String stringRequest = (String) client.marshall(request);
+        Response response = keyRequestClient.submitRequest(stringRequest);
         return client.getEntity(response, KeyRequestResponse.class);
     }
 
