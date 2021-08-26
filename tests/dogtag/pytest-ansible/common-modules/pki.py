@@ -90,6 +90,7 @@ def main():
         port = '_'.join([sub.upper(), module.params['protocol'].upper(), "PORT"])
         port = getattr(constants, port)
     conn_args = [module.params['raw_params'],
+                 '--debug',
                  '-d', module.params['nssdb'],
                  '-P', module.params['protocol'],
                  '-p', '{}'.format(port),
