@@ -25,6 +25,7 @@ import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import org.mozilla.jss.crypto.SymmetricKey;
@@ -415,9 +416,14 @@ public class KeyRequestService extends SubsystemService implements KeyRequestRes
     }
 
     @Override
-    public Response submitRequest(String stringRequest) throws Exception {
+    public Response submitRequest(MultivaluedMap<String, String> form) throws Exception {
+        RESTMessage data = new RESTMessage(form);
+        return submitRequest(data);
+    }
 
-        RESTMessage data = unmarshall(stringRequest, RESTMessage.class);
+    @Override
+    public Response submitRequest(RESTMessage data) throws Exception {
+
         Object request = null;
 
         try {
@@ -441,7 +447,7 @@ public class KeyRequestService extends SubsystemService implements KeyRequestRes
             return generateAsymKey(new AsymKeyGenerationRequest(data));
 
         } else {
-            throw new BadRequestException("Invalid request class: " + data.getClassName());
+            throw new BadRequestException("Invalid request class.");
         }
     }
 
