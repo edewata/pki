@@ -48,9 +48,9 @@ jobs:
           outputs: type=docker,dest=/tmp/pki-runner.tar
 
       - name: Upload runner image
-        uses: actions/upload-artifact@v2
+        uses: actions/cache@v2
         with:
-          name: pki-runner-${{ matrix.os }}
+          key: qe-runner-${{ matrix.os }}
           path: /tmp/pki-runner.tar
 
   # Tier 0
@@ -76,10 +76,10 @@ jobs:
           pip3 install -e tests/dogtag/pytest-ansible
 
       - name: Download runner image
-        uses: actions/download-artifact@v2
+        uses: actions/cache@v2
         with:
-          name: pki-runner-${{ matrix.os }}
-          path: /tmp
+          key: qe-runner-${{ matrix.os }}
+          path: /tmp/pki-runner.tar
 
       - name: Load runner image
         run: docker load --input /tmp/pki-runner.tar
