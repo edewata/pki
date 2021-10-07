@@ -1325,3 +1325,88 @@ jobs:
           name: scep-${{ matrix.os }}
           path: |
             /tmp/artifacts/pki
+
+  # https://github.com/dogtagpki/pki/wiki/Two-Step-Installation
+  two-step-ca-test:
+    name: Testing Two-Step CA Installation
+    needs: [init, build]
+    runs-on: ubuntu-latest
+    env:
+      PKIDIR: /tmp/workdir/pki
+    strategy:
+      matrix: ${{ fromJSON(needs.init.outputs.matrix) }}
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+
+      - name: Download runner image
+        uses: actions/download-artifact@v2
+        with:
+          name: pki-runner-${{ matrix.os }}
+          path: /tmp
+
+      - name: Load runner image
+        run: docker load --input /tmp/pki-runner.tar
+
+      - name: Run container
+        run: |
+          IMAGE=pki-runner \
+          NAME=pki \
+          HOSTNAME=pki.example.com \
+          tests/bin/runner-init.sh
+
+      - name: Install dependencies
+        run: docker exec pki dnf install -y 389-ds-base
+
+      - name: Install DS
+        run: docker exec pki ${PKIDIR}/tests/bin/ds-create.sh
+
+      - name: Install CA
+        run: |
+          docker exec pki pkispawn -f /usr/share/pki/server/examples/installation/ca.cfg -s CA --skip-configuration -v
+          sleep 1  # avoid pkispawn log conflict due to identical timestamps
+          # configure sslserver cert to expire in 1 minute
+          docker cp pki:/var/lib/pki/pki-tomcat/ca/conf/serverCert.profile serverCert.profile
+          sed -i \
+              -e "s/2.default.params.range=.*/2.default.params.range=1/" \
+              serverCert.profile
+          echo 2.default.params.rangeUnit=minute >> serverCert.profile
+          grep 2.default.params.range= serverCert.profile
+          grep 2.default.params.rangeUnit= serverCert.profile
+          docker cp serverCert.profile pki:/var/lib/pki/pki-tomcat/ca/conf/serverCert.profile
+          docker exec pki chown pkiuser.pkiuser /var/lib/pki/pki-tomcat/ca/conf/serverCert.profile
+          docker exec pki pkispawn -f /usr/share/pki/server/examples/installation/ca.cfg -s CA --skip-installation -v
+
+      - name: Initialize PKI client
+        run: |
+          docker exec pki pki-server cert-export ca_signing --cert-file ca_signing.crt
+          docker exec pki pki client-cert-import ca_signing --ca-cert ca_signing.crt
+          docker exec pki pki info
+
+      - name: Test CA admin
+        run: |
+          docker exec pki pki client-cert-import \
+              --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
+              --pkcs12-password-file /root/.dogtag/pki-tomcat/ca/pkcs12_password.conf
+          docker exec pki pki -n caadmin ca-user-show caadmin
+
+      - name: Gather artifacts
+        if: always()
+        run: |
+          tests/bin/ds-artifacts-save.sh pki
+          tests/bin/pki-artifacts-save.sh pki
+        continue-on-error: true
+
+      - name: Remove CA
+        run: docker exec pki pkidestroy -i pki-tomcat -s CA -v
+
+      - name: Remove DS
+        run: docker exec pki ${PKIDIR}/tests/bin/ds-remove.sh
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: two-step-ca-${{ matrix.os }}
+          path: |
+            /tmp/artifacts/pki
