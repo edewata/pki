@@ -83,14 +83,14 @@ EXPOSE 8080 8443
 # Enable COPR repo if specified
 RUN if [ -n "$COPR_REPO" ]; then dnf install -y dnf-plugins-core; dnf copr enable -y $COPR_REPO; fi
 
-# Install PKI dependencies
-RUN dnf install -y bind-utils iputils abrt-java-connector postgresql postgresql-jdbc
-
 # Import PKI packages
 COPY build/RPMS /tmp/RPMS/
 
 # Install PKI packages
 RUN dnf localinstall -y /tmp/RPMS/*; rm -rf /tmp/RPMS
+
+# Install PostgreSQL packages
+RUN dnf install -y postgresql postgresql-jdbc
 
 # Install PostgreSQL JDBC driver
 RUN ln -s /usr/share/java/postgresql-jdbc/postgresql.jar /usr/share/pki/server/common/lib/postgresql.jar
