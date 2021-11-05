@@ -236,9 +236,9 @@ public class LDAPRealm extends ACMERealm {
 
     public User findUserByUsername(LDAPConnection conn, String username) throws Exception {
 
-        String filter = "uid=" + username;
+        String filter = "(uid=" + username + ")";
 
-        logger.info("Finding user by username:");
+        logger.info("LDAP search:");
         logger.info("- base DN: " + usersDN);
         logger.info("- filter: " + filter);
 
@@ -251,7 +251,6 @@ public class LDAPRealm extends ACMERealm {
         );
 
         if (!results.hasMoreElements()) {
-            logger.info("User not found");
             return null;
         }
 
@@ -270,9 +269,9 @@ public class LDAPRealm extends ACMERealm {
 
     public User findUserByCertID(LDAPConnection conn, String certID) throws Exception {
 
-        String filter = "description=" + certID;
+        String filter = "(description=" + certID + ")";
 
-        logger.info("Finding user by cert:");
+        logger.info("LDAP search:");
         logger.info("- base DN: " + usersDN);
         logger.info("- filter: " + filter);
 
@@ -285,7 +284,6 @@ public class LDAPRealm extends ACMERealm {
         );
 
         if (!results.hasMoreElements()) {
-            logger.info("User not found");
             return null;
         }
 
@@ -302,11 +300,15 @@ public class LDAPRealm extends ACMERealm {
 
         LDAPConnection conn = connFactory.getConn();
         try {
+            logger.info("Finding user " + username);
             User user = findUserByUsername(conn, username);
 
             if (user == null) {
+                logger.warn("Unable to find user " + username);
                 return null;
             }
+
+            logger.info("Authenticating user " + user.getUserDN() + " with password");
 
             PKISocketFactory socketFactory = new PKISocketFactory(connConfig.isSecure());
             socketFactory.init(socketConfig);
@@ -317,6 +319,7 @@ public class LDAPRealm extends ACMERealm {
                 authConn.authenticate(user.getUserDN(), password);
 
             } catch (LDAPException e) {
+                logger.warn("Unable to authenticate " + user.getUserDN() + ": " + e.getMessage());
                 if (e.getLDAPResultCode() == LDAPException.INVALID_CREDENTIALS) {
                     return null;
                 } else {
@@ -325,6 +328,8 @@ public class LDAPRealm extends ACMERealm {
             } finally {
                 authConn.close();
             }
+
+            logger.info("User " + username + " authenticated");
 
             List<String> roles = getUserRoles(conn, user.getUserDN());
             return new PKIPrincipal(user, null, roles);
@@ -344,38 +349,45 @@ public class LDAPRealm extends ACMERealm {
 
         // get leaf cert
         X509Certificate cert = certChain[0];
+        String certID = getCertID(cert);
 
         // cert already validated during SSL handshake
 
         LDAPConnection conn = connFactory.getConn();
         try {
-            // find user by cert ID
-            String certID = getCertID(cert);
+            logger.info("Finding user with certificate " + certID);
             User user = findUserByCertID(conn, certID);
 
             if (user == null) {
+                logger.warn("Unable to find user with certificate " + certID);
                 return null;
             }
 
-            // validate cert data
+            logger.info("Validating cert data in " + user.getUserDN());
+            X509Certificate[] certs = user.getX509Certificates();
+
+            if (certs == null) {
+                logger.warn("User " + user.getUserDN() + " has no certificates");
+                return null;
+            }
+
             boolean found = false;
             byte[] data = cert.getEncoded();
 
-            X509Certificate[] certs = user.getX509Certificates();
-            if (certs != null) {
-                for (X509Certificate c : certs) {
-                    if (Arrays.equals(data, c.getEncoded())) {
-                        found = true;
-                        break;
-                    }
+            for (X509Certificate c : certs) {
+                if (Arrays.equals(data, c.getEncoded())) {
+                    found = true;
+                    break;
                 }
             }
 
             if (!found) {
+                logger.warn("User " + user.getUserDN() + " has no matching certificate");
                 return null;
             }
 
-            // create user principal
+            logger.info("User " + user.getUserDN() + " authenticated");
+
             List<String> roles = getUserRoles(conn, user.getUserDN());
             return new PKIPrincipal(user, null, roles);
 
