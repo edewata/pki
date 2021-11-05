@@ -11,7 +11,7 @@ jobs:
       COPR_REPO: "@pki/10.10"
     strategy:
       matrix:
-        os: ['32', '33']
+        os: ['34']
     steps:
       - name: Clone the repository
         uses: actions/checkout@v2
@@ -52,7 +52,7 @@ jobs:
       COPR_REPO: "@pki/10.10"
     strategy:
       matrix:
-        os: ['32', '33']
+        os: ['34']
     steps:
       - name: Install dependencies
         run: |
