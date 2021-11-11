@@ -198,10 +198,14 @@ jobs:
       - name: Run PKI healthcheck
         run: docker exec pki pki-healthcheck --failures-only
 
-      - name: Verify TPS admin
+      - name: Check security domain
         run: |
           docker exec pki pki-server cert-export ca_signing --cert-file ca_signing.crt
           docker exec pki pki client-cert-import ca_signing --ca-cert ca_signing.crt
+          docker exec pki pki securitydomain-show
+
+      - name: Verify TPS admin
+        run: |
           docker exec pki pki client-cert-import \
               --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
               --pkcs12-password Secret.123
@@ -269,13 +273,19 @@ jobs:
         continue-on-error: true
 
       - name: Remove TPS
-        run: docker exec pki pkidestroy -i pki-tomcat -s TPS -v
+        run: |
+          docker exec pki pkidestroy -i pki-tomcat -s TPS -v
+          docker exec pki pki securitydomain-show
 
       - name: Remove TKS
-        run: docker exec pki pkidestroy -i pki-tomcat -s TKS -v
+        run: |
+          docker exec pki pkidestroy -i pki-tomcat -s TKS -v
+          docker exec pki pki securitydomain-show
 
       - name: Remove KRA
-        run: docker exec pki pkidestroy -i pki-tomcat -s KRA -v
+        run: |
+          docker exec pki pkidestroy -i pki-tomcat -s KRA -v
+          docker exec pki pki securitydomain-show
 
       - name: Remove CA
         run: docker exec pki pkidestroy -i pki-tomcat -s CA -v
@@ -977,6 +987,12 @@ jobs:
 
           docker exec primary pki-server cert-find
 
+      - name: Check security domain in primary container
+        run: |
+          docker exec primary pki-server cert-export ca_signing --cert-file $SHARED/ca_signing.crt
+          docker exec primary pki client-cert-import ca_signing --ca-cert $SHARED/ca_signing.crt
+          docker exec primary pki securitydomain-show
+
       - name: Set up secondary DS container
         run: |
           tests/bin/ds-container-create.sh secondaryds
@@ -999,7 +1015,6 @@ jobs:
 
       - name: Install CA in secondary PKI container
         run: |
-          docker exec primary pki-server cert-export ca_signing --cert-file ${SHARED}/ca_signing.crt
           docker exec primary pki-server ca-clone-prepare --pkcs12-file ${SHARED}/ca-certs.p12 --pkcs12-password Secret.123
           docker exec secondary pkispawn \
               -f /usr/share/pki/server/examples/installation/ca-clone.cfg \
@@ -1066,6 +1081,11 @@ jobs:
       - name: Run PKI healthcheck in secondary container
         run: docker exec secondary pki-healthcheck --failures-only
 
+      - name: Check security domain in secondary container
+        run: |
+          docker exec secondary pki client-cert-import ca_signing --ca-cert $SHARED/ca_signing.crt
+          docker exec secondary pki securitydomain-show
+
       - name: Verify admin user
         run: |
           docker exec primary cp /root/.dogtag/pki-tomcat/ca_admin_cert.p12 ${SHARED}/ca_admin_cert.p12
@@ -1090,25 +1110,39 @@ jobs:
         continue-on-error: true
 
       - name: Remove TPS from secondary PKI container
-        run: docker exec secondary pkidestroy -i pki-tomcat -s TPS -v
+        run: |
+          docker exec secondary pkidestroy -i pki-tomcat -s TPS -v
+          docker exec secondary pki securitydomain-show
 
       - name: Remove TKS from secondary PKI container
-        run: docker exec secondary pkidestroy -i pki-tomcat -s TKS -v
+        run: |
+          docker exec secondary pkidestroy -i pki-tomcat -s TKS -v
+          docker exec secondary pki securitydomain-show
 
       - name: Remove KRA from secondary PKI container
-        run: docker exec secondary pkidestroy -i pki-tomcat -s KRA -v
+        run: |
+          docker exec secondary pkidestroy -i pki-tomcat -s KRA -v
+          docker exec secondary pki securitydomain-show
 
       - name: Remove CA from secondary PKI container
-        run: docker exec secondary pkidestroy -i pki-tomcat -s CA -v
+        run: |
+          docker exec secondary pkidestroy -i pki-tomcat -s CA -v
+          docker exec primary pki securitydomain-show
 
       - name: Remove TPS from primary PKI container
-        run: docker exec primary pkidestroy -i pki-tomcat -s TPS -v
+        run: |
+          docker exec primary pkidestroy -i pki-tomcat -s TPS -v
+          docker exec primary pki securitydomain-show
 
       - name: Remove TKS from primary PKI container
-        run: docker exec primary pkidestroy -i pki-tomcat -s TKS -v
+        run: |
+          docker exec primary pkidestroy -i pki-tomcat -s TKS -v
+          docker exec primary pki securitydomain-show
 
       - name: Remove KRA from primary PKI container
-        run: docker exec primary pkidestroy -i pki-tomcat -s KRA -v
+        run: |
+          docker exec primary pkidestroy -i pki-tomcat -s KRA -v
+          docker exec primary pki securitydomain-show
 
       - name: Remove CA from primary PKI container
         run: docker exec primary pkidestroy -i pki-tomcat -s CA -v

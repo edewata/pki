@@ -193,10 +193,14 @@ jobs:
       - name: Run PKI healthcheck
         run: docker exec pki pki-healthcheck --failures-only
 
-      - name: Initialize PKI client
+      - name: Check security domain
         run: |
           docker exec pki pki-server cert-export ca_signing --cert-file ca_signing.crt
           docker exec pki pki client-cert-import ca_signing --ca-cert ca_signing.crt
+          docker exec pki pki securitydomain-show
+
+      - name: Verify OCSP admin
+        run: |
           docker exec pki pki client-cert-import \
               --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
               --pkcs12-password Secret.123
@@ -321,6 +325,9 @@ jobs:
       - name: Remove OCSP
         run: docker exec pki pkidestroy -i pki-tomcat -s OCSP -v
 
+      - name: Check security domain
+        run: docker exec pki pki securitydomain-show
+
       - name: Remove CA
         run: docker exec pki pkidestroy -i pki-tomcat -s CA -v
 
@@ -392,6 +399,12 @@ jobs:
       - name: Install banner in CA container
         run: docker exec ca cp /usr/share/pki/server/examples/banner/banner.txt /etc/pki/pki-tomcat
 
+      - name: Check security domain
+        run: |
+          docker exec ca pki-server cert-export ca_signing --cert-file $SHARED/ca_signing.crt
+          docker exec ca pki client-cert-import ca_signing --ca-cert $SHARED/ca_signing.crt
+          docker exec ca pki --ignore-banner securitydomain-show
+
       - name: Set up OCSP DS container
         run: |
           tests/bin/ds-container-create.sh ocspds
@@ -435,10 +448,15 @@ jobs:
       - name: Run PKI healthcheck
         run: docker exec ocsp pki-healthcheck --failures-only
 
+      - name: Check security domain
+        run: |
+          docker exec ocsp pki client-cert-import ca_signing --ca-cert $SHARED/ca_signing.crt
+          docker exec ocsp pki --ignore-banner securitydomain-show
+
       - name: Verify OCSP admin
         run: |
-          docker exec ca cp /root/.dogtag/pki-tomcat/ca_admin_cert.p12 ${SHARED}/ca_admin_cert.p12
-          docker exec ocsp pki client-cert-import ca_signing --ca-cert ${SHARED}/ca_signing.crt
+          docker exec ca cp /root/.dogtag/pki-tomcat/ca_admin_cert.p12 $SHARED/ca_admin_cert.p12
+          docker exec ocsp pki client-cert-import ca_signing --ca-cert $SHARED/ca_signing.crt
           docker exec ocsp pki client-cert-import \
               --pkcs12 ${SHARED}/ca_admin_cert.p12 \
               --pkcs12-password Secret.123
@@ -460,6 +478,9 @@ jobs:
 
       - name: Remove OCSP from OCSP container
         run: docker exec ocsp pkidestroy -i pki-tomcat -s OCSP -v
+
+      - name: Check security domain
+        run: docker exec ca pki --ignore-banner securitydomain-show
 
       - name: Remove CA from CA container
         run: docker exec ca pkidestroy -i pki-tomcat -s CA -v
@@ -538,10 +559,14 @@ jobs:
 
           docker exec ca pki-server cert-find
 
+      - name: Check security domain
+        run: |
+          docker exec ca pki-server cert-export ca_signing --cert-file $SHARED/ca_signing.crt
+          docker exec ca pki client-cert-import ca_signing --ca-cert $SHARED/ca_signing.crt
+          docker exec ca pki securitydomain-show
+
       - name: Initialize CA admin in CA container
         run: |
-          docker exec ca pki-server cert-export ca_signing --cert-file ${SHARED}/ca_signing.crt
-          docker exec ca pki client-cert-import ca_signing --ca-cert ${SHARED}/ca_signing.crt
           docker exec ca pki client-cert-import \
               --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
               --pkcs12-password Secret.123
@@ -646,6 +671,9 @@ jobs:
       - name: Run PKI healthcheck
         run: docker exec ocsp pki-healthcheck --failures-only
 
+      - name: Check security domain
+        run: docker exec ca pki securitydomain-show
+
       - name: Verify OCSP admin
         run: |
           docker exec ocsp pki client-cert-import ca_signing --ca-cert ${SHARED}/ca_signing.crt
@@ -670,6 +698,9 @@ jobs:
 
       - name: Remove OCSP from OCSP container
         run: docker exec ocsp pkidestroy -i pki-tomcat -s OCSP -v
+
+      - name: Check security domain
+        run: docker exec ca pki securitydomain-show
 
       - name: Remove CA from CA container
         run: docker exec ca pkidestroy -i pki-tomcat -s CA -v
@@ -748,10 +779,14 @@ jobs:
 
           docker exec ca pki-server cert-find
 
-      - name: Initialize CA admin in CA container
+      - name: Check security domain
         run: |
           docker exec ca pki-server cert-export ca_signing --cert-file $SHARED/ca_signing.crt
           docker exec ca pki client-cert-import ca_signing --ca-cert $SHARED/ca_signing.crt
+          docker exec ca pki securitydomain-show
+
+      - name: Initialize CA admin in CA container
+        run: |
           docker exec ca pki client-cert-import \
               --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
               --pkcs12-password Secret.123
@@ -945,6 +980,9 @@ jobs:
       - name: Run PKI healthcheck
         run: docker exec ocsp pki-healthcheck --failures-only
 
+      - name: Check security domain
+        run: docker exec ca pki securitydomain-show
+
       - name: Verify OCSP admin
         run: |
           docker exec ocsp pki client-cert-import ca_signing --ca-cert $SHARED/ca_signing.crt
@@ -969,6 +1007,9 @@ jobs:
 
       - name: Remove OCSP from OCSP container
         run: docker exec ocsp pkidestroy -i pki-tomcat -s OCSP -v
+
+      - name: Check security domain
+        run: docker exec ca pki securitydomain-show
 
       - name: Remove CA from CA container
         run: docker exec ca pkidestroy -i pki-tomcat -s CA -v
@@ -1058,6 +1099,12 @@ jobs:
 
           docker exec primary pki-server cert-find
 
+      - name: Check security domain in primary PKI container
+        run: |
+          docker exec primary pki-server cert-export ca_signing --cert-file $SHARED/ca_signing.crt
+          docker exec primary pki client-cert-import ca_signing --ca-cert $SHARED/ca_signing.crt
+          docker exec primary pki securitydomain-show
+
       - name: Set up secondary DS container
         run: |
           tests/bin/ds-container-create.sh secondaryds
@@ -1080,7 +1127,6 @@ jobs:
 
       - name: Install CA in secondary PKI container
         run: |
-          docker exec primary pki-server cert-export ca_signing --cert-file ${SHARED}/ca_signing.crt
           docker exec primary pki-server ca-clone-prepare --pkcs12-file ${SHARED}/ca-certs.p12 --pkcs12-password Secret.123
           docker exec secondary pkispawn \
               -f /usr/share/pki/server/examples/installation/ca-clone.cfg \
@@ -1109,6 +1155,11 @@ jobs:
 
           docker exec secondary pki-server cert-find
 
+      - name: Check security domain in secondary PKI container
+        run: |
+          docker exec secondary pki client-cert-import ca_signing --ca-cert $SHARED/ca_signing.crt
+          docker exec secondary pki securitydomain-show
+
       - name: Verify OCSP admin in secondary PKI container
         run: |
           docker exec primary cp /root/.dogtag/pki-tomcat/ca_admin_cert.p12 ${SHARED}/ca_admin_cert.p12
@@ -1135,12 +1186,8 @@ jobs:
         env:
           HOSTNAME: tertiary.example.com
 
-      - name: Connect tertiary PKI container to network
-        run: docker network connect example tertiary --alias tertiary.example.com
-
       - name: Install CA in tertiary PKI container
         run: |
-          docker exec secondary pki-server cert-export ca_signing --cert-file ${SHARED}/ca_signing.crt
           docker exec secondary pki-server ca-clone-prepare --pkcs12-file ${SHARED}/ca-certs.p12 --pkcs12-password Secret.123
           docker exec tertiary pkispawn \
               -f /usr/share/pki/server/examples/installation/ca-clone-of-clone.cfg \
@@ -1154,6 +1201,9 @@ jobs:
               -v
 
           docker exec tertiary pki-server cert-find
+
+      - name: Check security domain in tertiary PKI container
+        run: docker exec tertiary pki securitydomain-show
 
       - name: Install OCSP in tertiary PKI container
         run: |
@@ -1178,9 +1228,13 @@ jobs:
       - name: Run PKI healthcheck in tertiary container
         run: docker exec tertiary pki-healthcheck --failures-only
 
+      - name: Check security domain in tertiary PKI container
+        run: |
+          docker exec tertiary pki client-cert-import ca_signing --ca-cert $SHARED/ca_signing.crt
+          docker exec tertiary pki securitydomain-show
+
       - name: Verify OCSP admin in tertiary PKI container
         run: |
-          docker exec tertiary pki client-cert-import ca_signing --ca-cert ${SHARED}/ca_signing.crt
           docker exec tertiary pki client-cert-import \
               --pkcs12 ${SHARED}/ca_admin_cert.p12 \
               --pkcs12-password Secret.123
@@ -1208,19 +1262,29 @@ jobs:
         continue-on-error: true
 
       - name: Remove OCSP from tertiary PKI container
-        run: docker exec tertiary pkidestroy -i pki-tomcat -s OCSP -v
+        run: |
+          docker exec tertiary pkidestroy -i pki-tomcat -s OCSP -v
+          docker exec tertiary pki securitydomain-show
 
       - name: Remove CA from tertiary PKI container
-        run: docker exec tertiary pkidestroy -i pki-tomcat -s CA -v
+        run: |
+          docker exec tertiary pkidestroy -i pki-tomcat -s CA -v
+          docker exec secondary pki securitydomain-show
 
       - name: Remove OCSP from secondary PKI container
-        run: docker exec secondary pkidestroy -i pki-tomcat -s OCSP -v
+        run: |
+          docker exec secondary pkidestroy -i pki-tomcat -s OCSP -v
+          docker exec secondary pki securitydomain-show
 
       - name: Remove CA from secondary PKI container
-        run: docker exec secondary pkidestroy -i pki-tomcat -s CA -v
+        run: |
+          docker exec secondary pkidestroy -i pki-tomcat -s CA -v
+          docker exec primary pki securitydomain-show
 
       - name: Remove OCSP from primary PKI container
-        run: docker exec primary pkidestroy -i pki-tomcat -s OCSP -v
+        run: |
+          docker exec primary pkidestroy -i pki-tomcat -s OCSP -v
+          docker exec primary pki securitydomain-show
 
       - name: Remove CA from primary PKI container
         run: docker exec primary pkidestroy -i pki-tomcat -s CA -v

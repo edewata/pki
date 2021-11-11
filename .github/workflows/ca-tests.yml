@@ -207,11 +207,11 @@ jobs:
       - name: Run PKI healthcheck
         run: docker exec pki pki-healthcheck --failures-only
 
-      - name: Initialize PKI client
+      - name: Check security domain
         run: |
           docker exec pki pki-server cert-export ca_signing --cert-file ca_signing.crt
           docker exec pki pki client-cert-import ca_signing --ca-cert ca_signing.crt
-          docker exec pki pki info
+          docker exec pki pki securitydomain-show
 
       - name: Test CA certs
         run: |
@@ -380,10 +380,14 @@ jobs:
       - name: Run PKI healthcheck
         run: docker exec pki pki-healthcheck --failures-only
 
-      - name: Verify CA admin
+      - name: Check security domain
         run: |
           docker exec pki pki-server cert-export ca_signing --cert-file ca_signing.crt
           docker exec pki pki client-cert-import ca_signing --ca-cert ca_signing.crt
+          docker exec pki pki securitydomain-show
+
+      - name: Verify CA admin
+        run: |
           docker exec pki pki client-cert-import \
               --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
               --pkcs12-password Secret.123
@@ -472,6 +476,12 @@ jobs:
       - name: Install banner in root container
         run: docker exec root cp /usr/share/pki/server/examples/banner/banner.txt /etc/pki/pki-tomcat
 
+      - name: Check security domain
+        run: |
+          docker exec root pki-server cert-export ca_signing --cert-file ${SHARED}/root-ca_signing.crt
+          docker exec root pki client-cert-import ca_signing --ca-cert ${SHARED}/root-ca_signing.crt
+          docker exec root pki --ignore-banner securitydomain-show
+
       - name: Set up subordinate DS container
         run: |
           tests/bin/ds-container-create.sh subds
@@ -494,7 +504,7 @@ jobs:
 
       - name: Install subordinate CA in subordinate container
         run: |
-          docker exec root pki-server cert-export ca_signing --cert-file ${SHARED}/root-ca_signing.crt
+          docker exec subordinate cp $SHARED/root-ca_signing.crt .
           docker exec subordinate pkispawn \
               -f /usr/share/pki/server/examples/installation/subca.cfg \
               -s CA \
@@ -540,6 +550,10 @@ jobs:
       - name: Run PKI healthcheck
         run: docker exec subordinate pki-healthcheck --failures-only
 
+      - name: Check security domain
+        run: |
+          docker exec root pki --ignore-banner securitydomain-show
+
       - name: Verify CA admin
         run: |
           docker exec subordinate pki client-cert-import ca_signing --ca-cert ${SHARED}/root-ca_signing.crt
@@ -567,7 +581,9 @@ jobs:
         continue-on-error: true
 
       - name: Remove subordinate CA from subordinate container
-        run: docker exec subordinate pkidestroy -i pki-tomcat -s CA -v
+        run: |
+          docker exec subordinate pkidestroy -i pki-tomcat -s CA -v
+          docker exec root pki --ignore-banner securitydomain-show
 
       - name: Remove root CA from root container
         run: docker exec root pkidestroy -i pki-tomcat -s CA -v
@@ -926,9 +942,13 @@ jobs:
       - name: Run PKI healthcheck
         run: docker exec pki pki-healthcheck --failures-only
 
-      - name: Verify CA admin
+      - name: Check security domain
         run: |
           docker exec pki pki client-cert-import ca_signing --ca-cert root-ca_signing.crt
+          docker exec pki pki securitydomain-show
+
+      - name: Verify CA admin
+        run: |
           docker exec pki pki client-cert-import \
               --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
               --pkcs12-password Secret.123
@@ -1097,10 +1117,14 @@ jobs:
           docker exec pki bash -c "certutil -K -d /etc/pki/pki-tomcat/alias -f password.txt | grep ca_audit_signing | sed 's/<.*>\s\+\S\+\s\+\(\S\+\).*/\1/' > ca_audit_signing.key.new"
           docker exec pki diff ca_audit_signing.key ca_audit_signing.key.new
 
-      - name: Verify CA admin
+      - name: Check security domain
         run: |
           docker exec pki pki-server cert-export ca_signing --cert-file ca_signing.crt
           docker exec pki pki client-cert-import ca_signing --ca-cert ca_signing.crt
+          docker exec pki pki securitydomain-show
+
+      - name: Verify CA admin
+        run: |
           docker exec pki pki client-cert-import \
               --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
               --pkcs12-password Secret.123
@@ -1186,15 +1210,18 @@ jobs:
 
           docker exec primary pki-server cert-find
 
-      - name: Verify users and SD hosts in primary PKI container
+      - name: Check security domain in primary PKI container
         run: |
           docker exec primary pki-server cert-export ca_signing --cert-file ${SHARED}/ca_signing.crt
           docker exec primary pki client-cert-import ca_signing --ca-cert ${SHARED}/ca_signing.crt
+          docker exec primary pki securitydomain-show
+
+      - name: Verify users in primary PKI container
+        run: |
           docker exec primary pki client-cert-import \
               --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
               --pkcs12-password Secret.123
           docker exec primary pki -n caadmin ca-user-find
-          docker exec primary pki securitydomain-host-find
 
       - name: Check cert requests in primary CA
         run: |
@@ -1236,15 +1263,18 @@ jobs:
 
           docker exec secondary pki-server cert-find
 
-      - name: Verify users and SD hosts in secondary PKI container
+      - name: Check security domain in secondary PKI container
         run: |
           docker exec primary cp /root/.dogtag/pki-tomcat/ca_admin_cert.p12 ${SHARED}/ca_admin_cert.p12
-          docker exec secondary pki client-cert-import ca_signing --ca-cert ${SHARED}/ca_signing.crt
+          docker exec secondary pki client-cert-import ca_signing --ca-cert ca_signing.crt
+          docker exec secondary pki securitydomain-show
+
+      - name: Verify users in secondary PKI container
+        run: |
           docker exec secondary pki client-cert-import \
               --pkcs12 ${SHARED}/ca_admin_cert.p12 \
               --pkcs12-password Secret.123
           docker exec secondary pki -n caadmin ca-user-find
-          docker exec secondary pki securitydomain-host-find
 
       - name: Check cert requests in secondary CA
         run: |
@@ -1287,14 +1317,17 @@ jobs:
 
           docker exec tertiary pki-server cert-find
 
-      - name: Verify users and SD hosts in tertiary PKI container
+      - name: Check security domain in tertiary PKI container
         run: |
-          docker exec tertiary pki client-cert-import ca_signing --ca-cert ${SHARED}/ca_signing.crt
+          docker exec tertiary pki client-cert-import ca_signing --ca-cert ca_signing.crt
+          docker exec tertiary pki securitydomain-show
+
+      - name: Verify users in tertiary PKI container
+        run: |
           docker exec tertiary pki client-cert-import \
               --pkcs12 ${SHARED}/ca_admin_cert.p12 \
               --pkcs12-password Secret.123
           docker exec tertiary pki -n caadmin ca-user-find
-          docker exec tertiary pki securitydomain-host-find
 
       - name: Check cert requests in tertiary CA
         run: |
@@ -1323,20 +1356,18 @@ jobs:
 
       - name: Remove CA from tertiary PKI container
         run: |
-          docker exec tertiary pki -n caadmin ca-user-find
-          docker exec tertiary pki securitydomain-host-find
           docker exec tertiary pkidestroy -i pki-tomcat -s CA -v
+          docker exec secondary pki -n caadmin ca-user-find
+          docker exec secondary pki securitydomain-show
 
       - name: Remove CA from secondary PKI container
         run: |
-          docker exec secondary pki -n caadmin ca-user-find
-          docker exec secondary pki securitydomain-host-find
           docker exec secondary pkidestroy -i pki-tomcat -s CA -v
+          docker exec primary pki -n caadmin ca-user-find
+          docker exec primary pki securitydomain-show
 
       - name: Remove CA from primary PKI container
         run: |
-          docker exec primary pki -n caadmin ca-user-find
-          docker exec primary pki securitydomain-host-find
           docker exec primary pkidestroy -i pki-tomcat -s CA -v
 
       - name: Upload artifacts from primary containers
@@ -1488,10 +1519,14 @@ jobs:
           sed -n 's/^\s\+Secure:\s\+\(\S\+\)$/\1/p' output > actual
           diff expected actual
 
-      - name: Verify CA admin
+      - name: Check security domain
         run: |
           docker exec pki pki-server cert-export ca_signing --cert-file ca_signing.crt
           docker exec pki pki client-cert-import ca_signing --ca-cert ca_signing.crt
+          docker exec pki pki securitydomain-show
+
+      - name: Verify CA admin
+        run: |
           docker exec pki pki client-cert-import \
               --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
               --pkcs12-password Secret.123
@@ -1642,15 +1677,18 @@ jobs:
           sed -n 's/^\s\+Secure:\s\+\(\S\+\)$/\1/p' output > actual
           diff expected actual
 
-      - name: Verify users and DS hosts in primary PKI container
+      - name: Check security domain in primary PKI container
         run: |
           docker exec primary pki-server cert-export ca_signing --cert-file ca_signing.crt
           docker exec primary pki client-cert-import ca_signing --ca-cert ca_signing.crt
+          docker exec primary pki securitydomain-show
+
+      - name: Verify users in primary PKI container
+        run: |
           docker exec primary pki client-cert-import \
               --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
               --pkcs12-password Secret.123
           docker exec primary pki -n caadmin ca-user-find
-          docker exec primary pki securitydomain-host-find
 
       - name: Check cert requests in primary CA
         run: |
@@ -1761,16 +1799,19 @@ jobs:
           sed -n 's/^\s\+Secure:\s\+\(\S\+\)$/\1/p' output > actual
           diff expected actual
 
-      - name: Verify users and SD hosts in secondary PKI container
+      - name: Check security domain in secondary PKI container
         run: |
           docker exec primary cp /root/.dogtag/pki-tomcat/ca_admin_cert.p12 ${SHARED}/ca_admin_cert.p12
           docker exec secondary pki-server cert-export ca_signing --cert-file ca_signing.crt
           docker exec secondary pki client-cert-import ca_signing --ca-cert ca_signing.crt
+          docker exec secondary pki securitydomain-show
+
+      - name: Verify users in secondary PKI container
+        run: |
           docker exec secondary pki client-cert-import \
               --pkcs12 ${SHARED}/ca_admin_cert.p12 \
               --pkcs12-password Secret.123
           docker exec secondary pki -n caadmin ca-user-find
-          docker exec secondary pki securitydomain-host-find
 
       - name: Check cert requests in secondary CA
         run: |
@@ -1792,6 +1833,7 @@ jobs:
               -D pki_cert_id_generator=random \
               -D pki_request_id_generator=random \
               -v
+          docker exec secondary pki securitydomain-show
 
       - name: Gather artifacts from primary containers
         if: always()
@@ -1809,14 +1851,12 @@ jobs:
 
       - name: Remove CA from secondary PKI container
         run: |
-          docker exec secondary pki -n caadmin ca-user-find
-          docker exec secondary pki securitydomain-host-find
           docker exec secondary pkidestroy -i pki-tomcat -s CA -v
+          docker exec primary pki -n caadmin ca-user-find
+          docker exec primary pki securitydomain-show
 
       - name: Remove CA from primary PKI container
         run: |
-          docker exec primary pki -n caadmin ca-user-find
-          docker exec primary pki securitydomain-host-find
           docker exec primary pkidestroy -i pki-tomcat -s CA -v
 
       - name: Upload artifacts from primary containers

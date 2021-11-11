@@ -186,10 +186,14 @@ jobs:
       - name: Run PKI healthcheck
         run: docker exec pki pki-healthcheck --failures-only
 
-      - name: Verify KRA admin
+      - name: Check security domain
         run: |
           docker exec pki pki-server cert-export ca_signing --cert-file ca_signing.crt
           docker exec pki pki client-cert-import ca_signing --ca-cert ca_signing.crt
+          docker exec pki pki securitydomain-show
+
+      - name: Verify KRA admin
+        run: |
           docker exec pki pki client-cert-import \
               --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
               --pkcs12-password Secret.123
@@ -264,7 +268,9 @@ jobs:
         continue-on-error: true
 
       - name: Remove KRA
-        run: docker exec pki pkidestroy -i pki-tomcat -s KRA -v
+        run: |
+          docker exec pki pkidestroy -i pki-tomcat -s KRA -v
+          docker exec pki pki securitydomain-show
 
       - name: Remove CA
         run: docker exec pki pkidestroy -i pki-tomcat -s CA -v
@@ -338,6 +344,12 @@ jobs:
       - name: Install banner in CA container
         run: docker exec ca cp /usr/share/pki/server/examples/banner/banner.txt /etc/pki/pki-tomcat
 
+      - name: Check security domain
+        run: |
+          docker exec ca pki-server cert-export ca_signing --cert-file $SHARED/ca_signing.crt
+          docker exec ca pki client-cert-import ca_signing --ca-cert $SHARED/ca_signing.crt
+          docker exec ca pki --ignore-banner securitydomain-show
+
       - name: Set up KRA DS container
         run: |
           tests/bin/ds-container-create.sh krads
@@ -360,7 +372,6 @@ jobs:
 
       - name: Install KRA in KRA container
         run: |
-          docker exec ca pki-server cert-export ca_signing --cert-file ${SHARED}/ca_signing.crt
           docker exec ca cp /root/.dogtag/pki-tomcat/ca_admin.cert ${SHARED}/ca_admin.cert
           docker exec kra pkispawn \
               -f /usr/share/pki/server/examples/installation/kra.cfg \
@@ -384,6 +395,9 @@ jobs:
       # - name: Run PKI healthcheck
       #   run: docker exec kra pki-healthcheck --failures-only
 
+      - name: Check security domain
+        run: docker exec ca pki --ignore-banner securitydomain-show
+
       - name: Verify KRA admin
         run: |
           docker exec ca cp /root/.dogtag/pki-tomcat/ca_admin_cert.p12 ${SHARED}/ca_admin_cert.p12
@@ -395,7 +409,6 @@ jobs:
 
       - name: Verify KRA connector in CA
         run: |
-          docker exec ca pki client-cert-import ca_signing --ca-cert ${SHARED}/ca_signing.crt
           docker exec ca pki client-cert-import \
               --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
               --pkcs12-password Secret.123
@@ -420,7 +433,9 @@ jobs:
         continue-on-error: true
 
       - name: Remove KRA from KRA container
-        run: docker exec kra pkidestroy -i pki-tomcat -s KRA -v
+        run: |
+          docker exec kra pkidestroy -i pki-tomcat -s KRA -v
+          docker exec ca pki --ignore-banner securitydomain-show
 
       - name: Remove CA from CA container
         run: docker exec ca pkidestroy -i pki-tomcat -s CA -v
@@ -499,10 +514,14 @@ jobs:
 
           docker exec ca pki-server cert-find
 
+      - name: Check security domain
+        run: |
+          docker exec ca pki-server cert-export ca_signing --cert-file $SHARED/ca_signing.crt
+          docker exec ca pki client-cert-import ca_signing --ca-cert $SHARED/ca_signing.crt
+          docker exec ca pki securitydomain-show
+
       - name: Initialize CA admin in CA container
         run: |
-          docker exec ca pki-server cert-export ca_signing --cert-file ${SHARED}/ca_signing.crt
-          docker exec ca pki client-cert-import ca_signing --ca-cert ${SHARED}/ca_signing.crt
           docker exec ca pki client-cert-import \
               --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
               --pkcs12-password Secret.123
@@ -623,6 +642,9 @@ jobs:
       # - name: Run PKI healthcheck
       #   run: docker exec kra pki-healthcheck --failures-only
 
+      - name: Check security domain
+        run: docker exec ca pki securitydomain-show
+
       - name: Verify KRA admin
         run: |
           docker exec kra pki client-cert-import ca_signing --ca-cert ${SHARED}/ca_signing.crt
@@ -652,7 +674,9 @@ jobs:
         continue-on-error: true
 
       - name: Remove KRA from KRA container
-        run: docker exec kra pkidestroy -i pki-tomcat -s KRA -v
+        run: |
+          docker exec kra pkidestroy -i pki-tomcat -s KRA -v
+          docker exec ca pki securitydomain-show
 
       - name: Remove CA from CA container
         run: docker exec ca pkidestroy -i pki-tomcat -s CA -v
@@ -1075,6 +1099,12 @@ jobs:
 
           docker exec primary pki-server cert-find
 
+      - name: Check security domain in primary PKI container
+        run: |
+          docker exec primary pki-server cert-export ca_signing --cert-file $SHARED/ca_signing.crt
+          docker exec primary pki client-cert-import ca_signing --ca-cert $SHARED/ca_signing.crt
+          docker exec primary pki securitydomain-show
+
       - name: Set up secondary DS container
         run: |
           tests/bin/ds-container-create.sh secondaryds
@@ -1127,6 +1157,11 @@ jobs:
               -v
 
           docker exec secondary pki-server cert-find
+
+      - name: Check security domain in secondary PKI container
+        run: |
+          docker exec secondary pki client-cert-import ca_signing --ca-cert $SHARED/ca_signing.crt
+          docker exec secondary pki securitydomain-show
 
       - name: Verify KRA admin in secondary PKI container
         run: |
@@ -1190,9 +1225,13 @@ jobs:
 
           docker exec tertiary pki-server cert-find
 
+      - name: Check security domain in tertiary PKI container
+        run: |
+          docker exec tertiary pki client-cert-import ca_signing --ca-cert $SHARED/ca_signing.crt
+          docker exec tertiary pki securitydomain-show
+
       - name: Verify KRA admin in tertiary PKI container
         run: |
-          docker exec tertiary pki client-cert-import ca_signing --ca-cert ${SHARED}/ca_signing.crt
           docker exec tertiary pki client-cert-import \
               --pkcs12 ${SHARED}/ca_admin_cert.p12 \
               --pkcs12-password Secret.123
@@ -1229,19 +1268,29 @@ jobs:
         continue-on-error: true
 
       - name: Remove KRA from tertiary PKI container
-        run: docker exec tertiary pkidestroy -i pki-tomcat -s KRA -v
+        run: |
+          docker exec tertiary pkidestroy -i pki-tomcat -s KRA -v
+          docker exec tertiary pki securitydomain-show
 
       - name: Remove CA from tertiary PKI container
-        run: docker exec tertiary pkidestroy -i pki-tomcat -s CA -v
+        run: |
+          docker exec tertiary pkidestroy -i pki-tomcat -s CA -v
+          docker exec secondary pki securitydomain-show
 
       - name: Remove KRA from secondary PKI container
-        run: docker exec secondary pkidestroy -i pki-tomcat -s KRA -v
+        run: |
+          docker exec secondary pkidestroy -i pki-tomcat -s KRA -v
+          docker exec secondary pki securitydomain-show
 
       - name: Remove CA from secondary PKI container
-        run: docker exec secondary pkidestroy -i pki-tomcat -s CA -v
+        run: |
+          docker exec secondary pkidestroy -i pki-tomcat -s CA -v
+          docker exec primary pki securitydomain-show
 
       - name: Remove KRA from primary PKI container
-        run: docker exec primary pkidestroy -i pki-tomcat -s KRA -v
+        run: |
+          docker exec primary pkidestroy -i pki-tomcat -s KRA -v
+          docker exec primary pki securitydomain-show
 
       - name: Remove CA from primary PKI container
         run: docker exec primary pkidestroy -i pki-tomcat -s CA -v

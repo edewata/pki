@@ -172,10 +172,14 @@ jobs:
       - name: Run PKI healthcheck
         run: docker exec pki pki-healthcheck --failures-only
 
-      - name: Verify TKS admin
+      - name: Check security domain
         run: |
           docker exec pki pki-server cert-export ca_signing --cert-file ca_signing.crt
           docker exec pki pki client-cert-import ca_signing --ca-cert ca_signing.crt
+          docker exec pki pki securitydomain-show
+
+      - name: Verify TKS admin
+        run: |
           docker exec pki pki client-cert-import \
               --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
               --pkcs12-password Secret.123
@@ -189,7 +193,9 @@ jobs:
         continue-on-error: true
 
       - name: Remove TKS
-        run: docker exec pki pkidestroy -i pki-tomcat -s TKS -v
+        run: |
+          docker exec pki pkidestroy -i pki-tomcat -s TKS -v
+          docker exec pki pki securitydomain-show
 
       - name: Remove CA
         run: docker exec pki pkidestroy -i pki-tomcat -s CA -v
@@ -627,6 +633,12 @@ jobs:
 
           docker exec primary pki-server cert-find
 
+      - name: Check security domain in primary container
+        run: |
+          docker exec primary pki-server cert-export ca_signing --cert-file ca_signing.crt
+          docker exec primary pki client-cert-import ca_signing --ca-cert ca_signing.crt
+          docker exec primary pki securitydomain-show
+
       - name: Set up secondary DS container
         run: |
           tests/bin/ds-container-create.sh secondaryds
@@ -677,6 +689,11 @@ jobs:
               -v
 
           docker exec secondary pki-server cert-find
+
+      - name: Check security domain in secondary container
+        run: |
+          docker exec secondary pki client-cert-import ca_signing --ca-cert $SHARED/ca_signing.crt
+          docker exec secondary pki securitydomain-show
 
       - name: Verify TKS admin in secondary PKI container
         run: |
@@ -747,9 +764,13 @@ jobs:
       - name: Run PKI healthcheck in tertiary container
         run: docker exec tertiary pki-healthcheck --failures-only
 
+      - name: Check security domain in tertiary container
+        run: |
+          docker exec tertiary pki client-cert-import ca_signing --ca-cert $SHARED/ca_signing.crt
+          docker exec tertiary pki securitydomain-show
+
       - name: Verify TKS admin in tertiary PKI container
         run: |
-          docker exec tertiary pki client-cert-import ca_signing --ca-cert ${SHARED}/ca_signing.crt
           docker exec tertiary pki client-cert-import \
               --pkcs12 ${SHARED}/ca_admin_cert.p12 \
               --pkcs12-password Secret.123
@@ -776,19 +797,29 @@ jobs:
         continue-on-error: true
 
       - name: Remove TKS from tertiary PKI container
-        run: docker exec tertiary pkidestroy -i pki-tomcat -s TKS -v
+        run: |
+          docker exec tertiary pkidestroy -i pki-tomcat -s TKS -v
+          docker exec tertiary pki securitydomain-show
 
       - name: Remove CA from tertiary PKI container
-        run: docker exec tertiary pkidestroy -i pki-tomcat -s CA -v
+        run: |
+          docker exec tertiary pkidestroy -i pki-tomcat -s CA -v
+          docker exec secondary pki securitydomain-show
 
       - name: Remove TKS from secondary PKI container
-        run: docker exec secondary pkidestroy -i pki-tomcat -s TKS -v
+        run: |
+          docker exec secondary pkidestroy -i pki-tomcat -s TKS -v
+          docker exec secondary pki securitydomain-show
 
       - name: Remove CA from secondary PKI container
-        run: docker exec secondary pkidestroy -i pki-tomcat -s CA -v
+        run: |
+          docker exec secondary pkidestroy -i pki-tomcat -s CA -v
+          docker exec primary pki securitydomain-show
 
       - name: Remove TKS from primary PKI container
-        run: docker exec primary pkidestroy -i pki-tomcat -s TKS -v
+        run: |
+          docker exec primary pkidestroy -i pki-tomcat -s TKS -v
+          docker exec primary pki securitydomain-show
 
       - name: Remove CA from primary PKI container
         run: docker exec primary pkidestroy -i pki-tomcat -s CA -v
