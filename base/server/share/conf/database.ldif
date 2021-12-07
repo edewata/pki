@@ -3,11 +3,6 @@
 # All rights reserved.
 # --- END COPYRIGHT BLOCK ---
 #
-dn: cn=config
-changetype: modify
-replace: nsslapd-maxbersize
-nsslapd-maxbersize: 209715200
-
 dn: cn=USN,cn=plugins,cn=config
 changetype: modify
 replace: nsslapd-pluginEnabled
