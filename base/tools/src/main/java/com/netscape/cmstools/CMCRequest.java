@@ -2258,6 +2258,9 @@ public class CMCRequest {
             printUsage();
         }
 
+        if (CryptoUtil.isInternalToken(tokenName)) {
+            tokenName = CryptoUtil.INTERNAL_TOKEN_NAME;
+        }
 
         try {
             // initialize CryptoManager
@@ -2272,15 +2275,10 @@ public class CMCRequest {
                             mPrefix, "secmod.db");
 */
             CryptoManager.initialize(dbdir);
-            CryptoToken token = null;
             CryptoManager cm = CryptoManager.getInstance();
             System.out.println("CryptoManger initialized");
 
-            token = CryptoUtil.getKeyStorageToken(tokenName);
-
-            if (CryptoUtil.isInternalToken(tokenName)) {
-                tokenName = CryptoUtil.INTERNAL_TOKEN_NAME;
-            }
+            CryptoToken token = CryptoUtil.getKeyStorageToken(tokenName);
             cm.setThreadToken(token);
 
             Password pass = new Password(password.toCharArray());
