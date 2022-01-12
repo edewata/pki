@@ -97,7 +97,7 @@ public class HttpClient {
     }
 
     public void send(String ifilename, String ofilename, String tokenName,
-            String nickname, String servlet, String clientmode,
+            String nickname, String servlet, X509Certificate cert,
             int numHeaderLines)
             throws Exception {
         DataOutputStream dos = null;
@@ -117,25 +117,7 @@ public class HttpClient {
                 sslSocket.addHandshakeCompletedListener(listener);
                 sslSocket.enablePostHandshakeAuth(true);
 
-                CryptoManager cm = CryptoManager.getInstance();
-                CryptoToken tt = cm.getThreadToken();
-                System.out.println("after SSLSocket created, thread token is "+ tt.getName());
-
-                if (clientmode != null && clientmode.equals("true")) {
-                    StringBuffer certname = new StringBuffer();
-                    if (!CryptoUtil.isInternalToken(tokenName)) {
-                        certname.append(tokenName);
-                        certname.append(":");
-                    }
-                    certname.append(nickname);
-
-                    X509Certificate cert =
-                        cm.findCertByNickname(certname.toString());
-
-                    if (cert == null)
-                        System.out.println("client cert is null");
-                    else
-                        System.out.println("client cert is not null");
+                if (cert != null) {
                     sslSocket.setUseClientMode(true);
                     sslSocket.setClientCertNickname(nickname);
                 }
@@ -404,8 +386,12 @@ public class HttpClient {
         CryptoManager.initialize(dbdir);
         CryptoManager cm = CryptoManager.getInstance();
 
+        String fullname;
         if (CryptoUtil.isInternalToken(tokenName)) {
             tokenName = CryptoUtil.INTERNAL_TOKEN_NAME;
+            fullname = nickname;
+        } else {
+            fullname = tokenName + ":" + nickname;
         }
 
         CryptoToken token = CryptoUtil.getKeyStorageToken(tokenName);
@@ -419,9 +405,14 @@ public class HttpClient {
             pass.clear();
         }
 
+        X509Certificate cert = null;
+        if (clientmode != null && clientmode.equals("true")) {
+            cert = cm.findCertByNickname(fullname);
+        }
+
         try {
             HttpClient client = new HttpClient(host, port, secure);
-            client.send(ifilename, ofilename, tokenName,  nickname, servlet, clientmode, numHeaderLines);
+            client.send(ifilename, ofilename, tokenName,  nickname, servlet, cert, numHeaderLines);
         } catch (Exception e) {
             System.out.println("Error: " + e.toString());
         }
