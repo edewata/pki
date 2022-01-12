@@ -33,7 +33,6 @@ import java.net.Socket;
 import java.util.Properties;
 
 import org.mozilla.jss.CryptoManager;
-import org.mozilla.jss.InitializationValues;
 import org.mozilla.jss.crypto.CryptoToken;
 import org.mozilla.jss.crypto.X509Certificate;
 import org.mozilla.jss.netscape.security.util.Utils;
@@ -97,8 +96,8 @@ public class HttpClient {
         return bytes;
     }
 
-    public void send(String ifilename, String ofilename, String tokenName, String dbdir,
-            String nickname, String password, String servlet, String clientmode,
+    public void send(String ifilename, String ofilename, String tokenName,
+            String nickname, String servlet, String clientmode,
             int numHeaderLines)
             throws Exception {
         DataOutputStream dos = null;
@@ -112,34 +111,19 @@ public class HttpClient {
 
             System.out.println("Total number of bytes read = " + b.length);
             if (_secure) {
-                InitializationValues vals =
-                        new InitializationValues(dbdir, "", "", "secmod.db");
-                CryptoManager.initialize(vals);
-                CryptoManager cm = CryptoManager.getInstance();
-                CryptoToken token = CryptoUtil.getKeyStorageToken(tokenName);
-                if (CryptoUtil.isInternalToken(tokenName)) {
-                    tokenName = CryptoUtil.INTERNAL_TOKEN_NAME;
-                }
-                cm.setThreadToken(token);
-                Password pass = new Password(password.toCharArray());
-                try {
-                    token.login(pass);
-                } finally {
-                    pass.clear();
-                }
-
                 SSLHandshakeCompletedListener listener = new ClientHandshakeCB(this);
 
                 sslSocket = new SSLSocket(_host, _port);
                 sslSocket.addHandshakeCompletedListener(listener);
                 sslSocket.enablePostHandshakeAuth(true);
 
+                CryptoManager cm = CryptoManager.getInstance();
                 CryptoToken tt = cm.getThreadToken();
                 System.out.println("after SSLSocket created, thread token is "+ tt.getName());
 
                 if (clientmode != null && clientmode.equals("true")) {
                     StringBuffer certname = new StringBuffer();
-                    if (!token.equals(cm.getInternalKeyStorageToken())) {
+                    if (!CryptoUtil.isInternalToken(tokenName)) {
                         certname.append(tokenName);
                         certname.append(":");
                     }
@@ -306,7 +290,7 @@ public class HttpClient {
         System.exit(0);
     }
 
-    public static void main(String args[]) {
+    public static void main(String args[]) throws Exception {
 
         System.out.println("");
 
@@ -417,10 +401,27 @@ public class HttpClient {
             }
         }
 
+        CryptoManager.initialize(dbdir);
+        CryptoManager cm = CryptoManager.getInstance();
+
+        if (CryptoUtil.isInternalToken(tokenName)) {
+            tokenName = CryptoUtil.INTERNAL_TOKEN_NAME;
+        }
+
+        CryptoToken token = CryptoUtil.getKeyStorageToken(tokenName);
+        cm.setThreadToken(token);
+
+        Password pass = new Password(password.toCharArray());
+
         try {
-            HttpClient client =
-                    new HttpClient(host, port, secure);
-            client.send(ifilename, ofilename, tokenName,  dbdir, nickname, password, servlet, clientmode, numHeaderLines);
+            token.login(pass);
+        } finally {
+            pass.clear();
+        }
+
+        try {
+            HttpClient client = new HttpClient(host, port, secure);
+            client.send(ifilename, ofilename, tokenName,  nickname, servlet, clientmode, numHeaderLines);
         } catch (Exception e) {
             System.out.println("Error: " + e.toString());
         }
