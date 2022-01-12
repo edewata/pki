@@ -22,9 +22,11 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.CharConversionException;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
@@ -2112,22 +2114,16 @@ public class CMCRequest {
             printUsage();
         }
 
-        String configFile = s[0];
-        BufferedReader reader = null;
-        try {
-            reader = new BufferedReader(new InputStreamReader(
-                            new BufferedInputStream(
-                                    new FileInputStream(
-                                            configFile))));
-        } catch (FileNotFoundException e) {
+        File configFile = new File(s[0]);
+
+        if (!configFile.exists()) {
             System.out.println("CMCRequest:  can't find configuration file: " + configFile);
             printUsage();
-        } catch (Exception e) {
-            e.printStackTrace();
             System.exit(1);
         }
 
-        try {
+        try (BufferedReader reader = new BufferedReader(new FileReader(configFile))) {
+
             String str = "";
             while ((str = reader.readLine()) != null) {
                 str = str.trim();
