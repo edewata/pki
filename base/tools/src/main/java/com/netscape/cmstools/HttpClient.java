@@ -30,11 +30,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.net.Socket;
+import java.net.URL;
 import java.util.Properties;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.dogtagpki.util.logging.PKILogger;
 import org.dogtagpki.util.logging.PKILogger.Level;
@@ -285,6 +287,22 @@ public class HttpClient {
 
         Options options = new Options();
 
+        Option option = new Option("d", true, "NSS database location (default: .)");
+        option.setArgName("path");
+        options.addOption(option);
+
+        option = new Option("U", true, "Servlet URL");
+        option.setArgName("URL");
+        options.addOption(option);
+
+        option = new Option("i", true, "Input file");
+        option.setArgName("path");
+        options.addOption(option);
+
+        option = new Option("o", true, "Output file");
+        option.setArgName("path");
+        options.addOption(option);
+
         options.addOption("v", "verbose", false, "Run in verbose mode.");
         options.addOption(null, "debug", false, "Run in debug mode.");
         options.addOption(null, "help", false, "Show help message.");
@@ -350,6 +368,33 @@ public class HttpClient {
         String clientmode = config.getProperty("clientmode");
         String servlet = config.getProperty("servlet");
 
+        // override with command-line parameters
+
+        if (cmd.hasOption("d")) {
+            dbdir = cmd.getOptionValue("d");
+        }
+
+        if (cmd.hasOption("U")) {
+            URL url = new URL(cmd.getOptionValue("U"));
+            host = url.getHost();
+            portstr = "" + url.getPort();
+            secure = Boolean.toString(url.getProtocol().equals("https"));
+            servlet = url.getFile();
+        }
+
+        logger.info("Host: " + host);
+        logger.info("Port: " + portstr);
+        logger.info("Secure: " + secure);
+        logger.info("Servlet: " + servlet);
+
+        if (cmd.hasOption("i")) {
+            ifilename = cmd.getOptionValue("i");
+        }
+
+        if (cmd.hasOption("o")) {
+            ofilename = cmd.getOptionValue("o");
+        }
+
         // unadvertised parameter to tell HttpClient how many header lines
         // to skip
         String numHeaderLinesStr = config.getProperty("numHeaderLines");
@@ -388,10 +433,6 @@ public class HttpClient {
             }
 
             if (clientmode != null && clientmode.equals("true")) {
-                if (password == null) {
-                    System.out.println("Missing password for the cert7.db.");
-                    printUsage();
-                }
                 if (nickname == null) {
                     System.out.println("Missing nickname for the client certificate");
                     printUsage();
@@ -428,12 +469,15 @@ public class HttpClient {
         CryptoToken token = CryptoUtil.getKeyStorageToken(tokenName);
         cm.setThreadToken(token);
 
-        Password pass = new Password(password.toCharArray());
+        if (password != null) {
+            // log into token if password is specified
+            Password pass = new Password(password.toCharArray());
 
-        try {
-            token.login(pass);
-        } finally {
-            pass.clear();
+            try {
+                token.login(pass);
+            } finally {
+                pass.clear();
+            }
         }
 
         X509Certificate cert = null;
