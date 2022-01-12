@@ -43,6 +43,11 @@ import java.util.StringTokenizer;
 
 import javax.crypto.Mac;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
 import org.mozilla.jss.CryptoManager;
 import org.mozilla.jss.asn1.ANY;
 import org.mozilla.jss.asn1.ASN1Util;
@@ -2081,11 +2086,56 @@ public class CMCRequest {
         }
     }
 
-    public static void main(String[] s) {
-        String numRequests = null;
-        String dbdir = null, nickname = null;
+    public static void main(String[] args) throws Exception {
+
+        Options options = new Options();
+
+        Option option = new Option("d", true, "NSS database location (default: .)");
+        option.setArgName("path");
+        options.addOption(option);
+
+        option = new Option(null, "password", true, "NSS database password");
+        option.setArgName("password");
+        options.addOption(option);
+
+        option = new Option(null, "token", true, "Token name (default: internal)");
+        option.setArgName("name");
+        options.addOption(option);
+
+        option = new Option(null, "nickname", true, "Nickname for agent certificate");
+        option.setArgName("name");
+        options.addOption(option);
+
+        option = new Option(null, "format", true, "Request format: pkcs10 (default), crmf");
+        option.setArgName("format");
+        options.addOption(option);
+
+        option = new Option(null, "numRequests", true, "Total number of PKCS10/CRMF requests (default: 1)");
+        option.setArgName("integer");
+        options.addOption(option);
+
+        option = new Option("i", true, "Input file");
+        option.setArgName("path");
+        options.addOption(option);
+
+        option = new Option("o", true, "Output file");
+        option.setArgName("path");
+        options.addOption(option);
+
+        CommandLineParser parser = new DefaultParser();
+        CommandLine cmd = parser.parse(options, args, true);
+
+        String[] s = cmd.getArgs();
+
+        String dbdir = ".";
+        String password = null;
         String tokenName = null;
-        String ifilename = null, ofilename = null, password = null, format = null;
+        String nickname = null;
+        String format = "pkcs10";
+        String numRequests = "1";
+        String ifilename = null;
+        String ofilename = null;
+
         String privKeyId = null;
         String oaep = null;
         String decryptedPopEnable = "false", encryptedPopResponseFile=null, decryptedPopRequestFile= null;
@@ -2243,9 +2293,22 @@ public class CMCRequest {
             printUsage();
         }
 
-        if (password == null) {
-            System.out.println("Missing password.");
-            printUsage();
+        // override with command-line parameters
+
+        if (cmd.hasOption("d")) {
+            dbdir = cmd.getOptionValue("d");
+        }
+
+        if (cmd.hasOption("password")) {
+            password = cmd.getOptionValue("password");
+        }
+
+        if (cmd.hasOption("i")) {
+            ifilename = cmd.getOptionValue("i");
+        }
+
+        if (cmd.hasOption("o")) {
+            ofilename = cmd.getOptionValue("o");
         }
 
         if ((!useSharedSecret.equals("true") && (revRequestSharedSecret == null))
@@ -2260,8 +2323,6 @@ public class CMCRequest {
 
         try {
             // initialize CryptoManager
-            if (dbdir == null)
-                dbdir = ".";
             String mPrefix = "";
             System.out.println("cert/key prefix = " + mPrefix);
             System.out.println("path = " + dbdir);
@@ -2277,16 +2338,19 @@ public class CMCRequest {
             CryptoToken token = CryptoUtil.getKeyStorageToken(tokenName);
             cm.setThreadToken(token);
 
-            Password pass = new Password(password.toCharArray());
+            if (password != null) {
+                // log into token if password is specified
+                Password pass = new Password(password.toCharArray());
 
-            try {
-                token.login(pass);
-                System.out.println("token "+ tokenName + " logged in...");
-            } catch (Exception e) {
-                System.out.println("login Exception: " + e.toString());
-                System.exit(1);
-            } finally {
-                pass.clear();
+                try {
+                    token.login(pass);
+                    System.out.println("token "+ tokenName + " logged in...");
+                } catch (Exception e) {
+                    System.out.println("login Exception: " + e.toString());
+                    System.exit(1);
+                } finally {
+                    pass.clear();
+                }
             }
 
             X509Certificate signerCert = null;
@@ -2376,18 +2440,7 @@ public class CMCRequest {
                     printUsage();
                 }
 
-                int num = 0;
-                if (numRequests == null) {
-                    System.out.println("Missing numRequests.");
-                    printUsage();
-                } else {
-                    try {
-                        num = Integer.parseInt(numRequests);
-                    } catch (Exception ee) {
-                        System.out.println("numRequests must be integer");
-                        System.exit(1);
-                    }
-                }
+                int num = Integer.parseInt(numRequests);
 
                 String[] ifiles = null;
                 if (revRequestEnable.equalsIgnoreCase("false")) {
