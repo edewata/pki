@@ -625,12 +625,18 @@ jobs:
           docker exec root openssl req -text -noout -in $SHARED/ca_signing.csr
 
           # create CMC request
-          docker exec root mv $SHARED/ca_signing.csr ca_signing.csr
           docker exec root CMCRequest \
+              -d /root/.dogtag/nssdb \
+              -i $SHARED/ca_signing.csr \
+              -o ca_signing.cmc \
               /usr/share/pki/server/examples/cmc/ca_signing-cmc-request.cfg
 
           # submit CMC request
           docker exec root HttpClient \
+              -d /root/.dogtag/nssdb \
+              -U https://root.example.com:8443/ca/ee/ca/profileSubmitCMCFull?profileId=caCMCcaCert \
+              -i ca_signing.cmc \
+              -o ca_signing.der.p7 \
               /usr/share/pki/server/examples/cmc/ca_signing-cmc-submit.cfg
 
           # convert DER PKCS #7 response into PEM PKCS #7 chain
