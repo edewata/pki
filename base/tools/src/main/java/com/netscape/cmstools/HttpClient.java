@@ -32,6 +32,12 @@ import java.io.PrintStream;
 import java.net.Socket;
 import java.util.Properties;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Options;
+import org.dogtagpki.util.logging.PKILogger;
+import org.dogtagpki.util.logging.PKILogger.Level;
 import org.mozilla.jss.CryptoManager;
 import org.mozilla.jss.crypto.CryptoToken;
 import org.mozilla.jss.crypto.X509Certificate;
@@ -49,6 +55,9 @@ import com.netscape.cmsutil.crypto.CryptoUtil;
  * @version $Revision$, $Date$
  */
 public class HttpClient {
+
+    public static org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(HttpClient.class);
+
     private String _host = null;
     private int _port = 0;
     private boolean _secure = false;
@@ -274,15 +283,37 @@ public class HttpClient {
 
     public static void main(String args[]) throws Exception {
 
+        Options options = new Options();
+
+        options.addOption("v", "verbose", false, "Run in verbose mode.");
+        options.addOption(null, "debug", false, "Run in debug mode.");
+        options.addOption(null, "help", false, "Show help message.");
+
+        CommandLineParser parser = new DefaultParser();
+        CommandLine cmd = parser.parse(options, args, true);
+
+        if (cmd.hasOption("help")) {
+            printUsage();
+            return;
+
+        } else if (cmd.hasOption("debug")) {
+            PKILogger.setLevel(Level.DEBUG);
+
+        } else if (cmd.hasOption("verbose")) {
+            PKILogger.setLevel(Level.INFO);
+        }
+
+        String[] cmdArgs = cmd.getArgs();
+
         System.out.println("");
 
         // Check that the correct # of arguments were submitted to the program
-        if (args.length != (ARGC)) {
-            System.out.println("Wrong number of parameters:" + args.length);
+        if (cmdArgs.length != (ARGC)) {
+            System.out.println("Wrong number of parameters:" + cmdArgs.length);
             printUsage();
         }
 
-        String configFile = args[0];
+        String configFile = cmdArgs[0];
         BufferedReader reader = null;
         try {
             reader = new BufferedReader(new InputStreamReader(
