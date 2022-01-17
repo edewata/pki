@@ -53,6 +53,7 @@ import com.netscape.certsrv.ca.CACertClient;
 import com.netscape.certsrv.ca.CAClient;
 import com.netscape.certsrv.client.ClientConfig;
 import com.netscape.certsrv.client.PKIClient;
+import com.netscape.certsrv.request.RequestId;
 import com.netscape.certsrv.system.CertificateSetupRequest;
 import com.netscape.certsrv.system.InstallToken;
 import com.netscape.certsrv.system.SecurityDomainClient;
@@ -476,6 +477,10 @@ public class Configurator {
                     critical,
                     out.toByteArray());
         }
+    }
+
+    public RequestId createRequestID() throws Exception {
+        return null;
     }
 
     public void loadCert(

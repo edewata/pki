@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import com.netscape.certsrv.base.BadRequestException;
 import com.netscape.certsrv.base.PKIException;
+import com.netscape.certsrv.request.RequestId;
 import com.netscape.certsrv.system.CertificateSetupRequest;
 import com.netscape.certsrv.system.SystemCertData;
 import com.netscape.cms.servlet.base.PKIService;
@@ -76,6 +77,22 @@ public class SystemConfigService extends PKIService {
         instanceRoot = cs.getInstanceDir();
 
         configurator = engine.createConfigurator();
+    }
+
+    @POST
+    @Path("createRequestID")
+    public RequestId createRequestID(CertificateSetupRequest request) throws Exception {
+
+        logger.info("SystemConfigService: Creating request ID");
+
+        try {
+            validatePin(request.getPin());
+            return configurator.createRequestID();
+
+        } catch (Throwable e) {
+            logger.error("Unable to create request ID: " + e.getMessage(), e);
+            throw e;
+        }
     }
 
     @POST
