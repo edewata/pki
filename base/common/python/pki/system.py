@@ -353,6 +353,7 @@ class SystemConfigClient(object):
 
         self.connection = connection
 
+        self.create_request_id_url = '/rest/installer/createRequestID'
         self.load_cert_url = '/rest/installer/loadCert'
         self.setup_cert_url = '/rest/installer/setupCert'
         self.init_subsystem_url = '/rest/installer/initSubsystem'
@@ -365,12 +366,35 @@ class SystemConfigClient(object):
             if subsystem is None:
                 raise Exception('Missing subsystem for SystemConfigClient')
 
+            self.create_request_id_url = '/' + subsystem + self.create_request_id_url
             self.load_cert_url = '/' + subsystem + self.load_cert_url
             self.setup_cert_url = '/' + subsystem + self.setup_cert_url
             self.init_subsystem_url = '/' + subsystem + self.init_subsystem_url
             self.setup_admin_url = '/' + subsystem + self.setup_admin_url
             self.backup_keys_url = '/' + subsystem + self.backup_keys_url
             self.setup_security_domain_url = '/' + subsystem + self.setup_security_domain_url
+
+    def create_request_id(self, request):
+        """
+        Create request ID.
+
+        :param request: Certificate setup request
+        :type request: CertificateSetupRequest
+        :return: RequestID
+        """
+        data = json.dumps(request, cls=pki.encoder.CustomTypeEncoder)
+        headers = {'Content-type': 'application/json',
+                   'Accept': 'application/json'}
+
+        response = self.connection.post(
+            self.create_request_id_url,
+            data,
+            headers)
+
+        if not response.content:
+            return None
+
+        return response.json()
 
     def loadCert(self, request):
         """

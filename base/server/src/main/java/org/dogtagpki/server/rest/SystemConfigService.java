@@ -75,6 +75,22 @@ public class SystemConfigService extends PKIService {
     }
 
     @POST
+    @Path("createRequestID")
+    public RequestId createRequestID(CertificateSetupRequest request) throws Exception {
+
+        logger.info("SystemConfigService: Creating request ID");
+
+        try {
+            validatePin(request.getPin());
+            return configurator.createRequestID();
+
+        } catch (Throwable e) {
+            logger.error("Unable to create request ID: " + e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    @POST
     @Path("loadCert")
     public SystemCertData loadCert(CertificateSetupRequest request) throws Exception {
 
