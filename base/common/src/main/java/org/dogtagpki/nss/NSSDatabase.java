@@ -963,8 +963,6 @@ public class NSSDatabase {
 
             keyPair = new KeyPair(publicKey, privateKey);
 
-            throw new Exception("Unsupported");
-
         } else if ("rsa".equalsIgnoreCase(keyType)) {
 
             logger.info("NSSDatabase: - type: RSA");
@@ -1099,11 +1097,14 @@ public class NSSDatabase {
 
         // convert Extensions into CertificateExtensions
         CertificateExtensions certExts = new CertificateExtensions();
-        Enumeration<String> names = extensions.getAttributeNames();
-        while (names.hasMoreElements()) {
-            String name = names.nextElement();
-            Extension extension = (Extension) extensions.get(name);
-            certExts.set(name, extension);
+
+        if (extensions != null) {
+            Enumeration<String> names = extensions.getAttributeNames();
+            while (names.hasMoreElements()) {
+                String name = names.nextElement();
+                Extension extension = (Extension) extensions.get(name);
+                certExts.set(name, extension);
+            }
         }
 
         X509CertInfo info = CryptoUtil.createX509CertInfo(
