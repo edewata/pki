@@ -23,6 +23,7 @@ import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.netscape.certsrv.request.RequestId;
 import com.netscape.certsrv.util.JSONSerializer;
 
 /**
@@ -38,7 +39,7 @@ public class CertificateSetupRequest implements JSONSerializer {
     protected InstallToken installToken;
 
     protected String tag;
-
+    protected RequestId requestID;
     protected SystemCertData systemCert;
 
     protected Boolean clone;
@@ -72,6 +73,18 @@ public class CertificateSetupRequest implements JSONSerializer {
         this.tag = tag;
     }
 
+    public RequestId getRequestID() {
+        return requestID;
+    }
+
+    public void setRequestID(RequestId requestID) {
+        this.requestID = requestID;
+    }
+
+    public void setRequestID(String requestID) {
+        this.requestID = new RequestId(requestID);
+    }
+
    public SystemCertData getSystemCert() {
        return systemCert;
    }
@@ -100,6 +113,7 @@ public class CertificateSetupRequest implements JSONSerializer {
     public String toString() {
         return "CertificateSetupRequest [pin=XXXX" +
                ", tag=" + tag +
+               ", requestID=" + requestID +
                ", systemCert=" + systemCert +
                ", clone=" + clone +
                ", masterURL=" + masterURL +
@@ -108,7 +122,10 @@ public class CertificateSetupRequest implements JSONSerializer {
 
     @Override
     public int hashCode() {
-        return Objects.hash(clone, installToken, masterURL, pin, systemCert, tag);
+        return Objects.hash(clone, installToken, masterURL, pin,
+                tag,
+                requestID,
+                systemCert);
     }
 
     @Override
@@ -122,7 +139,10 @@ public class CertificateSetupRequest implements JSONSerializer {
         CertificateSetupRequest other = (CertificateSetupRequest) obj;
         return Objects.equals(clone, other.clone) && Objects.equals(installToken, other.installToken)
                 && Objects.equals(masterURL, other.masterURL) && Objects.equals(pin, other.pin)
-                && Objects.equals(systemCert, other.systemCert) && Objects.equals(tag, other.tag);
+                && Objects.equals(tag, other.tag)
+                && Objects.equals(requestID, other.requestID)
+                && Objects.equals(systemCert, other.systemCert);
+
     }
 
 }
