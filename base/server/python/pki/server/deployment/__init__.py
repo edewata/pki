@@ -778,6 +778,10 @@ class PKIDeployer:
 
         if subsystem.type == 'CA' and external and tag != 'sslserver' and cert_info:
 
+            logger.info('Creating request ID for %s certificate', tag)
+            request.requestID = client.create_request_id(request)
+            logger.debug('- request ID: %s', request.requestID)
+
             logger.info('Importing %s certificate', tag)
             logger.debug('- cert: %s', system_cert['data'])
             logger.debug('- request: %s', system_cert['request'])

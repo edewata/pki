@@ -184,6 +184,7 @@ public class CAConfigurator extends Configurator {
     }
 
     public void importCert(
+            RequestId requestID,
             X509Key x509key,
             X509CertImpl cert,
             String profileID,
@@ -212,9 +213,6 @@ public class CAConfigurator extends Configurator {
 
         IConfigStore profileConfig = engine.createFileConfigStore(instanceRoot + configurationRoot + profileID);
         BootstrapProfile profile = new BootstrapProfile(profileConfig);
-
-        RequestId requestID = createRequestID();
-        logger.info("CAConfigurator: Creating cert request " + requestID);
 
         CertRequestRepository requestRepository = engine.getCertRequestRepository();
         IRequest request = requestRepository.createRequest(requestID, "enrollment");
@@ -457,6 +455,7 @@ public class CAConfigurator extends Configurator {
             String type,
             String tag,
             String certRequestType,
+            RequestId requestID,
             X509Certificate x509Cert,
             String profileID,
             String[] dnsNames) throws Exception {
@@ -488,6 +487,7 @@ public class CAConfigurator extends Configurator {
         if (certImpl.getIssuerDN().equals(caSigningSubjectDN)) {
             logger.info("CAConfigurator: " + tag + " cert issued by this CA, import into database");
             importCert(
+                    requestID,
                     x509key,
                     certImpl,
                     profileID,

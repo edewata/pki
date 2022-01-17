@@ -111,6 +111,9 @@ public class SystemConfigService extends PKIService {
 
             String type = cs.getType();
 
+            RequestId requestID = request.getRequestID();
+            logger.info("SystemConfigService: - request ID: " + requestID);
+
             SystemCertData certData = request.getSystemCert();
 
             String nickname = certData.getNickname();
@@ -145,6 +148,7 @@ public class SystemConfigService extends PKIService {
                     type,
                     tag,
                     certRequestType,
+                    requestID,
                     x509Cert,
                     profileID,
                     dnsNames);
