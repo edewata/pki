@@ -769,6 +769,10 @@ class PKIDeployer:
         else:
             logger.info('%s cert does not exist', tag)
 
+        logger.info('Creating request ID for %s cert', tag)
+        request.requestID = client.create_request_id(request)
+        logger.debug('- request ID: %s', request.requestID)
+
         # For external/existing CA case, some/all system certs may be provided.
         # The SSL server cert will always be generated for the current host.
 
