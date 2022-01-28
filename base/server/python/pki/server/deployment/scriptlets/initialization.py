@@ -214,7 +214,19 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             #            tightly-coupled shared instance.
             #
 
-            deployer.security_domain.deregister()
+            subsystem = instance.get_subsystem(deployer.mdict['pki_subsystem'].lower())
+
+            security_domain_type = subsystem.config['securitydomain.select']
+            logger.info('Security domain type: %s', security_domain_type)
+
+            if security_domain_type == 'existing':
+
+                sd_url = deployer.mdict['pki_security_domain_uri']
+                logger.info('Leaving security domain at %s', sd_url)
+
+                host_id = deployer.mdict['pki_subsystem_name']
+
+                subsystem.leave_security_domain(sd_url, host_id)
 
         except Exception as e:  # pylint: disable=broad-except
             logger.error(str(e))

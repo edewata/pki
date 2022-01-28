@@ -1402,6 +1402,47 @@ class PKISubsystem(object):
         finally:
             shutil.rmtree(tmpdir)
 
+    def leave_security_domain(
+            self,
+            sd_url,
+            host_id):
+
+        tmpdir = tempfile.mkdtemp()
+        try:
+            nickname = self.config.get('%s.cert.subsystem.nickname' % self.name)
+            hostname = self.config.get('service.machineName')
+            secure_port = self.config.get('service.securityDomainPort')
+
+            proxy_secure_port = self.config.get('proxy.securePort')
+            if proxy_secure_port:
+                secure_port = proxy_secure_port
+
+            cmd = [
+                'pki',
+                '-d', self.instance.nssdb_dir,
+                '-f', self.instance.password_conf,
+                '-n', nickname,
+                '-U', sd_url,
+                'securitydomain-leave',
+                '--type', self.type,
+                '--hostname', hostname,
+                '--secure-port', secure_port
+            ]
+
+            if logger.isEnabledFor(logging.DEBUG):
+                cmd.append('--debug')
+
+            elif logger.isEnabledFor(logging.INFO):
+                cmd.append('--verbose')
+
+            cmd.append(host_id)
+
+            logger.debug('Command: %s', ' '.join(cmd))
+            subprocess.check_call(cmd)
+
+        finally:
+            shutil.rmtree(tmpdir)
+
     def find_groups(self, as_current_user=False):
 
         cmd = [self.name + '-group-find']
