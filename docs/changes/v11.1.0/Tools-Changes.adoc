@@ -25,3 +25,8 @@ The `pkidaemon status` command has been removed. Use `pki-server status` instead
 == New pki nss-cert-find CLI ==
 
 The `pki nss-cert-find` command has been added to list certificates in NSS database.
+
+== New pki securitydomain-leave CLI ==
+
+The `pki securitydomain-leave` command has been added to leave a security domain.
+This command will be called automatically by `pkidestroy`, but it can also be used manually to fix security domain issues.
