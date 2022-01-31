@@ -24,6 +24,7 @@ import json
 import ldap
 import logging
 import os
+import re
 import shutil
 import socket
 import struct
@@ -1334,6 +1335,125 @@ class PKIDeployer:
         finally:
             shutil.rmtree(tmpdir)
 
+    def add_user(
+            self,
+            instance,
+            subsystem_type,
+            subsystem_url,
+            username,
+            password,
+            uid,
+            full_name,
+            cert=None):
+
+        tmpdir = tempfile.mkdtemp()
+        try:
+            password_file = os.path.join(tmpdir, 'password.txt')
+            with open(password_file, 'w') as f:
+                f.write(password)
+
+            cmd = [
+                'pki',
+                '-d', instance.nssdb_dir,
+                '-f', instance.password_conf,
+                '-U', subsystem_url,
+                '-u', username,
+                '-W', password_file,
+                '%s-user-add' % subsystem_type,
+                uid,
+                '--fullName', full_name
+            ]
+
+            if cert:
+                cert_file = os.path.join(tmpdir, 'cert.pem')
+                with open(cert_file, 'w') as f:
+                    f.write(cert)
+                cmd.extend(['--cert-file', cert_file])
+
+            if logger.isEnabledFor(logging.DEBUG):
+                cmd.append('--debug')
+
+            elif logger.isEnabledFor(logging.INFO):
+                cmd.append('--verbose')
+
+            logger.debug('Command: %s', ' '.join(cmd))
+            subprocess.run(cmd, capture_output=True, check=True, text=True)
+
+        except subprocess.CalledProcessError as e:
+
+            error = e.stderr.strip()
+
+            match = re.search(
+                r'com\.netscape\.certsrv\.base\.ConflictingOperationException:',
+                error,
+                re.MULTILINE)
+
+            if match:
+                logger.info('%s already exists', uid)
+                return
+
+            logger.error('Unable to add %s: %s', uid, error)
+            raise
+
+        finally:
+            shutil.rmtree(tmpdir)
+
+    def add_group_member(
+            self,
+            instance,
+            subsystem_type,
+            subsystem_url,
+            username,
+            password,
+            group,
+            uid):
+
+        tmpdir = tempfile.mkdtemp()
+        try:
+            password_file = os.path.join(tmpdir, 'password.txt')
+            with open(password_file, 'w') as f:
+                f.write(password)
+
+            cmd = [
+                'pki',
+                '-d', instance.nssdb_dir,
+                '-f', instance.password_conf,
+                '-U', subsystem_url,
+                '-u', username,
+                '-W', password_file,
+                '%s-group-member-add' % subsystem_type,
+                group,
+                uid
+            ]
+
+            if logger.isEnabledFor(logging.DEBUG):
+                cmd.append('--debug')
+
+            elif logger.isEnabledFor(logging.INFO):
+                cmd.append('--verbose')
+
+            logger.debug('Command: %s', ' '.join(cmd))
+            subprocess.run(cmd, capture_output=True, check=True, text=True)
+
+        except subprocess.CalledProcessError as e:
+
+            error = e.stderr.strip()
+
+            match = re.search(
+                r'com\.netscape\.certsrv\.base\.ConflictingOperationException:',
+                error,
+                re.MULTILINE)
+
+            if match:
+                logger.info('%s already exists in %s', uid, group)
+                return
+
+            logger.error('Unable to add %s into %s: %s', uid, group, error)
+            raise
+
+        finally:
+            shutil.rmtree(tmpdir)
+
     def get_ca_signing_cert(self, instance, ca_url):
 
         cmd = [
@@ -1812,6 +1932,7 @@ class PKIDeployer:
             ca_host = subsystem.config.get('preop.ca.hostname')
 
             if not clone and not standalone and ca_host:
+
                 ca_port = subsystem.config.get('preop.ca.httpsadminport')
                 ca_url = 'https://%s:%s' % (ca_host, ca_port)
                 ca_uid = 'CA-%s-%s' % (ca_host, ca_port)

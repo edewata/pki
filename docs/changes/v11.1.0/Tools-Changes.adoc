@@ -25,3 +25,10 @@ The `pkidaemon status` command has been removed. Use `pki-server status` instead
 == New pki nss-cert-find CLI ==
 
 The `pki nss-cert-find` command has been added to list certificates in NSS database.
+
+== New pkispawn Parameters ==
+
+When installing KRA with external certificates, the following parameters are required if the issuing CA is different from the security domain:
+
+* `pki_issuing_ca_user`
+* `pki_issuing_ca_password`

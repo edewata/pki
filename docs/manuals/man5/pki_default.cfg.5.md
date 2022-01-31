@@ -304,6 +304,10 @@ This should point to the CA that will issue the relevant system certificates for
 In a default install, this defaults to the CA subsystem within the same instance.
 The URI has the format https://*ca_hostname*:*ca_https_port*.
 
+**pki_issuing_ca_user**, **pki_issuing_ca_password**  
+Administrative user of the issuing CA.
+Required for installing KRA with external certificates if the issuing CA is different from the security domain.
+
 ### MISCELLANEOUS PARAMETERS
 
 **pki_restart_configured_instance**  
