@@ -2243,6 +2243,17 @@ class SecurityDomain:
         cs_cfg = PKIConfigParser.read_simple_configuration_file(
             self.mdict['pki_target_cs_cfg'])
 
+        securitydomain_type = cs_cfg.get('securitydomain.select')
+        logger.debug('Security domain type: %s', securitydomain_type)
+
+        if securitydomain_type == 'new':
+            # no need to remove the last subsystem in the security domain
+            return
+
+        logger.info(
+            'Unregistering %s subsystem from security domain',
+            self.mdict['pki_subsystem'])
+
         # assign key name/value pairs
         machinename = cs_cfg.get('service.machineName')
         sport = cs_cfg.get('service.securityDomainPort')
@@ -2273,11 +2284,6 @@ class SecurityDomain:
                 raise Exception(log.PKIHELPER_SECURITY_DOMAIN_UNDEFINED)
             else:
                 return
-
-        logger.info(
-            'Unregistering %s subsystem from %s security domain',
-            typeval,
-            secname)
 
         update_url = "/ca/agent/ca/updateDomainXML"
 
