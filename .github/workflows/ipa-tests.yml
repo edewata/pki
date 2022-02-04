@@ -120,6 +120,7 @@ jobs:
       - name: Install KRA
         run: |
           docker exec ipa ipa-kra-install -p Secret.123
+          docker exec ipa pki-server ca-config-find | grep ca.connector.KRA
 
       - name: Run PKI healthcheck
         run: docker exec ipa pki-healthcheck --failures-only
@@ -230,6 +231,7 @@ jobs:
       - name: Install KRA in IPA container
         run: |
           docker exec ipa ipa-kra-install -p Secret.123
+          docker exec ipa pki-server ca-config-find | grep ca.connector.KRA
 
       - name: Verify CA admin in IPA container
         run: |
@@ -384,6 +386,7 @@ jobs:
       - name: Install KRA in primary container
         run: |
           docker exec primary ipa-kra-install -p Secret.123
+          docker exec primary pki-server ca-config-find | grep ca.connector.KRA
 
       - name: Run secondary container
         run: |
@@ -414,10 +417,19 @@ jobs:
           docker exec secondary ipa-replica-install \
               --no-host-dns \
               --setup-ca
+          docker exec secondary pki-server ca-user-find
 
       - name: Install KRA in secondary container
         run: |
           docker exec secondary ipa-kra-install -p Secret.123
+          docker exec secondary pki-server ca-config-find | grep ca.connector.KRA
+          docker exec primary pki-server ca-config-find | grep ca.connector.KRA
+
+      - name: Check CA
+        if: always()
+        run: |
+          docker exec secondary pki-server ca-user-find
+          docker exec secondary pki-server ca-config-find | grep ca.connector.KRA
 
       # TODO: Enable the following tests after the following issue is fixed:
       # https://pagure.io/freeipa/issue/9099
