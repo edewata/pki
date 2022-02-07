@@ -51,7 +51,6 @@ import com.netscape.cms.servlet.csadmin.Configurator;
 import com.netscape.cmscore.apps.CMSEngine;
 import com.netscape.cmscore.apps.PreOpConfig;
 import com.netscape.cmscore.cert.CertUtils;
-import com.netscape.cmscore.dbs.CertRecord;
 import com.netscape.cmscore.dbs.CertificateRepository;
 import com.netscape.cmscore.request.CertRequestRepository;
 import com.netscape.cmscore.request.Request;
@@ -260,17 +259,6 @@ public class CAConfigurator extends Configurator {
 
         RequestQueue queue = engine.getRequestQueue();
         queue.updateRequest(request);
-
-        logger.info("CAConfigurator: Creating cert record 0x" + cert.getSerialNumber().toString(16));
-        logger.info("CAConfigurator: - subject: " + cert.getSubjectDN());
-        logger.info("CAConfigurator: - issuer: " + cert.getIssuerDN());
-
-        CertificateRepository certificateRepository = engine.getCertificateRepository();
-        CertRecord certRecord = certificateRepository.createCertRecord(
-                request.getRequestId(),
-                profileConfig.getString("profileIDMapping"),
-                cert);
-        certificateRepository.addCertificateRecord(certRecord);
     }
 
     @Override
@@ -360,17 +348,6 @@ public class CAConfigurator extends Configurator {
 
         RequestQueue queue = engine.getRequestQueue();
         queue.updateRequest(request);
-
-        logger.info("CAConfigurator: Creating cert record 0x" + cert.getSerialNumber().toString(16));
-        logger.info("CAConfigurator: - subject: " + cert.getSubjectDN());
-        logger.info("CAConfigurator: - issuer: " + cert.getIssuerDN());
-
-        CertificateRepository certificateRepository = engine.getCertificateRepository();
-        CertRecord certRecord = certificateRepository.createCertRecord(
-                request.getRequestId(),
-                profileConfig.getString("profileIDMapping"),
-                cert);
-        certificateRepository.addCertificateRecord(certRecord);
 
         return cert;
     }

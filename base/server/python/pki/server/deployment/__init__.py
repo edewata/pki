@@ -819,7 +819,29 @@ class PKIDeployer:
             subsystem.update_system_cert(system_cert)
 
         request_id = cert.get('requestID')
-        logger.info('Request ID: %s', request_id)
+
+        if request_id:
+
+            # if a request record was added into the database it will have
+            # a request ID, so a cert record needs to be created as well
+
+            profile_id = subsystem.config['preop.cert.%s.profile' % tag]
+            profile_path = os.path.join(subsystem.conf_dir, profile_id)
+
+            logger.info('Loading %s', profile_path)
+            profile = {}
+            pki.util.load_properties(profile_path, profile)
+
+            profile_id_mapping = profile['profileIDMapping']
+            cert_data = pki.nssdb.convert_cert(system_cert['data'], 'base64', 'pem')
+
+            logger.info('Creating cert record for %s', tag)
+
+            subsystem.import_cert(
+                request_id=request_id,
+                profile_id=profile_id_mapping,
+                cert_data=cert_data,
+                cert_format='PEM')
 
         if subsystem.type == 'CA' and tag == 'signing':
             logger.info('Initializing subsystem')
@@ -1068,8 +1090,34 @@ class PKIDeployer:
         request.systemCert.requestType = self.mdict['pki_admin_cert_request_type']
         request.systemCert.request = csr
 
-        response = client.setupAdmin(request)
-        return response['cert']
+        admin_cert = client.setupAdmin(request)
+
+        request_id = admin_cert.get('requestID')
+
+        if request_id:
+
+            # if a request record was added into the database it will have
+            # a request ID, so a cert record needs to be created as well
+
+            profile_id = subsystem.config['preop.cert.admin.profile']
+            profile_path = os.path.join(subsystem.conf_dir, profile_id)
+
+            logger.info('Loading %s', profile_path)
+            profile = {}
+            pki.util.load_properties(profile_path, profile)
+
+            profile_id_mapping = profile['profileIDMapping']
+            cert_data = pki.nssdb.convert_cert(admin_cert['cert'], 'base64', 'pem')
+
+            logger.info('Creating cert record for admin')
+
+            subsystem.import_cert(
+                request_id=request_id,
+                profile_id=profile_id_mapping,
+                cert_data=cert_data,
+                cert_format='PEM')
+
+        return admin_cert['cert']
 
     def get_admin_cert(self, subsystem, client):
 
