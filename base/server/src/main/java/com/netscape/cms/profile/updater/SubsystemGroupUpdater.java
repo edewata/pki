@@ -49,7 +49,7 @@ import com.netscape.cmscore.usrgrp.User;
  * This updater class will create the new user to the subsystem group and
  * then add the subsystem certificate to the user.
  *
- * @version $Revision$, $Date$
+ * TODO: Remove this class since it has been replaced by UpdateConnector.
  */
 public class SubsystemGroupUpdater implements IProfileUpdater {
 
