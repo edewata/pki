@@ -1171,28 +1171,48 @@ class PKISubsystem(object):
         finally:
             shutil.rmtree(tmpdir)
 
-    def request_ranges(self, master_url, session_id=None, install_token=None):
+    def request_ranges(
+            self,
+            master_url,
+            types=['request', 'serialNo', 'replicaId'],
+            session_id=None,
+            install_token=None):
 
-        logger.info('Requesting request ID range')
+        if 'request' in types:
 
-        request_range = self.request_range(
-            master_url, 'request', session_id=session_id, install_token=install_token)
-        self.config['dbs.beginRequestNumber'] = request_range['begin']
-        self.config['dbs.endRequestNumber'] = request_range['end']
+            logger.info('Requesting request ID range')
 
-        logger.info('Requesting serial number range')
+            request_range = self.request_range(
+                master_url,
+                'request',
+                session_id=session_id,
+                install_token=install_token)
+            self.config['dbs.beginRequestNumber'] = request_range['begin']
+            self.config['dbs.endRequestNumber'] = request_range['end']
 
-        serial_range = self.request_range(
-            master_url, 'serialNo', session_id=session_id, install_token=install_token)
-        self.config['dbs.beginSerialNumber'] = serial_range['begin']
-        self.config['dbs.endSerialNumber'] = serial_range['end']
+        if 'serialNo' in types:
 
-        logger.info('Requesting replica ID range')
+            logger.info('Requesting serial number range')
 
-        replica_range = self.request_range(
-            master_url, 'replicaId', session_id=session_id, install_token=install_token)
-        self.config['dbs.beginReplicaNumber'] = replica_range['begin']
-        self.config['dbs.endReplicaNumber'] = replica_range['end']
+            serial_range = self.request_range(
+                master_url,
+                'serialNo',
+                session_id=session_id,
+                install_token=install_token)
+            self.config['dbs.beginSerialNumber'] = serial_range['begin']
+            self.config['dbs.endSerialNumber'] = serial_range['end']
+
+        if 'replicaId' in types:
+
+            logger.info('Requesting replica ID range')
+
+            replica_range = self.request_range(
+                master_url,
+                'replicaId',
+                session_id=session_id,
+                install_token=install_token)
+            self.config['dbs.beginReplicaNumber'] = replica_range['begin']
+            self.config['dbs.endReplicaNumber'] = replica_range['end']
 
         self.config['dbs.enableSerialManagement'] = 'true'
 
