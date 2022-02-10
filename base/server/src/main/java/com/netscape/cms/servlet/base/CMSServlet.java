@@ -32,6 +32,7 @@ import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Locale;
 import java.util.StringTokenizer;
 import java.util.Vector;
@@ -43,6 +44,9 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.UriInfo;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.dogtagpki.server.authentication.AuthManager;
@@ -214,6 +218,12 @@ public abstract class CMSServlet extends HttpServlet {
 
     public static final String CERT_ATTR =
             "javax.servlet.request.X509Certificate";
+
+    @Context
+    protected UriInfo uriInfo;
+
+    @Context
+    protected HttpHeaders headers;
 
     // members.
 
@@ -1616,6 +1626,16 @@ public abstract class CMSServlet extends HttpServlet {
             return new Locale(lang, "");
         else
             return new Locale(lang.substring(0, dash), lang.substring(dash + 1));
+    }
+
+    public Locale getLocale(HttpHeaders headers) {
+
+        if (headers == null) return Locale.getDefault();
+
+        List<Locale> locales = headers.getAcceptableLanguages();
+        if (locales == null || locales.isEmpty()) return Locale.getDefault();
+
+        return locales.get(0);
     }
 
     public IAuthToken authenticate(CMSRequest req)
