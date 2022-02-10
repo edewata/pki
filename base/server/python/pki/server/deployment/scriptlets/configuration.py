@@ -583,10 +583,47 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
 
         if clone:
 
-            if subsystem.type in ['CA', 'KRA']:
+            if subsystem.type == 'CA':
 
-                logger.info('Requesting ranges from %s master', subsystem.type)
-                subsystem.request_ranges(master_url, session_id=deployer.install_token.token)
+                logger.info('Requesting ranges from CA master')
+
+                types = []
+
+                if not deployer.mdict.get('pki_request_id_generator'):
+                    # by default request a new cert request ID range
+                    types.append('request')
+
+                if not deployer.mdict.get('pki_cert_id_generator'):
+                    # by default request a cert ID range
+                    types.append('serialNo')
+
+                types.append('replicaId')
+
+                subsystem.request_ranges(
+                    master_url,
+                    types=types,
+                    session_id=deployer.install_token.token)
+
+            if subsystem.type == 'KRA':
+
+                logger.info('Requesting ranges from KRA master', subsystem.type)
+
+                types = []
+
+                if not deployer.mdict.get('pki_request_id_generator'):
+                    # by default request a key request ID range
+                    types.append('request')
+
+                if not deployer.mdict.get('pki_key_id_generator'):
+                    # by default request a key ID range
+                    types.append('serialNo')
+
+                types.append('replicaId')
+
+                subsystem.request_ranges(
+                    master_url,
+                    types=types,
+                    session_id=deployer.install_token.token)
 
             logger.info('Retrieving config params from %s master', subsystem.type)
 
