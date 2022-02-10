@@ -112,11 +112,14 @@ jobs:
               -r EXAMPLE.COM \
               -p Secret.123 \
               -a Secret.123 \
-              --setup-kra \
               --no-host-dns \
               --no-ntp
           docker exec ipa bash -c "echo Secret.123 | kinit admin"
           docker exec ipa ipa ping
+
+      - name: Install KRA
+        run: |
+          docker exec ipa ipa-kra-install -p Secret.123
 
       - name: Run PKI healthcheck
         run: docker exec ipa pki-healthcheck --failures-only
@@ -219,11 +222,14 @@ jobs:
               -r EXAMPLE.COM \
               -p Secret.123 \
               -a Secret.123 \
-              --setup-kra \
               --no-host-dns \
               --no-ntp
           docker exec ipa bash -c "echo Secret.123 | kinit admin"
           docker exec ipa ipa ping
+
+      - name: Install KRA in IPA container
+        run: |
+          docker exec ipa ipa-kra-install -p Secret.123
 
       - name: Verify CA admin in IPA container
         run: |
@@ -370,11 +376,14 @@ jobs:
               -r EXAMPLE.COM \
               -p Secret.123 \
               -a Secret.123 \
-              --setup-kra \
               --no-host-dns \
               --no-ntp
           docker exec primary bash -c "echo Secret.123 | kinit admin"
           docker exec primary klist
+
+      - name: Install KRA in primary container
+        run: |
+          docker exec primary ipa-kra-install -p Secret.123
 
       - name: Run secondary container
         run: |
@@ -404,8 +413,11 @@ jobs:
         run: |
           docker exec secondary ipa-replica-install \
               --no-host-dns \
-              --setup-ca \
-              --setup-kra
+              --setup-ca
+
+      - name: Install KRA in secondary container
+        run: |
+          docker exec secondary ipa-kra-install -p Secret.123
 
       # TODO: Enable the following tests after the following issue is fixed:
       # https://pagure.io/freeipa/issue/9099
