@@ -589,6 +589,9 @@ jobs:
               -D pki_ds_hostname=rootds.example.com \
               -D pki_ds_ldap_port=3389 \
               -D pki_security_domain_name=ROOT \
+              -D pki_cert_id_generator=random \
+              -D pki_cert_id_length=159 \
+              -D pki_request_id_generator=random \
               -v
 
       - name: Update caCMCcaCert profile
@@ -642,6 +645,9 @@ jobs:
               -D pki_ds_hostname=subds.example.com \
               -D pki_ds_ldap_port=3389 \
               -D pki_ca_signing_csr_path=$SHARED/ca_signing.csr \
+              -D pki_cert_id_generator=random \
+              -D pki_cert_id_length=159 \
+              -D pki_request_id_generator=random \
               -v
 
       # https://github.com/dogtagpki/pki/wiki/Issuing-CA-Signing-Certificate-with-CMC
@@ -678,6 +684,9 @@ jobs:
               -D pki_cert_chain_path=$SHARED/root-ca_signing.crt \
               -D pki_ca_signing_csr_path=$SHARED/ca_signing.csr \
               -D pki_ca_signing_cert_path=$SHARED/ca_signing.p7b \
+              -D pki_cert_id_generator=random \
+              -D pki_cert_id_length=159 \
+              -D pki_request_id_generator=random \
               -v
 
       - name: Check subordinate CA signing cert
