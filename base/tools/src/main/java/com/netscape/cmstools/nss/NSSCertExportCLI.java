@@ -30,12 +30,16 @@ public class NSSCertExportCLI extends CommandCLI {
 
     @Override
     public void printHelp() {
-        formatter.printHelp(getFullName() + " [OPTIONS...] nickname [path]", options);
+        formatter.printHelp(getFullName() + " [OPTIONS...] <nickname> [path]", options);
     }
 
     @Override
     public void createOptions() {
-        Option option = new Option(null, "format", true, "Certificate format: PEM (default), DER, RAW");
+        Option option = new Option(null, "output", true, "Output path");
+        option.setArgName("path");
+        options.addOption(option);
+
+        option = new Option(null, "format", true, "Certificate format: PEM (default), DER, RAW");
         option.setArgName("format");
         options.addOption(option);
 
@@ -57,7 +61,13 @@ public class NSSCertExportCLI extends CommandCLI {
         nickname = cmdArgs[0];
 
         if (cmdArgs.length >= 2) {
+            logger.warn("The optional positional path argument has been deprecated. Use the --output option instead.");
             path = cmdArgs[1];
+        }
+
+        String outputFile = cmd.getOptionValue("output");
+        if (outputFile != null) {
+            path = outputFile;
         }
 
         String format = cmd.getOptionValue("format", "PEM").toUpperCase();
@@ -96,6 +106,7 @@ public class NSSCertExportCLI extends CommandCLI {
             }
 
             output = buffer.toString().getBytes();
+
         } else if (format.equals("PEM")) {
             StringBuffer buffer = new StringBuffer();
 
@@ -109,15 +120,19 @@ public class NSSCertExportCLI extends CommandCLI {
             }
 
             output = buffer.toString().getBytes();
+
         } else if (format.equals("DER")) {
             for (X509Certificate cert : certs) {
                 output = cert.getEncoded();
             }
+
+        } else {
+            throw new Exception("Unsupported format: " + format);
         }
 
         if (path == null) {
-            System.out.print(new String(output));
-            System.out.flush();
+            System.out.write(output);
+
         } else {
             try (FileOutputStream fos = new FileOutputStream(path)) {
                 fos.write(output);

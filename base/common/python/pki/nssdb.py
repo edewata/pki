@@ -1636,7 +1636,10 @@ class NSSDatabase(object):
         else:
             fullname = nickname
 
-        cmd.extend(['nss-cert-export'])
+        cmd.extend([
+            'nss-cert-export',
+            '--output', output_file
+        ])
 
         if include_chain:
             cmd.extend(['--with-chain'])
@@ -1644,7 +1647,7 @@ class NSSDatabase(object):
         if output_format:
             cmd.extend(['--format', output_format])
 
-        cmd.extend([fullname, output_file])
+        cmd.append(fullname)
 
         logger.debug('Command: %s', ' '.join(map(str, cmd)))
         subprocess.check_call(cmd)
