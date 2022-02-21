@@ -220,6 +220,14 @@ jobs:
               --pkcs12-password-file /root/.dogtag/pki-tomcat/ca/pkcs12_password.conf
           docker exec pki pki -n caadmin ca-user-show caadmin
 
+      - name: Check CA profiles
+        run: |
+          docker exec pki pki -n caadmin ca-profile-find
+          docker exec pki pki -n caadmin ca-profile-show caUserCert --output ${PKIDIR}/profile.xml
+          ls -la
+          sed -i "s/caUserCert/caCustomUser/g" profile.xml
+          docker exec pki pki -n caadmin ca-profile-add ${PKIDIR}/profile.xml
+
       - name: Gather artifacts
         if: always()
         run: |
