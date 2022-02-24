@@ -1943,6 +1943,17 @@ jobs:
         run: |
           docker exec pki pki ca-cert-find
 
+      - name: Check collision handling
+        run: |
+          docker exec pki pki-server ca-config-set dbs.cert.id.length 1
+          docker exec pki pki-server ca-config-set dbs.request.id.length 1
+          docker exec pki pki-server restart --wait
+
+          docker exec pki /usr/share/pki/tests/ca/bin/ca-agent-create.sh
+          docker exec pki /usr/share/pki/tests/ca/bin/ca-agent-cert-create.sh
+          docker exec pki /usr/share/pki/tests/ca/bin/ca-agent-cert-create.sh
+          docker exec pki /usr/share/pki/tests/ca/bin/ca-agent-cert-create.sh
+
       - name: Gather artifacts
         if: always()
         run: |
