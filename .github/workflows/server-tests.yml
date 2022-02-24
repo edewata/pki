@@ -133,6 +133,31 @@ jobs:
         run: |
           docker exec pki pki-server start --wait -v
 
+      - name: Deploy ROOT web application
+        run: |
+          docker exec pki pki-server webapp-deploy \
+              --descriptor /usr/share/pki/server/conf/Catalina/localhost/ROOT.xml \
+              --wait \
+              -v \
+              ROOT
+
+          # verify that the web application is deployed
+          docker exec pki curl -s -o /dev/null -w "%{http_code}\n" http://pki.example.com:8080 > actual
+          echo 200 > expected
+          diff expected actual
+
+      - name: Undeploy ROOT web application
+        run: |
+          docker exec pki pki-server webapp-undeploy \
+              --wait \
+              -v \
+              ROOT
+
+          # verify that the web application is undeployed
+          docker exec pki curl -s -o /dev/null -w "%{http_code}\n" http://pki.example.com:8080 > actual
+          echo 404 > expected
+          diff expected actual
+
       - name: Stop PKI server
         run: |
           docker exec pki pki-server stop --wait -v
@@ -190,7 +215,10 @@ jobs:
 
       - name: Set up PKI container
         run: |
-          docker run --name pki --detach pki-server
+          docker run \
+              --name pki \
+              --detach \
+              pki-server
 
       - name: Connect PKI container to network
         run: docker network connect example pki --alias pki.example.com
@@ -207,3 +235,9 @@ jobs:
       - name: Wait for PKI container to start
         run: |
           tests/bin/pki-start-wait.sh client http://pki.example.com:8080
+
+      - name: Check ROOT web application
+        run: |
+          docker exec client curl -s -o /dev/null -w "%{http_code}\n" http://pki.example.com:8080 > actual
+          echo 200 > expected
+          diff expected actual

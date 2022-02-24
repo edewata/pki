@@ -50,9 +50,10 @@ EXPOSE 8080 8443
 RUN pki-server create tomcat@pki --user tomcat --group root
 
 # Deploy ROOT web application
-RUN pki-server webapp-deploy ROOT \
+RUN pki-server webapp-deploy \
     -i tomcat@pki \
-    --descriptor /usr/share/pki/server/conf/Catalina/localhost/ROOT.xml
+    --descriptor /usr/share/pki/server/conf/Catalina/localhost/ROOT.xml \
+     ROOT
 
 # Grant the root group the full access to PKI server files
 # https://www.openshift.com/blog/jupyter-on-openshift-part-6-running-as-an-assigned-user-id
