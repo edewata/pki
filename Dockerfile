@@ -49,6 +49,11 @@ EXPOSE 8080 8443
 # Create PKI server
 RUN pki-server create tomcat@pki --user tomcat --group root
 
+# Deploy ROOT web application
+RUN pki-server webapp-deploy ROOT \
+    -i tomcat@pki \
+    --descriptor /usr/share/pki/server/conf/Catalina/localhost/ROOT.xml
+
 # Grant the root group the full access to PKI server files
 # https://www.openshift.com/blog/jupyter-on-openshift-part-6-running-as-an-assigned-user-id
 RUN chgrp -Rf root /var/lib/tomcats/pki
