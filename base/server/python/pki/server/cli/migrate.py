@@ -109,13 +109,16 @@ class MigrateCLI(pki.cli.CLI):
 
         tomcat_version = pki.server.Tomcat.get_version()
         if tomcat_version >= pki.util.Version('9.0.31'):
-
             for instance in instances:
-                self.update_ajp_connectors(instance)
+                self.configure_ajp_connector_secret(instance)
 
-    def update_ajp_connectors(self, instance):
+        else:
+            for instance in instances:
+                self.configure_ajp_connector_required_secret(instance)
 
-        logger.info('Updating AJP connectors in %s', instance.server_xml)
+    def configure_ajp_connector_secret(self, instance):
+
+        logger.info('Configuring AJP connector secret')
 
         document = etree.parse(instance.server_xml, self.parser)
         server = document.getroot()
@@ -150,16 +153,71 @@ class MigrateCLI(pki.cli.CLI):
                 # not an AJP connector -> skip
                 continue
 
+            # remove 'requiredSecret' if any
+            value = connector.attrib.pop('requiredSecret', None)
+
             if connector.get('secret'):
                 # already has a 'secret' -> skip
                 continue
 
-            if connector.get('requiredSecret') is None:
-                # does not have a 'requiredSecret' -> skip
+            if value:
+                # store 'secret'
+                connector.set('secret', value)
+
+            raise Exception('Unable to configure AJP connector secret in %s', instance.server_xml)
+
+        with open(instance.server_xml, 'wb') as f:
+            document.write(f, pretty_print=True, encoding='utf-8')
+
+    def configure_ajp_connector_required_secret(self, instance):
+
+        logger.info('Configuring AJP connector requiredSecret')
+
+        document = etree.parse(instance.server_xml, self.parser)
+        server = document.getroot()
+
+        # replace 'secret' with 'requiredSecret' in comments
+
+        services = server.findall('Service')
+        for service in services:
+
+            children = list(service)
+            for child in children:
+
+                if not isinstance(child, etree._Comment):  # pylint: disable=protected-access
+                    # not a comment -> skip
+                    continue
+
+                if 'protocol="AJP/1.3"' not in child.text:
+                    # not an AJP connector -> skip
+                    continue
+
+                child.text = re.sub(r'secret=',
+                                    r'requiredSecret=',
+                                    child.text,
+                                    flags=re.MULTILINE)
+
+        # replace 'secret' with 'requiredSecret' in Connectors
+
+        connectors = server.findall('Service/Connector')
+        for connector in connectors:
+
+            if connector.get('protocol') != 'AJP/1.3':
+                # not an AJP connector -> skip
                 continue
 
-            value = connector.attrib.pop('requiredSecret')
-            connector.set('secret', value)
+            # remove 'secret' if any
+            value = connector.attrib.pop('secret', None)
+
+            if connector.get('requiredSecret'):
+                # already has a 'requiredSecret' -> skip
+                continue
+
+            if value:
+                # store 'requiredSecret'
+                connector.set('requiredSecret', value)
+
+            raise Exception('Unable to configure AJP connector requiredSecret in %s', instance.server_xml)
 
         with open(instance.server_xml, 'wb') as f:
             document.write(f, pretty_print=True, encoding='utf-8')
