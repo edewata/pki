@@ -400,6 +400,7 @@ class CACertRequestCLI(pki.cli.CLI):
         super().__init__('request', 'CA certificate requests management commands')
 
         self.add_module(CACertRequestFindCLI())
+        self.add_module(CACertRequestImportCLI())
         self.add_module(CACertRequestShowCLI())
 
     @staticmethod
@@ -493,6 +494,94 @@ class CACertRequestFindCLI(pki.cli.CLI):
                 print()
 
             CACertRequestCLI.print_request(request)
+
+
+class CACertRequestImportCLI(pki.cli.CLI):
+
+    def __init__(self):
+        super().__init__('import', 'Import certificate request into CA')
+
+    def print_help(self):
+        print('Usage: pki-server ca-cert-request-import [OPTIONS]')
+        print()
+        print('  -i, --instance <instance ID>       Instance ID (default: pki-tomcat)')
+        print('      --cert <path>                  Certificate request path')
+        print('      --format <format>              Certificate request format: PEM (default), DER')
+        print('      --type <type>                  Certificate request type: pkcs10 (default), crmf')
+        print('      --profile <ID>                 Profile ID')
+        print('      --dns-names <names>            DNS names')
+        print('      --adjust-validity              Adjust validity')
+        print('  -v, --verbose                      Run in verbose mode.')
+        print('      --debug                        Run in debug mode.')
+        print('      --help                         Show help message.')
+        print()
+
+    def execute(self, argv):
+
+        try:
+            opts, _ = getopt.gnu_getopt(argv, 'i:v', [
+                'instance=', 'request=', 'profile=', 'cert=', 'format=',
+                'verbose', 'debug', 'help'])
+
+        except getopt.GetoptError as e:
+            logger.error(e)
+            self.print_help()
+            sys.exit(1)
+
+        instance_name = 'pki-tomcat'
+        cert_path = None
+        cert_format = None
+        profile_id = None
+        request_id = None
+
+        for o, a in opts:
+            if o in ('-i', '--instance'):
+                instance_name = a
+
+            elif o == '--cert':
+                cert_path = a
+
+            elif o == '--format':
+                cert_format = a
+
+            elif o == '--profile':
+                profile_id = a
+
+            elif o == '--request':
+                request_id = a
+
+            elif o in ('-v', '--verbose'):
+                logging.getLogger().setLevel(logging.INFO)
+
+            elif o == '--debug':
+                logging.getLogger().setLevel(logging.DEBUG)
+
+            elif o == '--help':
+                self.print_help()
+                sys.exit()
+
+            else:
+                logger.error('Invalid option: %s', o)
+                self.print_help()
+                sys.exit(1)
+
+        instance = pki.server.instance.PKIServerFactory.create(instance_name)
+        if not instance.exists():
+            logger.error('Invalid instance: %s', instance_name)
+            sys.exit(1)
+
+        instance.load()
+
+        subsystem = instance.get_subsystem('ca')
+        if not subsystem:
+            logger.error('No CA subsystem in instance %s', instance_name)
+            sys.exit(1)
+
+        subsystem.import_cert(
+            cert_path=cert_path,
+            cert_format=cert_format,
+            profile_id=profile_id,
+            request_id=request_id)
 
 
 class CACertRequestShowCLI(pki.cli.CLI):

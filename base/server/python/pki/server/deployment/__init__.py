@@ -835,9 +835,18 @@ class PKIDeployer:
 
             logger.info('Importing %s cert request', tag)
             logger.debug('- request: %s', system_cert['request'])
-            response = client.importRequest(request)
 
-            logger.info('- request ID: %s', response['requestID'])
+            request_data = pki.nssdb.convert_csr(system_cert['request'], 'base64', 'pem')
+
+            request_id = subsystem.import_cert_request(
+                request_data=request_data,
+                request_format='PEM',
+                request_type=request.systemCert.requestType,
+                profile_id=request.systemCert.profile,
+                dns_names=request.systemCert.dnsNames,
+                adjust_validity=request.systemCert.adjustValidity)
+
+            logger.info('- request ID: %s', request_id)
 
             logger.info('Importing %s cert', tag)
             logger.debug('- cert: %s', system_cert['data'])
@@ -848,7 +857,7 @@ class PKIDeployer:
                 cert_data=cert_data,
                 cert_format='PEM',
                 profile_id=request.systemCert.profile,
-                request_id=response['requestID'])
+                request_id=request_id)
 
             return
 
