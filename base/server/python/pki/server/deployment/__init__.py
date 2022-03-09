@@ -885,9 +885,28 @@ class PKIDeployer:
 
             logger.info('Importing %s cert request', tag)
             logger.debug('- request: %s', system_cert['request'])
-            response = client.importRequest(request)
 
-            logger.info('- request ID: %s', response['requestID'])
+            request_id_generator = subsystem.config.get('dbs.request.id.generator', 'legacy')
+
+            if request_id_generator == 'random':
+
+                request_data = pki.nssdb.convert_csr(system_cert['request'], 'base64', 'pem')
+
+                result = subsystem.import_cert_request(
+                    request_data=request_data,
+                    request_format='PEM',
+                    request_type=request.systemCert.requestType,
+                    profile_id=request.systemCert.profile,
+                    dns_names=request.systemCert.dnsNames,
+                    adjust_validity=request.systemCert.adjustValidity)
+                request.systemCert.requestID = result['requestID']
+
+            else:  # legacy
+
+                response = client.importRequest(request)
+                request.systemCert.requestID = response['requestID']
+
+            logger.info('- request ID: %s', request.systemCert.requestID)
 
             logger.info('Importing %s cert', tag)
             logger.debug('- cert: %s', system_cert['data'])
@@ -898,7 +917,7 @@ class PKIDeployer:
                 cert_data=cert_data,
                 cert_format='PEM',
                 profile_id=request.systemCert.profile,
-                request_id=response['requestID'])
+                request_id=request.systemCert.requestID)
 
             return
 
@@ -961,9 +980,27 @@ class PKIDeployer:
         else:  # selfsign or local
 
             logger.info('Importing %s cert request', tag)
-            response = client.importRequest(request)
 
-            request.systemCert.requestID = response['requestID']
+            request_id_generator = subsystem.config.get('dbs.request.id.generator', 'legacy')
+
+            if request_id_generator == 'random':
+
+                request_data = pki.nssdb.convert_csr(request.systemCert.request, 'base64', 'pem')
+
+                result = subsystem.import_cert_request(
+                    request_data=request_data,
+                    request_format='PEM',
+                    request_type=request.systemCert.requestType,
+                    profile_id=request.systemCert.profile,
+                    dns_names=request.systemCert.dnsNames,
+                    adjust_validity=request.systemCert.adjustValidity)
+                request.systemCert.requestID = result['requestID']
+
+            else:  # legacy
+
+                response = client.importRequest(request)
+                request.systemCert.requestID = response['requestID']
+
             logger.info('- request ID: %s', request.systemCert.requestID)
 
             logger.info('Creating %s cert', tag)
@@ -1346,6 +1383,7 @@ class PKIDeployer:
         request.systemCert.subjectDN = self.mdict['pki_admin_subject_dn']
         request.systemCert.requestType = self.mdict['pki_admin_cert_request_type']
         request.systemCert.request = csr
+        request.systemCert.dnsNames = None
         request.systemCert.adjustValidity = False
 
         profile_filename = subsystem.config.get('profile.caAdminCert.config')
@@ -1358,9 +1396,27 @@ class PKIDeployer:
         logger.info('Signing algorithm: %s', request.systemCert.keyAlgorithm)
 
         logger.info('Importing admin cert request')
-        response = client.importRequest(request)
 
-        request.systemCert.requestID = response['requestID']
+        request_id_generator = subsystem.config.get('dbs.request.id.generator', 'legacy')
+
+        if request_id_generator == 'random':
+
+            request_data = pki.nssdb.convert_csr(csr, 'base64', 'pem')
+
+            result = subsystem.import_cert_request(
+                request_data=request_data,
+                request_format='PEM',
+                request_type=request.systemCert.requestType,
+                profile_id=request.systemCert.profile,
+                dns_names=request.systemCert.dnsNames,
+                adjust_validity=request.systemCert.adjustValidity)
+            request.systemCert.requestID = result['requestID']
+
+        else:  # legacy
+
+            response = client.importRequest(request)
+            request.systemCert.requestID = response['requestID']
+
         logger.info('- request ID: %s', request.systemCert.requestID)
 
         logger.info('Creating admin cert')
