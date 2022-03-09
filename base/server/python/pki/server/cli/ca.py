@@ -401,6 +401,7 @@ class CACertRequestCLI(pki.cli.CLI):
         super().__init__('request', 'CA certificate requests management commands')
 
         self.add_module(CACertRequestFindCLI())
+        self.add_module(CACertRequestImportCLI())
         self.add_module(CACertRequestShowCLI())
 
     @staticmethod
@@ -494,6 +495,123 @@ class CACertRequestFindCLI(pki.cli.CLI):
                 print()
 
             CACertRequestCLI.print_request(request)
+
+
+class CACertRequestImportCLI(pki.cli.CLI):
+
+    def __init__(self):
+        super().__init__('import', 'Import certificate request into CA')
+
+    def print_help(self):
+        print('Usage: pki-server ca-cert-request-import [OPTIONS]')
+        print()
+        print('  -i, --instance <instance ID>       Instance ID (default: pki-tomcat)')
+        print('      --request <path>               Certificate request path')
+        print('      --format <format>              Certificate request format: PEM (default), DER')
+        print('      --type <type>                  Certificate request type: pkcs10 (default), crmf')
+        print('      --profile <ID>                 Profile ID')
+        print('      --dns-names <names>            Comma-separated list of DNS names')
+        print('      --adjust-validity              Adjust validity')
+        print('      --output-format <format>       Output format: text (default), json')
+        print('  -v, --verbose                      Run in verbose mode.')
+        print('      --debug                        Run in debug mode.')
+        print('      --help                         Show help message.')
+        print()
+
+    def execute(self, argv):
+
+        try:
+            opts, _ = getopt.gnu_getopt(argv, 'i:v', [
+                'instance=',
+                'request=', 'format=', 'type=', 'profile=',
+                'dns-names=', 'adjust-validity', 'output-format=',
+                'verbose', 'debug', 'help'])
+
+        except getopt.GetoptError as e:
+            logger.error(e)
+            self.print_help()
+            sys.exit(1)
+
+        instance_name = 'pki-tomcat'
+        request_path = None
+        request_format = None
+        request_type = None
+        profile_id = None
+        dns_names = None
+        adjust_validity = False
+        output_format = None
+
+        for o, a in opts:
+            if o in ('-i', '--instance'):
+                instance_name = a
+
+            elif o == '--request':
+                request_path = a
+
+            elif o == '--format':
+                request_format = a
+
+            elif o == '--type':
+                request_type = a
+
+            elif o == '--profile':
+                profile_id = a
+
+            elif o == '--dns-names':
+                dns_names = a.split(',')
+
+            elif o == '--adjust-validity':
+                adjust_validity = True
+
+            elif o == '--output-format':
+                output_format = a
+
+            elif o in ('-v', '--verbose'):
+                logging.getLogger().setLevel(logging.INFO)
+
+            elif o == '--debug':
+                logging.getLogger().setLevel(logging.DEBUG)
+
+            elif o == '--help':
+                self.print_help()
+                sys.exit()
+
+            else:
+                logger.error('Invalid option: %s', o)
+                self.print_help()
+                sys.exit(1)
+
+        instance = pki.server.instance.PKIServerFactory.create(instance_name)
+        if not instance.exists():
+            logger.error('Invalid instance: %s', instance_name)
+            sys.exit(1)
+
+        instance.load()
+
+        subsystem = instance.get_subsystem('ca')
+        if not subsystem:
+            logger.error('No CA subsystem in instance %s', instance_name)
+            sys.exit(1)
+
+        result = subsystem.import_cert_request(
+            request_path=request_path,
+            request_format=request_format,
+            request_type=request_type,
+            profile_id=profile_id,
+            dns_names=dns_names,
+            adjust_validity=adjust_validity)
+
+        if output_format == 'json':
+            print(result)
+
+        elif output_format == 'text':
+            print('  Request ID: {}'.format(result['requestID']))
+            print('  Type: {}'.format(result['requestType']))
+            print('  Status: {}'.format(result['requestStatus']))
+            print('  Result: {}'.format(result['operationResult']))
+
+        else:
+            raise Exception('Unsupported output format: %s' % output_format)
 
 
 class CACertRequestShowCLI(pki.cli.CLI):
