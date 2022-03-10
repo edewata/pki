@@ -127,9 +127,6 @@ jobs:
               -s CA \
               -D pki_ds_hostname=ds.example.com \
               -D pki_ds_ldap_port=3389 \
-              -D pki_cert_id_generator=random \
-              -D pki_cert_id_length=159 \
-              -D pki_request_id_generator=random \
               -v
           # set buffer size to 0 so that revocation takes effect immediately
           docker exec pki pki-server ca-config-set auths.revocationChecking.bufferSize 0
@@ -286,9 +283,6 @@ jobs:
               -s CA \
               -D pki_ds_hostname=ds.example.com \
               -D pki_ds_ldap_port=3389 \
-              -D pki_cert_id_generator=random \
-              -D pki_cert_id_length=159 \
-              -D pki_request_id_generator=random \
               -v
 
       - name: Check CA signing cert
@@ -427,9 +421,6 @@ jobs:
               -s CA \
               -D pki_ds_hostname=rootds.example.com \
               -D pki_ds_ldap_port=3389 \
-              -D pki_cert_id_generator=random \
-              -D pki_cert_id_length=159 \
-              -D pki_request_id_generator=random \
               -v
 
           docker exec root pki-server cert-find
@@ -463,9 +454,6 @@ jobs:
               -D pki_cert_chain_path=${SHARED}/root-ca_signing.crt \
               -D pki_ds_hostname=subds.example.com \
               -D pki_ds_ldap_port=3389 \
-              -D pki_cert_id_generator=random \
-              -D pki_cert_id_length=159 \
-              -D pki_request_id_generator=random \
               -v
 
       - name: Check CA signing cert
@@ -601,9 +589,6 @@ jobs:
               -D pki_ds_hostname=rootds.example.com \
               -D pki_ds_ldap_port=3389 \
               -D pki_security_domain_name=ROOT \
-              -D pki_cert_id_generator=random \
-              -D pki_cert_id_length=159 \
-              -D pki_request_id_generator=random \
               -v
 
       - name: Update caCMCcaCert profile
@@ -657,9 +642,6 @@ jobs:
               -D pki_ds_hostname=subds.example.com \
               -D pki_ds_ldap_port=3389 \
               -D pki_ca_signing_csr_path=$SHARED/ca_signing.csr \
-              -D pki_cert_id_generator=random \
-              -D pki_cert_id_length=159 \
-              -D pki_request_id_generator=random \
               -v
 
       # https://github.com/dogtagpki/pki/wiki/Issuing-CA-Signing-Certificate-with-CMC
@@ -696,9 +678,6 @@ jobs:
               -D pki_cert_chain_path=$SHARED/root-ca_signing.crt \
               -D pki_ca_signing_csr_path=$SHARED/ca_signing.csr \
               -D pki_ca_signing_cert_path=$SHARED/ca_signing.p7b \
-              -D pki_cert_id_generator=random \
-              -D pki_cert_id_length=159 \
-              -D pki_request_id_generator=random \
               -v
 
       - name: Check subordinate CA signing cert
@@ -852,9 +831,6 @@ jobs:
               -D pki_req_ext_add=True \
               -D pki_req_ext_oid=1.3.6.1.4.1.311.20.2 \
               -D pki_req_ext_data=1E0A00530075006200430041 \
-              -D pki_cert_id_generator=random \
-              -D pki_cert_id_length=159 \
-              -D pki_request_id_generator=random \
               -v
 
           docker exec pki /usr/share/pki/tests/ca/bin/test-subca-signing-csr-ext.sh ca_signing.csr
@@ -878,9 +854,6 @@ jobs:
               -D pki_req_ext_add=True \
               -D pki_req_ext_oid=1.3.6.1.4.1.311.20.2 \
               -D pki_req_ext_data=1E0A00530075006200430041 \
-              -D pki_cert_id_generator=random \
-              -D pki_cert_id_length=159 \
-              -D pki_request_id_generator=random \
               -v
 
           docker exec pki pki-server cert-find
@@ -1034,9 +1007,6 @@ jobs:
               -s CA \
               -D pki_ds_hostname=ds.example.com \
               -D pki_ds_ldap_port=3389 \
-              -D pki_cert_id_generator=random \
-              -D pki_cert_id_length=159 \
-              -D pki_request_id_generator=random \
               -v
           sleep 1  # avoid pkispawn log conflict due to identical timestamps
           docker exec pki pkispawn \
@@ -1044,9 +1014,6 @@ jobs:
               -s CA \
               -D pki_ds_hostname=ds.example.com \
               -D pki_ds_ldap_port=3389 \
-              -D pki_cert_id_generator=random \
-              -D pki_cert_id_length=159 \
-              -D pki_request_id_generator=random \
               -v
 
           docker exec pki pki-server cert-find
@@ -2028,9 +1995,6 @@ jobs:
               -s CA \
               -D pki_ds_hostname=ds.example.com \
               -D pki_ds_ldap_port=3389 \
-              -D pki_cert_id_generator=random \
-              -D pki_cert_id_length=159 \
-              -D pki_request_id_generator=random \
               -v
 
       # https://github.com/dogtagpki/pki/wiki/Configuring-File-based-CRL-Publishing
@@ -2253,9 +2217,6 @@ jobs:
               -s CA \
               -D pki_ds_hostname=ds.example.com \
               -D pki_ds_ldap_port=3389 \
-              -D pki_cert_id_generator=random \
-              -D pki_cert_id_length=159 \
-              -D pki_request_id_generator=random \
               -v
 
           docker exec pki pki-server cert-find
