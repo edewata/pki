@@ -538,48 +538,6 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             subsystem.config['preop.ca.httpsport'] = str(url.port)
             subsystem.config['preop.ca.httpsadminport'] = str(url.port)
 
-        system_certs_imported = \
-            deployer.mdict['pki_server_pkcs12_path'] != '' or \
-            deployer.mdict['pki_clone_pkcs12_path'] != ''
-
-        if not (subsystem.type == 'CA' and hierarchy == 'Root'):
-
-            if external and subsystem.type == 'CA' or \
-                    standalone and subsystem.type in ['KRA', 'OCSP']:
-                subsystem.config['preop.ca.pkcs7'] = ''
-
-            elif not clone and not system_certs_imported:
-
-                logger.info('Retrieving CA certificate chain from %s', issuing_ca)
-
-                pem_chain = deployer.get_ca_signing_cert(instance, issuing_ca)
-                base64_chain = pki.nssdb.convert_pkcs7(pem_chain, 'pem', 'base64')
-                subsystem.config['preop.ca.pkcs7'] = base64_chain
-
-                logger.info('Importing CA certificate chain')
-
-                nssdb = instance.open_nssdb()
-                try:
-                    nssdb.import_pkcs7(pkcs7_data=pem_chain, trust_attributes='CT,C,C')
-                finally:
-                    nssdb.close()
-
-        if subsystem.type == 'CA' and clone and not system_certs_imported:
-
-            logger.info('Retrieving CA certificate chain from %s', master_url)
-
-            pem_chain = deployer.get_ca_signing_cert(instance, master_url)
-            base64_chain = pki.nssdb.convert_pkcs7(pem_chain, 'pem', 'base64')
-            subsystem.config['preop.clone.pkcs7'] = base64_chain
-
-            logger.info('Importing CA certificate chain')
-
-            nssdb = instance.open_nssdb()
-            try:
-                nssdb.import_pkcs7(pkcs7_data=pem_chain, trust_attributes='CT,C,C')
-            finally:
-                nssdb.close()
-
         subsystem.save()
 
         if clone:

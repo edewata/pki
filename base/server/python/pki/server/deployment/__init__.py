@@ -2226,10 +2226,35 @@ class PKIDeployer:
 
             if not clone and ca_host:
 
-                logger.info('Adding CRL issuing point')
-                base64_chain = subsystem.config['preop.ca.pkcs7']
-                cert_chain = base64.b64decode(base64_chain)
-                subsystem.add_crl_issuing_point(cert_chain=cert_chain, cert_format='DER')
+                nssdb = instance.open_nssdb()
+                tmpdir = tempfile.mkdtemp()
+
+                try:
+                    ocsp_signing_nickname = self.mdict['pki_ocsp_signing_nickname']
+                    pkcs7_file = os.path.join(tmpdir, 'cert_chain.p7b')
+
+                    logger.info('Exporting CA certificate chain to %s', pkcs7_file)
+
+                    nssdb.export_pkcs7(
+                        nickname=ocsp_signing_nickname,
+                        pkcs7_file=pkcs7_file,
+                        with_leaf=False)
+
+                    # pki.util.chown(pkcs7_file, instance.uid, instance.gid)
+                    # pki.util.chmod(pkcs7_file, pki.server.DEFAULT_FILE_MODE)
+
+                    with open(pkcs7_file, 'rb') as f:
+                        pkcs7_data = f.read()
+
+                    logger.info('Adding CRL issuing point')
+
+                    subsystem.add_crl_issuing_point(
+                        cert_chain=pkcs7_data,
+                        cert_format='PEM')
+
+                finally:
+                    shutil.rmtree(tmpdir)
+                    nssdb.close()
 
             if not clone and not standalone and ca_host:
                 ca_port = subsystem.config.get('preop.ca.httpsadminport')

@@ -212,7 +212,31 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         ca_cert_path = deployer.mdict.get('pki_cert_chain_path')
         if ca_cert_path and os.path.exists(ca_cert_path):
             destination = os.path.join(instance.nssdb_dir, "ca.crt")
+            cert_chain_nickname = deployer.mdict['pki_cert_chain_nickname']
+
+            nssdb = instance.open_nssdb()
+            try:
+                logger.info('Importing %s into NSS database', ca_cert_path)
+
+                nssdb.import_cert_chain(
+                    nickname=cert_chain_nickname,
+                    cert_chain_file=ca_cert_path,
+                    trust_attributes='CT,C,C')
+
+                # logger.info('Exporting cert chain into %s', destination)
+
+                # nssdb.extract_ca_cert(instance.ca_cert, cert_chain_nickname)
+
+                # pki.util.chown(instance.ca_cert, instance.uid, instance.gid)
+                # pki.util.chmod(instance.ca_cert, pki.server.DEFAULT_FILE_MODE)
+
+            finally:
+                nssdb.close()
+
             if not os.path.exists(destination):
+
+                logger.info('Copying %s into %s', ca_cert_path, destination)
+
                 # When we're passed a CA certificate file and we don't already
                 # have a CA file for some reason, we need to copy the passed
                 # file as the root CA certificate to establish trust in the
