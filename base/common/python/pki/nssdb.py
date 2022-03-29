@@ -1922,6 +1922,95 @@ class NSSDatabase(object):
         finally:
             shutil.rmtree(tmpdir)
 
+    def export_pkcs7(
+            self,
+            nickname,
+            pkcs7_file,
+            with_leaf=True):
+
+        cmd = [
+            'pki',
+            '-d', self.directory,
+            'pkcs7-export',
+            '--pkcs7', pkcs7_file
+        ]
+
+        if logger.isEnabledFor(logging.DEBUG):
+            cmd.append('--debug')
+
+        elif logger.isEnabledFor(logging.INFO):
+            cmd.append('--verbose')
+
+        cmd.append(nickname)
+
+        self.run(cmd, check=True)
+
+        if with_leaf:
+            return
+
+        tmpdir = tempfile.mkdtemp()
+
+        try:
+            # Sort and split the certs from root to leaf.
+            prefix = os.path.join(tmpdir, 'cert')
+            suffix = '.crt'
+
+            logger.info('Splitting %s', pkcs7_file)
+
+            cmd = [
+                'pki',
+                '-d', self.directory,
+                'pkcs7-cert-export',
+                '--pkcs7', pkcs7_file,
+                '--output-prefix', prefix,
+                '--output-suffix', suffix
+            ]
+
+            if logger.isEnabledFor(logging.DEBUG):
+                cmd.append('--debug')
+
+            elif logger.isEnabledFor(logging.INFO):
+                cmd.append('--verbose')
+
+            self.run(cmd, check=True)
+
+            # Count the number of certs in the chain.
+            n = 0
+            while True:
+                cert_file = prefix + str(n) + suffix
+                if not os.path.exists(cert_file):
+                    break
+                n = n + 1
+
+            logger.info('Number of certs: %s', n)
+            logger.info('Recreating %s', pkcs7_file)
+
+            for i in range(0, n - 1):
+                cert_file = prefix + str(i) + suffix
+                logger.info('Adding %s', cert_file)
+
+                cmd = [
+                    'pki',
+                    '-d', self.directory,
+                    'pkcs7-cert-import',
+                    '--pkcs7', pkcs7_file,
+                    '--input-file', cert_file
+                ]
+
+                if i > 0:
+                    cmd.append('--append')
+
+                if logger.isEnabledFor(logging.DEBUG):
+                    cmd.append('--debug')
+
+                elif logger.isEnabledFor(logging.INFO):
+                    cmd.append('--verbose')
+
+                self.run(cmd, check=True)
+
+        finally:
+            shutil.rmtree(tmpdir)
+
     def import_pkcs12(self, pkcs12_file,
                       pkcs12_password=None,
                       pkcs12_password_file=None,
