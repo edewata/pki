@@ -46,6 +46,10 @@ COPY --from=pki-builder /tmp/pki/build/RPMS /tmp/RPMS/
 # Install PKI packages
 RUN dnf localinstall -y /tmp/RPMS/*; rm -rf /tmp/RPMS
 
+RUN rpm -ql dogtag-pki-server
+RUN find /usr/share/pki -name banner.txt
+RUN cat /usr/share/pki/server/examples/banner/banner.txt
+
 ################################################################################
 FROM registry.fedoraproject.org/fedora:$OS_VERSION AS pki-acme
 
