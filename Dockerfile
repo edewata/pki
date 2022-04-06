@@ -5,37 +5,38 @@
 #
 # https://docs.fedoraproject.org/en-US/containers/guidelines/guidelines/
 
-ARG VENDOR="Dogtag"
-ARG MAINTAINER="Dogtag PKI Team <devel@lists.dogtagpki.org>"
-ARG COMPONENT="dogtag-pki"
-ARG LICENSE="GPLv2 and LGPLv2"
-ARG ARCH="x86_64"
-ARG VERSION="0"
-ARG OS_VERSION="latest"
-ARG COPR_REPO="@pki/master"
+################################################################################
+FROM registry.fedoraproject.org/fedora:latest AS pki-builder-deps
+
+# Install build dependencies
+RUN dnf install -y dnf-plugins-core git rpm-build \
+    && dnf builddep -y dogtag-pki \
+    && dnf clean all
 
 ################################################################################
-FROM registry.fedoraproject.org/fedora:$OS_VERSION AS pki-builder
+FROM pki-builder-deps AS pki-builder
 
-ARG COPR_REPO
+ENV COPR_REPO="@pki/master"
+
 ARG BUILD_OPTS
 
-# Enable COPR repo if specified
-RUN if [ -n "$COPR_REPO" ]; then dnf install -y dnf-plugins-core; dnf copr enable -y $COPR_REPO; fi
-
-# Import PKI sources
-COPY . /tmp/pki/
 WORKDIR /tmp/pki
 
+# Enable COPR repo if specified
+RUN if [ -n "$COPR_REPO" ]; then dnf copr enable -y $COPR_REPO; fi
+
+# Import PKI sources
+COPY . ./
+
 # Build PKI packages
-RUN dnf install -y git rpm-build
-RUN dnf builddep -y --spec pki.spec
+RUN dnf builddep -y --spec pki.spec \
+    && dnf clean all
 RUN ./build.sh $BUILD_OPTS --work-dir=build rpm
 
 ################################################################################
-FROM registry.fedoraproject.org/fedora:$OS_VERSION AS pki-runner
+FROM registry.fedoraproject.org/fedora:latest AS pki-runner
 
-ARG COPR_REPO
+ENV COPR_REPO="@pki/master"
 
 # Enable COPR repo if specified
 RUN if [ -n "$COPR_REPO" ]; then dnf install -y dnf-plugins-core; dnf copr enable -y $COPR_REPO; fi
@@ -49,8 +50,14 @@ RUN dnf localinstall -y /tmp/RPMS/*; rm -rf /tmp/RPMS
 ################################################################################
 FROM pki-runner AS pki-server
 
-ARG SUMMARY="Dogtag PKI Server"
-ARG COPR_REPO
+ENV VENDOR="Dogtag"
+ENV MAINTAINER="Dogtag PKI Team <devel@lists.dogtagpki.org>"
+ENV COMPONENT="dogtag-pki"
+ENV LICENSE="GPLv2 and LGPLv2"
+ENV ARCH="x86_64"
+ENV VERSION="0"
+ENV COPR_REPO="@pki/master"
+ENV SUMMARY="Dogtag PKI Server"
 
 LABEL name="pki-server" \
       summary="$SUMMARY" \
@@ -99,8 +106,14 @@ CMD [ "/usr/share/pki/server/bin/pki-server-run" ]
 ################################################################################
 FROM pki-server AS pki-acme
 
-ARG SUMMARY="Dogtag PKI ACME Responder"
-ARG COPR_REPO
+ENV VENDOR="Dogtag"
+ENV MAINTAINER="Dogtag PKI Team <devel@lists.dogtagpki.org>"
+ENV COMPONENT="dogtag-pki"
+ENV LICENSE="GPLv2 and LGPLv2"
+ENV ARCH="x86_64"
+ENV VERSION="0"
+ENV COPR_REPO="@pki/master"
+ENV SUMMARY="Dogtag PKI ACME Responder"
 
 LABEL name="pki-acme" \
       summary="$SUMMARY" \

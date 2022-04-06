@@ -37,6 +37,29 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
+      - name: Retrieve builder-deps image
+        uses: actions/cache@v3
+        id: builder-deps
+        with:
+          key: fedora:${{ matrix.os }}-pki-builder-deps-${{ hashFiles('pki.spec') }}
+          path: pki-builder-deps.tar
+
+      - name: Build builder-deps image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          build-args: |
+            OS_VERSION=${{ matrix.os }}
+            COPR_REPO=${{ needs.init.outputs.repo }}
+          tags: pki-builder-deps
+          target: pki-builder-deps
+          outputs: type=docker,dest=pki-builder-deps.tar
+        if: steps.builder-deps.outputs.cache-hit != 'true'
+
+      - name: Load builder-deps image
+        run: docker load --input pki-builder-deps.tar
+        if: steps.builder-deps.outputs.cache-hit == 'true'
+
       - name: Build runner image
         uses: docker/build-push-action@v2
         with:
