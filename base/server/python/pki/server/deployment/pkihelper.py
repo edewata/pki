@@ -2211,6 +2211,7 @@ class TPSConnector:
                    "-n", subsystemnick,
                    "-d", self.mdict['pki_server_database_path'],
                    "-f", password_conf,
+                   "--ignore-banner",
                    "tks-tpsconnector-del",
                    "--host", tpshost,
                    "--port", str(tpsport)]
