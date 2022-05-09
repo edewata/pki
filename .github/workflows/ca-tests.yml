@@ -129,6 +129,35 @@ jobs:
               -D pki_ds_ldap_port=3389 \
               -v
 
+          docker exec pki pki-server cert-export \
+              --pkcs12-file /var/lib/pki/pki-tomcat/conf/keystore.p12 \
+              --pkcs12-password Secret.123 \
+              sslserver
+
+          docker exec pki chown pkiuser.pkiuser /var/lib/pki/pki-tomcat/conf/keystore.p12
+          docker exec pki chmod 660 /var/lib/pki/pki-tomcat/conf/keystore.p12
+
+          docker exec pki pki-server http-connector-find
+
+          docker exec pki pki-server http-connector-mod \
+              --sslImpl '' \
+              Secure
+
+          docker exec pki pki-server http-connector-host-find Secure
+
+          docker exec pki pki-server http-connector-host-mod \
+              --trustManager 'org.dogtagpki.tomcat.PKITrustManager' \
+              Secure \
+              _default_
+
+          docker exec pki pki-server http-connector-cert-del
+
+          docker exec pki pki-server http-connector-cert-add \
+              --keyAlias sslserver \
+              --keystoreType pkcs12 \
+              --keystoreFile /var/lib/pki/pki-tomcat/conf/keystore.p12 \
+              --keystorePassword Secret.123
+
           # set buffer size to 0 so that revocation takes effect immediately
           docker exec pki pki-server ca-config-set auths.revocationChecking.bufferSize 0
 
