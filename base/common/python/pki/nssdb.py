@@ -1287,6 +1287,30 @@ class NSSDatabase(object):
 
         exts['authorityInfoAccess'] = ', '.join(values)
 
+    def __create_generic_exts(self, exts, generic_exts):
+        '''
+        Create generic extensions for pki nss-cert-request/issue.
+        '''
+
+        oids = []
+
+        for generic_ext in generic_exts:
+
+            values = []
+
+            if generic_ext.get('critical'):
+                values.append('critical')
+
+            data = generic_ext['data']
+            values.append('DER:' + data.hex(':'))
+
+            oid = generic_ext['oid']
+            exts[oid] = ', '.join(values)
+
+            oids.append(oid)
+
+        exts['genericExtensions'] = ', '.join(oids)
+
     def __create_request(
             self,
             subject_dn,
@@ -1326,25 +1350,7 @@ class NSSDatabase(object):
             self.__create_ski_ext(exts, ski_ext)
 
         if generic_exts:
-
-            oids = []
-
-            for generic_ext in generic_exts:
-
-                values = []
-
-                if generic_ext.get('critical'):
-                    values.append('critical')
-
-                data = generic_ext['data']
-                values.append('DER:' + data.hex(':'))
-
-                oid = generic_ext['oid']
-                exts[oid] = ', '.join(values)
-
-                oids.append(oid)
-
-            exts['genericExtensions'] = ', '.join(oids)
+            self.__create_generic_exts(exts, generic_exts)
 
         tmpdir = tempfile.mkdtemp()
 
