@@ -26,6 +26,7 @@ import sys
 import signal
 import subprocess
 import traceback
+import warnings
 
 import pki.server.deployment
 import pki.server.instance
@@ -210,8 +211,10 @@ def main(argv):
     parser.init_config(pki_instance_name=config.pki_deployed_instance_name)
 
     if args.pki_verbosity > 1:
-        logger.warning('The -%s option has been deprecated. Use --debug instead.',
-                       'v' * args.pki_verbosity)
+        warnings.warn(
+            'The -%s option has been deprecated. Use --debug instead.' %
+            ('v' * args.pki_verbosity),
+            DeprecationWarning)
 
     # Read the specified PKI configuration file.
     rv = parser.read_pki_configuration_file()

@@ -20,11 +20,11 @@
 #
 
 from __future__ import absolute_import
-import inspect
 import json
 import logging
 import xml.etree.ElementTree as ETree
 import os
+import warnings
 
 import pki.encoder
 
@@ -170,10 +170,10 @@ class DomainInfo(object):
 
     @property
     def systems(self):
-        logger.warning(
-            '%s:%s: The DomainInfo.systems has been deprecated '
-            '(https://www.dogtagpki.org/wiki/PKI_10.8_Python_Changes).',
-            inspect.stack()[1].filename, inspect.stack()[1].lineno)
+        warnings.warn(
+            'The DomainInfo.systems has been deprecated '
+            '(https://github.com/dogtagpki/pki/wiki/PKI-10.8-Python-Changes).',
+            DeprecationWarning)
         return self.subsystems
 
     @classmethod
@@ -255,10 +255,10 @@ class SecurityDomainClient(object):
             self.install_token_url = '/ca' + self.install_token_url
 
     def get_security_domain_info(self):
-        logger.warning(
-            '%s:%s: The SecurityDomainClient.get_security_domain_info() has been deprecated '
-            '(https://www.dogtagpki.org/wiki/PKI_10.8_Python_Changes).',
-            inspect.stack()[1].filename, inspect.stack()[1].lineno)
+        warnings.warn(
+            'The SecurityDomainClient.get_security_domain_info() has been deprecated '
+            '(https://github.com/dogtagpki/pki/wiki/PKI-10.8-Python-Changes).',
+            DeprecationWarning)
         return self.get_domain_info()
 
     def get_domain_info(self):

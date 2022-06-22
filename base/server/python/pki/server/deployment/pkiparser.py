@@ -28,6 +28,7 @@ import ldap
 import logging
 import os
 import string
+import warnings
 
 from six.moves import input  # pylint: disable=W0622,F0401
 from six.moves import configparser  # pylint: disable=F0401
@@ -505,7 +506,7 @@ class PKIConfigParser:
             else:
                 message = '%s Use \'%s\' instead.' % (message, new_param)
 
-            print('WARNING: %s' % message)
+            warnings.warn(message, DeprecationWarning)
 
     def authdb_connect(self):
 

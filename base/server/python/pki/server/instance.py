@@ -22,7 +22,6 @@
 from __future__ import absolute_import
 
 import functools
-import inspect
 import io
 import logging
 import os
@@ -32,6 +31,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import warnings
 
 from lxml import etree
 
@@ -156,10 +156,10 @@ class PKIInstance(pki.server.PKIServer):
 
     @property
     def server_cert_nick_conf(self):
-        logger.warning(
-            '%s:%s: The PKIInstance.server_cert_nick_conf() has '
-            'been deprecated (https://www.dogtagpki.org/wiki/PKI_10.9_Python_Changes).',
-            inspect.stack()[1].filename, inspect.stack()[1].lineno)
+        warnings.warn(
+            'The PKIInstance.server_cert_nick_conf() has '
+            'been deprecated (https://github.com/dogtagpki/pki/wiki/PKI-10.9-Python-Changes).',
+            DeprecationWarning)
         return os.path.join(self.conf_dir, 'serverCertNick.conf')
 
     @property

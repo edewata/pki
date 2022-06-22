@@ -29,6 +29,7 @@ import sys
 import signal
 import subprocess
 import traceback
+import warnings
 
 import pki
 import pki.server
@@ -521,8 +522,10 @@ def main(argv):
         sys.exit(1)
 
     if args.pki_verbosity > 1:
-        logger.warning('The -%s option has been deprecated. Use --debug instead.',
-                       'v' * args.pki_verbosity)
+        warnings.warn(
+            'The -%s option has been deprecated. Use --debug instead.' %
+            ('v' * args.pki_verbosity),
+            DeprecationWarning)
 
     # Read the specified PKI configuration file.
     rv = parser.read_pki_configuration_file()

@@ -12,6 +12,7 @@ import getopt
 import logging
 import os
 import sys
+import warnings
 
 import pki.cli
 import pki.server
@@ -681,7 +682,10 @@ class ACMEDatabaseShowCLI(pki.cli.CLI):
 
             base_dn = config.get('basedn')
             if base_dn:
-                logger.warning('The basedn parameter has been deprecated. Use baseDN instead.')
+                warnings.warn(
+                    'The basedn parameter has been deprecated. Use baseDN instead.',
+                    DeprecationWarning)
+
             else:
                 base_dn = config.get('baseDN')
 
