@@ -29,6 +29,7 @@ import shutil
 import sys
 import tempfile
 import textwrap
+import time
 
 import pki.cli
 import pki.server
@@ -49,8 +50,11 @@ class CACLI(pki.cli.CLI):
     def __init__(self):
         super().__init__('ca', 'CA management commands')
 
+        self.add_module(CACreateCLI())
+        self.add_module(CARemoveCLI())
         self.add_module(pki.server.cli.subsystem.SubsystemDeployCLI(self))
         self.add_module(pki.server.cli.subsystem.SubsystemUndeployCLI(self))
+
         self.add_module(pki.server.cli.audit.AuditCLI(self))
         self.add_module(CACertCLI())
         self.add_module(CACloneCLI())
@@ -60,6 +64,320 @@ class CACLI(pki.cli.CLI):
         self.add_module(CAProfileCLI())
         self.add_module(pki.server.cli.range.RangeCLI(self))
         self.add_module(pki.server.cli.user.UserCLI(self))
+
+
+class CACreateCLI(pki.cli.CLI):
+
+    def __init__(self):
+        super(CACreateCLI, self).__init__(
+            'create', 'Create CA subsystem')
+
+    def print_help(self):
+        print('Usage: pki-server ca-create [OPTIONS] [name]')
+        print()
+        print('  -i, --instance <instance ID>       Instance ID (default: pki-tomcat).')
+        print('      --force                        Force creation.')
+        print('  -v, --verbose                      Run in verbose mode.')
+        print('      --debug                        Run in debug mode.')
+        print('      --help                         Show help message.')
+        print()
+
+    def execute(self, argv):
+
+        try:
+            opts, args = getopt.gnu_getopt(argv, 'i:v', [
+                'instance=', 'database=', 'issuer=',
+                'force',
+                'verbose', 'debug', 'help'])
+
+        except getopt.GetoptError as e:
+            logger.error(e)
+            self.print_help()
+            sys.exit(1)
+
+        name = 'ca'
+        instance_name = 'pki-tomcat'
+        force = False
+
+        for o, a in opts:
+            if o in ('-i', '--instance'):
+                instance_name = a
+
+            elif o == '--force':
+                force = True
+
+            elif o in ('-v', '--verbose'):
+                logging.getLogger().setLevel(logging.INFO)
+
+            elif o == '--debug':
+                logging.getLogger().setLevel(logging.DEBUG)
+
+            elif o == '--help':
+                self.print_help()
+                sys.exit()
+
+            else:
+                logger.error('Unknown option: %s', o)
+                self.print_help()
+                sys.exit(1)
+
+        if len(args) > 0:
+            name = args[0]
+
+        instance = pki.server.instance.PKIServerFactory.create(instance_name)
+
+        if not instance.exists():
+            raise Exception('Invalid instance: %s' % instance_name)
+
+        instance.load()
+
+        server_config = instance.get_server_config()
+
+        subsystem = pki.server.subsystem.PKISubsystemFactory.create(instance, name)
+
+        # Creating /var/lib/pki/<instance>/<subsystem>
+        logger.info('Creating %s', subsystem.base_dir)
+        instance.makedirs(subsystem.base_dir, force=force)
+
+        # Creating /etc/pki/<instance>/<subsystem>
+        conf_dir = os.path.join(instance.conf_dir, subsystem.name)
+        logger.info('Creating %s', conf_dir)
+        instance.makedirs(conf_dir, force=force)
+
+        # Link /var/lib/pki/<instance>/<subsystem>/conf
+        # to /etc/pki/<instance>/<subsystem>
+        conf_dir_link = os.path.join(subsystem.base_dir, 'conf')
+        logger.info('Creating %s', conf_dir_link)
+        instance.symlink(conf_dir, conf_dir_link, force=force)
+
+        share_dir = os.path.join(pki.server.PKIServer.SHARE_DIR, subsystem.name)
+
+        # Copy /usr/share/pki/<subsystem>/conf/CS.cfg
+        # to /etc/pki/<instance>/<subsystem>/CS.cfg
+        cs_conf = os.path.join(share_dir, 'conf', 'CS.cfg')
+        logger.info('Creating %s', subsystem.cs_conf)
+
+        params = {}
+        params['PKI_INSTANCE_ROOT'] = pki.server.PKIServer.BASE_DIR
+        params['PKI_INSTANCE_PATH'] = instance.base_dir
+        params['PKI_INSTANCE_NAME'] = instance.name
+        params['PKI_SUBSYSTEM_TYPE'] = subsystem.name
+
+        params['PKI_AGENT_SECURE_PORT'] = server_config.get_secure_port()
+        params['PKI_EE_SECURE_PORT'] = server_config.get_secure_port()
+        params['PKI_EE_SECURE_CLIENT_AUTH_PORT'] = server_config.get_secure_port()
+        params['PKI_ADMIN_SECURE_PORT'] = server_config.get_secure_port()
+        params['PKI_SECURE_PORT'] = server_config.get_secure_port()
+        params['PKI_UNSECURE_PORT'] = server_config.get_unsecure_port()
+        params['TOMCAT_SERVER_PORT'] = server_config.get_port()
+        params['PKI_PROXY_SECURE_PORT'] = ''
+        params['PKI_PROXY_UNSECURE_PORT'] = ''
+
+        params['PKI_USER'] = instance.name
+        params['PKI_GROUP'] = instance.group
+
+        params['PKI_HOSTNAME'] = 'localhost.localdomain'
+        params['PKI_DS_SECURE_CONNECTION'] = 'false'
+        params['PKI_SYSTEMD_SERVICENAME'] = 'pki-tomcatd@%s.service' % instance.name
+        params['MASTER_CRL_ENABLE'] = 'false'
+        params['PKI_ENABLE_RANDOM_SERIAL_NUMBERS'] = 'false'
+        params['PKI_PROFILE_SUBSYSTEM'] = 'ProfileSubsystem'
+        params['PKI_CFG_PATH_NAME'] = subsystem.cs_conf
+
+        params['INSTALL_TIME'] = time.asctime(time.localtime(time.time()))
+        params['PKI_PIDDIR'] = '/var/run/pki/tomcat'
+        params['PKI_RANDOM_NUMBER'] = ''
+        params['PKI_SSL_SERVER_NICKNAME'] = 'sslserver'
+
+        instance.copyfile(
+            cs_conf,
+            subsystem.cs_conf,
+            params=params,
+            force=force)
+
+        # Copy /usr/share/pki/<subsystem>/conf/registry.cfg
+        # to /etc/pki/<instance>/<subsystem>/registry.cfg
+        registry_conf = os.path.join(share_dir, 'conf', 'registry.cfg')
+        logger.info('Creating %s', subsystem.registry_conf)
+        instance.copy(registry_conf, subsystem.registry_conf, force=force)
+
+        # Copy /usr/share/pki/<subsystem>/conf/database.conf
+        # to /etc/pki/<instance>/<subsystem>/database.conf
+        database_template = os.path.join(share_dir, 'conf', 'database.conf')
+        database_conf = os.path.join(subsystem.conf_dir, 'database.conf')
+        logger.info('Creating %s', database_conf)
+        instance.copy(database_template, database_conf, force=force)
+
+        # Copy /usr/share/pki/<subsystem>/conf/realm.conf
+        # to /etc/pki/<instance>/<subsystem>/realm.conf
+        realm_template = os.path.join(share_dir, 'conf', 'realm.conf')
+        realm_conf = os.path.join(subsystem.conf_dir, 'realm.conf')
+        logger.info('Creating %s', realm_conf)
+        instance.copy(realm_template, realm_conf, force=force)
+
+        # Copy /usr/share/pki/<subsystem>/conf/<type>AdminCert.profile
+        # to /etc/pki/<instance>/<subsystem>/adminCert.profile
+        admin_profile_template = os.path.join(share_dir, 'conf', 'rsaAdminCert.profile')
+        admin_profile = os.path.join(subsystem.conf_dir, 'adminCert.profile')
+        logger.info('Creating %s', admin_profile)
+        instance.copy(admin_profile_template, admin_profile, force=force)
+
+        # Copy /usr/share/pki/<subsystem>/conf/caAuditSigningCert.profile
+        # to /etc/pki/<instance>/<subsystem>/caAuditSigningCert.profile
+        audit_signing_profile_template = os.path.join(share_dir, 'conf', 'caAuditSigning.profile')
+        audit_signing_profile = os.path.join(subsystem.conf_dir, 'caAuditSigning.profile')
+        logger.info('Creating %s', audit_signing_profile)
+        instance.copy(audit_signing_profile_template, audit_signing_profile, force=force)
+
+        # Copy /usr/share/pki/<subsystem>/conf/caCert.profile
+        # to /etc/pki/<instance>/<subsystem>/caCert.profile
+        signing_profile_template = os.path.join(share_dir, 'conf', 'caCert.profile')
+        signing_profile = os.path.join(subsystem.conf_dir, 'caCert.profile')
+        logger.info('Creating %s', signing_profile)
+        instance.copy(signing_profile_template, signing_profile, force=force)
+
+        # Copy /usr/share/pki/<subsystem>/conf/caOCSPCert.profile
+        # to /etc/pki/<instance>/<subsystem>/caOCSPCert.profile
+        ocsp_signing_profile_template = os.path.join(share_dir, 'conf', 'caOCSPCert.profile')
+        ocsp_signing_profile = os.path.join(subsystem.conf_dir, 'caOCSPCert.profile')
+        logger.info('Creating %s', ocsp_signing_profile)
+        instance.copy(ocsp_signing_profile_template, ocsp_signing_profile, force=force)
+
+        # Copy /usr/share/pki/<subsystem>/conf/<type>ServerCert.profile
+        # to /etc/pki/<instance>/<subsystem>/serverCert.profile
+        sslserver_profile_template = os.path.join(share_dir, 'conf', 'rsaServerCert.profile')
+        sslserver_profile = os.path.join(subsystem.conf_dir, 'serverCert.profile')
+        logger.info('Creating %s', sslserver_profile)
+        instance.copy(sslserver_profile_template, sslserver_profile, force=force)
+
+        # Copy /usr/share/pki/<subsystem>/conf/<type>SubsystemCert.profile
+        # to /etc/pki/<instance>/<subsystem>/subsystemCert.profile
+        subsystem_profile_template = os.path.join(share_dir, 'conf', 'rsaSubsystemCert.profile')
+        subsystem_profile = os.path.join(subsystem.conf_dir, 'subsystemCert.profile')
+        logger.info('Creating %s', subsystem_profile)
+        instance.copy(subsystem_profile_template, subsystem_profile, force=force)
+
+        # Create /var/log/pki/<instance>/<subsystem>
+        log_dir = os.path.join(instance.log_dir, subsystem.name)
+        logger.info('Creating %s', log_dir)
+        instance.makedirs(log_dir, exist_ok=True)
+
+        # Link /var/lib/pki/<instance>/<subsystem>/logs
+        # to /var/log/pki/<instance>/<subsystem>
+        log_dir_link = os.path.join(subsystem.base_dir, 'logs')
+        logger.info('Creating %s', log_dir_link)
+        instance.symlink(log_dir, log_dir_link, force=force)
+
+        # Create /var/log/pki/<instance>/<subsystem>/archive
+        log_archive_dir = os.path.join(log_dir, 'archive')
+        logger.info('Creating %s', log_archive_dir)
+        instance.makedirs(log_archive_dir, exist_ok=True)
+
+        # Create /var/log/pki/<instance>/<subsystem>/signedAudit
+        log_audit_dir = os.path.join(log_dir, 'signedAudit')
+        logger.info('Creating %s', log_audit_dir)
+        instance.makedirs(log_audit_dir, exist_ok=True)
+
+        # Link /var/lib/pki/<instance>/<subsystem>/registry
+        # to /etc/sysconfig/pki/tomcat/<instance>
+        registry_link = os.path.join(subsystem.base_dir, 'registry')
+        service_conf = os.path.join(pki.server.SYSCONFIG_DIR, 'tomcat')
+        logger.info('Creating %s', registry_link)
+        instance.symlink(service_conf, registry_link, force=force)
+
+        # Copy /usr/share/pki/ca/profiles/ca
+        # to /var/lib/pki/<instance>/<subsystem>/profiles/ca
+        profiles_dir_source = os.path.join(share_dir, 'profiles', 'ca')
+        profiles_dir_target = os.path.join(subsystem.base_dir, 'profiles', 'ca')
+        logger.info('Creating %s', profiles_dir_target)
+        instance.copy(profiles_dir_source, profiles_dir_target, force=force)
+
+        subsystem.load()
+
+
+class CARemoveCLI(pki.cli.CLI):
+
+    def __init__(self):
+        super(CARemoveCLI, self).__init__(
+            'remove', 'Remove CA subsystem')
+
+    def print_help(self):
+        print('Usage: pki-server ca-remove [OPTIONS] [name]')
+        print()
+        print('  -i, --instance <instance ID>       Instance ID (default: pki-tomcat).')
+        print('      --force                        Force removal.')
+        print('  -v, --verbose                      Run in verbose mode.')
+        print('      --debug                        Run in debug mode.')
+        print('      --help                         Show help message.')
+        print()
+
+    def execute(self, argv):
+
+        try:
+            opts, args = getopt.gnu_getopt(argv, 'i:v', [
+                'instance=',
+                'force',
+                'verbose', 'debug', 'help'])
+
+        except getopt.GetoptError as e:
+            logger.error(e)
+            self.print_help()
+            sys.exit(1)
+
+        name = 'ca'
+        instance_name = 'pki-tomcat'
+        force = False
+
+        for o, a in opts:
+            if o in ('-i', '--instance'):
+                instance_name = a
+
+            elif o == '--force':
+                force = True
+
+            elif o in ('-v', '--verbose'):
+                logging.getLogger().setLevel(logging.INFO)
+
+            elif o == '--debug':
+                logging.getLogger().setLevel(logging.DEBUG)
+
+            elif o == '--help':
+                self.print_help()
+                sys.exit()
+
+            else:
+                logger.error('Unknown option: %s', o)
+                self.print_help()
+                sys.exit(1)
+
+        if len(args) > 0:
+            name = args[0]
+
+        instance = pki.server.instance.PKIServerFactory.create(instance_name)
+
+        if not instance.exists():
+            raise Exception('Invalid instance: %s' % instance_name)
+
+        instance.load()
+
+        subsystem = instance.get_subsystem(name)
+        if not subsystem:
+            logger.error('No CA subsystem in instance %s', instance_name)
+            sys.exit(1)
+
+        # Remove /var/log/pki/<instance>/<subsystem>
+        log_dir = os.path.join(instance.log_dir, subsystem.name)
+        logger.info('Removing %s', log_dir)
+        pki.util.rmtree(log_dir, force=force)
+
+        # Remove /etc/pki/<instance>/<subsystem>
+        conf_dir = os.path.join(instance.conf_dir, subsystem.name)
+        logger.info('Removing %s', conf_dir)
+        pki.util.rmtree(conf_dir, force=force)
+
+        # Remove /var/lib/pki/<instance>/<subsystem>
+        logger.info('Removing %s', subsystem.base_dir)
+        pki.util.rmtree(subsystem.base_dir, force=force)
 
 
 class CACertCLI(pki.cli.CLI):
