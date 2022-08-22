@@ -2,8 +2,15 @@
 
 # TODO:
 # - parameterize hard-coded values
-# - do not create security domain
-# - support existing subsystem user
+
+DATABASE_URL=$(cat /database/url)
+
+if [ "$DATABASE_URL" == "" ]
+then
+    DATABASE_URL=ldap://ds.example.com:3389
+fi
+
+echo "DATABASE_URL: $DATABASE_URL"
 
 echo "################################################################################"
 
@@ -303,7 +310,7 @@ echo "INFO: Creating PKI CA"
 pkispawn \
     -f /usr/share/pki/server/examples/installation/ca.cfg \
     -s CA \
-    -D pki_ds_url=ldap://ds.example.com:3389 \
+    -D pki_ds_url=$DATABASE_URL \
     -D pki_ds_setup=False \
     -D pki_share_db=True \
     -D pki_request_id_generator=random \
