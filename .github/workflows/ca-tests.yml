@@ -1951,6 +1951,8 @@ jobs:
               -D pki_ds_hostname=ds.example.com \
               -D pki_ds_ldap_port=3389 \
               -D pki_hsm_enable=True \
+              -D pki_hsm_libfile=/usr/lib64/pkcs11/libsofthsm2.so \
+              -D pki_hsm_modulename=softhsm2 \
               -D pki_token_name=HSM \
               -D pki_token_password=Secret.123 \
               -D pki_server_database_password=Secret.123 \
