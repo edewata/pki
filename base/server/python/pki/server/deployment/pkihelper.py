@@ -93,34 +93,6 @@ class Identity:
                 raise
             return None
 
-    def set_uid(self, name, critical_failure=True):
-        try:
-            logger.debug(log.PKIHELPER_USER_1, name)
-            # id -u <name>
-            pki_uid = getpwnam(name)[2]
-            self.mdict['pki_uid'] = pki_uid
-            logger.debug(log.PKIHELPER_UID_2, name, pki_uid)
-            return pki_uid
-        except KeyError as exc:
-            logger.error(log.PKI_KEYERROR_1, exc)
-            if critical_failure:
-                raise
-            return None
-
-    def set_gid(self, name, critical_failure=True):
-        try:
-            logger.debug(log.PKIHELPER_GROUP_1, name)
-            # id -g <name>
-            pki_gid = getgrnam(name)[2]
-            self.mdict['pki_gid'] = pki_gid
-            logger.debug(log.PKIHELPER_GID_2, name, pki_gid)
-            return pki_gid
-        except KeyError as exc:
-            logger.error(log.PKI_KEYERROR_1, exc)
-            if critical_failure:
-                raise
-            return None
-
     def group_exists(self, pki_group):
         try:
             getgrnam(pki_group)
