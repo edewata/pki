@@ -253,8 +253,8 @@ Defaults to True.
 
 ### INTERNAL DATABASE PARAMETERS
 
-**pki_ds_hostname**, **pki_ds_ldap_port**, **pki_ds_ldaps_port**  
-Hostname and ports for the internal database.  Defaults to localhost, 389, and 636, respectively.
+**pki_ds_url**  
+URL for the internal database.  Defaults to ldap://localhost:389.
 
 **pki_ds_bind_dn**, **pki_ds_password**  
 Credentials to connect to the database during installation.
