@@ -3,6 +3,13 @@
 # TODO:
 # - parameterize hard-coded values
 
+id
+pwd
+ls -la
+ls -la /certs
+ls -la /database
+ls -la /etc/sysconfig/pki/tomcat
+
 DATABASE_URL=$(cat /database/url)
 
 if [ "$DATABASE_URL" == "" ]
@@ -75,6 +82,17 @@ pki \
     -d /etc/pki/pki-tomcat/alias \
     nss-cert-show \
     ca_signing
+
+if [ ! -f /certs/ca_signing.crt ]
+then
+    echo "INFO: Exporting CA signing cert"
+
+    pki \
+        -d /etc/pki/pki-tomcat/alias \
+        nss-cert-export \
+        --output-file /certs/ca_signing.crt \
+        ca_signing
+fi
 
 echo "################################################################################"
 
@@ -250,24 +268,43 @@ if [ $rc -ne 0 ]
 then
     echo "INFO: Creating admin cert"
 
-    pki nss-cert-request \
+    pki \
+        nss-cert-import \
+        --cert /certs/ca_signing.crt \
+        --trust CT,C,C \
+        ca_signing
+
+    pki \
+        nss-cert-request \
         --subject "CN=Administrator" \
         --ext /usr/share/pki/server/certs/admin.conf \
         --csr /certs/admin.csr
 
-    pki nss-cert-issue \
+    pki \
+        -d /etc/pki/pki-tomcat/alias \
+        nss-cert-issue \
         --issuer ca_signing \
         --csr /certs/admin.csr \
         --ext /usr/share/pki/server/certs/admin.conf \
         --cert /certs/admin.crt
 
-    pki nss-cert-import \
+    pki \
+        nss-cert-import \
         --cert /certs/admin.crt \
         admin
 fi
 
 echo "INFO: Admin cert:"
 pki nss-cert-show admin
+
+if [ ! -f /certs/admin.crt ]
+then
+    echo "INFO: Exporting admin cert"
+
+    pki nss-cert-export \
+        --output-file /certs/admin.crt \
+        admin
+fi
 
 echo "################################################################################"
 
@@ -278,26 +315,6 @@ then
     pki pkcs12-export \
         --pkcs12 /certs/admin.p12 \
         --password Secret.123 \
-        admin
-fi
-
-if [ ! -f /certs/ca_signing.crt ]
-then
-    echo "INFO: Exporting CA signing cert"
-
-    pki \
-        -d /etc/pki/pki-tomcat/alias \
-        nss-cert-export \
-        --output-file /certs/ca_signing.crt \
-        ca_signing
-fi
-
-if [ ! -f /certs/admin.crt ]
-then
-    echo "INFO: Exporting admin cert"
-
-    pki nss-cert-export \
-        --output-file /certs/admin.crt \
         admin
 fi
 
@@ -313,6 +330,9 @@ pkispawn \
     -D pki_ds_url=$DATABASE_URL \
     -D pki_ds_setup=False \
     -D pki_share_db=True \
+    -D pki_user= \
+    -D pki_uid=$UID \
+    -D pki_group=root \
     -D pki_request_id_generator=random \
     -D pki_cert_id_generator=random \
     -D pki_existing=True \
