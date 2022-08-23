@@ -116,7 +116,6 @@ def makedirs(
     logger.debug('Command: mkdir %s', path)
 
     os.makedirs(path, mode=mode, exist_ok=exist_ok)
-    os.chown(path, uid, gid)
 
 
 def symlink(source, dest, uid=-1, gid=-1, force=False):
@@ -128,7 +127,6 @@ def symlink(source, dest, uid=-1, gid=-1, force=False):
         return
 
     os.symlink(source, dest)
-    os.lchown(dest, uid, gid)
 
 
 def copy(
@@ -202,7 +200,6 @@ def copyfile(source, dest, slots=None, params=None, uid=None, gid=None, mode=Non
         if gid is None:
             gid = stat.st_gid
 
-        os.lchown(dest, uid, gid)
         return
 
     # source is a file
@@ -232,8 +229,6 @@ def copyfile(source, dest, slots=None, params=None, uid=None, gid=None, mode=Non
         uid = stat.st_uid
     if gid is None:
         gid = stat.st_gid
-
-    os.chown(dest, uid, gid)
 
     if mode is None:
         mode = stat.st_mode
@@ -268,7 +263,6 @@ def copydirs(source, dest, uid=-1, gid=-1, mode=None, force=False):
         gid = stat.st_gid
 
     os.utime(dest, (stat.st_atime, stat.st_mtime))
-    os.chown(dest, uid, gid)
 
     if mode is None:
         mode = stat.st_mode

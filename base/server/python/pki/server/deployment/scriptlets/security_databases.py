@@ -105,18 +105,6 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
                 deployer.mdict['pki_hsm_modulename'],
                 deployer.mdict['pki_hsm_libfile'])
 
-        # Set the initial NSS database ownership and permissions.
-        pki.util.chown(
-            deployer.mdict['pki_server_database_path'],
-            deployer.mdict['pki_uid'],
-            deployer.mdict['pki_gid'])
-        pki.util.chmod(
-            deployer.mdict['pki_server_database_path'],
-            config.PKI_DEPLOYMENT_DEFAULT_SECURITY_DATABASE_PERMISSIONS)
-        os.chmod(
-            deployer.mdict['pki_server_database_path'],
-            pki.server.DEFAULT_DIR_MODE)
-
         # import system certificates before starting the server
 
         pki_server_pkcs12_path = deployer.mdict['pki_server_pkcs12_path']
@@ -205,8 +193,6 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             # migration. If we don't fix the permissions now, migration will
             # fail and subsystem won't start up.
             pki.util.chmod(pki_ca_crt_path, 0o644)
-            pki.util.chown(pki_ca_crt_path, deployer.mdict['pki_uid'],
-                           deployer.mdict['pki_gid'])
 
         ca_cert_path = deployer.mdict.get('pki_cert_chain_path')
         if ca_cert_path and os.path.exists(ca_cert_path):

@@ -592,7 +592,6 @@ grant codeBase "file:%s" {
 
     def touch(self, path):
         pathlib.Path(path).touch()
-        os.chown(path, self.uid, self.gid)
         os.chmod(path, DEFAULT_FILE_MODE)
 
     def makedirs(self, path, exist_ok=None, force=False):
@@ -603,16 +602,13 @@ grant codeBase "file:%s" {
             path,
             mode=DEFAULT_DIR_MODE,
             exist_ok=exist_ok,
-            uid=self.uid,
-            gid=self.gid,
             force=force)
 
     def symlink(self, source, dest, force=False):
 
         logger.info('Creating %s', dest)
 
-        pki.util.symlink(
-            source, dest, uid=self.uid, gid=self.gid, force=force)
+        pki.util.symlink(source, dest, force=force)
 
     def copy(self, source, dest, force=False):
 
@@ -621,8 +617,6 @@ grant codeBase "file:%s" {
         pki.util.copy(
             source,
             dest,
-            uid=self.uid,
-            gid=self.gid,
             dir_mode=DEFAULT_DIR_MODE,
             file_mode=DEFAULT_FILE_MODE,
             force=force)
@@ -634,8 +628,6 @@ grant codeBase "file:%s" {
         pki.util.copydirs(
             source,
             dest,
-            uid=self.uid,
-            gid=self.gid,
             mode=DEFAULT_DIR_MODE,
             force=force)
 
@@ -648,14 +640,11 @@ grant codeBase "file:%s" {
             dest,
             slots=slots,
             params=params,
-            uid=self.uid,
-            gid=self.gid,
             mode=DEFAULT_FILE_MODE,
             force=force)
 
     def store_properties(self, filename, properties):
         pki.util.store_properties(filename, properties)
-        pki.util.chown(filename, self.uid, self.gid)
 
     def create(self, force=False):
 
@@ -746,8 +735,6 @@ grant codeBase "file:%s" {
         with open(self.server_xml, 'wb') as f:
             document.write(f, pretty_print=True, encoding='utf-8')
 
-        pki.util.chown(self.server_xml, self.uid, self.gid)
-
     def remove_lockout_realm(self, document):
 
         server = document.getroot()
@@ -835,8 +822,6 @@ grant codeBase "file:%s" {
             nssdb.create()
         finally:
             nssdb.close()
-
-        pki.util.chown(self.nssdb_dir, self.uid, self.gid)
 
     def open_nssdb(self, token=pki.nssdb.INTERNAL_TOKEN_NAME,
                    user=None, group=None):
@@ -976,7 +961,6 @@ grant codeBase "file:%s" {
             document.write(f, pretty_print=True, encoding='utf-8')
 
         # set deployment descriptor ownership and permission
-        os.chown(context_xml, self.uid, self.gid)
         os.chmod(context_xml, DEFAULT_FILE_MODE)
 
         if not wait:

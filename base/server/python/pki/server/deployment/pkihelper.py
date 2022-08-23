@@ -689,22 +689,6 @@ class Directory:
                 logger.debug('Command: chmod %o %s', perms, name)
                 os.chmod(name, perms)
 
-                if uid is None:
-                    uid = self.identity.get_uid()
-                if gid is None:
-                    gid = self.identity.get_gid()
-
-                logger.debug('Command: chown %s:%s %s', uid, gid, name)
-                os.chown(name, uid, gid)
-
-                # Store record in installation manifest
-                self.deployer.record(
-                    name,
-                    manifest.RECORD_TYPE_DIRECTORY,
-                    uid,
-                    gid,
-                    perms,
-                    acls)
             elif not os.path.isdir(name):
                 logger.error(log.PKI_DIRECTORY_ALREADY_EXISTS_NOT_A_DIRECTORY_1, name)
                 if critical_failure:
@@ -742,24 +726,6 @@ class Directory:
                     logger.debug('Command: chmod %o %s', perms, name)
                 os.chmod(name, perms)
 
-                if uid is None:
-                    uid = self.identity.get_uid()
-                if gid is None:
-                    gid = self.identity.get_gid()
-
-                if not silent:
-                    logger.debug('Command: chown %s:%s %s', uid, gid, name)
-                os.chown(name, uid, gid)
-
-                # Store record in installation manifest
-                if not silent:
-                    self.deployer.record(
-                        name,
-                        manifest.RECORD_TYPE_DIRECTORY,
-                        uid,
-                        gid,
-                        perms,
-                        acls)
             else:
                 logger.error(log.PKI_DIRECTORY_MISSING_OR_NOT_A_DIRECTORY_1, name)
                 if critical_failure:
@@ -830,11 +796,6 @@ class Directory:
                 raise Exception(
                     log.PKI_DIRECTORY_MISSING_OR_NOT_A_DIRECTORY_1 % name)
             else:
-                if uid is None:
-                    uid = self.identity.get_uid()
-                if gid is None:
-                    gid = self.identity.get_gid()
-
                 if recursive_flag:
                     for root, dirs, files in os.walk(name):
                         for name in files:
@@ -845,18 +806,6 @@ class Directory:
 
                                 logger.debug('Command: chmod %o %s', file_perms, temp_file)
                                 os.chmod(temp_file, file_perms)
-
-                                logger.debug('Command: chown %s:%s %s', uid, gid, temp_file)
-                                os.chown(temp_file, uid, gid)
-
-                                # Store record in installation manifest
-                                self.deployer.record(
-                                    name,
-                                    manifest.RECORD_TYPE_FILE,
-                                    uid,
-                                    gid,
-                                    file_perms,
-                                    file_acls)
                             else:
                                 symlink = entity
                                 logger.debug(log.PKIHELPER_IS_A_SYMLINK_1, symlink)
@@ -866,18 +815,6 @@ class Directory:
                                 #            run directly against symbolic
                                 #            links!
 
-                                logger.debug('Command: chown -h %s:%s %s', uid, gid, symlink)
-                                os.lchown(symlink, uid, gid)
-
-                                # Store record in installation manifest
-                                self.deployer.record(
-                                    name,
-                                    manifest.RECORD_TYPE_SYMLINK,
-                                    uid,
-                                    gid,
-                                    symlink_perms,
-                                    symlink_acls)
-
                         for name in dirs:
                             temp_dir = os.path.join(root, name)
                             logger.debug(log.PKIHELPER_IS_A_DIRECTORY_1, temp_dir)
@@ -885,35 +822,12 @@ class Directory:
                             logger.debug('Command: chmod %o %s', dir_perms, temp_dir)
                             os.chmod(temp_dir, dir_perms)
 
-                            logger.debug('Command: chown %s:%s %s', uid, gid, temp_dir)
-                            os.chown(temp_dir, uid, gid)
-
-                            # Store record in installation manifest
-                            self.deployer.record(
-                                name,
-                                manifest.RECORD_TYPE_DIRECTORY,
-                                uid,
-                                gid,
-                                dir_perms,
-                                dir_acls)
-
                 else:
                     logger.debug(log.PKIHELPER_IS_A_DIRECTORY_1, name)
 
                     logger.debug('Command: chmod %o %s', dir_perms, name)
                     os.chmod(name, dir_perms)
 
-                    logger.debug('Command: chown %s:%s %s', uid, gid, name)
-                    os.chown(name, uid, gid)
-
-                    # Store record in installation manifest
-                    self.deployer.record(
-                        name,
-                        manifest.RECORD_TYPE_DIRECTORY,
-                        uid,
-                        gid,
-                        dir_perms,
-                        dir_acls)
         except OSError as exc:
             logger.error(log.PKI_OSERROR_1, exc)
             if critical_failure:
@@ -998,22 +912,6 @@ class File:
                 logger.debug('Command: chmod %o %s', perms, name)
                 os.chmod(name, perms)
 
-                if uid is None:
-                    uid = self.identity.get_uid()
-                if gid is None:
-                    gid = self.identity.get_gid()
-
-                logger.debug('Command: chown %s:%s %s', uid, gid, name)
-                os.chown(name, uid, gid)
-
-                # Store record in installation manifest
-                self.deployer.record(
-                    name,
-                    manifest.RECORD_TYPE_FILE,
-                    uid,
-                    gid,
-                    perms,
-                    acls)
             elif not os.path.isfile(name):
                 logger.error(log.PKI_FILE_ALREADY_EXISTS_NOT_A_FILE_1, name)
                 if critical_failure:
@@ -1049,24 +947,6 @@ class File:
                     logger.debug('Command: chmod %o %s', perms, name)
                 os.chmod(name, perms)
 
-                if uid is None:
-                    uid = self.identity.get_uid()
-                if gid is None:
-                    gid = self.identity.get_gid()
-
-                if not silent:
-                    logger.debug('Command: chown %s:%s %s', uid, gid, name)
-                os.chown(name, uid, gid)
-
-                # Store record in installation manifest
-                if not silent:
-                    self.deployer.record(
-                        name,
-                        manifest.RECORD_TYPE_FILE,
-                        uid,
-                        gid,
-                        perms,
-                        acls)
             else:
                 logger.error(log.PKI_FILE_MISSING_OR_NOT_A_FILE_1, name)
                 if critical_failure:
@@ -1130,25 +1010,10 @@ class File:
 
                 logger.debug('Command: cp -p %s %s', old_name, new_name)
                 shutil.copy2(old_name, new_name)
-                if uid is None:
-                    uid = self.identity.get_uid()
-                if gid is None:
-                    gid = self.identity.get_gid()
 
                 logger.debug('Command: chmod %o %s', perms, new_name)
                 os.chmod(new_name, perms)
 
-                logger.debug('Command: chown %s:%s %s', uid, gid, new_name)
-                os.chown(new_name, uid, gid)
-
-                # Store record in installation manifest
-                self.deployer.record(
-                    new_name,
-                    manifest.RECORD_TYPE_FILE,
-                    uid,
-                    gid,
-                    perms,
-                    acls)
         except (shutil.Error, OSError) as exc:
             if isinstance(exc, shutil.Error):
                 msg = log.PKI_SHUTIL_ERROR_1
@@ -1174,29 +1039,15 @@ class File:
                     log.PKI_FILE_MISSING_OR_NOT_A_FILE_1 %
                     old_name)
 
-            if uid is None:
-                uid = self.identity.get_uid()
-            if gid is None:
-                gid = self.identity.get_gid()
-
             pki.util.copyfile(
                 old_name,
                 new_name,
                 slots=self.slots,
                 params=self.mdict,
-                uid=uid,
-                gid=gid,
+                uid=None,
+                gid=None,
                 mode=perms,
                 force=overwrite_flag)
-
-            # Store record in installation manifest
-            self.deployer.record(
-                new_name,
-                manifest.RECORD_TYPE_FILE,
-                uid,
-                gid,
-                perms,
-                acls)
 
         except (shutil.Error, OSError) as exc:
             if isinstance(exc, shutil.Error):
@@ -1236,22 +1087,6 @@ class Symlink:
                 #            implemented on Linux systems since 'chmod'
                 #            CANNOT be run directly against symbolic links!
 
-                if uid is None:
-                    uid = self.identity.get_uid()
-                if gid is None:
-                    gid = self.identity.get_gid()
-
-                logger.debug('Command: chown -h %s:%s %s', uid, gid, link)
-                os.lchown(link, uid, gid)
-
-                # Store record in installation manifest
-                self.deployer.record(
-                    link,
-                    manifest.RECORD_TYPE_SYMLINK,
-                    uid,
-                    gid,
-                    pki.server.DEFAULT_LINK_MODE,
-                    acls)
             elif not os.path.islink(link):
                 logger.error(log.PKI_SYMLINK_ALREADY_EXISTS_NOT_A_SYMLINK_1, link)
                 if critical_failure:
@@ -1287,24 +1122,6 @@ class Symlink:
                 #            implemented on Linux systems since 'chmod'
                 #            CANNOT be run directly against symbolic links!
 
-                if uid is None:
-                    uid = self.identity.get_uid()
-                if gid is None:
-                    gid = self.identity.get_gid()
-
-                if not silent:
-                    logger.debug('Command: chown -h %s:%s %s', uid, gid, link)
-                os.lchown(link, uid, gid)
-
-                # Store record in installation manifest
-                if not silent:
-                    self.deployer.record(
-                        link,
-                        manifest.RECORD_TYPE_SYMLINK,
-                        uid,
-                        gid,
-                        pki.server.DEFAULT_LINK_MODE,
-                        acls)
             else:
                 logger.error(log.PKI_SYMLINK_MISSING_OR_NOT_A_SYMLINK_1, link)
                 if critical_failure:
