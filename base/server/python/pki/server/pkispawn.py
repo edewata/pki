@@ -170,10 +170,6 @@ def main(argv):
         parser.indent = 0
         print(log.PKISPAWN_INTERACTIVE_INSTALLATION)
 
-    # Only run this program as "root".
-    if not os.geteuid() == 0:
-        sys.exit("'%s' must be run as root!" % argv[0])
-
     while True:
         # -s <subsystem>
         if args.pki_subsystem is None:
