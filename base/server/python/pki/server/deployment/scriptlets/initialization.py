@@ -127,9 +127,6 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         if not deployer.mdict['pki_client_database_password']:
             deployer.mdict['pki_client_database_password'] = pki.generate_password()
 
-        # ALWAYS initialize 'uid' and 'gid'
-        deployer.identity.add_uid_and_gid(deployer.mdict['pki_user'],
-                                          deployer.mdict['pki_group'])
         # ALWAYS establish 'uid' and 'gid'
         deployer.identity.set_uid(deployer.mdict['pki_user'])
         deployer.identity.set_gid(deployer.mdict['pki_group'])
