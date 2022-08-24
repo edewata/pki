@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: pki-ca-database
+stringData:
+  url: ldap://ds.pki-demo.svc.cluster.local:10389
+  authType: BasicAuth
+  bindDN: cn=Directory Manager
+  bindPassword: Secret.123
+  baseDN: dc=ca,dc=pki,dc=example,dc=com

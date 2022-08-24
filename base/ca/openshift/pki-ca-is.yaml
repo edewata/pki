@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ImageStream
+metadata:
+  labels:
+    app: pki-ca
+  name: pki-ca
+spec:
+  lookupPolicy:
+    local: false
+  tags:
+    - from:
+        kind: DockerImage
+        name: quay.io/edewata/pki-ca:latest
+      name: latest
+      referencePolicy:
+        type: Source

@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: pki-ca
+  name: pki-ca
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pki-ca
+  template:
+    metadata:
+      labels:
+        app: pki-ca
+    spec:
+      containers:
+        - name: pki-ca
+          image: 'quay.io/edewata/pki-ca:latest'
+          imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /database
+              name: pki-ca-database
+      volumes:
+        - name: pki-ca-database
+          secret:
+            secretName: pki-ca-database
+  triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+          - pki-ca
+        from:
+          kind: ImageStreamTag
+          name: 'pki-ca:latest'
+      type: ImageChange
+    - type: ConfigChange
