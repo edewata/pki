@@ -25,11 +25,13 @@ from __future__ import print_function
 
 import getopt
 import getpass
+import inspect
 import logging
 import os
 import subprocess
 import sys
 import tempfile
+import textwrap
 
 import pki.cli
 import pki.nssdb
@@ -194,6 +196,164 @@ class SubsystemShowCLI(pki.cli.CLI):
             sys.exit(1)
 
         SubsystemCLI.print_subsystem(subsystem)
+
+
+class SubsystemCreateCLI(pki.cli.CLI):
+    '''
+    Create {subsystem} subsystem
+    '''
+
+    help = '''\
+        Usage: pki-server {subsystem}-create [OPTIONS]
+
+          -i, --instance <instance ID>       Instance ID (default: pki-tomcat)
+          -v, --verbose                      Run in verbose mode.
+              --debug                        Run in debug mode.
+              --help                         Show help message.
+    '''
+
+    def __init__(self, parent):
+        super().__init__(
+            'create',
+            inspect.cleandoc(self.__class__.__doc__).format(
+                subsystem=parent.name.upper()))
+
+        self.parent = parent
+
+    def print_help(self):
+        print(textwrap.dedent(self.__class__.help).format(
+            subsystem=self.parent.name))
+
+    def execute(self, argv):
+        try:
+            opts, _ = getopt.gnu_getopt(argv, 'i:v', [
+                'instance=',
+                'verbose', 'debug', 'help'])
+
+        except getopt.GetoptError as e:
+            logger.error(e)
+            self.print_help()
+            sys.exit(1)
+
+        instance_name = 'pki-tomcat'
+        subsystem_name = self.parent.name
+
+        for o, a in opts:
+            if o in ('-i', '--instance'):
+                instance_name = a
+
+            elif o in ('-v', '--verbose'):
+                logging.getLogger().setLevel(logging.INFO)
+
+            elif o == '--debug':
+                logging.getLogger().setLevel(logging.DEBUG)
+
+            elif o == '--help':
+                self.print_help()
+                sys.exit()
+
+            else:
+                logger.error('Invalid option: %s', o)
+                self.print_help()
+                sys.exit(1)
+
+        instance = pki.server.instance.PKIServerFactory.create(instance_name)
+        if not instance.exists():
+            logger.error('Invalid instance: %s', instance_name)
+            sys.exit(1)
+
+        instance.load()
+
+        subsystem = pki.server.subsystem.PKISubsystemFactory.create(instance, subsystem_name)
+        subsystem.create()
+
+
+class SubsystemRemoveCLI(pki.cli.CLI):
+    '''
+    Remove {subsystem} subsystem
+    '''
+
+    help = '''\
+        Usage: pki-server {subsystem}-remove [OPTIONS]
+
+          -i, --instance <instance ID>       Instance ID (default: pki-tomcat)
+              --remove-conf                  Remove configuration.
+              --remove-logs                  Remove logs.
+          -v, --verbose                      Run in verbose mode.
+              --debug                        Run in debug mode.
+              --help                         Show help message.
+    '''
+
+    def __init__(self, parent):
+        super().__init__(
+            'remove',
+            inspect.cleandoc(self.__class__.__doc__).format(
+                subsystem=parent.name.upper()))
+
+        self.parent = parent
+
+    def print_help(self):
+        print(textwrap.dedent(self.__class__.help).format(
+            subsystem=self.parent.name))
+
+    def execute(self, argv):
+        try:
+            opts, _ = getopt.gnu_getopt(argv, 'i:v', [
+                'instance=',
+                'remove-conf', 'remove-logs',
+                'verbose', 'debug', 'help'])
+
+        except getopt.GetoptError as e:
+            logger.error(e)
+            self.print_help()
+            sys.exit(1)
+
+        instance_name = 'pki-tomcat'
+        subsystem_name = self.parent.name
+        remove_conf = False
+        remove_logs = False
+
+        for o, a in opts:
+            if o in ('-i', '--instance'):
+                instance_name = a
+
+            elif o == '--remove-conf':
+                remove_conf = True
+
+            elif o == '--remove-logs':
+                remove_logs = True
+
+            elif o in ('-v', '--verbose'):
+                logging.getLogger().setLevel(logging.INFO)
+
+            elif o == '--debug':
+                logging.getLogger().setLevel(logging.DEBUG)
+
+            elif o == '--help':
+                self.print_help()
+                sys.exit()
+
+            else:
+                logger.error('Invalid option: %s', o)
+                self.print_help()
+                sys.exit(1)
+
+        instance = pki.server.instance.PKIServerFactory.create(instance_name)
+        if not instance.exists():
+            logger.error('Invalid instance: %s', instance_name)
+            sys.exit(1)
+
+        instance.load()
+
+        subsystem = pki.server.subsystem.PKISubsystemFactory.create(instance, subsystem_name)
+
+        if remove_logs:
+            subsystem.remove_logs()
+
+        if remove_conf:
+            subsystem.remove_conf()
+
+        subsystem.remove()
 
 
 class SubsystemDeployCLI(pki.cli.CLI):
