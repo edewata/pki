@@ -213,6 +213,7 @@ class SubsystemDBCLI(pki.cli.CLI):
         self.parent = parent
         self.add_module(SubsystemDBConfigCLI(self))
         self.add_module(SubsystemDBInfoCLI(self))
+        self.add_module(SubsystemDBInitCLI(self))
         self.add_module(SubsystemDBEmptyCLI(self))
         self.add_module(SubsystemDBRemoveCLI(self))
         self.add_module(SubsystemDBUpgradeCLI(self))
@@ -610,6 +611,117 @@ class SubsystemDBInfoCLI(pki.cli.CLI):
             sys.exit(1)
 
         subsystem.run(cmd, as_current_user=as_current_user)
+
+
+class SubsystemDBInitCLI(pki.cli.CLI):
+    '''
+    Initialize {subsystem} database
+    '''
+
+    help = '''\
+        Usage: pki-server {subsystem}-db-init [OPTIONS]
+
+          -i, --instance <instance ID>       Instance ID (default: pki-tomcat)
+              --setup-schema                 Set up DS schema.
+              --create-database              Create DS database.
+              --create-base                  Create base entries.
+              --create-container             Create container entries.
+              --rebuild-indexes              Rebuild search indexes.
+          -v, --verbose                      Run in verbose mode.
+              --debug                        Run in debug mode.
+              --help                         Show help message.
+    '''
+
+    def __init__(self, parent):
+        super().__init__(
+            'init',
+            inspect.cleandoc(self.__class__.__doc__).format(
+                subsystem=parent.parent.name.upper()))
+
+        self.parent = parent
+
+    def print_help(self):
+        print(textwrap.dedent(self.__class__.help).format(
+            subsystem=self.parent.parent.name))
+
+    def execute(self, argv):
+        try:
+            opts, _ = getopt.gnu_getopt(argv, 'i:v', [
+                'instance=',
+                'setup-schema',
+                'create-database',
+                'create-base',
+                'create-containers',
+                'rebuild-indexes',
+                'verbose', 'debug', 'help'])
+
+        except getopt.GetoptError as e:
+            logger.error(e)
+            self.print_help()
+            sys.exit(1)
+
+        instance_name = 'pki-tomcat'
+        subsystem_name = self.parent.parent.name
+        setup_schema = False
+        create_database = False
+        create_base = False
+        create_containers = False
+        rebuild_indexes = False
+
+        for o, a in opts:
+            if o in ('-i', '--instance'):
+                instance_name = a
+
+            elif o == '--setup-schema':
+                setup_schema = True
+
+            elif o == '--create-database':
+                create_database = True
+
+            elif o == '--create-base':
+                create_base = True
+
+            elif o == '--create-containers':
+                create_containers = True
+
+            elif o == '--rebuild-indexes':
+                rebuild_indexes = True
+
+            elif o in ('-v', '--verbose'):
+                logging.getLogger().setLevel(logging.INFO)
+
+            elif o == '--debug':
+                logging.getLogger().setLevel(logging.DEBUG)
+
+            elif o == '--help':
+                self.print_help()
+                sys.exit()
+
+            else:
+                logger.error('Invalid option: %s', o)
+                self.print_help()
+                sys.exit(1)
+
+        instance = pki.server.instance.PKIServerFactory.create(instance_name)
+        if not instance.exists():
+            logger.error('Invalid instance: %s', instance_name)
+            sys.exit(1)
+
+        instance.load()
+
+        subsystem = instance.get_subsystem(subsystem_name)
+
+        if not subsystem:
+            logger.error('No %s subsystem in instance %s',
+                         subsystem_name.upper(), instance_name)
+            sys.exit(1)
+
+        subsystem.init_database(
+            setup_schema=setup_schema,
+            create_database=create_database,
+            create_base=create_base,
+            create_containers=create_containers,
+            rebuild_indexes=rebuild_indexes)
 
 
 class SubsystemDBEmptyCLI(pki.cli.CLI):
