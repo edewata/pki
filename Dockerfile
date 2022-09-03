@@ -111,6 +111,9 @@ RUN pki-server create --group root
 # Create NSS database
 RUN pki-server nss-create --no-password
 
+# Create PKI CA subsystem
+RUN pki-server ca-create
+
 VOLUME [ "/certs" ]
 
 CMD [ "/usr/share/pki/ca/bin/pki-ca-run" ]
