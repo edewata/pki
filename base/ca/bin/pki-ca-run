@@ -306,6 +306,8 @@ pkispawn \
     -D pki_ds_hostname=ds.example.com \
     -D pki_ds_ldap_port=3389 \
     -D pki_ds_setup=False \
+    -D pki_ds_connections_min=0 \
+    -D pki_skip_ds_verify=True \
     -D pki_share_db=True \
     -D pki_request_id_generator=random \
     -D pki_cert_id_generator=random \

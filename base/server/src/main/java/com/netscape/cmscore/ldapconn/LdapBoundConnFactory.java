@@ -232,7 +232,7 @@ public class LdapBoundConnFactory implements ILdapConnFactory {
      */
     private void init() throws ELdapException {
 
-        if (mMinConns <= 0)
+        if (mMinConns < 0)
             throw new ELdapException("Invalid minimum number of connections: " + mMinConns);
 
         if (mMaxConns <= 0)
