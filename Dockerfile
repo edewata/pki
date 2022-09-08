@@ -24,6 +24,25 @@ RUN dnf install -y systemd \
 CMD [ "/usr/sbin/init" ]
 
 ################################################################################
+FROM registry.fedoraproject.org/fedora:$OS_VERSION AS pki-builder
+
+ARG COPR_REPO
+
+# Enable COPR repo if specified
+RUN if [ -n "$COPR_REPO" ]; then dnf install -y dnf-plugins-core; dnf copr enable -y $COPR_REPO; fi
+
+# Import PKI sources
+COPY . /tmp/pki/
+WORKDIR /tmp/pki
+
+# Install PKI dependencies
+RUN dnf install -y dnf-plugins-core rpm-build
+RUN dnf builddep -y --spec pki.spec
+
+# Build PKI packages
+RUN ./build.sh --with-timestamp --work-dir=/tmp/build rpm
+
+################################################################################
 FROM fedora-runner AS pki-runner
 
 ARG COPR_REPO
@@ -32,10 +51,13 @@ ARG COPR_REPO
 RUN if [ -n "$COPR_REPO" ]; then dnf install -y dnf-plugins-core; dnf copr enable -y $COPR_REPO; fi
 
 # Import PKI packages
-COPY build/RPMS /tmp/RPMS/
+COPY --from=pki-builder /tmp/build/RPMS/* /tmp/RPMS/
 
 # Install PKI packages
-RUN dnf localinstall -y /tmp/RPMS/*; rm -rf /tmp/RPMS
+RUN dnf localinstall -y /tmp/RPMS/* \
+    && dnf clean all \
+    && rm -rf /var/cache/yum \
+    && rm -rf /tmp/RPMS
 
 ################################################################################
 FROM pki-runner AS pki-server
