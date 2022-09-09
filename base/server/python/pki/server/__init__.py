@@ -114,12 +114,18 @@ class PKIServer(object):
                  name,
                  instance_type='tomcat',
                  user='tomcat',
-                 group='tomcat'):
+                 group='tomcat',
+                 uid=-1,
+                 gid=-1):
 
         self.name = name
         self.type = instance_type
+
         self.user = user
+        self._uid = uid
+
         self.group = group
+        self._gid = gid
 
         self.config = {}
         self.passwords = {}
@@ -219,11 +225,17 @@ class PKIServer(object):
 
     @property
     def uid(self):
-        return pwd.getpwnam(self.user).pw_uid
+        if self.user:
+            return pwd.getpwnam(self.user).pw_uid
+        return self._uid
 
     @property
     def gid(self):
-        return grp.getgrnam(self.group).gr_gid
+        if self.group:
+            return grp.getgrnam(self.group).gr_gid
+        if self.user:
+            return pwd.getpwnam(self.user).pw_gid
+        return self._gid
 
     @property
     def password_conf(self):

@@ -58,9 +58,11 @@ class PKIInstance(pki.server.PKIServer):
                  instance_type='pki-tomcatd',
                  user='pkiuser',
                  group='pkiuser',
+                 uid=-1,
+                 gid=-1,
                  version=10):
 
-        super().__init__(name, instance_type, user, group)
+        super().__init__(name, instance_type, user, group, uid, gid)
 
         self.version = version
 
