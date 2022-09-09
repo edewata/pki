@@ -187,20 +187,27 @@ class NSSDatabase(object):
                  passwords=None,
                  password_conf=None,
                  user=None,
-                 group=None):
-        self.user = user
-        self.group = group
+                 group=None,
+                 uid=-1,
+                 gid=-1):
 
         if not directory:
             directory = os.path.join(
                 os.path.expanduser("~"), '.dogtag', 'nssdb')
 
+        self.user = user
         if user:
             self.uid = pwd.getpwnam(user).pw_uid
-            if group:
-                self.gid = grp.getgrnam(group).gr_gid
-            else:
-                self.gid = pwd.getpwnam(user).pw_gid
+        else:
+            self.uid = uid
+
+        self.group = group
+        if group:
+            self.gid = grp.getgrnam(group).gr_gid
+        elif user:
+            self.gid = pwd.getpwnam(user).pw_gid
+        else:
+            self.gid = gid
 
         self.directory = directory
         self.token = normalize_token(token)
@@ -311,9 +318,7 @@ class NSSDatabase(object):
         password_file = os.path.join(tmpdir, filename)
         with open(password_file, 'w', encoding='utf-8') as f:
             f.write(password)
-        if self.user:
-            os.chown(password_file, self.uid, self.gid)
-
+        os.chown(password_file, self.uid, self.gid)
         return password_file
 
     def get_password_file(self, tmpdir, token, filename=None):
@@ -337,8 +342,7 @@ class NSSDatabase(object):
 
     def create_tmpdir(self):
         tmpdir = tempfile.mkdtemp()
-        if self.user:
-            os.chown(tmpdir, self.uid, self.gid)
+        os.chown(tmpdir, self.uid, self.gid)
         return tmpdir
 
     def get_dbtype(self):
@@ -861,8 +865,7 @@ class NSSDatabase(object):
                 Raw extension data (``bytes``)
 
         """
-        if self.user:
-            os.chown(os.path.dirname(request_file), self.uid, self.gid)
+        os.chown(os.path.dirname(request_file), self.uid, self.gid)
 
         if use_jss:
 
