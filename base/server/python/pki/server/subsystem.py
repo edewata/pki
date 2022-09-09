@@ -1731,7 +1731,7 @@ class PKISubsystem(object):
         cmd = []
 
         # by default run command as systemd user
-        if not as_current_user:
+        if not as_current_user and self.instance.user:
 
             # switch to systemd user if different from current user
             username = pwd.getpwuid(os.getuid()).pw_name
