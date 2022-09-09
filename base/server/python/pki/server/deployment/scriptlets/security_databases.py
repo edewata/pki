@@ -77,7 +77,11 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
 
         nssdb = pki.nssdb.NSSDatabase(
             directory=deployer.mdict['pki_server_database_path'],
-            password_file=deployer.mdict['pki_shared_pfile'])
+            password_file=deployer.mdict['pki_shared_pfile'],
+            user=deployer.mdict['pki_user'],
+            group=deployer.mdict['pki_group'],
+            uid=int(deployer.mdict['pki_uid']),
+            gid=int(deployer.mdict['pki_gid']))
 
         try:
             if not nssdb.exists():
@@ -86,6 +90,23 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
                 nssdb.create()
         finally:
             nssdb.close()
+
+        logger.info('Setting NSS database ownership')
+
+        pki.util.chown(
+            deployer.mdict['pki_server_database_path'],
+            subsystem.instance.uid,
+            subsystem.instance.gid)
+
+        logger.info('Setting NSS database permissions')
+
+        pki.util.chmod(
+            deployer.mdict['pki_server_database_path'],
+            pki.server.DEFAULT_FILE_MODE)
+
+        os.chmod(
+            deployer.mdict['pki_server_database_path'],
+            pki.server.DEFAULT_DIR_MODE)
 
         if not os.path.islink(deployer.mdict['pki_instance_database_link']):
             instance.symlink(
@@ -408,7 +429,9 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             directory=deployer.mdict['pki_client_database_dir'],
             password_file=deployer.mdict['pki_client_password_conf'],
             user=deployer.mdict['pki_user'],
-            group=deployer.mdict['pki_group'])
+            group=deployer.mdict['pki_group'],
+            uid=int(deployer.mdict['pki_uid']),
+            gid=int(deployer.mdict['pki_gid']))
 
         try:
             if not nssdb.exists():

@@ -2058,8 +2058,8 @@ class PKIDeployer:
 
         pki.util.chown(
             self.mdict['pki_server_database_path'],
-            self.mdict['pki_uid'],
-            self.mdict['pki_gid'])
+            subsystem.instance.uid,
+            subsystem.instance.gid)
 
         logger.info('Resetting NSS database permissions')
 

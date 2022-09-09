@@ -543,7 +543,9 @@ def main(argv):
     instance = pki.server.instance.PKIInstance(
         deployer.mdict['pki_instance_name'],
         user=deployer.mdict['pki_user'],
-        group=deployer.mdict['pki_group'])
+        group=deployer.mdict['pki_group'],
+        uid=int(deployer.mdict['pki_uid']),
+        gid=int(deployer.mdict['pki_gid']))
 
     if args.log_file:
         print('Installation log: %s' % args.log_file)
