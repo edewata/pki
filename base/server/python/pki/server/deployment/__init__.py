@@ -2054,16 +2054,18 @@ class PKIDeployer:
             nickname=self.mdict['pki_audit_signing_nickname'],
             trust_attributes='u,u,Pu')
 
-        # Reset the NSS database ownership and permissions
+        logger.info('Resetting NSS database ownership')
 
         pki.util.chown(
             self.mdict['pki_server_database_path'],
             self.mdict['pki_uid'],
             self.mdict['pki_gid'])
 
+        logger.info('Resetting NSS database permissions')
+
         pki.util.chmod(
             self.mdict['pki_server_database_path'],
-            config.PKI_DEPLOYMENT_DEFAULT_SECURITY_DATABASE_PERMISSIONS)
+            pki.server.DEFAULT_FILE_MODE)
 
         os.chmod(
             self.mdict['pki_server_database_path'],
