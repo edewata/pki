@@ -21,6 +21,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import logging
+import os
 
 # PKI Deployment Imports
 from .. import pkiconfig as config
@@ -92,6 +93,9 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         if deployer.mdict['pki_configuration_path'] != \
            config.PKI_DEPLOYMENT_CONFIGURATION_ROOT:
             deployer.directory.create(deployer.mdict['pki_configuration_path'])
+
+        logger.info('infrastructure: NSS database: %s',
+                    os.path.exists(deployer.mdict['pki_server_database_path']))
 
     def destroy(self, deployer):
 

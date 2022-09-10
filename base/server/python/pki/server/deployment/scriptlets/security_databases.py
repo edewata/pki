@@ -46,6 +46,9 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             logger.info('Skipping NSS database creation')
             return
 
+        logger.info('security_databases: NSS database: %s',
+                    os.path.exists(deployer.mdict['pki_server_database_path']))
+
         instance = self.instance
         instance.load()
 
@@ -88,25 +91,32 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
                 logger.info('Creating NSS database: %s',
                             deployer.mdict['pki_server_database_path'])
                 nssdb.create()
+            else:
+                logger.info('NSS database already exists: %s',
+                            deployer.mdict['pki_server_database_path'])
         finally:
             nssdb.close()
 
-        logger.info('Setting NSS database ownership')
+        subprocess.run(['ls', '-la', '/etc/pki'])
+        subprocess.run(['ls', '-la', '/etc/pki/pki-tomcat'])
+        subprocess.run(['ls', '-la', '/etc/pki/pki-tomcat/alias'])
 
-        pki.util.chown(
-            deployer.mdict['pki_server_database_path'],
-            subsystem.instance.uid,
-            subsystem.instance.gid)
+        # logger.info('Setting NSS database ownership')
 
-        logger.info('Setting NSS database permissions')
+        # pki.util.chown(
+        #     deployer.mdict['pki_server_database_path'],
+        #     subsystem.instance.uid,
+        #     subsystem.instance.gid)
 
-        pki.util.chmod(
-            deployer.mdict['pki_server_database_path'],
-            pki.server.DEFAULT_FILE_MODE)
+        # logger.info('Setting NSS database permissions')
 
-        os.chmod(
-            deployer.mdict['pki_server_database_path'],
-            pki.server.DEFAULT_DIR_MODE)
+        # pki.util.chmod(
+        #     deployer.mdict['pki_server_database_path'],
+        #     pki.server.DEFAULT_FILE_MODE)
+
+        # os.chmod(
+        #     deployer.mdict['pki_server_database_path'],
+        #     pki.server.DEFAULT_DIR_MODE)
 
         if not os.path.islink(deployer.mdict['pki_instance_database_link']):
             instance.symlink(

@@ -114,6 +114,9 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         if pki.nssdb.normalize_token(deployer.mdict['pki_token_name']):
             configuration_file.confirm_data_exists('pki_token_password')
 
+        logger.info('initialization: NSS database: %s',
+                    os.path.exists(deployer.mdict['pki_server_database_path']))
+
     def spawn(self, deployer):
 
         logger.info(log.PKISPAWN_BEGIN_MESSAGE_2,

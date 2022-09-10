@@ -1149,6 +1149,16 @@ grant codeBase "file:%s" {
 
         self.config['NAME'] = self.name
 
+        user = self.config.get('PKI_USER')
+        logger.info('PKI_USER: %s', user)
+        if user:
+            self.user = user
+
+        group = self.config.get('PKI_GROUP')
+        logger.info('PKI_GROUP: %s', group)
+        if group:
+            self.group = group
+
     def load_passwords(self):
 
         self.passwords.clear()

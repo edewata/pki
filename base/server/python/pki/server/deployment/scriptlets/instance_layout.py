@@ -273,6 +273,9 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
                          deployer.mdict['pki_instance_name']),
             overwrite_flag=True)
 
+        logger.info('instance_layout: NSS database: %s',
+                    os.path.exists(deployer.mdict['pki_server_database_path']))
+
     def destroy(self, deployer):
 
         # if this is not the last subsystem, skip

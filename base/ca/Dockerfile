@@ -82,6 +82,10 @@ RUN chmod -Rf g+rw /etc/sysconfig
 RUN chgrp -Rf root /etc/sysconfig/pki/tomcat
 RUN chmod -Rf g+rw /etc/sysconfig/pki/tomcat
 
+RUN pki -d /etc/pki/pki-tomcat/alias nss-create --force
+RUN chgrp -Rf root /etc/pki/pki-tomcat
+RUN chmod -Rf g+rw /etc/pki/pki-tomcat
+
 RUN mkdir -p /.dogtag
 RUN chgrp -Rf root /.dogtag
 RUN chmod -Rf g+rw /.dogtag
