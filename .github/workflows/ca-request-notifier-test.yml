@@ -1,0 +1,140 @@
+name: CA request notifier
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        required: true
+        type: string
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    env:
+      SHARED: /tmp/workdir/pki
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+
+      - name: Retrieve runner image
+        uses: actions/cache@v3
+        with:
+          key: pki-ca-runner-${{ inputs.os }}-${{ github.run_id }}
+          path: pki-ca-runner.tar
+
+      - name: Load runner image
+        run: docker load --input pki-ca-runner.tar
+
+      - name: Create network
+        run: docker network create example
+
+      - name: Set up DS container
+        run: |
+          tests/bin/ds-container-create.sh ds
+        env:
+          IMAGE: ${{ needs.init.outputs.db-image }}
+          COPR_REPO: ${{ needs.init.outputs.repo }}
+          HOSTNAME: ds.example.com
+          PASSWORD: Secret.123
+
+      - name: Connect DS container to network
+        run: docker network connect example ds --alias ds.example.com
+
+      - name: Set up PKI container
+        run: |
+          tests/bin/runner-init.sh pki
+        env:
+          HOSTNAME: pki.example.com
+
+      - name: Connect PKI container to network
+        run: docker network connect example pki --alias pki.example.com
+
+      - name: Install mail server and client
+        run: |
+          docker exec pki dnf install -y postfix mailx
+
+      - name: Start mail server
+        run: |
+          # use only IPv4 since IPv6 is not available by default
+          docker exec pki sed -i \
+              -e 's/^inet_protocols = .*$/inet_protocols = ipv4/' \
+              /etc/postfix/main.cf
+
+          docker exec pki systemctl start postfix
+
+      - name: Install CA
+        run: |
+          docker exec pki pkispawn \
+              -f /usr/share/pki/server/examples/installation/ca.cfg \
+              -s CA \
+              -D pki_ds_hostname=ds.example.com \
+              -D pki_ds_ldap_port=3389 \
+              -D pki_cert_id_generator=random \
+              -D pki_request_id_generator=random \
+              -v
+
+      - name: Configure request notification job
+        run: |
+          # enable notification listener
+          docker exec pki pki-server ca-config-set ca.notification.requestInQ.enabled true
+          docker exec pki pki-server ca-config-set ca.notification.requestInQ.recipientEmail root@pki.example.com
+          docker exec pki pki-server ca-config-set ca.notification.requestInQ.senderEmail root@pki.example.com
+
+          # enable notification job
+          docker exec pki pki-server ca-config-set jobsScheduler.enabled true
+          docker exec pki pki-server ca-config-set jobsScheduler.job.requestInQueueNotifier.enabled false
+          docker exec pki pki-server ca-config-set jobsScheduler.job.requestInQueueNotifier.cron "* * * * *"
+          docker exec pki pki-server ca-config-set jobsScheduler.job.requestInQueueNotifier.summary.enabled true
+          docker exec pki pki-server ca-config-set jobsScheduler.job.requestInQueueNotifier.summary.recipientEmail root@pki.example.com
+          docker exec pki pki-server ca-config-set jobsScheduler.job.requestInQueueNotifier.summary.senderEmail root@pki.example.com
+
+          # restart CA subsystem
+          docker exec pki pki-server ca-undeploy --wait
+          docker exec pki pki-server ca-deploy --wait
+
+      - name: Check CA admin
+        run: |
+          docker exec pki pki-server cert-export ca_signing --cert-file ca_signing.crt
+          docker exec pki pki client-cert-import ca_signing --ca-cert ca_signing.crt
+          docker exec pki pki client-cert-import \
+              --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
+              --pkcs12-password Secret.123
+          docker exec pki pki -n caadmin ca-user-show caadmin
+
+      - name: Check messages before request
+        run: |
+          sleep 60
+          echo -ne "1\n2\n" | docker exec -i pki mail
+        continue-on-error: true
+
+      - name: Submit enrollment request
+        run: |
+          docker exec pki pki client-cert-request uid=testuser | tee output
+
+          REQUEST_ID=$(sed -n -e 's/^ *Request ID: *\(.*\)$/\1/p' output)
+          echo "REQUEST_ID: $REQUEST_ID"
+
+      - name: Check messages after request
+        run: |
+          sleep 60
+          echo -ne "1\n2\n" | docker exec -i pki mail
+        continue-on-error: true
+
+      - name: Gather artifacts
+        if: always()
+        run: |
+          tests/bin/ds-artifacts-save.sh --output=/tmp/artifacts/pki ds
+          tests/bin/pki-artifacts-save.sh pki
+        continue-on-error: true
+
+      - name: Remove CA
+        run: docker exec pki pkidestroy -i pki-tomcat -s CA -v
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ca-request-notifier-${{ inputs.os }}
+          path: |
+            /tmp/artifacts/pki

@@ -145,6 +145,15 @@ jobs:
     with:
       os: ${{ matrix.os }}
 
+  ca-request-notifier-test:
+    name: CA request notifier
+    needs: [init, build]
+    strategy:
+      matrix: ${{ fromJSON(needs.init.outputs.matrix) }}
+    uses: ./.github/workflows/ca-request-notifier-test.yml
+    with:
+      os: ${{ matrix.os }}
+
   ca-scheduler-publishing-test:
     name: CA publishing job
     needs: [init, build]
