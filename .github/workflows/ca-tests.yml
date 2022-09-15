@@ -46,13 +46,13 @@ jobs:
             COPR_REPO=${{ needs.init.outputs.repo }}
           tags: pki-runner
           target: pki-runner
-          outputs: type=docker,dest=pki-ca-runner.tar
+          outputs: type=docker,dest=/tmp/pki-ca-runner.tar
 
       - name: Store runner image
         uses: actions/cache@v3
         with:
           key: pki-ca-runner-${{ matrix.os }}-${{ github.run_id }}
-          path: pki-ca-runner.tar
+          path: /tmp/pki-ca-runner.tar
 
       - name: Build server image
         uses: docker/build-push-action@v2
@@ -63,13 +63,13 @@ jobs:
             COPR_REPO=${{ needs.init.outputs.repo }}
           tags: pki-ca
           target: pki-ca
-          outputs: type=docker,dest=pki-ca-server.tar
+          outputs: type=docker,dest=/tmp/pki-ca-server.tar
 
       - name: Store server image
         uses: actions/cache@v3
         with:
           key: pki-ca-server-${{ matrix.os }}-${{ github.run_id }}
-          path: pki-ca-server.tar
+          path: /tmp/pki-ca-server.tar
 
   ca-basic-test:
     name: Basic CA
