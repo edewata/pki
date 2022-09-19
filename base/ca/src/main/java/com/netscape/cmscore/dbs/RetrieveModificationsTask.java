@@ -17,6 +17,7 @@
 // --- END COPYRIGHT BLOCK ---
 package com.netscape.cmscore.dbs;
 
+import java.math.BigInteger;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -27,6 +28,7 @@ import org.mozilla.jss.netscape.security.x509.RevokedCertImpl;
 
 import com.netscape.ca.CRLIssuingPoint;
 import com.netscape.certsrv.base.EBaseException;
+import com.netscape.certsrv.dbs.certdb.CertId;
 
 import netscape.ldap.LDAPAttributeSet;
 import netscape.ldap.LDAPEntry;
@@ -85,7 +87,7 @@ public class RetrieveModificationsTask implements Runnable {
     public void retrieveModifications(LDAPEntry entry) {
 
         if (entry == null) {
-            logger.warn("RetrieveModificationsTask: Missing LDAP entry");
+            logger.warn("Missing LDAP entry");
             return;
         }
 
@@ -100,18 +102,23 @@ public class RetrieveModificationsTask implements Runnable {
         try {
             certRecord = (CertRecord) dbSubsystem.getRegistry().createObject(entryAttrs);
         } catch (Exception e) {
-            logger.warn("RetrieveModificationsTask: " + e.getMessage(), e);
+            logger.warn("Unable to create certificate record: " + e.getMessage(), e);
         }
 
         if (certRecord == null) {
-            logger.warn("RetrieveModificationsTask: Unable to create certificate record");
+            logger.warn("Unable to create certificate record");
             return;
         }
 
+        BigInteger serialNumber = certRecord.getSerialNumber();
+        CertId certID = new CertId(serialNumber);
+        logger.info("RetrieveModificationsTask: - serial number: " + certID.toHexString());
+
         String status = certRecord.getStatus();
-        logger.info("RetrieveModificationsTask: status: " + status);
+        logger.info("RetrieveModificationsTask: - status: " + status);
 
         if (status == null) {
+            logger.warn("Missing certificate status");
             return;
         }
 
@@ -122,16 +129,21 @@ public class RetrieveModificationsTask implements Runnable {
         for (CRLIssuingPoint ip : engine.getCRLIssuingPoints()) {
 
             if (ip == null) {
+                logger.warn("Missing CRL issuing point");
                 continue;
             }
 
             if (!status.equals(CertRecord.STATUS_REVOKED)) {
+                logger.info("RetrieveModificationsTask: Unrevoking cert " + certID.toHexString());
                 ip.addUnrevokedCert(certRecord.getSerialNumber());
                 continue;
             }
 
+            logger.info("RetrieveModificationsTask: Revoking cert " + certID.toHexString());
+
             RevocationInfo rInfo = certRecord.getRevocationInfo();
             if (rInfo == null) {
+                logger.warn("Missing revocation information");
                 continue;
             }
 
@@ -166,35 +178,36 @@ public class RetrieveModificationsTask implements Runnable {
             // results.hasMoreElements() will block until next result becomes available
             // or return false if the search is abandoned or the connection is closed
 
-            logger.debug("Waiting for next result.");
+            logger.info("RetrieveModificationsTask: Listening to cert database modifications");
+
             if (results.hasMoreElements()) {
                 LDAPEntry entry = results.next();
 
-                logger.debug("Processing "+entry.getDN()+".");
+                logger.info("RetrieveModificationsTask: Processing " + entry.getDN());
                 retrieveModifications(entry);
-                logger.debug("Done processing "+entry.getDN()+".");
+                logger.info("RetrieveModificationsTask: Done processing " + entry.getDN());
 
                 // wait for next result immediately
                 executorService.schedule(this, 0, TimeUnit.MINUTES);
 
             } else {
                 if (executorService.isShutdown()) {
-                    logger.debug("Task has been shutdown.");
+                    logger.info("RetrieveModificationsTask: Task has been shutdown");
 
                 } else {
-                    logger.debug("Persistence search ended.");
+                    logger.info("RetrieveModificationsTask: Persistence search ended");
                     close();
 
-                    logger.debug("Retrying in 1 minute.");
+                    logger.info("RetrieveModificationsTask: Retrying in 1 minute");
                     executorService.schedule(this, 1, TimeUnit.MINUTES);
                 }
             }
 
         } catch (Exception e) {
-            logger.warn("RetrieveModificationsTask: " + e.getMessage(), e);
+            logger.warn("Unable to process cert database modification: " + e.getMessage(), e);
             close();
 
-            logger.warn("Retrying in 1 minute.");
+            logger.warn("Retrying in 1 minute");
             executorService.schedule(this, 1, TimeUnit.MINUTES);
         }
     }
