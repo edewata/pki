@@ -20,11 +20,11 @@ package com.netscape.cmscore.dbs;
 import java.util.Enumeration;
 
 import com.netscape.certsrv.base.EBaseException;
+import com.netscape.certsrv.dbs.DBVirtualList;
 import com.netscape.certsrv.dbs.EDBException;
 import com.netscape.certsrv.dbs.EDBNotAvailException;
 import com.netscape.certsrv.dbs.EDBRecordNotFoundException;
 import com.netscape.certsrv.dbs.IDBObj;
-import com.netscape.certsrv.dbs.DBVirtualList;
 import com.netscape.certsrv.dbs.Modification;
 import com.netscape.certsrv.dbs.ModificationSet;
 import com.netscape.cmscore.apps.CMS;
@@ -113,7 +113,7 @@ public class LDAPSession extends DBSSession {
                 LDAPAttribute attr = e.nextElement();
                 String[] values = attr.getStringValueArray();
                 if (values == null) continue;
-                logger.debug("LDAPSession: - " + attr.getName());
+                logger.info("LDAPSession: - " + attr.getName());
             }
 
             LDAPEntry e = new LDAPEntry(name, attrs);
@@ -242,13 +242,13 @@ public class LDAPSession extends DBSSession {
 
                     switch (op) {
                     case LDAPModification.ADD:
-                        logger.debug("LDAPSession: - add: " + attr.getName());
+                        logger.info("LDAPSession: - add: " + attr.getName());
                         break;
                     case LDAPModification.DELETE:
-                        logger.debug("LDAPSession: - delete: " + attr.getName());
+                        logger.info("LDAPSession: - delete: " + attr.getName());
                         break;
                     case LDAPModification.REPLACE:
-                        logger.debug("LDAPSession: - replace: " + attr.getName());
+                        logger.info("LDAPSession: - replace: " + attr.getName());
                         break;
                     }
 
