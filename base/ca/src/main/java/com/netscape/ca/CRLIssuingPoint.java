@@ -590,6 +590,8 @@ public class CRLIssuingPoint implements Runnable {
         mCA = ca;
         mId = id;
 
+        logger.info("CRLIssuingPoint: Initializing " + mId + " issuing point");
+
         if (mId.equals(CertificateAuthority.PROP_MASTER_CRL)) {
             mCrlUpdateStatus = Request.CRL_UPDATE_STATUS;
             mCrlUpdateError = Request.CRL_UPDATE_ERROR;
@@ -607,7 +609,7 @@ public class CRLIssuingPoint implements Runnable {
         CAConfig caConfig = mCA.getConfigStore();
         CRLConfig crlConfig = caConfig.getCRLConfig();
         mPageSize = crlConfig.getInteger(CertificateAuthority.PROP_CRL_PAGE_SIZE, CRL_PAGE_SIZE);
-        logger.debug("CRL Page Size: " + mPageSize);
+        logger.info("CRLIssuingPoint: - page Size: " + mPageSize);
 
         mCountMod = mConfigStore.getCountMod();
 
@@ -828,12 +830,15 @@ public class CRLIssuingPoint implements Runnable {
 
         // Get CRL cache config.
         mEnableCRLCache = config.getEnableCRLCache();
+        logger.info("CRLIssuingPoint: - CRL cache enabled: " + mEnableCRLCache);
+
         mCacheUpdateInterval = MINUTE * config.getCacheUpdateInterval();
         mEnableCacheRecovery = config.getEnableCacheRecovery();
         mEnableCacheTesting = config.getEnableCacheTesting();
 
         // check if CRL generation is enabled
         mEnableCRLUpdates = config.getEnableCRLUpdates();
+        logger.info("CRLIssuingPoint: - CRL update enabled: " + mEnableCRLUpdates);
 
         // get update schema
         mUpdateSchema = config.getUpdateSchema();
@@ -841,6 +846,7 @@ public class CRLIssuingPoint implements Runnable {
 
         // Get always update even if updated perdically.
         mAlwaysUpdate = config.getAlwaysUpdate();
+        logger.info("CRLIssuingPoint: - always update: " + mAlwaysUpdate);
 
         // Get list of daily updates.
         mEnableDailyUpdates = config.getEnableDailyUpdates();
@@ -855,7 +861,11 @@ public class CRLIssuingPoint implements Runnable {
 
         // Get auto update interval in minutes.
         mEnableUpdateFreq = config.getEnableUpdateInterval();
+        logger.info("CRLIssuingPoint: - auto-update enabled: " + mEnableUpdateFreq);
+
         mAutoUpdateInterval = MINUTE * config.getAutoUpdateInterval();
+        logger.info("CRLIssuingPoint: - auto-update interval: " + mAutoUpdateInterval);
+
         mMinUpdateInterval = MINUTE * config.getMinUpdateInterval();
         if (mEnableUpdateFreq && mAutoUpdateInterval > 0 &&
                 mAutoUpdateInterval < mMinUpdateInterval)
@@ -863,12 +873,14 @@ public class CRLIssuingPoint implements Runnable {
 
         // get next update grace period
         mNextUpdateGracePeriod = MINUTE * config.getNextUpdateGracePeriod();
+
         // get unexpected exception wait time; default to 30 minutes
         mUnexpectedExceptionWaitTime = MINUTE * config.getUnexpectedExceptionWaitTime();
-        logger.debug("CRLIssuingPoint:initConfig: mUnexpectedExceptionWaitTime set to " + mUnexpectedExceptionWaitTime);
+        logger.info("CRLIssuingPoint: - unexpected exception wait time: " + mUnexpectedExceptionWaitTime);
+
         // get unexpected exception loop max; default to 10 times
         mUnexpectedExceptionLoopMax = config.getUnexpectedExceptionLoopMax();
-        logger.debug("CRLIssuingPoint:initConfig: mUnexpectedExceptionLoopMax set to " + mUnexpectedExceptionLoopMax);
+        logger.info("CRLIssuingPoint: - unexpected exception loop max: " + mUnexpectedExceptionLoopMax);
 
         // get next update as this update extension
         mNextAsThisUpdateExtension = MINUTE * config.getNextAsThisUpdateExtension();
@@ -925,9 +937,10 @@ public class CRLIssuingPoint implements Runnable {
         }
 
         mAutoUpdateIntervalEffectiveAtStart = config.getAutoUpdateIntervalEffectiveAtStart();
-        logger.debug("CRLIssuingPoint.initConfig : mAutoUpdateIntervalEffectiveAtStart: " +  mAutoUpdateIntervalEffectiveAtStart);
-	mForbidCustomFutureThisUpdateValue = config.getBoolean("forbidCustomFutureThisUpdateValue",true);
-        logger.debug("CRLIssuingPoint.initConfig: mForbidCustomFutureThisUpdateValue " + mForbidCustomFutureThisUpdateValue);
+        logger.info("CRLIssuingPoint: - auto-update interval effective at start: " +  mAutoUpdateIntervalEffectiveAtStart);
+
+        mForbidCustomFutureThisUpdateValue = config.getBoolean("forbidCustomFutureThisUpdateValue",true);
+        logger.info("CRLIssuingPoint: - forbid custom future thisUpdate value: " + mForbidCustomFutureThisUpdateValue);
     }
 
     /**
@@ -943,7 +956,7 @@ public class CRLIssuingPoint implements Runnable {
         mLastCacheUpdate = System.currentTimeMillis() + mCacheUpdateInterval;
 
         try {
-            logger.info("CRLIssuingPoint: reading CRL issuing point: " + mId);
+            logger.info("CRLIssuingPoint: Reading " + mId + " issuing point");
             crlRecord = mCRLRepository.readCRLIssuingPointRecord(mId);
 
         } catch (EDBNotAvailException e) {
@@ -952,7 +965,7 @@ public class CRLIssuingPoint implements Runnable {
             return;
 
         } catch (EDBRecordNotFoundException e) {
-            logger.warn("CRLIssuingPoint: CRL issuing point not found: " + mId);
+            logger.info("CRLIssuingPoint: CRL issuing point not found: " + mId);
         }
 
         if (crlRecord != null) {
@@ -992,15 +1005,17 @@ public class CRLIssuingPoint implements Runnable {
 
             mNextUpdate = crlRecord.getNextUpdate();
 
-            logger.debug("CRLIssuingPoint.initCRL: mNextUpdate: " + mNextUpdate);
+            logger.info("CRLIssuingPoint: - next update: " + mNextUpdate);
 
             if (isDeltaCRLEnabled()) {
                 mNextDeltaUpdate = (mNextUpdate != null) ? new Date(mNextUpdate.getTime()) : null;
             }
 
             mFirstUnsaved = crlRecord.getFirstUnsaved();
-            logger.debug("initCRL  CRLNumber=" + mCRLNumber.toString() + "  CRLSize=" + mCRLSize +
-                            "  FirstUnsaved=" + mFirstUnsaved);
+            logger.info("CRLIssuingPoint: - CRL number: " + mCRLNumber);
+            logger.info("CRLIssuingPoint: - size: " + mCRLSize);
+            logger.info("CRLIssuingPoint: - first unsaved: " + mFirstUnsaved);
+
             if (mFirstUnsaved == null ||
                     (mFirstUnsaved != null && mFirstUnsaved.equals(CRLIssuingPointRecord.NEW_CACHE))) {
                 clearCRLCache();
@@ -1077,7 +1092,7 @@ public class CRLIssuingPoint implements Runnable {
 
         if (crlRecord == null) {
             // no crl was ever created, or crl in db is corrupted.
-            logger.info("CRLIssuingPoint: creating new CRL issuing point: " + mId);
+            logger.info("CRLIssuingPoint: Creating new CRL issuing point: " + mId);
 
             CAConfig caConfig = mCA.getConfigStore();
             CRLConfig crlConfig = caConfig.getCRLConfig();
@@ -1085,7 +1100,7 @@ public class CRLIssuingPoint implements Runnable {
 
             try {
                 BigInteger startingCrlNumberBig = ipConfig.getBigInteger(PROP_CRL_STARTING_NUMBER, BigInteger.ZERO);
-                logger.debug("CRLIssuingPoint: startingCrlNumber: " + startingCrlNumberBig);
+                logger.info("CRLIssuingPoint: - starting number: " + startingCrlNumberBig);
 
                 // Check for bogus negative value
 
@@ -1646,7 +1661,7 @@ public class CRLIssuingPoint implements Runnable {
                         (mInitialized == CRLIssuingPointStatus.NotInitialized) ||
                         mDoLastAutoUpdate || mDoManualUpdate)))) {
 
-            logger.info(CMS.getLogMessage("CMSCORE_CA_ISSUING_START_CRL", mId));
+            logger.info("CRLIssuingPoint: Starting auto-update for " + mId);
 
             mUpdateThread = new Thread(this, "CRLIssuingPoint-" + mId);
             mUpdateThread.setDaemon(true);
@@ -1724,6 +1739,9 @@ public class CRLIssuingPoint implements Runnable {
      * @return delay to the next update time or the next update time itself
      */
     private long findNextUpdate(boolean fromLastUpdate, boolean delta) {
+
+        logger.info("CRLIssuingPoint: Calculating next update");
+
         long now = System.currentTimeMillis();
 
         //If we have already created a future thisUpdate value, make "now" this time in the future.
@@ -1751,10 +1769,10 @@ public class CRLIssuingPoint implements Runnable {
         long next = 0L;
         long nextUpdate = 0L;
 
-        logger.debug("CRLIssuingPoint.findNextUpdate: mLastUpdate: " + mLastUpdate);
-        logger.debug("CRLIssuingPoint.findNextUpdate: mNextUpdate: " + mNextUpdate);
-        logger.debug("CRLIssuingPoint.findNextUpdate: mAutoUpdateInterval: " + mAutoUpdateInterval / 60000);
-        logger.debug("CRLIssuingPOint.findNextUpdate: lastUpdate: " + new Date(lastUpdate));
+        logger.info("CRLIssuingPoint: - last update: " + mLastUpdate);
+        logger.info("CRLIssuingPoint: - next update: " + mNextUpdate);
+        logger.info("CRLIssuingPoint: - auto-update interval: " + mAutoUpdateInterval / 60000);
+        logger.info("CRLIssuingPoint: - last update: " + new Date(lastUpdate));
 
         int numberOfDays = (int) ((startOfToday - lastUpdateDay) / oneDay);
         if (numberOfDays > 0 && mDailyUpdates.size() > 1 &&
@@ -1918,7 +1936,8 @@ public class CRLIssuingPoint implements Runnable {
             }
         }
 
-        logger.debug("CRLIssuingPoint.findNextUpdate: nextUpdate : " + new Date(nextUpdate) + " next: " + new Date(next));
+        logger.info("CRLIssuingPoint: - next update: " + new Date(nextUpdate));
+        logger.info("CRLIssuingPoint: - next: " + new Date(next));
 
         if (fromLastUpdate && nextUpdate > 0 && (nextUpdate < next || nextUpdate >= now)) {
             // We have the one time schedule updated flag set in CS.cfg, which means
@@ -1930,25 +1949,27 @@ public class CRLIssuingPoint implements Runnable {
                 // Check and see if the new schedule has taken us into the past:
                 if(next <= now ) {
                     mNextUpdate = new Date(now);
-                    logger.debug("CRLIssuingPoint.findNextUpdate: schedule updated to the past. Making mNextUpdate now: " +  mNextUpdate);
+                    logger.info("CRLIssuingPoint: Schedule updated to the past. Making next update now: " +  mNextUpdate);
                     next = now;
                 }  else {
                     //alter the value of the nextUpdate to be the time calculated from the new schedule
                     mNextUpdate = new Date(next);
                 }
 
-                logger.debug("CRLIssuingPoint.findNextUpdate: taking updated schedule value: " + mNextUpdate);
+                logger.info("CRLIssuingPoint: Taking updated schedule value: " + mNextUpdate);
                 // Now clear it since we only want this once upon startup.
                 mAutoUpdateIntervalEffectiveAtStart = false;
+
             } else {
-                logger.debug("CRLIssuingPoint.findNextUpdate: taking current schedule's nextUpdate value: " + new Date(nextUpdate));
+                logger.info("CRLIssuingPoint: Taking current schedule's next update: " + new Date(nextUpdate));
                 //Normal behavior where the previous or current shedule's nextUpdate time is observed.
                 next = nextUpdate;
             }
         }
 
-        logger.debug("findNextUpdate:  "
-                + ((new Date(next)).toString()) + ((fromLastUpdate) ? "  delay: " + (next - now) : ""));
+        if (fromLastUpdate) {
+            logger.info("CRLIssuingPoint: - delay: " + (next - now) + " ms");
+        }
 
         return (fromLastUpdate) ? next - now : next;
     }
@@ -1999,6 +2020,9 @@ public class CRLIssuingPoint implements Runnable {
      */
     @Override
     public void run() {
+
+        logger.info("CRLIssuingPoint: Starting auto-update");
+
         /*
          * mechnism to slow down the infinite loop when depending
          * components are not available: e.g. Directory server, HSM
@@ -2016,6 +2040,8 @@ public class CRLIssuingPoint implements Runnable {
                             (mEnableUpdateFreq && mAutoUpdateInterval > 0) ||
                     mDoManualUpdate)))) {
 
+                logger.info("CRLIssuingPoint: Waiting to perform auto-update");
+
                 synchronized (this) {
                     long delay = 0;
                     long delay2 = 0;
@@ -2026,12 +2052,15 @@ public class CRLIssuingPoint implements Runnable {
                             (mEnableUpdateFreq && mAutoUpdateInterval > 0));
 
                     if (mInitialized == CRLIssuingPointStatus.NotInitialized) {
+                        logger.info("CRLIssuingPoint: Initializing CRL");
                         initCRL();
                     }
 
                     if ((mEnableCRLUpdates && mDoManualUpdate) || mDoLastAutoUpdate) {
+                        logger.info("CRLIssuingPoint: No delay");
                         delay = 0;
                     } else if (scheduledUpdates) {
+                        logger.info("CRLIssuingPoint: Finding next update");
                         delay = findNextUpdate(true, false);
                     }
 
@@ -2049,6 +2078,7 @@ public class CRLIssuingPoint implements Runnable {
                         }
                     }
 
+                    logger.info("CRLIssuingPoint: Waiting for " + delay + " ms");
                     if (delay > 0) {
                         try {
                             wait(delay);
@@ -2101,10 +2131,13 @@ public class CRLIssuingPoint implements Runnable {
 
                 }
             }
-        } catch (EBaseException e1) {
-            e1.printStackTrace();
+
+            logger.info("CRLIssuingPoint: Done auto-update");
+
+        } catch (EBaseException e) {
+            logger.warn("Unable to auto-update " + mId + ": " + e.getMessage(), e);
         }
-        logger.debug("CRLIssuingPoint:run(): out of the while loop");
+
         mUpdateThread = null;
     }
 
