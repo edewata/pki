@@ -63,6 +63,39 @@ jobs:
 
           docker exec primary pki-server cert-find
 
+      - name: Check CRL config in primary CA
+        run: |
+          echo -n "" > expected
+          docker exec primary pki-server ca-config-show ca.certStatusUpdateInterval | tee actual
+          diff expected actual
+
+          docker exec primary pki-server ca-config-set ca.listenToCloneModifications true
+
+          # update CRL immediately after each cert revocation
+          docker exec primary pki-server ca-config-set ca.crl.MasterCRL.alwaysUpdate true
+
+          docker exec primary pki-server ca-config-set ca.crl.MasterCRL.autoUpdateInterval 1
+
+          echo "true" > expected
+          docker exec primary pki-server ca-config-show ca.crl.MasterCRL.enableCRLCache | tee actual
+          diff expected actual
+
+          echo "true" > expected
+          docker exec primary pki-server ca-config-show ca.crl.MasterCRL.enableCRLUpdates | tee actual
+          diff expected actual
+
+          echo -n "" > expected
+          docker exec primary pki-server ca-config-show master.ca.agent.host | tee actual
+          diff expected actual
+
+          echo -n "" > expected
+          docker exec primary pki-server ca-config-show master.ca.agent.port | tee actual
+          diff expected actual
+
+          # restart CA subsystem
+          docker exec primary pki-server ca-undeploy --wait
+          docker exec primary pki-server ca-deploy --wait
+
       - name: Verify users and SD hosts in primary PKI container
         run: |
           docker exec primary pki-server cert-export ca_signing --cert-file ${SHARED}/ca_signing.crt
@@ -112,6 +145,40 @@ jobs:
               -v
 
           docker exec secondary pki-server cert-find
+
+      - name: Check CRL config in secondary CA
+        run: |
+          echo "0" > expected
+          docker exec secondary pki-server ca-config-show ca.certStatusUpdateInterval | tee actual
+          diff expected actual
+
+          echo "false" > expected
+          docker exec secondary pki-server ca-config-show ca.listenToCloneModifications | tee actual
+          diff expected actual
+
+          echo "false" > expected
+          docker exec secondary pki-server ca-config-show ca.crl.MasterCRL.alwaysUpdate | tee actual
+          diff expected actual || true
+
+          echo "1" > expected
+          docker exec secondary pki-server ca-config-show ca.crl.MasterCRL.autoUpdateInterval | tee actual
+          diff expected actual || true
+
+          echo "false" > expected
+          docker exec secondary pki-server ca-config-show ca.crl.MasterCRL.enableCRLCache | tee actual
+          diff expected actual
+
+          echo "false" > expected
+          docker exec secondary pki-server ca-config-show ca.crl.MasterCRL.enableCRLUpdates | tee actual
+          diff expected actual
+
+          echo "primary.example.com" > expected
+          docker exec secondary pki-server ca-config-show master.ca.agent.host | tee actual
+          diff expected actual
+
+          echo "8443" > expected
+          docker exec secondary pki-server ca-config-show master.ca.agent.port | tee actual
+          diff expected actual
 
       - name: Verify users and SD hosts in secondary PKI container
         run: |
@@ -164,6 +231,40 @@ jobs:
 
           docker exec tertiary pki-server cert-find
 
+      - name: Check CRL config in tertiary CA
+        run: |
+          echo "0" > expected
+          docker exec tertiary pki-server ca-config-show ca.certStatusUpdateInterval | tee actual
+          diff expected actual
+
+          echo "false" > expected
+          docker exec tertiary pki-server ca-config-show ca.listenToCloneModifications | tee actual
+          diff expected actual
+
+          echo "false" > expected
+          docker exec tertiary pki-server ca-config-show ca.crl.MasterCRL.alwaysUpdate | tee actual
+          diff expected actual
+
+          echo "1" > expected
+          docker exec secondary pki-server ca-config-show ca.crl.MasterCRL.autoUpdateInterval | tee actual
+          diff expected actual || true
+
+          echo "false" > expected
+          docker exec tertiary pki-server ca-config-show ca.crl.MasterCRL.enableCRLCache | tee actual
+          diff expected actual
+
+          echo "false" > expected
+          docker exec tertiary pki-server ca-config-show ca.crl.MasterCRL.enableCRLUpdates | tee actual
+          diff expected actual
+
+          echo "secondary.example.com" > expected
+          docker exec tertiary pki-server ca-config-show master.ca.agent.host | tee actual
+          diff expected actual
+
+          echo "8443" > expected
+          docker exec tertiary pki-server ca-config-show master.ca.agent.port | tee actual
+          diff expected actual
+
       - name: Verify users and SD hosts in tertiary PKI container
         run: |
           docker exec tertiary pki client-cert-import ca_signing --ca-cert ${SHARED}/ca_signing.crt
@@ -176,6 +277,205 @@ jobs:
       - name: Check cert requests in tertiary CA
         run: |
           docker exec tertiary pki -n caadmin ca-cert-request-find
+
+      - name: Demote primary CA
+        run: |
+          docker exec primary pki-server ca-undeploy --wait
+
+          docker exec primary sed -n '/^ca\.crl\./p' /etc/pki/pki-tomcat/ca/CS.cfg | tee crl.conf
+          docker exec primary sed -n '/^ca\.publish\./p' /etc/pki/pki-tomcat/ca/CS.cfg | tee publish.conf
+
+          docker exec primary pki-server ca-config-set ca.crl.MasterCRL.enableCRLCache false
+          docker exec primary pki-server ca-config-set ca.crl.MasterCRL.enableCRLUpdates false
+          docker exec primary pki-server ca-config-set ca.publish.enable false
+
+          docker exec primary pki-server ca-config-set ca.certStatusUpdateInterval 0
+          docker exec primary pki-server ca-config-set ca.listenToCloneModifications false
+          docker exec primary pki-server ca-config-set master.ca.agent.host secondary.example.com
+          docker exec primary pki-server ca-config-set master.ca.agent.port 8443
+
+          docker exec primary pki-server ca-deploy --wait
+
+      - name: Promote secondary CA
+        run: |
+          docker exec secondary pki-server ca-undeploy --wait
+
+          docker exec secondary mkdir -p /var/lib/pki/pki-tomcat/crl
+          docker exec secondary chown pkiuser.pkiuser /var/lib/pki/pki-tomcat/crl
+
+          docker exec secondary sed -i '/^ca\.crl\./d' /etc/pki/pki-tomcat/ca/CS.cfg
+          cat crl.conf | docker exec -i secondary tee -a /etc/pki/pki-tomcat/ca/CS.cfg
+
+          docker exec secondary sed -i '/^ca\.publish\./d' /etc/pki/pki-tomcat/ca/CS.cfg
+          cat publish.conf | docker exec -i secondary tee -a /etc/pki/pki-tomcat/ca/CS.cfg
+
+          docker exec secondary pki-server ca-config-unset ca.certStatusUpdateInterval
+          docker exec secondary pki-server ca-config-set ca.listenToCloneModifications true
+          docker exec secondary pki-server ca-config-unset master.ca.agent.host
+          docker exec secondary pki-server ca-config-unset master.ca.agent.port
+
+          docker exec secondary pki-server ca-deploy --wait
+
+      - name: Check initial CRL
+        run: |
+          docker exec tertiary ldapsearch \
+              -H ldap://secondaryds.example.com:3389 \
+              -x \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b "cn=MasterCRL,ou=crlIssuingPoints,ou=ca,dc=ca,dc=pki,dc=example,dc=com" \
+              -o ldif_wrap=no \
+              -t \
+              "(objectClass=crlIssuingPointRecord)" | tee output
+
+          # there should be one CRL attribute
+          grep "certificateRevocationList:" output | wc -l > actual
+          echo "1" > expected
+          diff expected actual
+
+          FILENAME=$(sed -n 's/certificateRevocationList:< file:\/\/\(.*\)$/\1/p' output)
+          echo "FILENAME: $FILENAME"
+
+          # check the CRL
+          docker exec tertiary openssl crl \
+              -in "$FILENAME" \
+              -inform DER \
+              -text \
+              -noout | tee output
+
+          # CRL number should be 1
+          echo "X509v3 CRL Number: " > expected
+          echo "1" >> expected
+          sed -En 'N; s/^ *(X509v3 CRL Number: .*)\n *(.*)$/\1\n\2/p; D' output | tee actual
+          diff expected actual
+
+          # there should be no revoked certs
+          grep "Serial Number:" output | wc -l > actual
+          echo "0" > expected
+          diff expected actual
+
+      - name: Enroll user cert in tertiary CA
+        run: |
+          docker exec tertiary pki client-cert-request uid=testuser | tee output
+
+          REQUEST_ID=$(sed -n -e 's/^ *Request ID: *\(.*\)$/\1/p' output)
+          echo "REQUEST_ID: $REQUEST_ID"
+
+          docker exec tertiary pki -n caadmin ca-cert-request-approve $REQUEST_ID --force | tee output
+          CERT_ID=$(sed -n -e 's/^ *Certificate ID: *\(.*\)$/\1/p' output)
+          echo "CERT_ID: $CERT_ID"
+          echo $CERT_ID > cert.id
+
+          docker exec tertiary pki ca-cert-show $CERT_ID | tee output
+
+          # cert should be valid
+          sed -n "s/^ *Status: \(.*\)$/\1/p" output > actual
+          echo "VALID" > expected
+          diff expected actual
+
+      - name: Revoke user cert in tertiary CA
+        run: |
+          CERT_ID=$(cat cert.id)
+          docker exec tertiary pki -n caadmin ca-cert-hold $CERT_ID --force
+
+          docker exec tertiary pki ca-cert-show $CERT_ID | tee output
+
+          # cert should be revoked
+          sed -n "s/^ *Status: \(.*\)$/\1/p" output > actual
+          echo "REVOKED" > expected
+          diff expected actual
+
+      - name: Check CRL after revocation
+        run: |
+          sleep 120
+
+          docker exec tertiary ldapsearch \
+              -H ldap://tertiaryds.example.com:3389 \
+              -x \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b "cn=MasterCRL,ou=crlIssuingPoints,ou=ca,dc=ca,dc=pki,dc=example,dc=com" \
+              -o ldif_wrap=no \
+              -t \
+              "(objectClass=crlIssuingPointRecord)" | tee output
+
+          # there should be one CRL attribute
+          grep "certificateRevocationList:" output | wc -l > actual
+          echo "1" > expected
+          diff expected actual
+
+          FILENAME=$(sed -n 's/certificateRevocationList:< file:\/\/\(.*\)$/\1/p' output)
+          echo "FILENAME: $FILENAME"
+
+          # check the CRL
+          docker exec tertiary openssl crl \
+              -in "$FILENAME" \
+              -inform DER \
+              -text \
+              -noout | tee output
+
+          # CRL number should be 2
+          echo "X509v3 CRL Number: " > expected
+          echo "2" >> expected
+          sed -En 'N; s/^ *(X509v3 CRL Number: .*)\n *(.*)$/\1\n\2/p; D' output | tee actual
+          diff expected actual
+
+          # there should be one revoked cert
+          grep "Serial Number:" output | wc -l > actual
+          echo "1" > expected
+          diff expected actual
+
+      - name: Unrevoke user cert in tertiary CA
+        run: |
+          CERT_ID=$(cat cert.id)
+          docker exec tertiary pki -n caadmin ca-cert-release-hold $CERT_ID --force
+
+          docker exec tertiary pki ca-cert-show $CERT_ID | tee output
+
+          # cert should be valid
+          sed -n "s/^ *Status: \(.*\)$/\1/p" output > actual
+          echo "VALID" > expected
+          diff expected actual
+
+      - name: Check CRL after unrevocation
+        run: |
+          sleep 120
+
+          docker exec tertiary ldapsearch \
+              -H ldap://secondaryds.example.com:3389 \
+              -x \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b "cn=MasterCRL,ou=crlIssuingPoints,ou=ca,dc=ca,dc=pki,dc=example,dc=com" \
+              -o ldif_wrap=no \
+              -t \
+              "(objectClass=crlIssuingPointRecord)" | tee output
+
+          # there should be one CRL attribute
+          grep "certificateRevocationList:" output | wc -l > actual
+          echo "1" > expected
+          diff expected actual
+
+          FILENAME=$(sed -n 's/certificateRevocationList:< file:\/\/\(.*\)$/\1/p' output)
+          echo "FILENAME: $FILENAME"
+
+          # check the CRL
+          docker exec tertiary openssl crl \
+              -in "$FILENAME" \
+              -inform DER \
+              -text \
+              -noout | tee output
+
+          # CRL number should be 1
+          echo "X509v3 CRL Number: " > expected
+          echo "3" >> expected
+          sed -En 'N; s/^ *(X509v3 CRL Number: .*)\n *(.*)$/\1\n\2/p; D' output | tee actual
+          diff expected actual
+
+          # there should be no revoked certs
+          grep "Serial Number:" output | wc -l > actual
+          echo "0" > expected
+          diff expected actual
 
       - name: Gather artifacts from primary containers
         if: always()
