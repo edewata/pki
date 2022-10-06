@@ -1,6 +1,7 @@
 ################################################################################
 Name:             pki
 ################################################################################
+# invalidate existing cache
 
 %global           product_name Dogtag PKI
 %global           product_id dogtag-pki
