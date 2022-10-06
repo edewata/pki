@@ -71,7 +71,6 @@ jobs:
             COPR_REPO=${{ needs.init.outputs.repo }}
           tags: pki-deps
           target: pki-deps
-          cache-from: type=local,src=/tmp/cache-pki-deps
           cache-to: type=local,dest=/tmp/cache-pki-deps
         if: steps.cache-pki-deps.outputs.cache-hit != 'true'
 
