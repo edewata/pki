@@ -33,17 +33,6 @@ jobs:
       - name: Create network
         run: docker network create example
 
-      - name: Set up DS container
-        run: |
-          tests/bin/ds-container-create.sh ds
-        env:
-          IMAGE: pki-runner
-          HOSTNAME: ds.example.com
-          PASSWORD: Secret.123
-
-      - name: Connect DS container to network
-        run: docker network connect example ds --alias ds.example.com
-
       - name: Set up PKI container
         run: |
           tests/bin/runner-init.sh pki
@@ -91,17 +80,33 @@ jobs:
               Server-Cert
           docker exec pki certutil -L -d /root/.dogtag/nssdb
 
-      - name: Import certs into DS container
+      - name: Export DS certs
         run: |
+          mkdir -p data/tls/ca
+
+          # export DS signing cert
+          docker cp pki:ds_signing.crt data/tls/ca/signing.crt
+
+          # export DS server cert and key
           docker exec pki pk12util \
               -d /root/.dogtag/nssdb \
               -o ds_server.p12 \
               -W Secret.123 \
               -n Server-Cert
           docker cp pki:ds_server.p12 ds_server.p12
-          tests/bin/ds-container-certs-import.sh ds ds_server.p12
-          tests/bin/ds-container-stop.sh ds
-          tests/bin/ds-container-start.sh ds
+
+      - name: Set up DS container
+        run: |
+          tests/bin/ds-container-create.sh ds
+        env:
+          IMAGE: pki-runner
+          HOSTNAME: ds.example.com
+          PASSWORD: Secret.123
+          DATA: ${{ github.workspace }}/data
+          CERTS: ds_server.p12
+
+      - name: Connect DS container to network
+        run: docker network connect example ds --alias ds.example.com
 
       - name: Install CA
         run: |

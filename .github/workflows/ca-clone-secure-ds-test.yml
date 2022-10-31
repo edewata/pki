@@ -34,17 +34,6 @@ jobs:
       - name: Create network
         run: docker network create example
 
-      - name: Set up primary DS container
-        run: |
-          tests/bin/ds-container-create.sh primaryds
-        env:
-          IMAGE: pki-runner
-          HOSTNAME: primaryds.example.com
-          PASSWORD: Secret.123
-
-      - name: Connect primary DS container to network
-        run: docker network connect example primaryds --alias primaryds.example.com
-
       - name: Set up primary PKI container
         run: |
           tests/bin/runner-init.sh primary
@@ -92,17 +81,37 @@ jobs:
               Server-Cert
           docker exec primary certutil -L -d /root/.dogtag/nssdb
 
-      - name: Import certs into primary DS container
+      - name: Export DS certs
         run: |
+          mkdir -p primaryds-data/tls/ca
+
+          # export DS signing cert
+          docker cp primary:ds_signing.crt primaryds-data/tls/ca/signing.crt
+
+          # export DS server cert and key
           docker exec primary pk12util \
               -d /root/.dogtag/nssdb \
               -o ds_server.p12 \
               -W Secret.123 \
               -n Server-Cert
+          docker exec primary openssl pkcs12 \
+              -in ds_server.p12 \
+              -passin pass:Secret.123 \
+              -passout pass:Secret.123
           docker cp primary:ds_server.p12 primaryds_server.p12
-          tests/bin/ds-container-certs-import.sh primaryds primaryds_server.p12
-          tests/bin/ds-container-stop.sh primaryds
-          tests/bin/ds-container-start.sh primaryds
+
+      - name: Set up primary DS container
+        run: |
+          tests/bin/ds-container-create.sh primaryds
+        env:
+          IMAGE: pki-runner
+          HOSTNAME: primaryds.example.com
+          PASSWORD: Secret.123
+          DATA: ${{ github.workspace }}/primaryds-data
+          CERTS: primaryds_server.p12
+
+      - name: Connect primary DS container to network
+        run: docker network connect example primaryds --alias primaryds.example.com
 
       - name: Install CA in primary PKI container
         run: |
@@ -145,17 +154,6 @@ jobs:
         run: |
           docker exec primary pki -n caadmin ca-cert-request-find
 
-      - name: Set up secondary DS container
-        run: |
-          tests/bin/ds-container-create.sh secondaryds
-        env:
-          IMAGE: pki-runner
-          HOSTNAME: secondaryds.example.com
-          PASSWORD: Secret.123
-
-      - name: Connect secondary DS container to network
-        run: docker network connect example secondaryds --alias secondaryds.example.com
-
       - name: Set up secondary PKI container
         run: |
           tests/bin/runner-init.sh secondary
@@ -165,7 +163,7 @@ jobs:
       - name: Connect secondary PKI container to network
         run: docker network connect example secondary --alias secondary.example.com
 
-      - name: Import DS signing cert into secondary PKI container
+      - name: Clone DS signing cert into secondary PKI container
         run: |
           docker exec primary pki \
               pkcs12-export \
@@ -201,17 +199,37 @@ jobs:
               Server-Cert
           docker exec secondary certutil -L -d /root/.dogtag/nssdb
 
-      - name: Import certs into secondary DS container
+      - name: Export DS certs
         run: |
+          mkdir -p secondaryds-data/tls/ca
+
+          # export DS signing cert
+          docker cp secondary:ds_signing.crt secondaryds-data/tls/ca/signing.crt
+
+          # export DS server cert and key
           docker exec secondary pk12util \
               -d /root/.dogtag/nssdb \
               -o ds_server.p12 \
               -W Secret.123 \
               -n Server-Cert
+          docker exec secondary openssl pkcs12 \
+              -in ds_server.p12 \
+              -passin pass:Secret.123 \
+              -passout pass:Secret.123
           docker cp secondary:ds_server.p12 secondaryds_server.p12
-          tests/bin/ds-container-certs-import.sh secondaryds secondaryds_server.p12
-          tests/bin/ds-container-stop.sh secondaryds
-          tests/bin/ds-container-start.sh secondaryds
+
+      - name: Set up secondary DS container
+        run: |
+          tests/bin/ds-container-create.sh secondaryds
+        env:
+          IMAGE: pki-runner
+          HOSTNAME: secondaryds.example.com
+          PASSWORD: Secret.123
+          DATA: ${{ github.workspace }}/secondaryds-data
+          CERTS: secondaryds_server.p12
+
+      - name: Connect secondary DS container to network
+        run: docker network connect example secondaryds --alias secondaryds.example.com
 
       - name: Install CA in secondary PKI container
         run: |

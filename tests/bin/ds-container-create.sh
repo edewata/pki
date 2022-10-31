@@ -25,6 +25,11 @@ then
     IMAGE=quay.io/389ds/dirsrv
 fi
 
+if [ "$PASSWORD" == "" ]
+then
+    PASSWORD=Secret.123
+fi
+
 create_server() {
 
     echo "Creating DS server"
@@ -45,20 +50,35 @@ create_server() {
         ds.inf
 
     docker exec $NAME dscreate from-file ds.inf
+
+    if [ "$CERTS" != "" ]
+    then
+        tests/bin/ds-container-certs-import.sh $NAME $CERTS
+        tests/bin/ds-container-stop.sh $NAME
+        tests/bin/ds-container-start.sh $NAME
+    fi
 }
 
 create_container() {
 
-    echo "Creating DS volume"
+    if [ "$DATA" == "" ]
+    then
+        echo "Creating DS volume"
+        DATA=$NAME-data
+        docker volume create $DATA > /dev/null
+    fi
 
-    docker volume create $NAME-data > /dev/null
+    if [ "$CERTS" != "" ]
+    then
+        tests/bin/ds-container-certs-import.sh $NAME $CERTS
+    fi
 
     echo "Creating DS container"
 
     docker create \
         --name=$NAME \
         --hostname=$HOSTNAME \
-        -v $NAME-data:/data \
+        -v $DATA:/data \
         -v $GITHUB_WORKSPACE:$SHARED \
         -e DS_DM_PASSWORD=$PASSWORD \
         -p 3389 \
@@ -66,10 +86,6 @@ create_container() {
         $IMAGE > /dev/null
 
     $SCRIPT_DIR/ds-container-start.sh $NAME
-
-    echo "Creating certs folder"
-
-    docker exec $NAME mkdir -p /data/tls/ca
 
     echo "Creating database backend"
 

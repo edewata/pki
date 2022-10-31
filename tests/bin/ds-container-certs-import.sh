@@ -28,6 +28,8 @@ import_certs_into_server() {
     echo "Importing DS certs into server"
 
     docker cp $INPUT $NAME:certs.p12
+    docker exec $NAME pwd
+    docker exec $NAME ls -la
 
     docker exec $NAME pk12util \
         -d /etc/dirsrv/slapd-localhost \
@@ -52,41 +54,37 @@ import_certs_into_container() {
 
     echo "Importing DS certs into container"
 
-    docker cp $INPUT $NAME:/tmp/certs.p12
+    ls -laR $DATA
 
-    echo "Fixing file ownership"
+    echo "Exporting server cert into $DATA/tls/server.crt"
 
-    docker exec -u 0 $NAME chown dirsrv.dirsrv /tmp/certs.p12
-
-    echo "Exporting server cert into /data/tls/server.crt"
-
-    docker exec $NAME openssl pkcs12 \
-        -in /tmp/certs.p12 \
+    openssl pkcs12 \
+        -in $INPUT \
         -passin pass:$PASSWORD \
-        -out /data/tls/server.crt \
+        -out $DATA/tls/server.crt \
         -clcerts \
         -nokeys
 
-    echo "Exporting server key into /data/tls/server.key"
+    echo "Exporting server key into $DATA/tls/server.key"
 
-    docker exec $NAME openssl pkcs12 \
-        -in /tmp/certs.p12 \
+    openssl pkcs12 \
+        -in $INPUT \
         -passin pass:$PASSWORD \
-        -out /data/tls/server.key \
+        -out $DATA/tls/server.key \
         -nodes \
         -nocerts
 
-    echo "Exporting CA cert into /data/tls/ca/ca.crt"
+    echo "Exporting CA cert into $DATA/tls/ca/ca.crt"
 
-    docker exec $NAME openssl pkcs12 \
-        -in /tmp/certs.p12 \
+    openssl pkcs12 \
+        -in $INPUT \
         -passin pass:$PASSWORD \
-        -out /data/tls/ca/ca.crt \
+        -out $DATA/tls/ca/ca.crt \
         -cacerts \
         -nokeys
 }
 
-if [ "$IMAGE" == "" ]
+if [ "$IMAGE" == "pki-runner" ]
 then
     import_certs_into_server
 else
