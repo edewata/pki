@@ -83,6 +83,27 @@ jobs:
               -w Secret.123 \
               -f $SHARED/base/acme/realm/ds/create.ldif
 
+      - name: Create ACME admin user and group
+        run: |
+          docker exec -i ds ldapadd \
+              -H ldap://ds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 << EOF
+          dn: uid=admin,ou=people,dc=acme,dc=pki,dc=example,dc=com
+          objectClass: person
+          objectClass: organizationalPerson
+          objectClass: inetOrgPerson
+          uid: admin
+          cn: Administrator
+          sn: Administrator
+
+          dn: cn=Administrators,ou=groups,dc=acme,dc=pki,dc=example,dc=com
+          objectClass: groupOfUniqueNames
+          cn: Administrators
+          description: Administrators
+          uniqueMember: uid=admin,ou=people,dc=acme,dc=pki,dc=example,dc=com
+          EOF
+
       - name: Install ACME in PKI container
         run: |
           docker exec pki pki-server acme-create
@@ -107,8 +128,52 @@ jobs:
               --pkcs12-password Secret.123
           docker exec pki pki -n caadmin ca-user-show caadmin
 
+      - name: Assign CA admin cert to ACME admin user
+        run: |
+          # get PEM cert
+          docker exec pki pki nss-cert-export caadmin > admin.crt
+
+          # convert to DER cert
+          openssl x509 -outform der -in admin.crt -out admin.der
+          docker cp admin.der ds:admin.der
+
+          # get hexadecimal serial number
+          docker exec pki pki nss-cert-show caadmin | tee output
+          HEX_SERIAL=$(sed -n 's/^ *Serial Number: *0x\(.*\)$/\1/p' output)
+          echo "HEX_SERIAL: $HEX_SERIAL"
+
+          # convert to decimal serial number
+          DEC_SERIAL=$(python -c "print(int('$HEX_SERIAL', 16))")
+          echo "DEC_SERIAL: $DEC_SERIAL"
+
+          # get issuer
+          ISSUER=$(sed -n 's/^ *Issuer DN: *\(.*\)$/\1/p' output)
+          echo "ISSUER: $ISSUER"
+
+          # get subject
+          SUBJECT=$(sed -n 's/^ *Subject DN: *\(.*\)$/\1/p' output)
+          echo "SUBJECT: $SUBJECT"
+
+          docker exec -i ds ldapmodify \
+              -H ldap://ds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 << EOF
+          dn: uid=admin,ou=people,dc=acme,dc=pki,dc=example,dc=com
+          changetype: modify
+          add: description
+          description: 2;$DEC_SERIAL;$ISSUER;$SUBJECT
+          -
+          add: userCertificate
+          userCertificate:< file:admin.der
+          -
+          EOF
+
       - name: Verify ACME in PKI container
         run: docker exec pki pki acme-info
+
+      - name: Check ACME jobs in PKI container
+        run: |
+          docker exec pki pki -n caadmin acme-job-find
 
       - name: Set up client container
         run: |
@@ -153,6 +218,46 @@ jobs:
           docker exec client certbot unregister \
               --server http://pki.example.com:8080/acme/directory \
               --non-interactive
+
+      - name: Check ACME orders
+        run: |
+          docker exec ds ldapsearch \
+              -H ldap://ds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b ou=orders,dc=acme,dc=pki,dc=example,dc=com \
+              -s one
+
+      - name: Check ACME authorizations
+        run: |
+          docker exec ds ldapsearch \
+              -H ldap://ds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b ou=authorizations,dc=acme,dc=pki,dc=example,dc=com \
+              -s one
+
+      - name: Check ACME challenges
+        run: |
+          docker exec ds ldapsearch \
+              -H ldap://ds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b ou=challenges,dc=acme,dc=pki,dc=example,dc=com \
+              -s one
+
+      - name: Check ACME certificates
+        run: |
+          docker exec ds ldapsearch \
+              -H ldap://ds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b ou=certificates,dc=acme,dc=pki,dc=example,dc=com \
+              -s one
+
+      - name: Prune ACME database
+        run: |
+          docker exec pki pki -n caadmin acme-job-show pruning
 
       - name: Gather artifacts from server containers
         if: always()

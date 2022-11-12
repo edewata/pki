@@ -12,17 +12,29 @@ import org.dogtagpki.job.JobClient;
 import org.dogtagpki.job.JobInfo;
 
 import com.netscape.certsrv.client.PKIClient;
-import com.netscape.cmstools.cli.SubsystemCLI;
 
 /**
  * @author Endi S. Dewata
  */
 public class JobCLI extends CLI {
 
+    String prefix;
     JobClient jobClient;
 
-    public JobCLI(SubsystemCLI parent) {
+    public JobCLI(CLI parent) {
         super("job", "Job management commands", parent);
+
+        this.prefix = "rest";
+
+        addModule(new JobFindCLI(this));
+        addModule(new JobShowCLI(this));
+        addModule(new JobStartCLI(this));
+    }
+
+    public JobCLI(CLI parent, String prefix) {
+        super("job", "Job management commands", parent);
+
+        this.prefix = prefix;
 
         addModule(new JobFindCLI(this));
         addModule(new JobShowCLI(this));
@@ -33,11 +45,8 @@ public class JobCLI extends CLI {
 
         if (jobClient != null) return jobClient;
 
-        SubsystemCLI subsystemCLI = (SubsystemCLI) parent;
-        String subsystem = subsystemCLI.getName();
-
         PKIClient client = getClient();
-        jobClient = new JobClient(client, subsystem);
+        jobClient = new JobClient(client, parent.getName(), prefix);
 
         return jobClient;
     }

@@ -44,6 +44,9 @@ public class ACMEApplication extends Application {
         classes.add(ACMEAccountOrdersService.class);
         classes.add(ACMERevokeCertificateService.class);
 
+        // job management
+        classes.add(ACMEJobService.class);
+
         singletons.add(new ACMERequestFilter());
     }
 

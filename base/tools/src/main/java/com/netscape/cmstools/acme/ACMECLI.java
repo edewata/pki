@@ -8,6 +8,7 @@ package com.netscape.cmstools.acme;
 import org.dogtagpki.cli.CLI;
 
 import com.netscape.cmstools.cli.MainCLI;
+import com.netscape.cmstools.job.JobCLI;
 
 /**
  * @author Endi S. Dewata
@@ -20,6 +21,7 @@ public class ACMECLI extends CLI {
         addModule(new ACMEInfoCLI(this));
         addModule(new ACMEEnableCLI(this));
         addModule(new ACMEDisableCLI(this));
+        addModule(new JobCLI(this, null));
     }
 
     @Override

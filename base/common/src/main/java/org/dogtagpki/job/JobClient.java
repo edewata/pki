@@ -23,7 +23,12 @@ public class JobClient extends Client {
     JobResource resource;
 
     public JobClient(PKIClient client, String subsystem) throws Exception {
-        super(client, subsystem, "config");
+        super(client, subsystem, "job");
+        init();
+    }
+
+    public JobClient(PKIClient client, String subsystem, String prefix) throws Exception {
+        super(client, subsystem, prefix, "job");
         init();
     }
 

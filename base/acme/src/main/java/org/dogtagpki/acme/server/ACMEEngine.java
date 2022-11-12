@@ -61,9 +61,12 @@ import org.mozilla.jss.netscape.security.util.Utils;
 import org.mozilla.jss.netscape.security.x509.X500Name;
 import org.mozilla.jss.netscape.security.x509.X509CertImpl;
 
+import com.netscape.certsrv.base.EBaseException;
 import com.netscape.cms.realm.RealmCommon;
 import com.netscape.cms.realm.RealmConfig;
 import com.netscape.cms.tomcat.ProxyRealm;
+import com.netscape.cmscore.jobs.JobConfig;
+import com.netscape.cmscore.jobs.JobsConfig;
 
 /**
  * @author Endi S. Dewata
@@ -1052,5 +1055,16 @@ public class ACMEEngine {
         }
 
         return identifiers;
+    }
+
+    public JobsConfig getJobsConfig() throws EBaseException {
+
+        JobsConfig jobsConfig = new JobsConfig();
+
+        JobConfig pruningJobConfig = jobsConfig.createJobConfig("pruning");
+        pruningJobConfig.setEnabled(false);
+        pruningJobConfig.setPluginName("PruningJob");
+
+        return jobsConfig;
     }
 }

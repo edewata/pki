@@ -101,6 +101,11 @@ SPDX-License-Identifier: GPL-2.0-or-later
         <url-pattern>/revoke-cert</url-pattern>
     </servlet-mapping>
 
+    <servlet-mapping>
+        <servlet-name>ACME</servlet-name>
+        <url-pattern>/jobs/*</url-pattern>
+    </servlet-mapping>
+
     <security-constraint>
         <display-name>Allow somebody with credentials to log in</display-name>
         <web-resource-collection>
@@ -159,6 +164,19 @@ SPDX-License-Identifier: GPL-2.0-or-later
         <auth-constraint>
             <role-name>Administrators</role-name>
             <role-name>Enterprise ACME Administrators</role-name>
+        </auth-constraint>
+        <user-data-constraint>
+            <transport-guarantee>CONFIDENTIAL</transport-guarantee>
+        </user-data-constraint>
+    </security-constraint>
+
+    <security-constraint>
+        <display-name>Allow job owners to manage ACME jobs</display-name>
+        <web-resource-collection>
+            <url-pattern>/jobs/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>*</role-name>
         </auth-constraint>
         <user-data-constraint>
             <transport-guarantee>CONFIDENTIAL</transport-guarantee>
