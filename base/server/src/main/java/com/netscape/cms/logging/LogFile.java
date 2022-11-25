@@ -32,6 +32,7 @@ import java.io.LineNumberReader;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.RandomAccessFile;
+import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
@@ -703,15 +704,18 @@ public class LogFile extends LogEventListener implements IExtendedPluginInfo {
     }
 
     private static String getLastSignature(File f) throws IOException {
-        BufferedReader r = new BufferedReader(new FileReader(f));
         String lastSig = null;
         String curLine = null;
-        while ((curLine = r.readLine()) != null) {
-            if (curLine.indexOf("AUDIT_LOG_SIGNING") != -1) {
-                lastSig = curLine;
+
+        try (Reader fr = new FileReader(f);
+                BufferedReader r = new BufferedReader(fr)) {
+            while ((curLine = r.readLine()) != null) {
+                if (curLine.indexOf("AUDIT_LOG_SIGNING") != -1) {
+                    lastSig = curLine;
+                }
             }
         }
-        r.close();
+
         return lastSig;
     }
 
@@ -720,10 +724,8 @@ public class LogFile extends LogEventListener implements IExtendedPluginInfo {
      *
      */
     protected synchronized void open() throws IOException {
-        RandomAccessFile out;
 
-        try {
-            out = new RandomAccessFile(mFile, "rw");
+        try (RandomAccessFile out = new RandomAccessFile(mFile, "rw")) {
             out.seek(out.length());
             //XXX int or long?
             mBytesWritten = (int) out.length();
