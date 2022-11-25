@@ -28,9 +28,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.Reader;
 import java.net.Socket;
 import java.util.Properties;
 
@@ -103,7 +101,7 @@ public class HttpClient {
             String nickname, String password, String servlet, String clientmode,
             int numHeaderLines)
             throws Exception {
-        OutputStream os = null;
+        DataOutputStream dos = null;
         InputStream is = null;
         PrintStream ps = null;
         ByteArrayOutputStream bs = null;
@@ -159,30 +157,34 @@ public class HttpClient {
                 }
 
                 sslSocket.forceHandshake();
-                os = sslSocket.getOutputStream();
+                dos = new DataOutputStream(sslSocket.getOutputStream());
                 is = sslSocket.getInputStream();
             } else {
                 socket = new Socket(_host, _port);
-                os = socket.getOutputStream();
+                dos = new DataOutputStream(socket.getOutputStream());
                 is = socket.getInputStream();
             }
 
             // send request
-            try (DataOutputStream dos = new DataOutputStream(os)) {
+            if (servlet == null) {
+                System.out.println("Missing servlet name.");
+                printUsage();
+            } else {
                 System.out.println("writing to socket");
                 String s = "POST " + servlet + " HTTP/1.0\r\n";
                 dos.writeBytes(s);
-                dos.writeBytes("Content-length: " + b.length + "\r\n");
-                dos.writeBytes("\r\n");
-                dos.write(b);
             }
+            dos.writeBytes("Content-length: " + b.length + "\r\n");
+            dos.writeBytes("\r\n");
+            dos.write(b);
+            dos.flush();
 
+            FileOutputStream fof = new FileOutputStream(ofilename);
             boolean startSaving = false;
             int sum = 0;
             boolean hack = false;
             String catchHeaders = "";
-
-            try (OutputStream fof = new FileOutputStream(ofilename)) {
+            try {
                 while (true) {
                     int r = is.read();
                     if (r == -1)
@@ -210,7 +212,7 @@ public class HttpClient {
                 }
             } catch (IOException e) {
             }
-
+            fof.close();
             // debug
             System.out.println("\n##Response Headers begin##\n" + catchHeaders + "\n##end##\n");
 
@@ -231,6 +233,9 @@ public class HttpClient {
         } finally {
             if (is != null) {
                 is.close();
+            }
+            if (dos != null) {
+                dos.close();
             }
             if (bs != null) {
                 bs.close();
@@ -312,14 +317,11 @@ public class HttpClient {
         }
 
         String configFile = args[0];
-        Properties config = new Properties();
-
-        try (InputStream is = new FileInputStream(configFile);
-                InputStream bis = new BufferedInputStream(is);
-                Reader isr = new InputStreamReader(bis);
-                Reader reader = new BufferedReader(isr)) {
-            config.load(reader);
-
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new InputStreamReader(
+                            new BufferedInputStream(
+                                    new FileInputStream(configFile))));
         } catch (FileNotFoundException e) {
             System.out.println("HttpClient:  can't find configuration file: " + configFile);
             printUsage();
@@ -328,6 +330,15 @@ public class HttpClient {
             e.printStackTrace();
             printUsage();
             return;
+        }
+
+        Properties config = new Properties();
+        try {
+            config.load(reader);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            printUsage();
         }
 
         String host = config.getProperty("host");
@@ -404,12 +415,6 @@ public class HttpClient {
                 System.out.println("numHeaderLines " + numHeaderLines + " out of range: 1 - 56");
                 System.exit(1);
             }
-        }
-
-        if (servlet == null) {
-            System.out.println("Missing servlet name.");
-            printUsage();
-            return;
         }
 
         try {
