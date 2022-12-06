@@ -1028,7 +1028,12 @@ public class CAEngine extends CMSEngine {
         logger.info("CAEngine: Creating authority " + aidString);
 
         CertificateAuthority hostCA = getCA();
-        String nickname = hostCA.getNickname() + " " + aidString;
+        String nickname = hostCA.getNickname();
+        int i = nickname.indexOf(':');
+        if (i >= 0) {
+            nickname = nickname.substring(i + 1);
+        }
+        nickname = nickname + " " + aidString;
         logger.info("CAEngine: - nickname: " + nickname);
 
         // build database entry

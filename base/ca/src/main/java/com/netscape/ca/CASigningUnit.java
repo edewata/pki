@@ -35,8 +35,9 @@ import com.netscape.certsrv.base.EPropertyNotFound;
 import com.netscape.certsrv.ca.CAMissingCertException;
 import com.netscape.certsrv.ca.CAMissingKeyException;
 import com.netscape.certsrv.ca.ECAException;
-import com.netscape.certsrv.security.SigningUnitConfig;
+import com.netscape.certsrv.dbs.certdb.CertId;
 import com.netscape.certsrv.security.SigningUnit;
+import com.netscape.certsrv.security.SigningUnitConfig;
 import com.netscape.cmscore.apps.CMS;
 import com.netscape.cmsutil.crypto.CryptoUtil;
 
@@ -61,7 +62,9 @@ public final class CASigningUnit extends SigningUnit {
 
     public void init(SigningUnitConfig config, String nickname) throws EBaseException {
 
-        logger.debug("CASigningUnit.init(" + config.getName() + ", " + nickname + ")");
+        logger.info("CASigningUnit: Initializing CASigningUnit");
+        logger.info("CASigningUnit: - name: " + config.getName());
+        logger.info("CASigningUnit: - nickname: " + nickname);
 
         mConfig = config;
 
@@ -80,16 +83,22 @@ public final class CASigningUnit extends SigningUnit {
             }
 
             tokenname = config.getTokenName();
+            logger.info("CASigningUnit: - token: " + tokenname);
+
             mToken = CryptoUtil.getKeyStorageToken(tokenname);
             if (!CryptoUtil.isInternalToken(tokenname)) {
                 mNickname = tokenname + ":" + mNickname;
             }
+
+            logger.info("CASigningUnit: - new nickname: " + mNickname);
             setNewNickName(mNickname);
 
             try {
-                logger.debug("SigningUnit: Loading certificate " + mNickname);
+                logger.info("SigningUnit: Loading certificate " + mNickname);
                 mCert = mManager.findCertByNickname(mNickname);
-                logger.debug("SigningUnit: certificate serial number: " + mCert.getSerialNumber());
+
+                CertId certID = new CertId(mCert.getSerialNumber());
+                logger.info("SigningUnit: - serial: " + certID.toHexString());
 
             } catch (ObjectNotFoundException e) {
                 throw new CAMissingCertException("Certificate not found: " + mNickname + ": " + e.getMessage(), e);

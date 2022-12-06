@@ -1200,6 +1200,7 @@ public class CertificateAuthority implements IAuthority, ICertificateAuthority, 
     public synchronized void initCertSigningUnit() throws Exception {
 
         logger.info("CertificateAuthority: Initializing cert signing unit");
+        logger.info("CertificateAuthority: - nickname: " + mNickname);
 
         SigningUnitConfig caSigningCfg = mConfig.getSigningUnitConfig();
 
@@ -1210,9 +1211,10 @@ public class CertificateAuthority implements IAuthority, ICertificateAuthority, 
         signingUnitException = null;
 
         mNickname = mSigningUnit.getNickname();
+        logger.info("CertificateAuthority: - signing unit nickname: " + mNickname);
 
         X509Certificate caCert = mSigningUnit.getCert();
-        logger.info("CertificateAuthority: - nickname: " + caCert.getNickname());
+        logger.info("CertificateAuthority: - signing cert nickname: " + caCert.getNickname());
 
         X509CertImpl caCertImpl = mSigningUnit.getCertImpl();
         mName = caCertImpl.getSubjectName();
