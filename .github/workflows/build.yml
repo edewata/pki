@@ -87,58 +87,10 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           outputs: type=docker
 
-      - name: Build pki-server image
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          build-args: |
-            BASE_IMAGE=${{ needs.init.outputs.base-image }}
-            COPR_REPO=${{ needs.init.outputs.repo }}
-          tags: pki-server
-          target: pki-server
-          cache-from: type=local,src=/tmp/.buildx-cache
-          outputs: type=docker
-
-      - name: Build pki-ca image
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          build-args: |
-            BASE_IMAGE=${{ needs.init.outputs.base-image }}
-            COPR_REPO=${{ needs.init.outputs.repo }}
-          tags: pki-ca
-          target: pki-ca
-          cache-from: type=local,src=/tmp/.buildx-cache
-          outputs: type=docker
-
-      - name: Build pki-acme image
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          build-args: |
-            BASE_IMAGE=${{ needs.init.outputs.base-image }}
-            COPR_REPO=${{ needs.init.outputs.repo }}
-          tags: pki-acme
-          target: pki-acme
-          cache-from: type=local,src=/tmp/.buildx-cache
-          outputs: type=docker
-
-      - name: Build ipa-runner image
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          build-args: |
-            BASE_IMAGE=${{ needs.init.outputs.base-image }}
-            COPR_REPO=${{ needs.init.outputs.repo }}
-          tags: ipa-runner
-          target: ipa-runner
-          cache-from: type=local,src=/tmp/.buildx-cache
-          outputs: type=docker
-
       - name: Save PKI images
         run: |
           docker images
-          docker save -o pki-images.tar pki-builder pki-dist pki-runner pki-server pki-ca pki-acme ipa-runner
+          docker save -o pki-images.tar pki-builder pki-dist pki-runner
 
       - name: Store PKI images
         uses: actions/cache@v3
