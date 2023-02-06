@@ -1,0 +1,101 @@
+name: CA with HSM
+
+on:
+  workflow_call:
+    inputs:
+      db-image:
+        required: false
+        type: string
+
+jobs:
+  # docs/installation/ca/Installing_CA_with_HSM.md
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    env:
+      SHARED: /tmp/workdir/pki
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v3
+
+      - name: Retrieve PKI images
+        uses: actions/cache@v3
+        with:
+          key: pki-images-${{ github.sha }}
+          path: pki-images.tar
+
+      - name: Load PKI images
+        run: docker load --input pki-images.tar
+
+      - name: Create network
+        run: docker network create example
+
+      - name: Set up PKI container
+        run: |
+          tests/bin/runner-init.sh pki
+        env:
+          HOSTNAME: pki.example.com
+
+      - name: Connect PKI container to network
+        run: docker network connect example pki --alias pki.example.com
+
+      - name: Install dependencies
+        run: |
+          docker exec pki dnf install -y softhsm
+
+      - name: Test modutil
+        if: always()
+        run: |
+          docker exec pki modutil -nocertdb -list
+
+      - name: Test modutil
+        if: always()
+        run: |
+          docker exec pki mkdir -p nssdb
+          docker exec pki certutil -N -d nssdb --empty-password
+          docker exec pki modutil -dbdir nssdb \
+              -nocertdb -add softhsm -libfile /usr/lib64/pkcs11/libsofthsm2.so -force
+
+      - name: Create SoftHSM token
+        if: always()
+        run: |
+          # allow PKI user to access SoftHSM files
+          docker exec pki usermod pkiuser -a -G ods
+
+          # create SoftHSM token for PKI server
+          docker exec pki runuser -u pkiuser -- \
+              softhsm2-util \
+              --init-token \
+              --label HSM \
+              --so-pin Secret.HSM \
+              --pin Secret.HSM \
+              --free
+
+          docker exec pki ls -laR /var/lib/softhsm/tokens
+
+      - name: Test modutil
+        if: always()
+        run: |
+          docker exec pki runuser -u pkiuser -- modutil -nocertdb -list
+
+      - name: Test modutil
+        if: always()
+        run: |
+          docker exec pki runuser -u pkiuser -- mkdir -p nssdb2
+          docker exec pki runuser -u pkiuser -- certutil -N -d nssdb2 --empty-password
+          docker exec pki runuser -u pkiuser -- \
+              modutil -dbdir nssdb2 \
+              -nocertdb -add softhsm -libfile /usr/lib64/pkcs11/libsofthsm2.so -force
+
+      - name: Remove SoftHSM token
+        run: |
+          docker exec pki ls -laR /var/lib/softhsm/tokens
+          docker exec pki runuser -u pkiuser -- softhsm2-util --delete-token --token HSM
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: ca-hsm
+          path: |
+            /tmp/artifacts/pki

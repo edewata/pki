@@ -104,3 +104,10 @@ jobs:
   update-version-test:
     name: Update Version
     uses: ./.github/workflows/update-version-test.yml
+
+  modutil-test:
+    name: modutil
+    needs: [init, build]
+    uses: ./.github/workflows/modutil-test.yml
+    with:
+      db-image: ${{ needs.init.outputs.db-image }}
