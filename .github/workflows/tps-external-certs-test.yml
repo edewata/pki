@@ -184,6 +184,7 @@ jobs:
               -D pki_sslserver_csr_path=${SHARED}/sslserver.csr \
               -D pki_audit_signing_csr_path=${SHARED}/tps_audit_signing.csr \
               -D pki_admin_csr_path=${SHARED}/tps_admin.csr \
+              -D pki_security_domain_setup=False \
               -v
 
       - name: Issue subsystem cert
@@ -243,6 +244,7 @@ jobs:
               -D pki_sslserver_cert_path=${SHARED}/sslserver.crt \
               -D pki_audit_signing_cert_path=${SHARED}/tps_audit_signing.crt \
               -D pki_admin_cert_path=${SHARED}/tps_admin.crt \
+              -D pki_security_domain_setup=False \
               -v
 
           docker exec tps pki-server cert-find

@@ -109,6 +109,7 @@ jobs:
               -D pki_sslserver_csr_path=${SHARED}/sslserver.csr \
               -D pki_audit_signing_csr_path=${SHARED}/ocsp_audit_signing.csr \
               -D pki_admin_csr_path=${SHARED}/ocsp_admin.csr \
+              -D pki_security_domain_setup=False \
               -v
 
       - name: Issue OCSP signing cert
@@ -179,6 +180,7 @@ jobs:
               -D pki_sslserver_cert_path=${SHARED}/sslserver.crt \
               -D pki_audit_signing_cert_path=${SHARED}/ocsp_audit_signing.crt \
               -D pki_admin_cert_path=${SHARED}/ocsp_admin.crt \
+              -D pki_security_domain_setup=False \
               -v
 
           docker exec ocsp pki-server cert-find

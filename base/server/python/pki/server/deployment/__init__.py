@@ -2545,7 +2545,8 @@ class PKIDeployer:
         admin_groups = subsystem.config['preop.admin.group']
         groups = [x.strip() for x in admin_groups.split(',')]
 
-        if subsystem.config['securitydomain.select'] == 'new':
+        if config.str2bool(self.mdict['pki_security_domain_setup']) and \
+                subsystem.config['securitydomain.select'] == 'new':
 
             if subsystem.type == 'CA':
                 groups.extend([
@@ -3350,6 +3351,9 @@ class PKIDeployer:
         tps_uid = 'TPS-%s-%s' % (self.mdict['pki_hostname'], self.mdict['pki_https_port'])
         full_name = self.mdict['pki_subsystem_name']
         subsystem_cert = subsystem.get_subsystem_cert('subsystem').get('data')
+
+        if not config.str2bool(self.mdict['pki_security_domain_setup']):
+            return
 
         logger.info('Registering TPS in CA')
         self.add_subsystem_user(

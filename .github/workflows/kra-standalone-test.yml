@@ -73,6 +73,7 @@ jobs:
               -D pki_ds_ldap_port=3389 \
               -D pki_key_id_generator=random \
               -D pki_request_id_generator=random \
+              -D pki_security_domain_setup=False \
               -v
 
       - name: Issue KRA storage cert
@@ -144,6 +145,7 @@ jobs:
               -D pki_ds_ldap_port=3389 \
               -D pki_key_id_generator=random \
               -D pki_request_id_generator=random \
+              -D pki_security_domain_setup=False \
               -v
 
           docker exec pki pki-server cert-find

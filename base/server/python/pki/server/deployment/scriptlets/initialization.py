@@ -199,22 +199,24 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             # get ports to remove selinux context
             deployer.configuration_file.populate_non_default_ports()
 
-            # remove kra connector from CA if this is a KRA
-            deployer.kra_connector.deregister(instance, subsystem)
+            if config.str2bool(deployer.mdict['pki_security_domain_setup']):
 
-            # remove tps connector from TKS if this is a TPS
-            deployer.tps_connector.deregister(instance, subsystem)
+                # remove kra connector from CA if this is a KRA
+                deployer.kra_connector.deregister(instance, subsystem)
 
-            # de-register instance from its Security Domain
-            #
-            #     NOTE:  Since the security domain of an instance must be up
-            #            and running in order to be de-registered, this step
-            #            must be done PRIOR to instance shutdown because this
-            #            instance's security domain may be a part of a
-            #            tightly-coupled shared instance.
-            #
+                # remove tps connector from TKS if this is a TPS
+                deployer.tps_connector.deregister(instance, subsystem)
 
-            deployer.security_domain.deregister(instance, subsystem)
+                # de-register instance from its Security Domain
+                #
+                #     NOTE:  Since the security domain of an instance must be up
+                #            and running in order to be de-registered, this step
+                #            must be done PRIOR to instance shutdown because this
+                #            instance's security domain may be a part of a
+                #            tightly-coupled shared instance.
+                #
+
+                deployer.security_domain.deregister(instance, subsystem)
 
         except Exception as e:  # pylint: disable=broad-except
             logger.error(str(e))

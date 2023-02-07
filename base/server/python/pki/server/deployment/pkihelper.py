@@ -2169,7 +2169,7 @@ class SecurityDomain:
         self.mdict = deployer.mdict
         self.password = deployer.password
 
-    def deregister(self, instance, subsystem, critical_failure=False):
+    def deregister(self, instance, subsystem, critical_failure=True):
 
         cs_cfg = PKIConfigParser.read_simple_configuration_file(subsystem.cs_conf)
         machinename = cs_cfg.get('machineName')
@@ -2240,7 +2240,7 @@ class SecurityDomain:
             else:
                 return
 
-        logger.debug('Output:\n%s', output)
+        logger.info('Output:\n%s', output)
 
         if not output:
             if critical_failure:
@@ -2295,7 +2295,7 @@ class SecurityDomain:
             instance,
             subsystem,
             typeval, secname, params,
-            update_url, sechost, secagentport, critical_failure=False):
+            update_url, sechost, secagentport, critical_failure=True):
 
         cs_cfg = PKIConfigParser.read_simple_configuration_file(subsystem.cs_conf)
 
@@ -2342,6 +2342,8 @@ class SecurityDomain:
                    "-e", urllib.parse.urlencode(params),
                    "-v",
                    "-r", update_url, sechost + ":" + str(secagentport)]
+
+        logger.info('Command: %s', ' '.join(command))
 
         # don't use text param to support Python 3.6
         # https://stackoverflow.com/questions/52663518/python-subprocess-popen-doesnt-take-text-argument

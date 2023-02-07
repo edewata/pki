@@ -72,6 +72,7 @@ jobs:
               -s OCSP \
               -D pki_ds_hostname=ds.example.com \
               -D pki_ds_ldap_port=3389 \
+              -D pki_security_domain_setup=False \
               -v
 
       - name: Issue OCSP signing cert
@@ -131,6 +132,7 @@ jobs:
               -s OCSP \
               -D pki_ds_hostname=ds.example.com \
               -D pki_ds_ldap_port=3389 \
+              -D pki_security_domain_setup=False \
               -v
 
           docker exec pki pki-server cert-find
