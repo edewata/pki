@@ -87,6 +87,13 @@ jobs:
     with:
       db-image: ${{ needs.init.outputs.db-image }}
 
+  ca-keyring-test:
+    name: CA with keyring
+    needs: [init, build]
+    uses: ./.github/workflows/ca-keyring-test.yml
+    with:
+      db-image: ${{ needs.init.outputs.db-image }}
+
   ca-hsm-test:
     name: CA with HSM
     needs: [init, build]
