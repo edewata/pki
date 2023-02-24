@@ -142,3 +142,10 @@ jobs:
     uses: ./.github/workflows/ca-container-test.yml
     with:
       db-image: ${{ needs.init.outputs.db-image }}
+
+  ca-backup-test:
+    name: CA backup
+    needs: [init, build]
+    uses: ./.github/workflows/ca-backup-test.yml
+    with:
+      db-image: ${{ needs.init.outputs.db-image }}
