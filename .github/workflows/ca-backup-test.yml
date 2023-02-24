@@ -1,0 +1,363 @@
+name: CA backup
+
+on:
+  workflow_call:
+    inputs:
+      db-image:
+        required: false
+        type: string
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    env:
+      SHARED: /tmp/workdir/pki
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v3
+
+      - name: Retrieve PKI images
+        uses: actions/cache@v3
+        with:
+          key: pki-images-${{ github.sha }}
+          path: pki-images.tar
+
+      - name: Load PKI images
+        run: docker load --input pki-images.tar
+
+      - name: Create network
+        run: docker network create example
+
+      - name: Set up DS container
+        run: |
+          tests/bin/ds-container-create.sh ds
+        env:
+          IMAGE: pki-runner
+          HOSTNAME: ds.example.com
+          PASSWORD: Secret.123
+
+      - name: Connect DS container to network
+        run: docker network connect example ds --alias ds.example.com
+
+      - name: Set up primary PKI container
+        run: |
+          tests/bin/runner-init.sh primary-pki
+        env:
+          HOSTNAME: primary-pki.example.com
+
+      - name: Connect primary PKI container to network
+        run: docker network connect example primary-pki --alias primary-pki.example.com
+
+      - name: Install CA on primary PKI container
+        run: |
+          docker exec primary-pki pkispawn \
+              -f /usr/share/pki/server/examples/installation/ca.cfg \
+              -s CA \
+              -D pki_ds_hostname=ds.example.com \
+              -D pki_ds_ldap_port=3389 \
+              -D pki_cert_id_generator=random \
+              -D pki_request_id_generator=random \
+              -v
+
+      - name: Run PKI healthcheck on primary PKI container
+        run: docker exec primary-pki pki-healthcheck --failures-only
+
+      - name: Set up client container
+        run: |
+          tests/bin/runner-init.sh client
+        env:
+          HOSTNAME: client.example.com
+
+      - name: Connect client container to network
+        run: docker network connect example client --alias client.example.com
+
+      - name: Set up PKI client
+        run: |
+          # install signing cert
+          docker exec primary-pki pki-server cert-export \
+              --cert-file ca_signing.crt \
+              ca_signing
+          docker cp primary-pki:ca_signing.crt .
+          docker cp ca_signing.crt client:.
+          docker exec client pki client-cert-import \
+              --ca-cert ca_signing.crt \
+              ca_signing
+
+          # install admin cert
+          docker cp primary-pki:/root/.dogtag/pki-tomcat/ca_admin_cert.p12 .
+          docker cp ca_admin_cert.p12 client:.
+          docker exec client pki pkcs12-import \
+              --pkcs12 ca_admin_cert.p12 \
+              --pkcs12-password Secret.123
+
+      - name: Check SD subsystems in primary PKI container
+        run: |
+          docker exec primary-pki pki-server sd-subsystem-find
+
+      - name: Check CA users in primary PKI container
+        run: |
+          docker exec primary-pki pki-server ca-user-find \
+              | tee users.before
+
+      - name: Check CA user certs in primary PKI container
+        run: |
+          docker exec primary-pki pki-server ca-user-cert-find \
+              CA-primary-pki.example.com-8443 \
+              | tee user-certs.before
+
+      - name: Check CA cert requests on primary PKI container
+        run: |
+          docker exec client pki \
+              -U https://primary-pki.example.com:8443 \
+              -n caadmin \
+              ca-cert-request-find \
+              | tee cert-requests.before
+
+      - name: Check CA certs on primary PKI container
+        run: |
+          docker exec client pki \
+              -U https://primary-pki.example.com:8443 \
+              ca-cert-find \
+              | tee certs.before
+
+      # https://github.com/dogtagpki/pki/wiki/Backing-Up-PKI-Server
+      - name: Back up PKI server
+        run: |
+          docker exec primary-pki pki-server stop --wait
+
+          docker exec primary-pki tar czvf pki-tomcat.tar.gz \
+              -C / \
+              etc/pki/pki-tomcat \
+              etc/sysconfig/pki-tomcat \
+              etc/sysconfig/pki/tomcat/pki-tomcat \
+              etc/systemd/system/pki-tomcatd.target.wants/pki-tomcatd@pki-tomcat.service \
+              var/lib/pki/pki-tomcat \
+              var/log/pki/pki-tomcat
+          docker cp primary-pki:pki-tomcat.tar.gz .
+
+      - name: Remove primary PKI container
+        run: |
+          docker network disconnect example primary-pki
+          docker rm -f primary-pki
+
+      - name: Create secondary PKI container
+        run: |
+          tests/bin/runner-init.sh secondary-pki
+        env:
+          HOSTNAME: secondary-pki.example.com
+
+      - name: Connect secondary PKI container to network
+        run: docker network connect example secondary-pki --alias secondary-pki.example.com
+
+      # https://github.com/dogtagpki/pki/wiki/Restoring-PKI-Server
+      - name: Restore CA on secondary PKI container
+        run: |
+          docker cp pki-tomcat.tar.gz secondary-pki:.
+          docker exec secondary-pki tar xzvf pki-tomcat.tar.gz -C /
+
+          docker exec secondary-pki grep -rn primary-pki \
+              etc/pki/pki-tomcat \
+              etc/sysconfig/pki-tomcat \
+              etc/sysconfig/pki/tomcat/pki-tomcat \
+              etc/systemd/system/pki-tomcatd.target.wants/pki-tomcatd@pki-tomcat.service \
+              var/lib/pki/pki-tomcat
+
+          docker exec secondary-pki find \
+              etc/pki/pki-tomcat \
+              etc/sysconfig/pki-tomcat \
+              etc/sysconfig/pki/tomcat/pki-tomcat \
+              etc/systemd/system/pki-tomcatd.target.wants/pki-tomcatd@pki-tomcat.service \
+              var/lib/pki/pki-tomcat \
+              -type f \
+              ! -name "*.db" \
+              ! -name "CS.cfg.bak.*" \
+              -exec sed -i 's/primary-pki/secondary-pki/g' {} +
+
+      - name: Create SSL server cert for secondary PKI container
+        run: |
+          # remove old SSL server cert
+          echo Secret.123 > password.txt
+          docker cp password.txt secondary-pki:/etc/pki/pki-tomcat/alias
+          docker exec secondary-pki certutil \
+              -D \
+              -d /etc/pki/pki-tomcat/alias \
+              -f /etc/pki/pki-tomcat/alias/password.txt \
+              -n sslserver
+
+          # generate new SSL server cert
+          docker exec secondary-pki pki \
+              -d /etc/pki/pki-tomcat/alias \
+              -f /etc/pki/pki-tomcat/password.conf \
+              nss-cert-request \
+              --subject "CN=secondary-pki.example.com,OU=pki-tomcat,O=EXAMPLE" \
+              --ext /usr/share/pki/server/certs/sslserver.conf \
+              --csr sslserver.csr
+          docker exec secondary-pki pki \
+              -d /etc/pki/pki-tomcat/alias \
+              -f /etc/pki/pki-tomcat/password.conf \
+              nss-cert-issue \
+              --issuer ca_signing \
+              --csr sslserver.csr \
+              --ext /usr/share/pki/server/certs/sslserver.conf \
+              --cert sslserver.crt
+          docker exec secondary-pki pki \
+              -d /etc/pki/pki-tomcat/alias \
+              -f /etc/pki/pki-tomcat/password.conf \
+              nss-cert-import \
+              --cert sslserver.crt \
+              sslserver
+
+      - name: Import SSL server cert and CSR into CA database
+        run: |
+          docker exec secondary-pki pki-server ca-cert-request-import \
+              --csr sslserver.csr \
+              --profile serverCert.profile \
+              | tee output
+          REQUEST_ID=$(sed 's/ *Request ID: *//' output)
+          docker exec secondary-pki pki-server ca-cert-import \
+              --cert sslserver.crt \
+              --profile serverCert.profile \
+              --request $REQUEST_ID
+
+      - name: Update SSL server cert and CSR in CS.cfg
+        run: |
+          docker exec secondary-pki openssl req \
+              -outform der \
+              -in sslserver.csr \
+              -out sslserver.csr.der
+          CSR=$(docker exec secondary-pki cat sslserver.csr.der | base64 -w 0)
+          echo "CSR: $CSR"
+          docker exec secondary-pki pki-server ca-config-set ca.signing.certreq "$CSR"
+
+          docker exec secondary-pki pki \
+              -d /etc/pki/pki-tomcat/alias \
+              -f /etc/pki/pki-tomcat/password.conf \
+              nss-cert-export \
+              sslserver \
+              --format DER \
+              --output-file sslserver.crt.der
+          CERT=$(docker exec secondary-pki cat sslserver.crt.der | base64 -w 0)
+          echo "Cert: $CERT"
+          docker exec secondary-pki pki-server ca-config-set ca.sslserver.cert "$CERT"
+
+      - name: Update security domain subsystem
+        run: |
+          docker exec secondary-pki pki-server \
+              sd-subsystem-del \
+              "CA primary-pki.example.com 8443"
+
+          docker exec secondary-pki pki-server \
+              sd-subsystem-add \
+              --subsystem CA \
+              --hostname secondary-pki.example.com \
+              --secure-port 8443 \
+              --domain-manager \
+              "CA secondary-pki.example.com 8443"
+
+      - name: Remove old subsystem user
+        run: |
+          docker exec secondary-pki pki-server \
+              ca-group-find \
+              --member CA-primary-pki.example.com-8443
+
+          docker exec secondary-pki pki-server \
+              ca-group-member-del \
+              "Subsystem Group" \
+              CA-primary-pki.example.com-8443
+
+          docker exec secondary-pki pki-server \
+              ca-user-del \
+              CA-primary-pki.example.com-8443
+
+      - name: Add new subsystem user
+        run: |
+          docker exec secondary-pki pki-server cert-export \
+              --cert-file subsystem.crt \
+              subsystem
+
+          docker exec secondary-pki pki-server \
+              ca-user-add \
+              --full-name "CA-secondary-pki.example.com-8443" \
+              --type agentType \
+              --state 1 \
+              CA-secondary-pki.example.com-8443
+
+          docker exec secondary-pki pki-server \
+              ca-user-cert-add \
+              --cert subsystem.crt \
+              CA-secondary-pki.example.com-8443
+
+          docker exec secondary-pki pki-server \
+              ca-group-member-add \
+              "Subsystem Group" \
+              CA-secondary-pki.example.com-8443
+
+          docker exec secondary-pki pki-server \
+              ca-group-find \
+              --member CA-secondary-pki.example.com-8443
+
+      - name: Check SD subsystems on secondary PKI container
+        run: |
+          docker exec secondary-pki pki-server sd-subsystem-find
+
+      - name: Check CA users in secondary PKI container
+        run: |
+          docker exec secondary-pki pki-server ca-user-find \
+              | tee users.after
+          #diff users.before users.after
+
+      - name: Check CA user certs in secondary PKI container
+        run: |
+          docker exec secondary-pki pki-server ca-user-cert-find \
+              CA-secondary-pki.example.com-8443 \
+              | tee user-certs.after
+          #diff user-certs.before user-certs.after
+
+      - name: Start CA on secondary PKI container
+        run: |
+          docker exec secondary-pki systemctl daemon-reload
+          docker exec secondary-pki pki-server start --wait
+
+      - name: Check systemd journal
+        if: always()
+        run: |
+          docker exec secondary-pki journalctl -u pki-tomcatd@pki-tomcat.service
+
+      - name: Run PKI healthcheck after restore
+        run: docker exec secondary-pki pki-healthcheck --failures-only
+
+      - name: Check CA cert requests on secondary PKI container
+        run: |
+          docker exec client pki \
+              -U https://secondary-pki.example.com:8443 \
+              -n caadmin \
+              ca-cert-request-find \
+              | tee cert-requests.after
+          #diff cert-requests.before cert-requests.after
+
+      - name: Check CA certs on secondary PKI container
+        run: |
+          docker exec client pki \
+              -U https://secondary-pki.example.com:8443 \
+              ca-cert-find \
+              | tee certs.after
+          #diff certs.before certs.after
+
+      - name: Remove CA
+        run: docker exec secondary-pki pkidestroy -i pki-tomcat -s CA --debug
+
+      - name: Gather artifacts from secondary PKI container
+        if: always()
+        run: |
+          tests/bin/ds-artifacts-save.sh --output=/tmp/artifacts/pki ds
+          tests/bin/pki-artifacts-save.sh secondary-pki
+        continue-on-error: true
+
+      - name: Upload artifacts from secondary PKI container
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: ca-backup
+          path: |
+            /tmp/artifacts/secondary-pki
