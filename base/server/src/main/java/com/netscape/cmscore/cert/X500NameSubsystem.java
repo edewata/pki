@@ -30,6 +30,7 @@ import org.mozilla.jss.netscape.security.x509.X500NameAttrMap;
 import com.netscape.certsrv.base.EBaseException;
 import com.netscape.certsrv.base.Subsystem;
 import com.netscape.cmscore.apps.CMS;
+import com.netscape.cmscore.apps.CMSEngine;
 import com.netscape.cmscore.base.ConfigStore;
 
 /**
@@ -128,11 +129,15 @@ public class X500NameSubsystem extends Subsystem {
      * </pre>
      *
      * </ul>
-     * <P>
+     *
+     * @param engine CMS engine
      * @param config configuration store
      */
     @Override
-    public synchronized void init(ConfigStore config) throws EBaseException {
+    public synchronized void init(CMSEngine engine, ConfigStore config) throws Exception {
+
+        super.init(engine, config);
+
         logger.trace(ID + " started");
         mConfig = config;
 

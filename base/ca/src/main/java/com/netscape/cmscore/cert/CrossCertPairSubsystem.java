@@ -33,6 +33,7 @@ import com.netscape.certsrv.base.Subsystem;
 import com.netscape.certsrv.cert.ICrossCertPairSubsystem;
 import com.netscape.certsrv.ldap.ELdapException;
 import com.netscape.cmscore.apps.CMS;
+import com.netscape.cmscore.apps.CMSEngine;
 import com.netscape.cmscore.base.ConfigStore;
 import com.netscape.cmscore.ldap.CAPublisherProcessor;
 import com.netscape.cmscore.ldapconn.LDAPConfig;
@@ -100,11 +101,16 @@ public class CrossCertPairSubsystem extends Subsystem implements ICrossCertPairS
     }
 
     @Override
-    public void init(ConfigStore config) throws EBaseException {
+    public void init(CMSEngine engine, ConfigStore config) throws Exception {
+        init((CAEngine) engine, config);
+    }
+
+    public void init(CAEngine engine, ConfigStore config) throws Exception {
+
+        super.init(engine, config);
 
         logger.debug("CrossCertPairSubsystem: initializing");
 
-        CAEngine engine = CAEngine.getInstance();
         CAEngineConfig cs = engine.getConfig();
 
         try {

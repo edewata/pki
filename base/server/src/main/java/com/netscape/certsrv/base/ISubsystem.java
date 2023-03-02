@@ -17,6 +17,7 @@
 // --- END COPYRIGHT BLOCK ---
 package com.netscape.certsrv.base;
 
+import com.netscape.cmscore.apps.CMSEngine;
 import com.netscape.cmscore.base.ConfigStore;
 
 /**
@@ -47,12 +48,13 @@ public interface ISubsystem {
     /**
      * Initializes this subsystem with the given configuration
      * store.
-     * <P>
+     *
+     * @param engine CMS engine
      * @param config configuration store
      *
      * @exception Exception failed to initialize
      */
-    public void init(ConfigStore config) throws Exception;
+    public void init(CMSEngine engine, ConfigStore config) throws Exception;
 
     /**
      * Notifies this subsystem if owner is in running mode.

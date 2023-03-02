@@ -24,6 +24,7 @@ import java.util.Vector;
 import com.netscape.certsrv.base.EBaseException;
 import com.netscape.certsrv.base.Subsystem;
 import com.netscape.certsrv.util.StatsEvent;
+import com.netscape.cmscore.apps.CMSEngine;
 import com.netscape.cmscore.base.ConfigStore;
 
 /**
@@ -69,14 +70,16 @@ public class StatsSubsystem extends Subsystem {
      * and it loads and initializes loadable
      * subsystem specified in the configuration
      * store.
-     * <P>
+     *
      * Note that individual subsystem should be initialized in a separated thread if it has dependency on the
      * initialization of other subsystems.
-     * <P>
+     *
+     * @param engine CMS engine
      * @param config configuration store
      */
     @Override
-    public synchronized void init(ConfigStore config) throws EBaseException {
+    public synchronized void init(CMSEngine engine, ConfigStore config) throws Exception {
+        super.init(engine, config);
     }
 
     /**

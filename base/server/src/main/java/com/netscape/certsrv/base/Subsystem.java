@@ -17,6 +17,7 @@
 // --- END COPYRIGHT BLOCK ---
 package com.netscape.certsrv.base;
 
+import com.netscape.cmscore.apps.CMSEngine;
 import com.netscape.cmscore.base.ConfigStore;
 
 /**
@@ -28,15 +29,19 @@ import com.netscape.cmscore.base.ConfigStore;
  */
 public abstract class Subsystem implements ISubsystem {
 
+    CMSEngine engine;
     ConfigStore config;
     String id;
 
     /**
      * Initializes this subsystem.
+     *
+     * @param engine CMS engine
      * @param config configuration store
      */
     @Override
-    public void init(ConfigStore config) throws Exception {
+    public void init(CMSEngine engine, ConfigStore config) throws Exception {
+        this.engine = engine;
         this.config = config;
     }
 

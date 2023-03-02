@@ -29,6 +29,7 @@ import com.netscape.certsrv.profile.EProfileException;
 import com.netscape.cms.profile.common.Profile;
 import com.netscape.cms.profile.common.ProfileConfig;
 import com.netscape.cmscore.apps.CMS;
+import com.netscape.cmscore.apps.CMSEngine;
 import com.netscape.cmscore.base.ConfigStorage;
 import com.netscape.cmscore.base.ConfigStore;
 import com.netscape.cmscore.base.FileConfigStorage;
@@ -48,17 +49,23 @@ public class ProfileSubsystem
     /**
      * Initializes this subsystem with the given configuration
      * store.
-     * <P>
+     *
+     * @param engine CMS engine
      * @param cs configuration store
      *
      * @exception EBaseException failed to initialize
      */
     @Override
-    public void init(ConfigStore cs) throws EBaseException {
+    public void init(CMSEngine engine, ConfigStore config) throws Exception {
+        init((CAEngine) engine, config);
+    }
+
+    public void init(CAEngine engine, ConfigStore cs) throws Exception {
+
+        super.init(engine, cs);
 
         logger.debug("ProfileSubsystem: initialization");
 
-        CAEngine engine = CAEngine.getInstance();
         PluginRegistry registry = engine.getPluginRegistry();
 
         mConfig = cs;

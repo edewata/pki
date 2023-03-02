@@ -24,6 +24,7 @@ import org.dogtagpki.server.tks.TKSEngineConfig;
 import com.netscape.certsrv.authority.IAuthority;
 import com.netscape.certsrv.base.EBaseException;
 import com.netscape.certsrv.base.Subsystem;
+import com.netscape.cmscore.apps.CMSEngine;
 import com.netscape.cmscore.base.ConfigStore;
 
 public class TKSAuthority extends Subsystem implements IAuthority {
@@ -63,15 +64,21 @@ public class TKSAuthority extends Subsystem implements IAuthority {
 
     /**
      * Initializes this subsystem.
-     * <P>
+     *
+     * @param engine CMS engine
      * @param config configuration of this subsystem
      *
      * @exception EBaseException failed to initialize this RA
      */
     @Override
-    public void init(ConfigStore config) throws EBaseException {
+    public void init(CMSEngine engine, ConfigStore config) throws Exception {
+        init((TKSEngine) engine, config);
+    }
 
-        TKSEngine engine = TKSEngine.getInstance();
+    public void init(TKSEngine engine, ConfigStore config) throws Exception {
+
+        super.init(engine, config);
+
         TKSEngineConfig engineConfig = engine.getConfig();
 
         mConfig = engineConfig.getTKSConfig();

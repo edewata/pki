@@ -61,6 +61,7 @@ import com.netscape.certsrv.security.SigningUnitConfig;
 import com.netscape.cms.logging.Logger;
 import com.netscape.cms.logging.SignedAuditLogger;
 import com.netscape.cmscore.apps.CMS;
+import com.netscape.cmscore.apps.CMSEngine;
 import com.netscape.cmscore.base.ConfigStore;
 import com.netscape.cmscore.dbs.DBSubsystem;
 import com.netscape.cmscore.util.StatsSubsystem;
@@ -135,15 +136,21 @@ public class OCSPAuthority extends Subsystem implements IOCSPService, IAuthority
     /**
      * Initializes this subsystem with the given configuration
      * store.
-     * <P>
+     *
+     * @param engine CMS engine
      * @param config configuration store
      *
      * @exception EBaseException failed to initialize
      */
     @Override
-    public void init(ConfigStore config) throws EBaseException {
+    public void init(CMSEngine engine, ConfigStore config) throws Exception {
+        init((OCSPEngine) engine, config);
+    }
 
-        OCSPEngine engine = OCSPEngine.getInstance();
+    public void init(OCSPEngine engine, ConfigStore config) throws Exception {
+
+        super.init(engine, config);
+
         OCSPEngineConfig engineConfig = engine.getConfig();
         DBSubsystem dbSubsystem = engine.getDBSubsystem();
 

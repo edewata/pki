@@ -643,7 +643,7 @@ public class CMSEngine {
 
     public void initLogSubsystem() throws Exception {
         LoggingConfig logConfig = config.getLoggingConfig();
-        logSubsystem.init(logConfig);
+        logSubsystem.init(this, logConfig);
         logSubsystem.startup();
     }
 
@@ -675,13 +675,13 @@ public class CMSEngine {
 
     public void initOIDLoaderSubsystem() throws Exception {
         ConfigStore oidLoaderConfig = config.getSubStore(OidLoaderSubsystem.ID, ConfigStore.class);
-        oidLoaderSubsystem.init(oidLoaderConfig);
+        oidLoaderSubsystem.init(this, oidLoaderConfig);
         oidLoaderSubsystem.startup();
     }
 
     public void initX500NameSubsystem() throws Exception {
         ConfigStore x500NameConfig = config.getSubStore(X500NameSubsystem.ID, ConfigStore.class);
-        x500NameSubsystem.init(x500NameConfig);
+        x500NameSubsystem.init(this, x500NameConfig);
         x500NameSubsystem.startup();
     }
 
@@ -694,13 +694,13 @@ public class CMSEngine {
     public void initAuthSubsystem() throws Exception {
         AuthenticationConfig authConfig = config.getAuthenticationConfig();
         authSubsystem = new AuthSubsystem();
-        authSubsystem.init(authConfig);
+        authSubsystem.init(this, authConfig);
         authSubsystem.startup();
     }
 
     public void initAuthzSubsystem() throws Exception {
         ConfigStore authzConfig = config.getSubStore(AuthzSubsystem.ID, ConfigStore.class);
-        authzSubsystem.init(authzConfig);
+        authzSubsystem.init(this, authzConfig);
         authzSubsystem.startup();
     }
 
@@ -894,7 +894,7 @@ public class CMSEngine {
             if (isPreOpMode()) return;
         }
 
-        subsystem.init(subsystemConfig);
+        subsystem.init(this, subsystemConfig);
     }
 
     public void initSubsystems() throws Exception {

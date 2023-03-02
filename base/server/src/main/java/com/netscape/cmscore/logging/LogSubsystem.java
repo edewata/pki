@@ -34,6 +34,7 @@ import com.netscape.certsrv.logging.LogEventListener;
 import com.netscape.certsrv.logging.LogPlugin;
 import com.netscape.cms.logging.LogQueue;
 import com.netscape.cmscore.apps.CMS;
+import com.netscape.cmscore.apps.CMSEngine;
 import com.netscape.cmscore.base.ConfigStore;
 
 /**
@@ -85,11 +86,15 @@ public class LogSubsystem extends Subsystem {
 
     /**
      * Initializes the log subsystem.
-     * <P>
+     *
+     * @param engine CMS engine
      * @param config configuration store
      */
     @Override
-    public void init(ConfigStore config) throws EBaseException {
+    public void init(CMSEngine engine, ConfigStore config) throws Exception {
+
+        super.init(engine, config);
+
         mConfig = (LoggingConfig) config;
         LogQueue.getInstance().init();
 

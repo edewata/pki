@@ -75,6 +75,7 @@ import com.netscape.cms.logging.Logger;
 import com.netscape.cms.logging.SignedAuditLogger;
 import com.netscape.cms.request.RequestScheduler;
 import com.netscape.cmscore.apps.CMS;
+import com.netscape.cmscore.apps.CMSEngine;
 import com.netscape.cmscore.base.ConfigStore;
 import com.netscape.cmscore.dbs.DBSubsystem;
 import com.netscape.cmscore.dbs.KeyRecord;
@@ -297,20 +298,26 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
      * Starts this subsystem. It loads and initializes all
      * necessary components. This subsystem is started by
      * KRASubsystem.
-     * <P>
+     *
+     * @param engine CMS engine
      * @param config configuration store for this subsystem
      *
      * @exception Exception failed to start subsystem
      */
     @Override
-    public void init(ConfigStore config) throws Exception {
+    public void init(CMSEngine engine, ConfigStore config) throws Exception {
+        init((KRAEngine) engine, config);
+    }
+
+    public void init(KRAEngine engine, ConfigStore config) throws Exception {
+
+        super.init(engine, config);
 
         logger.debug("KeyRecoveryAuthority init() begins");
 
         if (mInitialized)
             return;
 
-        KRAEngine engine = KRAEngine.getInstance();
         KRAEngineConfig engineConfig = engine.getConfig();
         DBSubsystem dbSubsystem = engine.getDBSubsystem();
 

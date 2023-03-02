@@ -49,6 +49,7 @@ import com.netscape.certsrv.base.EBaseException;
 import com.netscape.certsrv.base.ISubsystem;
 import com.netscape.certsrv.base.Subsystem;
 import com.netscape.certsrv.tps.token.TokenStatus;
+import com.netscape.cmscore.apps.CMSEngine;
 import com.netscape.cmscore.base.ConfigStorage;
 import com.netscape.cmscore.base.ConfigStore;
 import com.netscape.cmscore.base.FileConfigStorage;
@@ -98,11 +99,16 @@ public class TPSSubsystem extends Subsystem implements IAuthority {
     }
 
     @Override
-    public void init(ConfigStore config) throws EBaseException {
+    public void init(CMSEngine engine, ConfigStore config) throws Exception {
+        init((org.dogtagpki.server.tps.TPSEngine) engine, config);
+    }
+
+    public void init(org.dogtagpki.server.tps.TPSEngine engine, ConfigStore config) throws Exception {
+
+        super.init(engine, config);
 
         logger.info("Initializing TPS subsystem");
 
-        org.dogtagpki.server.tps.TPSEngine engine = org.dogtagpki.server.tps.TPSEngine.getInstance();
         TPSEngineConfig cs = engine.getConfig();
 
         this.config = cs.getTPSConfig();

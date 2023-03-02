@@ -116,6 +116,7 @@ import com.netscape.cms.servlet.cert.RenewalProcessor;
 import com.netscape.cms.servlet.cert.RevocationProcessor;
 import com.netscape.cms.servlet.processors.CAProcessor;
 import com.netscape.cmscore.apps.CMS;
+import com.netscape.cmscore.apps.CMSEngine;
 import com.netscape.cmscore.base.ArgBlock;
 import com.netscape.cmscore.base.ConfigStore;
 import com.netscape.cmscore.dbs.CertRecord;
@@ -347,18 +348,24 @@ public class CertificateAuthority extends Subsystem implements IAuthority, IOCSP
 
     /**
      * Initializes this CA subsystem.
-     * <P>
+     *
+     * @param engine CMS engine
      * @param config configuration of this subsystem
      *
      * @exception EBaseException failed to initialize this CA
      */
     @Override
-    public void init(ConfigStore config) throws EBaseException {
+    public void init(CMSEngine engine, ConfigStore config) throws Exception {
+        init((CAEngine) engine, config);
+    }
+
+    public void init(CAEngine engine, ConfigStore config) throws Exception {
+
+        super.init(engine, config);
 
         logger.info("CertificateAuthority: Initializing " +
                 (authorityID == null ? "host CA" : "authority " + authorityID));
 
-        CAEngine engine = CAEngine.getInstance();
         CAEngineConfig cs = engine.getConfig();
 
         mConfig = cs.getCAConfig();
