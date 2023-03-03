@@ -1481,6 +1481,23 @@ class PKISubsystem(object):
 
         self.run(cmd, as_current_user=as_current_user)
 
+    def remove_security_domain_host(
+            self,
+            host_id,
+            as_current_user=False):
+
+        cmd = [self.name + '-sd-host-del']
+
+        if logger.isEnabledFor(logging.DEBUG):
+            cmd.append('--debug')
+
+        elif logger.isEnabledFor(logging.INFO):
+            cmd.append('--verbose')
+
+        cmd.append(host_id)
+
+        self.run(cmd, as_current_user=as_current_user)
+
     def join_security_domain(
             self,
             sd_url,

@@ -19,6 +19,7 @@ public class SDHostCLI extends CLI {
 
         addModule(new SDHostAddCLI(this));
         addModule(new SDHostFindCLI(this));
+        addModule(new SDHostRemoveCLI(this));
     }
 
     public static void printSecurityDomainHost(SecurityDomainHost host) {
