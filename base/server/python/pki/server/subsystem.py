@@ -1428,6 +1428,18 @@ class PKISubsystem(object):
 
         self.run(cmd, as_current_user=as_current_user)
 
+    def find_security_domain_hosts(self, as_current_user=False):
+
+        cmd = [self.name + '-sd-host-find']
+
+        if logger.isEnabledFor(logging.DEBUG):
+            cmd.append('--debug')
+
+        elif logger.isEnabledFor(logging.INFO):
+            cmd.append('--verbose')
+
+        self.run(cmd, as_current_user=as_current_user)
+
     def add_security_domain_host(
             self,
             host_id,
