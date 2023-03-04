@@ -37,3 +37,10 @@ jobs:
     uses: ./.github/workflows/ipa-basic-test.yml
     with:
       db-image: ${{ needs.init.outputs.db-image }}
+
+  ipa-backup-test:
+    name: IPA backup
+    needs: [init, build]
+    uses: ./.github/workflows/ipa-backup-test.yml
+    with:
+      db-image: ${{ needs.init.outputs.db-image }}

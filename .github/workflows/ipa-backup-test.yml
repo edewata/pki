@@ -1,0 +1,433 @@
+name: IPA backup
+
+on:
+  workflow_call:
+    inputs:
+      db-image:
+        required: false
+        type: string
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    env:
+      SHARED: /tmp/workdir/pki
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v3
+
+      - name: Retrieve PKI images
+        uses: actions/cache@v3
+        with:
+          key: pki-images-${{ github.sha }}
+          path: pki-images.tar
+
+      - name: Load PKI images
+        run: docker load --input pki-images.tar
+
+      - name: Create network
+        run: docker network create example
+
+      - name: Run IPA container
+        run: |
+          tests/bin/runner-init.sh ipa
+        env:
+          IMAGE: ipa-runner
+          HOSTNAME: ipa.example.com
+
+      - name: Connect IPA container to network
+        run: docker network connect example ipa --alias ipa.example.com
+
+      - name: Install IPA server
+        run: |
+          docker exec ipa sysctl net.ipv6.conf.lo.disable_ipv6=0
+          docker exec ipa ipa-server-install \
+              -U \
+              --domain example.com \
+              -r EXAMPLE.COM \
+              -p Secret.123 \
+              -a Secret.123 \
+              --no-host-dns \
+              --no-ntp
+          docker exec ipa bash -c "echo Secret.123 | kinit admin"
+          docker exec ipa ipa ping
+
+      - name: Check DS from IPA container
+        run: |
+          docker exec ipa ldapsearch \
+              -H ldaps://ipa.example.com \
+              -x \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b "o=ipaca" \
+              -o ldif_wrap=no \
+              -LLL \
+              dn
+
+      - name: Check SD hosts in IPA container
+        run: |
+          docker exec ipa pki-server sd-host-find
+
+      - name: Check CA users in IPA container
+        run: |
+          docker exec ipa pki-server ca-user-find \
+              | tee users.before
+
+      - name: Check CA user certs in IPA container
+        run: |
+          docker exec ipa pki-server ca-user-cert-find \
+              CA-ipa.example.com-8443 \
+              | tee user-certs.before
+
+      # https://github.com/dogtagpki/pki/wiki/Backing-Up-PKI-Server
+      - name: Back up PKI server
+        run: |
+          docker exec ipa pki-server stop --wait
+
+          docker exec ipa tar czvf pki-tomcat.tar.gz \
+              -C / \
+              etc/pki/pki-tomcat \
+              etc/sysconfig/pki-tomcat \
+              etc/sysconfig/pki/tomcat/pki-tomcat \
+              etc/systemd/system/pki-tomcatd.target.wants/pki-tomcatd@pki-tomcat.service \
+              var/lib/pki/pki-tomcat \
+              var/log/pki/pki-tomcat
+          docker cp ipa:pki-tomcat.tar.gz .
+
+      - name: Create PKI container
+        run: |
+          tests/bin/runner-init.sh pki
+        env:
+          IMAGE: ipa-runner
+          HOSTNAME: pki.example.com
+
+      - name: Connect PKI container to network
+        run: docker network connect example pki --alias pki.example.com
+
+      - name: Install IPA client in secondary container
+        run: |
+          docker exec pki sysctl net.ipv6.conf.lo.disable_ipv6=0
+          docker exec pki ipa-client-install \
+              -U \
+              --server=ipa.example.com \
+              --domain=example.com \
+              --realm=EXAMPLE.COM \
+              -p admin \
+              -w Secret.123 \
+              --no-ntp
+          docker exec pki bash -c "echo Secret.123 | kinit admin"
+          docker exec pki klist
+
+      # https://github.com/dogtagpki/pki/wiki/Restoring-PKI-Server
+      - name: Restore CA on PKI container
+        run: |
+          docker cp pki-tomcat.tar.gz pki:.
+          docker exec pki tar xzvf pki-tomcat.tar.gz -C /
+
+          docker exec pki grep -rn ipa.example.com \
+              etc/pki/pki-tomcat \
+              etc/sysconfig/pki-tomcat \
+              etc/sysconfig/pki/tomcat/pki-tomcat \
+              etc/systemd/system/pki-tomcatd.target.wants/pki-tomcatd@pki-tomcat.service \
+              var/lib/pki/pki-tomcat
+
+          #docker exec pki find \
+          #    etc/pki/pki-tomcat \
+          #    etc/sysconfig/pki-tomcat \
+          #    etc/sysconfig/pki/tomcat/pki-tomcat \
+          #    etc/systemd/system/pki-tomcatd.target.wants/pki-tomcatd@pki-tomcat.service \
+          #    var/lib/pki/pki-tomcat \
+          #    -type f \
+          #    ! -name "*.db" \
+          #    ! -name "*.keytab" \
+          #    ! -name "CS.cfg.bak.*" \
+          #    -exec sed -i 's/ipa\.example\.com/pki\.example\.com/g' {} +
+
+      - name: Check system certs in PKI container
+        run: |
+          docker exec pki ls -la /etc/pki/pki-tomcat/alias
+          docker exec pki pki-server cert-find
+
+      - name: Remove HTTP proxy ports
+        run: |
+          docker exec pki pki-server ca-config-unset proxy.securePort
+          docker exec pki pki-server ca-config-unset proxy.unsecurePort
+
+      - name: Use plain LDAP port for internal database
+        run: |
+          docker exec pki pki-server ca-config-set internaldb.ldapconn.port 389
+          docker exec pki pki-server ca-config-set internaldb.ldapconn.secureConn false
+
+      # https://github.com/dogtagpki/pki/wiki/Configuring-Basic-Authentication-to-Internal-Database
+      - name: Use basic auth for internal database
+        run: |
+          docker exec pki pki-server ca-config-unset internaldb.ldapauth.clientCertNickname
+
+          # authenticate as Directory Manager
+          docker exec pki pki-server ca-config-set internaldb.ldapauth.authtype BasicAuth
+          docker exec pki pki-server ca-config-set internaldb.ldapauth.bindDN "cn=Directory Manager"
+          docker exec pki pki-server ca-config-set internaldb.ldapauth.bindPWPrompt internaldb
+
+          # store password in password.conf
+          docker exec pki pki-server password-add internaldb --password Secret.123
+
+      # https://github.com/dogtagpki/pki/wiki/Configuring-CA-with-Random-Serial-Numbers-v3
+      - name: Use RSNv3 for request ID generator
+        run: |
+          docker exec pki pki-server ca-config-unset dbs.beginRequestNumber
+          docker exec pki pki-server ca-config-unset dbs.endRequestNumber
+          docker exec pki pki-server ca-config-unset dbs.requestIncrement
+          docker exec pki pki-server ca-config-unset dbs.requestLowWaterMark
+          docker exec pki pki-server ca-config-unset dbs.requestCloneTransferNumber
+          docker exec pki pki-server ca-config-unset dbs.requestRangeDN
+
+          docker exec pki pki-server ca-config-set dbs.request.id.generator random
+          docker exec pki pki-server ca-config-set dbs.request.id.length 128
+
+      - name: Use RSNv3 for cert ID generator
+        run: |
+          docker exec pki pki-server ca-config-unset dbs.beginSerialNumber
+          docker exec pki pki-server ca-config-unset dbs.endSerialNumber
+          docker exec pki pki-server ca-config-unset dbs.serialIncrement
+          docker exec pki pki-server ca-config-unset dbs.serialLowWaterMark
+          docker exec pki pki-server ca-config-unset dbs.serialCloneTransferNumber
+          docker exec pki pki-server ca-config-unset dbs.serialRangeDN
+          docker exec pki pki-server ca-config-unset dbs.enableRandomSerialNumbers
+          docker exec pki pki-server ca-config-unset dbs.randomSerialNumberCounter
+
+          docker exec pki pki-server ca-config-set dbs.cert.id.generator random
+          docker exec pki pki-server ca-config-set dbs.cert.id.length 128
+
+      - name: Check DS from PKI container
+        run: |
+          docker exec pki ldapsearch \
+              -H ldaps://ipa.example.com \
+              -x \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b "o=ipaca" \
+              -o ldif_wrap=no \
+              -LLL \
+              dn
+
+      - name: Check DS with client cert from PKI container
+        run: |
+          docker exec pki pki \
+              -d /etc/pki/pki-tomcat/alias \
+              -C /etc/pki/pki-tomcat/alias/pwdfile.txt \
+              pkcs12-export \
+              --pkcs12 subsystem.p12 \
+              --pkcs12-password Secret.123 \
+              "subsystemCert cert-pki-ca"
+
+          docker exec pki openssl pkcs12 \
+              -in subsystem.p12 \
+              -passin pass:Secret.123 \
+              -out ca_signing.crt \
+              -cacerts \
+              -nokeys
+
+          docker exec pki openssl pkcs12 \
+              -in subsystem.p12 \
+              -passin pass:Secret.123 \
+              -out subsystem.crt \
+              -clcerts \
+              -nokeys
+
+          docker exec pki openssl pkcs12 \
+              -in subsystem.p12 \
+              -passin pass:Secret.123 \
+              -out subsystem.key \
+              -nodes \
+              -nocerts
+
+          #docker exec \
+          #    -e LDAPTLS_CACERT=/etc/pki/pki-tomcat/alias \
+          #    -e LDAPTLS_CERT="subsystemCert cert-pki-ca" \
+          #    -e LDAPTLS_KEY=/etc/pki/pki-tomcat/alias/pwdfile.txt \
+          #    pki ldapsearch \
+          #    -H ldaps://ipa.example.com \
+          #    -b "o=ipaca" \
+          #    -o ldif_wrap=no \
+          #    -LLL \
+          #    dn
+
+      - name: Create SSL server cert for PKI container
+        run: |
+          # remove old SSL server cert
+          echo Secret.123 > password.txt
+          docker cp password.txt pki:/etc/pki/pki-tomcat/alias
+          docker exec pki certutil \
+              -D \
+              -d /etc/pki/pki-tomcat/alias \
+              -f /etc/pki/pki-tomcat/alias/password.txt \
+              -n "Server-Cert cert-pki-ca"
+
+          # generate new SSL server cert
+          docker exec pki pki \
+              -d /etc/pki/pki-tomcat/alias \
+              -f /etc/pki/pki-tomcat/password.conf \
+              nss-cert-request \
+              --subject "CN=pki.example.com,OU=pki-tomcat,O=EXAMPLE" \
+              --ext /usr/share/pki/server/certs/sslserver.conf \
+              --csr sslserver.csr
+          docker exec pki pki \
+              -d /etc/pki/pki-tomcat/alias \
+              -f /etc/pki/pki-tomcat/password.conf \
+              nss-cert-issue \
+              --issuer "caSigningCert cert-pki-ca" \
+              --csr sslserver.csr \
+              --ext /usr/share/pki/server/certs/sslserver.conf \
+              --cert sslserver.crt
+          docker exec pki pki \
+              -d /etc/pki/pki-tomcat/alias \
+              -f /etc/pki/pki-tomcat/password.conf \
+              nss-cert-import \
+              --cert sslserver.crt \
+              "Server-Cert cert-pki-ca"
+
+      - name: Update SSL server cert and CSR in CS.cfg
+        run: |
+          docker exec pki openssl req \
+              -outform der \
+              -in sslserver.csr \
+              -out sslserver.csr.der
+          CSR=$(docker exec pki cat sslserver.csr.der | base64 -w 0)
+          echo "CSR: $CSR"
+          docker exec pki pki-server ca-config-set ca.signing.certreq "$CSR"
+
+          docker exec pki pki \
+              -d /etc/pki/pki-tomcat/alias \
+              -f /etc/pki/pki-tomcat/password.conf \
+              nss-cert-export \
+              "Server-Cert cert-pki-ca" \
+              --format DER \
+              --output-file sslserver.crt.der
+          CERT=$(docker exec pki cat sslserver.crt.der | base64 -w 0)
+          echo "Cert: $CERT"
+          docker exec pki pki-server ca-config-set ca.sslserver.cert "$CERT"
+
+      - name: Import SSL server CSR into CA database
+        run: |
+          docker exec pki pki-server ca-cert-request-import \
+              --csr sslserver.csr \
+              --profile serverCert.profile \
+              --debug \
+              | tee output
+
+      - name: Import SSL server cert into CA database
+        run: |
+          REQUEST_ID=$(sed -n 's/^ *Request ID: *//p' output)
+          docker exec pki pki-server ca-cert-import \
+              --cert sslserver.crt \
+              --profile serverCert.profile \
+              --request $REQUEST_ID \
+              --debug
+
+      - name: Start CA on PKI container
+        run: |
+          docker exec pki systemctl daemon-reload
+          docker exec pki pki-server start --wait
+
+      - name: Check systemd journal
+        if: always()
+        run: |
+          docker exec pki journalctl -u pki-tomcatd@pki-tomcat.service
+
+      - name: Run PKI healthcheck after restore
+        run: docker exec pki pki-healthcheck --failures-only
+
+      - name: Update security domain host
+        run: |
+          docker exec pki pki-server \
+              sd-host-del \
+              "CA ipa.example.com 443"
+
+          docker exec pki pki-server \
+              sd-host-add \
+              --subsystem CA \
+              --hostname pki.example.com \
+              --secure-port 8443 \
+              --domain-manager \
+              "CA pki.example.com 8443"
+
+      - name: Update subsystem user
+        run: |
+          docker exec pki pki-server cert-export \
+              --cert-file subsystem.crt \
+              subsystem
+
+          docker exec pki pki-server \
+              ca-user-del \
+              CA-ipa.example.com-8443
+
+          docker exec pki pki-server \
+              ca-user-add \
+              --full-name "CA-pki.example.com-8443" \
+              --type agentType \
+              --state 1 \
+              CA-pki.example.com-8443
+
+          docker cp pki:subsystem.crt .
+          cat subsystem.crt | docker exec -i pki pki-server \
+              ca-user-cert-add \
+              CA-pki.example.com-8443
+
+      - name: Check SD hosts on PKI container
+        run: |
+          docker exec pki pki-server sd-host-find
+
+      - name: Check CA users in PKI container
+        run: |
+          docker exec pki pki-server ca-user-find \
+              | tee users.after
+          #diff users.before users.after
+
+      - name: Check CA user certs in PKI container
+        run: |
+          docker exec pki pki-server ca-user-cert-find \
+              CA-pki.example.com-8443 \
+              | tee user-certs.after
+          #diff user-certs.before user-certs.after
+
+      - name: Configure security domain
+        run: |
+          docker exec pki pki-server ca-config-find | grep securitydomain
+          docker exec pki pki-server ca-config-set securitydomain.host pki.example.com
+
+      - name: Update proxy in IPA container
+        run: |
+          docker exec ipa ls -la /etc/httpd/conf.d/
+          docker exec ipa cat /etc/httpd/conf.d/ipa-pki-proxy.conf
+
+          docker exec ipa sed \
+              -i 's/localhost/pki\.example\.com/g' \
+              /etc/httpd/conf.d/ipa-pki-proxy.conf
+
+          docker exec ipa cat /etc/httpd/conf.d/ipa-pki-proxy.conf
+          docker exec ipa systemctl restart httpd
+
+      - name: Check IPA certs
+        run: docker exec ipa ipa cert-find
+
+      - name: Gather artifacts from PKI container
+        if: always()
+        run: |
+          tests/bin/ds-artifacts-save.sh --output=/tmp/artifacts/pki ds
+          tests/bin/pki-artifacts-save.sh pki
+        continue-on-error: true
+
+      - name: Remove IPA
+        run: docker exec ipa ipa-server-install --uninstall -U
+
+      #- name: Remove CA
+      #  run: docker exec pki pkidestroy -i pki-tomcat -s CA -v
+
+      - name: Upload artifacts from PKI container
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: ipa-backup
+          path: |
+            /tmp/artifacts/pki
