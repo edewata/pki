@@ -67,3 +67,10 @@ jobs:
     uses: ./.github/workflows/ipa-basic-test.yml
     with:
       db-image: ${{ needs.init.outputs.db-image }}
+
+  ipa-migration-test:
+    name: IPA migration
+    needs: [init, build]
+    uses: ./.github/workflows/ipa-migration-test.yml
+    with:
+      db-image: ${{ needs.init.outputs.db-image }}
