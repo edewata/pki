@@ -37,3 +37,10 @@ jobs:
     uses: ./.github/workflows/ipa-basic-test.yml
     with:
       db-image: ${{ needs.init.outputs.db-image }}
+
+  ipa-pki-migration-test:
+    name: IPA PKI migration
+    needs: [init, build]
+    uses: ./.github/workflows/ipa-pki-migration-test.yml
+    with:
+      db-image: ${{ needs.init.outputs.db-image }}
