@@ -28,6 +28,8 @@ package com.netscape.certsrv.profile;
  */
 public class ERejectException extends EProfileException {
 
+    public static org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ERejectException.class);
+
     /**
      *
      */
@@ -42,13 +44,34 @@ public class ERejectException extends EProfileException {
      */
     public ERejectException(String msg) {
         super(msg);
+
+        StackTraceElement[] st = Thread.currentThread().getStackTrace();
+        for (StackTraceElement e : st) {
+            logger.info("ERejectException: " + e.getClassName()
+                + "." + e.getMethodName()
+                + "(" + e.getFileName() + ":" + e.getLineNumber() + ")");
+        }
     }
 
     public ERejectException(String msg, Throwable cause) {
         super(msg, cause);
+
+        StackTraceElement[] st = Thread.currentThread().getStackTrace();
+        for (StackTraceElement e : st) {
+            logger.info("ERejectException: " + e.getClassName()
+                + "." + e.getMethodName()
+                + "(" + e.getFileName() + ":" + e.getLineNumber() + ")");
+        }
     }
 
     public ERejectException(Throwable cause) {
         super(cause.getMessage(), cause);
+
+        StackTraceElement[] st = Thread.currentThread().getStackTrace();
+        for (StackTraceElement e : st) {
+            logger.info("ERejectException: " + e.getClassName()
+                + "." + e.getMethodName()
+                + "(" + e.getFileName() + ":" + e.getLineNumber() + ")");
+        }
     }
 }

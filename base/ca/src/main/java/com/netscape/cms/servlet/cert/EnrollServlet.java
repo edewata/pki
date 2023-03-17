@@ -333,6 +333,7 @@ public class EnrollServlet extends CAServlet {
 
         CMSEngine engine = getCMSEngine();
         CMSGateway gateway = engine.getCMSGateway();
+        logger.info("EnrollServlet: CMS gateway 2: " + gateway);
 
         // SPECIAL CASE:
         // if it is adminEnroll servlet,check if it's enabled
@@ -1484,6 +1485,7 @@ public class EnrollServlet extends CAServlet {
 
         CMSEngine engine = getCMSEngine();
         CMSGateway gateway = engine.getCMSGateway();
+        logger.info("EnrollServlet: CMS gateway 1: " + gateway);
 
         // this is special case, get the admin certificate
         if (mAuthMgr != null && mAuthMgr.equals(AuthSubsystem.PASSWDUSERDB_AUTHMGR_ID)) {

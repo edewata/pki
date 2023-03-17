@@ -132,7 +132,7 @@ public class ProfileProcessServlet extends ProfileServlet {
             setError(args, e.getMessage(), request, response);
             return;
         } catch (ERejectException e) {
-            logger.debug("ProfileProcessServlet: execution rejected " + e.getMessage());
+            logger.warn("ProfileProcessServlet: execution rejected " + e.getMessage());
             args.set(ARG_ERROR_CODE, "1");
             args.set(ARG_ERROR_REASON, CMS.getUserMessage(locale, "CMS_PROFILE_REJECTED", e.toString()));
         } catch (EDeferException e) {

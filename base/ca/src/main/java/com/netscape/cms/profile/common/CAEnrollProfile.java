@@ -164,7 +164,7 @@ public class CAEnrollProfile extends EnrollProfile {
                     }
 
                     if ((request.getError(getLocale(request))).equals(CMS.getUserMessage("CMS_KRA_INVALID_TRANSPORT_CERT"))) { //Todo
-                        logger.debug(method + "set request status: REJECTED");
+                        logger.info(method + "set request status: REJECTED");
                         request.setRequestStatus(RequestStatus.REJECTED);
                         engine.getRequestRepository().updateRequest(request);
                     }
@@ -243,7 +243,7 @@ public class CAEnrollProfile extends EnrollProfile {
                         }
 
                         if ((request.getError(getLocale(request))).equals(CMS.getUserMessage("CMS_KRA_INVALID_TRANSPORT_CERT"))) {
-                            logger.error("CAEnrollProfile: execute set request status: REJECTED");
+                            logger.info("CAEnrollProfile: execute set request status: REJECTED");
                             request.setRequestStatus(RequestStatus.REJECTED);
                             engine.getRequestRepository().updateRequest(request);
                         }
@@ -373,7 +373,7 @@ public class CAEnrollProfile extends EnrollProfile {
                         }
 
                         if ((request.getError(getLocale(request))).equals(CMS.getUserMessage("CMS_KRA_INVALID_TRANSPORT_CERT"))) { //Todo
-                            logger.debug(method + "set request status: REJECTED");
+                            logger.info(method + "set request status: REJECTED");
                             request.setRequestStatus(RequestStatus.REJECTED);
                             engine.getRequestRepository().updateRequest(request);
                         }

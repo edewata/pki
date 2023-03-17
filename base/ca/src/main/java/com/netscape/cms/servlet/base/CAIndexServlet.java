@@ -33,11 +33,14 @@ import com.netscape.cmscore.apps.CMSEngine;
  */
 public class CAIndexServlet extends IndexServlet {
 
+    public static org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(CAIndexServlet.class);
+
     @Override
     public void process(CMSRequest cmsReq) throws EBaseException {
 
         CMSEngine engine = getCMSEngine();
         CMSGateway gateway = engine.getCMSGateway();
+        logger.info("CAIndexServlet: CMS gateway: " + gateway);
 
         if (!gateway.getEnableAdminEnroll()) {
             super.process(cmsReq);

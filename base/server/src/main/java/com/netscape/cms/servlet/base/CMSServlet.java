@@ -1358,6 +1358,8 @@ public abstract class CMSServlet extends HttpServlet {
     public AuthToken authenticate(HttpServletRequest httpReq, String authMgrName)
             throws EBaseException {
 
+        logger.info("CMSServlet: Authenticating request");
+
         String auditSubjectID = ILogger.UNIDENTIFIED;
         String auditAuthMgrID = ILogger.UNIDENTIFIED;
         String auditUID = ILogger.UNIDENTIFIED;
@@ -1370,13 +1372,13 @@ public abstract class CMSServlet extends HttpServlet {
             ArgBlock httpArgs = new ArgBlock(toHashtable(httpReq));
             SessionContext ctx = SessionContext.getContext();
             String ip = httpReq.getRemoteAddr();
-            logger.debug("IP: " + ip);
+            logger.info("CMSServlet: - remote address: " + ip);
 
             if (ip != null) {
                 ctx.put(SessionContext.IPADDRESS, ip);
             }
             if (authMgrName != null) {
-                logger.debug("AuthMgrName: " + authMgrName);
+                logger.info("CMSServlet: - auth manager: " + authMgrName);
                 ctx.put(SessionContext.AUTH_MANAGER_ID, authMgrName);
             }
             // put locale into session context
@@ -1388,7 +1390,7 @@ public abstract class CMSServlet extends HttpServlet {
             X509Certificate clientCert = null;
 
             if (getClientCert != null && getClientCert.equals("true")) {
-                logger.debug("CMSServlet: retrieving SSL certificate");
+                logger.info("CMSServlet: Retrieving client certificate");
                 clientCert = getSSLClientCertificate(httpReq);
             }
 
@@ -1404,16 +1406,16 @@ public abstract class CMSServlet extends HttpServlet {
                 // audit message called LOGGING_SIGNED_AUDIT_AUTH_FAIL has
                 // been removed.
 
-                logger.debug("CMSServlet: no authMgrName");
+                logger.info("CMSServlet: Auth manager not speciifed");
                 return null;
             }
             // save the "Subject DN" of this certificate in case it
             // must be audited as an authentication failure
             if (clientCert == null) {
-                logger.debug("CMSServlet: no client certificate found");
+                logger.info("CMSServlet: No client certificate");
             } else {
                 String certUID = clientCert.getSubjectDN().getName();
-                logger.debug("CMSServlet: certUID=" + certUID);
+                logger.info("CMSServlet: client: " + certUID);
 
                 if (certUID != null) {
                     certUID = certUID.trim();
@@ -1430,16 +1432,26 @@ public abstract class CMSServlet extends HttpServlet {
 
             CMSEngine engine = getCMSEngine();
             CMSGateway gateway = engine.getCMSGateway();
+            logger.info(getClass().getSimpleName() + ": CMS gateway: " + gateway);
+            StackTraceElement[] st = Thread.currentThread().getStackTrace();
+            for (StackTraceElement e : st) {
+                logger.info("CMSServlet: " + e.getClassName()
+                    + "." + e.getMethodName()
+                    + "(" + e.getFileName() + ":" + e.getLineNumber() + ")");
+            }
+
             AuthToken authToken = gateway.checkAuthManager(httpReq,
                     httpArgs,
                     clientCert,
                     authMgrName);
+
             if (authToken == null) {
+                logger.info("CMSServlet: No auth token");
                 return null;
             }
-            String userid = authToken.getInString(AuthToken.USER_ID);
 
-            logger.debug("CMSServlet: userid=" + userid);
+            String userid = authToken.getInString(AuthToken.USER_ID);
+            logger.info("CMSServlet: user ID: " + userid);
 
             if (userid != null) {
                 ctx.put(SessionContext.USER_ID, userid);

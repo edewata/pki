@@ -637,6 +637,8 @@ public class CAProcessor extends Processor {
             }
 
             CMSGateway gateway = engine.getCMSGateway();
+            logger.info("CAProcessor: CMS gateway: " + gateway);
+
             AuthToken authToken = gateway.checkAuthManager(httpReq,
                     httpArgs,
                     clientCert,
