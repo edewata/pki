@@ -21,6 +21,7 @@
 from __future__ import absolute_import
 import logging
 import os
+import time
 
 import pki
 import pki.server.instance
@@ -228,6 +229,10 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         finally:
             # ALWAYS Stop this Tomcat PKI Process
             logger.info('Stopping PKI server')
+
+            # wait for logs to be flushed
+            time.sleep(10)
+
             instance.stop(
                 wait=True,
                 max_wait=deployer.startup_timeout,
