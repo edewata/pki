@@ -1590,9 +1590,12 @@ class PKISubsystem(object):
         logger.debug('Command: %s', ' '.join(cmd))
         subprocess.check_call(cmd)
 
-    def find_groups(self, as_current_user=False):
+    def find_groups(self, user_id=None, as_current_user=False):
 
         cmd = [self.name + '-group-find']
+
+        if user_id is not None:
+            cmd.extend(['--user', user_id])
 
         if logger.isEnabledFor(logging.DEBUG):
             cmd.append('--debug')
