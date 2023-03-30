@@ -8,9 +8,8 @@ jobs:
     uses: ./.github/workflows/init.yml
     secrets: inherit
 
-  # docs/development/Building_PKI.md
   build:
-    name: Building PKI
+    name: Building PKI images
     needs: init
     runs-on: ubuntu-latest
     steps:
@@ -123,22 +122,10 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           outputs: type=docker
 
-      - name: Build ipa-runner image
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          build-args: |
-            BASE_IMAGE=${{ needs.init.outputs.base-image }}
-            COPR_REPO=${{ needs.init.outputs.repo }}
-          tags: ipa-runner
-          target: ipa-runner
-          cache-from: type=local,src=/tmp/.buildx-cache
-          outputs: type=docker
-
       - name: Save PKI images
         run: |
           docker images
-          docker save -o pki-images.tar pki-dist pki-runner pki-server pki-ca pki-acme ipa-runner
+          docker save -o pki-images.tar pki-dist pki-runner pki-server pki-ca pki-acme
 
       - name: Store PKI images
         uses: actions/cache@v3
