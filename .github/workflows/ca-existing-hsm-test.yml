@@ -55,8 +55,12 @@ jobs:
 
       - name: Create SoftHSM token
         run: |
-          # allow PKI user to access SoftHSM files
-          docker exec pki usermod pkiuser -a -G ods
+          docker exec pki mkdir -p /home/pkiuser/.config/softhsm2/tokens
+
+          echo "directories.tokendir = /home/pkiuser/.config/softhsm2/tokens" > softhsm2.conf
+          docker cp softhsm2.conf pki:/home/pkiuser/.config/softhsm2/softhsm2.conf
+
+          docker exec pki chown -R pkiuser:pkiuser /home/pkiuser
 
           # create SoftHSM token for PKI server
           docker exec pki runuser -u pkiuser -- \
@@ -339,7 +343,7 @@ jobs:
 
       - name: Check SoftHSM files
         run: |
-          docker exec pki ls -lR /var/lib/softhsm/tokens
+          docker exec pki ls -laR /home/pkiuser/.config/softhsm2/tokens
 
       - name: Install CA with existing HSM
         run: |
@@ -510,6 +514,7 @@ jobs:
 
       - name: Remove SoftHSM token
         run: |
+          docker exec pki ls -laR /home/pkiuser/.config/softhsm2/tokens
           docker exec pki runuser -u pkiuser -- softhsm2-util --delete-token --token HSM
 
       - name: Upload artifacts

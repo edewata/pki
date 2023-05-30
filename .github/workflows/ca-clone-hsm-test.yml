@@ -56,8 +56,12 @@ jobs:
 
       - name: Create SoftHSM token in primary PKI container
         run: |
-          # allow PKI user to access SoftHSM files
-          docker exec primary usermod pkiuser -a -G ods
+          docker exec primary mkdir -p /home/pkiuser/.config/softhsm2/tokens
+
+          echo "directories.tokendir = /home/pkiuser/.config/softhsm2/tokens" > softhsm2.conf
+          docker cp softhsm2.conf primary:/home/pkiuser/.config/softhsm2/softhsm2.conf
+
+          docker exec primary chown -R pkiuser:pkiuser /home/pkiuser
 
           # create SoftHSM token for PKI server
           docker exec primary runuser -u pkiuser -- \
