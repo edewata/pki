@@ -282,7 +282,8 @@ jobs:
           DEC_SERIAL=$((16#${HEX_SERIAL:2}))
           echo "Dec serial: $DEC_SERIAL"
 
-          SHARED_TOKEN=$(cat token.txt)
+          #SHARED_TOKEN=$(cat token.txt)
+          SHARED_TOKEN="dGVzdAo="
 
           cat > modify.ldif << EOF
           dn: cn=$DEC_SERIAL,ou=certificateRepository,ou=ca,dc=ca,dc=pki,dc=example,dc=com
