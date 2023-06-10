@@ -1146,9 +1146,14 @@ public class CMSEngine {
      *
      * New non-blocking recover method.
      */
-    public void recoverRequestQueue() {
+    public void recoverRequestQueue() throws EBaseException {
 
         if (!isRunningMode()) return;
+
+        boolean enabled = config.getBoolean("requests.recovery.enabled", true);
+        if (!enabled) {
+            return;
+        }
 
         RecoverThread t = new RecoverThread(requestQueue);
         t.start();
