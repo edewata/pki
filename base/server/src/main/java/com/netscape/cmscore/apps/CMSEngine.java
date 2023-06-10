@@ -844,6 +844,11 @@ public class CMSEngine {
             return;
         }
 
+        boolean enabled = config.getBoolean("securitydomain.session.enabled", true);
+        if (!enabled) {
+            return;
+        }
+
         // monitor security domain sessions
 
         // my default is 1 day
