@@ -47,21 +47,6 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
 
     suffix = "(/.*)?"
 
-    def restore_context(self, mdict):
-        selinux.restorecon(mdict['pki_instance_path'], True)
-        selinux.restorecon(config.PKI_DEPLOYMENT_LOG_ROOT, True)
-        selinux.restorecon(self.instance.log_dir, True)
-        selinux.restorecon(mdict['pki_instance_configuration_path'], True)
-
-    # Helper function to check if a given `context_value` exists in the given
-    # set of `records`. This method can process both port contexts and file contexts
-    def context_exists(self, records, context_value):
-        for keys in records.keys():
-            for key in keys:
-                if str(key) == context_value:
-                    return True
-        return False
-
     def spawn(self, deployer):
 
         if config.str2bool(deployer.mdict['pki_skip_installation']):
@@ -82,61 +67,18 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
                 # check first if any transactions are required
                 if len(ports) == 0 and deployer.mdict['pki_instance_name'] == \
                         config.PKI_DEPLOYMENT_DEFAULT_TOMCAT_INSTANCE_NAME:
-                    self.restore_context(deployer.mdict)
+                    deployer.restore_context(self.instance)
                     return
 
                 # add SELinux contexts when adding the first subsystem
                 if len(deployer.tomcat_instance_subsystems()) == 1:
-                    trans = seobject.semanageRecords("targeted")
-                    trans.start()
                     if deployer.mdict['pki_instance_name'] != \
                             config.PKI_DEPLOYMENT_DEFAULT_TOMCAT_INSTANCE_NAME:
+                        deployer.create_selinux_context(self.instance)
 
-                        fcon = seobject.fcontextRecords(trans)
-
-                        logger.info(
-                            "adding selinux fcontext \"%s\"",
-                            deployer.mdict['pki_instance_path'] + self.suffix)
-                        fcon.add(
-                            deployer.mdict['pki_instance_path'] + self.suffix,
-                            config.PKI_INSTANCE_SELINUX_CONTEXT, "", "s0", "")
-
-                        logger.info(
-                            "adding selinux fcontext \"%s\"",
-                            self.instance.log_dir +
-                            self.suffix)
-                        fcon.add(
-                            self.instance.log_dir +
-                            self.suffix,
-                            config.PKI_LOG_SELINUX_CONTEXT, "", "s0", "")
-
-                        logger.info(
-                            "adding selinux fcontext \"%s\"",
-                            deployer.mdict['pki_instance_configuration_path'] +
-                            self.suffix)
-                        fcon.add(
-                            deployer.mdict['pki_instance_configuration_path'] +
-                            self.suffix,
-                            config.PKI_CFG_SELINUX_CONTEXT, "", "s0", "")
-
-                        logger.info(
-                            "adding selinux fcontext \"%s\"",
-                            deployer.mdict['pki_server_database_path'] + self.suffix)
-                        fcon.add(
-                            deployer.mdict['pki_server_database_path'] + self.suffix,
-                            config.PKI_CERTDB_SELINUX_CONTEXT, "", "s0", "")
-
-                        port_records = seobject.portRecords(trans)
-                        for port in ports:
-                            logger.info("adding selinux port %s", port)
-                            port_records.add(
-                                port, "tcp", "s0",
-                                config.PKI_PORT_SELINUX_CONTEXT)
-
-                    trans.finish()
-
-                    self.restore_context(deployer.mdict)
+                    deployer.restore_context(self.instance)
                 break
+
             except ValueError as e:
                 error_message = str(e)
                 logger.error(error_message)
@@ -169,66 +111,11 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             try:
                 # remove SELinux contexts when removing the last subsystem
                 if len(deployer.tomcat_instance_subsystems()) == 0:
-                    trans = seobject.semanageRecords("targeted")
-                    trans.start()
-
                     if deployer.mdict['pki_instance_name'] != \
                             config.PKI_DEPLOYMENT_DEFAULT_TOMCAT_INSTANCE_NAME:
-
-                        fcon = seobject.fcontextRecords(trans)
-                        file_records = fcon.get_all()
-
-                        if self.context_exists(file_records,
-                                               deployer.mdict['pki_instance_path'] +
-                                               self.suffix):
-                            logger.info(
-                                "deleting selinux fcontext \"%s\"",
-                                deployer.mdict['pki_instance_path'] + self.suffix)
-                            fcon.delete(
-                                deployer.mdict['pki_instance_path'] +
-                                self.suffix, "")
-
-                        if self.context_exists(file_records,
-                                               self.instance.log_dir +
-                                               self.suffix):
-                            logger.info(
-                                "deleting selinux fcontext \"%s\"",
-                                self.instance.log_dir +
-                                self.suffix)
-                            fcon.delete(
-                                self.instance.log_dir +
-                                self.suffix, "")
-
-                        if self.context_exists(file_records,
-                                               deployer.mdict['pki_instance_configuration_path'] +
-                                               self.suffix):
-                            logger.info(
-                                "deleting selinux fcontext \"%s\"",
-                                deployer.mdict['pki_instance_configuration_path'] +
-                                self.suffix)
-                            fcon.delete(
-                                deployer.mdict['pki_instance_configuration_path'] +
-                                self.suffix, "")
-
-                        if self.context_exists(file_records,
-                                               deployer.mdict['pki_server_database_path'] +
-                                               self.suffix):
-                            logger.info(
-                                "deleting selinux fcontext \"%s\"",
-                                deployer.mdict['pki_server_database_path'] + self.suffix)
-                            fcon.delete(
-                                deployer.mdict['pki_server_database_path'] +
-                                self.suffix, "")
-
-                        port_records = seobject.portRecords(trans)
-                        port_record_values = port_records.get_all()
-                        for port in ports:
-                            if self.context_exists(port_record_values, port):
-                                logger.info("deleting selinux port %s", port)
-                                port_records.delete(port, "tcp")
-
-                    trans.finish()
+                        deployer.remove_selinux_contexts(self.instance)
                 break
+
             except ValueError as e:
                 error_message = str(e)
                 logger.error(error_message)

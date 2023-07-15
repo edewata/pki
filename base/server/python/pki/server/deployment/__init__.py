@@ -26,6 +26,7 @@ import ldap
 import logging
 import os
 import re
+import selinux
 import shutil
 import socket
 import struct
@@ -48,9 +49,20 @@ import pki.system
 import pki.util
 
 from . import pkiconfig as config
+from . import pkiconfig.pki_selinux_config_ports as ports
 from . import pkihelper as util
 from . import pkimanifest as manifest
 from . import pkimessages as log
+
+seobject = None
+if selinux.is_selinux_enabled():
+    try:
+        import seobject
+    except ImportError:
+        # TODO: Fedora 22 has an incomplete Python 3 package
+        # sepolgen is missing.
+        if sys.version_info.major == 2:
+            raise
 
 logger = logging.getLogger(__name__)
 
@@ -3666,3 +3678,94 @@ class PKIDeployer:
         logger.info('Creating %s', manifest_archive)
 
         self.file.copy(manifest_file, manifest_archive)
+
+    def restore_context(self, instance):
+        selinux.restorecon(instance.base_dir, True)
+        selinux.restorecon(config.PKI_DEPLOYMENT_LOG_ROOT, True)
+        selinux.restorecon(instance.log_dir, True)
+        selinux.restorecon(instance.conf_dir, True)
+
+    # Helper function to check if a given `context_value` exists in the given
+    # set of `records`. This method can process both port contexts and file contexts
+    def context_exists(self, records, context_value):
+        for keys in records.keys():
+            for key in keys:
+                if str(key) == context_value:
+                    return True
+        return False
+
+    def create_selinux_context(self, instance):
+
+        suffix = '(/.*)?'
+
+        trans = seobject.semanageRecords('targeted')
+        trans.start()
+
+        fcon = seobject.fcontextRecords(trans)
+
+        logger.info('Adding selinux fcontext "%s"', instance.base_dir + suffix)
+        fcon.add(
+            instance.base_dir + suffix,
+            config.PKI_INSTANCE_SELINUX_CONTEXT, '', 's0', '')
+
+        logger.info('Adding selinux fcontext "%s"', instance.log_dir + suffix)
+        fcon.add(
+            instance.log_dir + suffix,
+            config.PKI_LOG_SELINUX_CONTEXT, '', 's0', '')
+
+        logger.info('Adding selinux fcontext "%s"', instance.conf_dir + suffix)
+        fcon.add(
+            instance.conf_dir + suffix,
+            config.PKI_CFG_SELINUX_CONTEXT, '', 's0', '')
+
+        logger.info('Adding selinux fcontext "%s"', instance.nssdb_dir + suffix)
+        fcon.add(
+            instance.nssdb_dir + suffix,
+            config.PKI_CERTDB_SELINUX_CONTEXT, '', 's0', '')
+
+        port_records = seobject.portRecords(trans)
+
+        for port in ports:
+            logger.info('Adding selinux port %s', port)
+            port_records.add(
+                port, 'tcp', 's0',
+                config.PKI_PORT_SELINUX_CONTEXT)
+
+        trans.finish()
+
+    def remove_selinux_contexts(self, instance):
+
+        suffix = '(/.*)?'
+
+        trans = seobject.semanageRecords('targeted')
+        trans.start()
+
+        fcon = seobject.fcontextRecords(trans)
+
+        file_records = fcon.get_all()
+
+        if self.context_exists(file_records, instance.base_dir + suffix):
+            logger.info('Deleting selinux fcontext "%s"', instance.base_dir + suffix)
+            fcon.delete(instance.base_dir + suffix, '')
+
+        if self.context_exists(file_records, instance.log_dir + suffix):
+            logger.info('Deleting selinux fcontext "%s"', instance.log_dir + suffix)
+            fcon.delete(instance.log_dir + suffix, '')
+
+        if self.context_exists(file_records, instance.conf_dir + suffix):
+            logger.info('Deleting selinux fcontext "%s"', instance.conf_dir + suffix)
+            fcon.delete(instance.conf_dir + suffix, ')
+
+        if self.context_exists(file_records, instance.nssdb_dir + suffix):
+            logger.info('Deleting selinux fcontext "%s"', instance.nssdb_dir + suffix)
+            fcon.delete(instance.nssdb_dir + suffix, '')
+
+        port_records = seobject.portRecords(trans)
+        port_record_values = port_records.get_all()
+
+        for port in ports:
+            if self.context_exists(port_record_values, port):
+                logger.info('Deleting selinux port %s', port)
+                port_records.delete(port, 'tcp')
+
+        trans.finish()
