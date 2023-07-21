@@ -50,6 +50,173 @@ jobs:
       - name: Connect primary DS container to network
         run: docker network connect example primaryds --alias primaryds.example.com
 
+      # https://github.com/dogtagpki/pki/wiki/Setting-up-CA-Database
+      - name: Configure primary DS database
+        run: |
+          docker exec primaryds ldapadd \
+              -H ldap://primaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -f $SHARED/base/server/database/ds/config.ldif
+
+      - name: Add PKI schema
+        run: |
+          docker exec primaryds ldapmodify \
+              -H ldap://primaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -f $SHARED/base/server/database/ds/schema.ldif
+
+      - name: Add CA base entry
+        run: |
+          docker exec -i primaryds ldapadd \
+              -H ldap://primaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 << EOF
+          dn: dc=ca,dc=pki,dc=example,dc=com
+          objectClass: dcObject
+          dc: ca
+          EOF
+
+      - name: Add CA database entries
+        run: |
+          sed \
+              -e 's/{rootSuffix}/dc=ca,dc=pki,dc=example,dc=com/g' \
+              base/ca/database/ds/create.ldif \
+              | tee create.ldif
+          docker exec primaryds ldapadd \
+              -H ldap://primaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -f $SHARED/create.ldif
+
+      - name: Add CA ACL resources
+        run: |
+          sed \
+              -e 's/{rootSuffix}/dc=ca,dc=pki,dc=example,dc=com/g' \
+              base/ca/database/ds/acl.ldif \
+              | tee acl.ldif
+          docker exec primaryds ldapadd \
+              -H ldap://primaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -f $SHARED/acl.ldif
+
+      - name: Add CA search indexes
+        run: |
+          sed \
+              -e 's/{database}/userroot/g' \
+              base/ca/database/ds/index.ldif \
+              | tee index.ldif
+          docker exec primaryds ldapadd \
+              -H ldap://primaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -f $SHARED/index.ldif
+
+      - name: Rebuild CA search indexes
+        run: |
+          # start rebuild task
+          sed \
+              -e 's/{database}/userroot/g' \
+              base/ca/database/ds/indextasks.ldif \
+              | tee indextasks.ldif
+          docker exec primaryds ldapadd \
+              -H ldap://primaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -f $SHARED/indextasks.ldif
+
+          # wait for task to complete
+          while true; do
+              sleep 1
+
+              docker exec primaryds ldapsearch \
+                  -H ldap://primaryds.example.com:3389 \
+                  -D "cn=Directory Manager" \
+                  -w Secret.123 \
+                  -b "cn=index1160589770, cn=index, cn=tasks, cn=config" \
+                  -LLL \
+                  nsTaskExitCode \
+                  | tee output
+
+              sed -n -e 's/nsTaskExitCode:\s*\(.*\)/\1/p' output > nsTaskExitCode
+              cat nsTaskExitCode
+
+              if [ -s nsTaskExitCode ]; then
+                  break
+              fi
+          done
+
+          echo "0" > expected
+          diff expected nsTaskExitCode
+
+      - name: Grant access to PKI database user
+        run: |
+          sed \
+              -e 's/{rootSuffix}/dc=example,dc=com/g' \
+              -e 's/{dbuser}/uid=pkidbuser,ou=people,dc=ca,dc=pki,dc=example,dc=com/g' \
+              base/server/database/ds/db-access-grant.ldif \
+              | tee db-access-grant.ldif
+          docker exec primaryds ldapadd \
+              -H ldap://primaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -f $SHARED/db-access-grant.ldif \
+              -c
+
+      - name: Add CA VLV indexes
+        run: |
+          sed \
+              -e 's/{instanceId}/pki-tomcat/g' \
+              -e 's/{database}/userroot/g' \
+              -e 's/{rootSuffix}/dc=ca,dc=pki,dc=example,dc=com/g' \
+              base/ca/database/ds/vlv.ldif \
+              | tee vlv.ldif
+          docker exec primaryds ldapadd \
+              -H ldap://primaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -f $SHARED/vlv.ldif
+
+      - name: Rebuild CA VLV indexes
+        run: |
+          # start rebuild task
+          sed \
+              -e 's/{database}/userroot/g' \
+              -e 's/{instanceId}/pki-tomcat/g' \
+              base/ca/database/ds/vlvtasks.ldif \
+              | tee vlvtasks.ldif
+          docker exec primaryds ldapadd \
+              -H ldap://primaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -f $SHARED/vlvtasks.ldif
+
+          # wait for task to complete
+          while true; do
+              sleep 1
+
+              docker exec primaryds ldapsearch \
+                  -H ldap://primaryds.example.com:3389 \
+                  -D "cn=Directory Manager" \
+                  -w Secret.123 \
+                  -b "cn=index1160589769, cn=index, cn=tasks, cn=config" \
+                  -LLL \
+                  nsTaskExitCode \
+                  | tee output
+
+              sed -n -e 's/nsTaskExitCode:\s*\(.*\)/\1/p' output > nsTaskExitCode
+              cat nsTaskExitCode
+
+              if [ -s nsTaskExitCode ]; then
+                  break
+              fi
+          done
+
+          echo "0" > expected
+          diff expected nsTaskExitCode
+
       - name: Set up primary PKI container
         run: |
           tests/bin/runner-init.sh primary
@@ -65,6 +232,7 @@ jobs:
               -f /usr/share/pki/server/examples/installation/ca.cfg \
               -s CA \
               -D pki_ds_url=ldap://primaryds.example.com:3389 \
+              -D pki_ds_setup=False \
               -D pki_cert_id_generator=random \
               -D pki_request_id_generator=random \
               -v
