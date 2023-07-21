@@ -618,14 +618,14 @@ class PKIDeployer:
         '''
 
         pki_clone_pkcs12_path = self.mdict['pki_clone_pkcs12_path']
-
         if not pki_clone_pkcs12_path:
             return
 
-        pki_clone_pkcs12_password = self.mdict['pki_clone_pkcs12_password']
+        logger.info('Importing certs and keys from %s', pki_clone_pkcs12_path)
 
+        pki_clone_pkcs12_password = self.mdict['pki_clone_pkcs12_password']
         if not pki_clone_pkcs12_password:
-            raise Exception('Missing pki_clone_pkcs12_password property')
+            raise Exception('Missing password for %s' % pki_clone_pkcs12_path)
 
         instance = subsystem.instance
 
@@ -645,8 +645,6 @@ class PKIDeployer:
                 password_file=pki_shared_pfile)
 
             try:
-                logger.info('Importing certificates from %s:', pki_clone_pkcs12_path)
-
                 # The PKCS12 class requires an NSS database to run. For simplicity
                 # it uses the NSS database that has just been created.
                 pkcs12 = pki.pkcs12.PKCS12(
@@ -1883,10 +1881,15 @@ class PKIDeployer:
         cert_id = self.get_cert_id(subsystem, tag)
 
         csr_path = self.mdict.get('pki_%s_csr_path' % cert_id)
-        if not csr_path or not os.path.exists(csr_path):
+        if not csr_path:
             return
 
-        logger.info('Importing %s CSR from %s', tag, csr_path)
+        logger.info('Importing CSR for %s from %s', tag, csr_path)
+
+        b64_csr = subsystem.config.get('%s.%s.certreq' % (subsystem.name, tag))
+        if b64_csr:
+            logger.warning('CSR for %s already exists', tag, csr_path)
+            return
 
         with open(csr_path, encoding='utf-8') as f:
             csr_data = f.read()

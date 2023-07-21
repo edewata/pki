@@ -42,6 +42,13 @@ jobs:
     with:
       db-image: ${{ needs.init.outputs.db-image }}
 
+  ca-clone-existing-ds-test:
+    name: CA clone with existing DS
+    needs: [init, build]
+    uses: ./.github/workflows/ca-clone-existing-ds-test.yml
+    with:
+      db-image: ${{ needs.init.outputs.db-image }}
+
   ca-crl-test:
     name: CA CRL database
     needs: [init, build]
