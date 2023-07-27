@@ -1398,7 +1398,16 @@ class PKIDeployer:
             for tag in tags:
                 if tag == 'sslserver':
                     continue
-                substores.append(subsystem.name + '.' + tag)
+
+                param = '%s.%s.certreq' % (subsystem.name, tag)
+                csr = nickname = subsystem.config.get(param)
+
+                if csr:
+                    # CSR already available on clone
+                    continue
+
+                # import CSR from master
+                names.append(param)
 
             if subsystem.name == 'ca':
                 substores.append('ca.connector.KRA')
