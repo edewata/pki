@@ -57,10 +57,7 @@ FROM pki-builder-deps AS pki-builder
 ARG BUILD_OPTS
 
 # Import JSS packages
-COPY --from=quay.io/dogtagpki/jss-dist:latest /root/RPMS /tmp/RPMS/
-
-# Import Tomcat JSS packages
-COPY --from=quay.io/dogtagpki/tomcatjss-dist:latest /root/RPMS /tmp/RPMS/
+COPY --from=quay.io/edewata/jss-dist:latest /root/RPMS /tmp/RPMS/
 
 # Import LDAP SDK packages
 COPY --from=quay.io/dogtagpki/ldapjdk-dist:latest /root/RPMS /tmp/RPMS/
@@ -88,10 +85,7 @@ COPY --from=pki-builder /root/pki/build/RPMS /root/RPMS/
 FROM pki-deps AS pki-runner
 
 # Import JSS packages
-COPY --from=quay.io/dogtagpki/jss-dist:latest /root/RPMS /tmp/RPMS/
-
-# Import Tomcat JSS packages
-COPY --from=quay.io/dogtagpki/tomcatjss-dist:latest /root/RPMS /tmp/RPMS/
+COPY --from=quay.io/edewata/jss-dist:latest /root/RPMS /tmp/RPMS/
 
 # Import LDAP SDK packages
 COPY --from=quay.io/dogtagpki/ldapjdk-dist:latest /root/RPMS /tmp/RPMS/
@@ -138,7 +132,7 @@ RUN pki-server http-connector-add -i tomcat@pki \
   --secure true \
   --sslEnabled true \
   --sslProtocol SSL \
-  --sslImpl org.dogtagpki.tomcat.JSSImplementation \
+  --sslImpl org.dogtagpki.jss.tomcat.JSSImplementation \
   Secure
 
 # Configure SSL server certificate
