@@ -441,6 +441,7 @@ Requires:         selinux-policy-targeted >= 3.13.1-159
 
 Requires:         mvn(org.jboss.resteasy:resteasy-servlet-initializer)
 Requires:         tomcat >= 1:9.0.50
+Conflicts:        tomcat >= 1:9.0.76
 Requires:         mvn(org.dogtagpki.jss:jss-tomcat) >= 5.5.0
 
 Requires:         systemd
