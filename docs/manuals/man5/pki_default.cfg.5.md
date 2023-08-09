@@ -305,8 +305,12 @@ If the back-end does not exist, it will be created during the running of **pkisp
 
 ### ISSUING CA PARAMETERS
 
-**pki_issuing_ca_hostname**, **pki_issuing_ca_https_port**, **pki_issuing_ca_uri**  
-Hostname and port, or URI of the issuing CA.
+**pki_issuing_ca_hostname**, **pki_issuing_ca_https_port**  
+Hostname and port of the issuing CA.
+**NOTE** Deprecated in favor of **pki_issuing_ca_uri**.
+
+**pki_issuing_ca_uri**  
+URI of the issuing CA.
 Required for installations of subordinate CA and non-CA subsystems.
 This should point to the CA that will issue the relevant system certificates for the subsystem.
 In a default install, this defaults to the CA subsystem within the same instance.

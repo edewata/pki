@@ -94,6 +94,10 @@ class PKIConfigParser:
          None, 'pki_ajp_host_ipv4'),
         (None, 'pki_restart_configured_instance',
          None, None),
+        (None, 'pki_issuing_ca_hostname',
+         None, 'pki_issuing_ca_uri'),
+        (None, 'pki_issuing_ca_https_port',
+         None, 'pki_issuing_ca_uri'),
     ]
 
     DEPRECATED_CA_PARAMS = [

@@ -165,8 +165,6 @@ run_bug_verification_setup(){
         echo "pki_client_database_dir=$BUGCA_CERTDB_DIR" >> $BUGKRA_INSTANCE_CFG
         echo "pki_client_database_password=$BUGCA_CERTDB_DIR_PASSWORD" >> $BUGKRA_INSTANCE_CFG
         echo "pki_client_database_purge=$BUGCA_CLIENT_DB_PURGE" >> $BUGKRA_INSTANCE_CFG
-	echo "pki_issuing_ca_hostname=$MASTER" >> $BUGKRA_INSTANCE_CFG
-        echo "pki_issuing_ca_https_port=$BUGCA_HTTPS_PORT" >> $BUGKRA_INSTANCE_CFG
         echo "pki_issuing_ca_uri=https://$MASTER:$BUGCA_HTTPS_PORT" >> $BUGKRA_INSTANCE_CFG
         rlRun "pkispawn -s KRA -v -f $BUGKRA_INSTANCE_CFG > $BUGKRA_INSTANCE_OUT"
 	rlRun "sleep 10"
@@ -200,8 +198,6 @@ run_bug_verification_setup(){
         echo "pki_client_database_dir=$BUGCA_CERTDB_DIR" >> $BUGOCSP_INSTANCE_CFG
         echo "pki_client_database_password=$BUGCA_CERTDB_DIR_PASSWORD" >> $BUGOCSP_INSTANCE_CFG
         echo "pki_client_database_purge=$BUGCA_CLIENT_DB_PURGE" >> $BUGOCSP_INSTANCE_CFG
-        echo "pki_issuing_ca_hostname=$MASTER" >> $BUGOCSP_INSTANCE_CFG
-        echo "pki_issuing_ca_https_port=$BUGCA_HTTPS_PORT" >> $BUGOCSP_INSTANCE_CFG
         echo "pki_issuing_ca_uri=https://$MASTER:$BUGCA_HTTPS_PORT" >> $BUGOCSP_INSTANCE_CFG
         rlRun "pkispawn -s OCSP -v -f $BUGOCSP_INSTANCE_CFG > $BUGOCSP_INSTANCE_OUT"
 	rlRun "sleep 10"
@@ -235,8 +231,6 @@ run_bug_verification_setup(){
         echo "pki_client_database_dir=$BUGCA_CERTDB_DIR" >> $BUGTKS_INSTANCE_CFG
         echo "pki_client_database_password=$BUGCA_CERTDB_DIR_PASSWORD" >> $BUGTKS_INSTANCE_CFG
         echo "pki_client_database_purge=$BUGCA_CLIENT_DB_PURGE" >> $BUGTKS_INSTANCE_CFG
-        echo "pki_issuing_ca_hostname=$MASTER" >> $BUGTKS_INSTANCE_CFG
-        echo "pki_issuing_ca_https_port=$BUGCA_HTTPS_PORT" >> $BUGTKS_INSTANCE_CFG
         echo "pki_issuing_ca_uri=https://$MASTER:$BUGCA_HTTPS_PORT" >> $BUGTKS_INSTANCE_CFG
         rlRun "pkispawn -s TKS -v -f $BUGTKS_INSTANCE_CFG > $BUGTKS_INSTANCE_OUT"
 	rlRun "sleep 10"

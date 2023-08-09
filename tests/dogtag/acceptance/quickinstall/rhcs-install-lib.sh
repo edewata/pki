@@ -292,8 +292,6 @@ rhcs_install_kra() {
                 echo "pki_import_admin_cert=$IMPORT_ADMIN_CERT_NONCA" >> $INSTANCECFG
                 echo "pki_client_dir=$CLIENT_DIR" >> $INSTANCECFG
                 echo "pki_client_admin_cert_p12=$CLIENT_DIR/$(eval echo \$KRA${number}_ADMIN_CERT_NICKNAME).p12" >> $INSTANCECFG
-		echo "pki_issuing_ca_hostname=$master_hostname" >> $INSTANCECFG
-		echo "pki_issuing_ca_https_port=$(eval echo \$${CA}_SECURE_PORT)" >> $INSTANCECFG
 		echo "pki_issuing_ca_uri=https://$master_hostname:$(eval echo \$${CA}_SECURE_PORT)" >> $INSTANCECFG
                 echo "pki_backup_keys=$(eval echo \$${CA}_BACKUP)" >> $INSTANCECFG
 		echo "pki_backup_password=$(eval echo \$KRA${number}_BACKUP_PASSWORD)" >> $INSTANCECFG
@@ -442,8 +440,6 @@ rhcs_install_ocsp() {
                 echo "pki_import_admin_cert=$IMPORT_ADMIN_CERT_NONCA" >> $INSTANCECFG
                 echo "pki_client_dir=$CLIENT_DIR" >> $INSTANCECFG
                 echo "pki_client_admin_cert_p12=$CLIENT_DIR/$(eval echo \$OCSP${number}_ADMIN_CERT_NICKNAME).p12" >> $INSTANCECFG
-                echo "pki_issuing_ca_hostname=$master_hostname" >> $INSTANCECFG
-                echo "pki_issuing_ca_https_port=$(eval echo \$${CA}_SECURE_PORT)" >> $INSTANCECFG
                 echo "pki_issuing_ca_uri=https://$master_hostname:$(eval echo \$${CA}_SECURE_PORT)" >> $INSTANCECFG
                 echo "pki_backup_keys=$(eval echo \$${CA}_BACKUP)" >> $INSTANCECFG
 		echo "pki_backup_password=$(eval echo \$OCSP${number}_BACKUP_PASSWORD)" >> $INSTANCECFG
@@ -583,8 +579,6 @@ rhcs_install_tks() {
                 echo "pki_import_admin_cert=$IMPORT_ADMIN_CERT_NONCA" >> $INSTANCECFG
                 echo "pki_client_dir=$CLIENT_DIR" >> $INSTANCECFG
                 echo "pki_client_admin_cert_p12=$CLIENT_DIR/$(eval echo \$TKS${number}_ADMIN_CERT_NICKNAME).p12" >> $INSTANCECFG
-                echo "pki_issuing_ca_hostname=$master_hostname" >> $INSTANCECFG
-                echo "pki_issuing_ca_https_port=$(eval echo \$${CA}_SECURE_PORT)" >> $INSTANCECFG
                 echo "pki_issuing_ca_uri=https://$master_hostname:$(eval echo \$${CA}_SECURE_PORT)" >> $INSTANCECFG
                 echo "pki_backup_keys=$(eval echo \$${CA}_BACKUP)" >> $INSTANCECFG
 		echo "pki_backup_password=$(eval echo \$TKS${number}_BACKUP_PASSWORD)" >> $INSTANCECFG
@@ -727,8 +721,6 @@ rhcs_install_tps() {
                 echo "pki_import_admin_cert=$IMPORT_ADMIN_CERT_NONCA" >> $INSTANCECFG
                 echo "pki_client_dir=$CLIENT_DIR" >> $INSTANCECFG
                 echo "pki_client_admin_cert_p12=$CLIENT_DIR/$(eval echo \$TPS${number}_ADMIN_CERT_NICKNAME).p12" >> $INSTANCECFG
-                echo "pki_issuing_ca_hostname=$master_hostname" >> $INSTANCECFG
-                echo "pki_issuing_ca_https_port=$(eval echo \$${CA}_SECURE_PORT)" >> $INSTANCECFG
                 echo "pki_issuing_ca_uri=https://$master_hostname:$(eval echo \$${CA}_SECURE_PORT)" >> $INSTANCECFG
 		echo "pki_ca_uri=https://$master_hostname:$(eval echo \$${CA}_SECURE_PORT)" >> $INSTANCECFG
 		echo "pki_enable_server_side_keygen=$(eval echo \$TPS${number}_SERVER_KEYGEN)" >> $INSTANCECFG

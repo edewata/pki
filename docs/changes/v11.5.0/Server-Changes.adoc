@@ -14,3 +14,8 @@ A new `pki_ds_url` parameter has been added for `pkispawn` to replace the follow
 A new `pki_http_enable` parameter has been added for `pkispawn`
 to enable/disable the plain HTTP connector in `server.xml`.
 The default value is `True`.
+
+== Deprecate pki_issuing_ca_hostname and pki_issuing_ca_https_port parameters ==
+
+The `pki_issuing_ca_hostname` and `pki_issuing_ca_https_port` parameters have been deprecated.
+Use `pki_issuing_ca_uri` instead.
