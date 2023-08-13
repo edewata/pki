@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.security.auth.x500.X500Principal;
+import javax.servlet.ServletContext;
 import javax.ws.rs.ServiceUnavailableException;
 
 import org.apache.catalina.Container;
@@ -49,11 +50,22 @@ public class ProxyRealm implements Realm {
     @Override
     public void setContainer(Container container) {
         this.container = container;
+
+        // when this method is invoked by Tomcat the "realm" object is
+        // not available yet since it's only added by PKIWebListener
+        // when the subsystem is started, so the container needs to
+        // stored in the "proxies" and mapped to the subsystem.
+        System.out.println("ProxyRealm: realm: " + realm);
+
         if (container instanceof Context) {
-            Context context = (Context)container;
+            Context context = (Context) container;
+
             String contextName = context.getBaseName();
             name = contextName.toUpperCase();
             proxies.put(contextName, this);
+
+            ServletContext servletContext = context.getServletContext();
+            System.out.println("ProxyRealm: engine: " + servletContext.getAttribute("engine"));
         }
     }
 
@@ -93,10 +105,10 @@ public class ProxyRealm implements Realm {
     @Override
     public Principal authenticate(String username) {
         validateRealm();
-        logger.info("Authenticating user " + username);
+        System.out.println("Authenticating user " + username);
         try {
             Principal principal = realm.authenticate(username);
-            logger.info("Principal: " + principal);
+            System.out.println("Principal: " + principal);
             return principal;
         } catch (Exception e) {
             logger.error("Unable to authenticate " + username + ": " + e.getMessage(), e);
@@ -107,10 +119,10 @@ public class ProxyRealm implements Realm {
     @Override
     public Principal authenticate(String username, String password) {
         validateRealm();
-        logger.info("Authenticating user " + username + " with password");
+        System.out.println("Authenticating user " + username + " with password");
         try {
             Principal principal = realm.authenticate(username, password);
-            logger.info("Principal: " + principal);
+            System.out.println("Principal: " + principal);
             return principal;
         } catch (Exception e) {
             logger.error("Unable to authenticate " + username + " with password: " + e.getMessage(), e);
@@ -121,9 +133,9 @@ public class ProxyRealm implements Realm {
     @Override
     public Principal authenticate(X509Certificate[] certs) {
         validateRealm();
-        logger.info("Authenticating certificate chain:");
+        System.out.println("Authenticating certificate chain:");
         for (X509Certificate cert : certs) {
-            logger.info("- " + cert.getSubjectDN());
+            System.out.println("- " + cert.getSubjectDN());
         }
 
         X500Principal subjectDN;
@@ -137,7 +149,7 @@ public class ProxyRealm implements Realm {
 
             X509Certificate userCert = sortedCerts.get(size - 1);
             subjectDN = userCert.getSubjectX500Principal();
-            logger.info("Authenticating cert " + subjectDN);
+            System.out.println("Authenticating cert " + subjectDN);
 
         } catch (Exception e) {
             logger.error("Unable to sort certificates: " + e.getMessage(), e);
@@ -146,7 +158,7 @@ public class ProxyRealm implements Realm {
 
         try {
             Principal principal = realm.authenticate(certs);
-            logger.info("Principal: " + principal);
+            System.out.println("Principal: " + principal);
             return principal;
         } catch (Exception e) {
             logger.error("Unable to authenticate " + subjectDN + ": " + e.getMessage(), e);
@@ -166,10 +178,10 @@ public class ProxyRealm implements Realm {
             String md5a2
     ) {
         validateRealm();
-        logger.info("Authenticating user " + username + " for realm "+ realmName);
+        System.out.println("Authenticating user " + username + " for realm "+ realmName);
         try {
             Principal principal = realm.authenticate(username, digest, nonce, nc, cnonce, qop, realmName, md5a2);
-            logger.info("Principal: " + principal);
+            System.out.println("Principal: " + principal);
             return principal;
         } catch (Exception e) {
             logger.error("Unable to authenticate " + username + " for realm " + realmName + ": " + e.getMessage(), e);
@@ -180,10 +192,10 @@ public class ProxyRealm implements Realm {
     @Override
     public Principal authenticate(GSSContext gssContext, boolean storeCreds) {
         validateRealm();
-        logger.info("Authenticating GSS context " + gssContext);
+        System.out.println("Authenticating GSS context " + gssContext);
         try {
             Principal principal = realm.authenticate(gssContext, storeCreds);
-            logger.info("Principal: " + principal);
+            System.out.println("Principal: " + principal);
             return principal;
         } catch (Exception e) {
             logger.error("Unable to authenticate " + gssContext + ": " + e.getMessage(), e);

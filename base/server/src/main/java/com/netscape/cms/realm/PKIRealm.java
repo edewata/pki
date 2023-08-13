@@ -6,6 +6,10 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
+import javax.servlet.ServletContext;
+
+import org.apache.catalina.Container;
+import org.apache.catalina.Context;
 import org.apache.catalina.realm.RealmBase;
 import org.apache.commons.lang3.StringUtils;
 import org.dogtagpki.server.authentication.AuthManager;
@@ -40,17 +44,14 @@ public class PKIRealm extends RealmBase {
 
     private static org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(PKIRealm.class);
 
-    protected CMSEngine engine;
-
     public PKIRealm() {
     }
 
     public CMSEngine getCMSEngine() {
-        return engine;
-    }
-
-    public void setCMSEngine(CMSEngine engine) {
-        this.engine = engine;
+        Container container = getContainer();
+        Context context = (Context) container;
+        ServletContext servletContext = context.getServletContext();
+        return (CMSEngine) servletContext.getAttribute("engine");
     }
 
     @Override
@@ -58,6 +59,7 @@ public class PKIRealm extends RealmBase {
 
         logger.info("PKIRealm: Authenticating user " + username + " with password");
 
+        CMSEngine engine = getCMSEngine();
         Auditor auditor = engine.getAuditor();
         String auditSubjectID = ILogger.UNIDENTIFIED;
         String attemptedAuditUID = username;
@@ -120,6 +122,7 @@ public class PKIRealm extends RealmBase {
         // in cert based auth, subject id from cert has already passed SSL authentication
         // what remains is to see if the user exists in the internal user db
         // therefore both auditSubjectID and attemptedAuditUID are the same
+        CMSEngine engine = getCMSEngine();
         Auditor auditor = engine.getAuditor();
         String auditSubjectID = getAuditUserfromCert(certs[0]);
         String attemptedAuditUID = auditSubjectID;
@@ -206,6 +209,7 @@ public class PKIRealm extends RealmBase {
     }
 
     protected User getUser(String username) throws EUsrGrpException {
+        CMSEngine engine = getCMSEngine();
         UGSubsystem ugSub = engine.getUGSubsystem();
         User user = ugSub.getUser(username);
         logger.info("PKIRealm: User DN: " + user.getUserDN());
@@ -216,6 +220,7 @@ public class PKIRealm extends RealmBase {
 
         List<String> roles = new ArrayList<>();
 
+        CMSEngine engine = getCMSEngine();
         UGSubsystem ugSub = engine.getUGSubsystem();
         Enumeration<Group> groups = ugSub.findGroupsByUser(user.getUserDN(), null);
 
