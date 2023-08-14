@@ -24,6 +24,8 @@
 -->
 <Context docBase="/usr/share/pki/ca/webapps/ca" crossContext="true">
 
+    <Listener className="com.netscape.cmscore.apps.PKIContextListener"/>
+
     <Manager
         secureRandomProvider="Mozilla-JSS" secureRandomAlgorithm="pkcs11prng"/>
 
