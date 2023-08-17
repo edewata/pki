@@ -112,7 +112,7 @@ jobs:
           docker exec primary-subca pki-server cert-find
 
       - name: Run PKI healthcheck
-        run: docker exec primary-subca pki-healthcheck --failures-only
+        run: docker exec primary-subca pki-healthcheck
 
       - name: Check primary sub-CA admin
         run: |
@@ -242,7 +242,7 @@ jobs:
           diff expected actual
 
       - name: Run PKI healthcheck
-        run: docker exec secondary-subca pki-healthcheck --failures-only
+        run: docker exec secondary-subca pki-healthcheck
 
       - name: Check secondary sub-CA admin
         run: |

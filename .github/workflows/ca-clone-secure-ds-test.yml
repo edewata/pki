@@ -226,10 +226,10 @@ jobs:
           docker exec secondary pki-server cert-find
 
       - name: Run PKI healthcheck in primary PKI container
-        run: docker exec primary pki-healthcheck --failures-only
+        run: docker exec primary pki-healthcheck
 
       - name: Run PKI healthcheck in secondary PKI container
-        run: docker exec secondary pki-healthcheck --failures-only
+        run: docker exec secondary pki-healthcheck
 
       - name: Verify DS connection in secondary PKI container
         run: |

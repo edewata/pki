@@ -96,10 +96,10 @@ jobs:
           docker exec primary pki-server ca-config-find | grep ca.connector.KRA
 
       - name: Run PKI healthcheck in primary container
-        run: docker exec primary pki-healthcheck --failures-only
+        run: docker exec primary pki-healthcheck
 
       - name: Run PKI healthcheck in secondary container
-        run: docker exec secondary pki-healthcheck --failures-only
+        run: docker exec secondary pki-healthcheck
 
       - name: Verify CA admin
         run: |
