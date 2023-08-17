@@ -21,13 +21,13 @@ setup(
         'ipahealthcheck.registry': [
             'pkihealthcheck.meta = pki.server.healthcheck.meta.plugin:registry',
             'pkihealthcheck.certs = pki.server.healthcheck.certs.plugin:registry',
-            'pkihealthcheck.clones = pki.server.healthcheck.clones.plugin:registry',
+            #'pkihealthcheck.clones = pki.server.healthcheck.clones.plugin:registry',
         ],
         # register the plugin with pki-healthcheck
         'pkihealthcheck.registry': [
             'pkihealthcheck.meta = pki.server.healthcheck.meta.plugin:registry',
             'pkihealthcheck.certs = pki.server.healthcheck.certs.plugin:registry',
-            'pkihealthcheck.clones = pki.server.healthcheck.clones.plugin:registry',
+            #'pkihealthcheck.clones = pki.server.healthcheck.clones.plugin:registry',
         ],
         # plugin modules for pkihealthcheck.meta registry
         'pkihealthcheck.meta': [

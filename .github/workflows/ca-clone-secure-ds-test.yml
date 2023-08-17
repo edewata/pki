@@ -226,10 +226,20 @@ jobs:
           docker exec secondary pki-server cert-find
 
       - name: Run PKI healthcheck in primary PKI container
-        run: docker exec primary pki-healthcheck
+        run: |
+          docker exec primary pki-healthcheck | tee output.json
+
+          echo -n > expected
+          jq '.[] | select(.check=="ClonesConnectivyAndDataCheck")' output.json > actual
+          diff expected actual
 
       - name: Run PKI healthcheck in secondary PKI container
-        run: docker exec secondary pki-healthcheck
+        run: |
+          docker exec secondary pki-healthcheck | tee output.json
+
+          echo -n > expected
+          jq '.[] | select(.check=="ClonesConnectivyAndDataCheck")' output.json > actual
+          diff expected actual
 
       - name: Verify DS connection in secondary PKI container
         run: |
