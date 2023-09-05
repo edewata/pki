@@ -205,23 +205,37 @@ public class PruningJob extends Job implements IExtendedPluginInfo {
 
     public void pruneRequestRecords(Calendar calendar) throws EBaseException {
 
+        String filter = "(!(" + RequestRecord.ATTR_REQUEST_STATE + "=" + RequestStatus.COMPLETE + "))";
+
+        logger.info("PruningJob: Finding incomplete requests");
+        Collection<RequestRecord> records = requestRepository.listRequestsByFilter(
+                filter, requestSearchSizeLimit, requestSearchTimeLimit);
+
+        logger.info("PruningJob: Found " + records.size() + " requests:");
+        for (RequestRecord record : records) {
+            Request request = record.toRequest();
+            RequestId requestID = request.getRequestId();
+            logger.info("PruningJob: - Request ID: " + requestID.toHexString());
+        }
+
         Calendar pruningCalendar = (Calendar) calendar.clone();
         pruningCalendar.add(requestRetentionUnit, -requestRetentionTime);
 
         Date pruningTime = pruningCalendar.getTime();
-        logger.info("PruningJob: Pruning incomplete requests last modified before " + pruningTime);
+        logger.info("PruningJob: Finding incomplete requests last modified before " + pruningTime);
 
         long time = pruningTime.getTime();
 
-        String filter = "(&" +
+        filter = "(&" +
                 "(!(" + RequestRecord.ATTR_REQUEST_STATE + "=" + RequestStatus.COMPLETE + "))" +
                 "(" + RequestRecord.ATTR_MODIFY_TIME + "<=" + time + ")" +
                 "(!(" + RequestRecord.ATTR_MODIFY_TIME + "=" + time + ")))";
         logger.info("PruningJob: - filter: " + filter);
 
-        Collection<RequestRecord> records = requestRepository.listRequestsByFilter(
+        records = requestRepository.listRequestsByFilter(
                 filter, requestSearchSizeLimit, requestSearchTimeLimit);
 
+        logger.info("PruningJob: Found " + records.size() + " requests:");
         for (RequestRecord record : records) {
             Request request = record.toRequest();
             RequestId requestID = request.getRequestId();
@@ -259,13 +273,13 @@ public class PruningJob extends Job implements IExtendedPluginInfo {
 
         try {
             pruneCertRecords(calendar);
-        } catch (EBaseException e) {
+        } catch (Throwable e) {
             logger.warn("PruningJob: Unable to prune certificates: " + e.getMessage(), e);
         }
 
         try {
             pruneRequestRecords(calendar);
-        } catch (EBaseException e) {
+        } catch (Throwable e) {
             logger.warn("PruningJob: Unable to prune requests: " + e.getMessage(), e);
         }
     }
