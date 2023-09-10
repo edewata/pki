@@ -116,20 +116,23 @@ jobs:
               --server http://pki.example.com:8080/acme/directory \
               --email user1@example.com \
               --agree-tos \
-              --non-interactive
+              --non-interactive \
+              -vvv
           docker exec client certbot certonly \
               --server http://pki.example.com:8080/acme/directory \
               -d client1.example.com \
               --key-type rsa \
               --standalone \
-              --non-interactive
+              --non-interactive \
+              -vvv
           docker exec client openssl x509 -text -noout -in /etc/letsencrypt/live/client1.example.com/fullchain.pem
           docker exec client certbot certonly \
               --server http://pki.example.com:8080/acme/directory \
               -d client2.example.com \
               --key-type rsa \
               --standalone \
-              --non-interactive
+              --non-interactive \
+              -vvv
           docker exec client openssl x509 -text -noout -in /etc/letsencrypt/live/client2.example.com/fullchain.pem
 
       - name: Simulate ACME server switchover by replacing the baseURL parameter
@@ -153,19 +156,23 @@ jobs:
               --cert-name client1.example.com \
               --force-renewal \
               --no-random-sleep-on-renew \
-              --non-interactive
+              --non-interactive \
+              -vvv
           docker exec client openssl x509 -text -noout -in /etc/letsencrypt/live/client1.example.com/fullchain.pem
           docker exec client certbot revoke \
               --server http://pki.example.com:8080/acme/directory \
               --cert-name client2.example.com \
-              --non-interactive
+              --non-interactive \
+              -vvv
           docker exec client certbot update_account \
               --server http://pki.example.com:8080/acme/directory \
               --email user2@example.com \
-              --non-interactive
+              --non-interactive \
+              -vvv
           docker exec client certbot unregister \
               --server http://pki.example.com:8080/acme/directory \
-              --non-interactive
+              --non-interactive \
+              -vvv
 
       - name: Gather artifacts from server containers
         if: always()

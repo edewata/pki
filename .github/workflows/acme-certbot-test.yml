@@ -222,7 +222,8 @@ jobs:
               --server http://pki.example.com:8080/acme/directory \
               --email testuser@example.com \
               --agree-tos \
-              --non-interactive
+              --non-interactive \
+              -vvv
 
       - name: Check ACME accounts after registration
         run: |
@@ -257,7 +258,8 @@ jobs:
               -d client.example.com \
               --key-type rsa \
               --standalone \
-              --non-interactive
+              --non-interactive \
+              -vvv
 
       - name: Check client cert
         run: |
@@ -363,7 +365,8 @@ jobs:
               --cert-name client.example.com \
               --force-renewal \
               --no-random-sleep-on-renew \
-              --non-interactive
+              --non-interactive \
+              -vvv
 
       - name: Check renewed client cert
         run: |
@@ -467,7 +470,8 @@ jobs:
           docker exec client certbot revoke \
               --server http://pki.example.com:8080/acme/directory \
               --cert-name client.example.com \
-              --non-interactive
+              --non-interactive \
+              -vvv
 
       - name: Check CA certs after revocation
         run: |
@@ -501,7 +505,8 @@ jobs:
           docker exec client certbot update_account \
               --server http://pki.example.com:8080/acme/directory \
               --email newuser@example.com \
-              --non-interactive
+              --non-interactive \
+              -vvv
 
       - name: Check ACME accounts after update
         run: |
@@ -528,7 +533,8 @@ jobs:
         run: |
           docker exec client certbot unregister \
               --server http://pki.example.com:8080/acme/directory \
-              --non-interactive
+              --non-interactive \
+              -vvv
 
       - name: Check ACME accounts after unregistration
         run: |
