@@ -554,6 +554,8 @@ jobs:
       - name: Gather artifacts from server containers
         if: always()
         run: |
+          sleep 5
+
           tests/bin/ds-artifacts-save.sh --output=/tmp/artifacts/pki ds
           tests/bin/pki-artifacts-save.sh pki
         continue-on-error: true

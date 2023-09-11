@@ -181,6 +181,8 @@ jobs:
           # revoke CA agent cert
           docker exec pki /usr/share/pki/tests/ca/bin/ca-agent-cert-revoke.sh
 
+          sleep 5
+
           # get cert serial number
           docker exec pki pki nss-cert-show caagent | tee output
           CERT_ID=$(sed -n "s/^\s*Serial Number:\s*\(\S*\)$/\1/p" output)
@@ -347,6 +349,8 @@ jobs:
       - name: Gather artifacts
         if: always()
         run: |
+          sleep 5
+
           tests/bin/ds-artifacts-save.sh --output=/tmp/artifacts/pki ds
           tests/bin/pki-artifacts-save.sh pki
         continue-on-error: true

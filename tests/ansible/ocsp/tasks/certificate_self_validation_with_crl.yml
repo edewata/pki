@@ -545,6 +545,10 @@
     container: "{{ ca_container }}"
     command: "pki -n caadmin  ca-cert-hold {{ ca_command.stdout | regex_search('\\s*Serial Number:\\s*(\\S*)', '\\1') | first }}  --force"
 
+- name: Wait for CRL propagation
+  ansible.builtin.pause:
+    seconds: 15
+
 - name: Restart OCSP
   community.docker.docker_container_exec:
     container: "{{ ocsp_container }}"
@@ -555,12 +559,16 @@
     container: "{{ ocsp_container }}"
     command: pki -n ocspadmin ocsp-user-show ocspadmin
   register: ocsp_command
-  failed_when: "'PKIException: Not Found' not in ocsp_command.stderr"
+  failed_when: "'PKIException: Unauthorized' not in ocsp_command.stderr"
 
 - name: Release the OCSP DS certificate
   community.docker.docker_container_exec:
     container: "{{ ca_container }}"
     command: "pki -n caadmin  ca-cert-release-hold {{ ca_command.stdout | regex_search('\\s*Serial Number:\\s*(\\S*)', '\\1') | first }}  --force"
+
+- name: Wait for CRL propagation
+  ansible.builtin.pause:
+    seconds: 15
 
 - name: Restart OCSP 2 
   community.docker.docker_container_exec:
