@@ -50,7 +50,7 @@ public class LdapBoundConnFactory extends LdapConnFactory {
 
     PKISocketConfig config;
 
-    protected int mMinConns = 5;
+    protected int mMinConns = 0;
     protected int mMaxConns = 1000;
     protected int mMaxResults = 0;
 

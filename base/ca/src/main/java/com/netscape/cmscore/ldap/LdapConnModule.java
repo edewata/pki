@@ -105,7 +105,7 @@ public class LdapConnModule {
                 connConfig.getInteger("port"),
                 connInfo.getSecure());
 
-        int minConns = mConfig.getInteger(LdapBoundConnFactory.PROP_MINCONNS, 3);
+        int minConns = mConfig.getInteger(LdapBoundConnFactory.PROP_MINCONNS, 0);
         int maxConns = mConfig.getInteger(LdapBoundConnFactory.PROP_MAXCONNS, 15);
         // must get authInfo from the config, don't default to internaldb!!!
 
