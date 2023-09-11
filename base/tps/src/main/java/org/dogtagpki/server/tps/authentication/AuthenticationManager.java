@@ -75,7 +75,7 @@ public class AuthenticationManager
      *   auths.instance.ldap1.ldap.ldapconn.secureConn=False
      *   auths.instance.ldap1.ldap.ldapconn.version=3
      *   auths.instance.ldap1.ldap.maxConns=15
-     *   auths.instance.ldap1.ldap.minConns=3
+     *   auths.instance.ldap1.ldap.minConns=0
      *   auths.instance.ldap1.ldapByteAttributes=
      *   auths.instance.ldap1.ldapStringAttributes=mail,cn,uid
      *   auths.instance.ldap1.pluginName=UidPwdDirAuth

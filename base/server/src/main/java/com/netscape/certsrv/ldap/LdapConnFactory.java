@@ -45,7 +45,7 @@ public abstract class LdapConnFactory {
     protected PKISocketConfig config;
     protected LdapConnInfo mConnInfo;
 
-    protected int mMinConns = 5;
+    protected int mMinConns = 0;
     protected int mMaxConns = 1000;
     protected int mMaxResults = 0;
 

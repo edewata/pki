@@ -391,7 +391,7 @@ public class AttributePresentConstraints extends APolicyRule
          params.addElement("ldap.ldapauth.clientCertNickname=");
          params.addElement("ldap.ldapauth.authtype=BasicAuth");
          params.addElement("ldap.basedn=");
-         params.addElement("ldap.minConns=1");
+         params.addElement("ldap.minConns=0");
          params.addElement("ldap.maxConns=5");
          */
     }
