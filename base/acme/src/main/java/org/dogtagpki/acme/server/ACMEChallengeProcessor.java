@@ -13,7 +13,6 @@ import org.dogtagpki.acme.ACMEAccount;
 import org.dogtagpki.acme.ACMEAuthorization;
 import org.dogtagpki.acme.ACMEChallenge;
 import org.dogtagpki.acme.ACMEError;
-import org.dogtagpki.acme.ACMEOrder;
 import org.dogtagpki.acme.ValidationResult;
 import org.dogtagpki.acme.validator.ACMEValidator;
 
@@ -119,34 +118,6 @@ public class ACMEChallengeProcessor implements Runnable {
         authorization.setExpirationTime(expirationTime);
 
         engine.updateAuthorization(account, authorization);
-
-        logger.info("Updating pending orders");
-
-        Collection<ACMEOrder> orders =
-            engine.getOrdersByAuthorizationAndStatus(account, authzID, "pending");
-
-        for (ACMEOrder order : orders) {
-            boolean allAuthorizationsValid = true;
-
-            for (String orderAuthzID : order.getAuthzIDs()) {
-
-                ACMEAuthorization authz = engine.getAuthorization(account, orderAuthzID);
-                if (authz.getStatus().equals("valid")) continue;
-
-                allAuthorizationsValid = false;
-                break;
-            }
-
-            if (!allAuthorizationsValid) continue;
-
-            logger.info("Order " + order.getID() + " is ready");
-            order.setStatus("ready");
-
-            Date orderExpirationTime = engine.getPolicy().getReadyOrderExpirationTime(currentTime);
-            order.setExpirationTime(orderExpirationTime);
-
-            engine.updateOrder(account, order);
-        }
     }
 
     public void finalizeInvalidAuthorization(ACMEError err) throws Exception {
@@ -194,39 +165,5 @@ public class ACMEChallengeProcessor implements Runnable {
         authorization.setExpirationTime(expirationTime);
 
         engine.updateAuthorization(account, authorization);
-
-        // RFC 8555 Section 7.1.6: Status Changes
-        //
-        // The order also moves to the "invalid" state if it expires or one of
-        // its authorizations enters a final state other than "valid" ("expired",
-        // "revoked", or "deactivated").
-
-        logger.info("Updating pending orders");
-
-        Collection<ACMEOrder> orders =
-            engine.getOrdersByAuthorizationAndStatus(account, authzID, "pending");
-
-        for (ACMEOrder order : orders) {
-            boolean allAuthorizationsValid = true;
-
-            for (String orderAuthzID : order.getAuthzIDs()) {
-
-                ACMEAuthorization authz = engine.getAuthorization(account, orderAuthzID);
-                if (authz.getStatus().equals("valid")) continue;
-
-                allAuthorizationsValid = false;
-                break;
-            }
-
-            if (allAuthorizationsValid) continue;
-
-            logger.info("Order " + order.getID() + " is invalid");
-            order.setStatus("invalid");
-
-            Date orderExpirationTime = engine.getPolicy().getInvalidOrderExpirationTime(currentTime);
-            order.setExpirationTime(orderExpirationTime);
-
-            engine.updateOrder(account, order);
-        }
     }
 }
