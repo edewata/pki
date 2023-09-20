@@ -162,7 +162,7 @@ public class CAEngine extends CMSEngine {
     protected LdapBoundConnFactory connectionFactory;
 
     protected AuthorityMonitor authorityMonitor;
-    protected boolean enableAuthorityMonitor = true;
+    protected boolean enableAuthorityMonitor;
 
     public CAEngine() {
         super("CA");
@@ -823,7 +823,7 @@ public class CAEngine extends CMSEngine {
         String schedulerClass = caConfig.getString("requestSchedulerClass", null);
         logger.info("CAEngine: - scheduler: " + schedulerClass);
 
-        enableAuthorityMonitor = caConfig.getBoolean("authorityMonitor.enable", enableAuthorityMonitor);
+        enableAuthorityMonitor = caConfig.getBoolean("authorityMonitor.enable", false);
         logger.info("CAEngine: - enable AuthorityMonitor: " + enableAuthorityMonitor);
 
         SecureRandom secureRandom = getJSSSubsystem().getRandomNumberGenerator();
