@@ -1,0 +1,82 @@
+= Installation =
+
+<pre>
+$ dnf install mongodb-server
+</pre>
+
+= Starting Server =
+
+<pre>
+$ systemctl start mongod
+</pre>
+
+= Command-Line Client =
+
+== Connecting to Database ==
+
+To connect to a local database:
+
+<pre>
+$ mongo <database>
+</pre>
+
+To connect to a remote database:
+
+<pre>
+$ mongo "mongodb+srv://<hostname>/<database>" --username <username>
+</pre>
+
+== Displaying Database Info ==
+
+To display database name:
+
+ MongoDB> db
+
+To display database version:
+
+ MongoDB> db.version()
+
+== Listing Collections ==
+
+ MongoDB> show collections
+
+== Creating a Collection ==
+
+ MongoDB> db.createCollection("users")
+
+== Removing a Collection ==
+
+ MongoDB> db.users.drop()
+
+== Listing Documents ==
+
+ MongoDB> db.users.find()
+
+== Creating a Document ==
+
+ MongoDB> db.users.insertOne({
+     uid: "testuser",
+     name: "Test User"
+ })
+
+== Removing a Document ==
+
+ MongoDB> db.users.remove({"uid": "testuser"})
+
+= Java Client =
+
+== Installation ==
+
+<pre>
+$ dnf install mongo-java-driver
+</pre>
+
+= See Also =
+
+* [https://docs.mongodb.com/ MongoDB Docs]
+* [https://tecadmin.net/install-mongodb-on-fedora/ How to Install MongoDB on Fedora]
+* [https://fedoramagazine.org/how-to-get-mongodb-server-on-fedora/ How to get MongoDB Server on Fedora]
+* [https://docs.mongodb.com/ecosystem/drivers/java/ Java MongoDB Driver]
+* [https://mongodb.github.io/mongo-java-driver/3.6/ MongoDB Java Driver 3.6]
+* [https://www.geekwire.com/2019/mongodbs-licensing-changes-led-red-hat-drop-database-latest-version-server-os/ MongoDB’s licensing changes led Red Hat to drop the database from the latest version of its server OS]
+* [[Cassandra]]

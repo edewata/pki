@@ -1,0 +1,25 @@
+Checking out from svn is:
+
+  git svn clone svn+ssh://svn.fedorahosted.org/svn/pki --prefix svn/ --stdlayout
+
+The flag  --stdlayout  is shorthand for  -T trunk -b branches -t tags  which are are svn specific
+
+The flag --prefix lets us name the remote repo.
+
+
+
+To work with Trunk
+
+  git checkout -b trunk svn/trunk
+
+
+Creates branch and checks out all in one.
+
+
+To Fetch changes from central git repo:
+  git svn fetch
+  git rebase svn/trunk
+
+To prepare a patch for review:
+
+  git format-patch  -M -C --patience --full-index

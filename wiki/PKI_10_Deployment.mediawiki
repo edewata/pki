@@ -1,0 +1,113 @@
+= System Certificates =
+
+== Self-Signed CA Certificate ==
+
+* Generate self-signed temporary SSL server cert
+* Generate self-signed CA signing cert
+* Generate admin cert request
+* Use CA signing cert to issue:
+** OCSP signing cert
+** subsystem cert
+** SSL server cert
+** audit signing cert
+** admin cert
+* Replace temporary SSL server cert with permanent one
+* Import admin cert
+
+== External CA Certificate ==
+
+* Generate self-signed temporary SSL server certificate
+* Generate CA signing CSR
+* Use external CA to issue CA signing certificate
+* Import cert chain and CA signing certificate
+* Use CA signing cert to issue:
+** OCSP signing certificate
+** subsystem certificate
+** SSL server certificate
+** audit signing certificate
+** admin certificate
+* Replace temporary SSL server certificate with permanent one
+* Import admin certificate
+
+== KRA/OCSP with External Certificates ==
+
+* Generate CSRs for:
+** system certificates
+** SSL server certificate
+** admin certificate
+* Use external CA to issue:
+** system certificates
+** SSL server certificate
+** admin certificate
+* Import the certificates with certificate chain:
+** system certificates
+** SSL server certificate
+** admin certificate
+
+== Existing CA Signing Certificate ==
+
+* Generate self-signed temporary SSL server cert
+* Import CA signing cert, CSR, and certificate chain
+* Generate cert record and request record for CA signing cert
+* Use CA signing certificate to issue:
+** OCSP signing certificate
+** subsystem certificate
+** SSL server certificate
+** audit signing certificate
+** admin certificate
+* Replace temporary SSL server cert with permanent one
+* Import admin certificate
+
+== Existing CA Certificates ==
+
+* Import the following certificates, CSRs, and certificate chain:
+** CA signing certificate
+** OCSP signing certificate
+** subsystem certificate
+** SSL server certificate
+** audit signing certificate
+** admin certificate
+* Create cert records and request records for:
+** CA signing certificate
+** OCSP signing certificate
+** subsystem certificate
+** SSL server certificate
+** audit signing certificate
+** admin certificate
+
+= Registry =
+
+== Instance Registry ==
+
+Each instance has a registry in /etc/sysconfig/pki/tomcat/<instance> which contains:
+
+* <instance name> which is based on [https://github.com/dogtagpki/pki/blob/master/base/server/setup/pkidaemon_registry pkidaemon_registry]
+
+Variables:
+
+* PKI_WEB_SERVER_TYPE
+* PKI_USER
+* PKI_GROUP
+* PKI_INSTANCE_NAME
+* PKI_INSTANCE_PATH
+* PKI_LOCKDIR
+* PKI_PIDDIR
+* PKI_UNSECURE_PORT
+* TOMCAT_PIDFILE
+
+== Subsystem Registry ==
+
+Each subsystem has a registry at /etc/sysconfig/pki/tomcat/<instance>/<subsystem> which contains:
+
+* default.cfg
+* deployment.cfg
+* manifest
+
+= References =
+
+* [[Deployment Configuration]]
+* [[Deployment Process]]
+* [[PKI Instance Deployment]]
+* [https://github.com/dogtagpki/pki/wiki/KRA-Connector KRA Connector]
+* [[Directory Structure]]
+* [[Deployment API]]

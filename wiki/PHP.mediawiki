@@ -1,0 +1,24 @@
+= Installing Extensions =
+
+Install the extension with the following command:
+
+<pre>
+php composer.phar require <extension ID>
+</pre>
+
+Find the extension name in $IP/extensions.
+
+Add the following line in LocalSettings.php:
+
+<pre>
+wfLoadExtension( '<extension name>' );
+</pre>
+
+= References =
+
+* [https://getcomposer.org/doc/ PHP Composer Documentation]
+* [[Docker]]
+* [https://github.com/dogtagpki/pki/wiki/MySQL MySQL]
+* [[Apache HTTP Server]]
+* [https://github.com/dogtagpki/pki/wiki/MediaWiki MediaWiki]
+* [[Markdown]]

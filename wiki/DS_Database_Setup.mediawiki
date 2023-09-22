@@ -1,0 +1,188 @@
+= Overview =
+
+This page describes the process to setup DS instance to be used as PKI database. It assumes that the DS instance has been [https://github.com/dogtagpki/pki/wiki/DS-Installation installed].
+
+To avoid confusion, this page will use the following terms as follows:
+* database: the entire DS instance
+* backend: an internal LDBM database used by the DS instance to store LDAP entries
+
+A DS instance may contain multiple backends. The default backend is called userRoot.
+
+A single backend can store multiple LDAP suffixes.
+
+A PKI subsystem can use a private backend or a backend shared with other subsystems.
+
+= Automated Setup =
+
+The DS backend can be setup automatically by pkispawn.
+
+== Deploying into separate DS backends ==
+
+To deploy PKI subsystems into separate DS backends, specify a different suffix and backend name for each subsystem as follows:
+
+ pki_ds_base_dn=<font color="red">dc=ca,dc=example,dc=com</font>
+ pki_ds_database=<font color="red">ca</font>
+ pki_ds_create_new_db=True
+
+== Deploying into shared default DS backend ==
+
+To deploy PKI subsystems into shared default DS backend, specify the following parameters:
+
+ pki_ds_base_dn=<font color="red">dc=ca,dc=example,dc=com</font>
+ pki_ds_database=<font color="red">userRoot</font>
+ pki_ds_create_new_db=False
+
+== Deploying into shared custom DS backend ==
+
+To deploy PKI subsystem into a shared custom DS backend,
+first create the backend (see [https://github.com/dogtagpki/pki/wiki/Creating-DS-Backend-Manually Creating DS Backend Manually]),
+then deploy the subsystem with the following parameters:
+
+ pki_ds_base_dn=<font color="red">dc=ca,dc=pki,dc=example,dc=com</font>
+ pki_ds_database=<font color="red">pki</font>
+ pki_ds_create_new_db=False
+
+== Cloned DS backend ==
+
+On a PKI replica the DS backend will be replicated from the DS master:
+
+ pki_ds_database=<font color="red">ca</font>
+ pki_ds_create_new_db=False
+ pki_ds_remove_data=False
+ pki_clone=True
+ pki_clone_setup_replication=False
+
+= Manual Setup =
+
+== Creating new database ==
+
+=== Creating DS backend ===
+
+ $ ldapadd -x -D "cn=Directory Manager" -w <font color="red">Secret.123</font> << EOF
+ dn: cn=<font color="red">ca</font>,cn=ldbm database,cn=plugins,cn=config
+ objectClass: top
+ objectClass: nsBackendInstance
+ objectClass: extensibleObject
+ cn: <font color="red">ca</font>
+ nsslapd-suffix: <font color="red">dc=ca,dc=example,dc=com</font>
+ EOF
+
+=== Creating suffix mapping entry ===
+
+ $ ldapadd -x -D "cn=Directory Manager" -w <font color="red">Secret.123</font> << EOF
+ dn: cn=<font color="red">dc\3Dca\2Cdc\3Dexample\2Cdc\3Dcom</font>,cn=mapping tree,cn=config
+ objectClass: top
+ objectClass: extensibleObject
+ objectClass: nsMappingTree
+ cn: <font color="red">dc=ca,dc=example,dc=com</font>
+ nsslapd-backend: <font color="red">ca</font>
+ nsslapd-state: backend
+ EOF
+
+== Reusing existing database ==
+
+=== Checking mapping conflicts ===
+
+Check existing mappings:
+
+ $ ldapsearch -x -D "cn=Directory Manager" -w <font color="red">Secret.123</font> -b "cn=mapping tree,cn=config" -s one "(nsslapd-backend=<font color="red">ca</font>)"
+ dn: cn=<font color="red">dc\3Dca\2Cdc\3Dexample\2Cdc\3Dcom</font>,cn=mapping tree,cn=config
+ objectClass: top
+ objectClass: extensibleObject
+ objectClass: nsMappingTree
+ cn: <font color="red">dc=ca,dc=example,dc=com</font>
+ nsslapd-backend: <font color="red">ca</font>
+ nsslapd-state: Backend
+
+Make sure database is only used by <font color="red">dc=ca,dc=example,dc=com</font>.
+
+=== Removing existing entries ===
+
+Remove existing mapping entry:
+
+ $ ldapdelete -x -D "cn=Directory Manager" -w <font color="red">Secret.123</font> "cn=\"<font color="red">dc=ca,dc=example,dc=com</font>\",cn=mapping tree,cn=config"
+
+Remove existing DS database entry:
+
+ $ ldapdelete -x -D "cn=Directory Manager" -w <font color="red">Secret.123</font> "cn=<font color="red">ca</font>,cn=ldbm database,cn=plugins,cn=config"
+
+Remove existing PKI database entries:
+
+List all entries in existing LDAP tree:
+
+ $ ldapsearch -x -D "cn=Directory Manager" -w <font color="red">Secret.123</font> -b "<font color="red">dc=ca,dc=example,dc=com</font>" dn
+
+Delete all entries starting from the bottom of the tree:
+
+ $ ldapdelete -x -D "cn=Directory Manager" -w <font color="red">Secret.123</font> &lt;DN&gt;
+
+=== Populating the database ===
+
+Create DS database:
+
+ $ ldapadd -x -D "cn=Directory Manager" -w <font color="red">Secret.123</font> << EOF
+ dn: cn=<font color="red">ca</font>,cn=ldbm database,cn=plugins,cn=config
+ objectClass: top
+ objectClass: extensibleObject
+ objectClass: nsBackendInstance
+ cn: <font color="red">ca</font>
+ nsslapd-suffix: <font color="red">dc=ca,dc=example,dc=com</font>
+ EOF
+
+Create mapping entry:
+
+ $ ldapadd -x -D "cn=Directory Manager" -w <font color="red">Secret.123</font> << EOF
+ dn: cn=<font color="red">dc\3Dca\2Cdc\3Dexample\2Cdc\3Dcom</font>,cn=mapping tree,cn=config
+ objectClass: top
+ objectClass: extensibleObject
+ objectClass: nsMappingTree
+ cn: <font color="red">dc=ca,dc=example,dc=com</font>
+ nsslapd-backend: <font color="red">ca</font>
+ nsslapd-state: backend
+ EOF
+
+Create PKI base entry:
+
+ $ ldapadd -x -D "cn=Directory Manager" -w <font color="red">Secret.123</font> << EOF
+ dn: <font color="red">dc=ca,dc=example,dc=com</font>
+ objectClass: top
+ objectClass: domain
+ dc: <font color="red">ca</font>
+ EOF
+
+== Reusing existing subtree ==
+
+=== Removing existing entries ===
+
+List all entries in existing LDAP tree:
+
+ $ ldapsearch -x -D "cn=Directory Manager" -w <font color="red">Secret.123</font> -b "<font color="red">dc=ca,dc=example,dc=com</font>" dn
+
+Delete all entries starting from the bottom of the tree:
+
+ $ ldapdelete -x -D "cn=Directory Manager" -w <font color="red">Secret.123</font> <DN>
+
+=== Verifying parent entry ===
+
+ $ ldapsearch -x -D "cn=Directory Manager" -w <font color="red">Secret.123</font> -b "<font color="red">dc=example,dc=com</font>" -s base "(objectClass=*)"
+
+=== Creating base entry ===
+
+ $ ldapadd -x -D "cn=Directory Manager" -w <font color="red">Secret.123</font> << EOF
+ dn: <font color="red">dc=ca,dc=example,dc=com</font>
+ objectClass: top
+ objectClass: domain
+ dc: <font color="red">ca</font>
+ EOF
+
+== Cloned Database ==
+
+Cloned database will be populated automatically by the DS.
+
+== Removing Database ==
+
+See [https://github.com/dogtagpki/pki/wiki/Removing-DS-Backend-Manually Removing DS Backend Manually].
+
+= References =
+
+* [[PKI LDAP]]

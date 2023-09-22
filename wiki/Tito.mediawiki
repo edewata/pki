@@ -1,0 +1,66 @@
+= Installation =
+
+<pre>
+$ dnf install tito
+</pre>
+
+= Initialization =
+
+To enable Tito build, go to the root directory of the local git repository, then execute:
+
+<pre>
+$ tito init
+$ git push origin master
+</pre>
+
+= Creating a Release =
+
+To create a release, go to the package directory, then execute:
+
+<pre>
+$ tito tag --keep-version --no-auto-changelog
+$ git push origin <branch> --tags --force
+</pre>
+
+To undo a tag:
+
+<pre>
+$ tito tag -u
+</pre>
+
+or
+
+<pre>
+$ git tag -d <tag>
+$ git reset --hard HEAD^
+</pre>
+
+= Creating a Local Build =
+
+<pre>
+$ tito build --rpm --offline
+</pre>
+
+= Creating a COPR Build =
+
+In COPR repository go to Packages, click New package, then enter the following:
+
+* Source Type: SCM
+* SCM type: git
+* Clone URL: <GitHub URL>
+* Webhook rebuild: yes
+* Build SRPM with: tito
+
+= Configuring Webhook =
+
+In COPR repository go to Settings, click Webhooks, then copy GitHub Webhook URL.
+Go to GitHub project, click Settings, click Webhooks, click Add Webhook, then enter the following:
+* Payload URL
+* Content type: application/json.
+
+= References =
+
+* [[COPR]]
+* [https://github.com/dgoodwin/tito Tito]
+* [[Git]]
+* [[GitHub]]

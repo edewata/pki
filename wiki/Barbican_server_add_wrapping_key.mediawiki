@@ -1,0 +1,82 @@
+== Overview ==
+Changes will be needed in the interfaces that extract or store secrets.  This means basically the Secrets Resource.  The Orders resource does not store or return secrets, and therefore require no changes,
+
+When storing secrets, the client will:
+# Get the transport certificate from the Barbican server.
+# Wrap the secret with a session key. ( 168 bit 3DES symmetric key)
+# Wrap the session key with the public key in the DRM transport certificate.
+# Send both data and a nonce to the Barbican server.
+# The server will extract the data and store accordingly.
+
+When retrieving secrets, the client will:
+# Generate a session key (168 bit 3DES symmetric key)
+# Wrap the session key with the DRM public key.
+# Send the wrapped session key to the Barbican server as part of the retrieval request.
+# Server will unwrap the wrapping_key, and use it to wrap the returned secret.
+# Client will unwrap the returned secret using the session key.
+
+Changes to the server side will be covered in this blueprint.  Changes to the client side will be covered in a separate blueprint.
+
+== Changes for storing secrets ==
+
+There are two functions where we store secrets: SecretsResource.on_post() and SecretResource.on_put().
+
+#  In SecretsResource.on_post(), we currently have the POST parameter "payload".  We need to add the parameters: wrapping_key, wrapping_algorithm, wrapping_nonce. We will assume that if these parameters are present, then the payload contains an encrypted secret.
+#  on_post() calls create_secret(data, ...).  If a payload exists, this in turn calls crypto_manager.encrypt()
+#  crypto_manager.encrypt() would check for the wrapping_key field.  If that field exists, then it would check for a plugin that supports PluginSupportTypes.ENCRYPT_DECRYPT_WITH_WRAPPING
+# If such a plugin exists, it would bundle the wrapping parameters into the EncryptDTO, and call encrypt() on the plugin.  No changes are needed to the Plugin API call.
+# The plugin would handle the wrapping parameters accordingly.  In the case of the Dogtag plugin, we would call the archiveEncryptedData() call.
+
+
+# In SecretResource.on_put, the entire message body is read as the payload.  We will need to change this to pass an object with fields: payload, wrapping_key, wrapping_algorithm, wrapping_nonce.  If we wanted to preserve the old functionality, we could add a Query parameter like encrypted=True/False which would specify whether we were passing in an object with encrypted fields or just a plain payload.
+# on_put() calls crypto_manager.encrypt().  We would just need to pass down the values.  The changes required below this level as the same as those detailed above,
+
+== Alternate changes for storing secrets ==
+
+If we wanted the client to do a little more work and did not want to change the Barbican API too much, you could bundle all the
+wrapping parameters in a single binary structure.  
+
+Currently, the Dogtag DRM accepts a structure currently used in archiving asymmetric private keys (PKIArchiveOptions) -  http://tools.ietf.org/html/rfc2511 section 6.4.  This bundles the wrapping keys, algorithm, nonce, and encrypted data into a single blob.Now we don't have to use this structure - and in fact, we could consider something like KMIP further on, but given that Dogtag currently supports this, its not a bad place to start.
+
+We could then make the following changes:
+
+# In SecretsResource.on_post(), we would add the parameter encrypted=True/False.  We could do this as a POST parameter or as an addition query parameter.  If set to true, then we assume the payload contains an encrypted PKIArchiveOptions blob.
+# on_post() calls create_secret(data, ...).  If a payload exists, this in turn calls crypto_manager.encrypt().  We need to make sure the value of encrypted is passed down.
+# crypto_manager.encrypt() would check encrypted.  If true, then it would check for a plugin that supports PluginSupportTypes.ENCRYPT_DECRYPT_WITH_WRAPPING
+# If such a plugin exists, it would set encrypted=True in the EncryptDTO and call encrypt() on the plugin.  No changes are needed to the Plugin API call.
+# The plugin would handle the wrapping parameters accordingly.  In the case of the Dogtag plugin, we would call the archive_pki_options() call.
+
+
+# In SecretResource.on_put, we would need to add a query parameter encrypted_True/False.  The entire message body will continue to be read as the payload.
+# on_put() calls crypto_manager.encrypt().  We would just need to pass down the value of encrypted.  The changes required below this level as the same as those detailed above,
+
+== Changes to retrieving secrets ==
+
+Secrets are retrieved using SecretResource on_get.  
+
+We need to add a wrapping_key to the request. The problem here though is that the length of the query string is limited - http://en.wikipedia.org/wiki/Query_string in many browser implementations.  Now, this may not be a limitation in practice if we assume for instance that data retrieval using a wrapping_key will only occur with the barbican client (and the barbican client HTTP library supports larger query string).
+
+If this is not a limitation, then we need to add a new query parameter wrapping_key, which will be the base64 encoded wrapping key (wrapped with the Barbican server transport key).  If this will be a limitation, then we will need to create a new POST method on SecretResource.
+
+# Add new query parameter wrapping_key to SecretResource.on_get()  This function calls crypto_manager.decrypt()
+# decrypt() checks for the existance of a wrapping_key.  If so, it checks for a plugin that supports PluginSupportTypes.ENCRYPT_DECRYPT_WITH_WRAPPING
+# If that plugin exists, it bundles the wrapping_key into the DecryptDTO and calls the plugin's decrypt() method.
+# The plugin processes accordingly.  For Dogtag, that means calling recover_key() and passing in the wrapping_key.
+
+== Getting the transport certificate ==
+As a precursor for all this wrapping, the client needs to retrieve the transport key from the Barbican server.  Most probably, the client will cache the transport cert and do a conditional GET on startup.
+
+It looks like we need a new resource.  Until we find a better name, I suggest WrappingKeyResource.
+
+   WrappingKeyResource  on_get()
+      on_get()  will implement a conditional GET
+      calls into crypto_manager.get_wrapping_key
+   
+   crypto_manager.get_wrapping_key():
+      looks for support of ENCRYPT_DECRYPT_WITH_WRAPPING
+      if none, return Not Supported,
+      else call crypto_plugin.get_wrapping_key()
+   
+   crypto_plugin.get_wrapping_key()
+     -- will store transport cert locally in file.  Makes call to update on startup if needed.
+     -- will return base64 encoded transport cert

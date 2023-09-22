@@ -1,0 +1,15 @@
+The connector database is stored in CS.cfg, for example:
+
+<pre>
+config.Subsystem_Connections.ca1.state=Enabled
+config.Subsystem_Connections.ca1.timestamp=1547653918278000
+config.Subsystem_Connections.kra1.state=Enabled
+config.Subsystem_Connections.kra1.timestamp=1547653918409000
+config.Subsystem_Connections.tks1.state=Enabled
+config.Subsystem_Connections.tks1.timestamp=1547653918467000
+</pre>
+
+= References =
+
+* [https://github.com/dogtagpki/pki/wiki/TPS-Database TPS Database]
+* [https://github.com/dogtagpki/pki/blob/master/base/tps/src/org/dogtagpki/server/tps/config/ConnectorDatabase.java ConnectorDatabase.java]

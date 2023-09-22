@@ -1,0 +1,197 @@
+= Overview =
+
+This page describes the process to release IDM Console Framework on Fedora.
+
+= Authentication =
+
+Obtain a Kerberos ticket for FEDORAPROJECT.ORG account and [[COPR]] authentication token.
+
+= Getting Source Package =
+
+The repository for IDM Console Framework source package for Fedora is located at https://src.fedoraproject.org/rpms/idm-console-framework. To clone the repository locally:
+
+ $ fedpkg clone idm-console-framework
+ $ cd idm-console-framework
+
+The repository can be forked for development. To add the fork into the local repository:
+
+ $ git remote add <username> ssh://<username>@pkgs.fedoraproject.org/forks/<username>/rpms/idm-console-framework.git
+ $ git fetch <username>
+
+= Updating Version and Release Numbers =
+
+Follow this guideline to update the version number, release number, and phase in the [https://github.com/dogtagpki/idm-console-framework/blob/master/idm-console-framework.spec.in spec template]:
+
+* version: <x>.<y>.<z>
+* release: 0.1, 0.2, ..., 1, 2, ...
+* phase: a1, a2, ..., b1, b2, ...
+
+For pre-releases, set the version number to <x>.<y>.0, set the release number to 0.<n>, and phase to -<phase>:
+
+<pre>
+Version:        1.2.0
+Release:        0.1%{?_timestamp}%{?_commit_id}%{?dist}
+%global         _phase -a1
+</pre>
+
+For initial release, keep the version number as <x>.<y>.0, set the release number to 1, and comment out the phase:
+
+<pre>
+Version:        1.2.0
+Release:        1%{?_timestamp}%{?_commit_id}%{?dist}
+# %global       _phase -a1
+</pre>
+
+For upstream updates (i.e. upstream bug fixes), increment the <z> in the version number, set the release number to 1:
+
+<pre>
+Version:        1.2.1
+Release:        1%{?_timestamp}%{?_commit_id}%{?dist}
+# %global       _phase -a1
+</pre>
+
+For downstream patches (e.g. platform-specific patches), keep the version number as <x>.<y>.<z>, increment the release number:
+
+<pre>
+Version:        1.2.1
+Release:        2%{?_timestamp}%{?_commit_id}%{?dist}
+# %global       _phase -a1
+</pre>
+
+See also:
+
+* [[Versioning Scheme]]
+* [https://fedoraproject.org/wiki/Packaging:Versioning Guidelines for Versioning Fedora Packages]
+
+= Merging Spec Changes =
+
+To merge the spec template with the actual spec files:
+
+ $ meld <font color="red">idm-console-framework</font>/idm-console-framework.spec <font color="red">Fedora/idm-console-framework</font>/idm-console-framework.spec 
+
+In the actual spec files, add a change log entry for the new release in downstream spec file (unless there is one already that has not been released):
+
+ * Tue May 29 2018 Dogtag PKI Team <pki-team@redhat.com> - 1.2.0-1
+ - Rebased to IDM Console Framework 1.2.0
+
+'''Notes:'''
+* Do not override changes that were done downstream unless they were done improperly.
+* Do not add a change log entry in the upstream spec template.
+* There might be changes that cannot be merged. This is OK.
+
+= Commit Upstream Changes =
+
+Commit all changes to upstream:
+
+ $ git commit -a -m "Updated version number to x.y.z-r"
+
+Create a local tag with the following commands:
+
+ $ git tag v1.2.0
+
+For pre-releases, append the phase name to the version number, e.g. v1.2.0-a1.
+
+= Update Source Tarball =
+
+Generate a tarball with the following commands:
+
+ $ cd <font color="red">idm-console-framework</font>
+ $ ./build.sh --source-tag=v1.2.0 src
+
+Import the source tarball with the following commands:
+
+ $ cd <font color="red">Fedora/idm-console-framework</font>
+ $ fedpkg new-sources ~/build/idm-console-framework/SOURCES/idm-console-framework-1.2.0.tar.gz
+
+Then verify with the following commands:
+
+ $ fedpkg local
+ $ fedpkg lint
+
+= Creating Test Build =
+
+Create a [[COPR]] build with the following command:
+
+ $ cd <font color="red">Fedora/idm-console-framework</font>
+ $ fedpkg copr-build @pki/10.6 --nowait
+
+or create a scratch build with the following commands:
+
+ $ fedpkg srpm
+ $ fedpkg scratch-build --nowait --srpm idm-console-framework-1.2.0-1.fc28.src.rpm
+
+Once the test build is complete, push the changes and tag upstream:
+
+ $ cd <font color="red">idm-console-framework</font>
+ $ git push origin master
+ $ git push origin v1.2.0
+
+= Commit Source Package Changes =
+
+Commit the changes to master (i.e. rawhide):
+
+ $ cd <font color="red">Fedora/idm-console-framework</font>
+ $ git commit -m "Rebased to IDM Console Framework 1.2.0"
+ $ git push origin master
+
+= Creating Koji Build for Rawhide =
+
+Create a Koji build:
+
+ $ fedpkg build --nowait
+
+If necessary, the task can be monitored with the following command:
+
+ $ koji watch-task <task ID>
+
+Once the build is complete, tag the source package repository:
+
+ $ git tag idm-console-framework-1.2.0-1.fc29
+ $ git push origin idm-console-framework-1.2.0-1.fc29
+
+= Creating Koji Build for Current Fedora =
+
+Cherry pick the changes from master into the current Fedora (e.g. f28):
+
+ $ git checkout <branch>
+ $ git cherry-pick <commit ID>
+ $ git push origin <branch>
+
+Then create a Koji build:
+
+ $ fedpkg build --nowait
+
+If necessary, the task can be monitored with the following command:
+
+ $ koji watch-task <task ID>
+
+Tag package repository:
+
+ $ git tag idm-console-framework-1.2.0-1.fc28
+ $ git push origin idm-console-framework-1.2.0-1.fc28
+
+= Creating Bodhi Update for Current Fedora =
+
+Once the Koji build is complete, submit a Bodhi update:
+
+ $ bodhi updates new \
+  --request=testing \
+  --notes="Update to IDM Console Framework 1.2.0-1" \
+  --type=enhancement idm-console-framework-1.2.0-1.fc28
+
+The update will appear [https://bodhi.fedoraproject.org/updates/?packages=idm-console-framework here].
+
+= Creating GitHub Release =
+
+Go to https://github.com/dogtagpki/idm-console-framework/releases/tag/v1.2.0 and edit the release.
+
+Include links to the new releases:
+
+* https://src.fedoraproject.org/rpms/idm-console-framework/releases
+
+= References =
+
+* [[Releases]]
+* [[JSS Release Procedure]]
+* [[Tomcat JSS Release Procedure]]
+* [[PKI Release Procedure]]

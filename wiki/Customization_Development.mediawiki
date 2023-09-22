@@ -1,0 +1,180 @@
+= Overview =
+
+Currently PKI webapps are deployed by copying the webapp files from PKI's shared folder into Tomcat instance.
+
+<pre>
+/var/lib/pki/<instance>:
++ webapps
+  + ca
+  + kra
+  + ocsp
+  + tks
+  + ...
+</pre>
+
+This mechanism creates a maintenance problem. On one hand some customers want to be able to modify the deployed webapps to make customization. On the other hand developers want to still be able to update the webapps to fix bugs or make some improvements.
+
+There are several options that can be done during upgrade:
+* Automatically redeploy all webapps. This will override any customization done on the deployed files, so customers will have to redo the customization.
+* Provide a script to upgrade the files. This script may be difficult to write if there are many/complicated updates. There is a risk that the script will not work due to the way the customization was done.
+* Let customer upgrade manually. This requires developers to provide detailed document on all changes to the webapps and places a burden on customers to upgrade each instance manually and correctly.
+
+None of these options are quite satisfactory. This document proposes a different way to deploy the webapps while still supporting both automatic upgrade and customization. The new mechanism consists of:
+* Splitting the webapps into smaller customizable parts.
+* Deploying the webapps directly from the shared folder.
+
+= Splitting the Web Applications =
+
+There are different aspects of customization that should be considered:
+* Look and feel
+* Messages
+* Behavior
+
+Most likely a customer would want to customize certain aspects of the webapp only, not the entire application. To accommodate the different requirements, the webapps should be split into smaller components as follows:
+
+{| border="1" style="border-collapse: collapse;" width="100%"
+|-
+! width="100" | Component
+! width="100" | Deployment Path
+! Description
+|-
+| Root 
+| /
+| This is the front page. By default it provides links to the subsystems installed on the server.
+|-
+| Common
+| /pki
+| This is a container to store files used by all subsystems (e.g. JS libraries, templates for installation wizard).
+|-
+| Theme
+| /pki/theme
+| This provides the images, CSS, and fonts for all subsystems.
+|-
+| Messages
+| /pki/messages
+| This provides the messages and translations for all subsystems.
+|-
+| Subsystem
+| /ca, /kra, /ocsp, /tks
+| This is the subsystem's main application. It contains HTML files, templates, JS scripts, web.xml, auth.properties.
+|}
+
+The front page can be changed by replacing the root webapp. The look and feel can be changed by creating a custom theme. The messages can be changed by creating a custom messages. If necessary, the behavior can also be changed by creating a custom subsystem.
+
+These components can also be split into smaller components if necessary to support more fine-grained customization. For example, the theme can be split into separate webapps for images, CSS, and fonts. The CA can be split into separate webapps for EE, agent, and admin.
+
+This way the customer will only be responsible for the components that they actually customize and the rest can still be upgraded automatically.
+
+= Direct Deployment =
+
+In this mechanism, the webapp files will no longer be copied. Instead, the Tomcat instance will be configured to point to the location of the webapp files. 
+
+== Tomcat Configuration ==
+
+To deploy a webapp without copying the files, a context should be created for each webapp and configured to point to the webapp folder.
+
+The context should be defined in an XML file in <Tomcat instance>/conf/<engine>/<host>. The file name should match the deployment path (see [http://tomcat.apache.org/tomcat-7.0-doc/config/host.html Automatic Application Deployment]).
+
+<pre>
+/var/lib/pki/<instance>:
++ conf
+  + Catalina
+    + localhost
+      + ROOT.xml         -- context for main webapp
+      + pki.xml          -- context for common webapp
+      + pki#theme.xml    -- context for theme webapp
+      + pki#messages.xml -- context for messages webapp
+      + ca.xml           -- context for CA webapp
+      + kra.xml          -- context for KRA webapp
+      + ocsp.xml         -- context for OCSP webapp
+      + tks.xml          -- context for TKS webapp
+</pre>
+
+In each XML file the context should be defined as follows. The docBase in the context should point to where the webapp files currently exist.
+
+<pre>
+<Context docBase="...<webapp folder>...">
+    ...
+</Context>
+</pre>
+
+== Default Web Applications ==
+
+The default PKI webapps should remain in the PKI's shared folder, but they might need to be rearranged to simplify direct deployment. The webapp folder names do not need to exactly match the context file names, but it's done that way to make it easier to identify.
+
+<pre>
+/usr/share/pki:
++ webapps
+  + ROOT              -- main webapp
+  + pki               -- common webapp
+  + pki#theme         -- default theme
+  + pki#messages      -- default messages
+  + ca                -- CA webapp
+  + kra               -- KRA webapp
+  + ocsp              -- OCSP webapp
+  + tks               -- TKS webapp
+</pre>
+
+Since they are not copied, these webapps can be used concurrently by multiple Tomcat instances. These files are installed by RPM, so during upgrade the files will be automatically updated. The context files in Tomcat are still pointing to the same location, so most likely the admin will only need to restart the Tomcat instances.
+
+== Custom Web Applications ==
+
+Customers can customize the web applications by copying the files from the shared location into a separate location and making the changes there. The web applications context file should then be pointed to that location. For example:
+
+<pre>
+/usr/share/mycompany:
++ webapps
+  + pki#theme         -- custom theme
+  + tps               -- custom TPS UI
+</pre>
+
+Note that during RPM upgrade these files will not be updated automatically. The customer is responsible to update these files manually. However, since the files will be organized into more granular web applications it should be easier to update the files by comparing the custom webapp with the new default webapp.
+
+== Installer ==
+
+During installation the admin will be asked to specify the location of the webapps. The installer will show the default webapp locations for each component. The admin can override it with the location of the customized webapp.
+
+<pre>
+% pkispawn
+Subsystem (CA/KRA/OCSP/TKS) [CA]:
+
+Web Applications:
+  Root [/usr/share/pki/webapps/ROOT]:
+  Common [/usr/share/pki/webapps/pki]:
+  Subsystem [/usr/share/pki/webapps/ca]:
+  Theme [/usr/share/pki/webapps/pki#theme]: /usr/share/mycompany/webapps/pki#theme
+  Messages [/usr/share/pki/webapps/pki#messages]:
+
+...
+</pre>
+
+= Potential Issues =
+
+Since PKI is already released using the old mechanism, customers who have customized their deployment would have to do it one more time using the new mechanism.
+
+Upgrade scripts might still be required if there's a configuration change or database change. However, these script should be easier to write since these configuration files and databases have PKI-specific formats.
+
+Some documentation about webapp changes might still be needed, but it may not need to be very detailed because customers know which webapp they have customized and they are relatively small.
+
+Customer might still need to upgrade the customized components manually, but it would be limited to the components that they actually customized. Majority of the components should be able to be upgraded automatically. Some components such as the theme are less likely to change during upgrade, so chances are the custom webapps do not need to be updated much or at all.
+
+Splitting CA into EE, agent, and admin would be more challenging because the code now would run in separate webapps. Further research need to be done about the need and the impact of such reorganization.
+
+= Task List =
+
+The followings are the steps required to accomplish the goal:
+* Reorganize the webapps in the shared folder.
+* Move config files (e.g. auth.properties) from the subsystem webapps into the conf folder.
+* Move theme files into separate webapp (e.g. images, CSS, fonts).
+* Move messages into separate webapp.
+* Update the links to the theme and message files in HTML and template files.
+* Modify installer to prompt for webapp locations and generate the context files.
+* Remove the code that copies the webapp files.
+
+= References =
+
+* [[Customization]]
+* [https://fedorahosted.org/pki/ticket/499  Ticket #499: Direct web application deployment]
+* [https://fedorahosted.org/pki/ticket/748 Ticket #748: Remove cfgPath from web.xml]
+* [http://tomcat.apache.org/tomcat-7.0-doc/config/host.html Apache Tomcat 7: The Host Container]
+* [http://tomcat.apache.org/tomcat-7.0-doc/config/context.html Apache Tomcat 7: The Context Container]

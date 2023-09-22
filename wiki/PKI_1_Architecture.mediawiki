@@ -1,0 +1,28 @@
+= Server Architecture =
+
+== Java-based Servers ==
+
+For the Java-based servers such as CA, TKS, DRM, and OCSP. We use tomcat as the web engine.
+
+The following diagram shows:
+
+* tomcat process secure http request using jss via tomcatjss
+* tomcat passes the requests to the PKI servlets that are part of cms.jar
+* PKI servlets submits the request into the CMS engine for processing
+
+[[Image:arch.png]]
+
+The server uses JSS to perform cryptographic operations such as signing and encryption.
+
+== Non Java-based Servers ==
+
+* TPS and RA are using Apache as the web engine. mod_nss (aka fortitude) handles the SSL communication, with the help of the NSS library, in Apache.
+* Apache passes the clear HTTP request to mod_tps for processing.
+
+[[Image:tps-arch.png]]
+
+
+The server uses NSS to perform cryptographic operations such as signing and encryption.
+
+
+[[Category:Tech Notes]]

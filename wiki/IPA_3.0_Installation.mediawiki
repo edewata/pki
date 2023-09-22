@@ -1,0 +1,47 @@
+= Overview =
+
+This page provides instructions to set up IPA for PKI development and testing. To set up IPA for production please refer to the official [http://www.freeipa.org/page/Documentation IPA documentation].
+
+= Installing IPA Packages =
+
+== RHEL packages ==
+
+To install the packages:
+
+<pre>
+$ yum install ipa-server
+</pre>
+
+= Installing IPA Server =
+
+== Basic IPA server ==
+
+<pre>
+$ ipa-server-install -a Secret.123 -p Secret.123 -r EXAMPLE.COM -U
+</pre>
+
+= Cloning IPA Server =
+
+== RHEL 6 ==
+
+On RHEL 6 master:
+<pre>
+$ ipa-replica-prepare <replica hostname> -p Secret.123
+</pre>
+
+It will generate /var/lib/ipa/replica-info-<replica hostname>.gpg. Transfer this file to the replica.
+
+On RHEL 6 replica:
+<pre>
+$ ipa-replica-install --setup-ca replica-info-<replica hostname>.gpg -p Secret.123 -w Secret.123
+</pre>
+
+= Uninstalling IPA Server =
+
+<pre>
+$ ipa-server-install --uninstall -U
+</pre>
+
+= References =
+
+* [https://github.com/dogtagpki/freeipa/wiki/Installation-Guide Installation Guide]

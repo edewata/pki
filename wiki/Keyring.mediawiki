@@ -1,0 +1,67 @@
+= Creating a New Session =
+
+<pre>
+$ keyctl new_session
+</pre>
+
+= Displaying Session Keyring =
+
+<pre>
+$ keyctl show
+Session Keyring
+ 995212359 --alswrv      0     0  keyring: _ses
+ 869008619 --alswrv      0     0   \_ user: testuser
+</pre>
+
+= Displaying User Keyring =
+
+<pre>
+$ keyctl show @u
+Keyring
+ 853797413 --alswrv      0 65534  keyring: _uid.0
+ 718614445 --alswrv      0     0   \_ user: testuser
+</pre>
+
+= Getting Key ID =
+
+<pre>
+$ keyctl request user testuser
+869008619
+</pre>
+
+= Storing a Password into Session Keyring =
+
+<pre>
+$ keyctl add user testuser Secret.123 @s
+</pre>
+
+= Storing a Password into User Keyring =
+
+<pre>
+$ keyctl add user testuser Secret.123 @u
+</pre>
+
+= Retrieving a Password =
+
+<pre>
+$ keyctl print %user:testuser
+Secret.123
+</pre>
+
+<pre>
+$ keyctl print 869008619
+Secret.123
+</pre>
+
+= Clearing User Keyring =
+
+<pre>
+$ keyctl clear @u
+</pre>
+
+= See Also =
+
+* [https://www.ict.griffith.edu.au/anthony/info/crypto/passwd_caching.txt Password caching]
+* [https://linux.die.net/man/1/keyctl keyctl]
+* [http://blog.soutade.fr/post/2018/08/tip-keyctl-in-a-bash-script.html Tip: keyctl in a bash script]
+* [[Nuxwdog]]

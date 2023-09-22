@@ -1,0 +1,271 @@
+= Overview (NOT IMPLEMENTED) =
+
+This CLI is not implemented yet.
+
+= Instance Management =
+
+== Listing Instances ==
+
+<pre>
+$ pki-ds instance-find
+-----------------
+1 entries matched
+-----------------
+  Instance ID: pki-tomcat
+  Port: 389
+  Root DN: cn=Directory Manager
+  Running: True
+</pre>
+
+== Displaying Instance Info ==
+
+<pre>
+$ pki-ds instance-show pki-tomcat
+  Instance ID: pki-tomcat
+  Port: 389
+  Root DN: cn=Directory Manager
+  Running: True
+</pre>
+
+== Creating Instance ==
+
+<pre>
+$ pki-ds instance-add pki-tomcat --root-dn "cn=Directory Manager" --root-password Secret.123 --port 389
+---------------------------
+Added "pki-tomcat" Instance
+---------------------------
+  Instance ID: pki-tomcat
+  Port: 389
+  Root DN: cn=Directory Manager
+  Running: True
+</pre>
+
+== Starting/Stopping Instance ==
+
+<pre>
+$ pki-ds instance-start pki-tomcat
+-----------------------------
+Started "pki-tomcat" Instance
+-----------------------------
+  Instance ID: pki-tomcat
+  Port: 389
+  Root DN: cn=Directory Manager
+  Running: True
+
+$ pki-ds instance-stop pki-tomcat
+-----------------------------
+Stopped "pki-tomcat" Instance
+-----------------------------
+  Instance ID: pki-tomcat
+  Port: 389
+  Root DN: cn=Directory Manager
+  Running: False
+</pre>
+
+== Enabling/Disabling LDAPS ==
+
+<pre>
+$ pki-ds instance-ldaps-enable pki-tomcat --port 636 --nickname Server-Cert
+--------------------------------------
+Enabled LDAPS on "pki-tomcat" Instance
+--------------------------------------
+
+$ pki-ds instance-ldaps-disable pki-tomcat
+---------------------------------------
+Disabled LDAPS on "pki-tomcat" Instance
+---------------------------------------
+</pre>
+
+== Enabling/Disabling LDAPI ==
+
+<pre>
+$ pki-ds instance-ldaps-enable pki-tomcat --socket /var/run/slapd-pki-tomcat.socket
+--------------------------------------
+Enabled LDAPI on "pki-tomcat" Instance
+--------------------------------------
+
+$ pki-ds instance-ldaps-disable pki-tomcat
+---------------------------------------
+Disabled LDAPI on "pki-tomcat" Instance
+---------------------------------------
+</pre>
+
+== Deleting Instance ==
+
+<pre>
+$ pki-ds instance-del pki-tomcat
+-----------------------------
+Deleted "pki-tomcat" Instance
+-----------------------------
+</pre>
+
+= Certificate Management =
+
+== Listing Certificates ==
+
+<pre>
+$ pki-ds cert-find
+-----------------
+2 entries matched
+-----------------
+  Certificate ID: CA certificate
+  Serial Number: 0x1
+  Subject DN: CN=CAcert
+  Issuer DN: CN=CAcert
+
+  Certificate ID: Server-Cert
+  Serial Number: 0x2
+  Subject DN: CN=server.example.com
+  Issuer DN: CN=CAcert
+----------------------------
+Number of entries returned 2
+----------------------------
+</pre>
+
+== Displaying Certificate Info ==
+
+<pre>
+$ pki-ds cert-show Server-Cert
+  Certificate ID: Server-Cert
+  Serial Number: 0x2
+  Subject DN: CN=server.example.com
+  Issuer DN: CN=CAcert
+</pre>
+
+== Generating Self-signed CA Certificate ==
+
+<pre>
+$ pki-ds cert-ca-generate "CA certificate" --type rsa --length 2048 --subject "CN=CAcert" --validity 365
+--------------------------------------
+Generated "CA certificate" certificate
+--------------------------------------
+</pre>
+
+== Generating Server Certificate ==
+
+<pre>
+$ pki-ds cert-generate Server-Cert --type rsa --length 2048 --subject "CN=$HOSTNAME" --validity 365
+-----------------------------------
+Generated "Server-Cert" certificate
+-----------------------------------
+</pre>
+
+== Deleting Certificate ==
+
+<pre>
+$ pki-ds cert-del Server-Cert
+---------------------------------
+Deleted "Server-Cert" certificate
+---------------------------------
+</pre>
+
+= Backend Management =
+
+== Listing Backends ==
+
+<pre>
+$ pki-ds -D "cn=Directory Manager" -w Secret.123 backend-find
+-----------------
+2 entries matched
+-----------------
+  Backend ID: root
+  Suffix: dc=example,dc=com
+
+  Backend ID: ca
+  Suffix: dc=ca,dc=example,dc=com
+----------------------------
+Number of entries returned 2
+----------------------------
+</pre>
+
+== Displaying Backend Info ==
+
+<pre>
+$ pki-ds -D "cn=Directory Manager" -w Secret.123 backend-show ca --suffix dc=ca,dc=example,dc=com
+  Backend ID: ca
+  Suffix: dc=ca,dc=example,dc=com
+</pre>
+
+== Adding Backend ==
+
+<pre>
+$ pki-ds -D "cn=Directory Manager" -w Secret.123 backend-add ca --suffix dc=ca,dc=example,dc=com
+------------------
+Added "ca" backend
+------------------
+  Backend ID: ca
+  Suffix: dc=ca,dc=example,dc=com
+</pre>
+
+== Deleting Backend ==
+
+<pre>
+$ pki-ds -D "cn=Directory Manager" -w Secret.123 backend-del ca
+--------------------
+Deleted "ca" backend
+--------------------
+</pre>
+
+= Backend User Management (NOT IMPLEMENTED) =
+
+== Adding Backend User ==
+
+<pre>
+$ pki-ds -D "cn=Directory Manager" -w Secret.123 backend-user-add ca uid=pkidbuser,dc=ca,dc=example,dc=com
+--------------------------------------------------
+Added "uid=pkidbuser,dc=ca,dc=example,dc=com" user
+--------------------------------------------------
+</pre>
+
+== Deleting Backend User ==
+
+<pre>
+$ pki-ds -D "cn=Directory Manager" -w Secret.123 backend-user-del ca uid=pkidbuser,dc=ca,dc=example,dc=com
+----------------------------------------------------
+Deleted "uid=pkidbuser,dc=ca,dc=example,dc=com" user
+----------------------------------------------------
+</pre>
+
+= Backend User Certificate Management (NOT IMPLEMENTED) =
+
+== Adding Backend User Certificate ==
+
+<pre>
+$ pki-ds -D "cn=Directory Manager" -w Secret.123 backend-user-cert-add ca uid=pkidbuser,dc=ca,dc=example,dc=com --cert-file cert.pem
+------------------------------------------------------------------
+Added certificate for "uid=pkidbuser,dc=ca,dc=example,dc=com" user
+------------------------------------------------------------------
+</pre>
+
+== Deleting Backend User Certificate ==
+
+<pre>
+$ pki-ds -D "cn=Directory Manager" -w Secret.123 backend-user-cert-del ca uid=pkidbuser,dc=ca,dc=example,dc=com <cert ID>
+--------------------------------------------------------------------
+Deleted certificate for "uid=pkidbuser,dc=ca,dc=example,dc=com" user
+--------------------------------------------------------------------
+</pre>
+
+= Backend Access Management (NOT IMPLEMENTED) =
+
+== Authorize Backend Access ==
+
+<pre>
+$ pki-ds -D "cn=Directory Manager" -w Secret.123 backend-access-grant ca uid=pkidbuser,dc=ca,dc=example,dc=com
+---------------------------------------------------------------
+Granted access for "uid=pkidbuser,dc=ca,dc=example,dc=com" user
+---------------------------------------------------------------
+</pre>
+
+== Deny Backend Access ==
+
+<pre>
+$ pki-ds -D "cn=Directory Manager" -w Secret.123 backend-access-deny ca uid=pkidbuser,dc=ca,dc=example,dc=com
+--------------------------------------------------------------
+Denied access for "uid=pkidbuser,dc=ca,dc=example,dc=com" user
+--------------------------------------------------------------
+</pre>
+
+= See Also =
+
+* [[PKI LDAP]]

@@ -1,0 +1,91 @@
+= Overview =
+
+IPA uses PKI to provide certificate management and key archival services.
+
+'''Note:''' This page is being moved to https://github.com/dogtagpki/freeipa/wiki.
+
+= Supported Versions =
+
+{| border="1" style="border-collapse: collapse;"
+! width="150" | Operating System
+! width="50" | IPA
+! width="50" | PKI
+! width="50" | Tomcat
+|-
+|Fedora 20
+|3.3.5
+|10.1.2
+|7.0
+|-
+|Fedora 21
+|4.1.3
+|10.2.1
+|7.0
+|-
+|Fedora 22
+|4.1.3
+|10.2.2
+|7.0
+|-
+|Fedora 23
+|4.1.3
+|10.2.2
+|8.0
+|-
+|RHEL/CentOS 6.4
+|3.0.0
+|9.0.3
+|6.0
+|-
+|RHEL/CentOS 6.5
+|3.0.0
+|9.0.3
+|6.0
+|-
+|RHEL/CentOS 6.6
+|3.0.0
+|9.0.3
+|6.0
+|-
+|RHEL/CentOS 7.0
+|3.3.3
+|10.0.5
+|7.0
+|-
+|RHEL/CentOS 7.1
+|4.1.0
+|10.1.2
+|7.0
+|-
+|RHEL/CentOS 7.2
+|4.2.0
+|10.2.5
+|7.0
+|}
+
+= References =
+
+* [[IPA Plugins]]
+* [[IPA Development]]
+* [[IPA Container]]
+* [https://github.com/dogtagpki/freeipa/wiki/Installation-Guide Installation Guide]
+* [https://github.com/dogtagpki/freeipa/wiki/DS IPA DS Installation]
+* [http://www.freeipa.org/page/V4/Domain_Levels IPA Domain Levels]
+* [[IPA Certificates]]
+* [https://github.com/dogtagpki/freeipa/wiki/CRL-Publishing IPA CRL Publishing]
+* [[IPA PKI Users]]
+* [[IPA PKI Admin Setup]]
+* [[IPA KRA Agent Setup]]
+* [[IPA RA Agent Setup]]
+* [[IPA Tests]]
+* [https://github.com/dogtagpki/freeipa/wiki/Password-Vault IPA Password Vault]
+* [[IPA Certificate Management]]
+* [[IPA Key Management]]
+* [https://github.com/dogtagpki/freeipa/wiki/ACME-Responder IPA ACME Responder]
+* [[Dogtag branches and releases]]
+* [http://www.freeipa.org/page/Howto/Change_Directory_Manager_Password How to Change Directory Manager Password]
+* [[Debugging the state of dogtag in an ipa install]]
+* [https://github.com/tiran/pki-vagans/ pki-vagans]
+* [https://github.com/freeipa/ipa-vagrant-tools/ ipa-vagrant-tools]
+* [https://github.com/freeipa/freeipa-workshop/ freeipa-workshop]
+* [https://copr.fedorainfracloud.org/groups/g/freeipa/coprs/ IPA COPR Repository]

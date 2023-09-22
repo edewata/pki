@@ -1,0 +1,306 @@
+= Overview =
+
+Dogtag contains several components:
+* The communication protocol which consists of Web API and JAX-RS interface.
+* The server library which provides server plugin API.
+* The client library which provides Java and Python client API.
+This document focuses mainly about the protocol versioning to support interaction between different versions of client and server.
+
+Sometimes an API needs to be modified to handle new requirements. Sometimes it can be done in a backward compatible way, but some other times it cannot. In many cases it's not possible to upgrade the client and the server simultaneously, so API versioning is used such that the client can continue to use the old API until it's ready to use the new one.
+
+= API Version =
+
+API version is defined in the following format: <major>.<minor>. The major version is used when there is a non-backward compatible change in the API. Other changes can be done using minor versions. Within the same major version, an older API is a subset of a newer API, for example 1.0 ⊂ 1.1 ⊂ 1.2. API with different major versions may not be related in any way, for example 1.2 ⊄ 2.0.
+
+The API version do not necessarily follow product releases. For example, Dogtag 10.1 may have protocol 1.0 and Dogtag 11 may have protocol 1.5.
+
+To avoid disruptive upgrade, major protocol version change should be done in major releases only. For example, Dogtag 12 may have protocol 2.0.
+
+A server may also support multiple protocol major versions simultaneously. For example, Dogtag 12 may support protocol 1.6 and 2.0.
+
+= Protocol =
+
+== Web API ==
+
+The Web API consists of the resource URLs, request and response objects. Protocol backward compatibility is very important in a distributed environment.
+
+=== Resource URLs ===
+
+Currently the resource URLs do not contain any versions. This is considered API 1.x:
+
+* /ca/admin/users
+* /kra/agent/keys
+
+Starting from API 2.0, the version will be inserted into the URL:
+
+* /ca/v2/admin/users
+* /kra/v2/agent/keys
+
+In the future the path may be rearranged as follows:
+
+* /pki/v2/ca/users
+* /pki/v2/kra/keys
+
+Note that only the major version needs to be specified in the URL.
+
+=== Request and response objects ===
+
+Currently requests and responses by default are sent in XML format. Adding a new field will require a new minor version. Changing the XML structure will require a new major version. Changing the default format to JSON will also require a new major version.
+
+== JAX-RS interface ==
+
+The REST services are defined using JAX-RS interface. This interface would be useful to write Java clients against the JAX-RS interface directly, but at this time backward compatibility is considered a lower priority since a client can also use Web API directly or use the client API.
+
+Consider the following example:
+
+<pre>
+package com.netscape.certsrv.user;
+
+@Path("/admin/users")
+public interface UserResource {
+
+    @GET
+    public UserCollection findUsers(
+            @QueryParam("filter") String filter,
+            @QueryParam("start") Integer start,
+            @QueryParam("size") Integer size);
+}
+</pre>
+
+Suppose we want to change the method to take a request object instead of individual parameters:
+
+<pre>
+    public UserCollection findUsers(UserSearchRequest request);
+</pre>
+
+=== Option #1: Change the interface directly ===
+
+This option can be used if backward compatibility is not necessary.
+
+<pre>
+package com.netscape.certsrv.user;
+
+@Path("/admin/users")
+public interface UserResource {
+
+    @GET
+    public UserCollection findUsers(UserSearchRequest request);
+}
+</pre>
+
+=== Option #2: Using additional methods in the same interface ===
+
+This option can be used if backward compatibility is important but not strict. Additional methods means that any class implementing the interface will now have to implement the new methods. The new methods may need to be mapped into a different URL, but that doesn't necessarily require a new major API version.
+
+<pre>
+package com.netscape.certsrv.user;
+
+public interface UserResource {
+
+    @GET
+    @Path("/admin/users")
+    public UserCollection findUsers(
+            @QueryParam("filter") String filter,
+            @QueryParam("start") Integer start,
+            @QueryParam("size") Integer size);
+
+    @GET
+    @Path("/users")
+    public UserCollection findUsers(UserSearchRequest request);
+}
+</pre>
+
+=== Option #3: Using separate interface ===
+
+If full backward compatibility is necessary, a new interface can be defined in a different package while keeping the original interface intact. The new interface will need a separate URL, but it doesn't require a new major version.
+
+<pre>
+package org.dogtagpki.v2.user;
+
+@Path("/users")
+public interface UserResource {
+
+    @GET
+    public UserCollection findUsers(UserSearchRequest request);
+}
+</pre>
+
+= Server =
+
+== JAX-RS services ==
+
+If JAX-RS interface versioning is addressed using option #1, the service implementation can be changed directly as well.
+
+<pre>
+public class UserService extends PKIService implements UserResource {
+
+    public UserCollection findUsers(UserSearchRequest request) {
+        String filter = request.getFilter();
+        Integer start = request.getStart();
+        Integer size = request.getSize();
+        ...
+    }
+}
+</pre>
+
+With option #2, the service will need to implement the new methods. Various methods can be utilized to minimize code duplication. In the following example the old method is modified to call the new method.
+
+<pre>
+public class UserService extends PKIService implements UserResource {
+
+    public UserCollection findUsers(String filter, Integer start, Integer size) {
+
+        // convert old parameters into new parameters
+        UserSearchRequest request = new UserSearchRequest();
+        request.setFilter(filter);
+        request.setStart(start);
+        request.setSize(size);
+
+        // invoke the new method
+        return findUsers(request);
+    }
+
+    public UserCollection findUsers(UserSearchRequest request) {
+        String filter = request.getFilter();
+        Integer start = request.getStart();
+        Integer size = request.getSize();
+        ...
+    }
+}
+</pre>
+
+With option #3, a new service will need to be implemented. In the following example the code is moved into a DAO which will be called by the old and new methods.
+
+<pre>
+package com.netscape.cms.servlet.admin;
+
+public class UserService extends PKIService implements UserResource {
+
+    public UserCollection findUsers(String filter, Integer start, Integer size) {
+
+        // convert old parameters into new parameters
+        UserSearchRequest request = new UserSearchRequest();
+        request.setFilter(filter);
+        request.setStart(start);
+        request.setSize(size);
+
+        // invoke the new method
+        return dao.findUsers(request);
+    }
+}
+</pre>
+
+<pre>
+package org.dogtagpki.server.v2.user;
+
+public class UserService extends PKIService implements UserResource {
+
+    public UserCollection findUsers(UserSearchRequest request) {
+        return dao.findUsers(request);
+    }
+}
+</pre>
+
+== JAX-RS application ==
+
+JAX-RS application is used to register services that run in the Web application. If the JAX-RS interface is addressed using option #1 or #2, there is no changes needed in the Application class.
+
+<pre>
+public class CertificateAuthorityApplication extends Application {
+
+    public CertificateAuthorityApplication() {
+        classes.add(UserService.class);
+    }
+}
+</pre>
+
+If option #3 is used, both service classes have to be registered.
+
+<pre>
+public class CertificateAuthorityApplication extends Application {
+
+    public CertificateAuthorityApplication() {
+        classes.add(com.netscape.cms.servlet.admin.UserService.class);
+        classes.add(org.dogtagpki.server.v2.user.UserService.class);
+    }
+}
+</pre>
+
+= Client =
+
+== Java client library ==
+
+The Java client library may need to be changed to support new protocol version. It can also support multiple versions using fallback mechanism.
+
+<pre>
+public class UserClient extends Client {
+
+    public com.netscape.certsrv.user.UserResource v1UserClient;
+    public org.dogtagpki.v2.user.UserResource v2UserClient;
+
+    public UserClient(PKIClient client, String subsystem) throws URISyntaxException {
+        super(client, subsystem, "user");
+        init();
+    }
+
+    public void init() throws Exception {
+
+        // try the newest protocol first
+        if (client.serverSupports(PKIClient.PROTOCOL_VERSION_2)) {
+             v2UserClient = createProxy(org.dogtagpki.v2.user.UserResource.class);
+
+        // fallback to an older version
+        } else if (client.serverSupports(PKIClient.PROTOCOL_VERSION_1)) {
+             v1UserClient = createProxy(com.netscape.certsrv.user.UserResource.class);
+
+        } else {
+             throw new Exception("Unsupported protocol.");
+        }
+    }
+
+    public UserCollection findUsers(String filter, Integer start, Integer size) {
+        if (v2UserClient != null) {
+            UserSearchRequest request = new UserSearchRequest();
+            request.setFilter(filter);
+            request.setStart(start);
+            request.setSize(size);
+            return userClient.findUsers(request);
+
+        } else if (v1UserClient != null) {
+            return userClient.findUsers(filter, start, size);
+
+        } else {
+             throw new Exception("Unsupported protocol.");
+        }
+    }
+}
+</pre>
+
+From Java client application's point of view, the client API itself may not necessarily change. The client API will have its own version number, separate from protocol versions.
+
+== Python client library ==
+
+Similar to Java client library, Python client library may support multiple protocols as well. Since it's Python, it's calling the Web API directly, it's not necessarily affected by JAX-RS changes.
+
+The Python client library may also provide Python client API which is has its own version, separate from protocol version.
+
+== CLI ==
+
+As a consumer of the client library, the CLI may only need to be changed if the client API is changed. In the above example the CLI will continue to work with the existing client API even with the protocol change.
+
+<pre>
+public class UserFindCLI extends CLI {
+
+    public void execute(String[] args) throws Exception {
+        UserCollection response = userCLI.userClient.findUsers(filter, start, size);
+    }
+}
+</pre>
+
+== Web UI ==
+
+Web UI calls the Web API directly. Since Web UI is dynamically loaded from the server there is no upgrade issue. It will automatically use the protocol supported by the server.
+
+= References =
+
+* [[Versioning Scheme]]

@@ -1,0 +1,19 @@
+= Overview =
+
+Licensing determines what rights you have to use this software in both binary and source form.  The Dogtag Certificate System is made up of a number of different pieces of software, each with their own licensing.  Each of these licenses is described below.  And we must say, of course, that this document should not be taken as legal advice.  Talk to your attorney.
+
+= PKI 10 Licensing =
+
+See [[PKI 10 Licensing]].
+
+= PKI 9 Licensing =
+
+See [[PKI 9 Licensing]].
+
+= References =
+
+* [https://fedoraproject.org/wiki/Packaging:ReviewGuidelines Packaging:ReviewGuidelines]
+* [https://fedoraproject.org/wiki/Packaging:LicensingGuidelines Packaging:LicensingGuidelines]
+* [https://fedoraproject.org/wiki/Licensing:Main Licensing:Main]
+* [https://help.github.com/articles/licensing-a-repository/ Licensing a repository]
+* [[Fedora Packages]]

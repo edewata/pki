@@ -1,0 +1,58 @@
+{| border="1" 
+|<div style="font-size: 8pt;"><b>EXPORT CONTROL. As required by U.S. law, you (“Licensee”) represents and warrants that it: (a) understands that the Software is subject to export controls under the U.S. Commerce Department's Export Administration Regulations ("EAR"); (b) is not located in a prohibited destination country under the EAR or U.S. sanctions regulations (currently Cuba, Iran, Iraq, North Korea, Sudan and Syria); (c) will not export, re-export, or transfer the Software to any prohibited destination, entity, or individual without the necessary export license(s) or authorizations(s) from the U.S. Government; (d) will not use or transfer the Software for use in any sensitive nuclear, chemical or biological weapons, or missile technology end-uses unless authorized by the U.S. Government by regulation or specific license; (e) understands and agrees that if it is in the United States and exports or transfers the Software to eligible end users, it will, as required by EAR Section 740.17(e), submit semi-annual reports to the Commerce Department's Bureau of Industry & Security (BIS), which include the name and address (including country) of each transferee; and (f) understands that countries other than the United States may restrict the import, use, or export of encryption products and that it shall be solely responsible for compliance with any such import, use, or export restrictions.</b></div>
+|}
+
+
+= Dogtag Certificate System =
+
+Please read the [[PKI_Release_Notes|Release Notes]] to find out what's new and for late breaking information.  Additionally, see the [https://github.com/dogtagpki/pki/wiki/FAQ#open-source FAQ section on Open Source] for more information.
+
+Remember, Dogtag requires access to a 389 Directory Server for storage purposes, so one must be
+available either through remote access on the network, or co-located locally on the same
+machine that hosts Dogtag.
+
+The 'yum' utility is used to install on platforms that use yum for package installation and management.
+
+<ul>
+If a 'local' directory server is to be utilized on Fedora (see http://directory.fedoraproject.org/docs/389ds/download.html for details):
+* yum &#91;--enablerepo=updates-testing&#93; install 389-ds<br><br>
+To obtain ALL Dogtag PKI packages for Fedora:
+* yum &#91;--enablerepo=updates-testing&#93; install dogtag-pki<br><br>
+To obtain INDIVIDUAL Dogtag PKI packages for Fedora:
+* yum &#91;--enablerepo=updates-testing&#93; upgrade &lt;package&gt;<br><br>
+<br>
+If a 'local' directory server is to be utilized on EPEL (see http://directory.fedoraproject.org/docs/389ds/download.html for details):
+* yum &#91;--enablerepo=epel-testing&#93; install 389-ds<br><br>
+To obtain ALL Dogtag PKI packages for EPEL:
+* yum &#91;--enablerepo=epel-testing&#93; install dogtag-pki<br><br>
+To obtain INDIVIDUAL Dogtag PKI packages for EPEL:
+* yum &#91;--enablerepo=epel-testing&#93; upgrade &lt;package&gt;<br><br>
+</ul>
+
+= Dogtag Certificate System 10.0 =
+
+See [[PKI 10.0 Download]].
+
+= Dogtag Certificate System 9.0 =
+
+See [[PKI 9.0 Download]].
+
+= Dogtag Certificate System 1.3 =
+
+See [[PKI 1.3 Download]].
+
+= Dogtag Certificate System 1.2 =
+
+See [[PKI 1.2 Download]].
+
+= Dogtag Certificate System 1.1 =
+
+See [[PKI 1.1 Download]].
+
+= Dogtag Certificate System 1.0 =
+
+See [[PKI 1.0 Download]].
+
+= See Also =
+
+* [https://github.com/dogtagpki/pki/wiki/Installation-Guide Installation Guide]

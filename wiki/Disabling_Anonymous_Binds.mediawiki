@@ -1,0 +1,34 @@
+= Overview =
+
+This page describes the process to protect the DS from anonymous access.
+
+= Manual Procedure =
+
+Edit the DS configuration to disable anonymous binds:
+
+<pre>
+$ ldapmodify -x -D "cn=Directory manager" -w Secret.123
+dn: cn=config
+changetype: modify
+replace: nsslapd-allow-anonymous-access
+nsslapd-allow-anonymous-access: off
+</pre>
+
+Restart the DS:
+
+<pre>
+$ systemctl restart dirsrv@pki-tomcat.service
+</pre>
+
+Verify with the following command:
+
+<pre>
+$ ldapsearch -x -b "" -s base
+ldap_bind: Inappropriate authentication (48)
+        additional info: Anonymous access is not allowed
+</pre>
+
+= References =
+
+* [[DS Authentication]]
+* [https://access.redhat.com/documentation/en-US/Red_Hat_Directory_Server/9.0/html-single/Administration_Guide/index.html#disabling-anonymous-binds RH DS Administration Guide: Disabling Anonymous Binds]

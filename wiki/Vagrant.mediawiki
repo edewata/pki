@@ -1,0 +1,44 @@
+= Installation =
+
+<pre>
+$ dnf install vagrant
+</pre>
+
+= Initialization =
+
+To create a Fedora 32 VM:
+
+<pre>
+$ vagrant init fedora/32-cloud-base
+</pre>
+
+It will create a Vagrantfile:
+
+<pre>
+Vagrant.configure("2") do |config|
+  config.vm.box = "fedora/32-cloud-base"
+end
+</pre>
+
+= Starting VM = 
+
+<pre>
+$ vagrant up
+</pre>
+
+= Accessing VM =
+
+<pre>
+$ vagrant ssh
+</pre>
+
+= Removing VM =
+
+<pre>
+$ vagrant destroy
+</pre>
+
+= See Also =
+
+* [https://learn.hashicorp.com/collections/vagrant/getting-started Vagrant: Getting Started]
+* [https://www.vagrantup.com/docs/vagrantfile Vagrantfile]

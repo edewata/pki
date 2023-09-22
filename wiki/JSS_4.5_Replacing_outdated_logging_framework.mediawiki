@@ -1,0 +1,13 @@
+= Overview =
+
+Currently JSS is using a very basic custom logging framework:
+
+* https://github.com/dogtagpki/jss/blob/master/org/mozilla/jss/util/Debug_debug.jnot
+* https://github.com/dogtagpki/jss/blob/master/org/mozilla/jss/util/Debug_ship.jnot
+
+JSS should be modified to use a more commonly used logging framework such as  SLF4J.
+
+= References =
+
+* [[JSS Design]]
+* [https://pagure.io/jss/issue/7 Ticket #7 - Replacing outdated logging framework]

@@ -1,0 +1,294 @@
+== Introduction ==
+This page talks about the different phases of the ECC support in Dogtag and what each of them really entails.
+=== Phase 1 - This is what Dogtag supports now===
+# CA can be configured with an ECC signing certificate
+# CA can issue ECC certificates (both system certificates as well as end entity certificates)
+# SSL can be done with ECC certificates
+# audit signing certificate remains to be RSA
+=== Phase 2 - (non-TMS) Key Archival and Recovery for ECC keys===
+# DRM can be configured to work with CA to archive and recover private keys
+# <b>DRM's transport and storage certificates remain to be RSA certificates</b>
+# DRM can recovery ECC keys
+# firefox support for ECC key archival with CRMF (and CA's EE exposes enrollment profile to handle ECC cert enrollment)
+# SSL can be done with ECC certificates
+# audit signing certificate remains to be RSA
+
+=== Phase 3: Token Management System (TMS) support for ECC ===
+See ECC Setup Instructions for CS versions implemented for this phase: [[http://pki.fedoraproject.org/wiki/ECC_Setup_Instructions]]
+# TKS and TPS can be configured to work with ECC CA and DRM
+# DRM can do server-side ECC key generation for smart cards, archive, and delivered to smart cards
+# <b>DRM's transport and storage certificates remain to be RSA certificates</b>
+# DRM can recovery ECC keys
+# smart card applet can generate ECC keys 
+# smart card applet can load with ECC keys
+# smart card applet can load with ECC certificates (in both client-side and server-side key generation as well as key recovery)
+# SSL can be done with ECC certificates (among all subsystems, as well as ESC=>TPS)
+# audit signing certificates remain to be RSA
+
+=== Phase 4: ECC DRM transport certificate ===
+# This phase includes everything in phase 3, plus the DRM transport certificate will be an ECC certificate;
+# This phase is useful for clients that have no RSA support (cannot use RSA DRM transport certificate to wrap user private keys)
+=== Phase 5: ECC DRM storage certificate ===
+# This phase includes everything in phase 4, plus the DRM storage certificate will be an ECC certificate;
+# This is only for sites that have policy which only allows ECC certificates
+== ECC Key Archival and Recovery Design (<b>Work in progress (DO NOT REVIEW) - To Be Continued </b>) ==
+=== (Phase 1, Non-TMS) RSA Key Archival ===
+<pre>
+note: all private keys and symmetric keys referred here are "handles" to keys on the crypto token;
+      These sensitive keys never exist in their raw form in the CS server memory;
+Client -
+  receives DRM's transport certificate;
+  extracts transport public key - DRMtransportPubKey;
+  generates RSA encryption key pair;
+  clientSymKey = generate symmetric key ();
+  data1 = wrap (clientPrivKey, clientSymKey);
+  data2 = wrap (clientSymKey, DRMtransportPubKey);
+  data1, data2, along with certificate request, public key, etc. info ===> CA
+
+Server -
+  receives request from client;
+  clientSymKey = unwrap(data2, DRMtransportPrivKey) ==> unwraps onto token
+  clientPrivKey = unwrap (data1, clientSymKey) ==> unwraps onto token
+  sessionSymKey = generate symmetric key ();
+  wrappedClientPrivKey = wrap(clientPrivKey, sessionSymKey)
+  wrappedSessionSymKey = wrap(sessionSymKey, DRMstoragePubKey)
+  wrappedClientPrivKey and wrappedSessionSymKey along with some other meta info ==> stored in DRM repository
+  
+</pre>
+
+=== (Phase 1, Non-TMS) RSA Key Recovery ===
+<pre>
+note: all private keys and symmetric keys referred here are "handles" to keys on the crypto token;
+      These sensitive keys never exist in their raw form in the CS server memory;
+Client -
+  a DRM agent goes to DRM agent url and search for key to recover;
+  d DRM recovery initiating agent supplies PKCS#12 password
+
+Server -
+  b requests for DRM agent (or agents, depending on # of agents required) approval  (details skipped here)
+  c when required # of DRM agents granted the recovery request, asks initiating DRM agent for PKCS#12 password - p12Password
+  e finds key record which contains: wrappedClientPrivKey & wrappedSessionSymKey along with some other meta info 
+  f SessionSymKey = unwrap(wrappedSessionSymKey, DRMstoragePrivKey) ==> unwraps onto token
+  g clientPrivKey = unwrap (wrappedClientPrivKey, SessionSymKey) ==> unwraps onto token
+  h pbeSymKey = PBEKeyGeneration(p12Password)
+  i wrappedClientPrivKey = wrap(clientPrivKey, pbeSymKey)
+  j certificate, wrappedClientPrivKey, along with other data are packed into PKCS12 format and sent back as file to init agent
+
+</pre>
+
+=== (Phase 1, TMS) RSA Key Archival ===
+<pre>
+note: all private keys and symmetric keys referred here are "handles" to keys on the crypto token;
+      These sensitive keys never exist in their raw form in the CS server memory;
+a Client:
+     enrollment request & CUID ===> TPS
+
+b TPS:
+     enrollment request & CUID===> TKS
+
+c TKS:
+     keyEncryptionKey = derive(CUID);
+     generates symmetric keyTransportSessionKey;
+     kekWrappedKeyTransportSessionKey = wrap(keyTransportSessionKey, keyEncryptionKey);
+     DRMwrappedKeyTransportSessionKey = wrap(keyTransportSessionKey, DRMtransportPubKey);
+     kekWrappedKeyTransportSessionKey, DRMwrappedKeyTransportSessionKey ===> TPS
+
+d. TPS: DRMwrappedKeyTransportSessionKey ===> DRM
+
+e. DRM:
+     keyTransportSessionKey = unwrap (DRMwrappedKeyTransportSessionKey, DRMtransportPrivKey);
+     generate RSA encryption key pair:
+         clientPrivKey
+         clientPubKey
+     sessionSymKey = generate symmetric key ();
+     wrappedClientPrivKey = wrap(clientPrivKey, sessionSymKey);
+     wrappedSessionSymKey = wrap(sessionSymKey, DRMstoragePubKey);
+     wrappedClientPrivKey and wrappedSessionSymKey along with some other meta info ==> stored in DRM repository
+     symWrappedClientPrivKey = wrap(clientPrivKey, keyTransportSessionKey);
+     symWrappedClientPrivKey, clientPubKey ===> TPS
+
+e. TPS:
+     clientPubKey ===> CA
+
+f. CA:
+    issue certificate;
+    certificate ===> TPS
+
+g TPS:
+    certificate, kekWrappedKeyTransportSessionKey, symWrappedClientPrivKey ===> client smart card
+</pre>
+
+=== (Phase 1, TMS) RSA Key Recovery ===
+<pre>
+a. Client:
+    recovery request & CUID ===> TPS
+
+b. TPS:
+    recovery request & CUID ===> TKS
+
+c. TKS:
+     keyEncryptionKey = derive(CUID);
+     generates symmetric keyTransportSessionKey;
+     kekWrappedKeyTransportSessionKey = wrap(keyTransportSessionKey, keyEncryptionKey);
+     DRMwrappedKeyTransportSessionKey = wrap(keyTransportSessionKey, DRMtransportPubKey);
+     kekWrappedKeyTransportSessionKey, DRMwrappedKeyTransportSessionKey ===> TPS
+
+d. TPS:
+     recovery request & DRMwrappedKeyTransportSessionKey ===> DRM
+
+e. DRM:
+     keyTransportSessionKey = unwrap (DRMwrappedKeyTransportSessionKey, DRMtransportPrivKey);
+     uses info in recovery request to find archived private key record;
+     extract from key record:
+         wrappedClientPrivKey
+         wrappedSessionSymKey
+     sessionSymKey = unwrap(wrappedSessionSymKey, DRMStoragePubKey);
+     clientPrivKey = unwrap(wrappedClientPrivKey, sessionSymKey);
+     symWrappedClientPrivKey = (clientPrivKey, keyTransportSessionKey);
+     symWrappedClientPrivKey ===> TPS
+
+TPS:
+     symWrappedClientPrivKey, kekWrappedKeyTransportSessionKey ===> client smart card
+     clientPubKey ===> CA
+
+CA:
+     finds client certificate;
+     certificate ===> TPS
+
+TPS:
+     certificate ===> client smart card
+
+</pre>
+=== (Phase 2 & 3) ECC Key Archival and Recovery with RSA DRM transport and storage keys===
+<pre>
+ note
+  * This does everything from phase 1, but handles ECC keys as well as RSA keys;
+  * The current JAVA version and JSS are not equipped entirely with the right functions so work needs to done to support it;
+  * Areas that are RSA-centric needs to be fixed so will handle ECC keys as well - e.g. key verification
+  * TMS's mechanisms are different in terms of proof of possession in key archival and delivery mechanism in key recovery
+    ( I will talk in more detail when I have time ) 
+  * the JAVA applet on the smart card token needs to support ECC
+</pre>
+=== (Phase 4 & 5, Non-TMS) ECC Key Archival with ECC DRM transport and/or ECC storage keys===
+note: the following is the result of consultation with Bob Relyea; It needs his review for accuracy;
+      If there is any mistake in the following mechanism, it's error on my part;
+<pre>
+note 1: all private keys and symmetric keys referred here are "handles" to keys on the crypto token;
+      These sensitive keys never exist in their raw form in the CS server memory;
+note 2: the ECC key transport relies on a shared secret between the client and the server resulted from key derivation;
+
+Client -
+  receives DRM's transport certificate;
+  extracts transport public key - DRMtransportPubKey;
+  generates ECC encryption key pair: ECpubkeyClient & ECprivkeyClient;
+  sharedSymkey = Derive (TransportPubKey, ECpubkeyClient); 
+  data1 = wrap (ECprivkeyClient, symkey);  // AES_ECB
+  data2 = data1 + ECpubkeyClient 
+  send data2 along with certificate request, other info ===> CA
+
+Server -
+  receives/extracts data
+         - ECpubkeyClient
+         - data1 == wrappedECprivkeyClient
+  sharedSymkey = Derive (DRMtransportPrivKey, ECpubkeyClient); 
+  ECprivkeyClient = unwrap (wrappedECprivkeyClient, sharedSymkey);
+  a sessionSymKey = (DRMtransportPrivKey, DRMtransportPubKey);
+    Bob pointed out that the above makes sessionSymKey constant, so alternatively:
+  b sessionSymKey = (DRMtransportPrivKey, ECpubkeyClient);
+  wrappedClientPrivKey = wrap (ECprivkeyClient, sessionSymKey);
+    note there is no need to wrap sessionSymKey and store because it can be derived at time of recovery
+  wrappedClientPrivKey along with some other meta info ==> stored in DRM repository
+  
+</pre>
+
+=== (Phase 4 & 5, TMS) ECC Key Archival with ECC DRM transport and storage keys===
+<pre>
+note 1. all private keys and symmetric keys referred here are "handles" to keys on the crypto token;
+      These sensitive keys never exist in their raw form in the CS server memory;
+note 2. this was put together fairly quickly and needs to be finalized later before review
+
+a Client:
+     enrollment request & CUID ===> TPS
+
+TPS:
+     enrollment request ==> DRM
+
+DRM:
+     generate EC encryption key pair:
+         clientPrivKey
+         clientPubKey
+     sessionSymKey = derive (clientPubKey, DRMstoragePrivKey);
+     wrappedClientPrivKey = wrap(clientPrivKey, sessionSymKey);
+     wrappedClientPrivKey along with some other meta info ==> stored in DRM repository
+     sessionDRM_TKS = derive (clientPrivKey, TKSTransportPubKey);
+     wrappedClientPrivKey = wrap(clientPrivKey, sessionDRM);
+     wrappedClientPrivKey, clientPubKey ===> TPS
+
+b TPS:
+     wrappedClientPrivKey, clientPubKey & CUID===> TKS
+
+c TKS:
+     keyEncryptionKey = derive(CUID);
+     sessionDRM_TKS = derive(clientPubKey, TKSTransportPrivKey);
+     clientPrivKey = unwrap(wrappedClientPrivKey, sessionDRM_TKS);
+     generates symmetric keyTransportSessionKey;
+     symWrappedKeyTransportSessionKey = wrap(keyTransportSessionKey, keyEncryptionKey);
+     symWrappedClientPrivKey = wrap(clientPrivKey, keyTransportSessionKey);
+     symWrappedKeyTransportSessionKey, symWrappedClientPrivKey ===> TPS
+
+e. TPS:
+     clientPubKey ===> CA
+
+f. CA:
+    issue certificate;
+    certificate ===> TPS
+
+g TPS:
+    certificate, symWrappedKeyTransportSessionKey, symWrappedClientPrivKey ===> client smart card
+
+</pre>
+
+=== (Phase 4 & 5, TMS) ECC Key Recovery with ECC DRM transport and storage keys===
+<pre>
+note 1. all private keys and symmetric keys referred here are "handles" to keys on the crypto token;
+      These sensitive keys never exist in their raw form in the CS server memory;
+note 2. this was put together fairly quickly and needs to be finalized later before review
+
+a. Client:
+     recovery request & CUID ===> TPS
+
+b. TPS:
+     recovery request ==> DRM
+
+c. DRM:
+     uses info in recovery request to find archived private key record;
+     extract from key record:
+         wrappedClientPrivKey
+         wrappedSessionSymKey
+     sessionSymKey = derive (clientPubkey, DRMStoragePrivKey);
+     clientPrivKey = unwrap(wrappedClientPrivKey, sessionSymKey);
+     sessionDRM_TKS = derive (clientPrivKey, TKSTransportPubKey);
+     wrappedClientPrivKey = wrap(clientPrivKey, sessionDRM);
+     wrappedClientPrivKey, clientPubKey ===> TPS
+
+d. TPS:
+     wrappedClientPrivKey, clientPubKey & CUID===> TKS
+
+c TKS:
+     keyEncryptionKey = derive(CUID);
+     sessionDRM_TKS = derive(clientPubKey, TKSTransportPrivKey);
+     clientPrivKey = unwrap(wrappedClientPrivKey, sessionDRM_TKS);
+     generates symmetric keyTransportSessionKey;
+     kekWrappedKeyTransportSessionKey = wrap(keyTransportSessionKey, keyEncryptionKey);
+     symWrappedClientPrivKey = wrap(clientPrivKey, keyTransportSessionKey);
+     symWrappedKeyTransportSessionKey, kekWrappedClientPrivKey ===> TPS
+
+e. TPS:
+     symWrappedKeyTransportSessionKey, symWrappedClientPrivKey ===> client smart card
+     clientPubKey ===> CA
+
+f. CA:
+    finds certificate;
+    certificate ===> TPS
+
+</pre>

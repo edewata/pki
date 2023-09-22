@@ -1,0 +1,30 @@
+= Schedules =
+
+Important dates:
+
+* 2018-08-14: Branch Fedora 29 from Rawhide
+* 2018-08-28: Fedora 29 Beta Freeze
+* 2018-09-18: Fedora 29 Beta Release
+* 2018-10-09: Fedora 29 Final Freeze
+* 2018-10-23: Fedora 29 Final Release
+* 2019-03-05: Fedora 30 Beta Freeze
+* 2019-03-26: Fedora 30 Beta Release
+* 2019-04-16: Fedora 30 Final Freeze
+* 2019-04-30: Fedora 30 Final Release
+
+See also:
+
+* [https://fedoraproject.org/wiki/Releases/29/Schedule Fedora 29 Schedule]
+* [https://fedoraproject.org/wiki/Releases/30/Schedule Fedora 30 Schedule]
+
+= Packages =
+
+* [http://koji.fedoraproject.org/koji/packageinfo?packageID=11434 pki-core]
+* [https://koji.fedoraproject.org/koji/packageinfo?packageID=9863 pki-console]
+* [http://koji.fedoraproject.org/koji/packageinfo?packageID=11475 dogtag-pki-theme]
+* [http://koji.fedoraproject.org/koji/packageinfo?packageID=9999 dogtag-pki]
+
+= References =
+
+* [[Fedora]]
+* [https://pagure.io/releng Fedora Release Engineering]

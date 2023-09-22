@@ -1,0 +1,54 @@
+= Overview =
+
+This page describes JSS development process.
+
+Note that the text in <font color="red">red</font> may need to be adjusted according to the local environment.
+
+See [https://bugzilla.mozilla.org/buglist.cgi?list_id=14093241&resolution=---&classification=Components&query_format=advanced&bug_status=UNCONFIRMED&bug_status=NEW&bug_status=ASSIGNED&bug_status=REOPENED&product=JSS JSS tickets] on Mozilla Bugzilla.
+
+= Prerequisites =
+
+<pre>
+$ dnf install fedpkg
+</pre>
+
+= Getting Source Code =
+
+The upstream JSS source repository is located at https://github.com/dogtagpki/jss.
+
+To clone the repository for development (requires SSH authentication):
+
+ $ git clone git@github.com:dogtagpki/jss.git
+
+To clone a read-only repository:
+
+ $ git clone https://github.com/dogtagpki/jss.git
+
+The above command will create a new <font color="red">jss</font> folder.
+
+The repository cloning should only be done once. If the repository is already available locally, it can be updated with the following command:
+
+ $ git pull
+
+= Applying a Patch =
+
+<pre>
+$ git am <patch>
+$ git push
+</pre>
+
+= Building Upstream Binaries =
+
+To build upstream JSS binaries (without RPM package), first [https://github.com/dogtagpki/nss/wiki/Building-NSS build NSS] in sandbox folder, then go to the <font color="red">jss</font> folder and execute the following:
+
+<pre>
+$ export JAVA_HOME=/etc/alternatives/java_sdk_1.8.0_openjdk
+$ export USE_64=1
+$ make clean all
+</pre>
+
+See [https://github.com/dogtagpki/jss/blob/master/README README].
+
+= References =
+
+* [[JSS Development]]

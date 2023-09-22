@@ -1,0 +1,49 @@
+= Overview =
+
+PKI uses JUnit framework to write unit tests.
+
+= Writing tests =
+
+In JUnit 4 it's no longer necessary to extend from TestCase class. The test methods can be marked using @Test annotation.
+
+<pre>
+public class PrintableConverterTest {
+
+    @Before
+    public void setUp() { ... }
+
+    @Test
+    public void test1() throws Exception { ... }
+
+    @Test
+    public void test2() throws Exception { ... }
+
+    @Test
+    public void test3() throws Exception { ... }
+
+    @After
+    public void tearDown() { ... }
+}
+</pre>
+
+= Running tests =
+
+JUnit provides a command-line to run the tests:
+
+<pre>
+java -cp <classpath> org.junit.runner.JUnitCore [Test classes...]
+</pre>
+
+However, the standard tool does not generate test reports. A new tool has been provided to run the tests and generate reports:
+
+<pre>
+java -cp <classpath> -Djunit.reports.dir=<report dir> com.netscape.test.TestRunner [Test classes...]
+</pre>
+
+See also [http://pki.fedoraproject.org/wiki/CMake#Running_Unit_Tests Running Unit Tests in CMake].
+
+= References =
+
+* [[Unit Tests]]
+* [http://junit.sourceforge.net/ JUnit]
+* [http://junit.sourceforge.net/doc/cookbook/cookbook.htm JUnit Cookbook]

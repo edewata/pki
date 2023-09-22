@@ -1,0 +1,52 @@
+= Installation =
+
+To install RADIUS packages:
+
+<pre>
+$ dnf install freeradius freeradius-utils freeradius-postgresql
+</pre>
+
+= Initialization =
+
+To generate certificates:
+
+<pre>
+$ cd /etc/raddb/certs
+$ ./bootstrap
+</pre>
+
+= Starting RADIUS Server =
+
+<pre>
+$ systemctl start radiusd
+</pre>
+
+= Testing =
+
+Edit /etc/raddb/users:
+
+<pre>
+bob     Cleartext-Password := "hello"
+        Reply-Message := "Hello, %{User-Name}"
+</pre>
+
+Restart the server:
+
+<pre>
+$ systemctl restart radiusd
+</pre>
+
+To authenticate:
+
+<pre>
+$ radtest bob hello 127.0.0.1 100 testing123
+Sent Access-Request Id 152 from 0.0.0.0:39067 to 127.0.0.1:1812 length 73
+	User-Name = "bob"
+	User-Password = "hello"
+	NAS-IP-Address = 10.0.0.18
+	NAS-Port = 100
+	Message-Authenticator = 0x00
+	Cleartext-Password = "hello"
+Received Access-Accept Id 152 from 127.0.0.1:1812 to 127.0.0.1:39067 length 32
+	Reply-Message = "Hello, bob"
+</pre>

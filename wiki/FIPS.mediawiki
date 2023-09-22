@@ -1,0 +1,115 @@
+= Operating System =
+
+== Enabling FIPS Mode ==
+
+To enable FIPS mode:
+
+<pre>
+$ fips-mode-setup --enable
+$ reboot
+</pre>
+
+To enable FIPS mode manually:
+    
+* dnf install dracut-fips
+* reboot
+* press 'e' on the grub config menu to 'edit' the selected kernel
+* add "fips=1" to the end of the boot line, or when multiple disks/partitions are involved (e. g. - "fips=1 boot=/dev/sda1")
+* Ctrl-x to boot with FIPS mode enabled
+
+Alternatively, see the following pages:
+
+* [[Configuring FIPS on Fedora]]
+* [[Configuring FIPS on RHEL]]
+
+== Verifying FIPS Mode ==
+
+To verify FIPS mode:
+
+<pre>
+$ fips-mode-setup --check
+FIPS mode is enabled.
+</pre>
+
+or:
+
+<pre>
+$ sysctl crypto.fips_enabled
+crypto.fips_enabled = 1
+</pre>
+
+or:
+
+<pre>
+$ cat /proc/sys/crypto/fips_enabled
+1
+</pre>
+
+= OpenSSL =
+
+* [[OpenSSL Ciphers]]
+
+= NSS =
+
+* [[NSS Ciphers]]
+* [https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS/FIPS_Mode_-_an_explanation FIPS Mode - an explanation]
+
+== Enabling FIPS Mode in NSS Database ==
+
+To enable FIPS mode:
+
+ $ modutil -dbdir nssdb -fips true
+
+To check FIPS status:
+
+ $ modutil -dbdir nssdb -chkfips true
+ FIPS mode enabled.
+
+To list NSS modules in FIPS mode:
+
+ $ modutil -dbdir nssdb -list
+ 
+ Listing of PKCS #11 Modules
+ -----------------------------------------------------------
+   1. NSS Internal PKCS #11 Module
+           uri: pkcs11:library-manufacturer=Mozilla%20Foundation;library-description=NSS%20Internal%20Crypto%20Services;library-version=3.34
+         slots: 1 slot attached
+        status: loaded
+ 
+         slot: NSS FIPS 140-2 User Private Key Services
+        token: NSS FIPS 140-2 Certificate DB
+          uri: pkcs11:token=NSS%20FIPS%20140-2%20Certificate%20DB;manufacturer=Mozilla%20Foundation;serial=0000000000000000;model=NSS%203
+ -----------------------------------------------------------
+
+'''Note:''' The internal token name in FIPS mode is "NSS FIPS 140-2 Certificate DB".
+
+== Password Requirements ==
+
+In FIPS mode the NSS database password must be a strong password, e.g. Secret.123.
+
+= Java =
+
+* [https://www2.cs.duke.edu/csed/java/jdk1.7/technotes/guides/security/jsse/FIPS.html FIPS 140 Compliant Mode for SunJSSE]
+* [https://bouncycastle.org/fips-java The Legion of the Bouncy Castle - Java FIPS Resources]
+
+= Tomcat =
+
+* [[Tomcat]]
+* [[FIPS SSL Configuration]]
+* [https://www.ysofters.com/2017/07/25/building-and-using-fips-capable-openssl-in-apache-tomcat/ Building and using FIPS capable OpenSSL in Apache Tomcat]
+* [https://stackoverflow.com/questions/34022646/how-to-make-tomcat-fips-mode-enabling How to make tomcat FIPS Mode enabling]
+* [https://tomcat.apache.org/tomcat-8.5-doc/config/http.html Apache Tomcat 8 Configuration Reference]
+
+= Crypto Policies =
+
+* [[Crypto Policies]]
+* https://gitlab.com/redhat-crypto/fedora-crypto-policies
+* https://gitlab.com/redhat-crypto/fedora-crypto-policies/blob/master/back-ends/nss.pl
+* https://gitlab.com/redhat-crypto/fedora-crypto-policies/blob/master/back-ends/profiles/FIPS.pl
+
+= References =
+
+* [https://csrc.nist.gov/csrc/media/publications/fips/140/2/final/documents/fips1402annexa.pdf Approved Security Functions for FIPS PUB 140-2]
+* [https://csrc.nist.gov/projects/cryptographic-module-validation-program/validated-modules/search Cryptographic Module Validation Program]
+* [[NSS]]
+* [[Linux]]

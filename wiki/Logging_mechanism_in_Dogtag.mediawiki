@@ -1,0 +1,69 @@
+== Logging mechanism in Dogtag ==
+Following is a description of the logging mechanism used in Dogtag and other features that are needed in the logging system.
+([https://fedorahosted.org/pki/ticket/683 Upstream ticket #683])
+
+=== What we have now ===
+We have two types of loggers defined in Dogtag. Both of them are accessible using the CMS server instance.
+
+* base/server/cmscore/src/com/netscape/cmscore/util/Debug.java
+** An instance of this class is a CMS subsystem used for printing debug logs.
+** The debug parameters such as the debug log file name, append, debug log level etc. are defined in the CS.cfg of the server.
+** Only logs with events with a level set greater than/equal to the debug log level get printed.
+** The three log levels defined for debug logs are:
+*** OBNOXIOUS - 1
+*** VERBOSE - 5
+*** INFORM - 10
+** Note: Unless the method CMS.debug(level, message) is used all other CMS.debug calls use VERBOSE level to print logs.
+
+ There seems to be an issue in the values set to these log levels. As the logs with levels greater than the debug log level specified in the config file only are printed,
+ it is not possible to print only the OBNOXIOUS logs (which have to be printed compulsorily) in the current code. Or a comment must be provided in the config file indicating the 
+ way the level parameter should be used and conditional check in the code has to be reversed.
+
+* base/server/cmscore/src/com/netscape/cmscore/logging/Logger.java
+** An instance of this class is used to print the event/audit logs.
+** The audit logs are printed to the specific audit log events based on the specific log file.
+** The log levels defined for audit logs are:
+*** LL_INFO, LL_WARN, LL_FAILURE, LL_MISCONF, LL_CATASTRPHE, LL_SECURITY
+** The default log level used in LL_INFO
+
+=== What may need to be done ===
+
+* Define methods to print logs in various levels - INFO, DEBUG, ERROR, FATAL, WARNING etc.
+** Instead of having numeric values for logs as we have now, it would be better to have specific strings denoting various levels
+of logging, which can be enabled/disabled in the config file.
+
+** It is then required to go through the code and verify how the log methods are called and correct them with the valid log level.
+
+* Logs should be categorized based on the location/function in the code - like Database, Enrolment etc.
+This should allow logs of a specific type to be disabled/enabled using entries in configuration file.
+This is open for discussion.
+
+A high level design to build such a logging framework - 
+
+1. Define a base logger - Logger. Here we define the different log methods with various inputs(string, exception/throwable objects) and various log levels(INFO, DEBUG, WARNING, ERROR, FATAL) that are used by the subclasses.
+2. Define category level loggers for each category events, for example - DatabaseEventLogger, EnrollemntEventLogger, KeyGenEventLogger etc.
+3. Each type of logger can be enabled or disabled in the configuration files.
+4. An instance of this loggers can be referenced from the singleton instance of CMS.java and the respective logs can be written to file.
+Sample code for using such a logger - 
+
+  Logger dbLogger = CMS.getDBEventLogger();
+  dbLogger.info("Created DB Connection");
+  dbLogger.debug("Adding an entry to the database");
+  dbLogger.fatal("Cannot connect to database");
+
+The corresponding logs can be seen in file as:
+
+ [Timestamp][DatabaseEvent][INFO] Created DB Connection
+ [Timestamp][DatabaseEvent][DEBUG] Adding an entry to the database
+ [Timestamp][DatabaseEvent][FATAL] Cannot connect to database
+
+This approach can be modified more to output logs for every event in a separate file.
+We have a similar framework for writing the signed audit and system events. It would be nice to integrate all the loggers under one package.
+
+== Alternate frameworks that can be used in Dogtag ==
+
+* Logback
+
+= References =
+
+* [[PKI Server Logging]]

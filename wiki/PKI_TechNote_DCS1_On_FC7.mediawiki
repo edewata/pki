@@ -1,0 +1,13 @@
+= Building and Running the Dogtag Certificate System 1.0.0 on Fedora 7 =
+
+== Building Hacks ==
+
+To build tomcatjss on Fedora 7, the path to tomcat-util.jar in build.xml should be changed to /usr/share/java/tomcat5/tomcat-util.jar
+
+== Execution Hacks ==
+
+The /usr/share/java/commons-collections.jar must be symlinked into /var/lib/tomcat5/common/lib.
+Otherwise, the server will complain that it cannot find org.apache.commons.collections.ExtendedProperties.class
+
+
+[[Category:Tech Notes]]

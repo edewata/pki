@@ -1,0 +1,40 @@
+= Prerequisites =
+
+For Fedora:
+
+<pre>
+$ dnf install git fedpkg rpm-build svrcore-devel
+$ dnf builddep pki-core pki-console dogtag-pki-theme dogtag-pki
+</pre>
+
+For CentOS/RHEL:
+
+<pre>
+$ yum install yum-utils
+$ yum-builddep specs/pki-core.spec.in
+$ yum-builddep specs/pki-console.spec.in
+$ yum-builddep specs/dogtag-pki-theme.spec.in
+$ yum-builddep specs/dogtag-pki.spec.in
+</pre>
+
+= PKI Fedora Packages =
+
+* [[PKI Core Release Procedure]]
+* [[PKI Console Fedora Package]]
+* [[PKI Theme Fedora Package]]
+* [[Dogtag PKI Release Procedure]]
+
+= References =
+
+* [[PKI 10 Development]]
+* [[Tomcat JSS Fedora Development]]
+* [[Git]]
+* [[Fedora Koji Process]]
+* [[Procedure used to Release Dogtag 10.2.1-1 on Fedora 22]]
+* [[PKI Release Procedure]]
+* [[Man Pages]]
+* [[Gerrit]]
+* [[PKI API]]
+* [https://github.com/dogtagpki/pki/wiki/COPR-Repositories COPR Repositories]
+* [[Mock]]
+* [https://fedoraproject.org/wiki/Package_maintenance_guide Package maintenance guide]

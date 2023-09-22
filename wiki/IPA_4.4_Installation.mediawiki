@@ -1,0 +1,119 @@
+= Overview =
+
+This page provides instructions to set up IPA for PKI development and testing. To set up IPA for production please refer to the official [http://www.freeipa.org/page/Documentation IPA documentation].
+
+= Installing IPA Server =
+
+To install the first IPA server (i.e. master), execute the following command on the server:
+
+<pre>
+$ ipa-server-install -U \
+ -r EXAMPLE.COM \
+ -p Secret.123 \
+ -a Secret.123
+</pre>
+
+To install IPA server with an [https://github.com/dogtagpki/pki/wiki/Generating-SSL-Server-Certificate existing SSL certificate]:
+
+<pre>
+$ ipa-server-install -U \
+ -r EXAMPLE.COM \
+ -p Secret.123 \
+ -a Secret.123 \
+ --dirsrv-cert-file=server.p12 \
+ --dirsrv-pin Secret.123 \
+ --http-cert-file=server.p12 \
+ --http-pin Secret.123
+</pre>
+
+To install IPA server with an externally signed CA certificate:
+
+<pre>
+$ ipa-server-install -U \
+ -r EXAMPLE.COM \
+ -p Secret.123 \
+ -a Secret.123 \
+ --external-ca \
+ --subject=O=EXAMPLE
+</pre>
+
+It will generate a CSR at /root/ipa.csr. Submit the CSR to the CA to obtain the certificate (e.g. /root/ipa.crt), then execute the following command:
+
+<pre>
+$ ipa-server-install -U \
+ -r EXAMPLE.COM \
+ -p Secret.123 \
+ -a Secret.123 \
+ --external-cert-file=/root/ipa.crt
+</pre>
+
+= Installing CA =
+
+By default the IPA master will have a CA.
+
+= Installing KRA =
+
+To install KRA, execute the following command on the server:
+
+<pre>
+$ ipa-kra-install -p Secret.123
+</pre>
+
+= Installing IPA Client =
+
+To install IPA client, execute the following command on the client:
+
+<pre>
+$ ipa-client-install -U \
+ --server server.example.com \
+ --domain example.com \
+ --realm EXAMPLE.COM \
+ -p admin \
+ -w Secret.123
+</pre>
+
+= Promoting IPA Client into Replica =
+
+To promote IPA client into a replica, execute the following command on the client:
+
+<pre>
+$ ipa-replica-install -U \
+ -P admin \
+ -w Secret.123
+</pre>
+
+To promote IPA client using an existing server certificate:
+
+<pre>
+$ ipa-replica-install -U \
+ -P admin \
+ -w Secret.123 \
+ --dirsrv-cert-file server.p12 \
+ --dirsrv-pin Secret.123 \
+ --http-cert-file server.p12 \
+ --http-pin Secret.123
+</pre>
+
+= Installing CA Clone =
+
+By default IPA replica will not have a CA (unless --setup-ca was specified during IPA client promotion). 
+
+To install CA clone, execute the following command on the replica:
+
+<pre>
+$ ipa-ca-install -p Secret.123
+</pre>
+
+= Installing KRA Clone =
+
+By default IPA replica will not have a KRA (unless --setup-kra was specified during IPA client promotion). 
+
+To install KRA clone, execute the following command on the replica:
+
+<pre>
+$ ipa-kra-install -p Secret.123
+</pre>
+
+= References =
+
+* [https://github.com/dogtagpki/freeipa/wiki/Installation-Guide Installation Guide]

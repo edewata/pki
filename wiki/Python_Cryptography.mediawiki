@@ -1,0 +1,20 @@
+= Prerequisites =
+
+<pre>
+$ yum install gcc libffi-devel python-devel openssl-devel
+$ pip install cryptography
+</pre>
+
+= Loading Private Key =
+
+<pre>
+key = load_pkcs8_private_key(pem_data, None, backend)
+</pre>
+
+= References =
+* [https://cryptography.io/ Python Cryptography]
+* [http://cryptography.readthedocs.org/en/latest/installation/ Python Cryptography - Installation]
+* [https://cryptography.io/en/latest/hazmat/primitives/key-derivation-functions/ Key derivation functions]
+* [https://cryptography.io/en/latest/hazmat/primitives/asymmetric/serialization/ Asymmetric algorithms]
+* [https://bugzilla.redhat.com/show_bug.cgi?id=1114267 Review Request: python-cryptography - PyCA's cryptography library]
+* [https://github.com/ricmoo/pyscrypt pyscrypt]

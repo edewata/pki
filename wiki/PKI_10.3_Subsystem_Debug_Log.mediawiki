@@ -1,0 +1,109 @@
+= Overview =
+
+PKI server logging can be configured using the following logging frameworks:
+
+* [https://docs.oracle.com/javase/8/docs/api/java/util/logging/package-summary.html java.util.logging (JUL)]
+* [http://logging.apache.org/log4j/1.2/ Log4j]
+* Internal Logging
+
+= java.util.logging (JUL) =
+
+Tomcat uses JUL as the default logging framework. The configuration is described in [http://tomcat.apache.org/tomcat-7.0-doc/logging.html Tomcat 7 Logging Configuration] and [http://tomcat.apache.org/tomcat-8.0-doc/logging.html Tomcat 8 Logging Configuration].
+
+The default configuration is located at /usr/share/pki/server/conf/logging.properties. During server deployment a link will be created at /etc/pki/<font color="red">pki-tomcat</font>/logging.properties.
+
+By default only log messages with level WARNING or higher will be logged on the console (i.e. systemd journal).
+
+ java.util.logging.ConsoleHandler.level = ALL
+ java.util.logging.ConsoleHandler.formatter = java.util.logging.SimpleFormatter
+ java.util.logging.SimpleFormatter.format = %4$s: %5$s%6$s%n
+ 
+ .level = ALL
+ .handlers = java.util.logging.ConsoleHandler
+
+The systemd journal can be viewed with the following command:
+
+ $ journalctl -u pki-tomcatd@<font color="red">pki-tomcat</font>.service
+
+To customize JUL configuration, replace the link with a copy of the default configuration:
+
+ $ rm -f /etc/pki/<font color="red">pki-tomcat</font>/logging.properties
+ $ cp /usr/share/pki/server/conf/logging.properties /etc/pki/<font color="red">pki-tomcat</font>
+ $ chown pkiuser.pkiuser /etc/pki/<font color="red">pki-tomcat</font>/logging.properties
+
+Then edit the file as needed. For example, to troubleshoot PKI issues add the following lines:
+
+ netscape.level = ALL 
+ com.netscape.level = ALL 
+ org.dogtagpki.level = ALL 
+
+To troubleshoot RESTEasy issues add the following line (unless Log4j is installed in Tomcat classpath):
+
+ org.jboss.resteasy.level = ALL
+
+Then restart the server.
+
+For more information see the following documents:
+* [https://docs.oracle.com/javase/8/docs/api/java/util/logging/ConsoleHandler.html ConsoleHandler]
+* [https://docs.oracle.com/javase/8/docs/api/java/util/logging/Level.html Level]
+* [https://docs.oracle.com/javase/8/docs/api/java/util/logging/SimpleFormatter.html SimpleFormatter]
+* [https://docs.oracle.com/javase/8/docs/api/java/util/Formatter.html Formatter]
+
+= Log4j =
+
+The default Tomcat 7 classpath does include Log4j, but the server itself is not configured to use Log4j for logging by default. However, since the Log4j is in the classpath the RESTEasy will use Log4j for logging automatically (see [https://docs.jboss.org/resteasy/docs/3.0.6.Final/userguide/html/Installation_Configuration.html#RESTEasyLogging RESTEasy Logging]).
+
+The default Log4j configuration is located at /usr/share/pki/server/conf/log4j.properties. During server deployment a link will be created at /var/lib/pki/<font color="red">pki-tomcat</font>/lib/log4j.properties.
+
+By default only log messages with level WARN or higher will be logged on the console (i.e. systemd journal).
+
+ log4j.appender.console = org.apache.log4j.ConsoleAppender
+ log4j.appender.console.Target = System.err
+ log4j.appender.console.layout = org.apache.log4j.PatternLayout
+ log4j.appender.console.layout.ConversionPattern = %p: %m%n
+ 
+ log4j.rootLogger = WARN, console
+ log4j.logger.org.jboss.resteasy = WARN
+
+The default Tomcat 8 classpath does not include Log4j, so RESTEasy will use JUL instead.
+
+To customize Log4j configuration, replace the link with a copy of the default configuration:
+
+ $ rm -f /var/lib/pki/<font color="red">pki-tomcat</font>/lib/log4j.properties
+ $ cp /usr/share/pki/server/conf/log4j.properties /var/lib/pki/<font color="red">pki-tomcat</font>/lib
+ $ chown pkiuser.pkiuser /var/lib/pki/<font color="red">pki-tomcat</font>/lib/log4j.properties
+
+Then edit the file as needed. For example, to troubleshoot RESTEasy issues add the following line:
+
+ log4j.logger.org.jboss.resteasy = ALL
+
+Then restart the server.
+
+For more information see the following documents:
+* [http://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/ConsoleAppender.html ConsoleAppender]
+* [http://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/Level.html Level]
+* [http://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/PatternLayout.html PatternLayout]
+
+= Internal Logging =
+
+Each PKI subsystem uses an internal logging framework for debugging purposes.
+
+The logging configuration is stored in /etc/pki/<font color="red">instance</font>/<font color="red">subsystem</font>/CS.cfg:
+
+ debug.enabled=true
+ debug.level=0
+ debug.filename=/var/lib/pki/<font color="red">instance</font>/logs/<font color="red">subsystem</font>/debug
+ debug.hashkeytypes=
+ debug.showcaller=false
+
+The '''debug.enabled''' determines whether the debug log is enabled. By default it is enabled.
+
+The '''debug.level''' determines the amount of details to be logged. The value ranges from 0 (most detailed) to 10 (least detailed). The default is 0.
+
+The '''debug.filename''' determines  the debug log file location. By default it is located at /var/lib/pki/<font color="red">instance</font>/logs/<font color="red">subsystem</font>/debug.
+
+The '''debug.hashkeytypes''' is a comma-separated list of additional components to log. By default it's empty.
+
+The '''debug.showcaller''' determines whether to include the caller information in the log message. By default it's disabled.
+
+To customize the internal logging configuration, edit the CS.cfg as needed, then restart the server.

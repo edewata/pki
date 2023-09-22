@@ -1,0 +1,68 @@
+Supported algorithms:
+
+* AES
+* DES
+* DESede (DES3)
+* PBAHmacSHA1
+* PBEWithMD5AndDES
+* PBEWithSHA1AndDES
+* PBEWithSHA1AndDESede (PBEWithSHA1AndDES3)
+* PBEWithSHA1And128RC4
+* RC4
+
+generateSecret supports the following transformations:
+
+{| border="1" style="border-collapse: collapse;"
+! width="200" | KeySpec Class
+! width="200" | Key Algorithm
+|-
+| PBEKeySpec
+org.mozilla.jss.crypto.PBEKeyGenParams
+| Using the appropriate PBE algorithm:
+* DES
+* DESede
+* RC4
+|-
+| DESedeKeySpec
+| DESede
+|-
+| DESKeySpec
+| DES
+|-
+| SecretKeySpec
+|
+* AES
+* DES
+* DESede
+* RC4
+|}
+
+getKeySpec supports the following transformations:
+
+{| border="1" style="border-collapse: collapse;"
+! width="200" | Key Algorithm
+! width="200" | KeySpec Class
+|-
+| DESede
+| DESedeKeySpec
+|-
+| DES
+| DESKeySpec
+|-
+|
+* DESede
+* DES
+* AES
+* RC4
+| SecretKeySpec
+|}
+
+Notes:
+
+* For increased security, some SecretKeys may not be extractable from their PKCS #11 token. In this case, the key should be wrapped (encrypted with another key), and then the encrypted key might be extractable from the token. This policy varies across PKCS #11 tokens.
+* translateKey tries two approaches to copying keys. First, it tries to copy the key material directly using NSS calls to PKCS #11. If that fails, it calls getEncoded() on the source key, and then tries to create a new key on the target token from the encoded bits. Both of these operations will fail if the source key is not extractable.
+* The class java.security.spec.PBEKeySpec in JDK versions earlier than 1.4 does not contain the salt and iteration fields, which are necessary for PBE key generation. These fields were added in JDK 1.4. If you are using a JDK (or JRE) version earlier than 1.4, you cannot use class java.security.spec.PBEKeySpec. Instead, you can use org.mozilla.jss.crypto.PBEKeyGenParams. If you are using JDK (or JRE) 1.4 or later, you can use java.security.spec.PBEKeySpec or org.mozilla.jss.crypto.PBEKeyGenParams.
+
+= References =
+
+* [[JSS Provider]]

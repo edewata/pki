@@ -1,0 +1,112 @@
+= Installation =
+
+ $ dnf install ansible
+
+= Configuration =
+
+The main configuration is stored in /etc/ansible/ansible.cfg, for example.
+
+<pre>
+#inventory      = /etc/ansible/hosts
+#inventory_plugins  = /usr/share/ansible/plugins/inventory
+
+[inventory]
+#enable_plugins = host_list, virtualbox, yaml, constructed
+</pre>
+
+= Inventory =
+
+The inventory configuration is stored in /etc/ansible/hosts, for example:
+
+<pre>
+[local]
+127.0.0.1
+
+[containers]
+container ansible_connection=docker
+</pre>
+
+To test the connection to the machines:
+
+<pre>
+$ ansible -i hosts containers -m ping
+</pre>
+
+Docker machines can be configured in docker_machine.yml, for example:
+
+<pre>
+plugin: community.docker.docker_machine
+strict: no
+keyed_groups:
+  - separator: ''
+    key: docker_machine_node_attributes.DriverName
+strict: no
+keyed_groups:
+  - prefix: tag
+    key: 'dm_tags'
+compose:
+  ansible_ssh_common_args: '"-o StrictHostKeyChecking=accept-new"'
+</pre>
+
+See also:
+
+* [https://docs.ansible.com/ansible/latest/user_guide/intro_inventory.html#non-ssh-connection-types Non-SSH connection types]
+* [https://docs.ansible.com/ansible/latest/collections/community/docker/docker_machine_inventory.html Docker Machine inventory source]
+
+= Tasks  =
+
+To run a task:
+
+ $ ansible -i hosts local -m ping
+
+= Playbooks =
+
+Create a playbook file (e.g. playbook.yml):
+
+<pre>
+- hosts: local
+  tasks:
+  - name: Ping
+    ping:
+</pre>
+
+To run the playbook:
+
+ $ ansible-playbook -i hosts playbook.yml
+
+= Platform-specific Notes =
+
+On RHEL 8, all ansible-playbook commands will need to specify the following variable:
+
+ -e ansible_python_interpreter=/usr/libexec/platform-python
+
+= Docker =
+
+<pre>
+$ ansible-galaxy collection install community.docke
+</pre>
+
+See also:
+
+* [[Docker]]
+* [https://docs.ansible.com/ansible/latest/scenario_guides/guide_docker.html Docker Guide].
+
+= Examples =
+
+See https://github.com/cipherboy/ansible-vms/blob/master/pki-server.yml.
+
+To run the script:
+
+ $ ansible-playbook -i hosts ansible-vms/pki-server.yml
+
+Roles are defined in https://github.com/cipherboy/ansible-vms/tree/master/roles.
+See also:
+* tasks/main.yml
+* vars/main.yml
+* files/*
+
+= References =
+
+* [https://docs.ansible.com/ansible/latest/index.html Ansible Documentation]
+* [https://serversforhackers.com/c/an-ansible2-tutorial An Ansible2 Tutorial]
+* [https://docs.ansible.com/ansible/latest/user_guide/playbooks_intro.html Intro to Playbooks]

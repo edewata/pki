@@ -1,0 +1,95 @@
+= Tomcat Configuration =
+
+PKIListener is required in server.xml:
+
+<pre>
+<Server ...>
+  ...
+  <Listener className="com.netscape.cms.tomcat.PKIListener"/>
+  ...
+</Server>
+</pre>
+
+= Tomcat Common Library =
+
+Tomcat common library is located at CATALINA_BASE/lib:
+
+* annotations-api.jar
+* catalina-ant.jar
+* catalina-ha.jar
+* catalina.jar
+* catalina-storeconfig.jar
+* catalina-tribes.jar
+* commons-collections.jar
+* commons-dbcp.jar
+* commons-pool.jar
+* jasper-el.jar
+* jasper.jar
+* jasper-jdt.jar
+* jaspic-api.jar
+* slf4j-api.jar
+* slf4j-jdk14.jar
+* tomcat-api.jar
+* tomcat-coyote.jar
+* tomcat-dbcp.jar
+* tomcat-el-3.0-api.jar
+* tomcat-i18n-es.jar
+* tomcat-i18n-fr.jar
+* tomcat-i18n-ja.jar
+* tomcat-jdbc.jar
+* tomcat-jni.jar
+* tomcat-jsp-2.3-api.jar
+* tomcat-juli.jar
+* tomcat-servlet-3.1-api.jar
+* tomcat-util.jar
+* tomcat-util-scan.jar
+* tomcat-websocket.jar
+* websocket-api.jar
+
+= PKI Common Library =
+
+PKI common library is located at CATALINA_BASE/common/lib:
+
+* commons-codec.jar
+* commons-collections.jar
+* commons-io.jar
+* commons-lang.jar
+* commons-logging.jar
+* httpclient.jar
+* httpcore.jar
+* jackson-annotations.jar
+* jackson-core.jar
+* jackson-databind.jar
+* jackson-jaxrs-base.jar
+* jackson-jaxrs-json-provider.jar
+* jackson-module-jaxb-annotations.jar
+* javassist.jar
+* jaxrs-api.jar
+* jboss-annotations-api_1.2_spec.jar
+* jboss-jaxrs-2.0-api.jar
+* jboss-logging.jar
+* jss4.jar
+* ldapjdk.jar
+* pki-cmsutil.jar
+* pki-nsutil.jar
+* pki-tomcat.jar
+* resteasy-atom-provider.jar
+* resteasy-client.jar
+* resteasy-jackson2-provider.jar
+* resteasy-jaxb-provider.jar
+* resteasy-jaxrs.jar
+* symkey.jar
+* tomcatjss.jar
+* velocity.jar
+* xerces-j2.jar
+* xml-commons-apis.jar
+* xml-commons-resolver.jar
+
+= See Also =
+
+* [[PKI Server]]
+* [[Creating PKI 10.6 Server]]
+* [https://access.redhat.com/solutions/2386441 How to create multiple tomcat instances on Red Hat Enterprise Linux 7]
+* [[Tomcat 9]]
+* [[Tomcat 8.5]]
+* [[Tomcat Class Loader]]

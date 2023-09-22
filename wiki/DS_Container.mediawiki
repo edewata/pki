@@ -1,0 +1,258 @@
+= Overview =
+
+This document describes the process to run DS in a container for use by [[PKI CA Container]].
+
+= Running DS Container =
+
+To create a DS volume:
+
+<pre>
+$ podman volume create ds-data
+</pre>
+
+To start the DS container:
+
+<pre>
+$ podman run \
+    --name ds \
+    --rm \
+    -e DS_DM_PASSWORD=Secret.123 \
+    -p 389:3389 \
+    -p 636:3636 \
+    -v ds-data:/data \
+    -it \
+    quay.io/389ds/dirsrv
+</pre>
+
+To verify LDAP connection:
+
+<pre>
+$ podman exec ds ldapsearch \
+    -H ldap://localhost.localdomain:3389 \
+    -D "cn=Directory Manager" \
+    -w Secret.123 \
+    -x \
+    -b "" \
+    -s base
+</pre>
+
+By default the DS container will generate a self-signed CA certificate and issue a server certificate.
+To export the self-signed CA certificate:
+
+<pre>
+$ podman exec ds certutil -L -d /etc/dirsrv/slapd-localhost -n "Self-Signed-CA" -a > ds_signing.crt
+</pre>
+
+To verify LDAPS connection:
+
+<pre>
+$ podman exec ds ldapsearch \
+    -H ldaps://localhost.localdomain:3636 \
+    -D "cn=Directory Manager" \
+    -w Secret.123 \
+    -x \
+    -b "" \
+    -s base
+</pre>
+
+= Replacing DS Certificates =
+
+To replace the default certificates, store the new server certificate, the key, and the CA certificate into a PKCS #12 file, then copy it into the container:
+
+<pre>
+$ podman cp ds_server.p12 ds:ds_server.p12
+$ podman exec -u 0 ds chown dirsrv.dirsrv ds_server.p12
+</pre>
+
+Then export the server certificate, the key, and the CA certificate into separate files:
+
+<pre>
+$ podman exec ds mkdir -p /data/tls/ca
+$ podman exec ds openssl pkcs12 \
+    -in ds_server.p12 \
+    -passin pass:Secret.123 \
+    -out /data/tls/server.crt \
+    -clcerts \
+    -nokeys
+$ podman  exec ds openssl pkcs12 \
+    -in ds_server.p12 \
+    -passin pass:Secret.123 \
+    -out /data/tls/server.key \
+    -nodes \
+    -nocerts
+$ podman  exec ds openssl pkcs12 \
+    -in ds_server.p12 \
+    -passin pass:Secret.123 \
+    -out /data/tls/ca/ds_signing.crt \
+    -cacerts \
+    -nokeys
+</pre>
+
+Alternatively, the PKCS #12 file can be imported into the NSS database directly:
+
+<pre>
+$ podman exec ds certutil -D \
+    -d /data/config \
+    -n Self-Signed-CA
+$ podman exec ds certutil -F \
+    -d /data/config \
+    -f /data/config/pwdfile.txt \
+    -n Server-Cert
+$ podman exec ds pk12util \
+    -d /data/config \
+    -k /data/config/pwdfile.txt \
+    -i ds_server.p12 \
+    -W Secret.123
+$ podman exec ds certutil -M \
+    -d /data/config \
+    -f /data/config/pwdfile.txt \
+    -t CT,C,C \
+    -n Self-Signed-CA
+</pre>
+
+= Removing DS Container =
+
+To remove the DS container:
+
+<pre>
+$ podman rm ds
+</pre>
+
+To remove the DS volume:
+
+<pre>
+$ docker volume rm ds-data
+</pre>
+
+= Creating DS Container (Obsolete) =
+
+To create DS container from Fedora image:
+
+<pre>
+$ docker run \
+    --name ds \
+    --hostname ds.example.com \
+    --tmpfs /tmp \
+    --tmpfs /run \
+    --volume /sys/fs/cgroup:/sys/fs/cgroup:ro \
+    --expose 10389 \
+    --expose 10636 \
+    --publish 389:10389 \
+    --publish 636:10636 \
+    --detach \
+    fedora:29 "/usr/sbin/init"
+$ docker exec ds mkdir -p /run/lock
+</pre>
+
+To create DS instance:
+
+<pre>
+$ docker exec ds dnf install -y 389-ds-base
+$ docker exec ds sh -c 'dscreate create-template | sed \
+    -e "s/;root_password = .*/root_password = Secret.123/g" \
+    -e "s/;suffix = .*/suffix = dc=example,dc=com/g" \
+    -e "s/;selinux = .*/selinux = False/g" \
+    -e "s/;port = .*/port = 10389/g" \
+    -e "s/;secure_port = .*/secure_port = 10636/g" \
+    > /root/ds.inf'
+$ docker exec ds dscreate from-file /root/ds.inf
+</pre>
+
+= Accessing DS Container (Obsolete) =
+
+To execute LDAP commands:
+
+<pre>
+$ ldapsearch -x -h $HOSTNAME -s base -b ""
+</pre>
+
+To add LDAP entries for PKI:
+
+<pre>
+$ ldapadd -h $HOSTNAME -x -D "cn=Directory Manager" -w Secret.123 << EOF
+dn: dc=example,dc=com
+objectClass: domain
+dc: example
+
+dn: dc=pki,dc=example,dc=com
+objectClass: domain
+dc: pki
+EOF
+</pre>
+
+= Removing DS Container (Obsolete) =
+
+(Optional) To remove DS instance:
+
+<pre>
+$ docker exec ds dsctl localhost remove --do-it
+</pre>
+
+To remove DS container:
+
+<pre>
+$ docker rm -f ds
+</pre>
+
+= Building DS Container Image (Obsolete) =
+
+Create the following Dockerfile:
+
+<pre>
+FROM fedora:29
+
+ENV container docker
+EXPOSE 10389 10636
+
+RUN dnf install -y 389-ds-base
+RUN dscreate create-template | sed \
+    -e "s/;root_password = .*/root_password = Secret.123/g" \
+    -e "s/;suffix = .*/suffix = dc=example,dc=com/g" \
+    -e "s/;selinux = .*/selinux = False/g" \
+    -e "s/;port = .*/port = 10389/g" \
+    -e "s/;secure_port = .*/secure_port = 10636/g" \
+    > /root/ds.inf
+RUN dscreate from-file /root/ds.inf --containerised
+
+USER dirsrv
+
+CMD [ \
+    "/usr/sbin/ns-slapd", \
+    "-D", "/etc/dirsrv/slapd-localhost", \
+    "-i", "/var/run/dirsrv/slapd-localhost.pid" \
+]
+</pre>
+
+To build DS container image:
+
+<pre>
+$ docker build -t ds .
+</pre>
+
+To create DS container:
+
+<pre>
+$ docker run \
+    --name ds \
+    --publish 389:10389 \
+    --publish 636:10636 \
+    --rm \
+    ds
+</pre>
+
+Currently it doesn't work. See https://pagure.io/389-ds-base/issue/50343.
+
+= See Also =
+
+* [[DS]]
+* [https://quay.io/repository/389ds/dirsrv quay.io/389ds/dirsrv]
+* [https://hub.docker.com/r/389ds/dirsrv docker.com/389ds/dirsrv]
+* [[PKI LDAP]]
+* [[Docker]]
+* [https://github.com/dogtagpki/pki/wiki/DS-Installation DS Installation]
+* [https://pagure.io/389-ds-base/blob/master/f/docker 389 DS Docker]
+* [[Kubernetes]]
+* [[DS OpenShift]]
+* [https://fy.blackhats.net.au/blog/html/2019/07/05/using_389ds_with_docker.html Using 389ds with docker]
+* [https://fy.blackhats.net.au/blog/html/2020/03/28/389ds_in_containers.html 389ds in containers]
+* [https://github.com/michel4j/389ds github.com/michel4j/389ds]

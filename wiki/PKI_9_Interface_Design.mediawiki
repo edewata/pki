@@ -1,0 +1,862 @@
+== Overview ==
+
+The following document is based upon the '''Netscape Certificate Management System 6.1 Packaging Design Software Design Specification''' by Thomas Kwan (last updated April 16, 2002), and outlines the class path structure of Netscape Certificate Management System's (CMS)'s public external inferfaces as well as its private internal interfaces.
+
+The details provided below represent the historical "package" layout (think 'jar', 'class path', and 'classes' rather than RPM) utilized by Dogtag Certificate System (see [[http://pki.fedoraproject.org/wiki/PKI_History Certificate System History (Dogtag Ancestors)]] for historical references).
+
+Some of the content has been altered for clarity.  For example, the use of "package" has been replaced by "jar", "class path", and/or "classes" to distinguish the content from the common modern day usage of "package" referring to RPMS.  Additionally, it should be understood that ALL references to an RA refer to a legacy Java implementation of a Registration Authority that was utilized in the CMS 6.0 timeframe (it does NOT refer to the current RA that exists as an Apache plug-in written primarily in Perl).
+
+== Goals and Guidelines ==
+
+The goal of separating CMS into multiple jars is that jars can be updated and distributed individually.
+
+For example, the CMS team may want to ship the public external implementation &#91;'''certsrv.jar''', '''cmsutil.jar''', and '''cms.jar'''&#93; to CMS developers, while excluding the private internal implementation &#91;'''cmscore.jar'''&#93;.
+
+== Policies and Tactics ==
+
+=== Public Interface Changes ===
+
+Beginning with version 6.0 of CMS, the functions or methods defined within the public interface classes shall not be altered without approval from the CMS team. Neither they, nor the signature of the methods shall be altered, since any changes to these classes may lead to future incompatibilities of the plug-ins.
+
+CMS engineers, however, are allowed to add new methods that extend the capabilities with the understanding that all new methods shall be well-documented.
+
+== Detailed System Design ==
+
+CMS has been organized into the following jars (presented in their build sequence order):
+
+==== Imported Binary Jars ====
+
+* Netscape's Utility Jar &#91;'''nsutil.jar'''&#93;
+
+==== CMS Public External Interfaces and Utilities ====
+
+* CMS's Utility Jar &#91;'''cmsutil.jar'''&#93;
+* CMS's Public Interface Jar &#91;'''certsrv.jar'''&#93;
+* CMS's Servlet Jar &#91;'''cms.jar'''&#93;
+
+==== CMS Resource Bundle ====
+
+* CMS's Resource Bundle Jar &#91;'''cmsbundle.jar'''&#93;
+
+==== CMS Private Internal Implementation ====
+
+* CMS's Private Implementation Jar &#91;'''cmscore.jar'''&#93;
+
+==== CMS Configuration ====
+
+* CMS's Configuration Jar &#91;'''certsetup.jar'''&#93;
+
+==== CMS Command-Line Tools ====
+
+* CMS's Command-Line Tool Jar &#91;'''cmstools.jar'''&#93;
+
+Note that all CMS public external interfaces and utilities jars are built prior to the CMS private internal implementation jar. This build sequence ensures that public classes such as plug-ins will have no dependency on the private core implementation.
+
+The following diagram illustrates the CMS 6.x design pictorially:
+<ul>
+[[File:apidep.png]]
+</ul>
+
+== Imported Binary Classes ==
+
+=== Netscape's Utility Jar &#91;'''nsutil.jar'''&#93; ===
+
+This jar includes all the java classes that provide the basic X.509 and Public-Key Cryptography Standards (PKCS) implementations, and provides external developers with a way to build X.509 extensions.
+
+This jar includes the following class paths:
+
+<table border=1>
+<tr>
+<th bgcolor="BLUE"><font color="WHITE">'''Class Path'''</font></th>
+<th bgcolor="BLUE"><font color="WHITE">'''Description'''</font></th>
+</tr>
+<tr>
+<td>netscape.net</td>
+<td>This class path includes classes that support the Simple Mail Transfer Protocol (SMTP) implemented in '''netscape.net.smtp.*'''.</td>
+</tr>
+<tr>
+<td>netscape.net.smtp</td>
+<td>This class path includes classes that implement SMTP for email communication.</td>
+</tr>
+<tr>
+<td>netscape.security.acl</td>
+<td>This class path includes classes that set of access control lists (ACL)s for the security framework.</td>
+</tr>
+<tr>
+<td>netscape.security.extensions</td>
+<td>This class path includes classes that implement additional Public-Key Infrastructure X.509 (PKIX) extensions.</td>
+</tr>
+<tr>
+<td>netscape.security.pkcs</td>
+<td>This class path includes classes that set of PKCS implementations.</td>
+</tr>
+<tr>
+<td>netscape.security.provider</td>
+<td>This class path includes a set of classes that implement key provider.</td>
+</tr>
+<tr>
+<td>netscape.security.spec</td>
+<td>This class path includes classes for the key spec implementation.</td>
+</tr>
+<tr>
+<td>netscape.security.util</td>
+<td>This class path includes a set of classes for Distinguished Encoding Rules (DER) encoding utilities.</td>
+</tr>
+<tr>
+<td>netscape.security.wTLS</td>
+<td>This class path includes classes for the Wireless Transport Layer Security (wTLS) certificate implementation.</td>
+</tr>
+<tr>
+<td>netscape.security.x509</td>
+<td>This class path includes classes for X.509 certificate implementation.</td>
+</tr>
+</table>
+
+Note that this jar needs to be dropped eventually because the original implementation is from Sun Microsystems. This jar shall not be developed further except for bug fixes.
+
+== CMS Public External Interfaces and Utilities ==
+
+=== CMS's Utility Jar &#91;cmsutil.jar&#93; ===
+
+This jar includes all the java classes that provide the basic building-blocks or utilities for CMS core implementation. This jar should not have any dependencies on '''netscape.security.*''' nor '''netscape.net.*'''.
+ 
+This jar includes the following class paths:
+
+<table border=1>
+<tr>
+<th bgcolor="GREEN"><font color="WHITE">'''Class Path'''</font></th>
+<th bgcolor="GREEN"><font color="WHITE">'''Description'''</font></th>
+</tr>
+<tr>
+<td>com.netscape.cmsutil.http</td>
+<td>This class path includes classes that implement the secure Hypertext Transfer Protocol (HTTP) client.</td>
+</tr>
+<tr>
+<td>com.netscape.cmsutil.net</td>
+<td>This class path includes classes that define the socket factory framework interfaces.</td>
+</tr>
+<tr>
+<td>com.netscape.cmsutil.ocsp</td>
+<td>This class path includes classes for an Online Certificate Status Protocol (OCSP) implementation (built on top of Java Security Services (JSS) DER encoding/decoding framework).</td>
+</tr>
+<tr>
+<td>com.netscape.cmsutil.radius</td>
+<td>This class path includes classes that implement the Remote Authentication Dial In User Service (RADIUS) protocol as defined in RFC2138.</td>
+</tr>
+<tr>
+<td>com.netscape.cmsutil.scep</td>
+<td>This class path includes classes that implement Cisco's Simple Certificate Enrollment Protocol (SCEP).</td>
+</tr>
+<tr>
+<td>com.netscape.cmsutil.util</td>
+<td>This class path includes classes that implement utility functions that are useful.</td>
+</tr>
+</table>
+
+This jar shall be well documented, and serve as the public external utilities for CMS.
+
+Eventually, this jar should totally replace Netscape's Utility jar.
+
+=== CMS's Public Interface Jar &#91;certsrv.jar&#93; ===
+
+This jar includes all of the java interfaces and base classes that an external developer may need for writing CMS plug-ins.
+
+This jar includes the following class paths:
+
+<table border=1>
+<tr>
+<th bgcolor="GREEN"><font color="WHITE">'''Class Path'''</font></th>
+<th bgcolor="GREEN"><font color="WHITE">'''Description'''</font></th>
+</tr>
+<tr>
+<td>com.netscape.certsrv.acls</td>
+<td>A set of classes that implement interfaces for ACL plug-ins.</td>
+</tr>
+<tr>
+<td>com.netscape.certsrv.apps</td>
+<td>A set of classes that implement interfaces that encapsulates the CMS framework.</td>
+</tr>
+<tr>
+<td>com.netscape.certsrv.authentication</td>
+<td>A set of classes that implement interfaces for authentication plug-ins.</td>
+</tr>
+<tr>
+<td>com.netscape.certsrv.authority</td>
+<td>A set of classes that implement interfaces that encapsulates the authority subsystem.</td>
+</tr>
+<tr>
+<td>com.netscape.certsrv.authorization</td>
+<td>A set of classes that implement interfaces that encapsulates the authorization framework.</td>
+</tr>
+<tr>
+<td>com.netscape.certsrv.base</td>
+<td>A set of classes that implement basic and common objects for the CMS framework.</td>
+</tr>
+<tr>
+<td>com.netscape.certsrv.ca</td>
+<td>A set of classes that implement interfaces for Certificate Authority (CA).</td>
+</tr>
+<tr>
+<td>com.netscape.certsrv.client</td>
+<td>A set of classes that implement interfaces that encapsulates the administration connection.</td>
+</tr>
+<tr>
+<td>com.netscape.certsrv.common</td>
+<td>A set of classes that implement constants that define the protocol between the console and the server.</td>
+</tr>
+<tr>
+<td>com.netscape.certsrv.connector</td>
+<td>A set of classes that implement interfaces for connectors.</td>
+</tr>
+<tr>
+<td>com.netscape.certsrv.dbs</td>
+<td>A set of classes that implement interfaces for database plug-ins.</td>
+</tr>
+<tr>
+<td>com.netscape.certsrv.evaluators</td>
+<td>A set of classes that implement interfaces for the access control evaluator in the authorization framework.</td>
+</tr>
+<tr>
+<td>com.netscape.certsrv.extensions</td>
+<td>A set of classes that implement interfaces for creating extensions from HTTP input.</td>
+</tr>
+<tr>
+<td>com.netscape.certsrv.jobs</td>
+<td>A set of classes that implement interfaces for job plug-ins.</td>
+</tr>
+<tr>
+<td>com.netscape.certsrv.kra</td>
+<td>A set of classes that implement interfaces for Key Recovery Authority (KRA) (also known as Data Recovery Manager (DRM)).</td>
+</tr>
+<tr>
+<td>com.netscape.certsrv.ldap</td>
+<td>A set of classes that implement interfaces for Lightweight Directory Access Protocol (LDAP) connection pool.</td>
+</tr>
+<tr>
+<td>com.netscape.certsrv.logging</td>
+<td>A set of classes that implement interfaces for logging plug-ins.</td>
+</tr>
+<tr>
+<td>com.netscape.certsrv.notification</td>
+<td>A set of classes that implement interfaces for notification plug-ins.</td>
+</tr>
+<tr>
+<td>com.netscape.certsrv.ocsp</td>
+<td>A set of classes that implement interfaces for OCSP Authority.</td>
+</tr>
+<tr>
+<td>com.netscape.certsrv.policy</td>
+<td>A set of classes that implement interfaces for policies.</td>
+</tr>
+<tr>
+<td>com.netscape.certsrv.publish</td>
+<td>A set of classes that implement interfaces that encapsulates the LDAP publishing framework.</td>
+</tr>
+<tr>
+<td>com.netscape.certsrv.ra</td>
+<td>A set of classes that implement interfaces for Registration Authority (RA).</td>
+</tr>
+<tr>
+<td>com.netscape.certsrv.request</td>
+<td>A set of classes that implement interfaces for request queue.</td>
+</tr>
+<tr>
+<td>com.netscape.certsrv.security</td>
+<td>A set of classes that implement interfaces that encapsulates the cryptographic tokens and their related data structures.</td>
+</tr>
+<tr>
+<td>com.netscape.certsrv.usrgrp</td>
+<td>A set of classes that implement interfaces for user and group management.</td>
+</tr>
+</table>
+
+This jar shall be well documented, and serve as the public external Application Programming Interface (API) for CMS.
+
+=== CMS's Servlet Jar &#91;cms.jar&#93; ===
+
+This jar includes all the java classes that handle the HTTP requests and resulting User Interface (UI) rendering from users including end-users, agents, and administrators.
+
+This jar includes the following class paths:
+
+<table border=1>
+<tr>
+<th bgcolor="GREEN"><font color="WHITE">'''Class Path'''</font></th>
+<th bgcolor="GREEN"><font color="WHITE">'''Description'''</font></th>
+</tr>
+<tr>
+<td>com.netscape.cms.authentication</td>
+<td>This class path includes classes that implement the authentication plug-ins.</td>
+</tr>
+<tr>
+<td>com.netscape.cms.authorization</td>
+<td>This class path includes classes that implement the authorization plug-ins.</td>
+</tr>
+<tr>
+<td>com.netscape.cms.evaluators</td>
+<td>This class path includes classes that implement the evaluator plug-ins of the authorization framework.</td>
+</tr>
+<tr>
+<td>com.netscape.cms.jobs</td>
+<td>This class path includes classes that implement the jobs plug-ins of the notification framework.</td>
+</tr>
+<tr>
+<td>com.netscape.cms.logging</td>
+<td>This class path includes classes that implement the logging plug-ins.</td>
+</tr>
+<tr>
+<td>com.netscape.cms.policy</td>
+<td>This class path includes classes that implement the policy plug-ins.</td>
+</tr>
+<tr>
+<td>com.netscape.cms.publish</td>
+<td>This class path includes classes that implement the publishing mappers and publishers.</td>
+</tr>
+<tr>
+<td>com.netscape.cms.servlet</td>
+<td>This class path includes classes that implement the servlets that handle the incoming HTTP requests.</td>
+</tr>
+<tr>
+<td>com.netscape.cms.servlet.admin</td>
+<td>This class path includes classes for a set of servlets that manage CMS configuration.</td>
+</tr>
+<tr>
+<td>com.netscape.cms.servlet.cert</td>
+<td>This class path includes classes for a set of servlets that manage certificate repository of RA or CA.</td>
+</tr>
+<tr>
+<td>com.netscape.cms.servlet.cert.scep</td>
+<td>This class path includes classes for a set of servlets that manage certificate repository of RA or CA using SCEP.</td>
+</tr>
+<tr>
+<td>com.netscape.cms.servlet.connector</td>
+<td>This class path includes classes for a set of servlets that manage the connectors framework.</td>
+</tr>
+<tr>
+<td>com.netscape.cms.servlet.key</td>
+<td>This class path includes classes for a set of servlets that manage the key repository of DRM.</td>
+</tr>
+<tr>
+<td>com.netscape.cms.servlet.ocsp</td>
+<td>This class path includes classes for a set of servlets that manage the OCSP framework.</td>
+</tr>
+<tr>
+<td>com.netscape.cms.servlet.request</td>
+<td>This class path includes classes for a set of servlets that manage the request repository of RA, CA, DRM, or OCSP.</td>
+</tr>
+</table>
+
+This jar shall be well documented, and serve as the public external communication interfaces of CMS.
+
+== CMS Resource Bundle ==
+
+=== CMS's Resource Bundle Jar &#91;cmsbundle.jar&#93; ===
+
+This jar contains all of the property files for CMS 6.x.
+
+This jar includes the following files:
+
+<table border=1>
+<tr>
+<th bgcolor="GREEN"><font color="WHITE">'''File'''</font></th>
+<th bgcolor="GREEN"><font color="WHITE">'''Description'''</font></th>
+</tr>
+<tr>
+<td>LogMessages_en.properties</td>
+<td>This property file includes string tokens that are put in CMS's log files.</td>
+</tr>
+<tr>
+<td>UserMessages_en.properties</td>
+<td>This property file includes string tokens that are returned to CMS users.</td>
+</tr>
+</table>
+
+== CMS Private Internal Implementation ==
+
+=== CMS's Private Implementation Jar &#91;cmscore.jar&#93; ===
+
+This jar includes all the private java classes that implement the public interfaces which are built on top of the utility jar. This jar is the core of the CMS implementation.
+
+This jar includes the following class paths:
+
+<table border=1>
+<tr>
+<th bgcolor="RED"><font color="WHITE">'''Class Path'''</font></th>
+<th bgcolor="RED"><font color="WHITE">'''Description'''</font></th>
+</tr>
+<tr>
+<td>com.netscape.cmscore.apps</td>
+<td>A set of classes that implement the CMS framework's driver.</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.authentication</td>
+<td>A set of classes that implement authentication plug-ins.</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.authorization</td>
+<td>A set of classes that implement the authorization framework.</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.base</td>
+<td>A set of classes that implement the basic subsystem loading registry.</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.ca</td>
+<td>A set of classes that implement the CA.</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.cert</td>
+<td>A set of classes that implement common X.509 certificate manipulation functions.</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.connector</td>
+<td>A set of classes that implement the connector framework.</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.crmf</td>
+<td>A set of classes that allow Certificate Request Message Format (CRMF) parsing of the key archival operation.</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.dbs</td>
+<td>A set clases that implement the database subsystem.</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.extensions</td>
+<td>A set of classes that implement certificate extensions.</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.jobs</td>
+<td>A set of classes that implement job plug-ins.</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.kra</td>
+<td>A set of classes that implement the KRA (or DRM).</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.ldap</td>
+<td>A set of classes that implement the LDAP publishing framework.</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.ldapconn</td>
+<td>A set of classes that implement the LDAP connection pool.</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.listeners</td>
+<td>A set of classes that implement request listener plug-ins.</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.logging</td>
+<td>A set of classes that implement logging plug-ins.</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.notification</td>
+<td>A set of classes that implement notification plug-ins.</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.ocsp</td>
+<td>A set of classes that implement an OCSP Authority.</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.policy</td>
+<td>A set of classes that implement policies.</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.ra</td>
+<td>A set of classes that implement the RA.</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.request</td>
+<td>A set of classes that implement the request queue.</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.security</td>
+<td>A set of classes that implement cryptographic related operations.</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.shares</td>
+<td>A set of classes that implement the Bloom/Shamir secret-sharing algorithm.</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.time</td>
+<td>A set of classes that implement different time sources when time is generated.</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.unix</td>
+<td>A set of classes that implement the UNIX specific system functions that are used in CMS.</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.usrgrp</td>
+<td>A set of classes that implement user and group management.</td>
+</tr>
+<tr>
+<td>com.netscape.cmscore.util</td>
+<td>A set of classes that implement common utility functions.</td>
+</tr>
+</table>
+
+Public plug-ins (e. g. - policies) will be implemented under '''com.netscape.cms.*''' (where all the public plug-ins are located). Public plug-ins should have no dependencies on the CMS private implementation jar directly, and therefore should be able to be compiled using only the cms public interface (and Netscape and CMS utility jars).
+
+== CMS Configuration ==
+
+=== CMS's Configuration Jar &#91;certsetup.jar&#93; ===
+
+This jar contains the configuration framework for CMS 6.x.
+
+This jar includes the following class paths:
+
+<table border=1>
+<tr>
+<th bgcolor="GREEN"><font color="WHITE">'''Class Path'''</font></th>
+<th bgcolor="GREEN"><font color="WHITE">'''Description'''</font></th>
+</tr>
+<tr>
+<td>com.netscape.certsetup.base</td>
+<td>This jar includes classes that implement the exceptions and resources used in the configuration framework.</td>
+</tr>
+<tr>
+<td>com.netscape.certsetup.daemon</td>
+<td>This class path includes classes that implement the configuration daemon process that configures CMS.</td>
+</tr>
+</table>
+
+== CMS Command-Line Tools ==
+
+=== CMS's Command-Line Tools Jar &#91;cmstools.jar&#93; ===
+
+This jar includes all of the java classes that implement command-line tools such as AtoB, BtoA, PrettyPrintCert, and PrettyPrintCrl.
+
+This jar includes the following class paths:
+
+<table border=1>
+<tr>
+<th bgcolor="GREEN"><font color="WHITE">'''Class Path'''</font></th>
+<th bgcolor="GREEN"><font color="WHITE">'''Description'''</font></th>
+</tr>
+<tr>
+<td>com.netscape.cmstools</td>
+<td>This class path includes classes that implement command-line tools.</td>
+</tr>
+</table>
+
+== Glossary ==
+
+<table>
+<tr>
+<td valign="Top">ACL</td>
+<td valign="Top">-</td>
+<td>Access Control List</td>
+</tr>
+<tr>
+<td valign="Top">API</td>
+<td valign="Top">-</td>
+<td>Application Programming Interface</td>
+</tr>
+<tr>
+<td valign="Top">ASN.1</td>
+<td valign="Top">-</td>
+<td>Abstract Syntax Notation One. A formal language for describing 
+messages to be exchanged between distributed computer systems. Along 
+with an encoding like BER/DER, ASN.1 can be used to generate and process 
+complex data structures in a standardized and OS-independent manner. 
+For an overview, see [ftp://ftp.rsa.com/pub/pkcs/ascii/layman.asc A Layman's Guide to a Subset of ASN.1, BER, and DER].</td>
+</tr>
+<tr>
+<td valign="Top">BER</td>
+<td valign="Top">-</td>
+<td>Basic Encoding Rules</td>
+</tr>
+<tr>
+<td valign="Top">CA</td>
+<td valign="Top">-</td>
+<td>Certificate Authority. A service that issues a certificate after 
+verifying the identity of the person or entity the certificate is 
+intended to identify. A CA also renews and revokes certificates and 
+generates CRLs. The entity named in the issuer field of a certificate is
+always a CA. Certificate authorities can be independent third parties 
+or a person or organization using certificate-issuing server software.</td>
+</tr>
+<tr>
+<td valign="Top">CC</td>
+<td valign="Top">-</td>
+<td>Common Criteria</td>
+</tr>
+<tr>
+<td valign="Top">certificate</td>
+<td valign="Top">-</td>
+<td>Digital data, formatted according to the X.509 standard, that 
+specifies the name of an individual, company, or other entity (the 
+subject name of the certificate) and certifies that a public key, which 
+is also included in the certificate, belongs to that entity. A 
+certificate is issued and digitally signed by a certificate authority 
+(CA). A certificate's validity can be verified by checking the CA's 
+digital signature using the techniques of public-key cryptography. To be 
+trusted within a public-key infrastructure (PKI), a certificate must be 
+issued and signed by a CA that is trusted by other entities enrolled in 
+the PKI. Also called digital ID, digital passport, public-key 
+certificate, X.509 certificate, and security certificate.</td>
+</tr>
+<tr>
+<td valign="Top">CMMF</td>
+<td valign="Top">-</td>
+<td>Certificate Management Message Formats. A PKIX format used to convey 
+certificate requests and revocation requests from end entities to 
+certificate authorities and to send a variety of information from 
+certificate authorities to end entities. CMMF is subsumed by another 
+proposed standard, Certificate Management Messages over CMS (CMC). For 
+more information about CMC and related standards, see the [http://www.ietf.org/html.charters/pkix-charter.html PKIX Charter].</td>
+</tr>
+<tr>
+<td valign="Top">CMS</td>
+<td valign="Top">-</td>
+<td>Netscape Certificate Management System</td>
+</tr>
+<tr>
+<td valign="Top">CRMF</td>
+<td valign="Top">-</td>
+<td>Certificate Request Message Format. A PKIX format used for messages 
+related to the life-cycle management of X.509 certificates. This format 
+is a subset of CMMF.</td>
+</tr>
+<tr>
+<td valign="Top">CVS</td>
+<td valign="Top">-</td>
+<td>Concurrent Versions System</td>
+</tr>
+<tr>
+<td valign="Top">DER</td>
+<td valign="Top">-</td>
+<td>Distinguished Encoding Rules</td>
+</tr>
+<tr>
+<td valign="Top">DRM</td>
+<td valign="Top">-</td>
+<td>Data Recovery Manager. Synonym for Key Recovery Authority (KRA).</td>
+</tr>
+<tr>
+<td valign="Top">FTP</td>
+<td valign="Top">-</td>
+<td>File Transfer Protocol. A communications protocol governing the transfer of files from one computer to another over a network.</td>
+</tr>
+<tr>
+<td valign="Top">HTML</td>
+<td valign="Top">-</td>
+<td>Hypertext Markup Language</td>
+</tr>
+<tr>
+<td valign="Top">HTTP</td>
+<td valign="Top">-</td>
+<td>Hypertext Transfer Protocol. Protocol used to display HTML.</td>
+</tr>
+<tr>
+<td valign="Top">HTTPS</td>
+<td valign="Top">-</td>
+<td>Hypertext Transfer Protocol over SSL. Protocol used to display HTML securely.</td>
+</tr>
+<tr>
+<td valign="Top">IETF</td>
+<td valign="Top">-</td>
+<td>[http://www.ietf.org/ Internet Engineering Task Force]. The Internet standards committee in charge or RFCs.</td>
+</tr>
+<tr>
+<td valign="Top">IMAP</td>
+<td valign="Top">-</td>
+<td>Internet Message Access Protocol</td>
+</tr>
+<tr>
+<td valign="Top">ITU</td>
+<td valign="Top">-</td>
+<td>International Telecommunication Union</td>
+</tr>
+<tr>
+<td valign="Top">JSS</td>
+<td valign="Top">-</td>
+<td>Java Security Services</td>
+</tr>
+<tr>
+<td valign="Top">KRA</td>
+<td valign="Top">-</td>
+<td>Key Recovery Authority. Synonym for Data Recovery Manager (DRM).</td>
+</tr>
+<tr>
+<td valign="Top">LDAP</td>
+<td valign="Top">-</td>
+<td>Lightweight Directory Access Protocol</td>
+</tr>
+<tr>
+<td valign="Top">NNTP</td>
+<td valign="Top">-</td>
+<td>Network News Transfer Protocol</td>
+</tr>
+<tr>
+<td valign="Top">OCSP</td>
+<td valign="Top">-</td>
+<td>Online Certificate Status Protocol. A PKIX protocol used for 
+determining the current status of a digital certificate. For details, 
+see [ftp://ftp.isi.edu/in-notes/rfc2560.txt OCSP].</td>
+</tr>
+<tr>
+<td valign="Top">PKCS</td>
+<td valign="Top">-</td>
+<td>Public-Key Cryptography Standards</td>
+</tr>
+<tr>
+<td valign="Top">PKCS #5</td>
+<td valign="Top">-</td>
+<td>Public-Key Cryptography Standard #5. The standard developed by RSA 
+Laboratories that governs password-based cryptography, for example to 
+encrypt private keys for storage. For details published by RSA, see [http://www.rsasecurity.com/rsalabs/pkcs/pkcs-5/index.html PKCS #5].</td>
+</tr>
+<tr>
+<td valign="Top">PKCS #7</td>
+<td valign="Top">-</td>
+<td>Public-Key Cryptography Standard #7. The standard developed by RSA 
+Laboratories that governs the application of cryptography to data, for 
+example digital signatures. For details published by RSA, see [http://www.rsasecurity.com/rsalabs/pkcs/pkcs-7/index.html PKCS #7].</td>
+</tr>
+<tr>
+<td valign="Top">PKCS #10</td>
+<td valign="Top">-</td>
+<td>Public-Key Cryptography Standard #10.  The standard developed by RSA 
+Laboratories that describes syntax for a request for certification of a 
+public key, a name, and possibly a set of attributes.  For details 
+published by RSA, see [http://www.rsasecurity.com/rsalabs/pkcs/pkcs-10/index.html PKCS #10].</td>
+</tr>
+<tr>
+<td valign="Top">PKCS #11</td>
+<td valign="Top">-</td>
+<td>Public-Key Cryptography Standard #11. The standard developed by RSA 
+Laboratories that governs communication with cryptographic tokens (such 
+as smart cards). For details published by RSA, see [http://www.rsasecurity.com/rsalabs/pkcs/pkcs-11/index.html PKCS #11].</td>
+</tr>
+<tr>
+<td valign="Top">PKCS #12</td>
+<td valign="Top">-</td>
+<td>Public-Key Cryptography Standard #12. The PKCS standard developed by 
+RSA Laboratories that governs the format used to store or transport 
+private keys, certificates, and other secret material. For details 
+published by RSA, see [http://www.rsasecurity.com/rsalabs/pkcs/pkcs-12/index.html PKCS #12].</td>
+</tr>
+<tr>
+<td valign="Top">PKI</td>
+<td valign="Top">-</td>
+<td>Public-Key Infrastructure</td>
+</tr>
+<tr>
+<td valign="Top">PKIX</td>
+<td valign="Top">-</td>
+<td>Public-Key Infrastructure X.509. A working group of the Internet 
+Engineering Task Force (IETF) that is developing Internet standards 
+needed to support a PKI based on X.509 certificates. For more 
+information, see [http://www.ietf.org/html.charters/pkix-charter.html PKIX Charter].</td>
+</tr>
+<tr>
+<td valign="Top">private key</td>
+<td valign="Top">-</td>
+<td>One of a pair of keys used in public-key cryptography. The private 
+key is kept secret and is used to decrypt data encrypted with the 
+corresponding public key.</td>
+</tr>
+<tr>
+<td valign="Top">public key</td>
+<td valign="Top">-</td>
+<td>One of a pair of keys used in public-key cryptography. The public 
+key is distributed freely and published as part of a certificate. It is 
+typically used to encrypt data sent to the public key's owner, who then 
+decrypts the data with the corresponding private key.</td>
+</tr>
+<tr>
+<td valign="Top">public key cryptography</td>
+<td valign="Top">-</td>
+<td>A set of well-established techniques and standards that allow an 
+entity to verify its identity electronically or to sign and encrypt 
+electronic data. Two keys are involved: a public key and a private key. A 
+public key is published as part of a certificate, which associates that 
+key with a particular identity. The corresponding private key is kept 
+secret. Data encrypted with the public key can be decrypted only with 
+the private key.</td>
+</tr>
+<tr>
+<td valign="Top">RA</td>
+<td valign="Top">-</td>
+<td>Registration Authority</td>
+</tr>
+<tr>
+<td valign="Top">RADIUS</td>
+<td valign="Top">-</td>
+<td>[http://www.ietf.org/rfc/rfc2138.txt Remote Authentication Dial In User Service]. A protocol as defined in RFC2138</td>
+</tr>
+<tr>
+<td valign="Top">RFC</td>
+<td valign="Top">-</td>
+<td>[http://www.ietf.org/rfc.html Request For Comment]. An IETF document.</td>
+</tr>
+<tr>
+<td valign="Top">S/MIME</td>
+<td valign="Top">-</td>
+<td>Secure/Multipurpose Internet Mail Extensions. A message 
+specification (based on the popular Internet MIME standard) that 
+provides a consistent way to send and receive signed and encrypted MIME 
+data. For complete specifications, see [http://www.ietf.org/rfc/rfc2311.txt S/MIME version 2] and [http://www.ietf.org/rfc/rfc2633.txt S/MIME version 3].</td>
+</tr>
+<tr>
+<td valign="Top">SCEP</td>
+<td valign="Top">-</td>
+<td>Simple Certificate Enrollment Protocol.  This protocol is used by Cisco.</td>
+</tr>
+<tr>
+<td valign="Top">SMTP</td>
+<td valign="Top">-</td>
+<td>Simple Mail Transfer Protocol</td>
+</tr>
+<tr>
+<td valign="Top">SSL</td>
+<td valign="Top">-</td>
+<td>Secure Sockets Layer. A protocol that allows mutual authentication 
+between a client and server and the establishment of an authenticated 
+and encrypted connection. SSL runs above TCP/IP and below HTTP, LDAP, 
+IMAP, NNTP, and other high-level network protocols. For complete SSL 
+specifications, see [http://www.mozilla.org/projects/security/pki/nss/ssl/draft302.txt SSL v3] and [http://www.mozilla.org/projects/security/pki/nss/ssl/draft02.html SSL v2].</td>
+</tr>
+<tr>
+<td valign="Top">TCP/IP</td>
+<td valign="Top">-</td>
+<td>Transmission Control Protocol/Internet Protocol. A protocol for 
+communication between computers, used as a standard for transmitting 
+data over networks and as the basis for standard Internet protocols.</td>
+</tr>
+<tr>
+<td valign="Top">TLS</td>
+<td valign="Top">-</td>
+<td>Transport Layer Security. A protocol from the IETF based on SSL. It 
+will eventually supersede SSL while remaining backward-compatible with 
+SSL implementations. For more information, see [http://www.ietf.org/rfc/rfc2246.txt The TLS Protocol].</td>
+</tr>
+<tr>
+<td valign="Top">wTLS</td>
+<td valign="Top">-</td>
+<td>Wireless Transport Layer Security</td>
+</tr>
+<tr>
+<td valign="Top">X.509</td>
+<td valign="Top">-</td>
+<td>A standard defined by the [http://www.itu.int/ International Telecommunication Union (ITU)] that governs the format of certificates used for authentication in public-key cryptography.</td>
+</tr>
+</table>
+
+== Bibliography ==
+
+* [ftp://ftp.rsa.com/pub/pkcs/ascii/layman.asc A Layman's Guide to a Subset of ASN.1, BER, and DER]
+* [http://java.sun.com/j2ee/sdk_1.3/techdocs/api/index.html J2EE API Specification]
+* [http://java.sun.com/j2se/1.3/docs/api/index.html J2SE API Specification]
+* [ftp://ftp.isi.edu/in-notes/rfc2560.txt Online Certificate Status Protocol (OCSP)]
+* [http://www.rsasecurity.com/rsalabs/pkcs/pkcs-5/index.html PKCS #5]
+* [http://www.rsasecurity.com/rsalabs/pkcs/pkcs-7/index.html PKCS #7]
+* [http://www.rsasecurity.com/rsalabs/pkcs/pkcs-10/index.html PKCS #10]
+* [http://www.rsasecurity.com/rsalabs/pkcs/pkcs-11/index.html PKCS #11]
+* [http://www.rsasecurity.com/rsalabs/pkcs/pkcs-12/index.html PKCS #12]
+* [http://www.ietf.org/rfc/rfc2138.txt Remote Authentication Dial In User Service]
+* [http://www.ietf.org/rfc/rfc2311.txt S/MIME version 2]
+* [http://www.ietf.org/rfc/rfc2633.txt S/MIME version 3]
+* [http://www.mozilla.org/projects/security/pki/nss/ssl/draft02.html SSL v2]
+* [http://www.mozilla.org/projects/security/pki/nss/ssl/draft302.txt SSL v3]
+* [http://www.ietf.org/rfc/rfc2246.txt The TLS Protocol]
+* [http://www.itu.int/ X.509]

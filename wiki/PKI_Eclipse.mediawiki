@@ -1,0 +1,72 @@
+= Overview =
+
+This page is being moved into https://github.com/dogtagpki/pki/wiki/Setting-Up-Eclipse.
+
+= Getting Eclipse =
+
+Yum install eclipse-platform eclipse-jdt
+ eclipse-cdt for C/C++ 
+but that is a tale for another day
+Tomcat not included either
+
+= Getting JEE For Eclipse =
+
+Help->Install New Software
+Repository:Indigo
+URL http://Download.eclipse.org/releases/indigo
+Install New Software -> Web, XML  and Java EE Developer
+
+= Tomcat Instance =
+
+*User is you:  Directory under your control:
+*The PKI Tomcat instance is very customized:  Much easier to use the tomcat instance created by pkicreate than to try and make your own or work with one downloaded by eclipse.
+
+== Creating the Tomcat Instance ==
+
+sudo pkicreate  
+-pki_instance_root=$HOME/apps  
+-subsystem_type=ca   
+-pki_instance_name=pki-ca-dev  
+-secure_port=8443   
+-unsecure_port=8080 
+-tomcat_server_port=8005  
+-user=$USER -group=$USER -verbose
+
+== Symlinks ==
+
+* demo-pki-ca -> /etc/rc.d/init.d/tomcat6
+* bin -> /usr/share/tomcat6/bin
+* lib -> /usr/share/tomcat6/lib
+* Remove webapps/ca/WEB-INF/lib/pki*\
+* Symlink webapps/ca/WEB-INF/classes to pki project in Eclipse
+
+= Runtime Environment =
+
+* Windows->Preferences->Server->Runtime Environments
+* add a “Runtime Environment”  : tomcat6
+* choose the directory that pkicreate put the tomcat instance in.  
+* If you missed one of the symlinks, it will give you and angry icon
+
+= Server Project =
+
+== Create Server Project ==
+
+* File->New->Other->Server->Server Project
+-- OR --
+* Window->Perspectives->Other->JEE
+* Right click in Server View
+
+== Server View ==
+
+* JEE Perspective: server view
+* tab on the bottom of the window
+* double click it and you should get a property sheet in the main window
+* “Use Tomcat Installation”
+* Open launch configuration
+* Classpath
+* under user entries: Add tomcat-juli.jar
+
+= Debugging =
+
+Link Source  To PKI
+Breakpoint in  known path of the application

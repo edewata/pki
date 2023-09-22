@@ -1,0 +1,168 @@
+= Overview =
+
+All the paths mentioned in this document start from the root of the cloned source tree.
+
+This page assumes that the [[Beaker Client]] has been installed.
+
+= Setting up Jenkins server =
+
+== Installing Jenkins and plugins ==
+
+The instructions for installing a jenkins server can be found at:
+https://wiki.jenkins-ci.org/display/JENKINS/Installing+Jenkins.
+
+Make sure to configure the Jenkins server to listen on a
+port other than 8080 to not raise port conflicts. The jenkins
+configuration file is at /etc/sysconfig/jenkins. A server restart is
+necessary for any changes to this file to be effective.
+
+The Jenkins UI can be accessed by the URL:
+http://<hostname>:<port>/, where the hostname is the hostname of the
+machine where Jenkins is installed and port is the port on which the
+server is listening.
+
+The CI test framework requires a few additional plugins to be installed
+for the Jenkins server.
+
+* Goto Jenkins -> Manage Jenkins -> Manage Plugins page on the UI.
+* Click on the "Available" tab.
+* Search and install the following plugins:
+** GitHub plugin
+** Jenkins Beaker builder plugin
+** Jenkins Email Extension Plugin
+
+== Configuring Jenkins setup ==
+
+The following configurations are required for the setup to be
+complete:
+
+Goto Jenkins -> Manage Jenkins -> Configure System.
+
+Update the "System Admin e-mail address" in "Jenkins Location" section.
+
+Enter the details of the beaker server in the "Beaker Builder" section.
+The server's certificate needs to be stored in a Java keystore if the
+connection uses https protocol. The details for fixing this issue can be
+found in the plugin documentation at:
+https://wiki.jenkins-ci.org/display/JENKINS/Beaker+Builder+Plugin.
+
+The "Email Notification" section needs to be completed with the details
+of the SMTP server and its authentication details (Click on the Advanced
+button).
+
+= Create a New Project =
+
+Create a New Project - ex: Dogtag-pki
+
+== Configuring the project ==
+
+Click on "Configure" in the left panel:
+
+Setting up the workspace:
+
+Set the path to the custom workspace in the Advanced Project Options
+section to "<Any path on the system>/pki"
+Click on Advanced -> Select Use custom workspace -> Enter the path.
+The build proces of Dogtag requires the top source directory to be
+named as pki. Hence it is required to setup a the workspace path.
+To use the default Jenkins workspace, set the path as
+var/lib/jenkins/workspace/pki.
+
+For continuous integration, the project can be configured to clone the source from the repository.
+(git://git.fedorahosted.org/git/pki.git). The Git option can be found in the SCM section.
+
+For using the working project directory as the source to build the rpms - Select None in the SCM
+section and clone the source in the above mentioned location.
+
+== Building the rpms and running the tests ==
+
+In the "Build" section, select "Add build step" -> "Execute Shell"
+Paste the following code in the Command text box.
+
+ $ cd $WORKSPACE/scripts; ./compose_pki_core_packages [--createrepo=<repository_file_absolute_path>] hybrid_rpms
+ $ echo "Compose the test package and submit the beaker task and job"
+ $ cd $WORKSPACE/scripts; ./compose_pki_test_package dogtagCI --submit-tests
+
+This shell script builds the pki core rpms, copies them to a repository,
+creates the test rpms using the unique_identifier dogtagCI and submits
+it to the beaker server.
+
+Then, select "Add build step" -> "Execute Beaker Task".
+Select the option "Specify Job XML".
+Copy the text in the pki/tests/dogtag/beakerjob.dogtag.xml.template file
+into the test area.
+Replace the string PKI_TEST_USER_ID in the task name to dogtagCI.
+Enter values for the distro required in the distroRequires element of
+the XML.
+Add the repository URLs in the repos element as follows:
+
+ <repo name="repo1" url="<URL_to_access_the_repos>"/>
+ <repo name="repo2" url="<URL_to_access_the_repos>"/>
+
+Again, select "Add build step" -> "Execute shell"
+Paste the following code in the text box:
+
+ $ echo "Check if there are any regressions in the current beaker test run."
+ $ cd $WORKSPACE/tests/dogtag/util
+ $ ./examine_results.sh ${BEAKER_JOB_ID}
+
+This shell script examines the results of the curent and the previous
+run and send an email as per the triggers, only if any regressions are
+found.
+
+== Setting up the mail client ==
+
+For setting up the post build email notification, select
+"Add post-build action" -> "Email Notification". This can be used to
+specify the email recipients and configuring when and to whom the email
+has to be sent.
+
+Configuring only this action will send emails for any result of the
+build process to all the recipients. (Even if the build passes
+successfully always.)
+
+To get an email only when there are any regressions, add another post
+build action, "Add post-build action" -> "Edit Email Notification".
+This action provides additional options to configure the email itself.
+
+Click on "Advanced" button and copy the following code into the
+Pre-send script text box :
+
+ def fileName = new FilePath(build.getWorkspace(), "/beaker/regressions.txt");
+ if (fileName.exists) {
+     def file = new File(fileName.toString())
+     msg.setText(file.getText());
+ } else {
+     cancel=true;
+ }
+
+This Groovy script looks for a file regressions.txt, created by the
+examine_results script mentioned shown in the previous section. The
+file contains the names of the tests that passed previously
+but failed now. A mail will also be generated if there are tests that
+passed now and were failing before.
+
+This helps reduce spamming of emails when running the continuous
+integration testng framework.
+
+The "Add Trigger" selection box will be useful to add a trigger to
+configure for which  result of the build an email has to be sent
+to the recipients.
+
+Additional Information:
+
+ * The Build Triggers section provides options for specifying the time
+   at which a new build can be triggered - periodically or on a git
+   commit.
+
+ * If no Build triggers are configured in the project, the build
+   process can be initiated by clicking on "Build Now" link in the left
+   panel.
+   The console output can be viewed by clicking the "Console Output" link.
+
+= References =
+
+* [[Jenkins CI]]
+* [[Beaker]]
+* [[Jenkins CI Design]]
+* [https://github.com/dogtagpki/pki/blob/master/tests/dogtag/README README]

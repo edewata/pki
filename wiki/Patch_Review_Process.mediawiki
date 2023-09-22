@@ -1,0 +1,29 @@
+The following is the patch review process that is used for Dogtag development.  the process is in place to ensure that we only push high-quality patches into the source repository, and that we have an easy way to tie the review information back to the patch/bug/ticket.
+
+==Review Goals==
+* Reviews should be done in public.  This ensures that other people can respond to review feedback and provide their input.
+* Maintaining history of reviews (who conducted the review, what issues were discussed).
+* Maintaining history of patches tied to bugs.
+* Commit message refers to bug #'s and trac ticket #'s
+
+==Review Process (old)==
+* Attach patches to review request e-mail to pki-devel list.
+* Provide review comments in e-mail to pki-devel list.  One should look for code correctness, potential oversights, and following the code formatting standards for the project.
+* Once review is complete, attach patch to bugzilla (if bug report exists) and get review flag set by the reviewer(s).
+* Put commit/push message in bugzilla if fixing a bug (commits list will send out commit message to pki-commits list).
+* Patch log message must refer to bug number (if one exists), and/or trac ticket (if one exists).
+
+==Review Process (new/gerrithub)==
+Now that we have migrated the PKI source code to github, we have the option of doing code reviews using gerrithub.io.  In time, this avenue will become the de-facto mechanism to submit patches, and the mailing list option will be deprecated.
+
+To set up gerrit:
+* yum install git-review
+* Check out the source code and navigate to that tree.
+* Create a "gerrit" remote:
+** git remote add gerrit ssh://<<username>@review.gerrithub.io:29419/dogtagpki/pki
+** git review -s
+
+Gerrit should now be set up.  You can then commit changes locally as usual.
+When you are ready to submit the patches for review, simply type "git review", and the patches will be submitted to gerrit, creating a new review.  You may add reviewers to the review at that time.
+
+For a more detailed discussion of using gerrit in PKI, read here. [[ Working_with_gerrit_for_PKI ]]

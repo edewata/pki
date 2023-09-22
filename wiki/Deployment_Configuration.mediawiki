@@ -1,0 +1,460 @@
+= Global Parameters =
+
+* pki_deployment_executable: os.path.basename(argv[0])
+* pki_install_time: time.asctime(time.localtime(ticks))
+* pki_timestamp: date('%Y%m%d%H%M%S', time.localtime(ticks))
+* pki_certificate_timestamp: date('%Y-%m-%d %H:%M:%S', time.localtime(ticks))
+* pki_architecture: struct.calcsize("P") * 8
+* pki_hostname: socket.getfqdn()
+
+== Admin User ==
+
+<pre>
+pki_admin_cert_file=%(pki_client_dir)s/ca_admin.cert
+pki_admin_cert_request_type=pkcs10
+pki_admin_dualkey=False
+pki_admin_keysize=2048
+pki_admin_key_type=rsa
+pki_admin_password=
+</pre>
+
+== Client Security Database ==
+
+<pre>
+pki_client_admin_cert_p12=%(pki_client_dir)s/%(pki_subsystem_type)s_admin_cert.p12
+pki_client_database_password=
+pki_client_database_purge=True
+pki_client_dir=%(home_dir)s/.dogtag/%(pki_instance_name)s
+pki_client_pkcs12_password=
+</pre>
+
+== Database Connection ==
+
+<pre>
+pki_ds_bind_dn=cn=Directory Manager
+pki_ds_create_new_db=True
+pki_ds_ldap_port=389
+pki_ds_ldaps_port=636
+pki_ds_password=
+pki_ds_remove_data=True
+pki_ds_secure_connection=False
+pki_ds_secure_connection_ca_nickname=Directory Server CA certificate
+pki_ds_secure_connection_ca_pem_file=
+</pre>
+
+== Audit Certificate ==
+
+<pre>
+pki_audit_signing_key_algorithm=SHA256withRSA
+pki_audit_signing_key_size=2048
+pki_audit_signing_key_type=rsa
+pki_audit_signing_signing_algorithm=SHA256withRSA
+pki_audit_signing_token=Internal Key Storage Token
+</pre>
+
+== SSL Server Certificate ==
+
+<pre>
+pki_ssl_server_key_algorithm=SHA256withRSA
+pki_ssl_server_key_size=2048
+pki_ssl_server_key_type=rsa
+pki_ssl_server_nickname=Server-Cert cert-%(pki_instance_name)s
+pki_ssl_server_subject_dn=cn=%(pki_hostname)s,o=%(pki_security_domain_name)s
+pki_ssl_server_token=Internal Key Storage Token
+</pre>
+
+== Subsystem Certificate ==
+
+<pre>
+pki_subsystem_key_algorithm=SHA256withRSA
+pki_subsystem_key_size=2048
+pki_subsystem_key_type=rsa
+pki_subsystem_nickname=subsystemCert cert-%(pki_instance_name)s
+pki_subsystem_subject_dn=cn=Subsystem Certificate,o=%(pki_security_domain_name)s
+pki_subsystem_token=Internal Key Storage Token
+</pre>
+
+== HSM ==
+
+By default HSM is disabled:
+
+<pre>
+pki_hsm_enable=False
+pki_hsm_libfile=
+pki_hsm_modulename=
+pki_token_name=
+pki_token_password=
+</pre>
+
+For Gemalto Safenet LunaSA HSM:
+
+<pre>
+pki_hsm_libfile=/usr/lib/libCryptoki2_64.so
+pki_hsm_modulename=lunasa
+</pre>
+
+For nCipher nFast HSM:
+
+<pre>
+pki_hsm_libfile=/opt/nfast/toolkits/pkcs11/libcknfast.so
+pki_hsm_modulename=nfast
+</pre>
+
+== Issuing CA ==
+
+<pre>
+pki_issuing_ca_hostname=%(pki_security_domain_hostname)s
+pki_issuing_ca_https_port=%(pki_security_domain_https_port)s
+pki_issuing_ca_uri=https://%(pki_issuing_ca_hostname)s:%(pki_issuing_ca_https_port)s
+pki_issuing_ca=%(pki_issuing_ca_uri)s
+</pre>
+
+== Security Domain ==
+
+<pre>
+pki_security_domain_hostname=%(pki_hostname)s
+pki_security_domain_https_port=8443
+pki_security_domain_name=%(pki_dns_domainname)s Security Domain
+pki_security_domain_password=
+pki_security_domain_user=caadmin
+</pre>
+
+= Tomcat Parameters =
+
+<pre>
+pki_enable_proxy=False
+pki_proxy_http_port=80
+pki_proxy_https_port=443
+</pre>
+
+See [[PKI Server Proxy Configuration]].
+
+= CA Deployment Parameters =
+
+== CA Signing Certificate ==
+
+<pre>
+pki_ca_signing_key_algorithm=SHA256withRSA
+pki_ca_signing_key_size=2048
+pki_ca_signing_key_type=rsa
+pki_ca_signing_nickname=caSigningCert cert-%(pki_instance_name)s CA
+pki_ca_signing_signing_algorithm=SHA256withRSA
+pki_ca_signing_subject_dn=cn=CA Signing Certificate,o=%(pki_security_domain_name)s
+pki_ca_signing_token=Internal Key Storage Token
+pki_ca_signing_csr_path=
+pki_ca_signing_cert_path=
+</pre>
+
+== Externally-Signed CA Signing Certificate ==
+
+<pre>
+pki_external=False
+pki_external_step_two=False
+pki_external_csr_path=%(pki_ca_signing_csr_path)s
+pki_external_ca_cert_path=%(pki_ca_signing_cert_path)s
+pki_external_ca_cert_chain_path=%(pki_cert_chain_path)s
+pki_external_ca_cert_chain_nickname=%(pki_cert_chain_nickname)s
+pki_external_pkcs12_path=%(pki_pkcs12_path)s
+pki_external_pkcs12_password=%(pki_pkcs12_password)s
+</pre>
+
+== CA Signing CSR ==
+
+<pre>
+pki_req_ext_add=False
+# MS subca request ext data
+pki_req_ext_oid=1.3.6.1.4.1.311.20.2
+pki_req_ext_critical=False
+pki_req_ext_data=1E0A00530075006200430041
+</pre>
+
+== OCSP Signing Certificate ==
+
+<pre>
+pki_ocsp_signing_key_algorithm=SHA256withRSA
+pki_ocsp_signing_key_size=2048
+pki_ocsp_signing_key_type=rsa
+pki_ocsp_signing_nickname=ocspSigningCert cert-%(pki_instance_name)s CA
+pki_ocsp_signing_signing_algorithm=SHA256withRSA
+pki_ocsp_signing_subject_dn=cn=CA OCSP Signing Certificate,o=%(pki_security_domain_name)s
+pki_ocsp_signing_token=Internal Key Storage Token
+</pre>
+
+== CA Admin User ==
+
+<pre>
+pki_import_admin_cert=False
+pki_admin_email=%(pki_admin_name)s@%(pki_dns_domainname)s
+pki_admin_name=%(pki_admin_uid)s
+pki_admin_nickname=PKI Administrator for %(pki_dns_domainname)s
+pki_admin_subject_dn=cn=PKI Administrator,e=%(pki_admin_email)s,o=%(pki_security_domain_name)s
+pki_admin_uid=caadmin
+</pre>
+
+== Random Serial Numbers ==
+
+<pre>
+pki_random_serial_numbers_enable=False
+</pre>
+
+== Serial Number Ranges ==
+
+<pre>
+pki_serial_number_range_start=1
+pki_serial_number_range_end=10000000
+pki_request_number_range_start=1
+pki_request_number_range_end=10000000
+pki_replica_number_range_start=1
+pki_replica_number_range_end=100
+</pre>
+
+= KRA Deployment Parameters =
+
+== Standalone KRA ==
+
+<pre>
+pki_standalone=False
+pki_external_step_two=False
+</pre>
+
+== Certificate Chain ==
+
+<pre>
+pki_external_ca_cert_path=%(pki_instance_configuration_path)s/external_ca.cert
+pki_external_ca_cert_chain_path=%(pki_instance_configuration_path)s/external_ca_chain.cert
+</pre>
+
+== KRA Audit Certificate ==
+
+<pre>
+pki_external_audit_signing_csr_path=%(pki_instance_configuration_path)s/%(pki_subsystem_type)s_audit_signing.csr
+pki_external_audit_signing_cert_path=%(pki_instance_configuration_path)s/%(pki_subsystem_type)s_audit_signing.cert
+</pre>
+
+== SSL Certificate ==
+
+<pre>
+pki_external_sslserver_csr_path=%(pki_instance_configuration_path)s/%(pki_subsystem_type)s_sslserver.csr
+pki_external_sslserver_cert_path=%(pki_instance_configuration_path)s/%(pki_subsystem_type)s_sslserver.cert
+</pre>
+
+== Storage Certificate ==
+
+<pre>
+pki_external_storage_csr_path=%(pki_instance_configuration_path)s/%(pki_subsystem_type)s_storage.csr
+pki_external_storage_cert_path=%(pki_instance_configuration_path)s/%(pki_subsystem_type)s_storage.cert
+pki_storage_key_algorithm=SHA256withRSA
+pki_storage_key_size=2048
+pki_storage_key_type=rsa
+pki_storage_nickname=storageCert cert-%(pki_instance_name)s KRA
+pki_storage_signing_algorithm=SHA256withRSA
+pki_storage_subject_dn=cn=DRM Storage Certificate,o=%(pki_security_domain_name)s
+pki_storage_token=Internal Key Storage Token
+</pre>
+
+== Subsystem Certificate ==
+
+<pre>
+pki_external_subsystem_csr_path=%(pki_instance_configuration_path)s/%(pki_subsystem_type)s_subsystem.csr
+pki_external_subsystem_cert_path=%(pki_instance_configuration_path)s/%(pki_subsystem_type)s_subsystem.cert
+</pre>
+
+== Transport Certificate ==
+
+<pre>
+pki_external_transport_csr_path=%(pki_instance_configuration_path)s/%(pki_subsystem_type)s_transport.csr
+pki_external_transport_cert_path=%(pki_instance_configuration_path)s/%(pki_subsystem_type)s_transport.cert
+pki_transport_key_algorithm=SHA256withRSA
+pki_transport_key_size=2048
+pki_transport_key_type=rsa
+pki_transport_nickname=transportCert cert-%(pki_instance_name)s KRA
+pki_transport_signing_algorithm=SHA256withRSA
+pki_transport_subject_dn=cn=DRM Transport Certificate,o=%(pki_security_domain_name)s
+pki_transport_token=Internal Key Storage Token
+</pre>
+
+== KRA Admin User ==
+
+<pre>
+pki_import_admin_cert=True
+pki_external_admin_csr_path=%(pki_instance_configuration_path)s/%(pki_subsystem_type)s_admin.csr
+pki_external_admin_cert_path=%(pki_instance_configuration_path)s/%(pki_subsystem_type)s_admin.cert
+</pre>
+
+= OCSP Deployment Parameters =
+
+== Standalone OCSP ==
+
+<pre>
+pki_standalone=False
+pki_external_step_two=False
+</pre>
+
+== Certificate Chain ==
+
+<pre>
+pki_external_ca_cert_chain_path=%(pki_instance_configuration_path)s/external_ca_chain.cert
+pki_external_ca_cert_path=%(pki_instance_configuration_path)s/external_ca.cert
+</pre>
+
+== OCSP Signing Certificate ==
+
+<pre>
+pki_external_signing_csr_path=%(pki_instance_configuration_path)s/%(pki_subsystem_type)s_signing.csr
+pki_external_signing_cert_path=%(pki_instance_configuration_path)s/%(pki_subsystem_type)s_signing.cert
+pki_ocsp_signing_key_algorithm=SHA256withRSA
+pki_ocsp_signing_key_size=2048
+pki_ocsp_signing_key_type=rsa
+pki_ocsp_signing_nickname=ocspSigningCert cert-%(pki_instance_name)s OCSP
+pki_ocsp_signing_signing_algorithm=SHA256withRSA
+pki_ocsp_signing_subject_dn=cn=OCSP Signing Certificate,o=%(pki_security_domain_name)s
+pki_ocsp_signing_token=Internal Key Storage Token
+</pre>
+
+== SSL Server Certificate ==
+
+<pre>
+pki_external_sslserver_csr_path=%(pki_instance_configuration_path)s/%(pki_subsystem_type)s_sslserver.csr
+pki_external_sslserver_cert_path=%(pki_instance_configuration_path)s/%(pki_subsystem_type)s_sslserver.cert
+</pre>
+
+== Subsystem Certificate ==
+
+<pre>
+pki_external_subsystem_csr_path=%(pki_instance_configuration_path)s/%(pki_subsystem_type)s_subsystem.csr
+pki_external_subsystem_cert_path=%(pki_instance_configuration_path)s/%(pki_subsystem_type)s_subsystem.cert
+pki_subsystem_name=OCSP %(pki_hostname)s %(pki_https_port)s
+</pre>
+
+== Audit Signing Certificate ==
+
+<pre>
+pki_external_audit_signing_csr_path=%(pki_instance_configuration_path)s/%(pki_subsystem_type)s_audit_signing.csr
+pki_external_audit_signing_cert_path=%(pki_instance_configuration_path)s/%(pki_subsystem_type)s_audit_signing.cert
+pki_audit_signing_nickname=auditSigningCert cert-%(pki_instance_name)s OCSP
+pki_audit_signing_subject_dn=cn=OCSP Audit Signing Certificate,o=%(pki_security_domain_name)s
+</pre>
+
+== OCSP Admin User ==
+
+<pre>
+pki_import_admin_cert=True
+pki_external_admin_csr_path=%(pki_instance_configuration_path)s/%(pki_subsystem_type)s_admin.csr
+pki_external_admin_cert_path=%(pki_instance_configuration_path)s/%(pki_subsystem_type)s_admin.cert
+pki_admin_email=%(pki_admin_name)s@%(pki_dns_domainname)s
+pki_admin_name=%(pki_admin_uid)s
+pki_admin_nickname=PKI Administrator for %(pki_dns_domainname)s
+pki_admin_subject_dn=cn=PKI Administrator,e=%(pki_admin_email)s,o=%(pki_security_domain_name)s
+pki_admin_uid=ocspadmin
+</pre>
+
+== Database Connection ==
+
+<pre>
+pki_ds_base_dn=o=%(pki_instance_name)s-OCSP
+pki_ds_database=%(pki_instance_name)s-OCSP
+pki_ds_hostname=%(pki_hostname)s
+pki_share_db=True
+pki_share_dbuser_dn=uid=pkidbuser,ou=people,o=%(pki_instance_name)s-CA
+</pre>
+
+= TKS Deployment Parameters =
+
+== TKS Subsystem Certificate ==
+
+<pre>
+pki_subsystem_name=TKS %(pki_hostname)s %(pki_https_port)s
+</pre>
+
+== TKS Admin User ==
+
+<pre>
+pki_import_admin_cert=True
+pki_admin_email=%(pki_admin_name)s@%(pki_dns_domainname)s
+pki_admin_name=%(pki_admin_uid)s
+pki_admin_nickname=PKI Administrator for %(pki_dns_domainname)s
+pki_admin_subject_dn=cn=PKI Administrator,e=%(pki_admin_email)s,o=%(pki_security_domain_name)s
+pki_admin_uid=tksadmin
+</pre>
+
+== TKS Audit Certificate ==
+
+<pre>
+pki_audit_signing_nickname=auditSigningCert cert-%(pki_instance_name)s TKS
+pki_audit_signing_subject_dn=cn=TKS Audit Signing Certificate,o=%(pki_security_domain_name)s
+</pre>
+
+== TKS Database Connection ==
+
+<pre>
+pki_ds_base_dn=o=%(pki_instance_name)s-TKS
+pki_ds_database=%(pki_instance_name)s-TKS
+pki_ds_hostname=%(pki_hostname)s
+pki_share_db=True
+pki_share_dbuser_dn=uid=pkidbuser,ou=people,o=%(pki_instance_name)s-CA
+</pre>
+
+= TPS Deployment Parameters =
+
+== TPS Admin User ==
+
+<pre>
+pki_import_admin_cert=True
+pki_admin_email=%(pki_admin_name)s@%(pki_dns_domainname)s
+pki_admin_name=%(pki_admin_uid)s
+pki_admin_nickname=PKI Administrator for %(pki_dns_domainname)s
+pki_admin_subject_dn=cn=PKI Administrator,e=%(pki_admin_email)s,o=%(pki_security_domain_name)s
+pki_admin_uid=tpsadmin
+</pre>
+
+== TPS Audit Signing Certificate ==
+
+<pre>
+pki_audit_signing_nickname=auditSigningCert cert-%(pki_instance_name)s TPS
+pki_audit_signing_subject_dn=cn=TPS Audit Signing Certificate,o=%(pki_security_domain_name)s
+</pre>
+
+== TPS Database Conection ==
+
+<pre>
+pki_ds_base_dn=o=%(pki_instance_name)s-TPS
+pki_ds_database=%(pki_instance_name)s-TPS
+pki_ds_hostname=%(pki_hostname)s
+pki_share_db=True
+pki_share_dbuser_dn=uid=pkidbuser,ou=people,o=%(pki_instance_name)s-CA
+</pre>
+
+== TPS Subsystem ==
+
+<pre>
+pki_subsystem_name=TPS %(pki_hostname)s %(pki_https_port)s
+</pre>
+
+== TPS Authentication Database ==
+
+<pre>
+pki_authdb_hostname=%(pki_hostname)s
+pki_authdb_port=389
+pki_authdb_secure_conn=False
+</pre>
+
+== Connection to Other Subsystems ==
+
+<pre>
+pki_ca_uri=https://%(pki_hostname)s:%(pki_https_port)s
+pki_kra_uri=https://%(pki_hostname)s:%(pki_https_port)s
+pki_tks_uri=https://%(pki_hostname)s:%(pki_https_port)s
+</pre>
+
+== Other ==
+
+<pre>
+pki_enable_server_side_keygen=False
+pki_import_shared_secret=False
+pki_source_phone_home_xml=/usr/share/pki/%(pki_subsystem_type)s/conf/phoneHome.xml
+pki_source_registry_cfg=%(pki_source_conf_path)s/registry.cfg
+</pre>
+
+= References =
+
+* [[Deployment]]

@@ -1,0 +1,20 @@
+= Configuration =
+
+<pre>
+log.instance.System.type=system
+log.instance.System.enable=true
+log.instance.System.bufferSize=512
+log.instance.System.expirationTime=0
+log.instance.System.fileName=/var/lib/pki/pki-tomcat/logs/ca/system
+log.instance.System.flushInterval=5
+log.instance.System.level=3
+log.instance.System.maxFileSize=2000
+log.instance.System.pluginName=file
+log.instance.System.rolloverInterval=2592000
+</pre>
+
+By default system logs are stored in /var/log/pki/<instance>/<subsystem>/system.
+
+= References =
+
+* [[PKI Server Logging]]

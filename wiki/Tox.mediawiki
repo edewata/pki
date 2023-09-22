@@ -1,0 +1,28 @@
+= Installation =
+
+<pre>
+$ dnf install tox
+</pre>
+
+= Running Tox =
+
+<pre>
+$ tox
+</pre>
+
+= Refreshing Environment =
+
+<pre>
+$ tox -r
+</pre>
+
+= Runing Specific Targets =
+
+<pre>
+$ tox -e lint
+</pre>
+
+= References =
+
+* [https://github.com/dogtagpki/pki/wiki/Setting-Up-PyDev-in-Eclipse Setting Up PyDev in Eclipse]
+* [[Pylint]]

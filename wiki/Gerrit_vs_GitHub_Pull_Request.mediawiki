@@ -1,0 +1,33 @@
+= Gerrit =
+
+* Gerrit accepts one patch at a time. The CI will once run for each patch, lengthening the total test time.
+* Since each patch must pass CI, complex changes must either:
+** be broken into smaller incremental patches which takes more time to develop and test, or
+** be submitted as a single large patch which makes it more difficult to review.
+* If there's a problem in a patch, the patch must be revised and resubmitted. Other patches that depend on it may need to be rebased. Each of these operations require a separate CI execution, lengthening the total time.
+* Gerrit requires Jenkins to create a test branch for Travis.
+* When multiple patches are submitted at once, often times one of the Jenkins job will fail.
+* Travis requires a second stage job to send the result to Gerrit.
+* Jenkins service must be maintained, and can become a single point of failure.
+* Gerrit has a bug which makes it difficult to scroll the screen when there are many files changed (fixed in the new UI).
+* Gerrit service is not very reliable. Sometimes it's not available. Sometimes it requires you to relogin (the new UI seems to be more stable).
+* Gerrit is configured to push automatically to GitHub, which is adding some risks.
+* If a Travis job fails due to system error (indicated by red exclamation point), Jenkins is unable to detect this and report the failure in Gerrit.
+
+= GitHub Pull Request =
+
+* GitHub PR accepts multiple patches at once. The CI will run once for all patches submitted together, shortening the total test time.
+* Since the CI will run only once for all patches submitted together, complex changes can be broken down in a way that is easier to review, without a concern about individually passing the CI.
+* If there's a problem in a patch, an additional patch can be submitted without rebasing anything.
+* GitHub PR does not require Jenkins.
+* GitHub PR does not require a second stage job to send the result.
+* GitHub PR can be merged with a merge commit, squashed, or rebased and pushed individually.
+* GitHub is generally more reliable than Gerrit.
+* GitHub requires contributors to fork the repo and submit the PR via web, but this is a common procedure in many GitHub-based projects.
+
+= References =
+
+* [[Gerrit]]
+* [[GitHub Pull Request]]
+* [[Jenkins CI]]
+* [[Travis CI]]

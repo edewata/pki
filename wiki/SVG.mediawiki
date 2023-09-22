@@ -1,0 +1,15 @@
+= Installation =
+
+<pre>
+$ dnf install rhino batik-svgpp
+</pre>
+
+= Running SVG Pretty Printer =
+
+<pre>
+$ svgpp <input> <output>
+</pre>
+
+= References =
+
+* [https://xmlgraphics.apache.org/batik/tools/pretty-printer.html SVG Pretty Printer]

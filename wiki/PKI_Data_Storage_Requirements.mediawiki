@@ -1,0 +1,79 @@
+= Data Storage Requirements =
+
+== Dogtag 9.0 ==
+=== 389 Directory Server ===
+
+For a CA, DRM, OCSP, TKS, or TPS subsystem, either have a 389 Directory Server available on the network in order to provide data storage for the installed PKI RPMs, or simply install the 389-ds Meta package:
+
+ yum install 389-ds
+
+The first time you install a 389 Directory Server, you need to configure it.  Run this command as '''root''':
+ /usr/sbin/setup-ds.pl (or /usr/sbin/setup-ds-admin.pl if you wish to use the '389-console').
+After answering several questions and accepting the license, you will see these choices
+ Choose a setup type:
+ 
+   1. Express
+       Allows you to quickly set up the servers using the most
+       common options and pre-defined defaults. Useful for quick
+       evaluation of the products.
+ 
+   2. Typical
+       Allows you to specify common defaults and options.
+ 
+   3. Custom
+       Allows you to specify more advanced options. This is 
+       recommended for experienced server administrators only.
+ 
+ To accept the default shown in brackets, press the Enter key.
+ 
+ Choose a setup type [2]: 
+
+Select [2].  When prompted for various options such as user names and network ports, hit <Enter> to accept the default. You will also need to select a password.
+
+Curious users may find more detailed information about the Fedora Directory Server at [http://directory.fedoraproject.org 389 Directory Server].
+
+== Dogtag 1.3 and Earlier ==
+=== Fedora Directory Server ===
+
+For a CA, DRM, OCSP, TKS, or TPS subsystem, either have a Fedora Directory Server available on the network in order to provide data storage for the installed PKI RPMs, or simply install the fedora-ds-base package:
+
+ yum install fedora-ds-base
+
+The first time you install a Fedora Directory Server, you need to configure it.  Run this command as '''root''':
+ /usr/sbin/setup-ds.pl
+After answering several questions and accepting the license, you will see these choices
+ Choose a setup type:
+ 
+   1. Express
+       Allows you to quickly set up the servers using the most
+       common options and pre-defined defaults. Useful for quick
+       evaluation of the products.
+ 
+   2. Typical
+       Allows you to specify common defaults and options.
+ 
+   3. Custom
+       Allows you to specify more advanced options. This is 
+       recommended for experienced server administrators only.
+ 
+ To accept the default shown in brackets, press the Enter key.
+ 
+ Choose a setup type [2]: 
+
+Select [2].  When prompted for various options such as user names and network ports, hit <Enter> to accept the default. You will also need to select a password.
+
+Curious users may find more detailed information about the Fedora Directory Server at [http://directory.fedoraproject.org http://directory.fedoraproject.org].
+
+=== Fedora Directory Server (Optional Extras) ===
+
+To optionally install the Fedora Directory Server Administration Server, install the following package:
+
+ yum install fedora-ds-admin
+
+To optionally install the Fedora Directory Server Console, install the following package:
+
+ yum install fedora-idm-console
+
+== SQLite Database ==
+
+RA subsystems utilize an SQLite database for data storage. The RA does not use the LDAP instance for storage.

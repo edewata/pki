@@ -1,0 +1,46 @@
+= Prerequisites =
+
+Install the required packages:
+
+ $ apt install make gcc git dpkg-dev devscripts build-essential lintian
+ $ apt build-dep jss
+
+Checkout the source code:
+
+ $ hg clone https://hg.mozilla.org/projects/nspr
+ $ hg clone https://hg.mozilla.org/projects/nss
+ $ git clone git@github.com:dogtagpki/jss.git
+
+= Building =
+
+Set environment variables:
+
+ $ export JAVA_HOME=/usr/lib/jvm/java-10-openjdk-amd64
+ $ export USE_64=1
+
+To build JSS:
+
+ $ cd jss
+ $ make clean all
+
+= Packaging =
+
+JSS source package for Debian is stored in https://salsa.debian.org/freeipa-team/jss:
+
+* [https://salsa.debian.org/freeipa-team/jss/blob/master/debian/control control]
+* [https://salsa.debian.org/freeipa-team/jss/blob/master/debian/changelog changelog]
+* [https://salsa.debian.org/freeipa-team/jss/blob/master/debian/rules rules]
+* [https://salsa.debian.org/freeipa-team/jss/blob/master/debian/copyright copyright]
+* [https://salsa.debian.org/freeipa-team/jss/tree/master/debian/patches patches]
+
+To build JSS package:
+
+ $ apt source jss
+ $ cd jss-<version>
+ $ debuild -i -us -uc -b
+
+= References =
+
+* [[JSS Development]]
+* [https://blog.packagecloud.io/debian/debuild/packaging/2015/06/08/buildling-deb-packages-with-debuild/ Building debian packages with debuild]
+* [[Debian]]

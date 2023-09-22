@@ -1,0 +1,115 @@
+= Overview =
+
+The PKI module source for Fedora is located at https://src.fedoraproject.org/modules/pki.
+
+Module streams:
+
+* [https://src.fedoraproject.org/modules/pki/tree/10.6 10.6]
+
+= Authentication =
+
+Obtain a Kerberos ticket for FEDORAPROJECT.ORG account and [[COPR]] authentication token.
+
+= Getting Module Source =
+
+ $ cd Fedora
+ $ fedpkg clone modules/pki modules/pki
+ $ cd modules/pki
+ $ git checkout 10.6
+
+= Updating Module Packages =
+
+Follow the following procedures to update the packages in the module, but do not create the Koji build:
+
+* [[JSS Release Procedure]]
+* [[Tomcat JSS Release Procedure]]
+* [[PKI Core Release Procedure]]
+* [[Dogtag PKI Release Procedure]]
+
+If any of the packages is updated, make sure the module is updated as well,
+or create an empty commit:
+
+ $ cd Fedora/modules/pki
+ $ git commit --allow-empty
+ $ git push origin 10.6
+
+= Creating Local Build =
+
+To create a local build:
+
+ $ cd Fedora/modules/pki
+ $ fedpkg module-build-local -s platform:f28
+
+or:
+
+ $ mbs-manager build_module_locally --file pki.yaml -s platform:f28
+
+To install the local build, create /etc/yum.repos.d/local.repo:
+
+<pre>
+[local]
+name=Local Repository
+baseurl=file:///home/<username>/modulebuild/builds/module-<name>-<stream>-<timestamp>/results/
+gpgcheck=0
+enabled=1
+</pre>
+
+Then execute the following:
+
+<pre>
+$ dnf module install <name>:<stream>
+</pre>
+
+See also:
+
+* [https://docs.fedoraproject.org/fedora-project/subprojects/fesco/en-US/making-modules/building-modules-locally.html Building Fedora modules locally]
+
+= Creating COPR Build =
+
+To create a COPR build:
+
+ $ cd Fedora/modules/pki
+ $ copr build-module --yaml pki.yaml <repo>
+
+To install the module:
+
+ $ dnf copr enable <repo>
+ $ dnf module install pki:10.6
+
+See also [https://frostyx.cz/posts/how-to-build-modules-in-copr How to build modules in Copr].
+
+= Creating Official Build =
+
+To create an official build:
+
+ $ cd Fedora/modules/pki
+ $ fedpkg module-build
+
+
+'''<font color="red">NOTE:</font>'''If there are no changes to the module itself, you still need to add an empty commit to the module. If not, mbs will just '''resubmit''' your previous module build.
+ 
+ $ git commit --allow-empty -m "Retriggering module build to pickup rebased packages"
+ $ git push origin <stream-branch>
+
+
+The build taks will appear in [https://mbs.fedoraproject.org/module-build-service/1/module-builds/ Fedora's MBS].
+
+To check build status:
+
+ $ fedpkg module-build-info <build ID>
+
+Wait until all components are in COMPLETE state.
+
+To cancel a build:
+
+<pre>
+$ fedpkg module-build-cancel &lt;build ID&gt;
+</pre>
+
+= Creating Bodhi Update =
+
+T.B.A.
+
+= See Also =
+
+* [[PKI Module]]

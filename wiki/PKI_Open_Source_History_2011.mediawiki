@@ -1,0 +1,51 @@
+= Open Source History (2011) =
+
+== Dogtag Certificate Server 9.0 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[07/22/2011] ==
+
+
+Dogtag Certificate System 9.0 builds upon Dogtag Certificate System 1.3 and represents the latest release of Dogtag PKI technology.
+
+'''Project Name:'''
+* '''''Dogtag Certificate System 9.0'''''
+'''Releases:'''
+* [07/22/2011] Dogtag Certificate Server 9.0 [32-bit & 64-bit Fedora 15]
+'''Major Features:'''
+* Designed to integrate seamlessly with [http://freeipa.org/page/Main_Page FreeIPA]
+* Updated to utilize [http://tomcat.apache.org/download-60.cgi 'tomcat6'] rather than [http://tomcat.apache.org/download-55.cgi 'tomcat5']
+* Streamlined 'pkicreate'/'pkiremove'/'registry' code to be more efficient
+* Improved SCEP feature support - see [https://github.com/dogtagpki/pki/wiki/SCEP-Responder SCEP Responder]
+* Implemented Publishing Queue - see [https://github.com/dogtagpki/pki/wiki/Publishing-Queue PKI Publishing Queue]
+* Replaced [http://ant.apache.org/ 'ant']/[http://www.gnu.org/software/autoconf 'autoconf']-based build system with a new [http://www.cmake.org/ 'CMake']-based build system
+* SRPM source packages were re-organized - see [[PKI 9 Packages]]
+* Fixed approximately 275 Bugs - see [[PKI Bugs closed between Dogtag 1.3 and Dogtag 9.0]]
+* New platform support for the following 32-bit and 64-bit versions of Fedora:
+'''Server Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>9.0</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 15 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 15 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+'''Client Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>9.0</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 15 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 15 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>

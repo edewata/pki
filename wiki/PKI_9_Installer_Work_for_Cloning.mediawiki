@@ -1,0 +1,204 @@
+== Design ==
+Below are the interactions that take place while running through the install panels during the process 
+of setting up a clone CA.
+    
+    1. Welcome Panel, Module Panel, HSM Login Panel
+    2. SecurityDomainPanel.java
+    -- get "existing" domain
+    -- set "preop.cert.subsystem.type" : remote
+    preop.cert.subsystem.profile", caInternalAuthSubsystemCert
+    -- updateCertChain( config, "securitydomain", hostname, admin_port,
+    true, context, certApprovalCallback );
+    contacts security domain on the admin port
+    -- calls getCertChainUsingSecureAdminPort() /ca/admin/ca/getCertChain
+    3. DisplayCertChainPanel.java
+    -- redirects to admin port on security domain to log in, passing in URL.
+    -- "https://"+sd_hostname+":"+sd_port+"/ca/admin/ca/securityDomainLogin?url="+encodedValue
+    which calls GetCookie.java
+    -- authenticates
+    -- puts session in domain table
+     
+    4. CreateSubsystemPanel.java
+    -- display()
+    -- calls getUrlListFromSecurityDomain(config, cstype, "SecurePort" )
+    -- calls getDomainXML() -> on security domain, admin port - returns list with host:ee port
+    by calling /ca/admin/ca/getDomainXML
+    -- update()
+    upon selecting CA to clone, calls:
+    -- getSecurityDomainAdminPort(config, host, ee_port, cstype) to get admin port of master
+    -- this calls getDomainXML()
+    if ca:
+    updateCertChainUsingSecureEEPort(clone, master_host, master_ee_port, ..)
+    -- calls getCertChainUsingSecureEEPort()
+    '''-- /ca/ee/ca/getCertChain'''
+    (for no ee, this will throw IOException, which propagates up)
+     
+    getTokenInfo(master_host, master_ee_port)
+    '''url = /ca/ee/ca/getTokenInfo''' (get nicknames for all certs, except sslserver cert,
+    no auth)
+    (with no EE, throws IOException)
+     
+    5. DisplyCertChainPanel
+    -- skip for clone of CA
+     
+    6. RestoreKeyCertPanel (only for clones)
+    - if path = "":
+    getConfigEntriesFromMaster()
+    updateNumberRange(master_hostname, master_ee_port)
+    - make serial number adjustments and get valid ranges
+    updateConfigEntries(master_host, master_port, "ca/admin/ca/getConfigEntries")
+    - get parameters like ds info, basedn etc., system cert info.
+    else:
+    read and verify we have all keys from pk12
+    getConfigEntriesFromMaster() for request, replica, serialNo, providing cookie
+    updateNumberRange(master_hostname, master_ee_port)
+    - make serial number adjustments and get valid ranges
+    - calling '''"ca/ee/ca/updateNumberRange"'''
+    updateConfigEntries(master_host, master_port, "ca/admin/ca/getConfigEntries")
+    - get parameters like ds info, basedn etc., system cert info.
+     
+    7. HierarchyPanel - skip
+    8. DatabasePanel, SizePanel, NamePanel, BackupKeyCertPanel, ImportCAChainPanel
+    9. AdminPanel - skip
+    10. DonePanel
+    '''updateDomainXML( sd_host, sd_agent_port_int, true, "/ca/agent/ca/updateDomainXML")'''
+    -- uses client auth (using subsystem cert)
+    getDomainXML(secdomain_admin_port) to display security domain
+
+
+The interactions described in '''bold''' are ones which take place on a part other than the admin port.
+We have decided that these interactions should in fact occur on the admin port.
+
+In particular:
+* In CreateSubsystemPanel, the call to /ca/ee/ca/getCertChain can be replaced by a call to /ca/admin/ca/getCertChain, which already exists.
+* In CreateSibsystemPanel, the call to /ca/ee/ca/getTokenInfo can be replaced by a call to  /ca/admin/ca/getTokenInfo. Moreover, we will require token authentication in this servlet. 
+* '''Update: '''the information in getTokenInfo is already gotten in the call to getConfigEntriesFromMaster.  Therefore, by rearanging the calls in RestoreKeyCertPanel, we can eliminate this interaction altogether.  This was already done in dogtag 10, so we know it works.
+* In RestoreKeyertPanel, the call to /ca/ee/ca/updateNumberRange can be replaced by a call to /ca/admin/ca/updateNumberRange, and will continue to require token auth.
+* In DonePanel, we have a call to /ca/agent/ca/updateDomainXML, which uses client auth.  This is problematic because this servlet is used in pkiremove (using the subsystem certificate) to direct the security domain to remove an instance.  Right now, its on the agent interface because thats the only interface on which we are guaranteed to have client auth.
+
+Ways of solving this:
+# Replace call with /ca/admin/ca/updateDomainXML with token auth.  Then, in pkiremove, add code to contact the security domain and get a token.  This means that pkiremove would require a username and password for a security domain user.  I prefer this method, because: the installation auth mechanism would be consistent for installation and de-installation; you would have an installation token in case you needed to talk with other systems during an uninstall - say to remove a KRA connector; on the security domain CA, you would know the identity of the admin who is performing the "remove from security domain" action, rather than being a system account.  This option is my preference.
+# add to admin interface, but continue to require client auth.  This would require "clientAuth" = "want" for the admin interface.
+# separate into two different servlets -- one on the admin interface and requiring token auth - this would be for adding a subsystem.  One for removing subsystem, existing on agent interface and requiring client auth.
+
+Some considerations:
+* In order to ensure that we do not break when trying to clone existing subsystems, we could write the installer code to try both the newer and older interfaces.  (newer first, of course).  Newly created instances would only expose the new interfaces.
+* The call for tokenAuthenticate (called by subsystems to verify a presented token) has also been added to the admin port.
+
+== Changes that need to be made to configuration files for an existing subsystems==
+* Existing subsystems need to be manually reconfigured to expose the new interfaces.
+
+=== CA (web.xml) ===
+* Add the following stanzas and servlet mappings:
+<pre>
+   <servlet>
+      <servlet-name>  caUpdateDomainXML-admin </servlet-name>
+      <servlet-class> com.netscape.cms.servlet.csadmin.UpdateDomainXML  </servlet-class>
+             <init-param><param-name>  GetClientCert  </param-name>
+                         <param-value> false       </param-value> </init-param>
+             <init-param><param-name>  authority   </param-name>
+                         <param-value> ca          </param-value> </init-param>
+             <init-param><param-name>  ID          </param-name>
+                         <param-value> caUpdateDomainXML </param-value> </init-param>
+             <init-param><param-name>  interface   </param-name>
+                         <param-value> admin          </param-value> </init-param>
+             <init-param><param-name>  AuthMgr     </param-name>
+                         <param-value> TokenAuth </param-value> </init-param>
+             <init-param><param-name>  AuthzMgr    </param-name>
+                         <param-value> BasicAclAuthz </param-value> </init-param>
+             <init-param><param-name>  resourceID  </param-name>
+                         <param-value> certServer.securitydomain.domainxml </param-value> </init-param>
+   </servlet>
+
+   <servlet>
+      <servlet-name>  caTokenAuthenticate-admin  </servlet-name>
+      <servlet-class> com.netscape.cms.servlet.csadmin.TokenAuthenticate  </servlet-class>
+              <init-param><param-name>  GetClientCert  </param-name>
+                          <param-value> false       </param-value> </init-param>
+              <init-param><param-name>  authority   </param-name>
+                          <param-value> ca          </param-value> </init-param>
+              <init-param><param-name>  ID          </param-name>
+                         <param-value> caTokenAuthenticate  </param-value> </init-param>
+              <init-param><param-name>  interface   </param-name>
+                         <param-value> admin          </param-value> </init-param>
+    </servlet>
+
+   <servlet-mapping>
+      <servlet-name>  caUpdateDomainXML-admin </servlet-name>
+      <url-pattern>   /admin/ca/updateDomainXML  </url-pattern>
+   </servlet-mapping>
+
+    <servlet-mapping>
+      <servlet-name>  caTokenAuthenticate-admin </servlet-name>
+      <url-pattern>   /admin/ca/tokenAuthenticate  </url-pattern>
+    </servlet-mapping>
+</pre>
+
+* Make the following change in the caUpdateNumberRange servlet stanza
+<pre>
+              <init-param><param-name>  interface   </param-name>
+-                         <param-value> ee          </param-value> </init-param>
++                         <param-value> admin          </param-value> </init-param>
+</pre>
+
+* Remove the caGetTokenInfo stanza and its associated servlet mapping.
+* Change the caUpdateNumberRange servlet mapping.
+<pre>
+    <servlet-mapping>     
+       <servlet-name>  caUpdateNumberRange </servlet-name>
+-      <url-pattern>   /ee/ca/updateNumberRange  </url-pattern>
++      <url-pattern>   /admin/ca/updateNumberRange  </url-pattern>
+    </servlet-mapping>
+</pre>
+
+=== KRA (web.xml) ===
+
+* Make the following change in the kraUpdateNumberRange servlet stanza
+<pre>
+              <init-param><param-name>  interface   </param-name>
+-                         <param-value> ee          </param-value> </init-param>
++                         <param-value> admin          </param-value> </init-param>
+</pre>
+
+* Remove the kraGetTokenInfo stanza and its associated servlet mapping.
+* Change the kraUpdateNumberRange servlet mapping.
+<pre>
+    <servlet-mapping>     
+       <servlet-name>  kraUpdateNumberRange </servlet-name>
+-      <url-pattern>   /ee/kra/updateNumberRange  </url-pattern>
++      <url-pattern>   /admin/kra/updateNumberRange  </url-pattern>
+    </servlet-mapping>
+</pre>
+
+=== OCSP (web.xml) ===
+* Remove the ocspGetTokenInfo stanza and its associated servlet mapping.
+ 
+
+=== TKS (web.xml) ===
+* Remove the ocspGetTokenInfo stanza and its associated servlet mapping.
+
+=== All Java subsystems ===
+* Change the following acl entry in the database: certServer.securitydomain.domainxml.  The new acl should look like this:
+<pre>
+resourceACLS: certServer.securitydomain.domainxml:read,modify:allow (read) user="anybody";allow (modify) group="Subsystem Group" || group="Enterprise CA Administrators" || group="Enterprise KRA Administrators" || group="Enterprise RA Administrators" || group="Enterprise OCSP Administrators" || group="Enterprise TKS Administrators" || group="Enterprise TPS Administrators":Anybody is allowed to read domain.xml but only Subsystem group and Enterprise Administrators are allowed to modify the domain.xml
+</pre>
+* For example, using a default CA called 'pki-ca', edit '/var/lib/pki-ca/conf/acl.cfg' to change the resourceACL listed above. Then run something like the following:
+<pre>
+# ldapmodify -x -D "cn=Directory Manager" -f /var/lib/pki-ca/conf/acl.ldif -W
+Enter LDAP Password: 
+modifying entry "cn=aclResources,dc=pki-rhel5.usersys.redhat.com-pki-ca"
+</pre>
+* Test to make certain that the ACL was applied:
+<pre>
+# ldapsearch -x -D "cn=Directory Manager" -W -b "dc=pki-rhel5.example.com-pki-ca" "(objectClass=*)"
+Enter LDAP Password:
+...
+resourceACLS: certServer.securitydomain.domainxml:read,modify:allow (read) use
+ r="anybody";allow (modify) group="Subsystem Group" || group="Enterprise CA Ad
+ ministrators" || group="Enterprise KRA Administrators" || group="Enterprise R
+ A Administrators" || group="Enterprise OCSP Administrators" || group="Enterpr
+ ise TKS Administrators" || group="Enterprise TPS Administrators":Anybody is a
+ llowed to read domain.xml but only Subsystem group and Enterprise Administrat
+ ors are allowed to modify the domain.xml
+...
+</pre>

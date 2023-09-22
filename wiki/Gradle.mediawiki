@@ -1,0 +1,17 @@
+= Installation =
+
+<pre>
+$ dnf install gradle
+</pre>
+
+= Creating New Gradle Build =
+
+<pre>
+$ gradle init
+</pre>
+
+= See Also =
+
+* [[Maven]]
+* [https://guides.gradle.org/creating-new-gradle-builds/ Creating New Gradle Builds]
+* [[Quarkus]]

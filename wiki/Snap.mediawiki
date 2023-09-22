@@ -1,0 +1,48 @@
+= Installation =
+
+To install snap, execute the following command:
+
+<pre>
+$ dnf install snapd
+$ snap refresh
+</pre>
+
+Then log out and back in.
+
+= Installing a Package =
+
+<pre>
+$ snap install <package>
+</pre>
+
+= Installing Snapcraft =
+
+<pre>
+$ ln -s /var/lib/snapd/snap /snap
+$ snap install snapcraft --classic
+</pre>
+
+= Creating Snap Package =
+
+<pre>
+$ snapcraft init
+</pre>
+
+= Building Snap Package =
+
+<pre>
+$ snapcraft
+</pre>
+
+= Installing Snap Package =
+
+<pre>
+$ snap install *.snap --devmode --dangerous
+</pre>
+
+= See Also =
+
+* [https://snapcraft.io/docs/installing-snap-on-fedora Installing snap on Fedora]
+* [https://snapcraft.io/docs/java-applications Java applications]
+* [[Flatpak]]
+* [[Visual Studio Code]]

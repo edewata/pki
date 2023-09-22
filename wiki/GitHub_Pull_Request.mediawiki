@@ -1,0 +1,159 @@
+= Overview =
+
+Patch review is a way to ensure the patches merged into the source repository are correct and good (i.e. clean, good design, conforming to standards). However, doing a patch review sometimes takes a significant amount of effort, which can take away the time to do other things. As a compromise, the review will be done on important or high-risk patches only.
+
+Here are some situations where a patch review is required or highly recommended:
+* Patches submitted by external contributors have to be reviewed and merged by a team member.
+* Patches for areas that are critical or complex, e.g. crypto changes, replication, serial number allocation.
+* Patches for maintenance/stable branch (i.e. anything other than master branch), e.g. 10.5 branch.
+* Patches for unfamiliar areas (i.e. mainly written by someone else).
+* Patches that will affect test automation in a significant way.
+* Patches that were already reviewed but change significantly when cherry-picked into another branch.
+
+Here are some situations where a patch review is not really necessary:
+* Patches that do not change significantly when cherry-picked into another branch.
+* Patches that are simple and low-risk, e.g. typos, log message changes. High-risk patches should still be reviewed even though it's trivial, e.g. crypto changes.
+* Patches that refactor/reorganize the code without changing the functionality. These patches should be done in simple steps so others can understand easily. Do not make major/complex changes in a single patch.
+
+There are various ways to do patch reviews, e.g. in person, over IRC, via email, in the ticket, but the recommended way is with GitHub Pull Request. GitHub PR allows patch reviews to be done conveniently online. All PRs can be found in one place. The patches are displayed in an easy-to-read format. Anybody can provide a comment on the patch in general or on a specific code in the patch. The CI will run automatically. And finally, the patches can be rebased and merged with a single click.
+
+There is no record keeping required for patch review (i.e. there's no need to record an ACK somewhere), but contributors are expected to follow the above guideline.
+
+See also [[Gerrit vs GitHub Pull Request]].
+
+= GitHub - Initial setup of a remote forked repo =
+
+* Go to https://github.com/dogtagpki/pki.
+
+* Create a fork of the upstream project by clicking on the fork button:
+
+[[File:Gh_pr_fork.png]]
+
+* Now, you'll have your own copy of a remote forked repo in the format: https://github.com/<your Github ID>/pki.
+
+= Local Repo - Initial setup =
+
+* Clone the upstream project into a local repository:
+ 
+ $ git clone https://github.com/dogtagpki/pki.git 
+
+* Add the remote forked repo to your local repo:
+
+ $ cd pki
+ 
+ # If you want to type in Github username/pass for every push
+ $ git remote add personal https://github.com/<your Github ID>/pki
+ 
+ # OR
+ 
+ # If you want to use an SSH authentication using your synced key-pair
+ # Note: This doesn't prompt for Username/password for pushing the changes
+ $ git remote add personal git@github.com:<your Github ID>/pki.git
+
+If you want to set up SSH keys for github account, please follow [https://help.github.com/articles/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent/ this] guide
+
+* Check whether you see the following output:
+
+ $ git remote -v
+ origin	https://github.com/dogtagpki/pki (fetch)
+ origin	https://github.com/dogtagpki/pki (push)
+ personal	https://github.com/SilleBille/pki.git (fetch)
+ personal	https://github.com/SilleBille/pki.git (push)
+
+= Local Repo - Submitting patches from a local dev branch =
+
+* Within your local repo, checkout the branch to which you want to submit one or more patches:
+
+ # To submit patches to master:
+ $ git checkout master
+
+ # To submit patches to DOGTAG_10_5_BRANCH (skip next step since you are creating a branch directly):
+ $ git checkout -b ticket-<number> origin/DOGTAG_10_5_BRANCH
+
+* Create a new local dev branch (which you'll be submitting as the PR):
+
+ $ git checkout -b ticket-<number>
+
+* Make changes (or cherry-pick changes from other branches) and commit them to your local dev branch:
+
+ $ git commit -a
+
+* Optionally verify that the commit(s) have been committed to the local dev branch:
+
+  # For master:
+  $ git branch
+    master
+  * ticket-<number>
+  
+  # For DOGTAG_10_5_BRANCH:
+  $ git branch
+    DOGTAG_10_5_BRANCH
+    master
+  * ticket-<number>
+   
+  $ git log
+
+* Push the local dev branch to your remote forked repo:
+
+ # Note that ticket-<number> is the new local dev branch you created
+ $ git push personal ticket-<number> 
+
+* This will trigger a travis CI build against your forked repo.
+
+= GitHub - Creating a Pull Request =
+
+* Go to https://github.com/<your Github ID>/pki.
+
+* Submit a pull request from your branch:
+
+[[File: Gh pr newPR.png]]
+
+* Go to https://github.com/<your Github ID>/pki/compare (a redirect should occur).
+
+* Choose the correct to and from branch. You should see the list of commits that will form a patch. You'll see a screen similar to this:
+
+[[File: Gh pr correct.png]]
+
+If there is an <font color='red'>error</font>, you'll see something like this:
+
+[[File: Gh pr incorrect.png]]
+
+* Fill in the '''Commit Message''' and '''Commit Description''' that will eventually appear in the official upstream repo commit history.
+
+* Add the reviewers (Github provides reviewer suggestions based on the history of the file)
+
+* Click on "Create Pull Request".
+
+= GitHub - Merge and update fork =
+
+<font color=red>'''NOTE:''' The following instructions are for users with write access to dogtagpki/* repositories. </font>
+
+* Once your patches go through and changes are reviewed, your patches are ready to be merged.
+
+* Click on the drop down next to "Merge":
+[[File:Gh pr merge.png]]
+
+
+* Use the following guideline to keep the official repo commit history CLEAN:
+
+ Squash & Merge      = Use when you have lot of insignificant commits (like correcting changes from reviewers). This will Squash all your commits into 1 single commit
+ Rebase & Merge      = Use when your patch is actually a combination of different patches (every commit is significant). This will copy ALL the commits on top of the last commit in the branch
+ Note: '''Create Merge Commit''' has been disabled to avoid undesirable loss of commit messages
+
+* Once merged, Github will provide you an option to delete your branch. DELETE IT!
+
+* Now, to keep your fork clean and in-sync with official repo do this in your local repository:
+ $ git checkout master           # or the branch you want to sync
+ $ git pull origin master        # or the branch you want to sync
+ $ git push personal master      # or the branch you want to sync
+ $ git branch -D ticket-<number> # Delete the local branch which you deleted from Github
+
+= References =
+
+* [[GitHub]]
+* [[Gerrit vs GitHub Pull Request]]
+* [https://gist.github.com/Chaser324/ce0505fbed06b947d962 GitHub Standard Fork & Pull Request Workflow]
+* [https://help.github.com/articles/about-pull-requests/ About pull requests]
+* [https://help.github.com/categories/collaborating-with-issues-and-pull-requests/ Collaborating with issues and pull requests]
+* [https://www.youtube.com/watch?v=FQsBmnZvBdc Git & GitHub: Pull requests]
+* [https://makandracards.com/makandra/14323-git-how-to-check-out-branches-that-exist-on-multiple-remotes Checking out branch that has multiple remotes]

@@ -1,0 +1,63 @@
+= Installing VisualVM =
+
+[https://visualvm.github.io/download.html Download] VisualVM, then unpack it:
+
+<pre>
+$ wget https://github.com/visualvm/visualvm.src/releases/download/2.0.1/visualvm_201.zip
+$ unzip visualvm_201.zip
+</pre>
+
+= Running VisualVM =
+
+<pre>
+$ cd visualvm_201/bin
+$ ./visualvm
+</pre>
+
+= Enabling JMX Port =
+
+Select a port for JMX connection (e.g. 8010). If [[SELinux]] is enabled, enable the SELinux port:
+
+<pre>
+$ semanage port -a -t http_port_t -p tcp 8010
+</pre>
+
+Define the following Java system properties in Tomcat configuration.
+For [https://github.com/dogtagpki/pki/wiki/PKI-Systemd-Service PKI Systemd Service], the Tomcat configuration is in /etc/sysconfig/pki-tomcat.
+For standalone PKI server, the Tomcat configuration is in /etc/pki/pki-tomcat/tomcat.conf.
+
+<pre>
+JAVA_OPTS="-Dcom.sun.management.jmxremote.port=8010 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false"
+</pre>
+
+Restart the server.
+
+= Connecting to PKI Server =
+
+In VisualVM open File -> Add JMX Connection, enter PKI server's hostname and JMX port, e.g. server.example.com:8010.
+The server will appear under Remote.
+
+= Monitoring PKI Server Machine =
+
+Open Remote -> <hostname>. It will open a panel that will provide information about the server machine including:
+* CPU load
+* Used physical memory
+* Total physical meory
+* Used swap memory
+* Total swap memory
+
+= Monitoring PKI Server Application =
+
+Open Remote -> <hostname> -> Tomcat. It will open a panel that will provide information about the server application including:
+* CPU usage
+* Heap size
+* Maximum heap size
+* Used heap size
+
+= See Also =
+
+* [[Java]]
+* [https://visualvm.github.io/documentation.html VisualVM Documentation]
+* [[SELinux]]
+* [https://docs.oracle.com/javase/8/docs/technotes/guides/management/agent.html Monitoring and Management Using JMX Technology]
+* [[JProfiler]]

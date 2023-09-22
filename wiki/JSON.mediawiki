@@ -1,0 +1,7 @@
+= JAXB Annotation =
+Use [http://docs.oracle.com/javase/7/docs/api/javax/xml/bind/annotation/XmlAccessType.html#NONE XmlAccessType.NONE] to require explicit property mapping.
+
+= References =
+* [http://wiki.fasterxml.com/JacksonDocumentation Jackson Documentation]
+* [http://wiki.fasterxml.com/JacksonJAXBAnnotations Using JAXB annotations with Jackson]
+* [http://docs.jboss.org/resteasy/docs/3.0.6.Final/userguide/html_single/#json RESTEasy - JSON Support via Jackson]

@@ -1,0 +1,205 @@
+= Overview (UNDER CONSTRUCTION) =
+
+This page describes the process to create and configure a basic PKI server without any of the PKI subsystems.
+
+= Creating Tomcat Instance =
+
+<pre>
+$ mkdir -p /var/lib/tomcats/pki
+$ ln -s /usr/share/tomcat/bin /var/lib/tomcats/pki/bin
+$ mkdir -p /var/lib/tomcats/pki/conf
+$ cp /etc/tomcat/catalina.policy /var/lib/tomcats/pki/conf/catalina.policy
+$ cp /etc/tomcat/catalina.properties /var/lib/tomcats/pki/conf/catalina.properties
+$ cp /etc/tomcat/context.xml /var/lib/tomcats/pki/conf/context.xml
+$ cp /etc/tomcat/server.xml /var/lib/tomcats/pki/conf/server.xml
+$ cp /etc/tomcat/tomcat-users.xml /var/lib/tomcats/pki/conf/tomcat-users.xml
+$ cp /etc/tomcat/tomcat-users.xsd /var/lib/tomcats/pki/conf/tomcat-users.xsd
+$ cp /etc/tomcat/web.xml /var/lib/tomcats/pki/conf/web.xml
+$ mkdir -p /var/lib/tomcats/pki/conf/conf.d
+$ mkdir -p /var/lib/tomcats/pki/conf/Catalina
+$ mkdir -p /var/lib/tomcats/pki/conf/Catalina/localhost
+$ mkdir -p /var/lib/tomcats/pki/lib
+$ mkdir -p /var/lib/tomcats/pki/temp
+$ mkdir -p /var/lib/tomcats/pki/webapps
+$ mkdir -p /var/lib/tomcats/pki/work
+$ mkdir -p /var/lib/tomcats/pki/logs
+$ cp /etc/sysconfig/tomcat /etc/sysconfig/tomcat@pki
+$ chown -R tomcat:tomcat /var/lib/tomcats/pki
+</pre>
+
+= Configuring SSL Connector =
+
+Add the following element into /var/lib/tomcats/pki/conf/server.xml:
+
+<pre>
+<Connector name="Secure" port="8443" scheme="https" secure="true" SSLEnabled="true">
+</Connector>
+</pre>
+
+= Configuring SSL Host =
+
+Add the following entry into /var/lib/tomcats/pki/conf/server.xml:
+
+<pre>
+<Connector name="Secure" ...>
+    <SSLHostConfig sslProtocol="SSL">
+    </SSLHostConfig>
+</Connector>
+</pre>
+
+= Configuring SSL Certificate =
+
+There are multiple ways to configure SSL certificate. 
+
+== Configuring SSL Certificate with PEM Files ==
+
+Add the following entry into /var/lib/tomcats/pki/conf/server.xml:
+
+<pre>
+<Connector name="Secure" ...>
+    <SSLHostConfig ...>
+        <Certificate
+            certificateFile="/var/lib/tomcats/pki/conf/sslserver.crt"
+            certificateKeyFile="/var/lib/tomcats/pki/conf/sslserver.key"/>
+    </SSLHostConfig>
+</Connector>
+</pre>
+
+== Configuring SSL Certificate with JKS Keystore ==
+
+Add the following entry into /var/lib/tomcats/pki/conf/server.xml:
+
+<pre>
+<Connector name="Secure" ...>
+    <SSLHostConfig ...>
+        <Certificate
+            certificateKeyAlias="sslserver"
+            certificateKeystoreFile="/var/lib/tomcats/pki/conf/sslserver.jks"
+            certificateKeystorePassword="Secret.123"/>
+    </SSLHostConfig>
+</Connector>
+</pre>
+
+== Configuring SSL Certificate with PKCS #12 Keystore ==
+
+Add the following entry into /var/lib/tomcats/pki/conf/server.xml:
+
+<pre>
+<Connector name="Secure" ...>
+    <SSLHostConfig ...>
+        <Certificate
+            certificateKeyAlias="sslserver"
+            certificateKeystoreType="pkcs12"
+            certificateKeystoreFile="/var/lib/tomcats/pki/conf/sslserver.p12"
+            certificateKeystorePassword="Secret.123"/>
+    </SSLHostConfig>
+</Connector>
+</pre>
+
+== Configuring SSL Certificate with PKCS #11 Keystore ==
+
+=== Creating NSS Password ===
+
+<pre>
+$ echo "internal=Secret.123" > /var/lib/tomcats/pki/conf/password.conf
+$ chown -R tomcat:tomcat /var/lib/tomcats/pki/conf/password.conf
+</pre>
+
+=== Creating NSS Database ===
+
+<pre>
+$ mkdir -p /var/lib/tomcats/pki/alias
+$ certutil -N -d /var/lib/tomcats/pki/alias -f /var/lib/tomcats/pki/alias/password.txt
+$ chown -R tomcat:tomcat /var/lib/tomcats/pki/alias
+</pre>
+
+=== Creating SSL Certificate ===
+
+<pre>
+$ echo Secret.123 > password.txt
+$ openssl rand -out noise.bin 2048
+$ certutil -S \
+ -x \
+ -d /var/lib/tomcats/pki/alias \
+ -f /var/lib/tomcats/pki/conf/password.txt \
+ -z /var/lib/tomcats/pki/conf/noise.bin \
+ -n sslserver \
+ -s "CN=$HOSTNAME" \
+ -t "CT,C,C" \
+ -m $RANDOM \
+ -k rsa \
+ -g 2048 \
+ -Z SHA256 \
+ --keyUsage certSigning,keyEncipherment
+</pre>
+
+=== Installing JSS Libraries ===
+
+<pre>
+$ ln -s /usr/share/java/commons-lang.jar /var/lib/tomcats/pki/lib/commons-lang.jar
+$ ln -s /usr/share/java/commons-codec.jar /var/lib/tomcats/pki/lib/commons-codec.jar
+$ ln -s /usr/share/java/slf4j/slf4j-api.jar /var/lib/tomcats/pki/lib/slf4j-api.jar
+$ ln -s /usr/share/java/slf4j/slf4j-jdk14.jar /var/lib/tomcats/pki/lib/slf4j-jdk14.jar
+$ ln -s /usr/share/java/jaxb-api.jar /var/lib/tomcats/pki/lib/jaxb-api.jar
+$ ln -s /usr/lib64/jss/jss4.jar /var/lib/tomcats/pki/lib/jss4.jar
+$ ln -s /usr/share/java/tomcatjss.jar /var/lib/tomcats/pki/lib/tomcatjss.jar
+$ chown -R tomcat:tomcat /var/lib/tomcats/pki/lib
+</pre>
+
+=== Enabling JSS ===
+
+Add the following element in /var/lib/tomcats/pki/conf/server.xml:
+
+<pre>
+<Server ...>
+    <Listener className="org.dogtagpki.tomcat.PKIListener"/>
+</Server>
+</pre>
+
+Then add the following attributes into the SSL Connector:
+
+<pre>
+<Server ...>
+    <Service>
+        <Connector name="Secure"
+            ...
+            certdbDir="/var/lib/tomcats/pki/alias"
+            passwordFile="/var/lib/tomcats/pki/conf/password.conf"
+            passwordClass="org.apache.tomcat.util.net.jss.PlainPasswordFile">
+            ...
+        </Connector>
+    </Service>
+</Server>
+</pre>
+
+=== Configuring SSL Certificate with JSS Keystore ===
+
+Add the following entry into /var/lib/tomcats/pki/conf/server.xml:
+
+<pre>
+<Connector name="Secure" ...>
+    <SSLHostConfig ...>
+        <Certificate
+            certificateKeyAlias="sslserver"
+            certificateKeystoreType="pkcs11"
+            certificateKeystoreProvider="Mozilla-JSS"/>
+    </SSLHostConfig>
+</Connector>
+</pre>
+
+= Starting Tomcat Instance =
+
+<pre>
+$ systemctl start tomcat@pki.service
+</pre>
+
+= Verifying SSL Configuration =
+
+<pre>
+$ sslscan $HOSTNAME:8443
+</pre>
+
+= See Also =
+
+* [[PKI 10.6 Server]]
+* [https://github.com/dogtagpki/pki/wiki/Creating-Self-Signed-SSL-Server-Certificate-with-NSS Creating Self-Signed SSL Server Certificate with NSS]

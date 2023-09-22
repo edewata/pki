@@ -1,0 +1,173 @@
+= Overview =
+
+PKI Console source package is located at https://src.fedoraproject.org/rpms/pki-console.
+
+= Getting PKI Console Source Package =
+
+To get the source package:
+
+ $ fedpkg clone pki-console <font color="red">Fedora/pki-console</font>
+
+The above command will create a new <font color="red">Fedora/pki-console</font> folder.
+
+To add a forked repository:
+
+ $ cd Fedora/pki-console
+ $ git remote add <username> ssh://<username>@pkgs.fedoraproject.org/forks/<username>/rpms/pki-console.git
+
+= Updating PKI Console Package =
+
+== Creating Source Tarball from Current Directory ==
+
+To create a source tarball from the current directory:
+
+<pre>
+$ cd pki
+$ tar cvzf pki-10.6.0.tar.gz \
+ --transform 's,^./,pki-10.6.0/,' \
+ --exclude .git \
+ --exclude .svn \
+ --exclude .swp \
+ --exclude .metadata \
+ --exclude build \
+ --exclude .tox \
+ --exclude dist \
+ --exclude MANIFEST \
+ --exclude *.pyc \
+ --exclude __pycache__ \
+ .
+$ mv pki-10.6.0.tar.gz ../Fedora/pki-console
+</pre>
+
+'''Note:''' Since the tar command will include all files by default, a number of exclusions needs to be specified. Because of that, this should only be used for development, not for the official build.
+
+== Creating Source Tarball from Git Repository ==
+
+To create a source tarball from Git repository:
+
+<pre>
+$ cd pki
+$ git archive \
+ --format=tar.gz \
+ --prefix pki-10.6.0/ \
+ -o pki-10.6.0.tar.gz \
+ -v \
+ HEAD
+$ mv pki-10.6.0.tar.gz ../Fedora/pki-console
+</pre>
+
+'''Note:''' Since the git archive command will only include files already in Git repository, any changes will have to be committed first. Because of that, this procedure can be used for the official build.
+
+== Downloading Source Tarball from GitHub ==
+
+Source tarball and patch files can be downloaded directly from GitHub, for example:
+
+* [https://github.com/dogtagpki/pki/archive/v10.6.0/pki-10.6.0.tar.gz pki-10.6.0.tar.gz]
+* [https://github.com/dogtagpki/pki/commit/5b73386fd0c2f37a6ef231701a5d6d279a2fab46.patch 5b73386fd0c2f37a6ef231701a5d6d279a2fab46.patch]
+
+== Updating Source Checksum ==
+
+To update the source checksum:
+
+<pre>
+$ cd Fedora/pki-console
+$ sha512sum --tag pki-10.6.0.tar.gz > sources
+</pre>
+
+The sources file should contain something like this:
+
+<pre>
+SHA512 (pki-10.6.0.tar.gz) = b3fc3f78e7d4a34e378a5b2b985218aa8157248483fb86da8e94f014b4de62561eb37b213d0c5215bad547296f0305f28c3ff1131b20aec1bf13459fee20bdbc
+</pre>
+
+== Merging RPM Spec Changes ==
+
+Changes in RPM spec file template needs to be merged with the actual RPM spec file. Use a visual merge tools such as Meld or Diffuse.
+
+<pre>
+$ meld specs/pki-console.spec.in ../Fedora/pki-console/pki-console.spec
+</pre>
+
+= Building PKI Console Package =
+
+== Creating Local Build ==
+
+To create a local build:
+
+<pre>
+$ fedpkg local
+</pre>
+
+== Creating SRPM ==
+
+To create an SRPM:
+
+<pre>
+$ fedpkg srpm
+</pre>
+
+== Creating Mock Build ==
+
+To create Mock build:
+
+<pre>
+$ fedpkg mockbuild --root fedora-rawhide-x86_64
+</pre>
+
+== Creating COPR Build ==
+
+To create a COPR build for all platforms:
+
+<pre>
+$ fedpkg copr-build @pki/10.6
+</pre>
+
+To create a COPR build for certain platforms only, create an SRPM, then execute the following command:
+
+<pre>
+$ copr build @pki/10.6 <SRPM> \
+  -r fedora-27-x86_64 \
+  -r fedora-28-x86_64 \
+  -r fedora-rawhide-x86_64
+</pre>
+
+== Creating Koji Build ==
+
+To upload new sources:
+
+<pre>
+$ fedpkg new-sources pki-10.6.0.tar.gz
+</pre>
+
+This will update sources and .gitignore.
+
+To commit and push the changes:
+
+<pre>
+$ git commit
+$ git push origin <branch>
+</pre>
+
+Except for rawhide, create BuildRoot overrides for unpublished dependencies, for example:
+
+<pre>
+$ bodhi overrides save pki-core-10.6.0-0.2.fc28
+$ koji wait-repo f28-build --build=pki-core-10.6.0-0.2.fc28
+</pre>
+
+To create a scratch build:
+
+<pre>
+$ fedpkg scratch-build
+</pre>
+
+To create an official build:
+
+<pre>
+$ fedpkg build
+</pre>
+
+= References =
+
+* [[PKI Fedora Development]]
+* [https://github.com/dogtagpki/pki/wiki/COPR-Repositories COPR Repositories]

@@ -1,0 +1,5 @@
+* [https://en.wikipedia.org/wiki/Certificate_Management_Protocol Certificate Management Protocol]
+* [https://datatracker.ietf.org/doc/html/rfc4210 Internet X.509 Public Key Infrastructure Certificate Management Protocol (CMP)]
+* [https://datatracker.ietf.org/doc/html/rfc6712 Internet X.509 Public Key Infrastructure -- HTTP Transfer for the Certificate Management Protocol (CMP)]
+* [https://wiki.wireshark.org/CMP Wireshark: Certificate Management Protocol (CMP)]
+* [https://www.bouncycastle.org/docs/pkixdocs1.5on/org/bouncycastle/cert/cmp/package-summary.html Package org.bouncycastle.cert.cmp]

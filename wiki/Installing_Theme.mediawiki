@@ -1,0 +1,31 @@
+= Overview =
+
+PKI server theme is distributed in a separate package (i.e. dogtag-pki-server-theme).
+
+If the theme package was already installed before deploying the PKI server instance, the theme will be deployed automatically and all subsystems will have a theme.
+
+If the theme package was not installed during PKI server deployment, the subsystems in the PKI server will not have a theme.
+
+If the theme package is installed after PKI server deployment, the theme can be deployed manually into the server.
+
+= Deploying Theme =
+
+To deploy PKI theme into an existing server, copy the theme deployment descriptor (i.e. pki.xml) into the server configuration folder:
+
+ $ cp /usr/share/pki/server/conf/Catalina/localhost/pki.xml \
+    /var/lib/pki/<font color="red">pki-tomcat</font>/conf/Catalina/localhost
+
+Wait for a few seconds for Tomcat to detect the change. No restart is required.
+
+= Undeploy Theme =
+
+To undeploy PKI theme from an existing server, simply remove the deployment descriptor from the server configuration folder:
+
+ $ rm /var/lib/pki/<font color="red">pki-tomcat</font>/conf/Catalina/localhost/pki.xml
+
+Wait for a few seconds for Tomcat to detect the change. No restart is required.
+
+= References =
+
+* [[PKI 10 Installation]]
+* [[Theme]]

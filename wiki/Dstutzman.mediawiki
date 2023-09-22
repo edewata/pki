@@ -1,0 +1,2 @@
+;Install pre-reqs for building in one shot
+:<pre>yum install nspr nspr-devel nss nss-devel nss-tools mozldap mozldap-tools mozldap-devel cyrus-sasl-devel svrcore-devel httpd-devel zlib-devel jss ldapjdk tomcat5 velocity junit ant-junit idm-console-framework tomcatjss java-1.6.0-openjdk-devel</pre>

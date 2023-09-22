@@ -1,0 +1,6 @@
+= References =
+
+* [http://yaml.org/ YAML]
+* [https://learn.getgrav.org/advanced/yaml YAML Syntax]
+* [https://learnxinyminutes.com/docs/yaml/ Learn yaml in Y minutes]
+* [https://docs.saltstack.com/en/latest/topics/yaml/ Understanding YAML]

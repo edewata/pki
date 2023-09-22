@@ -1,0 +1,39 @@
+= Overview =
+
+Currently the server configuration is upgraded automatically when the RPMs are upgraded. When the server is restarted by the admin it will use the upgraded configuration.
+
+With the addition of database upgrade, automatic upgrade might not be appropriate for all situations since a database upgrade might have a system wide impact. It might take sometime to run, and the changes might not be reversible (LDAP delete operations cannot be undone without creating a backup first).
+
+Dogtag could provide some options to the admin, but we need to decide what should be the default behavior of Dogtag out of the box.
+
+= Option #1: Automatic upgrade =
+
+When the server is restarted, it will check the configuration and the database versions. If they are not yet upgraded, the server will run the upgrade scripts at that point without the admin's involvement.
+
+In ideal conditions the upgrade will run transparently. But if upgrade fails for any reason, the server could remain offline for a while.
+
+It's also possible for the startup script to run the upgrade before shutting down the server, but that also means the server can't be shutdown if upgrade fails. To force shutdown the admin may need to change some configuration parameters.
+
+It may also be possible to add an option to ignore upgrade failures and restart the server anyway. But this is not recommended since the server behavior will be undefined.
+
+= Option #2: Manual upgrade =
+
+When the server is restarted, it will check the configuration and the database versions. If they are not yet upgraded, the server will stop and display a message telling the admin to run the upgrade scripts manually. It's also possible to do the checking before shutting down like in option #1, but similarly, the admin may need to change a parameter to force shutdown.
+
+In this case the admin will have to be aware of all upgrades and have the opportunity to decide the appropriate time or mechanism to do the upgrade, but it's no longer transparent.
+
+= Option #3: Interactive upgrade =
+
+When the server is restarted, it will check the configuration and the database versions. If they are not yet upgraded, the server will ask the admin whether to upgrade now, shutdown the server, or cancel the restart (assuming it's not shutdown yet), or restart anyway with a mismatching configuration/database versions.
+
+In this case the admin will be able to pick the best option, but this will not be transparent anymore and there could be problems automating a startup script that requires user interaction.
+
+= See Also =
+
+* [https://github.com/dogtagpki/pki/wiki/Upgrading-PKI-Database Upgrading PKI Database]
+* [https://fedorahosted.org/pki/ticket/710 Ticket #710: Database upgrade framework]
+* [https://fedorahosted.org/pki/ticket/906 Ticket #906: Check database version during startup]
+* [https://fedorahosted.org/pki/ticket/907 Ticket #907: Check configuration version during startup]
+* [https://fedorahosted.org/pki/ticket/909 Ticket #909: Automatic server upgrade]
+* [https://fedorahosted.org/pki/ticket/998 Ticket #998: Notification of database upgrade]
+* [https://fedorahosted.org/pki/ticket/1000 Ticket #1000: Database upgrade procedure]

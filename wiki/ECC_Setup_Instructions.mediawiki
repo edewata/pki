@@ -1,0 +1,254 @@
+'''Work In Progress'''
+This page contains various instructions for ECC-related setup.  The instructions given are specific to the product(s) specified and may or may not apply to other comparable product(s) -- e.g. RHEL5.x v.s. Fedora versions.
+<p> This set of instructions apply to RHCS and Dogtag versions implemented per design "phase 3" plan at the following link:
+ECC in Dogtag [[http://pki.fedoraproject.org/wiki/ECC_in_Dogtag]]
+
+== Certicom Libraries ==
+Note: This instruction assumes that you have Certicom libraries installed.
+On the RHEL5.x systems, you should have the following two libraries in your
+/usr/lib64 directory:
+* libsbcpgse.so
+* libsbgse2.so
+and a binary "initpin" in your home directory:
+* initpin
+
+== Browser (Firefox) ==
+<p>Make sure you have the Certicom Libraries specified in the above section</p>
+Make sure you have Certicom's initpin executable in your home directory.
+
+<p>With the above all set, you can start setting up for your browser.</p>
+<p>ECC browser setup Example for administrators who will be using Firefox to manage the CS system:</p>
+# As the regular user that will become the CS administrator.
+# start firefox
+# create a new profile
+# exit firefox
+# > cd ~/
+# add symbolic links to the two certicom libraries:
+#* ln -s /usr/lib64/libsbcpgse.so .
+#* ln -s /usr/lib64/libsbgse2.so .
+# run initpin (when asked, enter your full path home directory path)
+#* ./initpin (the password you enter will be the password to the certicom token)
+# > cd ~/.mozilla/firefox/<your new profile directory>
+# Make sure your firefox is not running; add the Certicom module:
+#* modutil -dbdir . -nocertdb -add certicom -libfile /usr/lib64/libsbcpgse.so
+# Before you run firefox as a CS agent to access your ECC CS servers, make sure you do the following:
+#* export NSS_USE_DECODED_CKA_EC_POINT=1
+
+== CS System User ==
+<p>Make sure you have the Certicom Libraries specified in the above section</p>
+Make sure you have Certicom's initpin executable in your home directory.
+
+<p>With the above all set, you can start setting up for the new CS system user</p>
+# Become a root user
+# Create a user:
+#*useradd -d /usr/share/pki/pkiuser2 pkiuser2
+# Copy executable "initpin" into the home directory of pkiuser2
+# cd /usr/share/pki/pkiuser2
+#add symbolic links to the two certicom libraries:
+#* ln -s /usr/lib64/libsbcpgse.so .
+#* ln -s /usr/lib64/libsbgse2.so .
+# run initpin (when asked, enter your full path home directory path)
+#* ./initpin (the password you enter will be the password to the certicom token)
+#change ownership of the pkiuser2's home directory to pkiuser2:
+#* cd /usr/share/pki; chown -R pkiuser2:pkiuser2 pkiuser2
+
+==Create a CS Instance (Older than Dogtag 10.0)==
+The following is an example of a CA instance that uses the new system user id "pkiuser2" created in the above instruction as it's system user.
+It assumes that you have followed the above instruction on setting up the CS system user.
+* Become a root user
+  pkicreate -pki_instance_root=/var/lib        \
+          -pki_instance_name=pki-ca-silentEC          \
+          -subsystem_type=ca                 \
+          -agent_secure_port=31443            \
+          -ee_secure_port=31444               \
+          -ee_secure_client_auth_port=31446   \
+          -admin_secure_port=31445            \
+          -unsecure_port=31180                \
+          -tomcat_server_port=31701           \
+          -user=pkiuser2                      \
+          -group=pkiuser2                     \
+          -redirect conf=/etc/pki-ca-silentEC         \
+          -redirect logs=/var/log/pki-ca-silentEC    \
+          -verbose
+
+
+== Create CS Instance (Dogtag 10.x) ==
+[[PKI 10 Installation]], It uses the config file to create the CA and Other subsystems.
+The following config file will create the CA instance with EC.
+
+Create Admin certificate with EC algorithm.
+ [DEFAULT]
+ ...
+ pki_admin_key_type=ecc
+ pki_admin_keysize=nistp256
+ ...
+
+Create CA signing certificate with EC.
+
+ [CA]
+ #Add below lines if HSM is used.
+ pki_ca_signing_token=<hsm_token>
+ pki_ca_signing_key_type=ecc
+ pki_ca_signing_key_size=nistp256
+ pki_ca_signing_key_algorithm=SHA256withEC
+ pki_ca_signing_signing_algorithm=SHA256withEC
+
+Create OCSP signing certificate with EC.
+
+ #Add below lines if HSM is used.
+ pki_ocsp_signing_token=<hsm_token> 
+ pki_ocsp_signing_key_type=ecc
+ pki_ocsp_signing_key_size=nistp256
+ pki_ocsp_signing_key_algorithm=SHA256withEC
+ pki_ocsp_signing_signing_algorithm=SHA256withEC
+
+Create Audit signing certificate with EC.
+
+ #Add below lines if HSM is used.
+ pki_audit_signing_token=<hsm_token>
+ pki_audit_signing_key_type=ecc
+ pki_audit_signing_key_size=nistp256
+ pki_audit_signing_key_algorithm=SHA256withEC
+ pki_audit_signing_signing_algorithm=SHA256withEC
+
+Create SSLServer certificate with EC.
+ 
+ pki_sslserver_key_type=ecc
+ pki_sslserver_key_size=nistp256
+ pki_sslserver_key_algorithm=SHA256withEC
+ pki_sslserver_signing_algorithm=SHA256withEC
+ pki_sslserver_nickname=Server-Cert cert-pki-RootCA
+
+Cereate Subsystem certificate with EC.
+
+ #Add below line if HSM is used.
+ pki_subsystem_token=<hsm_token>
+ pki_subsystem_key_type=ecc
+ pki_subsystem_key_size=nistp256
+ pki_subsystem_key_algorithm=SHA256withEC
+ pki_subsystem_signing_algorithm=SHA256withEC
+
+
+Run above config file using:
+ # pkispawn -s CA -f ecc_ca.cfg
+
+==Setup for Configuration==
+The following instruction assumes that you have followed the instructions above to Create a CS Instance. 
+# Become a root user
+# shutdown the server instance right after instance creation and BEFORE you try to configure. 
+# export HOME=/usr/share/pki/pkiuser2 (this step is very important, because that's when .certicom dir and stuff are created under the current shell's $HOME)
+# cd <instance dir>/alias 
+# modutil -dbdir . -nocertdb -add certicom -libfile /usr/lib64/libsbcpgse.so
+# add certicom token password to password.conf 
+#* cd <instance dir>/conf; vim password.conf
+#**(for JAVA subsystems) add the following line (make sure to add the prefix "hardware-" and escape spaces):
+#***hardware-Certicom\ FIPS\ Cert/Key\ Services=<password>
+#**(for TPS ) add the following line (note the different format):
+#***Certicom FIPS Cert/Key Services:<password>
+# for CA only, add requestVerify token to CS.cfg:
+#* edit <instance dir>/conf/CS.cfg
+#* add the following line
+#** ca.requestVerify.token=<nethsm token name>
+#**or, in case of Certicom token
+#***ca.requestVerify.token=Certicom FIPS Cert/Key Services
+# for SSL:
+#*for java subsystems: 
+#**edit /usr/bin/dtomcat5-<instance name>
+#**add following line (around after umask 00002" line):
+#***export NSS_USE_DECODED_CKA_EC_POINT=1
+#*for TPS:
+#**edit /usr/bin/sslget
+#**add following line before the COMMAND is called:
+#***export NSS_USE_DECODED_CKA_EC_POINT=1
+#**edit /etc/init.d/<tps instance name>
+#***export NSS_USE_DECODED_CKA_EC_POINT=1
+# set up shared secret between TKS and TPS (this step applies to both RSA and ECC. It is mentioned here so it won't be forgotten):
+#*on TKS, run tkstool (copy the resulting key shares and KCV to a file while you do it):
+#**cd /var/lib/<tks instancedir>/alias
+#**tkstool -T -d . -n sharedSecret
+#*on TPS, run tkstool (open the file saved up earlier to paste data in):
+#**cd /var/lib/<tps instancedir>/alias
+#**tkstool -I -d . -n sharedSecret 
+# If this is TPS, and you intend to either generate ECC keys on the server side or ECC keys on the token, you need to add the following for each TPS profile:
+#* op.enroll.<profile name>.keyGen.encryption.alg=5
+#** example: op.enroll.userKey.keyGen.encryption.alg=5
+#* and change the key size (example: op.enroll.userKey.keyGen.encryption.keySize=256)
+# If this is OCSP, you need to add the following to its CS.cfg:
+#* ocsp.crlVerify.token=<token name>
+#** example: ocsp.crlVerify.token=NHSM6000-OCS
+# start the server instance
+
+==Configure an Instance Using Browser==
+The following instruction assumes that you have followed the Create a CS Instance and Setup for Configuration.
+<p>In this intruction, you are using the browser you have set up earlier by following Browser (Firefox) setup instruction.</p>
+# As the regular user that will become the CS administrator.
+# start configuring the instance from the browser
+# as root; restart the server instance
+
+==Configure an Instance Using pkisilent==
+The following instruction assumes that you have followed the Create a CS Instance and Setup for Configuration.
+In this instruction, you are using the pkisilent tool to configure the instance.
+# As the regular user that will become the CS administrator.
+# make sure your browser is shutdown
+# copy one of the silentEC_XX.template to your browser profile directory under a different script name
+# follow the instruction on the template to fill in relevant information.
+# run the script
+# As root user, restart the CS instance per instruction when configuration is successful.
+
+== Console Setup ==
+<p>The following instruction assumes that you have the Certicom Libraries specified in the above section</p>
+<p>Make sure you have Certicom's initpin executable in your home directory.</p>
+<p>The following instruction shows how to set up for you to run the java console (pkiconsole) against your ECC CS java subsystems.</p>
+# cd .redhat-idm-console (if it exists, if not create it in your $HOME) 
+# build links to certicom libraries to in .redhat-idm-console directory
+#* ln -s /usr/lib64/libsbcpgse.so .
+#* ln -s /usr/lib64/libsbgse2.so .
+# /usr/share/pki/pkiuser/initpin
+#* when initpin prompts you for the directory, enter /<home>/.redhat-idm-console
+#* which will create /<home>/.redhat-idm-console/.certicom
+# if no nss dbs, run certutil to create them: certutil -d . -N 
+# modutil -dbdir /<home>/.redhat-idm-console -nocertdb -add certicom -libfile /<home>/.redhat-idm-console/libsbcpgse.so 
+# export NSS_USE_DECODED_CKA_EC_POINT=1 
+# start pkiconsole
+
+== ECC Key Archival ==
+<p>Due to incorrectly formatted ECC private keys generated by the Certicom tokens, ECC clients (e.g. Firefox) when used for generating private keys will cause DRM to be unable to archive/recover ECC keys.  Certicom has been informed of such issue but there is no estimate or indication on when or whether this issue will be addressed in the future.</p>
+<p>In the TMS environment, however, this will not be an issue, as keys are either generated by the smart card tokens, or in the "Server-Side key generation" case, on the server HSM.</p>
+<p>See "Testing ECC (Client side)" section below on suggested tests.
+===Server-Side Key Generation===
+During installation/configuration on the wizard for TPS, if Server-Side key generation is chosen, and provided that a DRM instance was properly installed and configured before that, then the necessary setup for server-side key generation is automatically configured.
+However, if Server-Side Key Generation can still be added afterwards if it was not selected during TPS configuration.  The following is an example diff of TPS CS.cfg between client side key generation and server side key generation:
+    < conn.tks1.serverKeygen=true
+    ---
+    > conn.tks1.serverKeygen=false
+    < op.enroll.userKey.keyGen.encryption.serverKeygen.archive=true
+    ---
+    > op.enroll.userKey.keyGen.encryption.serverKeygen.archive=false
+    < op.enroll.userKey.keyGen.encryption.serverKeygen.enable=true
+    ---
+    > op.enroll.userKey.keyGen.encryption.serverKeygen.enable=false 
+
+== Testing ECC (Client side) ==
+===Testing Key Archival===
+In the earlier section, "ECC Key Archival" I talked about how the ECC private keys generated by Certicom are malformed and cannot be archived by the HSMs. This issue makes it impossible for someone to test key archival with a browser if they are counting on using the Certicom token to provide ECC functionalities. In this section, I am going to show you how to use the RHCS/Dogtag provided tools to test ECC key archival by hooking these tools with an HSM.  This section is mainly for QE and people who are interested in evaluating ECC key archival functionality in the RHCS/Dogtag system. Please be advised that this is NOT a recommended deployment setup.  Furthermore, <b> only when you are testing key archival should you have a need to hook your clients with an HSM; for any other ECC tests, you can just use the Certicom token.</b>
+
+The following are some examples on how to use the newly updated RHCS or Dogtag-provided tool, CRMFPopClient to generate CRMF key archival certificate enrollment requests to test out the ECC key archival ability of DRM, before a workaround to the Certicom defect is available:
+ # CRMFPopClient -d . -p myTokenPassword -h NHSM6000-OCS -o DemoECCRMF.b64 -n "cn=cfu DemoECCRMF" -a ec -c nistp256 -m myhost.example.com:9180 -u cfu -r cfu -t true -s -1 -e -1 -x false -q POP_SUCCESS
+The generated request can be pasted into a suitable enrollment profile to test certificate enrollment with key archival.
+
+<b>NOTE: the new option "-t" can be used to set the key as temporary; while the "-e" is used to set the key extractable.  These new options are added because HSM does not allow private keys to be extracted unless it is a temporary and extractable key.  It is therefore important to set them correctly if you are testing key archival.  Also, since the keys you generated are temporary, you are NOT going to find them by doing "certutil -A" later to import the certificate later.</b>  The new options are added to assist you to test key archival, and are by no means to provide a workaround for a real deployment.
+
+== Key and Signature Algorithms ==
+Here are a few rules when it comes to what should work and what not:
+* If the CA signing cert is an RSA cert, then the signing algorithms have to be RSA-based (e.g. SHA256withRSA)
+* If the CA signing cert is an ECC cert, then the signing algorithms have to be ECC-based (e.g. SHA256withEC)
+* A CA signing cert of any flavor (RSA or ECC) can issue certs with either keys (e.g. ECC CA signs an RSA cert), however, because of the signing algorithm used (e.g. SHA256withEC), when such a cert is used as an SSL client cert, the server will need to be connected to a crypto module that can handle signature verification of the signing algirothm (e.g. SHA256withEC).  For example, the agent user of an ECC based DRM server can just use an RSA cert as agent cert.
+
+What Do we support now?  For practical (and realistic) reasons, we support either of the following:
+* ECC environment: 
+** CA: all ECC certs except for audit signing cert, which is RSA
+** DRM: audit signing cert, DRM transport cert, and DRM storage cert are RSA, others are ECC
+** TKS: all ECC certs except for audit signing cert, which is RSA
+** TPS: all ECC certs except for audit signing cert, which is RSA
+* RSA environment:
+** All system certs are RSA

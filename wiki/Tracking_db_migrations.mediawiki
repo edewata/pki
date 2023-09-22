@@ -1,0 +1,203 @@
+== The basic idea ==
+
+Over the last few years, database updates have been relatively infrequent.
+With new features being provided, however, it is becoming more common for database
+changes to come up, and we need a database upgrade framework to make the process
+more manageable.
+
+The creation of a database framework similar to the current upgrade framework
+is now scheduled for 10.4.  We certainly do not have the capacity to do these
+changes now.  But we do need to at least put some of the basic structures in place
+so that we can be sure that some of the most invasive changes are not performed
+unnecessarily.
+
+Here is an attempt to define that basic framework.
+
+There are two kinds of database changes:
+* Changes that are performed at the global level and which need only to be performed once and then replicated to the clones.  These include:
+** schema changes (adding a new attribute or object, changing an object)
+** adding, deleting or modifying data that exists in the directory tree.
+
+* Changes that need to be performed on each replica.  These include:
+** Adding or modifying a VLV or regular index.
+** Reindexing
+** Enabling a specific plugin (like the usn plugin for instance).
+
+There is a further distinction between those updates which might be executable
+by the user that connects to the DB (pkidbuser), as opposed to those which
+need elevated privileges (Directory Manager).  I propose that we ignore this
+distinction when setting up the upgrade framework.  Performing some of these
+operations automatically while other more privileged operations are blocked
+is fraught with possible confusion.
+
+To track the two types of changes, we need two trackers - one for local and one for
+global changes.  The global tracker must exist in the database so that the tracker
+state can be replicated across the replication topology.  I propose that both of
+these trackers exist in the DB, so that the configuration can be more clearly
+seen and managed.
+
+The simplest solution is then to define a new container at the top level that
+looks something like the following:
+
+  dn: ou=trackers,{basedn}
+  ou: trackers
+  objectClass: top
+  objectClass: organizationalUnit
+  
+  dn: cn=global, ou=trackers, {basedn}
+  cn: global
+  version: YYYY (global version)
+  
+  dn: cn=<host>-<port>, ou=trackers, {basedn}
+  cn: <host>-<port>
+  version: XXXX  (local version)
+
+Any format could be used for the versions, but the versions should increase
+monotonically.  Moreover, because local changes may be dependent on global changes,
+(for example, a new index to be created locally requires the addition of a new schema
+attribute), the version numbers for both local and global changes should come from
+the same sequence.  If change X depends on change Y, X should be greater than Y.
+
+Database upgrade scripts would then use the above entries to determine whether or
+not a specific change needs to be performed, and will update the entry accordingly.
+
+The algorithm will look something like this:
+
+  On a replica:
+  * Iterate through all migrations greater than the local version in order:
+    * If the migration is a global change, check the global tracker.  If the global tracker
+      is greater than or equal to the migration version, then the change has already
+      been applied somewhere in the topology - do not apply.  Otherwise, apply
+      the change and update both the local and global trackers.
+    * If the migration is a local change, apply it and update the local tracker.
+    * Note that all migration scripts are required to be idempotent.
+    * If any of the migrations fail, then stop and scream bloody murder.
+
+== The problem ==
+
+And now the fly in the ointment.  The migrations are supposed to be applied to a specific
+database instance.  Global means across all database instances in the replication
+topology, local means for that database instance.
+
+The trackers are defined with respect to a top-level DN - but these are currently only
+defined per-subsystem.  This works just fine if each subsystem uses its own DB instance,
+but not if multiple subsystems share a common database instance.
+
+=== The desired long term solution: a new subsystem-wide baseDN ===
+
+We could solve this by creating a new top-level DN (o=pki, perhaps), and migrate
+all the subsystems to exist below this top-level DN.  There are many reasons why
+we should ultimately move to this structure.  Replcation agreements would be defined
+at the top level only, for instance, and we could define top-level trackers and
+system-wide users.
+
+* Create trackers in each of the top-level subsystems, and have the migration
+framework keep them in sync.
+
+This solution is where we eventually want to go, but its a rather invasive change
+for the RHEL 7.x cycle.  Data has to be moved and replication agreements have to be
+removed and recreated.
+
+IPA has a less elegant solution to this right now that installs the CA as the top-level
+entry and then installs all subsequent subsystems below that.
+
+Assuming that changing to a top-level DN is too invasive in the near term, we can
+consider the second solution and migrate to the first at a later point.
+
+=== The less optimal solution: trackers per subsystem ===
+
+We have determined that we will support two kinds of servers:
+* instances in which there is a single subsystem which talks to a single database instance.
+* instances in which there are multiple subsystems which talk to a single database instance (albeit with different suffixes and back-ends).
+
+We have determined that we will not support:
+* instances with multiple subsystems which talk to different database back-ends.
+
+We can choose to have trackers per subsystem, and have the databse upgrade framework handle
+it accordingly.  Given the above assumptions, here is how the above algorithm would change:
+
+  On a replica for a given PKI instance:
+  * Determine the version of the local tracker.  To do this, iterate through the subsystems
+    for that instance and determine the highest versioned tracker.  Update all subsystem
+    trackers to that local version.
+  * Determine the version of the global tracker.  To do this, iterate through the subsystems
+    for that instance and determine the highest versioned tracker.  Update all global trackers
+    to that global version.
+  * Iterate through all migrations greater than the local version in order:
+    * If the migration is a global change, check the global tracker.  If the global tracker
+      is greater than or equal to the migration version, then the change has already
+      been applied somewhere in the topology - do not apply.  Otherwise, apply
+      the change and update both the local and global trackers of all subsystems.
+    * If the migration is a local change, apply it and update every local tracker.
+    * There may be changes that apply only to a particular subsystem (global or local).
+      An example is a script with adds an entry to all the certificate entries in a CA.
+      In this case, only apply the change if the subsystem exists in the instance.  Otherwise,
+      do not apply, but update the tracker in all subsystems.
+    * Note that all migration scripts are required to be idempotent.
+    * If any of the migrations fail, then stop and scream bloody murder.  We should, of course
+      be sure to update the trackers only after a particular migration succeeds.
+
+The above mechanism will work if we make the above assumptions.  Note that this does
+address cases where multiple PKI instances are configured to store data in the same directory
+server.  In this case, though, more likely than not, the only adverse effect will be the
+re-running of some global migrations.  And even this may not be too troublesome as these are
+likely to be reruns of schema updates.
+
+= Comments =
+
+== edewata (6/1/2016) ==
+
+1. I think we need more fine-grained trackers due to differences in how the DS contents are shared and replicated. Please take a look at this page: http://pki.fedoraproject.org/wiki/DS_Deployment_Scenarios
+
+a) There should be a separate tracker for DS schema (e.g. cn=schema,cn=trackers) since the schema is shared by all backends in the same DS instance (unless the subsystems use separate DS instances) and it's replicated to all clones.
+
+b) There should be a separate tracker for DS configuration (e.g. cn=config,cn=<DS hostname & port>,cn=trackers) since the configuration is shared with all backends in the same DS instance (unless the subsystems use separate DS instances), but it's not replicated to other clones.
+
+c) There should be a separate tracker for each subsystem subtree (e.g. cn=ca,cn=subtrees,cn=trackers) since the subtree is not shared with other backends, but it's replicated to all clones.
+
+d) There should be a separate tracker for each subsystem indexes (e.g.
+cn=ca,cn=indexes,cn=<DS hostname & port>,cn=trackers) since the indexes are not shared with other backends and they are not replicated to other clones.
+
+2. I don't think global updates have to necessarily happen before local updates. The upgrade scripts should have their own sequence number to allow flexible execution order. The version numbers stored in the trackers should be independent of each other, but the upgrade scripts can enforce certain dependency. For example:
+
+  01-UpdateSchema
+  02-UpdateSubtreeToUseTheNewSchema
+
+Script #1 will do something like this:
+
+  if schema.version < MIN_SCHEMA_VERSION:
+      update_schema()
+
+Script #2 will do something like this:
+
+  if schema.version >= MIN_SCHEMA_VERSION:
+      update_subtree()
+
+So if the schema was already updated while upgrading another subsystem, the schema will not be updated again since the version number may already meet the minimum requirement.
+
+3. Although we don't have a top-level DN now, different PKI subsystems using the same DS instance can share the same trackers stored in one of the subsystem subtree. The base DN of the trackers can be stored in a file in each PKI instance/subsystem, so it can be customized depending on the deployment scenario. When we have the top-level DN in the future, the trackers can be moved there too.
+
+4. In the future there we might want to keep track of the optional security upgrades as well:
+https://fedorahosted.org/pki/ticket/1135
+
+As shown in the example, at some point we might want to remove obsolete algorithm (e.g. SHA1withRSA), but we cannot do that automatically since some people might still depend specifically on it.
+
+So these types of upgrades should be optional, they should not block other upgrades, and the server should continue to function even without these upgrades. However, we need to keep track of them to remind people that in the future they will be required to do the upgrade.
+
+This can be done by adding tracking entries under one of the above trackers depending on the scope. For example:
+
+  cn=Remove SHA1withRSA from caAdminCert profile,
+      cn=ca,cn=subtrees,cn=trackers
+
+assuming the profiles are in LDAP, or
+
+  cn=Remove SHA1withRSA from caAdminCert profile,
+      cn=ca,cn=config,cn=<DS hostname & port>,cn=trackers
+
+if the profiles are still stored in locally in the CA subsystem that uses the above DS instance.
+
+Nothing to change in the design, but we just need to make sure this can be done in the future.
+
+= References =
+
+* [https://github.com/dogtagpki/pki/wiki/Upgrading-PKI-Database Upgrading PKI Database]

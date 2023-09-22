@@ -1,0 +1,95 @@
+= Overview =
+
+This page describes the development process for PKI 10.5. For PKI 10.6 see [[PKI 10.6 Development|this page]].
+
+= Source Code =
+
+To clone the source repository:
+
+<pre>
+$ git clone git@github.com:dogtagpki/pki.git
+$ cd pki
+</pre>
+
+By default it will checkout the master branch.
+
+To list available branches:
+
+<pre>
+$ git branch -r
+</pre>
+
+To switch to a different branch:
+
+<pre>
+$ git checkout <branch>
+</pre>
+
+= Dependencies =
+
+During development PKI may require dependencies that are only available in [https://github.com/dogtagpki/pki/wiki/COPR-Repositories COPR Repositories].
+
+== Fedora ==
+
+To enable PKI COPR repository:
+
+<pre>
+$ dnf copr -y enable @pki/10.5
+</pre>
+
+To install PKI dependencies:
+
+<pre>
+$ dnf builddep -y specs/pki-core.spec
+</pre>
+
+== RHEL/CentOS ==
+
+To enable PKI COPR repository:
+
+<pre>
+$ yum install -y yum-plugin-copr
+$ yum copr enable @pki/10.5
+</pre>
+
+To install PKI dependencies:
+
+<pre>
+$ yum-builddep -y specs/pki-core.spec
+</pre>
+
+= Building PKI Packages =
+
+To build PKI packages:
+
+<pre>
+$ cd scripts/
+$ ./compose_pki_core_packages rpms
+$ ./compose_pki_console_packages rpms
+$ ./compose_dogtag_pki_theme_packages rpms
+$ ./compose_dogtag_pki_packages rpms
+</pre>
+
+The packages will be built and placed under ../../packages/RPMS.
+
+= Installing PKI Packages =
+
+== Fedora ==
+
+To install PKI packages:
+
+<pre>
+$ dnf install ../../packages/RPMS/noarch/* ../../packages/RPMS/x86_64/*
+</pre>
+
+== RHEL/CentOS ==
+
+To install PKI packages:
+
+<pre>
+$ yum localinstall ../../packages/RPMS/noarch/* ../../packages/RPMS/x86_64/*
+</pre>
+
+= References =
+
+* [[PKI 10 Development]]

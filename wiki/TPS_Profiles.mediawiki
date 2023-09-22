@@ -1,0 +1,44 @@
+= Configuration =
+
+TPS profile parameters:
+
+<pre>
+op.<explicit op>.<profile id>.<implicit op>.<key type>.*
+</pre>
+
+For example:
+
+<pre>
+op.enroll.userKey.keyGen.encryption.*
+</pre>
+
+= Format =
+
+<pre>
+op.format.userKey.auth.enable=true
+op.format.userKey.auth.id=ldap1
+op.format.userKey.ca.conn=ca1
+op.format.userKey.cardmgr_instance=A0000000030000
+op.format.userKey.cuidMustMatchKDD=false
+op.format.userKey.enableBoundedGPKeyVersion=true
+op.format.userKey.issuerinfo.enable=true
+op.format.userKey.issuerinfo.value=http://server.example.com:8080/tps/phoneHome
+op.format.userKey.loginRequest.enable=true
+op.format.userKey.maximumGPKeyVersion=FF
+op.format.userKey.minimumGPKeyVersion=01
+op.format.userKey.revokeCert=true
+op.format.userKey.revokeCert.reason=0
+op.format.userKey.rollbackKeyVersionOnPutKeyFailure=false
+op.format.userKey.tks.conn=tks1
+op.format.userKey.update.applet.directory=/usr/share/pki/tps/applets
+op.format.userKey.update.applet.emptyToken.enable=true
+op.format.userKey.update.applet.encryption=true
+op.format.userKey.update.applet.requiredVersion=1.4.58768072
+op.format.userKey.update.symmetricKeys.enable=false
+op.format.userKey.update.symmetricKeys.requiredVersion=1
+op.format.userKey.validateCardKeyInfoAgainstTokenDB=true
+</pre>
+
+= See Also =
+
+* [https://github.com/dogtagpki/pki/wiki/TPS-Profile-Lifecycle TPS Profile Lifecycle]

@@ -1,0 +1,8 @@
+We need to document the following items on this wiki, or mention them and provide links to other pages:
+# CoolKey libraries and their purpose
+# The Java applet that is used with Dogtag
+# Global Platform, how we use it, links
+# NSS crypto libraries
+# PCSC
+# Smartcard login to Fedora and RHEL (and others!)
+# Smartcard login to Windows

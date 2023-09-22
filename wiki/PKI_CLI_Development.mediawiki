@@ -1,0 +1,87 @@
+= Structure =
+
+<pre>
+MainCLI
+ + HelpCLI
+ + ClientCLI
+    + ClientInitCLI
+    + ClientCertFindCLI
+    + ClientCertImportCLI
+    + ClientCertModifyCLI
+    + ClientCertRemoveCLI
+    + ClientCertRequestCLI
+    + ClientCertShowCLI
+    + ClientCertValidateCLI
+ + ProxyCLI(ca, CertCLI)
+ + ProxyCLI(ca, GroupCLI)
+ + ProxyCLI(kra, KeyCLI)
+ + ProxyCLI(ca, SecurityDomainCLI)
+ + ProxyCLI(ca, UserCLI)
+ + CACLI
+    + AuthorityCLI
+    + CertCLI
+    + FeatureCLI
+    + GroupCLI
+    + KRAConnectorCLI
+    + ProfileCLI
+    + SelfTestCLI
+    + UserCLI
+ + KRACLI
+    + GroupCLI
+    + KeyCLI
+    + SelfTestCLI
+    + UserCLI
+ + OCSPCLI
+    + GroupCLI
+    + SelfTestCLI
+    + UserCLI
+ + TKSCLI
+    + GroupCLI
+    + SelfTestCLI
+    + TPSConnectorCLI
+    + UserCLI
+ + TPSCLI
+    + ActivityCLI
+    + AuditCLI
+    + AuthenticatorCLI
+    + TPSCertCLI
+    + ConfigCLI
+    + ConnectorCLI
+    + GroupCLI
+    + ProfileCLI
+    + SelfTestCLI
+    + TokenCLI
+    + UserCLI
+ + PKCS12CLI
+    + PKCS12CertCLI
+    + PKCS12ExportCLI
+    + PKCS12ImportCLI
+    + PKCS12KeyCLI
+</pre>
+
+= Future Enhancements =
+
+== Session ==
+
+Currently each CLI command uses separate connection. So the user would have to provide authentication in each command. Ideally there should be a session that connects multiple CLI commands so the authentication only needs to be done once:
+
+<pre>
+$ pki login -u admin -w Secret.123
+$ pki ca-user-add testuser --fullName "Test User"
+$ pki ca-group-member-add Administrators testuser
+$ pki logout
+</pre>
+
+== Shell-mode ==
+
+<pre>
+$ pki
+pki> login -u admin -w Secret.123
+pki> ca-user-add testuser --fullName "Test User"
+pki> ca-group-member-add Administrators testuser
+pki> logout
+</pre>
+
+= See Also =
+
+* [https://github.com/dogtagpki/pki/wiki/PKI-CLI PKI CLI]

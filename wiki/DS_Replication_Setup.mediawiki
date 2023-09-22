@@ -1,0 +1,178 @@
+= Configuration Replication Agreements =
+
+A clone will have the following entries in the CS.cfg:
+
+<pre>
+internaldb.replication.master=masterAgreement1-replica.example.com-pki-tomcat
+internaldb.replication.consumer=cloneAgreement1-replica.example.com-pki-tomcat
+</pre>
+
+= Creating Replication Managers =
+
+To create replication manager on master:
+
+<pre>
+$ ldapadd -h master.example.com -x -D "cn=Directory Manager" -w Secret.123 << EOF
+dn: ou=csusers,cn=config
+objectClass: top
+objectClass: organizationalUnit
+ou: csusers
+
+dn: cn=Replication Manager masterAgreement1-replica.example.com-pki-tomcat,ou=csusers,cn=config
+objectClass: top
+objectClass: person
+cn: Replication Manager masterAgreement1-replica.example.com-pki-tomcat
+sn: manager
+userPassword: <password>
+EOF
+</pre>
+
+To create replication manager on replica:
+
+<pre>
+$ ldapadd -h replica.example.com -x -D "cn=Directory Manager" -w Secret.123 << EOF
+dn: ou=csusers,cn=config
+objectClass: top
+objectClass: organizationalUnit
+ou: csusers
+
+dn: cn=Replication Manager cloneAgreement1-replica.example.com-pki-tomcat,ou=csusers,cn=config
+objectClass: top
+objectClass: person
+cn: Replication Manager cloneAgreement1-replica.example.com-pki-tomcat
+sn: manager
+userPassword: <password>
+EOF
+</pre>
+
+= Getting Instance Directory =
+
+<pre>
+$ ldapsearch -x -D "cn=Directory Manager" -w Secret.123 -b "cn=config,cn=ldbm database,cn=plugins,cn=config" "(nsslapd-directory=*)"
+</pre>
+
+= Creating Change Log =
+
+To create change log on master:
+
+<pre>
+$ ldapadd -h master.example.com -x -D "cn=Directory Manager" -w Secret.123
+dn: cn=changelog5,cn=config
+objectClass: top
+objectClass: extensibleObject
+cn: changelog5
+nsslapd-changelogdir: /var/lib/dirsrv/slapd-pki-tomcat/changelogs
+</pre>
+
+To create change log on replica:
+
+<pre>
+$ ldapadd -h replica.example.com -x -D "cn=Directory Manager" -w Secret.123
+dn: cn=changelog5,cn=config
+objectClass: top
+objectClass: extensibleObject
+cn: changelog5
+nsslapd-changelogdir: /var/lib/dirsrv/slapd-pki-tomcat/changelogs
+</pre>
+
+= Enabling Replication =
+
+To enable replication on master:
+
+<pre>
+$ ldapadd -h master.example.com -x -D "cn=Directory Manager" -w Secret.123
+dn: cn=replica,cn=\"dc=ca,dc=pki,dc=example,dc=com\",cn=mapping tree,cn=config
+objectclass: top
+objectclass: nsDS5Replica
+objectclass: extensibleobject
+cn: replica
+nsDS5ReplicaRoot: dc=ca,dc=pki,dc=example,dc=com
+nsDS5ReplicaType: 3
+nsDS5ReplicaBindDN: cn=Replication Manager masterAgreement1-replica.example.com-pki-tomcat,ou=csusers,cn=config
+nsDS5ReplicaId: <replica ID>
+nsds5flags: 1
+</pre>
+
+To enable replication on replica:
+
+<pre>
+$ ldapadd -h replica.example.com -x -D "cn=Directory Manager" -w Secret.123
+dn: cn=replica,cn=\"dc=ca,dc=pki,dc=example,dc=com\",cn=mapping tree,cn=config
+objectclass: top
+objectclass: nsDS5Replica
+objectclass: extensibleobject
+cn: replica
+nsDS5ReplicaRoot: dc=ca,dc=pki,dc=example,dc=com
+nsDS5ReplicaType: 3
+nsDS5ReplicaBindDN: cn=Replication Manager cloneAgreement1-replica.example.com-pki-tomcat,ou=csusers,cn=config
+nsDS5ReplicaId: <replica ID>
+nsds5flags: 1
+</pre>
+
+= Configuring Replica ID =
+
+<pre>
+dbs.beginReplicaNumber=<replica ID>
+</pre>
+
+= Creating Replication Agreements =
+
+To create replication agreement on master:
+
+<pre>
+$ ldapadd -h master.example.com -x -D "cn=Directory Manager" -w Secret.123
+dn: cn=masterAgreement1-replica.example.com-pki-tomcat,cn=replica,cn=\"dc=ca,dc=pki,dc=example,dc=com\",cn=mapping tree,cn=config
+objectClass: top
+objectClass: nsds5replicationagreement
+cn: masterAgreement1-replica.example.com-pki-tomcat
+nsDS5ReplicaRoot: dc=ca,dc=pki,dc=example,dc=com
+nsDS5ReplicaHost: replica.example.com
+nsDS5ReplicaPort: 389
+nsDS5ReplicaBindDN: cn=Replication Manager cloneAgreement1-replica.example.com-pki-tomcat,ou=csusers,cn=config
+nsDS5ReplicaBindMethod: Simple
+nsds5replicacredentials: <password>
+nsDS5ReplicaTransportInfo: <SSL|TLS>
+description: masterAgreement1-replica.example.com-pki-tomcat
+</pre>
+
+To create replication agreement on replica:
+
+<pre>
+$ ldapadd -h replica.example.com -x -D "cn=Directory Manager" -w Secret.123
+dn: cn=cloneAgreement1-replica.example.com-pki-tomcat,cn=replica,cn=\"dc=ca,dc=pki,dc=example,dc=com\",cn=mapping tree,cn=config
+objectClass: top
+objectClass: nsds5replicationagreement
+cn: cloneAgreement1-replica.example.com-pki-tomcat
+nsDS5ReplicaRoot: dc=ca,dc=pki,dc=example,dc=com
+nsDS5ReplicaHost: master.example.com
+nsDS5ReplicaPort: 389
+nsDS5ReplicaBindDN: cn=Replication Manager cloneAgreement1-replica.example.com-pki-tomcat,ou=csusers,cn=config
+nsDS5ReplicaBindMethod: Simple
+nsds5replicacredentials: <password>
+nsDS5ReplicaTransportInfo: <SSL|TLS>
+description: cloneAgreement1-replica.example.com-pki-tomcat
+</pre>
+
+= Initializing Consumer =
+
+<pre>
+$ ldapmodify -h master.example.com -x -D "cn=Directory Manager" -w Secret.123
+dn: cn=masterAgreement1-replica.example.com-pki-tomcat,cn=replica,cn=\"dc=ca,dc=pki,dc=example,dc=com\",cn=mapping tree,cn=config
+changetype: modify
+replace: nsds5beginreplicarefresh
+nsds5beginreplicarefresh: start
+</pre>
+
+= Checking Replication Status =
+
+<pre>
+$ ldapsearch -h master.example.com -b "cn=masterAgreement1-replica.example.com-pki-tomcat,cn=replica,cn="dc=ca,dc=pki,dc=example,dc=com",cn=mapping tree,cn=config" -s base "(objectclass=*)" nsds5beginreplicarefresh
+dn: cn=masterAgreement1-replica.example.com-pki-tomcat,cn=replica,cn="dc=ca,dc=pki,dc=example,dc=com",cn=mapping tree,cn=config
+nsds5beginreplicarefresh:
+nsds5replicalastinitstatus:
+</pre>
+
+= References =
+
+* [[PKI LDAP]]
+* [[CA Database]]

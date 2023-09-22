@@ -1,0 +1,63 @@
+= Installation =
+
+<pre>
+$ dnf install flatpak
+</pre>
+
+= Enabling Flathub Repository =
+
+<pre>
+$ flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+</pre>
+
+= Installing a Package =
+
+<pre>
+$ flatpak install flathub <package ID>
+</pre>
+
+= Listing Installed Packages =
+
+<pre>
+$ flatpak list
+</pre>
+
+= Removing a Package =
+
+<pre>
+$ flatpak uninstall <package>
+</pre>
+
+= Creating Flatpak Package =
+
+To install Flatpak builder:
+
+<pre>
+$ dnf install flatpak-builder
+</pre>
+
+To install runtime dependencies:
+
+<pre>
+$ flatpak install flathub org.freedesktop.Platform//18.08 org.freedesktop.Sdk.Extension.openjdk11
+</pre>
+
+To build Flatpak package:
+
+<pre>
+$ flatpak-builder <build dir> <manifest> --force-clean
+</pre>
+
+To test the build:
+
+<pre>
+$ flatpak-builder --run <build dir> <manifest> <program>
+</pre>
+
+= See Also =
+
+* [https://developer.fedoraproject.org/deployment/flatpak/flatpak-usage.html Flatpak Usage]
+* [http://docs.flatpak.org/en/latest/first-build.html Building your first Flatpak]
+* [http://blog.matbooth.co.uk/08-openjdk-in-flathub.html The State of Java in Flathub]
+* [https://github.com/flathub/org.freedesktop.Sdk.Extension.openjdk11 SDK Extension for OpenJDK 11]
+* [[Snap]]

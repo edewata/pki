@@ -1,0 +1,21 @@
+= Installing a Package =
+
+<pre>
+$ dnf install <package>
+</pre>
+
+= Reinstalling a Package =
+
+<pre>
+$ dnf reinstall <package>
+</pre>
+
+= Installing Build Dependencies =
+
+<pre>
+$ dnf builddep --spec <file>
+</pre>
+
+= References =
+
+* [[RPM]]

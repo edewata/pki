@@ -1,0 +1,11 @@
+= Overview =
+
+JSSImplementation needs to be rewritten to work with HTTP NIO connector. This includes:
+
+* extending from JSSEImplementation
+* adding support for KeyManager and TrustManager
+
+= References =
+
+* [[Tomcat JSS Design]]
+* [https://github.com/dmlloyd/openjdk/blob/jdk/jdk/src/java.base/share/classes/sun/security/ssl/SunX509KeyManagerImpl.java#L116 sun.security.ssl.SunX509KeyManagerImpl]

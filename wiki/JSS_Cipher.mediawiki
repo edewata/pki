@@ -1,0 +1,71 @@
+Supported algorithms:
+
+* AES
+* DES
+* DESede (DES3)
+* RC2
+* RC4
+* RSA
+
+The following modes and padding schemes are supported:
+
+{| border="1" style="border-collapse: collapse;"
+! width="100" | Algorithm
+! width="100" | Mode
+! width="200" | Padding
+|-
+| DES
+| ECB
+| NoPadding
+|-
+| DES
+| CBC	
+| NoPadding
+|-
+| DES
+| CBC	
+| PKCS5 Padding
+|-
+| DESede (DES3)
+| ECB
+| NoPadding
+|-
+| DESede (DES3)
+| CBC
+| NoPadding
+|-
+| DESede (DES3)
+| CBC
+| PKCS5 Padding
+|-
+| AES
+| ECB
+| NoPadding
+|-
+| AES
+| CBC
+| NoPadding
+|-
+| AES
+| CBC
+| PKCS5 Padding
+|-
+| RC4
+| None
+| None
+|-
+| RC2
+| CBC
+| NoPadding
+|-
+| RC2
+| CBC
+| PKCS5 Padding
+|}
+
+Notes:
+* The SecureRandom argument passed to initSign() and initVerify() is ignored, because NSS does not support specifying an external source of randomness.
+
+= References =
+
+* [[JSS Provider]]

@@ -1,0 +1,43 @@
+Some classes have been replaced as follows:
+
+{| border="1" style="border-collapse: collapse;"
+! width="400" | Old Class
+! width="400" | Replacement
+|-
+| org.mozilla.jss.CryptoManager.CertificateUsage
+| org.mozilla.jss.CertificateUsage
+|-
+| org.mozilla.jss.CryptoManager.InitializationValues
+| org.mozilla.jss.InitializationValues
+|-
+| org.mozilla.jss.CryptoManager.InvalidLengthException
+| org.mozilla.jss.InvalidLengthException
+|-
+| org.mozilla.jss.CryptoManager.NicknameConflictException
+| org.mozilla.jss.NicknameConflictException
+|-
+| org.mozilla.jss.CryptoManager.NotInitializedException
+| org.mozilla.jss.NotInitializedException
+|-
+| org.mozilla.jss.CryptoManager.UserCertConflictException
+| org.mozilla.jss.UserCertConflictException
+|-
+| org.mozilla.jss.crypto.BadPaddingException
+| javax.crypto.BadPaddingException
+|-
+| org.mozilla.jss.ssl.SSLSocket.SSLVersionRange
+| org.mozilla.jss.ssl.SSLVersionRange
+|-
+| org.mozilla.jss.ssl.SSLSocket.SSLProtocolVariant
+| org.mozilla.jss.ssl.SSLProtocolVariant
+|-
+| org.mozilla.jss.ssl.SSLSocket.CipherPolicy
+| org.mozilla.jss.ssl.CipherPolicy
+|-
+| org.mozilla.jss.util.Debug
+| org.slf4j.Logger
+|}
+
+= References =
+
+* [[JSS Design]]

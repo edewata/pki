@@ -1,0 +1,71 @@
+= Installation Issues =
+
+== Check PKI Server Logs ==
+
+To troubleshoot installation issues, the debug log level can be increased before running pkispawn. See [[PKI Server Log]].
+
+== Common Issues ==
+
+===  Misleading error message during installation ===
+
+See [https://fedorahosted.org/pki/ticket/1615 Ticket #1615]. The PKI server generates the following message when it is started for the first time during installation before being configured by pkispawn:
+
+<pre>
+Sep 23 14:14:16 server.example.com server[13604]: CMS Warning: FAILURE: Cannot
+build CA chain. Error java.security.cert.CertificateException: Certificate is
+not a PKCS #11 certificate|FAILURE: authz instance DirAclAuthz initialization
+failed and skipped, error=Property internaldb.ldapconn.port missing value|
+</pre>
+
+This is actually a normal part of the installation and can be ignored safely.
+
+=== Failed token authentication ===
+
+Installing an additional server may fail if the Directory Manager password, the PKCS #12 password, or the admin user was changed incorrectly. See the detailed steps at [http://www.freeipa.org/page/Howto/Change_Directory_Manager_Password IPA Howto: Changing Directory Manager Password].
+
+= Cloning Issues =
+
+* Check PKI server logs on master and replica
+* Check certificate expirations
+* Check Directory Manager password, admin password, and PKCS #12 password
+
+= CLI Issues =
+
+== Run in Verbose Mode ==
+
+Run the CLI in verbose mode to see more details:
+
+<pre>
+$ pki -v <command>
+</pre>
+
+== Check HTTP Messages ==
+
+Save the HTTP requests and responses exchanged by the CLI:
+
+<pre>
+$ mkdir -p tmp
+$ pki --output tmp <command>
+</pre>
+
+== Check PKI Server Logs ==
+
+CLI failure may be caused by a server issue. See [[PKI Server Log]].
+
+= Server Issues =
+
+= Upgrade Issues =
+
+= IPA Issues =
+
+* Check IPA server install logs
+* Check HTTP proxy configuration
+
+See also [http://www.freeipa.org/page/Troubleshooting IPA - Troubleshooting].
+
+= References =
+
+* [[Deployment]]
+* [[Debugging]]
+* [[PKI Server Logging]]
+* [https://github.com/sosreport/sos/blob/master/sos/plugins/cs.py sosreport]

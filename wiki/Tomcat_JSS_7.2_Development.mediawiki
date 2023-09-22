@@ -1,0 +1,53 @@
+= Prerequisites =
+
+<pre>
+$ dnf install ant apache-commons-lang java-devel jss
+</pre>
+
+= Getting Source Code =
+
+To clone upstream Tomcat JSS source repository:
+
+<pre>
+$ git clone git@github.com:dogtagpki/tomcatjss.git
+</pre>
+
+The above command will create a new 'tomcatjss' folder.
+
+= Building TomcatJSS =
+
+To do a normal build of Tomcat JSS (instead of generating RPM package):
+
+<pre>
+$ ant
+</pre>
+
+The above command will generate tomcatjss.jar.
+
+To build and install Tomcat JSS:
+
+<pre>
+$ ant install
+</pre>
+
+The above command will generate tomcatjss.jar and install it in /usr/share/java/tomcatjss-<version>.jar, then it will create link at /usr/share/java/tomcatjss.jar to the versioned file.
+
+== Build Properties ==
+
+By default the build.xml defines the build properties for Fedora. To customize the build properties for other platforms create a separate property file and specify the new property values.
+
+For example, for RHEL there's only one property to change: 
+
+<pre>
+rhel=1
+</pre>
+
+Then the build can be done as follows:
+
+<pre>
+$ ant -propertyfile <property file> [TARGETS...]
+</pre>
+
+= References =
+
+* [[Tomcat JSS Development]]

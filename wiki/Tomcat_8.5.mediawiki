@@ -1,0 +1,128 @@
+= Overview =
+
+Prior to version 10.5, PKI uses Tomcat JSS 7.2 which only supports blocking I/O (BIO) connector (org.apache.coyote.http11.Http11Protocol). With BIO connector the SSL connector is configured as follows:
+
+ <Connector name="Secure"
+            port="8443"
+            protocol="org.apache.coyote.http11.Http11Protocol"
+            sslImplementationName="org.apache.tomcat.util.net.jss.JSSImplementation"
+            ...
+            />
+
+In Tomcat 8.5 the blocking Java connector is no longer available, so PKI 10.6 is now using Tomcat JSS 7.3 which supports non-blocking I/O (NIO) connector (org.apache.coyote.http11.Http11NioProtocol). The [https://github.com/dogtagpki/pki/blob/master/base/server/tomcat-8.5/conf/server.xml server.xml] now looks like the following.
+
+ <Connector name="Secure"
+            port="8443"
+            protocol="org.dogtagpki.tomcat.Http11NioProtocol"
+            ...
+            keystoreType="pkcs12"
+            keystoreFile="[pki_instance_configuration_path]/keystore.p12"
+            keystorePassFile="[pki_instance_configuration_path]/keystore.pwd"
+            keyAlias="sslserver"
+            trustManagerClassName="org.dogtagpki.tomcat.PKITrustManager"
+ />
+
+= Installation =
+
+== Installing Tomcat 8.5 from COPR Repository ==
+
+Tomcat 8.5 can be installed directly from [https://copr.fedorainfracloud.org/coprs/csutherl/tomcat/ csutherl's COPR repository].
+
+<pre>
+$ dnf copr enable csutherl/tomcat
+$ dnf install tomcat
+</pre>
+
+== Installing Upstream Tomcat 8.5 ==
+
+<pre>
+$ wget http://mirror.cogentco.com/pub/apache/tomcat/tomcat-8/v8.5.32/bin/apache-tomcat-8.5.32.tar.gz
+$ tar xzvf apache-tomcat-8.5.32.tar.gz
+$ mv apache-tomcat-8.5.32 /usr/share
+$ cd /usr/share
+$ chown -R root.tomcat apache-tomcat-8.5.32
+$ chmod -R a+rx apache-tomcat-8.5.32
+$ ln -s apache-tomcat-8.5.32 tomcat85
+$ chown -h root.tomcat tomcat85
+</pre>
+
+== Development ==
+
+See [[Tomcat 8.5 Development]].
+
+= Configuration =
+
+== catalina.properties ==
+
+The location of catalina.properties can be specified with the catalina.config system properties:
+
+ -Dcatalina.config=/usr/share/pki/server/conf/catalina.properties
+
+== Configuring SSL with PKCS #12 Keystore ==
+
+<pre>
+<Connector name="Secure"
+           port="8443"
+           protocol="org.dogtagpki.tomcat.Http11NioProtocol"
+           SSLEnabled="true"
+           scheme="https"
+           secure="true"
+           ...>
+
+    <SSLHostConfig
+            certificateVerification="optional"
+            trustManagerClassName="org.dogtagpki.tomcat.PKITrustManager">
+
+        <Certificate
+            certificateKeyAlias="sslserver"
+            certificateKeystoreType="pkcs12"
+            certificateKeystoreFile="[pki_instance_configuration_path]/keystore.p12"
+            certificateKeystorePassFile="[pki_instance_configuration_path]/keystore.pwd">
+        </Certificate>
+
+    </SSLHostConfig>
+
+</Connector>
+</pre>
+
+== Configuring SSL with PKCS #11 JSS Keystore ==
+
+<pre>
+<Connector name="Secure"
+           port="8443"
+           protocol="org.dogtagpki.tomcat.Http11NioProtocol"
+           SSLEnabled="true"
+           scheme="https"
+           secure="true"
+           ...>
+
+    <SSLHostConfig
+            certificateVerification="optional"
+            trustManagerClassName="org.dogtagpki.tomcat.PKITrustManager">
+
+        <Certificate
+            certificateKeyAlias="sslserver"
+            certificateKeystoreType="pkcs11"
+            certificateKeystoreProvider="Mozilla-JSS">
+        </Certificate>
+
+    </SSLHostConfig>
+
+</Connector>
+</pre>
+
+= Migration =
+
+See [[Tomcat 8.5 Migration]].
+
+= References =
+
+* [[Tomcat]]
+* [https://github.com/dogtagpki/tomcatjss Tomcat JSS]
+* [http://tomcat.apache.org/tomcat-8.5-doc/ Apache Tomcat 8.5 Documentation]
+* [https://tomcat.apache.org/tomcat-8.5-doc/api/ Apache Tomcat 8.5 API]
+* [https://tomcat.apache.org/tomcat-8.5-doc/config/http.html The HTTP Connector]
+* [https://copr.fedorainfracloud.org/coprs/csutherl/tomcat/ Tomcat 8.5 for Fedora]
+* [https://github.com/apache/tomcat/tree/8.5.x Tomcat 8.5 Source Code]
+* [http://hg.openjdk.java.net/jdk8u/jdk8u/jdk/file/07011844584f/src/share/classes/javax/net/ssl javax.net.ssl source code]
+* [https://github.com/apache/tomcat85/blob/trunk/java/org/apache/tomcat/util/net/openssl/OpenSSLEngine.java OpenSSLEngine.java]

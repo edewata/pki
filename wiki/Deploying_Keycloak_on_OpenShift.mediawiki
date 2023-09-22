@@ -1,0 +1,82 @@
+= Installation =
+
+Add Keycloak into project's catalog:
+
+ $ oc new-project pki-keycloak
+ $ oc replace --force -f https://raw.githubusercontent.com/jboss-dockerfiles/keycloak/master/openshift-examples/keycloak-https.json
+
+Go to Add to Project -> Browse Catalog -> Other -> Keycloak -> Next:
+
+* Username: admin
+* Password: Secret.123
+* Namespace used for DNS discovery: pki
+
+= Resource Limits =
+
+Go to Applications -> Deployments -> keycloak -> Actions -> Edit Resource Limits:
+
+* Memory: 1 GiB
+
+= Environment Variables =
+
+<pre>
+JGROUPS_DISCOVERY_PROTOCOL=dns.DNS_PING
+KEYCLOAK_PASSWORD=Secret.123
+JDBC_MYSQL_VERSION=5.1.46
+HOSTNAME=keycloak-2-85flp
+SECURE_KEYCLOAK_SERVICE_PORT=8443
+KUBERNETES_PORT=tcp://172.30.0.1:443
+KUBERNETES_PORT_443_TCP_PORT=443
+TERM=xterm
+SECURE_KEYCLOAK_PORT_8443_TCP=tcp://172.30.207.107:8443
+KEYCLOAK_SERVICE_HOST=172.30.222.213
+LAUNCH_JBOSS_IN_BACKGROUND=1
+KUBERNETES_SERVICE_PORT=443
+KUBERNETES_PORT_53_TCP=tcp://172.30.0.1:53
+KUBERNETES_SERVICE_HOST=172.30.0.1
+JBOSS_HOME=/opt/jboss/keycloak
+JDBC_MARIADB_VERSION=2.2.3
+KUBERNETES_PORT_53_TCP_PORT=53
+KUBERNETES_PORT_53_UDP=udp://172.30.0.1:53
+KUBERNETES_SERVICE_PORT_DNS=53
+KEYCLOAK_PORT=tcp://172.30.222.213:8080
+DB_VENDOR=H2
+KEYCLOAK_PORT_8080_TCP_PROTO=tcp
+KUBERNETES_PORT_53_TCP_ADDR=172.30.0.1
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+KUBERNETES_PORT_53_UDP_ADDR=172.30.0.1
+PWD=/opt/jboss
+SECURE_KEYCLOAK_SERVICE_HOST=172.30.207.107
+JAVA_HOME=/usr/lib/jvm/java
+JGROUPS_DISCOVERY_PROPERTIES=dns_query=keycloak.pki.svc.cluster.local
+LANG=en_US.UTF-8
+KUBERNETES_PORT_53_UDP_PORT=53
+KEYCLOAK_VERSION=4.5.0.Final
+KEYCLOAK_PORT_8080_TCP_PORT=8080
+SECURE_KEYCLOAK_PORT=tcp://172.30.207.107:8443
+JDBC_POSTGRES_VERSION=42.2.2
+HOME=/
+SHLVL=2
+KUBERNETES_PORT_53_UDP_PROTO=udp
+KEYCLOAK_PORT_8080_TCP=tcp://172.30.222.213:8080
+KUBERNETES_PORT_443_TCP_PROTO=tcp
+KUBERNETES_SERVICE_PORT_HTTPS=443
+SECURE_KEYCLOAK_PORT_8443_TCP_PORT=8443
+KEYCLOAK_SERVICE_PORT=8080
+PROXY_ADDRESS_FORWARDING=false
+KEYCLOAK_PORT_8080_TCP_ADDR=172.30.222.213
+KUBERNETES_PORT_443_TCP_ADDR=172.30.0.1
+KUBERNETES_SERVICE_PORT_DNS_TCP=53
+KUBERNETES_PORT_53_TCP_PROTO=tcp
+KEYCLOAK_USER=admin
+KUBERNETES_PORT_443_TCP=tcp://172.30.0.1:443
+SECURE_KEYCLOAK_PORT_8443_TCP_PROTO=tcp
+SECURE_KEYCLOAK_PORT_8443_TCP_ADDR=172.30.207.107
+_=/usr/bin/env
+</pre>
+
+= See Also =
+
+* [[Keycloak]]
+* [https://www.keycloak.org/2018/05/keycloak-on-openshift.html Keycloak on OpenShift]
+* [https://www.youtube.com/watch?v=9zUWqbK3BqI Keycloak on OpenShift]

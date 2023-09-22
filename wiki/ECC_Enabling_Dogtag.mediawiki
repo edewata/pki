@@ -1,0 +1,437 @@
+=Background=
+This page describes the process for adding an ECC software token to the Dogtag Certificate System. Although Dogtag does not directly support the ECC cryptosystem, it will be able to take advantage of a third party ECC PKCS#11 module (shared library plug-in) if you supply one.
+
+If you find a bug, please file it in the [https://bugzilla.redhat.com/enter_bug.cgi?product=Dogtag%20Certificate%20System Bugzilla system].
+
+Note:
+* We have not tested these instructions with HSMs (hardware key storage), but we would appreciate feedback if you have successes or problems.
+* We did some initial tests against [http://www.redhat.com/certificate_system/ RHCS7.3] on RHEL4 with one third party ECC library.  We have not tested Dogtag with any additional third party ECC libraries.  If you find any bugs, please file them at the Bugzilla link above and edit this page as appropriate.
+
+=Required Packages=
+
+To add a third party ECC library, you'll first need to get or build the following packages.
+
+'''NSS''': You'll need a special build of the [http://www.mozilla.org/projects/security/pki/nss/ NSS crypto libraries], which are used in Dogtag. [[ECC_Capable_NSS|Build instructions are here]]. The final section in the NSS build link above talks about manually installing the NSS files on the system. Make sure this step is completed.
+
+'''ECC library''': We don't supply ECC libraries, so you will also need a third party ECC PKCS#11 module. Place the library on the system in a chosen well known location, for example, /usr/lib. 
+
+'''Dogtag''': To enable ECC functionality on the CA, you will need to obtain the latest version of the Dogtag Certificate System. As of this writing, the current version is 1.2.0.
+
+'''Web Server''': If you want to issue a certificate from your CA to your SSL web server, we recommend that you use [http://directory.fedoraproject.org/wiki/mod_nss mod_nss, an Apache plugin utilizing NSS for SSL].   Instructions on [[ECC_Enabling_Dogtag#Build_ECC-enabled_mod_nss|how to build an ECC enabled mod_nss are located here]].  After building the ECC enabled mod_nss, distribute the build onto your system. This procedure will vary depending upon how the build was created, either from source or the source rpm.
+
+
+Further information on installing mod_nss can be found [http://directory.fedoraproject.org/docs/mod_nss.html here].
+
+
+If your only goal is to get Dogtag running with ECC, this step can be deferred to a future time.
+
+
+
+Make sure the following list of required packages is installed:
+ rpm -q pki-util pki-common pki-ca fedora-ds-base
+
+If you don't have all the packages, use yum to install them before proceeding.
+
+=CA Preparation=
+
+In order to configure a Dogtag CA for use with ECC, you must install the Dogtag CA packages.  For these tests, you do not need to install the other subsystems such as the OCSP responder.
+
+Once you have installed the CA's RPMs, the screen will display a URL that will be used to configure the CA. Note this URL for later but do NOT proceed with the configuration.
+
+Once other prerequisites have been satisfied, the next step will be to configure the CA to use the ECC PKCS#11 module.
+
+=Command Line Tests=
+Before trying to use the Dogtag CA, you should make sure you have configured your environment to use the third party ECC library.  The following steps have to be done:
+
+* Make sure to have manually installed the ECC enabled NSS on the system.
+* Make sure to have manually installed the third party ECC module on the system.
+
+Use the following command line tests to confirm you have set things up correctly.
+
+In the following instructions, ''THIRD_PARTY_MODULE'' is a name that you make up in order to identify your new module to NSS and ''THIRD_PARTY_MODULE_TOKEN'' is a placeholder we use for the name of the token for your new module. 
+
+Use [http://www.mozilla.org/projects/security/pki/nss/tools/certutil.html certutil] to create a test NSS cert/key database, and then make NSS aware of the location of your ECC library.
+ mkdir /tmp/ecc-tests
+ cd /tmp/ecc-tests
+ certutil -d . -N
+ modutil -dbdir . -add ''THIRD_PARTY_MODULE'' -libfile /usr/lib/''libYourNewModule.so''
+
+Use [http://www.mozilla.org/projects/security/pki/nss/tools/modutil.html modutil] to list basic information about the module just added:
+ modutil -dbdir . -list ''THIRD_PARTY_MODULE''
+Amongst the information listed by the above command, you will see an entry for "Token Name:".
+Take the value shown on the screen and replace the string "THIRD_PARTY_MODULE_TOKEN" in the command below with it.
+
+ modutil -dbdir . -nocertdb -changepw "''THIRD_PARTY_MODULE_TOKEN''"
+
+From now on in these instructions, when you see THIRD_PARTY_MODULE_TOKEN, replace it with the actual Token Name obtained above.
+
+Use certutil to generate an ECC key:
+ certutil -d . -G -k ec -q nistp256
+  certutil: unable to generate key(s)
+  : security library failure.
+'''Note''': this command has failed because the NSS soft token (the default, internal soft token) does not know how to perform ECC operations.  This is the expected result.
+
+Proceed to test key generation, but this time specify the third party ECC module (using the -h argument) so the command will succeed:
+ certutil -d . -G -h "''THIRD_PARTY_MODULE_TOKEN''" -k ec -q nistp256
+
+Generate a CSR:
+ certutil -d . -R -h "''THIRD_PARTY_MODULE_TOKEN''" -k ec -q nistp256 -s "CN=cfu1003" -a -o req.1003b
+
+If the ''libYourNewModule.so'' supports ECC, the last two commands will have succeeded.
+
+= CA Configuration=
+* Recall that these instructions had previously called for the installation of a CA. Installing the CA RPM causes an instance to be created and it starts the server in a mode ready for proceeding with the installation wizard. The server should be now running in this mode. Proceed to stop the server in order to continue with the ECC configuration.
+* Stop the CA as as root as follows:
+ /etc/init.d/pki-ca stop  
+* Note that Dogtag requires a user account called "pkiuser" that assumes privileges over Dogtag files and processes.
+* Prepare a new home directory that will ultimately belong to the user "pkiuser".
+
+Proceed as follows:
+ su
+ /usr/sbin/usermod --home /usr/share/pki/pkiuser pkiuser   #change pkiuser's home directory 
+ cd /usr/share/pki
+ mkdir pkiuser
+ HOME=/usr/share/pki/pkiuser
+ export HOME
+*Add the new PKCS#11 module.
+ cd <''install root dir''>/alias   #For example on Fedora8: cd  /var/lib/pki-ca/alias)
+ modutil -dbdir . -nocertdb -add ''THIRD_PARTY_MODULE'' -libfile /usr/lib/''libYourNewModule.so''
+This command will create a directory called "<code>''.THIRD_PARTY_MODULE''</code>" under root's new HOME within the current command shell. Note that our use of THIRD_PARTY_MODULE actually refers to some derivative of the module's actual name as described earlier. This directory , for example, might have a name like ".dogtag" if dogtag was an actual third party module.
+* Initialize the token's password.
+ modutil -dbdir . -nocertdb -changepw "''THIRD_PARTY_MODULE_TOKEN''" 
+This step also creates the file "YourNewModuleuser.db" under $HOME/''.THIRD_PARTY_MODULE''/''YourNewModule''.
+* Recursively change everything at and under /usr/share/pki/pkiuser to be owned by pkiuser:pkiuser 
+ cd /usr/share/pki
+ chown -R pkiuser:pkiuser pkiuser
+* Add the token password to password.conf: e.g. 
+ cd /var/lib/pki-ca/conf
+ vim password.conf
+Add the following line (make sure to add the prefix "hardware-" and escape spaces):
+ hardware-''THIRD_PARTY_MODULE_TOKEN'':''yourPassword''
+"''THIRD_PARTY_MODULE_TOKEN''" is the actual module token name, and "''yourPassword''" is the password of the ECC token you just added.
+* Specify the token for signature verification for requests.
+ vim /var/lib/pki-ca/conf/CS.cfg
+Add the following line:
+ ca.requestVerify.token=''THIRD_PARTY_MODULE_TOKEN''
+Optionally, though not recommended for a production deployment, one can turn off request signature verification by adding the following line:
+ ca.requestVerify.enabled=false
+
+* Start the CA.
+ /etc/init.d/pki-ca start
+* Proceed with the CA's configuration using the configuration wizard URL saved from before. You can find more information on the [[PKI_Subsystem_Configuration#CA|CA configuration process here]].
+* When presented with a screen from which to select the module token, select the ECC module token and ECC with desired key strength.
+** When shown the Module selection screen, the modules will be grouped with so called "supported" modules on the top of the screen and "unsupported" modules on the bottom. The bottom grouping is where the ECC module will be presented. In this context, "unsupported" merely refers to the fact that you are installing an external module. Pick the module with the name previously represented by the placeholder "THIRD_PARTY_MODULE_TOKEN" and proceed.
+** Selecting the highlighted default setting for key strength works fine.
+*At this point, <b>you have a CA running with ECC support</b>.
+* Those interested can easily verify that ECC is being used by Dogtag by performing the following:
+** Proceed to the CA's main page: <nowiki>https://test.host.com:9443/ca/services</nowiki>
+** Click on the link "SSL EndUser Services"
+** Click on the "Retrieval" tab.
+** Click on the "Import CA Certificate Chain" link on the left of the page.
+** Select the " Display certificates in the CA certificate chain for importing individually into a server" radio button and click Submit.
+** A pretty print of the certificate is presented on the screen. Look down the display for something like the following to see that ECC keys are in use:
+  Subject Public Key Info: 
+                Algorithm: EC - 1.2.840.10045.2.1
+
+ECC enabling the CA Console
+* The console acts as an SSL client talking to the CA.  As such, it also needs to support the ECC algorithms.  Assuming you are running the console locally on the machine the CA is installed you need to add your new ECC PKCS#11 module to the console's security database.
+* Attempt to connect to your new CA using the console.  This will automatically create the folder and and empty security database
+** <code>/usr/bin/pkiconsole https://yournewca:9443/ca</code>
+*Add the ECC PKCS#11 module to the security database:
+ cd ~/.dogtag-idm-console/
+ modutil -dbdir . -nocertdb -add ''THIRD_PARTY_MODULE'' -libfile /usr/lib/''libYourNewModule.so''
+* Attempt to connect to your new CA using the console again.  If everything is working properly, a small GUI window should show up prompting for your admin username/password.
+
+=Putting ECC certificates to use=
+
+You have reached the point where you have successfully configured an instance of the Dogtag CA to be ECC aware.  The next logical step is to work with some software acting as a consumer of Dogtag's ECC certificates.  An ideal candidate is an Apache web server configured with an ECC enabled mod_nss. The following tasks must be done:
+
+* Secure a host upon which to install Apache.
+* Install Apache on the host in question.
+* Build and install an ECC-enabled mod_nss library.
+* Attempt to request an ECC-enabled certificate from Dogtag.
+* Proceed with the configuration of Apache with the ECC-enabled mod_nss software with the help of the certificate obtained from Dogtag.
+
+==Install Apache==
+
+The mod_nss documentation [http://directory.fedoraproject.org/wiki/Mod_nss#What_do_I_need_to_run_mod_nss.3F here] points to the proper versions of Apache supported and information on where to get Apache. Proceed to make sure an appropriate version of Apache is available and ready to configure with mod_nss.
+
+If this is not the same host as the CA installation, make sure that the following is installed on this Apache host:
+* The ECC enabled version of NSS.
+* The third party ECC PKCS#11 module.
+
+==Build ECC-enabled mod_nss==
+
+The mod_nss package can be built either directly from source or from the SRC RPM, which is recommended.
+
+=== Build From the SRC RPM===
+
+To build an ECC enabled mod_nss (Fedora 8) from the source rpm, do the following:
+
+* Obtain a version 1.0.7 SRPM from [http://koji.fedoraproject.org/packages/mod_nss/1.0.7/2.fc8/src/mod_nss-1.0.7-2.fc8.src.rpm here].
+
+* Locate the rpm on your system and do the following:
+  su
+  rpm -ihv <mod_nss rpm name> 
+  cd /usr/src/redhat/SPECS
+  #Edit the spec file
+  vi mod_nss.spec
+* Add the string "--enable-ecc" to the following line so it looks like:
+
+  %configure \
+    --with-nss-lib=$NSS_LIB_DIR \
+    --with-nss-inc=$NSS_INCLUDE_DIR \
+    --with-nspr-lib=$NSPR_LIB_DIR \
+    --with-nspr-inc=$NSPR_INCLUDE_DIR \
+    --with-apr-config --enable-ecc
+* Do the build.
+
+  rpm -ba mod_nss.spec
+
+If the rpm program complains about missing dependencies, use the "yum" utility to bring the system into compliance.
+
+* Retrieve and install the build:
+
+  cd /usr/src/redhat/RPMS/i386
+  #Stop Apache.
+  /etc/init.d/httpd stop
+  #Install the RPM (name may vary)
+  rpm -ihv mod_nss.1.7.0-2.fc8.i386.rpm
+
+===Build From Source Tarball===
+
+To build from source you will need  the mod_nss source tarball: [http://directory.fedoraproject.org/sources/mod_nss-1.0.7.tar.gz mod_nss-1.0.7.tar.gz]
+
+Proceed to build:
+* Extract the tarball 
+* Make sure the system has the Apache apsx devel package as well. The mod_nss build will not fare too well without this component.
+   yum install httpd-devel
+* Make sure NSS is installed in its usual system directory location. The same goes for NSPR. On Linux, this software lives in the "/usr/bin", "/usr/include", and "/usr/lib" directories.
+* Configure mod_nss with the following:
+
+ ./configure --prefix=/usr --exec-prefix=/usr --bindir=/usr/bin --sbindir=/usr/sbin \
+ --sysconfdir=/etc --datadir=/usr/share --includedir=/usr/include --libdir=/usr/lib \
+ --libexecdir=/usr/libexec --localstatedir=/var --sharedstatedir=/usr/com \
+ --mandir=/usr/share/man --infodir=/usr/share/info --with-nss-lib=/usr/lib \
+ --with-nss-inc=/usr/include/nss3 --with-nspr-lib=/usr/lib \
+ --with-nspr-inc=/usr/include/nspr4 --with-apr-config --enable-ecc
+
+* Build it:
+
+  make
+
+* If Apache and apsx are installed, you can install mod nss as root by:
+
+  make install
+  cd /etc/http
+  mkdir alias
+  #Create NSS database
+  certutil -d . -N
+
+* Make sure mod_nss is configured for the proper NSS database we just created:
+
+  cd /etc/httpd/conf.d
+  vi nss.conf
+  
+* Set the following line:
+  NSSCertificateDatabase /etc/httpd/alias
+
+==Create server cert request for Dogtag==
+Always make a backup of your certificate database before proceeding.
+ #Proceed to your Apache's NSS database area
+ cd /etc/httpd/alias
+ mkdir -v nss-`date +%F`     # create a directory with today's date, like "nss-2008-03-25"
+ cp -v *.db nss-`date +%F`   # copy all NSS database files into that just created directory
+ #Add the third party ECC module to this database
+ modutil -dbdir . -add ''THIRD_PARTY_MODULE'' -libfile /usr/lib/''libYourNewModule.so''
+ #Create a certificate request and capture it in the file "certreq.txt"
+ certutil -d . -R -h "''THIRD_PARTY_MODULE_TOKEN''" -k ec -q nistp256 -s \
+   "CN=''example.host.com'', O=''Example Domain 1023''" -a -o certreq.txt
+
+==Submit certificate request to the CA==
+
+The certificate request you just created in the file "certreq.tx" will have a blob of data looking something like this:
+
+  -----BEGIN NEW CERTIFICATE REQUEST-----
+ MIH6MIGiAgEAMEAxHDAaBgNVBAoTE0V4YW1wbGUgRG9tYWluIDEwMjMxIDAeBgNV
+ BAMTF2RoY3AtMTI4LnNqYy5yZWRoYXQuY29tMFkwEwYHKoZIzj0CAQYIKoZIzj0D
+ AQcDQgAExknz78rhNGhUfd/d256ERbAXSBQzVPgxDnBKZA5CfPizmjfoYCGcDGKF
+ sG3Xl5HeggKhDq0uxGyShY1WQyNguKAAMAkGByqGSM49BAEDSAAwRQIhAKkTlR+g
+ Pq1M1Fw59SG4xFEcm77Y0u0u8thG1Nwbzs7eAiAvINKFxslTSFKUzBkte9lvm7bf
+ 20IftfHtB1/2Qpmpfg==
+ -----END NEW CERTIFICATE REQUEST-----
+
+Proceed to submit this request to Dogtag by performing the following steps:
+
+* Proceed to the Dogtag CA main page at for example: <nowiki>https://example.host.com:9443/ca/services</nowiki>
+* Click on "SSL End Users Services"
+* Click on the certificate profile "Manual Server Certificate Enrollment"
+* Copy to the clipboard the entire  request blob above including the "--BEGIN" and "--END" dividers.
+* Paste the blob into the large edit box in Dogtag while accepting the default format "PKCS#10".
+* Click "Submit".
+* If successful, Dogtag will indicate that a new request has been created for your certificate. It will also give the request number that an "agent" user will need later.
+
+Proceed through these steps to process the certificate.
+
+* Proceed to the Dogtag CA main page at (for example): <nowiki>https://example.host.com:9443/ca/services</nowiki>
+* If you have "agent" privileges, proceed to the link "Agent Services". Otherwise, you must get the help of an actual Dogtag agent user.
+* Click on "List Requests" on the left frame.
+* Search for the request  number recalled from before and click on the link provided for it.
+* The agent will now see a screen where they are able to "approve" the request for the server certificate.
+* In this case, it should be sufficient for the agent to simply approve the request with no further action and move on.
+
+Proceed through these steps to obtain the created certificate.
+
+* Using the "End Users Services" page like before, search for and display the page representing the newly created certificate.
+* Locate the blob representing your certificate on the page and save it in the file <code>cert.txt</code>. 
+* Locate and save the CA cert in a new text file called <code>ca.txt</code>. Do this by using the  "Retrieval" tab and "List Certificates" link. The UI will give you the first 20 or so certificates. The very first one in the list is the CA cert.
+* Add the newly obtained certs to the database:
+ /etc/int.d/httpd stop  #stop Apache
+ cd /etc/httpd/alias    #Add the certs to the database
+ certutil -A -d . -n cacert -t "CT,CT," -a -h "''THIRD_PARTY_MODULE_TOKEN''" < ca.txt
+ certutil -A -d . -n "Server-Cert" -t "u,u,u" -a -h "''THIRD_PARTY_MODULE_TOKEN''" < cert.txt
+ 
+
+Note: If any of the above certutil commands complain about not being able to authenticate to the database, try resetting the "THIRD_PARTY_MODULE" password  in order to log into the token:
+
+  modutil -dbdir . -nocertdb -changepw "THIRD_PARTY_MODULE_TOKEN"
+
+==Configure mod_nss==
+
+It is necessary to perform some final configuration of mod_nss on Apache to finish the job.
+
+*Add our third party ECC module to mod_nss's security database.
+
+  cd /etc/httpd/alias
+  modutil -dbdir . -add THIRD_PARTY_MODULE -libfile /usr/lib/libYourNewModule.so
+
+
+
+*Edit /etc/httpd/conf.d/nss.conf and set NSSNickname to "''THIRD PARTY MODULE NAME'':Server-Cert" 
+Here make sure that if there are spaces in your "THIRD_PARTY_MODULE_NAME", make sure that the whole string is enclosed in double quotes.
+
+*Add these lines to the value NSSCiphersuite in nss.conf:
+ +rsa_aes_128_sha,+rsa_aes_256_sha,+ecdh_ecdsa_3des_sha,\
+ +ecdh_ecdsa_aes_128_sha,+ecdh_ecdsa_aes_256_sha,\ +ecdhe_ecdsa_rc4_128_sha,+ecdhe_ecdsa_3des_sha,\
+ +ecdhe_ecdsa_aes_128_sha,+ecdhe_ecdsa_aes_256_sha
+
+The "\" is there to make the text more readable.  It is actually one continuous line. Edit the file accordingly.
+
+*Restart Apache (/etc/rc.d/init.d/httpd restart) and authenticate to the ECC token by typing the password when prompted.
+
+*Create a simple test case for the whole scenario by putting the following simple CGI script into the new file /var/www/cgi-bin/printenv.
+
+The following script will serve to simply print out Apache's environment:
+
+ #!/usr/bin/perl
+ #
+ # printenv -- demo CGI program which just prints its environment
+ #
+ print "Content-type: text/plain; charset=iso-8859-1\n\n";
+ foreach $var (keys %ENV ) {
+   print $var + "\n";
+   $val = $ENV{$var};
+   $val =~ s|\n|\\n|g;
+   $val =~ s|"|\\"|g;
+   print "${var}=\"${val}\"\n";
+ }
+
+ 
+* Make your script executable.
+
+ chmod +x /var/www/cgi-bin/printenv
+
+* Point your browser to this newly created CGI script:
+e.g.  <NOWIKI>https://example.host.com:<ssl-port>/cgi-bin/printenv</NOWIKI>
+
+The "ssl-port" can be found in /etc/httpd/conf.d/nss.conf. Look for the directive:
+
+  Listen 8443
+
+If you see something like the following line, then you are running your Apache server with an ECC server cert and an ECC-enabled browser:
+ SSL_CIPHER_NAME="TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA"
+
+= Tested Browsers=
+We have tested the following browsers against Dogtag 1.0:
+* Firefox 2.0.0.6
+* Firefox 2.0.0.7
+* Firefox 2.0.0.8
+* Firefox 3.0.a7
+
+If you have success with other browsers, please add them to this list.
+
+If you find any bugs when using other browsers, please file a bug in Bugzilla.
+
+=Tested HSMs=
+==nCipher nShield 500 F2 with ECC feature activation==
+Status: Using 64-bit client software v11.00 on 64-bit FC8, currently doesn't work with Dogtag
+
+There are two issues to deal with:
+* [https://bugzilla.mozilla.org/show_bug.cgi?id=344179  NSS Bug #344179: ECC Keygen on ncipher HSM sets CKA_SIGN to false] - From an nCipher engineer: "At the PKCS #11 level, if you specify CKA_DERIVE=true and let CKA_SIGN default, it will default to false, and vice versa.  If you specify both CKA_DERIVE=true and CKA_SIGN=true, then we return CKR_TEMPLATE_INCONSISTENT because we can't do both with the same key. (However, the tests using C_GetMechanismInfo will show that we can do both mechanisms, because we can - so long as you use different keys, even though they have the same PKCS#11 type.)  I can't comment on when or how that will be changed."
+* nCipher support says that using ECC and SHA-2 through the PKCS#11 interface is a "known bug" and will be fixed in v11.10 software/firmware released in "late June 2008".
+
+Since nCipher HSMs share their client software it is assumed that the issues with this specific HSM would apply across their range of products.
+
+'''Note''': Of the two tests given in the [[ECC_Enabling_Dogtag#Command_Line_Tests | Command Line Tests]] section, the keygen command works, the CSR generation command does not.
+
+= Troubleshooting: =
+
+Collected below are a few things that might go wrong and possible solutions. If you discover any more issues, feel free to add to this list.
+
+*If the ECC token is not logged in (with incorrect password in the log) during configuration:
+# Remove the ECC library in pkiuser's home directory.
+# Become root and set home directory to pkiuser's home directory.
+# Run modutil to initialize password again (this will create necessary ECC db directories under pkiuser's home directory)
+
+*If after CA's installation, and the browser at any point has problems recognizing the algorithm (shown in a pop-up), restart the browser and try again.
+
+*For certutil -R, if you see the error:
+ certutil: signing of data failed: security library: invalid algorithm.
+Most likely you have not installed a version of NSS built for ECC as described earlier in the document. 
+
+*Very often, Tomcat does not go away when the server is shut down. You will need to kill the processes manually in these cases.
+
+= Debugging =
+When customers run into problems, it would  assist greatly to  have access to useful debugging information.   Depending upon where you suspect the problems are, you can ask the customer to turn on additional debugging:
+
+==Debugging the Dogtag CA Server==
+*Stop the CA server
+ /etc/init.d/pki-ca stop
+ vi /var/lib/pki-ca/conf/CS.cfg
+*Set the following parameters:
+ debug.append=true
+ debug.enabled=true
+ debug.filename=/var/lib/pki-ca/logs/debug
+ debug.level=0
+The quantity "debug.level" can have values 0 - 10 with 0 being least detailed, and 10 being most detailed.
+*Restart the CA server
+ /etc/init.d/pki-ca start
+* Exercise the server while looking for the debug log in ex: /var/lib/pki-ca/logs/debug.
+
+==Debugging NSS (PKCS#11)==
+Put the following near the top of the file /usr/bin/dtomcat5-pki-ca (change the name to match your instance name)
+ NSS_DEBUG_PKCS11_MODULE="NSS Internal PKCS #11 Module"
+ NSS_DEBUG_PKCS11_MODULE="''THIRD_PARTY_MODULE''"
+ export NSS_DEBUG_PKCS11_MODULE
+
+==Debugging with strace==
+The Linux utility "strace" is used to provide logging of low level system calls. This can often be useful when trying to diagnose difficult problems.
+
+Prepend the following line with the strace call in /usr/bin/dtomcat5-pki-ca (change the name to match your instance name)
+
+To find the right line, search for 
+ elif [ "$1" = "start" ] ; then
+and within that elif block, find the "else" block of 
+ "if [ "$1" = "-security" ] ; then" strace -o /tmp/strace.log "$_RUNJAVA" $JAVA_OPTS $CATALINA_OPTS \
+
+==Debugging tomcatjss==
+The Dogtag component "tomcatjss" is used to provide NSS crypto services to the traditional tomcat Java servlet environment. Is is possible to obtain debugging information for this as follows:
+*Edit /var/lib/pki-ca/conf/server.xml
+*Add the line:
+ debug="true"
+*By placing it below the existing line:
+ <Connector port="9443" maxHttpHeaderSize="8192">
+
+The debug log is found in /tmp/tomatjss.log (hardcoded).
+
+[[Category:PKI]]

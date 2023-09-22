@@ -1,0 +1,56 @@
+= Libraries =
+
+== SLF4J ==
+
+* WEB-INF/lib/slf4j-api.jar
+* WEB-INF/lib/slf4j-jdk14.jar
+
+= Configuration =
+
+* ${catalina.base}/conf/logging.properties
+* WEB-INF/classes/logging.properties
+
+== Log Handler ==
+
+=== Daily Log Rotation ===
+
+<pre>
+org.apache.juli.FileHandler.directory = ${catalina.base}/logs/${classloader.webappName}
+org.apache.juli.FileHandler.prefix = debug.
+org.apache.juli.FileHandler.maxDays = 7
+org.apache.juli.FileHandler.formatter = java.util.logging.SimpleFormatter
+</pre>
+
+=== Size-based Log Rotation ===
+
+<pre>
+java.util.logging.FileHandler.pattern = ${catalina.base}/logs/${classloader.webappName}/debug.%g
+java.util.logging.FileHandler.limit = 1048576
+java.util.logging.FileHandler.count = 10
+java.util.logging.FileHandler.append = true
+java.util.logging.FileHandler.formatter = java.util.logging.SimpleFormatter
+</pre>
+
+== Formatter ==
+
+See also:
+* [https://docs.oracle.com/javase/8/docs/api/java/util/logging/SimpleFormatter.html java.util.logging.SimpleFormatter]
+* [https://docs.oracle.com/javase/8/docs/api/java/util/Formatter.html java.util.Formatter]
+
+= Security Manager =
+
+ grant codeBase "file:${catalina.home}/bin/tomcat-juli.jar" {
+         permission java.lang.RuntimePermission "accessClassInPackage.sun.util.logging.resources";
+ 
+         // Allow Tomcat JULI to read web application logging configuration.
+         permission java.io.FilePermission "/usr/share/pki/server/webapps/pki/WEB-INF/classes/logging.properties", "read";
+ 
+         // Allow Tomcat JULI to generate web application log files.
+         permission java.io.FilePermission "${catalina.base}/logs/pki/-", "read,write";
+ };
+
+= References =
+
+* [[Tomcat]]
+* [https://tomcat.apache.org/tomcat-8.0-doc/logging.html Logging in Tomcat]
+* [[PKI Logging]]

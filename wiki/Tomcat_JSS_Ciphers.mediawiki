@@ -1,0 +1,15 @@
+= Configuration =
+
+The ciphers for JSS connector can be configured in the '''sslRangeCiphers''' attribute of the '''Connector''' element as follows:
+
+ <Connector name="Secure"
+            port="8443"
+            ...
+            <font color="red">sslRangeCiphers="..."</font>
+            ...
+            />
+
+= References =
+
+* [[Tomcat SSL Ciphers]]
+* [https://github.com/dogtagpki/pki/wiki/SSL SSL]

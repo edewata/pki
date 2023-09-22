@@ -1,0 +1,43 @@
+= Prerequisites =
+
+ $ apt install libresteasy3.0-java
+ $ apt install libtomcat8-java
+ $ apt install libjss-java
+ $ apt install libtomcatjss-java
+
+= Packaging =
+
+PKI source package for Debian is stored in https://salsa.debian.org/freeipa-team/dogtag-pki:
+
+* [https://salsa.debian.org/freeipa-team/dogtag-pki/blob/master/debian/control control]
+* [https://salsa.debian.org/freeipa-team/dogtag-pki/blob/master/debian/changelog changelog]
+* [https://salsa.debian.org/freeipa-team/dogtag-pki/blob/master/debian/rules rules]
+* [https://salsa.debian.org/freeipa-team/dogtag-pki/blob/master/debian/copyright copyright]
+* [https://salsa.debian.org/freeipa-team/dogtag-pki/tree/master/debian/patches patches]
+* [https://salsa.debian.org/freeipa-team/dogtag-pki/tree/master/debian/patches/series series]
+
+To build binary package:
+
+ $ git clone https://salsa.debian.org/freeipa-team/dogtag-pki.git
+ $ cd dogtag-pki
+ $ mk-build-deps --install debian/control
+ $ debuild -i -us -uc -b
+
+To build source package:
+
+ $ debuild -i -us -uc -S
+
+To install binary packages:
+
+ $ dpkg -i ../*.deb
+
+= Releases =
+
+* https://packages.debian.org/source/sid/dogtag-pki
+
+= References =
+
+* [[PKI 10 Development]]
+* [[Debian]]
+* [https://www.debian.org/doc/manuals/debian-faq/ch-pkg_basics.en.html Basics of the Debian package management system]
+* [https://wiki.debian.org/HowToPackageForDebian HowToPackageForDebian]

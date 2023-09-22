@@ -1,0 +1,1005 @@
+= History =
+
+== Netscape Certificate Server 1.0 &nbsp;&nbsp;&nbsp;[01/24/1997] ==
+
+The Certificate System project was created at Netscape Communications when a need arose to generate certificates as a better means of authentication rather than using simple name/password based basic authentication.  Released on January 24, 1997, version 1.0 of the Netscape Certificate Server was written in a combination of C, and C++, and used an Informix database for storage of the certificates.  The release consisted solely of a Certificate Authority, and was made available on a number of different hardware platforms.
+
+'''Project Name:'''
+* '''''Species''''' (named after the 1995 Metro-Goldwyn-Mayer (MGM) motion picture)
+'''Releases:'''
+* [12/19/1996] Netscape Certificate Server 1.0 Preview Release Beta 3
+* [01/24/1997] Netscape Certificate Server 1.0
+* [05/22/1997] Netscape Certificate Server 1.0.1
+* [05/22/1997] Netscape Certificate Server 1.0.2
+* [05/22/1997] Netscape Certificate Server 1.0.3
+* [06/26/1998] Netscape Certificate Server 1.0 (SP 1)
+'''Major Features:'''
+* An X.509 v3 compliant Certificate Authority
+* Support for UID and MAIL attributes
+* Support for multiple Organization Unit (OU) attributes within any Distinguished Name (DN)
+* Extensible to include virtually any X.509 v3 extension
+* Supports automatic certificate issuance through Virtual Graphics Interface (VGI)
+* Y2K compliant
+'''Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>1.0 Preview Release Beta 3</th>
+    <th>1.0</th>
+    <th>1.0.1</th>
+    <th>1.0.2</th>
+    <th>1.0.3</th>
+    <th>1.0 (SP 1)</th>
+    </tr>
+    <tr>
+    <td>Digital UNIX 3.2C</td>
+    <td><center>&nbsp;</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Digital UNIX 4.0B</td>
+    <td><center>&nbsp;</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>HP-UX 10.10</td>
+    <td><center>&nbsp;</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>IBM AIX 4.1.4</td>
+    <td><center>&nbsp;</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>IBM AIX 4.2</td>
+    <td><center>&nbsp;</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>IRIX 5.3</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>IRIX 6.2</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Solaris 2.4</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Solaris 2.5.1</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Windows NT 4.0 (alpha)</td>
+    <td><center>&nbsp;</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>&nbsp;</center></td>
+    </tr>
+    <tr>
+    <td>Windows NT 3.51 (intel)</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Windows NT 4.0 (intel)</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Netscape Certificate Management System 4.1 &nbsp;&nbsp;&nbsp;[06/24/1999] ==
+
+Shortly thereafter, a group of Netscape engineers decided to create a more robust framework consisting of a plug-in architecture.  Released on June 24, 1999, Netscape Certificate Management System was written primarily in Java (with small portions in C and C++), and would replace the proprietary third-party Informix Database with the successful Netscape Directory Server.  This release consisted of three subsystems, a Certificate Authority, a Data Recovery Manager, and a Registration Authority. Due to the new code base, the number of available hardware platforms was significantly reduced from the 1.0.x version.
+
+'''Project Name:'''
+* '''''Columbo''''' (named after the popular American television detective)
+'''Releases:'''
+* [03/08/1999] Netscape Certificate Management System 4.0 Beta 2a
+* [06/24/1999] Netscape Certificate Management System 4.1
+* [12/12/1999] Netscape Certificate Management System 4.1 (SP 1)
+'''Major Features:'''
+* Certificate Authority (CA) subsystem
+* Registration Authority (RA) subsystem
+* Data Recovery Manager (DRM) subsystem
+* Authentication methods for end users
+* Forms for certificate enrollment, certificate renewal, and certificate revocation
+* Constraints-specific policies for governing the formulation of certificates
+* Extension-specific policies for adding certificate extensions
+* Schedulable jobs
+* Event-driven notifications
+* Publishing of certificates and CRLs
+* Logging
+* Key Type: RSA and DSA
+* Key Length Supported: 512 to 2048 bits
+* Signing Algorithms Supported: MD2 with RSA, MD5 with RSA, and SHA-1 RSA, if the CA key type is RSA; SHA-1 DSA, if the CA key type is DSA.
+* CA supports data migration from Netscape Certificate Server 1.0.x
+* RA supports publishing of certificates to an LDAP directory
+* Uses Netscape Security Services (NSS) for Secure Socket Layer (SSL), Certificate Manager certificate, and Certificate Revocation List (CRL) signing, but not for random number generation
+* Includes configurable support for Certificate Enrollment Protocol (CEP) used by Cisco routers
+* Includes an Alpha Build of a Dual-Key Test Bed for Communicator 4.5
+* CMS SDK and samples
+* Y2K compliant
+'''Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>4.0 Beta 2a</th>
+    <th>4.1</th>
+    <th>4.1 (SP 1)</th>
+    </tr>
+    <tr>
+    <td>Solaris 2.5.1</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Solaris 2.6</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Windows NT 4.0 (SP 4 using NTFS)</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>&nbsp;</center></td>
+    </tr>
+    </table>
+
+== Netscape/iPlanet Certificate Management System 4.2 &nbsp;&nbsp;&nbsp;[08/02/2000] ==
+
+In 1999, AOL acquired Netscape and formed the iPlanet Alliance with Sun to jointly develop Netscape servers.  From 1999 to 2001, employees of Netscape and Sun worked together to create the next two versions of the Certificate Management System, and on August 2, 2000, Netscape/iPlanet Certificate Management System 4.2 was released.
+
+'''Project Name:'''
+* '''''Columbo''''' (named after the popular American television detective)
+'''Releases:'''
+* [08/02/2000] Netscape Certificate Management System 4.2
+* [10/18/2000] Netscape Certificate Management System 4.2 (SP 1)
+* [05/29/2002] Netscape Certificate Management System 4.2 (SP 1a)
+'''Major Features:'''
+* Certificate Authority (CA) subsystem
+* Registration Authority (RA) subsystem
+* Data Recovery Manager (DRM) subsystem
+* Additional authentication methods for end users
+* Additional forms for certificate enrollment, and certificate revocation
+* Additional constraint-specific policies for governing the formulation of certificates
+* Added ability to set the 'critical' flag to all CMS 4.1 extension-specific policies (except for the Netscape Certificate Type policy)
+* Additional policies for adding certificate extensions
+* Added an event-driven notifications method for PIN-removal listeners
+* Improved UI for publishing certificates and CRLs
+* Created a pluggable architecture for mapper and publisher classes
+* Added support to publish certificates and CRLs to a flat file (for importing certificates and CRLs into other repositories)
+* Added support to publish CRLs to an online validation authority (an OCSP responder)
+* Added additional mapper and publisher plug-in modules
+* Added a UI for Windows NT Event Log configuration
+* Added Perl-script based, interactive command-line tools for Backup and Recovery
+* Key Length Supported: 512-4096 bits (RSA) and 512-1024 bits by 64-bit increments (DSA)
+* CA supports data migration from Netscape Certificate Server 1.0.x
+* Removed RA ability to publish certificates to an LDAP directory
+* CMS SDK provides additional samples
+* DRM installation wizard fills default IDs for Key Recovery Agents to allow default values to be overwritten
+* Added an Agent Services interface
+* Upgrade from Certificate Management System 4.1
+* Includes ValiCert Certificate VA<sup>TM</sup>
+* Allows a CA to be cloned
+* Includes CGI support
+'''Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>4.2</th>
+    <th>4.2 (SP 1)</th>
+    <th>4.2 (SP 1a)</th>
+    </tr>
+    <tr>
+    <td>OSF/1 4.0D</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>HP-UX B.11.00</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>IBM AIX 4.3.2</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Solaris 2.6</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Solaris 2.7</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Solaris 8</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Windows NT 4.0 (SP 4)</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Windows NT 4.0 (SP 6)</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Windows 2000</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== iPlanet Certificate Management System 4.2 (SP 2) &nbsp;&nbsp;&nbsp;[03/29/2001] ==
+
+Referred to internally as Certificate Management System 4.3, on March 29, 2001, iPlanet Certificate Management System 4.2 (SP 2) added a fourth subsystem, the Online Certificate Status Protocol Manager (to replace an embedded proprietary third-party OCSP Responder from Valicert).
+
+'''Project Name:'''
+* '''''Columbo''''' (named after the popular American television detective)
+'''Releases:'''
+* [03/29/2001] iPlanet Certificate Management System 4.2 (SP 2)
+'''Major Features:'''
+* Certificate Authority (CA) subsystem
+* Registration Authority (RA) subsystem
+* Data Recovery Manager (DRM) subsystem
+* Inclusion of a new server named "Online Certificate Status Manager" that functions as a OCSP responder with abilities to receive CRLs from multiple CAs
+* Improved scalability (using cloned CAs)
+* Improved performance and reliability
+* Built-in OCSP service for the CA, enabling the CA to function as a light-weight OCSP responder
+* Removed ValiCert Certificate VA<sup>TM</sup>
+* Support for issuance of wTLS-compliant certificates (for wireless applications/devices)
+* Key Length Supported: 512-2048 bits (RSA) and 512-1024 bits in 64-bit increments (DSA)
+* Improved SDK, including better Javadocs and tutorials for developing Java plug-ins
+* Updated standards (Java 2)
+* Policy processor that accepts policies written in JavaScript
+* Support for requesting certificates in the CMC format
+* i18n support for all end-entity interfaces
+* Pluggable architecture for CMS logs
+* Improved and extended CMS 4.2 features
+* Improved product documentation
+'''Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>4.2 (SP 2)</th>
+    </tr>
+    <tr>
+    <td>Compaq Tru64 4.0D</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>HP-UX B.11.00</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>IBM AIX 4.3.3</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Solaris 2.6</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Solaris 2.7</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Solaris 8</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Windows NT 4.0 (SP 5)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Windows NT 4.0 (SP 6)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Windows 2000 (SP 1)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Netscape Certificate Management System 4.5 &nbsp;&nbsp;&nbsp;[10/10/2001] ==
+
+The iPlanet alliance officially ended in October 2001, and Sun and Netscape forked the code base.  AOL formed a new division entitled Strategic Business Solutions, and on October 10, 2001, a re-branded Netscape Certificate Management System 4.5 was released derived from iPlanet Certificate Management System 4.2 (SP 2). Once again, the number of available hardware platforms was significantly reduced.
+
+'''Project Name:'''
+* '''''Columbo''''' (named after the popular American television detective)
+'''Releases:'''
+* [10/10/2001] Netscape Certificate Management System 4.5
+'''Major Features:'''
+* Certificate Authority (CA) subsystem
+* Registration Authority (RA) subsystem
+* Data Recovery Manager (DRM) subsystem
+* Online Certificate Status Protocol (OCSP) Manager subsystem
+* Re-branded from "iPlanet" back to "Netscape"
+* Includes numerous bug fixes
+* Allow administrators to disable selected servlets
+* Allow administrators to disallow putting certificates 'on hold'
+* Allow end user to import, download, and view delta-CRLs
+* Make CMS start when rebooting NT without having to login as a user
+* Improve Random Number Generator entropy by collecting UI events during installation wizard
+'''Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>4.5</th>
+    </tr>
+    <tr>
+    <td>Solaris 2.6</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Solaris 8</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Windows NT 4.0 (SP 6a)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Windows 2000 (SP 2)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Netscape Certificate Management System 6.0 &nbsp;&nbsp;&nbsp;[03/28/2002] ==
+
+On March 28, 2002, Netscape Certificate Management System 6.0 was released which replaced its own internally developed web server with the more robust Netscape Enterprise Server.
+
+'''Project Name:'''
+* '''''Bobby''''' (named after a pet dog of one of the CMS developers)
+'''Releases:'''
+* [03/28/2002] Netscape Certificate Management System 6.0
+'''Major Features:'''
+* Certificate Authority (CA) subsystem
+* Registration Authority (RA) subsystem
+* Data Recovery Manager (DRM) subsystem
+* Online Certificate Status Protocol (OCSP) Manager subsystem
+* Replaces the CMS customized HTTP engine with the Netscape Enterprise Server (NES) 6.0 core
+* Includes a new face-to-face enrollment form in the Registration Manager's agent interface
+* Includes performance and scalability improvements
+* Includes many bug fixes
+* Uses Netscape Directory Server 6.01, Netscape Administration Server 6.01, and NSS 3.3.4
+* A CMS instance can only contain one of the four CMS subsystems
+* Network settings cannot be managed from the CMS Console, NES's configuration files must be used to manage these
+* The cryptographic token password is also used for single sign on, eliminating the need to create and maintain two separate passwords
+* An ability to remotely enable starting/stopping/restarting of server is optionally provided through a flat-file called "password.conf"
+* The CMS certificate database does not contain public or third-party CA certificates
+* CMS SDK and samples no longer get installed with the product
+'''Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>6.0</th>
+    </tr>
+    <tr>
+    <td>Solaris 8</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Windows 2000 (SP 2)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Netscape Certificate Management System 6.01 &nbsp;&nbsp;&nbsp;[05/28/2002] ==
+
+Although technically considered a service pack of Netscape Certificate Management System 6.0, on May 28, 2002, Netscape Certificate Management System 6.01 was released which consisted of the first officially recognized and supported version of the server on the Linux operating system available on Red Hat Advanced Server 2.1.
+
+'''Project Name:'''
+* '''''Bobby''''' (named after a pet dog of one of the CMS developers)
+'''Releases:'''
+* [05/28/2002] Netscape Certificate Management System 6.01
+'''Major Features:'''
+* Certificate Authority (CA) subsystem
+* Registration Authority (RA) subsystem
+* Data Recovery Manager (DRM) subsystem
+* Online Certificate Status Protocol (OCSP) Manager subsystem
+* Adds CMS availability to Red Hat Linux operating system platforms
+* Drops CMS availability on Microsoft Windows platforms
+* Supports generation of RSA key sizes of upto 4096 bits
+* Enables two cloned CAs to use the same certificate repository/internal database
+* Provides a command-line utility for migrating data from previous CMS versions
+* Includes some performance and scalability improvements
+* Includes some bug fixes
+* Includes an updated version of CMS Customization Guide,  which covers the changes made to the HTTP interface of the product
+* Uses Netscape Directory Server 6.02, Netscape Administration Server 6.02, and Network Security Services (NSS) 3.3.2
+'''Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>6.01</th>
+    </tr>
+    <tr>
+    <td>Red Hat Linux 7.3</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Red Hat Linux Advanced Server 2.1</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Solaris 8</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Sun<sup>TM</sup> ONE Certificate Server 4.7 &nbsp;&nbsp;&nbsp;[06/03/2002] ==
+
+Derived from iPlanet Certificate Management System 4.2 (SP 2), on June 3, 2002, members of the Sun Certificate Management System team released their final major point release composed from the Sun code base, Sun<sup>TM</sup> ONE Certificate Server 4.7.
+
+'''Project Name:'''
+* '''''Columbo''''' (named after the popular American television detective)
+'''Releases:'''
+* [06/03/2002] Sun<sup>TM</sup> ONE Certificate Server 4.7
+* [10/15/2002] Sun<sup>TM</sup> ONE Certificate Server 4.7 (SP 1)
+'''Major Features:'''
+* Certificate Authority (CA) subsystem
+* Registration Authority (RA) subsystem
+* Data Recovery Manager (DRM) subsystem
+* Online Certificate Status Protocol (OCSP) Manager subsystem
+* Product renamed shortly before product launch
+* Support for Windows 2000 Login Certificates
+* FIPS 140-1 Level 3 Support
+* Extended Functionality for Registration Manager
+* Challenge Password-based Certificate Renewal
+* Support for Identity Server Single Sign-on (SSO)
+* Provides a utility that migrates certificates, keys, CRLs, and related user information contained in the Internal DB directories
+'''Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>4.7</th>
+    <th>4.7 (SP 1)</th>
+    </tr>
+    <tr>
+    <td>Solaris 8 (with relevant Java 2 patches)</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Windows NT 4.0 (SP 6)</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Windows 2000</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Netscape Certificate Management System 6.1 &nbsp;&nbsp;&nbsp;[01/31/2003] ==
+
+On January 31, 2003, Netscape Certificate System 6.1 was released, and on March 12, 2003, Netscape Certificate System 6.1 (SP 1) was the first release of the product to be Common Criteria Certified, an acknowledgment from the United States government that this product was approved for "global" acceptance.  Due to the purpose of this release, the certification was only performed on a single hardware platform.
+
+'''Project Name:'''
+* '''''Scooby-Doo''''' (named after Hanna-Barbera's famous television cartoon dog)
+'''Releases:'''
+* [09/09/2002] Netscape Certificate Management System 6.1 Preview Drop (Beta 1)
+* [11/12/2002] Netscape Certificate Management System 6.1 Preview Drop (Beta 2)
+* [01/31/2003] Netscape Certificate Management System 6.1
+* [03/12/2003] Netscape Certificate Management System 6.1 (SP 1)
+* [05/05/2003] Netscape Certificate Management System 6.1 (SP 2)
+* [08/11/2003] Netscape Certificate Management System 6.1 (SP 3)
+* [08/20/2003] Netscape Certificate Management System 6.1 (SP 3.1)
+* [11/18/2003] Netscape Certificate Management System 6.1 (SP 4)
+'''Major Features:'''
+* Certificate Authority (CA) subsystem
+* Registration Authority (RA) subsystem
+* Data Recovery Manager (DRM) subsystem
+* Online Certificate Status Protocol (OCSP) Manager subsystem
+* Netscape Certificate Management System 6.1 (SP 1) provided Common Criteria Certification
+* Authorization
+* Cross Certificate Pairs
+* Signed Audit Log
+* UNICODE Support for Subject Name and Issuer Name
+* CMC Enroll and CMC Revoke
+* Proof of Possession
+* Allowing Empty Certificate Subject Name
+* Certificate Profiles
+* Console Certificate Authentication
+* Self Tests
+* Certificate Search Improvements
+* Authority Revocation List
+* CRL Issuing Points
+* Clean Shutdown
+* Removed support for issuance of wTLS-compliant certificates (for wireless applications/devices)
+'''Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>6.1 Preview Drop (Beta 1)</th>
+    <th>6.1 Preview Drop (Beta 2)</th>
+    <th>6.1</th>
+    <th>6.1 (SP 1)</th>
+    <th>6.1 (SP 2)</th>
+    <th>6.1 (SP 3)</th>
+    <th>6.1 (SP 3.1)</th>
+    <th>6.1 (SP 4)</th>
+    </tr>
+    <tr>
+    <td>Solaris 8</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Netscape Certificate Management System 6.2 &nbsp;&nbsp;&nbsp;[06/17/2003] ==
+
+On June 17, 2003, Netscape Certificate Management System 6.2 was released which included high-availability support compliments of the included Netscape Directory Server.
+
+'''Project Name:'''
+* '''''Tantor''''' (named after the cartoon elephant in Walt Disney's 1999 motion picture '''''Tarzan''''')
+'''Releases:'''
+* [06/17/2003] Netscape Certificate Management System 6.2
+* [04/12/2004] Netscape Certificate Management System 6.2 (SP 1)
+'''Major Features:'''
+* Certificate Authority (CA) subsystem
+* Registration Authority (RA) subsystem
+* Data Recovery Manager (DRM) subsystem
+* Online Certificate Status Protocol (OCSP) Manager subsystem
+* High Availability Support
+* CRL Scheduling
+* New CA Profiles
+'''Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>6.2</th>
+    <th>6.2 (SP 1)</th>
+    </tr>
+    <tr>
+    <td>Red Hat Linux Advanced Server 2.1</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Solaris 8</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Netscape Certificate Management System 6.3 &nbsp;&nbsp;&nbsp;[02/13/2004] ==
+
+On February 13, 2004, Netscape Certificate Management System 6.3 was officially released as an AOL Internal-Only release, and its primary purpose was to prototype a token management system (e. g. - smartcard management) provided by means of two new server subsystems - the Token Key Service, and the Netkey Registration Authority, and a new client known as the AOL Security Client (ASC).
+
+'''Project Name:'''
+* '''''Taz''''' (named after the Tasmanian Devil cartoon character in Time Warner's '''''Looney Tunes''''' and '''''Merrie Melodies''''')
+'''Releases:'''
+* [11/26/2003] Netscape Certificate Management System 6.3 Preview Release 1
+* [01/09/2004] Netscape Certificate Management System 6.3 Preview Release 2
+* [02/13/2004] Netscape Certificate Management System 6.3 (included Netkey Registration Authority 1.0)
+* [08/24/2004] Netkey Registration Authority 6.3
+* [08/25/2004] Netscape Certificate Management System 6.3 (SP 1)
+'''Major Features:'''
+* Certificate Authority (CA) subsystem
+* Registration Authority (RA) subsystem
+* Data Recovery Manager (DRM) subsystem
+* Online Certificate Status Protocol (OCSP) Manager subsystem
+* Added Token Key Service (TKS) subsystem
+* Added Netkey RA subsystem
+* Added AOL Security Client
+* Transport Key Utility
+* Protocol Converter
+'''Server Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>6.3</th>
+    <th>6.3 (SP 1)</th>
+    </tr>
+    <tr>
+    <td>Red Hat Linux Advanced Server 2.1</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Solaris 8</td>
+    <td><center>X</center></td>
+    <td><center>&nbsp;</center></td>
+    </tr>
+    </table>
+'''Client Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>1.0</th>
+    </tr>
+    <tr>
+    <td>Windows 2000 (SP 4)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Windows XP (SP 1)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Netscape Certificate Management System 7.0 &nbsp;&nbsp;&nbsp;[11/30/2004] ==
+
+On November 30, 2004, Netscape Certificate System 7.0 was released, and became the final version released by AOL.  This release dropped the original Registration Authority, and officially added the initial support for smartcard management by means of the two new server subsystems - the Token Key Service, and the Token Processing System.  Interaction with this new feature was provided via a new client entitled the Enterprise Security Client.
+
+'''Project Name:'''
+* '''''Chico''''' (named after a pet dog of one of the CMS developers)
+'''Server Releases:'''
+* [11/30/2004] Netscape Certificate Management System 7.0
+'''Major Features:'''
+* Certificate Authority (CA) subsystem
+* Data Recovery Manager (DRM) subsystem
+* Online Certificate Status Protocol (OCSP) Manager subsystem
+* Dropped support of the Registration Authority (RA)
+* Officially added Token Key Service (TKS) subsystem
+* Officially added Token Processing System (TPS) subsystem (formally known internally as the Netkey Registration Authority)
+* Officially added Enterprise Security Client (ESC) client (formally known internally as the AOL Security Client)
+'''Server Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>7.0</th>
+    </tr>
+    <tr>
+    <td>Red Hat Linux Advanced Server 2.1</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Solaris 8</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+'''Client Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>1.0</th>
+    </tr>
+    <tr>
+    <td>Windows 2000 (SP 4)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Windows XP (SP 2)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Red Hat Certificate System 7.1 &nbsp;&nbsp;&nbsp;[05/27/2005] ==
+
+On December 8, 2004, several Netscape technologies were acquired by Red Hat, including the Netscape Certificate Management System and the Netscape Directory Server.  On May 27, 2005, the Netscape Certificate Management System was officially re-dubbed the Red Hat Certificate System, and released to the world on the 32-bit Red Hat Enterprise Linux 3 AS/ES, the 32-bit Red Hat Enterprise Linux 4 AS/ES, and the 32-bit sparc and 64-bit sparcv9 Solaris 9 platforms.
+
+'''Project Name:'''
+* '''''Red Hat Certificate System 7.1'''''
+'''Releases:'''
+* [05/27/2005] Red Hat Certificate System 7.1
+'''Major Features:'''
+* Certificate Authority (CA) subsystem
+* Data Recovery Manager (DRM) subsystem
+* Online Certificate Status Protocol (OCSP) Manager subsystem
+* Token Key Service (TKS) subsystem
+* Token Processing System (TPS) subsystem
+* Enterprise Security Client (ESC) client
+* Token management support for server-side key generation, key archival and recovery
+* ACL-based recovery approval
+* Revised client software
+* Applet on token
+* Support of SHA-256 and SHA-512
+* Data Recovery Manager (DRM): Entropy Collection for Server-side Key Generation
+* RHCS 7.1 Migration
+* Integrated 32-bit IBM JRE 1.4.2 (RHEL only)
+* Support for RPMs (RHEL only - consists of a single large monolithic "RPM")
+'''Server Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>7.1</th>
+    </tr>
+    <tr>
+    <td>32-bit Red Hat Enterprise Linux Advanced Server (AS) 3 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Red Hat Enterprise Linux Enterprise Server (ES) 3 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Red Hat Enterprise Linux Advanced Server (AS) 4 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Red Hat Enterprise Linux Enterprise Server (ES) 4 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Solaris 9 (sparc)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Solaris 9 (sparcv9)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+'''Client Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>1.1</th>
+    </tr>
+    <tr>
+    <td>Apple Mac OS X 10.3 (Panther)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Microsoft Windows XP Professional</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Red Hat Enterprise Linux Advanced Server (AS) 3 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Red Hat Enterprise Linux Enterprise Server (ES) 3 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Red Hat Enterprise Linux Advanced Server (AS) 4 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Red Hat Enterprise Linux Enterprise Server (ES) 4 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Red Hat Certificate System 7.2 &nbsp;&nbsp;&nbsp;[02/05/2007] ==
+
+On February 5, 2007, Red Hat Certificate System 7.2 was released, and was changed significantly from being one huge monolithic package of various embedded servers and subsystems into numerous modular independent RPMs/PKGs.  While still required for operation, the Red Hat Directory Server was removed as an embedded server and required to be obtained as a separate downloadable entity, and the reliance upon the Netscape Enterprise Security web server was replaced by version 2.0 of the Apache web server, and version 5.5 of the Tomcat web server.  This server was made available on both 32-bit and 64-bit Red Hat Enterprise Linux 4 AS/ES, and 64-bit sparcv9 Solaris 9 platforms.
+
+'''Project Name:'''
+* '''''Red Hat Certificate System 7.2.0'''''
+'''Releases:'''
+* [02/05/2007] Red Hat Certificate System 7.2
+'''Major Features:'''
+* Certificate Authority (CA) subsystem
+* Data Recovery Manager (DRM) subsystem
+* Online Certificate Status Protocol (OCSP) Manager subsystem
+* Token Key Service (TKS) subsystem
+* Token Processing System (TPS) subsystem
+* Enterprise Security Client (ESC) client
+* New silent installation script to ease installing and configuring multiple subsystem instances
+* New security domain structure to organize and streamline communications between subsystems
+* Enhanced cloning functionalities utilizing the new security domain organization
+* Enhanced Red Hat Enterprise Security Client GUI and diagnostic and Phone Home functionality
+* Multiple distinct packages rather than a single all-encompassing package (RPMs on RHEL, PKGs on Solaris)
+* A new standards-based architecture which more closely integrates Red Hat Certificate System with its base operating system
+* Simplified browser-based HTML configuration panels for setting up subsystems
+* Replaced Netscape Enterprise Server (NES) with Tomcat and Apache web servers
+* Decoupled Red Hat Directory Server from Red Hat Certificate System
+* Relocatable Red Hat Certificate System subsystem instances
+* New supported server platform, Red Hat Enterprise Linux AS 4 (Intel 64-bit)
+* New supported client platform, Apple Macintosh OS X 10.4.x (Tiger) (Power PC 32-bit)
+'''Server Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>7.2.0</th>
+    </tr>
+    <tr>
+    <td>32-bit Red Hat Enterprise Linux AS 4 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Red Hat Enterprise Linux ES 4 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Red Hat Enterprise Linux AS 4 for AMD64 and Intel EM64T (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Red Hat Enterprise Linux ES 4 for AMD64 and Intel EM64T (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Solaris 9 (sparcv9)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+'''Client Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>1.0.0</th>
+    </tr>
+    <tr>
+    <td>Apple Macintosh OS X 10.4.x (Tiger) (Power PC)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Microsoft Windows XP Professional (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Red Hat Enterprise Linux AS 4 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Red Hat Enterprise Linux ES 4 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Red Hat Enterprise Linux AS 4 for AMD64 and Intel EM64T (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Red Hat Enterprise Linux ES 4 for AMD64 and Intel EM64T (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Red Hat Certificate System 7.3 &nbsp;&nbsp;&nbsp;[05/11/2007] ==
+
+On May 11, 2007, Red Hat Certificate System 7.3 was released, and included a newly re-written light-weight Registration Authority.
+
+'''Project Name:'''
+* '''''Red Hat Certificate System 7.3.0'''''
+'''Releases:'''
+* [05/11/2007] Red Hat Certificate System 7.3 (32-bit and 64-bit RHEL4, all clients)
+* [07/20/2007] Red Hat Certificate System 7.3 (64-bit Solaris 9)
+'''Major Features:'''
+* Certificate Authority (CA) subsystem
+* Data Recovery Manager (DRM) subsystem
+* Online Certificate Status Protocol (OCSP) Manager subsystem
+* Token Key Service (TKS) subsystem
+* Token Processing System (TPS) subsystem
+* Enterprise Security Client (ESC) client
+* Added Registration Authority (RA) subsystem
+* Added support for the Simple Certificate Enrollment Protocol (SCEP) designed by Cisco
+* Added an auto-enrollment Proxy
+'''Server Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>7.3.0</th>
+    </tr>
+    <tr>
+    <td>32-bit Red Hat Enterprise Linux AS 4 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Red Hat Enterprise Linux ES 4 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Red Hat Enterprise Linux AS 4 for AMD64 and Intel EM64T (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Red Hat Enterprise Linux ES 4 for AMD64 and Intel EM64T (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Solaris 9 (sparcv9)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+'''Client Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>1.0.1</th>
+    </tr>
+    <tr>
+    <td>Apple Macintosh OS X 10.4.x (Tiger) (Power PC)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Apple Macintosh OS X 10.4.x (Tiger) (Intel)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>Microsoft Windows XP Professional (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Red Hat Enterprise Linux AS 4 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Red Hat Enterprise Linux ES 4 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Red Hat Enterprise Linux AS 4 for AMD64 and Intel EM64T (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Red Hat Enterprise Linux ES 4 for AMD64 and Intel EM64T (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Mistakes ==
+
+If you should discover any mistakes in this history, please mail this information to [http://www.redhat.com/mailman/listinfo/pki-devel pki-devel@redhat.com].

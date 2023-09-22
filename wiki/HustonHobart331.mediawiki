@@ -1,0 +1,29 @@
+The Functions of a Proxy Server
+
+
+
+A server is really a combination of one or more software and hardware made to provide networking service to clients. Individually, it could also refer to any software or dedicated hardware accustomed to provide such service or any system that's running a server operating system.
+
+A proxy server could therefore be described as a firewall mechanism that substitutes the IP address of the protected host network with a temporary address for those data traffic passing through it. It can make decisions to authenticate the consumer or client IP address' permission to gain access to the network and establishes connection to any remote computer with respect to the consumer.
+
+Essentially, it is a computer that acts being an interface or intermediary for connecting several computers which have different protocols and therefore are placed at various remote locations over the internet.
+
+When a user (computer) tries to connect with another user to consider any resources for example files, webpages, connections, etc available on their database, it is the proxy server that evaluates if such connection is permitted based on the existing settings around the remote computer. Once the proxy server authenticates these conditions are met, after that it makes the request on behalf of the user and establishes the bond.
+
+
+[http://audiopedia.com.br/index.php?title=User:SchillingCuster21 free proxies]
+
+The proxy server can either modify either the request or response from the user or client or, react to a request without contacting the server. It does this by using cached similar responses stored on the remote server the resources are now being requested from.
+
+The other functions include:
+
+1. It reduces the time required to access resources from servers by serving cached responses for similar request to clients.
+2. It serves a log to supply info on internet usage for auditing or evaluation purposes.
+3. It could be used to over-ride security or parental control
+4. It enables access to regionally restricted resources
+5. It hides its clients for anonymous browsing and security
+6. It may be used to block use of unwanted or unauthorised sites
+7. It serves as a scan to filter malware before delivering requested resources
+8. It serves as a scan to block certain outgoing data. To protected files
+
+Since it is a middleman that acts with respect to several users or clients, a proxy server can be placed anywhere in-between the users or at destination servers on the web for it to serve its functions.

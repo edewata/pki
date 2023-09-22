@@ -1,0 +1,68 @@
+= Instance Files =
+
+The instance files are located in /var/lib/pki/<instance>.
+
+== Systemd Files ==
+
+The instance systemd files are:
+
+* /etc/systemd/system/pki-tomcatd.target.wants/pki-tomcatd@<instance>.service
+* /etc/systemd/system/pki-tomcatd-nuxwdog.target.wants/pki-tomcatd-nuxwdog@<instance>.service
+
+See also [https://github.com/dogtagpki/pki/wiki/Systemd Systemd].
+
+= Subsystem Files =
+
+The subsystem files are located in /var/lib/pki/<instance>.
+
+= Log Files =
+
+== Install Log Files ==
+
+The install log files are located in /var/log/pki.
+
+== Upgrade Log Files ==
+
+The upgrade log files are located in /var/log/pki.
+
+== Instance Log Files ==
+
+The instance log files are located in /var/log/pki/<instance>.
+
+== Subsystem Log Files ==
+
+The subsystem log files are located in /var/log/pki/<instance>/<subsystem>.
+
+= Shared Files =
+
+== Common Files ==
+
+The files that are used by both client and server are located in /usr/share/pki.
+
+== Server Shared Files ==
+
+The files that are used by the server only are located in /usr/share/pki/server.
+
+== Subsystem Shared Files ==
+
+The files that are used by all subsystems on the same machine are located in /usr/share/pki/<subsystem>.
+
+= Java Libraries =
+
+Java libraries are located in /usr/share/java/pki.
+
+= Python Libraries =
+
+Python libraries are stored in /usr/lib/python2.7/site-packages/pki.
+
+= Systemd Files =
+
+Systemd files are stored in /etc/systemd/system and /usr/lib/systemd/system.
+
+= Admin Tools =
+
+Admin tools are stored in /usr/sbin.
+
+= Documentations =
+
+Documentations are stored in /usr/share/doc/pki-base and /usr/share/man.

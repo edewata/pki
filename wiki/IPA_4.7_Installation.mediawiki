@@ -1,0 +1,69 @@
+= Installing IPA Master with CA =
+
+<pre>
+$ ipa-server-install -U -r EXAMPLE.COM -p Secret.123 -a Secret.123
+</pre>
+
+= Installing IPA Replica with CA Clone =
+
+<pre>
+$ ipa-client-install -U --server master.example.com --domain example.com --realm EXAMPLE.COM -p admin -w Secret.123
+$ ipa-replica-install -w Secret.123
+$ ipa-ca-install -p Secret.123
+</pre>
+
+= Installing KRA on IPA Master =
+
+<pre>
+$ ipa-kra-install -p Secret.123
+</pre>
+
+= Installing KRA Clone on IPA Replica =
+
+<pre>
+$ ipa-kra-install -p Secret.123
+</pre>
+
+= Subordinate CA Installation =
+
+Generate the CSR with the following command:
+
+<pre>
+$ ipa-server-install -r IPA.EXAMPLE -n ipa.example -p Secret.123 -a Secret.123 --setup-dns --no-forwarders --auto-reverse --no-dnssec-validation --external-ca --unattended
+</pre>
+
+Issue the certificate with the following command:
+
+<pre>
+$ python << EOF
+from ipatests.pytest_plugins.integration.create_external_ca import ExternalCA
+ 
+external_ca = ExternalCA()
+root_ca = external_ca.create_ca()
+with open('/root/ipa.csr', 'rb') as f:
+    ipa_csr = f.read()
+ipa_ca = external_ca.sign_csr(ipa_csr)
+with open('/root/rootca.pem', 'wb') as f:
+    f.write(root_ca)
+with open('/root/ipaca.pem', 'wb') as f:
+    f.write(ipa_ca)
+EOF
+</pre>
+
+See also https://github.com/freeipa/freeipa/blob/master/ipatests/pytest_plugins/integration/create_external_ca.py.
+
+Complete the installation with the following command:
+
+<pre>
+$ ipa-server-install --external-cert-file=/root/ipaca.pem --external-cert-file=/root/rootca.pem -p Secret.123
+</pre>
+
+= Uninstalling IPA =
+
+<pre>
+$ ipa-server-install --uninstall -U
+</pre>
+
+= See Also =
+
+* [https://github.com/dogtagpki/freeipa/wiki/Installation-Guide Installation Guide]

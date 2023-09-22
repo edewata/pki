@@ -1,0 +1,6 @@
+<noinclude>{{Template}}</noinclude><includeonly>{| WIDTH="85%" cellpadding=5 cellspacing=0 style="background-color: #efefef; border-top: solid 1px #3c6eb4; border-bottom: solid 1px #3c6eb4;"
+|-valign="top"
+|[[Image:Note.png]]
+|<font style="color:#294172; font-size:14pt; vertical-align:bottom;">'''NOTE''' {{{1}}}</font><br>
+<div class="scroll">{{{2}}}</div>
+|}</includeonly>

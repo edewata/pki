@@ -1,0 +1,33 @@
+= Overview =
+
+{| border="1" style="border-collapse: collapse;"
+! width="100" | Platform
+! width="200" | Jersey
+|-
+| Fedora 28
+| [https://koji.fedoraproject.org/koji/packageinfo?packageID=15840 Jersey 2.23]
+|-
+| Fedora 27
+| [https://koji.fedoraproject.org/koji/packageinfo?packageID=15840 Jersey 2.23]
+|-
+| Debian
+| [https://packages.debian.org/source/sid/jersey1 Jersey 1.19]
+|}
+
+= Application =
+
+<pre>
+import javax.ws.rs.ApplicationPath;
+import javax.ws.rs.core.Application;
+
+@ApplicationPath("rest")
+public class ApplicationConfig extends Application {
+
+}
+</pre>
+
+= References =
+
+* [https://jersey.github.io/documentation/latest/user-guide.html Jersey User Guide]
+* [[Java EE]]
+* [[Jetty]]

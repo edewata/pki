@@ -1,0 +1,149 @@
+= Prerequisites =
+
+<pre>
+$ dnf install dnf-plugin-copr
+</pre>
+
+or
+
+<pre>
+$ yum install yum-plugin-copr
+</pre>
+
+= Enabling COPR Repository =
+
+<pre>
+$ dnf copr enable <repository>
+</pre>
+
+or
+
+<pre>
+$ yum copr enable <repository>
+</pre>
+''
+
+= Managing COPR Repository =
+
+== Installation ==
+
+On Fedora:
+
+<pre>
+$ dnf install copr-cli
+</pre>
+
+On RHEL:
+
+<pre>
+$ yum install copr-cli
+</pre>
+
+== Authentication ==
+
+Generate an [https://copr.fedorainfracloud.org/api/ API Token] and save it into ~/.config/copr, for example:
+
+<pre>
+[copr-cli]
+login = P497sg==##ekcpg3ysdfkgprswvoxp
+username = <username>
+token = ldavxiszflvejqxegszqdbbgzvaxbr
+copr_url = https://copr.fedorainfracloud.org
+# expiration date: 2018-03-23
+</pre>
+
+If necessary, the CA cert can be specified as follows:
+
+<pre>
+$ export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-bundle.crt
+</pre>
+
+Verify with the following command:
+
+<pre>
+$ copr whoami
+<username>
+</pre>
+
+== Listing COPR Repositories ==
+
+<pre>
+$ copr list
+</pre>
+
+== Creating COPR Repository ==
+
+To create a new repository:
+
+<pre>
+$ copr create \
+    --chroot fedora-34-x86_64 \
+    --chroot fedora-35-x86_64 \
+    --chroot fedora-36-x86_64 \
+    --chroot fedora-rawhide-x86_64 \
+    test
+</pre>
+
+To fork an existing repository:
+
+<pre>
+$ copr fork pki pki-11.2
+</pre>
+
+== Modifying COPR Repository ==
+
+<pre>
+$ copr modify \
+    --chroot fedora-34-x86_64 \
+    --chroot fedora-35-x86_64 \
+    --chroot fedora-36-x86_64 \
+    --chroot fedora-rawhide-x86_64 \
+    test
+</pre>
+
+== Creating COPR Build ==
+
+Generate the SPRM files as described in [[PKI Fedora Development]], then upload with the following command:
+
+<pre>
+$ copr build <COPR repo> <SRPM file> [-r <target>]
+</pre>
+
+For example, to build PKI for all platforms supported by the repository:
+
+<pre>
+$ copr build pki-10.6 pki-core-10.6.0-0.1.fc29.src.rpm
+</pre>
+
+To build PKI for certain platforms only:
+
+<pre>
+$ copr build pki-10.6 \
+    pki-core-10.6.0-0.1.fc29.src.rpm \
+    -r fedora-27-x86_64 \
+    -r fedora-28-x86_64 \
+    -r fedora-rawhide-x86_64
+</pre>
+
+To build in someone else's COPR repo, go to Settings -> Permissions in that repo and request a permission.
+
+= COPR API =
+
+To obtain project info:
+
+* https://copr.fedorainfracloud.org/api_2/projects?group=pki&name=10.6
+* https://copr.fedorainfracloud.org/api_2/projects?owner=edewata&name=pki-10.6
+
+See [http://copr-rest-api.readthedocs.io/en/latest/index.html COPR API].
+
+= References =
+
+* [https://github.com/dogtagpki/pki/wiki/COPR-Repositories PKI COPR Repositories]
+* [[IPA COPR]]
+* [[rpkg]]
+* [[Tito]]
+* [https://docs.pagure.org/copr.copr/user_documentation.html#github-webhooks GitHub Webhooks]
+* [http://miroslav.suchy.cz/blog/archives/2013/12/17/how_to_create_new_release_of_rpm_package_in_5_seconds/ How to create new release of RPM package in 5 seconds]
+* [http://miroslav.suchy.cz/blog/archives/2013/12/29/how_to_build_in_copr/ How to build in Copr]
+* [https://docs.pagure.org/copr.copr/custom_source_method.html Custom source method]
+* [https://pavel.raiskup.cz/blog/copr-ci-and-custom-source-method.html CI/CD with Copr, finally for any project?]

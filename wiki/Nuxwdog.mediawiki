@@ -1,0 +1,57 @@
+= Overview =
+
+Nuxwdog is a watchdog daemon that can be used to start, stop, monitor and reconfigure server programs.
+It is based on the uxwdog code that is used to start the Netscape Enterprise Server (NES).
+
+Nuxwdog is used in Red Hat Certificate System 8 to start all of the Java-based and C/C++ based servers.
+These servers require passwords to access security databases in order to start, but there was a requirement that
+no unencrypted password files be stored on the system. In this case, nuxwdog is used to prompt the user for the
+relevant passwords during server startup. These passwords are then cached by the nuxwdog, so that nuxwdog can
+restart the server without human intervention. This is particularly important for automatically restarting the server
+in case of a server crash.
+
+More details on how nuxwdog works and how to configure it can be found in this [[Nuxwdog/HOWTO]]
+
+If you would like to contribute to the nuxwdog, a good place to start would be our [[Nuxwdog/Contributions]] page.
+
+If you want to file a bug or enhancement request, please log in with your Fedora Account System credentials.
+If you do not have a Fedora Account, you can register for one at ​https://admin.fedoraproject.org/accounts/
+
+= Installation =
+
+ $ dnf install nuxwdog
+
+= Configuration =
+
+== Enabling Nuwxdog ==
+
+See [https://github.com/dogtagpki/pki/wiki/Enabling-Nuxwdog Enabling Nuxwdog].
+
+== Disabling Nuxwdog ==
+
+See [https://github.com/dogtagpki/pki/wiki/Disabling-Nuxwdog Disabling Nuxwdog].
+
+== Manual Configuration ==
+
+See [[Nuxwdog Manual Configuration]].
+
+= Usage =
+
+To starting nuxwdog-enabled instance:
+
+ $ systemctl start pki-tomcatd-nuxwdog@<font color="red">pki-tomcat</font>.service
+
+To stopping nuxwdog-enabled instance:
+
+ $ systemctl stop pki-tomcatd-nuxwdog@<font color="red">pki-tomcat</font>.service
+
+= References =
+
+* [https://pagure.io/nuxwdog nuxwdog]
+* [https://linux.die.net/man/1/nuxwdog nuxwdog(1)]
+* [https://github.com/dogtagpki/pki/wiki/Systemd Systemd]
+* [https://github.com/dogtagpki/tomcat/wiki/User-Guide Tomcat User Guide]
+* [https://github.com/dogtagpki/pki/blob/master/docs/admin/Nuxwdog.md PKI Nuxwdog]
+* [https://github.com/dogtagpki/pki/wiki/PKI-Server-Nuxwdog-CLI PKI Server Nuxwdog CLI]
+* [https://github.com/dogtagpki/pki/wiki/PKI-Server-Instance-Nuxwdog-CLI PKI Server Instance Nuxwdog CLI]
+* [[Keyring]]

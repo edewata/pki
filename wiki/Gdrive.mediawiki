@@ -1,0 +1,66 @@
+= Installation =
+
+To install gdrive:
+
+<pre>
+$ wget -O gdrive https://docs.google.com/uc?id=0B3X9GlR6EmbnQ0FtZmJJUXEyRTA
+$ chmod +x gdrive
+</pre>
+
+= Authentication =
+
+By default the Google Drive authentication token will be stored in $HOME/.gdrive. If that location is inaccessible, a different location can be specified with GDRIVE_CONFIG_DIR environment variable.
+
+To authenticate to Google Drive:
+
+<pre>
+$ ./gdrive about
+Authentication needed
+Go to the following url in your browser:
+https://accounts.google.com/o/oauth2/auth?access_type=offline&client_id=...&redirect_uri=urn%3Aietf%3Awg%3Aoauth%3A2.0%3Aoob&response_type=code&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdrive&state=state
+
+Enter verification code: 
+</pre>
+
+It will store the token in ~/.gdrive/token_v2.json. If authentication failed, try removing the old ~/.gdrive/token_v2.json.
+
+See also [https://developers.google.com/identity/protocols/OAuth2ServiceAccount Service Account].
+
+= Listing Files and Folders =
+
+To list files and folders:
+
+<pre>
+$ ./gdrive list [-q <query>] [--order <order>]
+</pre>
+
+For example:
+
+<pre>
+$ gdrive list -q "name = 'Backup'"
+</pre>
+
+See also:
+* [https://developers.google.com/drive/v3/web/search-parameters Search for Files and Team Drives]
+* [https://godoc.org/google.golang.org/api/drive/v3#FilesListCall.OrderBy func (*FilesListCall) OrderBy]
+
+= Downloading a File =
+
+To download a file:
+
+<pre>
+$ ./gdrive download <file ID>
+</pre>
+
+= Uploading a File =
+
+<pre>
+$ ./gdrive upload -p <parent ID> <file>
+</pre>
+
+= See Also =
+
+* [[Google Drive]]
+* [https://github.com/prasmussen/gdrive gdrive]
+* [https://developers.google.com/drive/search-parameters Google Drive: Search for Files]
+* [[rclone]]

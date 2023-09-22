@@ -1,0 +1,152 @@
+= Overview =
+
+This page describes the process to set up Keycloak as an identity provider for PKI.
+
+'''Note:''' This functionality is not yet officially supported.
+
+= Building Keycloak =
+
+To build Keycloak:
+
+ $ git clone https://github.com/keycloak/keycloak.git
+ $ cd keycloak
+ $ mvn install
+
+See also:
+
+* https://github.com/keycloak/keycloak/blob/master/docs/building.md
+
+= Installation =
+
+To install Keycloak server:
+
+ $ wget https://downloads.jboss.org/keycloak/6.0.1/keycloak-6.0.1.tar.gz
+ $ tar xzvf keycloak-6.0.1.tar.gz
+ $ cd keycloak-6.0.1/bin
+
+To setup admin user:
+
+ $ ./add-user-keycloak.sh -u admin -p Secret.123
+
+To start Keycloak server:
+
+ $ ./standalone.sh -b=0.0.0.0
+
+= Adding a New Realm =
+
+To access the Admin Console, open http://$HOSTNAME:8080/auth/admin/.
+
+To access a realm, open http://$HOSTNAME:8080/auth/realms/<realm>/account.
+
+= Adding Roles in Realm =
+
+= Adding Users in Realm =
+
+= Configuring Tomcat Client =
+
+To create a [https://github.com/dogtagpki/pki/blob/master/docs/installation/Installing_Basic_PKI_Server.md Tomcat server with TLS connector]:
+
+ $ pki-server create tomcat@pki
+ $ pki-server http-connector-mod -i tomcat@pki --port 9080 Connector1
+
+To install [https://www.keycloak.org/downloads.html Keycloak client adapter]:
+
+ $ curl https://downloads.jboss.org/keycloak/7.0.0/adapters/keycloak-oidc/keycloak-tomcat-adapter-dist-7.0.0.tar.gz \
+     --output keycloak-tomcat-adapter-dist-7.0.0.tar.gz
+ $ mkdir lib
+ $ cd lib
+ $ tar xzvf ../keycloak-tomcat-adapter-dist-7.0.0.tar.gz
+ $ mv * /var/lib/tomcats/pki/lib
+
+To enable Keycloak, prepare context.xml for customization:
+
+<pre>
+$ cd /var/lib/tomcats/pki/conf
+$ rm context.xml
+$ cp /etc/tomcat/context.xml .
+</pre>
+
+Then add the following &lt;Valve&gt; element:
+
+<pre>
+<Context>
+    <Valve className="org.keycloak.adapters.tomcat.KeycloakAuthenticatorValve"/>
+</Context>
+</pre>
+
+To register Tomcat client:
+
+* Open Keycloak Admin Console
+* Click Clients -> Create
+** Client protocol: openid-connect
+** Root URL: http://$HOSTNAME:9080/
+
+To generate client adapter configuration, click Installation:
+
+* Format option: Keycloak OIDC JSON
+
+Save the configuration as keycloak.json, then store it in PKI web application's WEB-INF folder
+(e.g. /usr/share/pki/ca/webapps/ca/WEB-INF/keycloak.json).
+
+<pre>
+{
+  "realm": "demo",
+  "auth-server-url": "http://$HOSTNAME:8080/auth",
+  "ssl-required": "external",
+  "resource": "tomcat",
+  "public-client": true,
+  "confidential-port": 0
+}
+</pre>
+
+To configure web application, edit the WEB-INF/web.xml:
+
+* Define security constraints
+* Define login-config with auth-method set to KEYCLOAK
+
+<pre>
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE web-app 
+   PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN" "file:///usr/share/pki/setup/web-app_2_3.dtd">
+<web-app>
+
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>Account Services</web-resource-name>
+            <url-pattern>/account/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>*</role-name>
+        </auth-constraint>
+        <user-data-constraint>
+            <transport-guarantee>CONFIDENTIAL</transport-guarantee>
+        </user-data-constraint>
+    </security-constraint>
+
+    <login-config>
+        <auth-method>KEYCLOAK</auth-method>
+    </login-config>
+
+    <security-role>
+        <role-name>*</role-name>
+    </security-role>
+
+</web-app>
+</pre>
+
+To run Tomcat server:
+
+ $ pki-server run tomcat@pki
+
+= See Also =
+
+* [[SSO]]
+* [https://www.keycloak.org/ Keycloak]
+* [https://github.com/keycloak/keycloak Keycloak GitHub Repository]
+* [https://www.keycloak.org/documentation.html Keycloak Documentation]
+* [https://www.keycloak.org/docs/latest/server_installation/index.html#_database Relational Database Setup]
+* [https://www.keycloak.org/docs/latest/securing_apps/index.html#_tomcat_adapter Keycloak Tomcat Adapters]
+* [http://blog.arungupta.me/bind-wildfly-different-ip-address-multihomed/ Bind WildFly to a different IP address]
+* [https://dzone.com/articles/deploying-keycloak-in-tomcat Deploying Keycloak In Tomcat]
+* [https://www.youtube.com/watch?v=FdYAdJkwynA Configuring Tomcat to use Keycloak for oAuth login]
+* [[Deploying Keycloak on OpenShift]]

@@ -1,0 +1,9 @@
+Supported algorithms
+* HmacSHA1 (Hmac-SHA1)
+* Any secret key type (AES, DES, etc.) can be used as the MAC key, but it must be a JSS key. That is, it must be an instanceof org.mozilla.jss.crypto.SecretKeyFacade.
+
+The params passed to init() are ignored.
+
+= References =
+
+* [[JSS Provider]]

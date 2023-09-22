@@ -1,0 +1,11 @@
+= Containers =
+
+* [https://github.com/docker/build-push-action/issues/225 Sharing Docker containers between jobs in a workflow]
+* [https://github.com/docker/build-push-action docker/build-push-action]
+
+= See Also =
+
+* [[GitHub]]
+* [https://help.github.com/en/actions/automating-your-workflow-with-github-actions/events-that-trigger-workflows Events that trigger workflows]
+* [https://github.community/t5/GitHub-Actions/How-to-trigger-an-action-on-push-or-pull-request-but-not-both/td-p/35805 How to trigger an action on push or pull request but not both?]
+* [https://github.com/actions/starter-workflows/blob/master/ci/docker-image.yml docker-image.yml]

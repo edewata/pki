@@ -1,0 +1,121 @@
+= Overview =
+
+The current Dogtag only supports Tomcat 7. In Fedora 23 the Tomcat is changed to version 8, which is incompatible with the current Dogtag. This page contains the efforts required to support Tomcat 8 in Fedora 23.
+
+= Build Issues =
+
+== Dogtag does not compile ==
+
+The following classes need to be updated due to changes in Tomcat API and Servlet API:
+* base/server/tomcat/src/com/netscape/cms/tomcat/SSLAuthenticatorWithFallback.java
+* base/server/tomcat/src/com/netscape/cms/tomcat/ProxyRealm.java
+* base/server/cms/src/com/netscape/cms/servlet/common/CMSTemplate.java
+
+See also:
+* [http://tomcat.apache.org/tomcat-8.0-doc/api/org/apache/catalina/authenticator/AuthenticatorBase.html Class AuthenticatorBase]
+* [http://tomcat.apache.org/tomcat-8.0-doc/api/org/apache/catalina/Realm.html Interface Realm]
+* [https://tomcat.apache.org/tomcat-8.0-doc/servletapi/javax/servlet/ServletOutputStream.html Class ServletOutputStream]
+
+== Tomcat JSS does not compile ==
+
+The Tomcat JSS needs to be updated due to changes in Tomcat API.
+
+== Support for multiple Tomcat versions ==
+
+Since the same Dogtag versions may run on multiple platforms, and each platform supports the different Tomcat versions, Dogtag needs to support multiple Tomcat versions simultaneously. That means Dogtag must maintain separate set of files for each Tomcat versions, and build the ones available on the target platform. If a platforms supports both Tomcat versions, Dogtag needs to provide a mechanism to select which Tomcat version to use on new and existing instances.
+
+Same thing with Tomcat JSS, since the same Tomcat JSS versions may run on multiple platforms with different Tomcat versions, it needs to maintain separate set of files for each Tomcat version.
+
+= Installation Issues =
+
+== Incompatible Tomcat configuration ==
+
+The base/server/share/conf/server.xml needs to be modified:
+* add SecurityListener
+* remove JasperListener
+* add JreMemoryLeakPreventionListener
+* add ThreadLocalLeakPreventionListener
+
+== Incompatible deployment descriptors ==
+
+The following deployment descriptors need to be updated:
+* base/server/share/conf/Catalina/localhost/ROOT.xml
+* base/server/share/conf/Catalina/localhost/pki.xml
+* base/<subsystem>/shared/conf/Catalina/localhost/<subsystem>.xml
+
+The changes include:
+* move allowLinking attribute from Context to Resources
+
+See also [http://tomcat.apache.org/tomcat-8.0-doc/config/context.html The Context Container].
+
+== NullPointerException during SSL initialization ==
+
+The current Tomcat JSS and JSS does not support the non-blocking Java NIO connector which is used by default in Tomcat 8. 
+
+<pre>
+25-Feb-2015 20:27:38.190 SEVERE [main] org.apache.coyote.AbstractProtocol.init Failed to initialize end point associated with ProtocolHandler ["http-nio-8443"]
+ java.lang.NullPointerException
+        at org.apache.tomcat.util.net.NioEndpoint.bind(NioEndpoint.java:362)
+...
+</pre>
+
+The workaround is to configure the secure connector in server.xml to use the blocking Java connector.
+
+<pre>
+<Connector
+    ...
+    protocol="org.apache.coyote.http11.Http11Protocol"
+    ... />
+</pre>
+
+See also:
+* [http://tomcat.apache.org/tomcat-8.0-doc/config/http.html The HTTP Connector]
+* [http://tomcat.apache.org/tomcat-8.0-doc/api/org/apache/tomcat/util/net/SSLSupport.html Interface SSLSupport]
+* [http://tomcat.apache.org/tomcat-8.0-doc/api/org/apache/tomcat/util/net/SSLImplementation.html Class SSLImplementation]
+* [http://docs.oracle.com/javase/8/docs/api/javax/net/ssl/SSLSession.html Interface SSLSession]
+
+== Missing Mozilla-JSS provider ==
+
+Due to the Tomcat JSS issue above, the JSS security provider is not loaded:
+
+<pre>
+25-Feb-2015 20:29:29.849 SEVERE [localhost-startStop-1] org.apache.catalina.util.SessionIdGeneratorBase.createSecureRandom Exception initializing random number generator using provider [Mozilla-JSS]
+ java.security.NoSuchProviderException: no such provider: Mozilla-JSS
+        at sun.security.jca.GetInstance.getService(GetInstance.java:83)
+...
+</pre>
+
+With the above workaround the problem no longer exists.
+
+= Runtime Issues =
+
+== Internal Server Error during authentication ==
+
+The server generates an internal server error during the authentication process over SSL and there is no error in the log file:
+<pre>
+$ pki -d ~/.dogtag/pki-tomcat/ca/alias/ -c Secret.123 -n caadmin ca-user-find
+PKIException: Internal Server Error
+</pre>
+
+The problem disappears after fixing Tomcat JSS build issues.
+
+= Upgrade Issues =
+
+When upgrading existing instances from F21 to F22, some of the configuration changes would have to be done automatically by an upgrade script to the correct Tomcat version:
+* updating Tomcat configuration
+* updating deployment descriptors
+
+= References =
+
+* [[Tomcat]]
+* [[Tomcat 8]]
+* [http://tomcat.apache.org/migration-8.html Migrating from 7.0.x to 8.0.x]
+* [http://tomcat.apache.org/tomcat-8.0-doc/api/ Apache Tomcat 8.0 API]
+* [https://github.com/apache/tomcat80 Tomcat 8.0 source repository]
+* [https://fedorahosted.org/pki/ticket/1264 PKI Ticket #1264 - Support for Tomcat 8.0]
+* [https://fedorahosted.org/pki/ticket/1310 PKI Ticket #1310 - Auto migration to Tomcat 8]
+* [https://bugzilla.redhat.com/show_bug.cgi?id=1195811 PKI Bug 1195811 - PKI fails to install, missing support for Tomcat 8.0]
+* [https://bugzilla.redhat.com/show_bug.cgi?id=1198450 Tomcat JSS Bug 1198450 - Support for Tomcat 8]
+* [https://fedorahosted.org/tomcatjss/ tomcatjss project]
+* [https://apps.fedoraproject.org/packages/tomcatjss tomcatjss Fedora package]
+* [http://hg.openjdk.java.net/jdk8/jdk8/jdk/ JDK 8 source repository]

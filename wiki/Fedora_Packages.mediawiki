@@ -1,0 +1,213 @@
+= Overview =
+
+{| class="wikitable"
+! Name
+|-
+| [https://src.fedoraproject.org/rpms/aopalliance aopalliance]
+|-
+| [https://src.fedoraproject.org/rpms/slf4j slf4j]
+|-
+| [https://src.fedoraproject.org/rpms/apache-commons-logging apache-commons-logging]
+|-
+| [https://src.fedoraproject.org/rpms/apache-ivy apache-ivy]
+|-
+| [https://src.fedoraproject.org/rpms/velocity velocity]
+|-
+| [https://src.fedoraproject.org/rpms/gradle gradle]
+|-
+| [https://src.fedoraproject.org/rpms/google-guice google-guice]
+|-
+| [https://src.fedoraproject.org/rpms/maven-javadoc-plugin maven-javadoc-plugin]
+|-
+| [https://src.fedoraproject.org/rpms/javacc-maven-plugin javacc-maven-plugin]
+|-
+| [https://src.fedoraproject.org/rpms/glassfish-fastinfoset glassfish-fastinfoset]
+|-
+| [https://src.fedoraproject.org/rpms/apache-commons-lang apache-commons-lang]
+|-
+| [https://src.fedoraproject.org/rpms/apache-mime4j apache-mime4j]
+|-
+| [https://src.fedoraproject.org/rpms/jakarta-commons-httpclient jakarta-commons-httpclient]
+|-
+| [https://src.fedoraproject.org/rpms/jackson jackson]
+|-
+| [https://src.fedoraproject.org/rpms/ant ant]
+|-
+| [https://src.fedoraproject.org/rpms/junit junit]
+|-
+| [https://src.fedoraproject.org/rpms/javassist javassist]
+|-
+| [https://src.fedoraproject.org/rpms/glassfish-jaxb glassfish-jaxb]
+|-
+| [https://src.fedoraproject.org/rpms/apache-commons-io apache-commons-io]
+|-
+| [https://src.fedoraproject.org/rpms/httpcomponents-client httpcomponents-client]
+|-
+| [https://src.fedoraproject.org/rpms/jettison jettison]
+|-
+| [https://src.fedoraproject.org/rpms/apache-commons-daemon apache-commons-daemon]
+|-
+| [https://src.fedoraproject.org/rpms/xalan-j2 xalan-j2]
+|-
+| [https://src.fedoraproject.org/rpms/maven-assembly-plugin maven-assembly-plugin]
+|-
+| [https://src.fedoraproject.org/rpms/snakeyaml snakeyaml]
+|-
+| [https://src.fedoraproject.org/rpms/javamail javamail]
+|-
+| [https://src.fedoraproject.org/rpms/xmvn xmvn]
+|-
+| [https://src.fedoraproject.org/rpms/maven-jar-plugin maven-jar-plugin]
+|-
+| [https://src.fedoraproject.org/rpms/jvnet-parent jvnet-parent]
+|-
+| [https://src.fedoraproject.org/rpms/nss nss]
+|-
+| [https://src.fedoraproject.org/rpms/resteasy resteasy]
+|-
+| [https://src.fedoraproject.org/rpms/tomcat tomcat]
+|-
+| [https://src.fedoraproject.org/rpms/jss jss]
+|-
+| [https://src.fedoraproject.org/rpms/tomcatjss tomcatjss]
+|-
+| [https://src.fedoraproject.org/rpms/nuxwdog nuxwdog]
+|-
+| [https://src.fedoraproject.org/rpms/ldapjdk ldapjdk]
+|-
+| [https://src.fedoraproject.org/rpms/pki-core pki-core]
+|-
+| [https://src.fedoraproject.org/rpms/pki-console pki-console]
+|-
+| [https://src.fedoraproject.org/rpms/dogtag-pki dogtag-pki]
+|-
+| [https://src.fedoraproject.org/rpms/dogtag-pki-theme dogtag-pki-theme]
+|-
+| [https://src.fedoraproject.org/rpms/freeipa freeipa]
+|}
+
+= Listing Packages =
+
+To list available packages:
+
+ $ dnf list
+
+= Getting Package Source =
+
+To clone a package repository:
+
+<pre>
+$ git clone ssh://<username>@pkgs.fedoraproject.org/pki-core
+$ cd pki-core
+$ git checkout f28
+</pre>
+= Creating Patches =
+
+== Creating patches in main source repository ==
+
+Checkout a branch:
+
+<pre>
+$ cd MAIN_SRC_DIR
+$ git checkout -b DOGTAG_10_3_BRANCH origin/DOGTAG_10_3_BRANCH
+</pre>
+
+Make code changes, then create a new patch:
+
+<pre>
+$ git commit -a -m "Some changes."
+$ git format-patch -M -C --patience --full-index -1
+$ mv <patch filename> ..
+</pre>
+
+== Creating patches in package source repository ==
+
+Prepare a source repository that includes the current patches:
+
+<pre>
+$ cd PKG_SRC_DIR
+$ fedpkg prep
+$ mv pki-core-10.3.0 orig
+$ cd orig
+$ git init .
+$ git add *
+$ git commit -a -m "Initial import."
+</pre>
+
+Make code changes, then create a new patch:
+
+<pre>
+$ git commit -a -m "Some changes."
+$ git format-patch -M -C --patience --full-index -1
+$ mv <patch filename> ..
+</pre>
+
+= Adding Patches =
+
+To include a patch in the spec file:
+
+<pre>
+Patch<N>:           <patch filename>
+...
+
+%prep
+
+...
+%patch<N> -p1
+</pre>
+
+= Continuous Integration =
+
+See https://fedoraproject.org/wiki/CI.
+
+= BuildRoot Overrides =
+
+If a dependency is not published yet, it needs to be added into [https://bodhi.fedoraproject.org/overrides/ BuildRoot Overrides].
+
+To check buildroot overrides via CLI:
+
+<pre>
+$ bodhi overrides query
+</pre>
+
+To check the latest builds:
+
+<pre>
+$ koji latest-build f28-build tomcat
+</pre>
+
+To create BuildRoot override:
+
+<pre>
+$ bodhi overrides save tomcat-8.5.29-1.fc28
+$ koji wait-repo f28-build --build=tomcat-8.5.29-1.fc28
+</pre>
+
+= Development =
+
+* [https://docs.fedoraproject.org/quick-docs/en-US/creating-rpm-packages.html Fedora: Creating RPM packages]
+* [https://fedoraproject.org/wiki/Package_Renaming_Process#Re-review_required Package Renaming Process]
+* [http://fedoraproject.org/wiki/Packaging:Guidelines Fedora Packaging Guidelines]
+* [https://src.fedoraproject.org/rpms/redhat-rpm-config/blob/master/f/buildflags.md redhat-rpm-config]
+* [https://fedoraproject.org/wiki/Packaging:SourceURL Packaging:SourceURL]
+* https://fedoraproject.org/wiki/Package_Review_Process
+* [https://fedoraproject.org/wiki/Infrastructure/WhatHappenedToPkgdb Infrastructure/WhatHappenedToPkgdb]
+* [https://fedoraproject.org/wiki/New_package_process_for_existing_contributors New package process for existing contributors]
+* [https://fedoraproject.org/wiki/PackagingDrafts/global_preferred_over_define PackagingDrafts/global preferred over define]
+* [https://pagure.io/fedpkg/blob/master/f/conf/etc/rpkg/fedpkg.conf fedpkg.conf]
+
+= See Also =
+
+* [[Fedora]]
+* [https://fedoraproject.org/wiki/Bundled_Libraries Bundled Libraries]
+* [https://fedoraproject.org/wiki/Bundled_Libraries_Virtual_Provides Bundled Libraries Virtual Provides]
+* [[RPM]]
+* [[Fedora Koji Process]]
+* [[Procedure used to Release Dogtag 10.2.1-1 on Fedora_22]]
+* [https://fedoraproject.org/wiki/Bodhi/BuildRootOverrides Bodhi/BuildRootOverrides]
+* [https://fedoraproject.org/wiki/Bodhi/bodhi-client bodhi-client]
+* [[Fedora Modules]]
+* [[PKI Licensing]]
+* [[JSS Fedora Packaging]]
+* [[PKI Fedora Development]]
+* [[Tomcat JSS Fedora Development]]

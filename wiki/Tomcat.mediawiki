@@ -1,0 +1,61 @@
+= Overview =
+
+'''Note:''' This page is being moved to https://github.com/dogtagpki/tomcat/wiki.
+
+{| border="1" style="border-collapse: collapse;"
+! width="100" | Platform
+! width="100" | Tomcat
+|-
+| Fedora 30
+| [https://koji.fedoraproject.org/koji/packageinfo?packageID=12023 Tomcat 9.0]
+|-
+| Fedora 29
+| [https://koji.fedoraproject.org/koji/packageinfo?packageID=12023 Tomcat 9.0]
+|-
+| Fedora 28
+| [https://koji.fedoraproject.org/koji/packageinfo?packageID=12023 Tomcat 8.5]
+|-
+| RHEL 7.3
+| Tomcat 7.0
+|-
+| Debian
+| [https://packages.debian.org/source/sid/tomcat8 Tomcat 8.5]
+|}
+
+To check Tomcat version:
+
+ $ /usr/sbin/tomcat version
+ Server version: Apache Tomcat/9.0.6
+ Server built:   Mar 27 2018 15:43:15 UTC
+ Server number:  9.0.6.0
+ OS Name:        Linux
+ OS Version:     4.16.0-0.rc7.git0.1.fc28.x86_64
+ Architecture:   amd64
+ JVM Version:    1.8.0_162-b12
+ JVM Vendor:     Oracle Corporation
+
+= Web Applications =
+
+The web application folder is located at /usr/share/tomcat/webapps.
+
+= Systemd =
+
+See [[Tomcat Systemd]].
+
+= See ALso =
+
+* [https://github.com/dogtagpki/tomcat/wiki/User-Guide User Guide]
+* [[Web Container]]
+* [[Tomcat 9]]
+* [[Tomcat 8.5]]
+* [[Tomcat 8]]
+* [[Tomcat 7]]
+* [[Tomcat Class Loader]]
+* [[Tomcat Logging]]
+* [[Tomcat Container]]
+* [[PKI Server]]
+* [[Tomcat Development]]
+* [https://github.com/dogtagpki/pki/wiki/Setting-Up-Tomcat-in-Eclipse Setting Up Tomcat in Eclipse]
+* [[Maven]]
+* [https://blog.openshift.com/getting-started-with-jboss-web-server/ Getting Started With Enterprise Tomcat 8 delivered by JBoss Web Server]
+* [https://devcenter.heroku.com/articles/create-a-java-web-application-using-embedded-tomcat Create a Java Web Application Using Embedded Tomcat]

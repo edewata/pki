@@ -1,0 +1,129 @@
+= Installation =
+
+To install pstack and jstack:
+
+<pre>
+$ yum install gdb java-devel
+</pre>
+
+To install debug symbols for Java and JSS:
+
+<pre>
+$ dnf debuginfo-install java jss
+</pre>
+
+= Stack Traces for Java and Native Code =
+
+To get the user and pid of the tomcat process
+
+<pre>
+$ ps -C java -o user,pid,args
+USER       PID COMMAND
+pkiuser  11751 /usr/lib/jvm/jre/bin/java -DRESTEASY_LIB=/usr/share/java/resteasy -Djava.library.path=/usr/lib64/nuxwdog-jni -classpath /usr/share/tomcat/bin/bootstrap.jar...
+</pre>
+
+To get stack for native code:
+
+<pre>
+$ pstack 11751
+Thread 60 (Thread 0x7efdb28c2700 (LWP 11769)):
+#0  0x00007efdb1ba32fd in poll () at ../sysdeps/unix/syscall-template.S:81
+#1  0x00007efd9ad42231 in NET_Timeout (s=s@entry=82, timeout=timeout@entry=-1) at /usr/src/debug/java-1.8.0-openjdk-1.8.0.65-3.b17.fc22.x86_64/openjdk/jdk/src/solaris/native/java/net/linux_close.c:361
+#2  0x00007efd9ad4007f in Java_java_net_PlainSocketImpl_socketAccept (env=0x7efdac0099e0, this=0x7efdb28c0ff0, socket=0x7efdb28c0fe8) at /usr/src/debug/java-1.8.0-openjdk-1.8.0.65-3.b17.fc22.x86_64/openjdk/jdk/src/solaris/native/java/net/PlainSocketImpl.c:707
+#3  0x00007efd9c7bf4b4 in ?? ()
+#4  0x00000000e8f45650 in ?? ()
+#5  0x00000000e8f45828 in ?? ()
+#6  0x0000000000000001 in ?? ()
+#7  0x00007efdb28c0f88 in ?? ()
+#8  0x0000000000000000 in ?? ()
+...
+Thread 44 (Thread 0x7efd84cb4700 (LWP 11799)):
+#0  0x00007efdb1ba32fd in poll () at ../sysdeps/unix/syscall-template.S:81
+#1  0x00007efd995f31db in poll (__timeout=5000, __nfds=1, __fds=0x7efd84cb3480) at /usr/include/bits/poll2.h:46
+#2  pt_poll_now (op=op@entry=0x7efd84cb34e0) at ../../../nspr/pr/src/pthreads/ptio.c:583
+#3  0x00007efd995f3eb6 in pt_Continue (op=0x7efd84cb34e0) at ../../../nspr/pr/src/pthreads/ptio.c:706
+#4  pt_Recv (fd=0x7efd7c382ba0, buf=0x7efd7cc25fa8, amount=<optimized out>, flags=<optimized out>, timeout=4294967295) at ../../../nspr/pr/src/pthreads/ptio.c:1865
+#5  0x00007efd99f5cbbe in ssl_DefRecv (ss=ss@entry=0x7efd7cc25ba0, buf=<optimized out>, len=5, flags=flags@entry=0) at ssldef.c:61
+#6  0x00007efd99f57b6f in ssl3_GatherData (flags=0, gs=0x7efd7cc25f58, ss=0x7efd7cc25ba0) at ssl3gthr.c:58
+#7  ssl3_GatherCompleteHandshake (ss=ss@entry=0x7efd7cc25ba0, flags=flags@entry=0) at ssl3gthr.c:335
+#8  0x00007efd99f581a4 in ssl3_GatherAppDataRecord (ss=ss@entry=0x7efd7cc25ba0, flags=flags@entry=0) at ssl3gthr.c:451
+#9  0x00007efd99f62ac1 in DoRecv (flags=<optimized out>, len=<optimized out>, out=<optimized out>, ss=<optimized out>) at sslsecur.c:616
+#10 ssl_SecureRecv (ss=0x7efd7cc25ba0, buf=0x7efd7cc45e10 "0\f\002\001\002a\a\n\001", len=8192, flags=0) at sslsecur.c:1237
+#11 0x00007efd99f666d1 in ssl_Recv (fd=<optimized out>, buf=0x7efd7cc45e10, len=8192, flags=0, timeout=4294967295) at sslsock.c:2393
+#12 0x00007efd9a3c9633 in Java_org_mozilla_jss_ssl_SSLSocket_socketRead (env=0x7efd7cc459e0, self=<optimized out>, bufBA=0x7efd84cb37b0, off=0, len=8192, timeout=0) at SSLSocket.c:922
+#13 0x00007efd9c7bf4b4 in ?? ()
+#14 0x00007efd9c7b398d in ?? ()
+#15 0x00000000e8bc3710 in ?? ()
+#16 0x00000000e8baa438 in ?? ()
+#17 0x00000000e8bc3680 in ?? ()
+#18 0x0000000000000000 in ?? ()
+</pre>
+
+To get stack for Java code:
+
+<pre>
+$ sudo -u pkiuser -- jstack 11751
+2015-12-17 12:35:42
+Full thread dump OpenJDK 64-Bit Server VM (25.65-b01 mixed mode):
+
+"Attach Listener" #66 daemon prio=9 os_prio=0 tid=0x00007efd8002e000 nid=0x3250 waiting on condition [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+"http-bio-8443-exec-4" #64 daemon prio=5 os_prio=0 tid=0x00007efd70002000 nid=0x2eba waiting on condition [0x00007efd756df000]
+   java.lang.Thread.State: WAITING (parking)
+      at sun.misc.Unsafe.park(Native Method)
+      - parking to wait for  <0x00000000f24ff390> (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)
+      at java.util.concurrent.locks.LockSupport.park(LockSupport.java:175)
+      at java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:2039)
+      at java.util.concurrent.LinkedBlockingQueue.take(LinkedBlockingQueue.java:442)
+      at org.apache.tomcat.util.threads.TaskQueue.take(TaskQueue.java:104)
+      at org.apache.tomcat.util.threads.TaskQueue.take(TaskQueue.java:32)
+      at java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1067)
+      at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1127)
+      at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+      at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:61)
+      at java.lang.Thread.run(Thread.java:745)
+...
+"LDAPConnThread-1 ldaps://vm-239.abc.idm.lab.eng.brq.redhat.com:636" #20 daemon prio=5 os_prio=0 tid=0x00007efd7cc45800 nid=0x2e17 runnable [0x00007efd84cb3000]
+   java.lang.Thread.State: RUNNABLE
+      at org.mozilla.jss.ssl.SSLSocket.socketRead(Native Method)
+      at org.mozilla.jss.ssl.SSLSocket.read(SSLSocket.java:1067)
+      - locked <0x00000000f0eddd40> (a java.lang.Object)
+      at org.mozilla.jss.ssl.SSLInputStream.read(SSLInputStream.java:70)
+      at java.io.BufferedInputStream.fill(BufferedInputStream.java:246)
+      at java.io.BufferedInputStream.read(BufferedInputStream.java:265)
+      - locked <0x00000000f0eddd60> (a java.io.BufferedInputStream)
+      at netscape.ldap.ber.stream.BERElement.getElement(Unknown Source)
+      at netscape.ldap.LDAPConnThread.run(Unknown Source)
+      at java.lang.Thread.run(Thread.java:745)
+...
+"main" #1 prio=5 os_prio=0 tid=0x00007efdac009800 nid=0x2df9 runnable [0x00007efdb28c0000]
+   java.lang.Thread.State: RUNNABLE
+      at java.net.PlainSocketImpl.socketAccept(Native Method)
+      at java.net.AbstractPlainSocketImpl.accept(AbstractPlainSocketImpl.java:409)
+      at java.net.ServerSocket.implAccept(ServerSocket.java:545)
+      at java.net.ServerSocket.accept(ServerSocket.java:513)
+      at org.apache.catalina.core.StandardServer.await(StandardServer.java:453)
+      at org.apache.catalina.startup.Catalina.await(Catalina.java:777)
+      at org.apache.catalina.startup.Catalina.start(Catalina.java:723)
+      at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+      at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+      at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+      at java.lang.reflect.Method.invoke(Method.java:497)
+      at org.apache.catalina.startup.Bootstrap.start(Bootstrap.java:321)
+      at org.apache.catalina.startup.Bootstrap.main(Bootstrap.java:455)
+</pre>
+
+To match Java threads to native threads, take the first six to eight chars of the thread's address in square brakets (e.g. 7efd84cb for Thread 44) and look for a similar memory address in the other stack trace.
+
+Hints:
+* jstack must run as the same effective user as the process. Even root cannot connect to the JVM. If you see any of these error messages then you are using the wrong user.
+** ''Unable to open socket file: target process not responding or HotSpot VM not loaded''
+** ''well-known file is not secure''
+* The thread numbers in the native call stack and Java call stack are unrelated.
+* Instead of jstack you can use jmap to dump an object memory map to a file.
+* For more detailed and elaborate logging have a look at jconsole and JMX for remote debugging.
+
+= See Also =
+
+* [[Debugging]]

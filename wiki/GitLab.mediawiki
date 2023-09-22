@@ -1,0 +1,3 @@
+= References =
+
+* [https://docs.gitlab.com/ee/ci/quick_start/README.html Getting started with GitLab CI/CD]

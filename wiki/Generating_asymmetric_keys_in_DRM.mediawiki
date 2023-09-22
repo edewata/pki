@@ -1,0 +1,78 @@
+== Implementing the generation of asymmetric keys in DRM and changes required ==
+
+This page explains the steps involved in generation, archival and retrieval of asymmetric keys in the DRM.
+
+=== Generate a new Asymmetric key for the parameters passed===
+
+Based on the algorithm, key size and key curve(for EC), a KeyPair object is generated
+using a KeyPairGenerator, which contains the PrivateKey and PublicKey objects, representing the
+newly generated PrivateKey and the PublicKey.
+
+=== Storing the information of the key in the ldap database ===
+
+A sample record(ldap entry) in the db, containing the key information would look like - 
+
+ dn: cn=1,ou=keyRepository,ou=kra,o=pki-tomcat-KRA
+ objectClass: keyRecord
+ objectClass: top
+ cn: 1
+ algorithm: RSA
+ archivedBy: kraadmin
+ clientId: vek123456
+ dataType: asymmetricKey
+ dateOfCreate: 20140730144547Z
+ dateOfModify: 20140730144547Z
+ keySize: 1024
+ keyState: VALID
+ ownerName: kraadmin
+ 
+ privateKeyData:: MIIDiASCAQA5G4HwgdPFYCUi+SvNsqXjvp7TA/3W0giLyzwf9lHz+8PszDK
+  M5o9RVYH4JTgDDTcXGlVO2J6wW9t043XQdHPwoJqHVwcBNZ4xD/RAA2F/yytgcuk5kZdQwukIl/
+  kyQD89BkF+14arXHj8ogURiK3UVWMBbVSwKCRCHmUATWcKQINyNVaZf5N1u9vr6EPx1eKQiUIWT
+  mJ644AC0Q+QJbkfXPttEkaOXZrWbGivH0jYg26sebDspdn8Vko3dhyucl4H8vUf217aF5BjP27Q
+  9D5u+r22W7TkmidLTGmJ5rJksmIweJuiGnV2C5W7KRJvl1y1PwYn/fL88XtSC916ypFFBIICgGR
+  faqqT+1QlJFk30Bfu1QkqLZiD29l1ibBRUqpsX0oA9xV/jqnbV6WIGvVtADNwgjD61huSCqwncG
+  8tWnyOEDw0juMAxrS28I8hKYzTf9nxgVy2lFAVHQkLwDJOm80Q5BFQsKR5mD5xlYr6tMyopQBct
+  Fj78Ly+OMM2mOhNu50OTI753EO0vnC4DgOv4bylNXl4vp4JXSCYPWTgpHSM5/3d43I62Ki4PmGw
+  TVnkDOFelf9TQhSqq9/YmYFQGozsEEsrNV1BhRez7HWW7t6zdeALCifqzAtvDLcAwSiS8Zx7g1+
+  yBSvES5QfRAu8fF9YcjNwFQqWhwq+1dG/YXz7NihVtUnpzaSn93pUNdWIaNBVzQB0FYmiqubCeC
+  QMu6fyA4jNj4xNIG4RnXGmkmZ2q/hJzsWX23ITunA3Kv/q3deKogGO/zsLVU/d/ueug94Oz8h6D
+  J51jBWUK7Hnq2W6ixNK12aapnKWU3jQusQI1iW2pSiyIUJasF8KBTFhCU/KWxuu3aG5GH8ucuEk
+  0+I47tvFnpakvGoijp86WjMCcPDmLVWx8VBshcknqKKZxykAzia5G32Rg1Y/QGwsLnCQVPf1a5T
+  9ZqoVF0NVZ3ApAdIU6co/dE1kyzAN+nOFEVLl5/dtVXmhiwxpCpcUqjmZZbujoX3tlRG/ZSZcso
+  rWFOijPvxSefpQluot4fH/qTiGZCCU2XvHOjyvI9AVdYwDqHtq/dx+wh5P68OoEVrBzwwbDyAha
+  d+/8jAGFst6gkaRtn/wo9ZTOJ9rgJek1ugRdkaTDb6qxp2/TO6D/NtMinxWS7QDAqpdTUPjqHow
+  fQ+lku4TWluUPfLY87cPTBlslsI=
+  
+ publicKeyData:: MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDbtioeZUa22vYZ/2pMNKmZ
+  XNSl0IBbsRAoTy86QxQS2JK6YvhdZbgiCNXdbM2E4oy4TzarR09BKr8yRoKBWCC5sV3X98fO/0N
+  nqTLDdJE+CiHjwzNvogMeIZw5T8OMavCfc+bRKC/miLVGf1B6EdZlhGuZgcPj8fwbRqrzq7mL+Q
+  IDAQAB
+ 
+ serialno: 011
+ status: active 
+
+where 
+*privateKeyData - the private key wrapped by the storage key of the drm
+*publicKeyData - encoded byte array representation of the Public Key generated.
+      
+Both the private key and the public key are stored in the same record.
+
+=== Changes needed in the KeyClient API to accomodate an extra key. ===
+
+===== The KeyInfo and KeyRequestInfo objects must contain 2 URLs. =====
+
+*Possible solutions: 
+**Change the data type of the keyURL field from String to String[]. (or)
+**Add a new attribute keyURL2(may be) as there is no reason to store three or more keys in the same record in the foreseeable future.
+
+===== Change the return type of getKey(KeyID) method in the KeyClient =====
+
+*Possible solutions:
+**Since there are two keys to be returned, the return type can be a KeyData[] or a new KeyDataCollection object. (or)
+**Since all the data except for the key information in the two KeyData objects is going to be the same except for the data fields,
+we can define another attribute to store the data of the public key.
+
+===== Extend the getKey() method to perform operations GET baseURL/<KeyID>/private and GET baseURL/<KeyID>/public. =====
+
+The ReST interface must provide ways to fetch only the private/public keys for a given KeyID.

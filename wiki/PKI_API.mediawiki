@@ -1,0 +1,38 @@
+= com.netscape.cmscore.request.RequestQueue =
+
+* modifyRequest()
+* updateRequest()
+
+= netscape.security.x509.X509CertImpl =
+
+= netscape.security.x509.KeyUsageExtension =
+
+<pre>
+public class KeyUsageExtension extends Extension implements CertAttrSet {
+
+    public static final String DIGITAL_SIGNATURE = "digital_signature";
+    public static final String NON_REPUDIATION = "non_repudiation";
+    public static final String KEY_ENCIPHERMENT = "key_encipherment";
+    public static final String DATA_ENCIPHERMENT = "data_encipherment";
+    public static final String KEY_AGREEMENT = "key_agreement";
+    public static final String KEY_CERTSIGN = "key_certsign";
+    public static final String CRL_SIGN = "crl_sign";
+    public static final String ENCIPHER_ONLY = "encipher_only";
+    public static final String DECIPHER_ONLY = "decipher_only";
+
+    public static final int DIGITAL_SIGNATURE_BIT = 0;
+    public static final int NON_REPUDIATION_BIT = 1;
+    public static final int KEY_ENCIPHERMENT_BIT = 2;
+    public static final int DATA_ENCIPHERMENT_BIT = 3;
+    public static final int KEY_AGREEMENT_BIT = 4;
+    public static final int KEY_CERTSIGN_BIT = 5;
+    public static final int CRL_SIGN_BIT = 6;
+    public static final int ENCIPHER_ONLY_BIT = 7;
+    public static final int DECIPHER_ONLY_BIT = 8;
+}
+</pre>
+
+= See Also =
+
+* [https://github.com/dogtagpki/pki/wiki/Client-API PKI Client API]
+* [[PKI Database API]]

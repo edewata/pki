@@ -1,0 +1,329 @@
+= Disk Usage =
+
+To check disk usage:
+
+<pre>
+$ ncdu -rx /
+</pre>
+
+To clean unused files:
+
+<pre>
+$ dnf clean all
+$ find /var/cache/PackageKit/ -name "*.rpm" -delete
+$ mock --clean
+$ cd /var/lib/mock; rm -rf *
+$ cd /var/cache/mock; rm -rf *
+$ cd ~/modulebuild/builds; rm -rf *
+$ docker system prune -a
+</pre>
+
+= Disk Partition Table =
+
+== Displaying disk partition table ==
+
+<pre>
+$ fdisk -l
+Disk /dev/vda: 8 GiB, 8589934592 bytes, 16777216 sectors
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: dos
+Disk identifier: 0xb1912ba4
+
+Device     Boot  Start      End  Sectors  Size Id Type
+/dev/vda1  *      2048   514047   512000  250M 83 Linux
+/dev/vda2       514048 16777215 16263168  7.8G 8e Linux LVM
+
+
+Disk /dev/mapper/vg_root-lv_root: 7.7 GiB, 8258584576 bytes, 16130048 sectors
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+
+
+Disk /dev/mapper/vg_root-lv_swap: 64 MiB, 67108864 bytes, 131072 sectors
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+</pre>
+
+== Creating a new disk ==
+
+A virtual disk can be created via the VM management interface:
+* Select VM
+* Select Disks tab
+* Click New
+* Enter Size (e.g. 10 GB)
+* Click OK
+
+Verify the new disk with the following command:
+
+ $ fdisk -l
+ ...
+ Disk <font color="red">/dev/sda</font>: 10 GiB, 10737418240 bytes, 20971520 sectors
+ Units: sectors of 1 * 512 = 512 bytes
+ Sector size (logical/physical): 512 bytes / 512 bytes
+ I/O size (minimum/optimal): 512 bytes / 512 bytes
+
+== Creating a new partition ==
+
+To create a new partition on a disk (e.g. /dev/sda):
+
+ $ fdisk /dev/sda
+ 
+ Welcome to fdisk (util-linux 2.28.2).
+ Changes will remain in memory only, until you decide to write them.
+ Be careful before using the write command.
+ 
+ Device does not contain a recognized partition table.
+ Created a new DOS disklabel with disk identifier 0x398bfa85.
+ 
+ Command (m for help): n
+ Partition type
+    p   primary (0 primary, 0 extended, 4 free)
+    e   extended (container for logical partitions)
+ Select (default p):
+ 
+ Using default response p.
+ Partition number (1-4, default 1):
+ First sector (2048-20971519, default 2048):
+ Last sector, +sectors or +size{K,M,G,T,P} (2048-20971519, default 20971519):
+ 
+ Created a new partition 1 of type 'Linux' and of size 10 GiB.
+ 
+ Command (m for help): t
+ Selected partition 1
+ Partition type (type L to list all types): 8e
+ Changed type of partition 'Linux' to 'Linux LVM'.
+ 
+ Command (m for help): p
+ Disk /dev/sda: 10 GiB, 10737418240 bytes, 20971520 sectors
+ Units: sectors of 1 * 512 = 512 bytes
+ Sector size (logical/physical): 512 bytes / 512 bytes
+ I/O size (minimum/optimal): 512 bytes / 512 bytes
+ Disklabel type: dos
+ Disk identifier: 0x398bfa85
+ 
+ Device     Boot Start      End  Sectors Size Id Type
+ <font color="red">/dev/sda1</font>        2048 20971519 20969472  10G 8e Linux LVM
+ 
+ Command (m for help): w
+ The partition table has been altered.
+ Calling ioctl() to re-read partition table.
+ Syncing disks.
+
+= Physical Volumes =
+
+== Displaying physical volumes ==
+
+<pre>
+$ pvdisplay
+  --- Physical volume ---
+  PV Name               /dev/vda2
+  VG Name               vg_root
+  PV Size               7.75 GiB / not usable 0
+  Allocatable           yes (but full)
+  PE Size               4.00 MiB
+  Total PE              1985
+  Free PE               0
+  Allocated PE          1985
+  PV UUID               1BIpPc-asey-Vn6V-x8h8-me5s-ibg6-jlZ2RJ
+</pre>
+
+== Adding physical volume ==
+
+ $ pvcreate <font color="red">/dev/sda1</font>
+   Physical volume "/dev/sda1" successfully created.
+
+= Volume Groups =
+
+== Displaying volume groups ==
+
+<pre>
+$ vgdisplay
+  --- Volume group ---
+  VG Name               vg_root
+  System ID
+  Format                lvm2
+  Metadata Areas        1
+  Metadata Sequence No  3
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                2
+  Open LV               2
+  Max PV                0
+  Cur PV                1
+  Act PV                1
+  VG Size               7.75 GiB
+  PE Size               4.00 MiB
+  Total PE              1985
+  Alloc PE / Size       1985 / 7.75 GiB
+  Free  PE / Size       0 / 0
+  VG UUID               he5cCR-6PYT-QoSd-6fzn-lAUw-7M2o-Xal6FA
+</pre>
+
+== Creating a volume group ==
+
+ $ vgcreate vg_test /dev/sda1
+   Volume group "vg_test" successfully created
+
+== Removing a volume group ==
+
+ $ vgremove vg_test
+   Volume group "vg_test" successfully removed
+
+== Adding physical volume to volume group ==
+
+ $ vgextend vg_root <font color="red">/dev/sda1</font>
+   Volume group "vg_root" successfully extended
+
+= Logical Volumes =
+
+== Displaying logical volumes ==
+
+<pre>
+$ lvs
+  LV      VG      Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lv_root vg_root -wi-ao----   7.69g
+  lv_swap vg_root -wi-ao----  64.00m
+</pre>
+
+<pre>
+$ lvdisplay
+  --- Logical volume ---
+  LV Path                /dev/vg_root/lv_root
+  LV Name                lv_root
+  VG Name                vg_root
+  LV UUID                3R31DO-bVdS-gwMB-9mFp-RR02-cot0-BxxXs3
+  LV Write Access        read/write
+  LV Creation host, time host.example.com, 2017-03-06 17:38:31 +0100
+  LV Status              available
+  # open                 1
+  LV Size                7.69 GiB
+  Current LE             1969
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:0
+
+  --- Logical volume ---
+  LV Path                /dev/vg_root/lv_swap
+  LV Name                lv_swap
+  VG Name                vg_root
+  LV UUID                2RDJZx-1I0f-AXEZ-nZOi-vANT-lUZd-4vsgDm
+  LV Write Access        read/write
+  LV Creation host, time host.example.com, 2017-03-06 17:38:34 +0100
+  LV Status              available
+  # open                 2
+  LV Size                64.00 MiB
+  Current LE             16
+  Segments               1
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:1
+</pre>
+
+== Adding a logical volume ==
+
+ $ lvcreate -L1 -n lv_test vg_test
+   Rounding up size to full physical extent 4.00 MiB
+   Logical volume "lv_test" created.
+
+== Removing a logical volume ==
+
+ $ lvremove vg_test/lv_test
+ Do you really want to remove active logical volume vg_test/lv_test? [y/n]: y
+   Logical volume "lv_test" successfully removed
+
+== Resizing logical volume ==
+
+<pre>
+$ lvresize -l +100%FREE /dev/vg_root/lv_root
+  Size of logical volume vg_root/lv_root changed from 7.69 GiB (1969 extents) to 17.69 GiB (4528 extents).
+  Logical volume vg_root/lv_root successfully resized.
+</pre>
+
+= File Systems =
+
+== Displaying file systems ==
+
+<pre>
+$ df
+Filesystem                  1K-blocks    Used Available Use% Mounted on
+devtmpfs                      1493744       0   1493744   0% /dev
+tmpfs                         1502748       0   1502748   0% /dev/shm
+tmpfs                         1502748     908   1501840   1% /run
+tmpfs                         1502748       0   1502748   0% /sys/fs/cgroup
+/dev/mapper/vg_root-lv_root   7807152 1058736   6328784  15% /
+tmpfs                         1502748     104   1502644   1% /tmp
+/dev/vda1                      243823   82943    148080  36% /boot
+tmpfs                          300548       0    300548   0% /run/user/0
+</pre>
+
+== Creating a file system ==
+
+<pre>
+$ mkfs.ext4 /dev/vg_test/lv_test 
+mke2fs 1.44.2 (14-May-2018)
+Discarding device blocks: done                            
+Creating filesystem with 4096 1k blocks and 1024 inodes
+
+Allocating group tables: done                            
+Writing inode tables: done                            
+Creating journal (1024 blocks): done
+Writing superblocks and filesystem accounting information: done
+</pre>
+
+== Mounting a file system ==
+
+<pre>
+$ mkdir /test
+$ mount /dev/vg_test/lv_test /test
+</pre>
+
+== Unmounting a file system ==
+
+<pre>
+$ umount /test
+</pre>
+
+== Resizing file system ==
+
+On Fedora:
+
+<pre>
+$ resize2fs /dev/vg_root/lv_root
+resize2fs 1.43.3 (04-Sep-2016)
+Filesystem at /dev/vg_root/lv_root is mounted on /; on-line resizing required
+old_desc_blocks = 1, new_desc_blocks = 3
+The filesystem on /dev/vg_root/lv_root is now 4636672 (4k) blocks long.
+</pre>
+
+On RHEL/CentOS:
+
+<pre>
+$ xfs_growfs /dev/vg_root/lv_root
+meta-data=/dev/mapper/vg_root-lv_root isize=512    agcount=4, agsize=635136 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=0 spinodes=0
+data     =                       bsize=4096   blocks=2540544, imaxpct=25
+         =                       sunit=0      swidth=0 blks
+naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
+log      =internal               bsize=4096   blocks=2560, version=2
+         =                       sectsz=512   sunit=0 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+data blocks changed from 2540544 to 5160960
+</pre>
+
+= References =
+
+* [[Fedora Setup]]
+* [[Smoke Tests]]
+* [https://www.howtogeek.com/howto/40702/how-to-manage-and-use-lvm-logical-volume-management-in-ubuntu/ How to Manage and Use LVM (Logical Volume Management) in Ubuntu]
+* [http://ryandoyle.net/posts/expanding-a-lvm-partition-to-fill-remaining-drive-space/ Expanding a LVM partition to fill remaining drive space]
+* [https://raymii.org/s/tutorials/KVM_add_disk_image_or_swap_image_to_virtual_machine_with_virsh.html KVM add disk image or swap image to virtual machine with virsh]
+* [[KVM]]

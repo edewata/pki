@@ -1,0 +1,32 @@
+= CA Certificate Directory =
+
+<pre>
+ldap.set_option(ldap.OPT_X_TLS_CACERTDIR, nssdb_dir)
+</pre>
+
+= Client Certificate Authentication =
+
+<pre>
+ldap.set_option(ldap.OPT_X_TLS_CERTFILE, client_cert_nickname)
+ldap.set_option(ldap.OPT_X_TLS_KEYFILE, password_file)
+</pre>
+
+= Initialization =
+
+<pre>
+connection = ldap.initialize(url)
+</pre>
+
+= Basic Authentication =
+
+<pre>
+connection.simple_bind_s(bind_dn, bind_password)
+</pre>
+
+= See Also =
+
+* [[Python]]
+* [http://python-ldap.org Python LDAP]
+* [https://src.fedoraproject.org/rpms/python-ldap rpms/python-ldap]
+* [[Support NSSDB in Python API]]
+* [https://github.com/python-ldap/python-ldap Source Repository]

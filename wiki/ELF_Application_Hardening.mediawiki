@@ -1,0 +1,68 @@
+= Build Validation =
+
+There should be a -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 compiler flag:
+
+ gcc -o Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/CryptoManager.o -c -O2 -D_POSIX_SOURCE -D_BSD_SOURCE -D_XOPEN_SOURCE -fPIC -DLINUX2_1  -Wall -Werror-implicit-function-declaration -Wno-switch -pipe -DLINUX -Dlinux -DHAVE_STRERROR -DXP_UNIX -UDEBUG -DNDEBUG -D_REENTRANT -DUSE_UTIL_DIRECTLY -I/usr/include/nspr4  -I/usr/include/nss3 -I/usr/include/nspr4  -I../../../../dist/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/include -I../../../../dist/public/jss -I../../../../dist/private/jss -I/usr/lib/jvm/java/include -I/usr/lib/jvm/java/include/linux -I../../../../dist/public/nspr20 -I../../../../dist/public/nss -g -O2 -g -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -Wp,-D_GLIBCXX_ASSERTIONS -fexceptions -fstack-protector-strong -grecord-gcc-switches <font color="red">-specs=/usr/lib/rpm/redhat/redhat-hardened-cc1</font> -specs=/usr/lib/rpm/redhat/redhat-annobin-cc1 -m64 -mtune=generic -fasynchronous-unwind-tables -fstack-clash-protection -mcet -fcf-protection CryptoManager.c
+
+There should be a -specs=/usr/lib/rpm/redhat/redhat-hardened-ld linker flag:
+
+ gcc -Wl,-z,relro  -Wl,-z,now <font color="red">-specs=/usr/lib/rpm/redhat/redhat-hardened-ld</font>   -shared  -Wl,-z,defs -Wl,-soname -Wl,libjss4.so  -Wl,--version-script,Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/jssmap.linux -o Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/libjss4.so  ../org/mozilla/jss/crypto/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/Algorithm.o ../org/mozilla/jss/crypto/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/PQGParams.o ../org/mozilla/jss/crypto/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/SecretDecoderRing.o ../org/mozilla/jss/SecretDecoderRing/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/KeyManager.o ../org/mozilla/jss/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/CryptoManager.o ../org/mozilla/jss/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/PK11Finder.o ../org/mozilla/jss/pkcs11/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/PK11Cert.o ../org/mozilla/jss/pkcs11/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/PK11Cipher.o ../org/mozilla/jss/pkcs11/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/PK11KeyGenerator.o ../org/mozilla/jss/pkcs11/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/PK11KeyPairGenerator.o ../org/mozilla/jss/pkcs11/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/PK11KeyWrapper.o ../org/mozilla/jss/pkcs11/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/PK11MessageDigest.o ../org/mozilla/jss/pkcs11/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/PK11Module.o ../org/mozilla/jss/pkcs11/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/PK11PrivKey.o ../org/mozilla/jss/pkcs11/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/PK11PubKey.o ../org/mozilla/jss/pkcs11/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/PK11Signature.o ../org/mozilla/jss/pkcs11/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/PK11SecureRandom.o ../org/mozilla/jss/pkcs11/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/PK11Store.o ../org/mozilla/jss/pkcs11/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/PK11SymKey.o ../org/mozilla/jss/pkcs11/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/PK11Token.o ../org/mozilla/jss/pkcs11/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/PK11SymmetricKeyDeriver.o ../org/mozilla/jss/asn1/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/ASN1Util.o ../org/mozilla/jss/ssl/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/SSLSocket.o ../org/mozilla/jss/ssl/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/callbacks.o ../org/mozilla/jss/ssl/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/SSLServerSocket.o ../org/mozilla/jss/ssl/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/common.o ../org/mozilla/jss/ssl/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/javasock.o ../org/mozilla/jss/util/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/jssutil.o ../org/mozilla/jss/util/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/jssver.o ../org/mozilla/jss/util/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/errstrings.o ../org/mozilla/jss/util/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/NativeErrcodes.o ../org/mozilla/jss/provider/java/security/Linux4.16_x86_64_glibc_PTH_64_OPT.OBJ/JSSKeyStoreSpi.o   -L/usr/lib64  -lsmime3 -lssl3 -lnss3 -lnssutil3 -L/usr/lib64  -lplc4 -lplds4 -lnspr4   -lpthread  -ldl -lc
+
+= Installation Validation =
+
+To install the validation tools:
+
+<pre>
+$ dnf install checksec elfutils
+</pre>
+
+To check with checksec:
+
+ $ checksec --file /usr/lib64/jss/libjss4.so
+ RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH	FORTIFY	Fortified Fortifiable  FILE
+ <font color="red">Full RELRO</font>      Canary found      NX enabled    <font color="red">DSO</font>             No RPATH   No RUNPATH   Yes	2		3	/usr/lib64/jss/libjss4.so
+There should be a "Full RELRO" and "PIE enabled"/"DSO".
+
+To check with eu-readelf:
+
+ $ eu-readelf -S /usr/lib64/jss/libjss4.so
+ There are 29 section headers, starting at offset 0x383b8:
+ 
+ Section Headers:
+ [Nr] Name                 Type         Addr             Off      Size     ES Flags Lk Inf Al
+ [ 0]                      NULL         0000000000000000 00000000 00000000  0        0   0  0
+ [ 1] .note.gnu.build-id   NOTE         0000000000000200 00000200 00000024  0 A      0   0  4
+ [ 2] .gnu.hash            GNU_HASH     0000000000000228 00000228 000007d0  0 A      3   0  8
+ [ 3] .dynsym              DYNSYM       00000000000009f8 000009f8 00003420 24 A      4   1  8
+ [ 4] .dynstr              STRTAB       0000000000003e18 00003e18 00004c46  0 A      0   0  1
+ [ 5] .gnu.version         GNU_versym   0000000000008a5e 00008a5e 00000458  2 A      3   0  2
+ [ 6] .gnu.version_d       GNU_verdef   0000000000008eb8 00008eb8 000001c0  0 A      4  16  8
+ [ 7] .gnu.version_r       GNU_verneed  0000000000009078 00009078 00000190  0 A      4   5  8
+ [ 8] .rela.dyn            RELA         0000000000009208 00009208 00002610 24 A      3   0  8
+ [ 9] .rela.plt            RELA         000000000000b818 0000b818 00001d40 24 AI     3  22  8
+ [10] .init                PROGBITS     000000000000d558 0000d558 00000017  0 AX     0   0  4
+ [11] .plt                 PROGBITS     000000000000d570 0000d570 00001390 16 AX     0   0 16
+ [12] .text                PROGBITS     000000000000e900 0000e900 00015357  0 AX     0   0 16
+ [13] .fini                PROGBITS     0000000000023c58 00023c58 00000009  0 AX     0   0  4
+ [14] .rodata              PROGBITS     0000000000023c80 00023c80 00008825  0 A      0   0 32
+ [15] .eh_frame_hdr        PROGBITS     000000000002c4a8 0002c4a8 00000a74  0 A      0   0  4
+ [16] .eh_frame            PROGBITS     000000000002cf20 0002cf20 00004430  0 A      0   0  8
+ [17] .note.gnu.property   NOTE         0000000000031350 00031350 00000030  0 A      0   0  8
+ [18] .init_array          INIT_ARRAY   0000000000231b90 00031b90 00000008  8 WA     0   0  8
+ [19] .fini_array          FINI_ARRAY   0000000000231b98 00031b98 00000008  8 WA     0   0  8
+ [20] .data.rel.ro         PROGBITS     0000000000231ba0 00031ba0 00001780  0 WA     0   0 32
+ [21] .dynamic             DYNAMIC      0000000000233320 00033320 000002a0 16 WA     4   0  8
+ [22] .got                 PROGBITS     00000000002335c0 000335c0 00000a38  8 WA     0   0  8
+ [23] .data                PROGBITS     0000000000234000 00034000 00000eb8  0 WA     0   0 32
+ [24] .bss                 NOBITS       0000000000234eb8 00034eb8 00000028  0 WA     0   0  8
+ <font color="red">[25] .gnu.build.attributes NOTE         0000000000000000 00034eb8 00002a00  0        0   0  4</font>
+ [26] .gnu_debuglink       PROGBITS     0000000000000000 000378b8 0000002c  0        0   0  4
+ [27] .gnu_debugdata       PROGBITS     0000000000000000 000378e4 000009a0  0        0   0  1
+ [28] .shstrtab            STRTAB       0000000000000000 00038284 0000012e  0        0   0  1
+
+On F28+ there should be a .gnu.build.attributes NOTE section.
+
+= References =
+
+* [[JSS Fedora Packaging]]
+* [https://bugzilla.redhat.com/show_bug.cgi?id=1548548 Bug #1548548 - jss: Partial Fedora build flags injection]

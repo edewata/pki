@@ -1,0 +1,80 @@
+Question: How do we set things up so that any user that wishes to
+access the EE pages must first authenticate with an LDAP directory?
+
+Response:
+
+This is a mechanism to require user authentication prior to the user even 
+accessing the Certificate Authority's EE pages.  This was tested on RHCS 8,
+although similar configuration should work for dogtag 10.  In  that case, the 
+paths referred to in the instructions will be different.
+
+You could do this by fronting the CA with another server (an apache
+server, for example, if they wanted to do some other processing.  But
+the basic requirement could be satisfied by configuring the CA (which is
+a Tomcat web server) to perform LDAP authentication prior to executing
+the request.  This is done by configuring a Tomcat JNDI realm.
+
+The steps to do this are as follows:
+# Configure a CA.  We will assume for these instructions that the CA has the instance name pki-ca.
+# Edit /var/lib/pki-ca/conf/server.xml.  Replace the following stanza: 
+<pre>
+      <!-- This Realm uses the UserDatabase configured in the global JNDI
+           resources under the key "UserDatabase".  Any edits
+           that are performed against this UserDatabase are immediately
+           available for use by the Realm.  -->
+      <Realm className="org.apache.catalina.realm.UserDatabaseRealm"
+             resourceName="UserDatabase"/>
+</pre> with: 
+<pre>
+      <Realm className="org.apache.catalina.realm.JNDIRealm"
+          connectionURL="ldap://localhost:389"
+          userPattern="uid={0},ou=people,dc=example,dc=com"
+          roleBase="ou=groups,dc=example,dc=com"
+          roleName="cn"
+        roleSearch="(uniqueMember={0})"
+      />
+</pre>  
+The details of the ldap connection and the relevant DN pattern and groups/roles needs to be configured accordingly.
+# Edit /var/lib/pki-ca/webapps/ca/WEB-INF/web.xml. At the end of the file, add: 
+<pre>
+   <login-config>
+       <auth-method>BASIC</auth-method>
+       <realm-name>PKI Certificate Authority</realm-name>
+   </login-config>
+
+   <security-role>
+       <role-name>*</role-name>
+   </security-role>
+
+   <security-constraint>
+       <web-resource-collection>
+           <web-resource-name>EE Services</web-resource-name>
+           <url-pattern>/ee/ca/*</url-pattern>
+       </web-resource-collection>
+       <auth-constraint>
+           <role-name>*</role-name>
+       </auth-constraint>
+       <user-data-constraint>
+           <transport-guarantee>CONFIDENTIAL</transport-guarantee>
+       </user-data-constraint>
+   </security-constraint>
+</pre>  
+BASIC authentication will provide a simple pop-up which asks for the user name and password.  It is also possible to configure FORM authentication, but you would have to write the form.  It is also possible to map LDAP groups to security roles.
+# Restart the CA.
+
+The above configuration was tested and appeared to work for enrollment,
+user initiated cert renewal and user initiated revocation.  Because we
+are limiting the security constraint to /ee/ca/* servlets, agent and
+admin interfaces are unaffected.  Agent interfaces require client auth
+as before.
+
+More details on the configuration options for a tomcat realm can be
+found here: http://tomcat.apache.org/tomcat-5.5-doc/realm-howto.html
+and http://tomcat.apache.org/tomcat-5.5-doc/realm-howto.html#JNDIRealm
+
+Note that there are some cases in which we access the EE servlets during
+the installation of other RHCS subsystems.  For example, during the
+installation of a KRA, we contact the CA on the EE interface to issue
+the KRA's subsystem certificates.  So, installation of new subsystems
+(involving this CA) may require this realm to be temporarily turned
+off.

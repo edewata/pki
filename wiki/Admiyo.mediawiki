@@ -1,0 +1,5 @@
+[[Image:Pki-git-svn.pdf]] is the presentation I gave regarding GIT and SVN.
+
+[[Image:Pki-eclipse.pdf]] is the presentation I gave regarding Eclipse for PKI development.
+
+[[Image:Pki-eclipse-tomcat.pdf]] is the presentation on running PKI Tomcat in  Eclipse.

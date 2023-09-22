@@ -1,0 +1,33 @@
+= Sharable interface =
+
+The object system in a Java Card is partitioned into separate protected object spaces referred to as contexts. All applets in a given package share the same context, and are prohibited from accessing objects in a different context due to firewalls which are enforced by the Java Card Runtime Environment (JCRE) [ 8 ]. The JCRE is able to access objects in any context, and global arrays such as the APDU buffer (which are owned by the JCRE) can be accessed by applets in any context.
+
+= Prerequisites =
+
+== Java Development Kit ==
+Download and install [http://www.oracle.com/technetwork/java/javase/downloads/index.html JDK 7].
+
+== Java Card Development Kit ==
+Download and install [http://www.oracle.com/technetwork/java/javacard/downloads/index.html Java Card Development Kit 2.2.2].
+
+== GPShell ==
+Download and install [http://sourceforge.net/projects/globalplatform/files/GPShell/ GPShell 1.4.4].
+
+See also [http://sourceforge.net/p/globalplatform/wiki/Home/ GPShell Wiki].
+
+= References =
+* [http://www.oracle.com/technetwork/java/javacard/overview/index-jsp-140503.html Java Card Technology]
+* [http://www.oracle.com/technetwork/java/javacard/applet-136808.html Developing a Java Card Applet]
+* [http://javacard.vetilles.com/tutorial/ Java Card Tutorial]
+* [http://www.javaworld.com/javaworld/jw-07-1999/jw-07-javacard.html How to write a Java Card applet: A developer's guide]
+* [http://www.oracle.com/technetwork/java/javacard/javacard1-139251.html An Introduction to Java Card Technology - Part 1]
+* [http://www.oracle.com/technetwork/java/javacard/javacard2-138597.html An Introduction to Java Card Technology - Part 2, The Java Card Applet]
+* [http://www.oracle.com/technetwork/java/javacard/javacard3-138837.html An Introduction to Java Card Technology - Part 3, The Smart Card Host Application]
+* [http://askra.de/software/jcdocs/kit-user-2.2.2/ Development Kit User's Guide, Java Card Platform, Version 2.2.2]
+* [http://askra.de/software/jcdocs/app-notes-2.2.2/ Application Programming Notes, Java Card Platform, Version 2.2.2]
+* [http://askra.de/software/jcdocs/apduio-2.2.2/ Package com.sun.javacard.apduio]
+* [http://static.usenix.org/events/smartcard99/full_papers/montgomery/montgomery_html/ Secure Object Sharing in Java Card]
+* [http://directory.fedoraproject.org/wiki/CoolKey CoolKey]
+* [http://gpj.sourceforge.net/ Global Platform for Java SmartCardIO]
+* [https://forums.oracle.com/forums/forum.jspa?forumID=991 Forum: Java Card]
+* [https://www.opensc-project.org/opensc/ OpenSC - tools and libraries for smart cards]

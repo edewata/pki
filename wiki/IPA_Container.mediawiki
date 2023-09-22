@@ -1,0 +1,68 @@
+= Overview =
+
+This page describes the process to run IPA in [[Docker]] container. It assumes that [[Docker]] is already installed.
+
+= Pulling IPA Container =
+
+<pre>
+$ docker pull freeipa/freeipa-server
+</pre>
+
+= Building IPA Container =
+
+Checkout [https://github.com/freeipa/freeipa-container freeipa-container] repository:
+
+<pre>
+$ git clone https://github.com/freeipa/freeipa-container.git
+</pre>
+
+To build IPA container:
+
+<pre>
+$ docker build -t freeipa-server -f Dockerfile.fedora-26 .
+</pre>
+
+= Running IPA Container =
+
+To create IPA container:
+
+<pre>
+$ mkdir /var/lib/ipa-data
+$ setsebool -P container_manage_cgroup 1
+$ docker run --name freeipa-server-container -ti \
+   -h ipa.example.test \
+   -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+   --tmpfs /run --tmpfs /tmp \
+   -v /var/lib/ipa-data:/data:Z freeipa-server
+</pre>
+
+To stop IPA container:
+
+<pre>
+$ docker stop freeipa-server-container
+</pre>
+
+To restart IPA container:
+
+<pre>
+$ docker start -ai freeipa-server-container
+</pre>
+
+= Attaching to IPA Container =
+
+To attach to IPA container:
+
+<pre>
+$ docker attach freeipa-server-container
+</pre>
+
+To detach, press Ctrl-PQ.
+
+= References =
+
+* [[IPA]]
+* [[Docker]]
+* [[IPA Testing in Container]]
+* [https://github.com/freeipa/freeipa-container freeipa-container]
+* [https://hub.docker.com/r/freeipa/freeipa-server/ IPA Docker Repository]
+* [https://docs.docker.com/engine/installation/fedora/ Docker Installation on Fedora]

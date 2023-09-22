@@ -1,0 +1,24 @@
+= Installation =
+
+To install DS Cockpit:
+
+<pre>
+$ dnf install cockpit-389-ds
+</pre>
+
+= Starting Cockpit =
+
+To start DS Cockpit:
+
+<pre>
+$ systemctl start cockpit.socket
+</pre>
+
+= Accessing Cockpit =
+
+Open https://localhost:9090 with a browser. Login as root user.
+
+= See Also =
+
+* [[DS]]
+* [[Cockpit]]

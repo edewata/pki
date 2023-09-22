@@ -1,0 +1,53 @@
+= Overview =
+
+In PKI Server 10.5 or older the debug log is implemented using a custom logging framework.
+
+= Configuration =
+
+The logging configuration is stored in /var/lib/pki/<font color="red">pki-tomcat</font>/<subsystem>/conf/CS.cfg:
+
+<pre>
+debug.append=true
+debug.enabled=true
+debug.filename=/var/lib/pki/<instance>/logs/<subsystem>/debug
+debug.hashkeytypes=
+debug.level=0
+debug.showcaller=false
+</pre>
+
+== Log Files ==
+
+The logging framework does not support log rotation.
+All debug logs will be stored into /var/log/pki/<font color="red">pki-tomcat</font>/<subsystem>/debug.
+
+== Log Level ==
+
+{| border="1" style="border-collapse: collapse;"
+! width="200" | Level
+! width="200" | Name
+! width="400" | Description
+|-
+| 0-4
+| OBNOXIOUS
+| most detailed
+|-
+| 5-9
+| VERBOSE
+|
+|-
+| >= 10
+| INFORM
+| least detailed
+|}
+
+On Fedora the default level is 0. On RHEL the default level is 10.
+
+The server must be restarted for the changes to become effective.
+
+= Pre-Installation =
+
+To change the debug level prior to running the installation, change the CS.cfg template in /usr/share/pki/<subsystem>/conf.
+
+= Post-Installation =
+
+To change the debug level after the installation is complete, change the CS.cfg in /var/lib/pki/<font color="red">pki-tomcat</font>/<subsystem>/conf.

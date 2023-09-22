@@ -1,0 +1,17 @@
+= Shutdown Triggers =
+
+== CMSAdminServlet ==
+
+The server will be shutdown when the admin sends a shutdown request.
+
+== CMSStartServlet ==
+
+When Tomcat is shutdown, PKI server will be shutdown as well.
+
+== SelfTestSubsystem ==
+
+If any selftest fails during startup, or a critical selftest fails uding on-demand test, the server will be shutdown immediately.
+
+= References =
+
+* [[PKI Server]]

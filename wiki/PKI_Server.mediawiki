@@ -1,0 +1,25 @@
+= Creating System User =
+
+<pre>
+$ groupadd pki
+$ useradd -g pki pki
+</pre>
+
+= Basic PKI Server =
+
+* [https://github.com/dogtagpki/pki/blob/master/docs/installation/Installing_Basic_PKI_Server.md Installing Basic PKI Server]
+* [[PKI 10.6 Server]]
+* [[PKI 10.5 Server]]
+
+= Backup and Restore =
+
+* [[PKI Server Backup]]
+* [[PKI Server Restore]]
+
+= References =
+
+* [https://github.com/dogtagpki/pki/wiki/PKI-Server-CLI PKI Server CLI]
+* [https://github.com/dogtagpki/pki/wiki/Server-Configuration-Files Server Configuration Files]
+* [[PKI Server Shutdown]]
+* [[Tomcat]]
+* [[Nuxwdog]]

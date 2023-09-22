@@ -1,0 +1,47 @@
+= Installation =
+
+<pre>
+$ dnf install mock
+</pre>
+
+= Configuration =
+
+Mock configuration files are located at /etc/mock. It contains the configuration file for each supported platform.
+
+= Initialization =
+
+The platform configuration is available in /etc/mock/<platform>.cfg.
+
+To initialize the mock environment:
+
+<pre>
+$ mock -r <platform> --init
+</pre>
+
+For example:
+
+<pre>
+$ mock -r fedora-rawhide-x86_64 --init
+</pre>
+
+= Building a Package =
+
+To build a package:
+
+<pre>
+$ mock -r <platform> --rebuild <source RPM>
+</pre>
+
+The result will be stored in /var/lib/mock/<platform>/result.
+
+= Clean Up =
+
+<pre>
+$ mock -r <platform> --clean
+</pre>
+
+= References =
+
+* [https://openforums.wordpress.com/2015/11/22/get-yourself-acquainted-with-mock-to-build-rpm/ Get yourself acquainted with mock to build rpm]
+* [https://wiki.nikhef.nl/grid/Building_RPMs_using_mock Building RPMs using mock]
+* [https://stackoverflow.com/questions/33011370/define-many-macros-for-rpmbuild-at-once Define many macros for rpmbuild at once]

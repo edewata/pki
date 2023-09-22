@@ -1,0 +1,14 @@
+= Message Files =
+* base/server/cmsbundle/src/UserMessages.properties
+* base/server/cmsbundle/src/LogMessages.properties
+* base/server/python/pki/server/deployment/pkimessages.py
+* dogtag/common-ui/shared/ca/ee/ProfileList.properties
+* dogtag/console-ui/src/CMSAdminRS.properties
+
+= References =
+* [http://poedit.net/ Poedit]
+* [http://www.gnu.org/software/gettext/manual/html_node/Java.html Java - GNU 'gettext' utilities]
+* [https://docs.python.org/2/library/gettext.html Python gettext]
+* [http://code.google.com/p/jquery-i18n-properties/ jquery-i18n-properties]
+* [http://linux-man-pages.blogspot.com/2008/08/translating-man-pages.html Translating man-pages]
+* [http://unix.stackexchange.com/questions/43384/localization-of-man-pages-on-linux-ubuntu localization of man pages on Linux (Ubuntu)]

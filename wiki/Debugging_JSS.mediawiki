@@ -1,0 +1,166 @@
+
+The component JSS grants access to the NSS security libraries through convenient Java code.
+
+Debugging JSS using jdb done as follows:
+
+Lets use  a standalone java/JSS program called PKCS10ECC , written to demonstrate how to debug JSS.
+
+ [root@example test]# jdb -classpath /home/cfu/source/jss/mozilla/security/jss/org/mozilla/jss/provider/java/security/JSSSignatureSpi.class:/usr/share/rhpki/classes:/usr/share/java/rhpki/cstools.jar:/usr/share/java/rhpki/cmsutil.jar:/usr/share/java/rhpki/nsutil.jar:/usr/share/java/ldapjdk.jar:/usr/lib/java/dirsec/jss4.jar com.netscape.cmstools.PKCS10ECC -d . -n cfunn -r req.1009 -p netscape
+ Initializing jdb ...
+ > stop at netscape.security.pkcs.PKCS10:191
+ Deferring breakpoint netscape.security.pkcs.PKCS10:191.
+ It will be set after the class is loaded.
+ > use /home/cfu/dogtag_src/pki/util/src
+ > run
+ run com.netscape.cmstools.PKCS10ECC -d . -n cfunn -r req.1009 -p 1234
+ Set uncaught java.lang.Throwable
+ Set deferred uncaught java.lang.Throwable
+ >
+ VM Started: cert/key prefix =
+ path = .
+ password = netscape
+ before BufferedReader
+ before calling getCMCBlob
+ in getCMCBlob
+ before b64 decode
+
+ after b64 decode
+ Set deferred breakpoint netscape.security.pkcs.PKCS10:191
+ 
+ Breakpoint hit: "thread=main", netscape.security.pkcs.PKCS10.<init>(), line=191 bci=278
+ 191         sig.initVerify (publicKey);
+ 
+ main[1] step
+ >
+ Step completed: "thread=main", org.mozilla.jss.provider.java.security.JSSSignatureSpi.engineInitVerify(), line=99 bci=0
+ 
+ main[1] use /home/cfu/source/jss/mozilla/security/jss
+ main[1] list
+ 95                throw new InvalidKeyException();
+ 96            }
+ 97            privk = (PrivateKey)privateKey;
+ 98
+ 99 =>         token = privk.getOwningToken();
+ 100
+ 101            return token.getSignatureContext(alg);
+ 102        }
+ 103
+ 104        public void engineInitVerify(PublicKey publicKey)
+ main[1] n
+ Unrecognized command: 'n'.  Try help...
+ main[1] next
+ >
+ Step completed: "thread=main", org.mozilla.jss.provider.java.security.JSSSignatureSpi.engineInitVerify(), line=101 bci=9
+ 101            return token.getSignatureContext(alg);
+ 
+ main[1] step
+ >
+ Step completed: "thread=main", org.mozilla.jss.pkcs11.PK11Token.getSignatureContext(), line=77 bci=0
+ 77            Assert._assert(algorithm!=null);
+ 
+ main[1] next
+ >
+ Step completed: "thread=main", org.mozilla.jss.pkcs11.PK11Token.getSignatureContext(), line=78 bci=12
+ 78              return Tunnel.constructSignature( algorithm,
+ 
+ main[1] step
+ >
+ Step completed: "thread=main", com.ibm.oti.vm.BootstrapClassLoader.loadClass(), line=66 bci=0
+ 
+ main[1] next
+ >
+ Step completed: "thread=main", com.ibm.oti.vm.BootstrapClassLoader.loadClass(), line=67 bci=6
+ 
+ main[1] next
+ >
+ Step completed: "thread=main", com.ibm.oti.vm.BootstrapClassLoader.loadClass(), line=68 bci=12
+ 
+ main[1] next
+ >
+ Step completed: "thread=main", com.ibm.oti.vm.BootstrapClassLoader.loadClass(), line=70 bci=24
+ 
+ main[1] next
+ >
+ Step completed: "thread=main", com.ibm.oti.vm.BootstrapClassLoader.loadClass(), line=84 bci=103
+ 
+ main[1] next
+ >
+ Step completed: "thread=main", org.mozilla.jss.pkcs11.PK11Token.getSignatureContext(), line=78 bci=16
+ 78              return Tunnel.constructSignature( algorithm,
+ 
+ main[1] step
+ >
+ Step completed: "thread=main", org.mozilla.jss.pkcs11.PK11Signature.<init>(), line=51 bci=0
+ 51      {
+ 
+ main[1] list
+ 47    final class PK11Signature extends org.mozilla.jss.crypto.SignatureSpi {
+ 48
+ 49      public PK11Signature(PK11Token token, SignatureAlgorithm algorithm)
+ 50              throws NoSuchAlgorithmException, TokenException
+ 51 =>   {
+ 52            Assert._assert(token!=null && algorithm!=null);
+ 53
+ 54            // Make sure this token supports this algorithm.  It's OK if
+ 55            // it only supports the signing part; the hashing can be done
+ 56            // on the internal module.
+ main[1] n
+ Unrecognized command: 'n'.  Try help...
+ main[1] next
+ >
+ Step completed: "thread=main", org.mozilla.jss.pkcs11.PK11Signature.<init>(), line=361 bci=4
+ 361        protected boolean raw=false; // raw signing only, no hashing
+ 
+ main[1] next
+ >
+ Step completed: "thread=main", org.mozilla.jss.pkcs11.PK11Signature.<init>(), line=52 bci=9
+ 52            Assert._assert(token!=null && algorithm!=null);
+ 
+ main[1] next
+ >
+ Step completed: "thread=main", org.mozilla.jss.pkcs11.PK11Signature.<init>(), line=57 bci=25
+ 57              if( ! token.doesAlgorithm(algorithm)  &&
+ 
+ main[1] list
+ 53
+ 54            // Make sure this token supports this algorithm.  It's OK if
+ 55            // it only supports the signing part; the hashing can be done
+ 56            // on the internal module.
+ 57 =>           if( ! token.doesAlgorithm(algorithm)  &&
+ 58                ! token.doesAlgorithm(algorithm.getSigningAlg()) )
+ 59            {
+ 60                      throw new NoSuchAlgorithmException();
+ 61              }
+ 62
+ main[1] next
+ >
+ Step completed: "thread=main", org.mozilla.jss.pkcs11.PK11Signature.<init>(), line=60 bci=44
+ 60                      throw new NoSuchAlgorithmException();
+ 
+ main[1] next
+ >
+ Step completed: "thread=main", org.mozilla.jss.provider.java.security.JSSSignatureSpi.engineInitVerify(), line=124 bci=143
+ 124                    X509EncodedKeySpec encodedKey =
+ 
+ main[1] next
+ >
+ Step completed: "thread=main", org.mozilla.jss.provider.java.security.JSSSignatureSpi.engineInitVerify(), line=125 bci=144
+ 125                        new X509EncodedKeySpec(publicKey.getEncoded());
+ 
+ main[1] next
+ >
+ Step completed: "thread=main", netscape.security.pkcs.PKCS10.<init>(), line=195 bci=314
+ 
+ main[1] next
+ >
+ Step completed: "thread=main", netscape.security.pkcs.PKCS10.<init>(), line=196 bci=316
+ 
+ main[1] next
+ >
+ Step completed: "thread=main", com.netscape.cmstools.PKCS10ECC.getCMCBlob(), line=130 bci=119
+ 
+ main[1] quit
+
+= References =
+
+* [[Debugging]]

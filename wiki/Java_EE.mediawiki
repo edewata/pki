@@ -1,0 +1,16 @@
+= Creating Web Services =
+
+== Custom Exception Message ==
+
+<pre>
+Response response = Response.status(Response.Status.FORBIDDEN)
+    .entity("Invalid password").build();
+
+throw new WebApplicationException(response);
+</pre>
+
+= References =
+
+* [https://docs.oracle.com/javaee/7/api/ Java(TM) EE 7 Specification APIs]
+* [[Java]]
+* [[Web Container]]

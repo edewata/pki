@@ -1,0 +1,49 @@
+= Creating PyPI Release =
+
+== Prepare your system ==
+
+Install package requirements
+
+<pre>
+dnf install python-setuptools python-wheel
+</pre>
+
+Store PyPI credentials in ~/.pypirc
+
+<pre>
+[distutils]
+index-servers =
+    pypi
+
+[pypi]
+username: <username>
+password: <password>
+</pre>
+
+== Build and upload release to PyPI ==
+
+Create the release with the following commands:
+
+<pre>
+$ cd base/common/python
+$ python setup.py release
+</pre>
+
+To inspect the files before they are uploaded, do:
+
+<pre>
+$ cd base/common/python
+$ python setup.py packages
+$ ls dist/
+</pre>
+
+The ''packages'' and ''release'' aliases are defined in ''setup.cfg''. It creates a source distribution and universal wheel. Then it registers a new version of the package and uploads both files to PyPI. A file can only uploaded once. PyPI refused to replace a file. 
+
+''setup.py'' gets the version and release from specs/pki-core.spec. The Python script rewrites itself to include the version number in setup.py and to make the source distribution work without specs/pki-core.spec. '''Please revert changes to setup.py afterwards.'''
+
+= References =
+
+* [[Python]]
+* [[pip]]
+* [https://pypi.python.org/pypi PyPI - the Python Package Index]
+* [https://docs.python.org/2/distutils/packageindex.html The Python Package Index (PyPI) Documentation]

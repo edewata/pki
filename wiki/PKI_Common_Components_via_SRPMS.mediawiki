@@ -1,0 +1,256 @@
+== Building PKI Common Components (Dogtag 1.3 and Earlier ONLY) ==
+
+=== OS Util (osutil) ===
+
+Obtain the latest osutil SRPM:
+
+    yumdownloader --source osutil
+
+To create binary RPMs from this SRPM, become '''root''', and execute the following commands:
+
+    rpm -Uvh osutil-{version}-{release}.src.rpm
+    cd /usr/src/redhat
+    rpmbuild -bb SPECS/osutil.spec
+
+The RPMs will be created in RPMS/{arch}.  Become '''root''', and execute the following commands:
+
+    cd RPMS/{arch}
+    rpm -Uvh *.rpm
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio osutil-{version}-{release}.src.rpm} | cpio -idumv
+    gtar -zxvf osutil-{version}.tar.gz
+    cd osutil-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in osutil-{version}/dist/rpmpkg/RPMS/{arch}.  Become '''root''', and execute the following commands:
+
+    cd osutil-{version}/dist/rpmpkg/RPMS/{arch}
+    rpm -Uvh *.rpm
+
+=== Sym Key (pki-symkey) ===
+
+Obtain the latest pki-symkey SRPM:
+
+    yumdownloader --source pki-symkey
+
+To create binary RPMs from this SRPM, become '''root''', and execute the following commands:
+
+    rpm -Uvh pki-symkey-{version}-{release}.src.rpm
+    cd /usr/src/redhat
+    rpmbuild -bb SPECS/pki-symkey.spec
+
+The RPMs will be created in RPMS/{arch}.  Become '''root''', and execute the following commands:
+
+    cd RPMS/{arch}
+    rpm -Uvh *.rpm
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio pki-symkey-{version}-{release}.src.rpm} | cpio -idumv
+    gtar -zxvf pki-symkey-{version}.tar.gz
+    cd pki-symkey-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in pki-symkey-{version}/dist/rpmpkg/RPMS/{arch}.  Become '''root''', and execute the following commands:
+
+    cd pki-symkey-{version}/dist/rpmpkg/RPMS/{arch}
+    rpm -Uvh *.rpm
+
+=== PKI Util (pki-util) ===
+
+Obtain the latest pki-util SRPM:
+
+    yumdownloader --source pki-util
+
+To create binary RPMs from this SRPM, become '''root''', and execute the following commands:
+
+    rpm -Uvh pki-util-{version}-{release}.src.rpm
+    cd /usr/src/redhat
+    rpmbuild -bb SPECS/pki-util.spec
+
+The RPMs will be created in RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd RPMS/noarch
+    rpm -Uvh *.rpm
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio pki-util-{version}-{release}.src.rpm} | cpio -idumv
+    gtar -zxvf pki-util-{version}.tar.gz
+    cd pki-util-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in pki-util-{version}/dist/rpmpkg/RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd pki-util-{version}/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+=== Native Tools (pki-native-tools) ===
+
+Obtain the latest pki-native-tools SRPM:
+
+    yumdownloader --source pki-native-tools
+
+To create binary RPMs from this SRPM, become '''root''', and execute the following commands:
+
+    rpm -Uvh pki-native-tools-{version}-{release}.src.rpm
+    cd /usr/src/redhat
+    rpmbuild -bb SPECS/pki-native-tools.spec
+
+The RPMs will be created in RPMS/{arch}.  Become '''root''', and execute the following commands:
+
+    cd RPMS/{arch}
+    rpm -Uvh *.rpm
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio pki-native-tools-{version}-{release}.src.rpm} | cpio -idumv
+    gtar -zxvf pki-native-tools-{version}.tar.gz
+    cd pki-native-tools-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in pki-native-tools-{version}/dist/rpmpkg/RPMS/{arch}.  Become '''root''', and execute the following commands:
+
+    cd pki-native-tools-{version}/dist/rpmpkg/RPMS/{arch}
+    rpm -Uvh *.rpm
+
+=== PKI Setup (pki-setup) ===
+
+Obtain the latest pki-setup SRPM:
+
+    yumdownloader --source pki-setup
+
+To create binary RPMs from this SRPM, become '''root''', and execute the following commands:
+
+    rpm -Uvh pki-setup-{version}-{release}.src.rpm
+    cd /usr/src/redhat
+    rpmbuild -bb SPECS/pki-setup.spec
+
+The RPMs will be created in RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd RPMS/noarch
+    rpm -Uvh *.rpm
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio pki-setup-{version}-{release}.src.rpm} | cpio -idumv
+    gtar -zxvf pki-setup-{version}.tar.gz
+    cd pki-setup-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in pki-setup-{version}/dist/rpmpkg/RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd pki-setup-{version}/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+=== Java Tools (pki-java-tools) ===
+
+Obtain the latest pki-java-tools SRPM:
+
+    yumdownloader --source pki-java-tools
+
+To create binary RPMs from this SRPM, become '''root''', and execute the following commands:
+
+    rpm -Uvh pki-java-tools-{version}-{release}.src.rpm
+    cd /usr/src/redhat
+    rpmbuild -bb SPECS/pki-java-tools.spec
+
+The RPMs will be created in RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd RPMS/noarch
+    rpm -Uvh *.rpm
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio pki-java-tools-{version}-{release}.src.rpm} | cpio -idumv
+    gtar -zxvf pki-java-tools-{version}.tar.gz
+    cd pki-java-tools-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in pki-java-tools-{version}/dist/rpmpkg/RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd pki-java-tools-{version}/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+=== PKI Selinux (pki-selinux) ===
+
+Obtain the latest pki-selinux SRPM:
+
+    yumdownloader --source pki-selinux
+
+To create binary RPMs from this SRPM, become '''root''', and execute the following commands:
+
+    rpm -Uvh pki-selinux-{version}-{release}.src.rpm
+    cd /usr/src/redhat
+    rpmbuild -bb SPECS/pki-selinux.spec
+
+The RPMs will be created in RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd RPMS/noarch
+    rpm -Uvh *.rpm
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio pki-selinux-{version}-{release}.src.rpm} | cpio -idumv
+    gtar -zxvf pki-selinux-{version}.tar.gz
+    cd pki-selinux-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in pki-selinux-{version}/dist/rpmpkg/RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd pki-selinux-{version}/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+=== PKI Common (pki-common) ===
+
+Obtain the latest pki-common-ui and pki-common SRPMs:
+
+    yumdownloader --source pki-common-ui pki-common
+
+To create binary RPMs from these SRPMs, become '''root''', and execute the following commands:
+
+    rpm -Uvh pki-common-ui-{version}-{release}.src.rpm
+    rpm -Uvh pki-common-{version}-{release}.src.rpm
+    cd /usr/src/redhat
+    rpmbuild -bb SPECS/pki-common-ui.spec
+    rpmbuild -bb SPECS/pki-common.spec
+
+The RPMs will be created in RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd RPMS/noarch
+    rpm -Uvh *.rpm
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio pki-common-ui-{version}-{release}.src.rpm} | cpio -idumv
+    gtar -zxvf pki-common-ui-{version}.tar.gz
+    cd pki-common-ui-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in pki-common-ui-{version}/dist/rpmpkg/RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd pki-common-ui-{version}/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio pki-common-{version}-{release}.src.rpm} | cpio -idumv
+    gtar -zxvf pki-common-{version}.tar.gz
+    cd pki-common-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in pki-common-{version}/dist/rpmpkg/RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd pki-common-{version}/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm

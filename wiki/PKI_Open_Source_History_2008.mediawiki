@@ -1,0 +1,72 @@
+= Open Source History (2008) =
+
+== Dogtag Certificate Server 1.0.0 &nbsp;&nbsp;&nbsp;[03/18/2008] ==
+
+The Dogtag Certificate System was the first fully open source version of what had previously been a successful proprietary product.  Based primarily upon Red Hat Certificate System 7.3, Dogtag Certificate System 1.0.0 marked an evolution of moving from a closed source proprietary code base to a true open source project.  Released on March 18, 2008, version 1.0.0 of Dogtag Certificate System was written in a combination of Java, C, C++, and Perl, and used the open source Fedora Directory Server (and SQLite) for storage of its certificates.  The release consisted of all six major server subsystems contained in Red Hat Certificate System 7.3 as well as its interaction with the open source Enterprise Security Client.  This initial release was only made available on 32-bit and 64-bit versions of Fedora 8, but this was later expanded to include the 32-bit and 64-bit versions of Fedora 9.
+
+'''Project Name:'''
+* '''''Dogtag Certificate System 1.0.0'''''
+'''Releases:'''
+* [03/18/2008] Dogtag Certificate Server 1.0.0
+'''Major Features:'''
+* The first true open source certificate system based upon a successful proprietary product
+* Contained all features present in Red Hat Certificate System 7.3 including:
+** Certificate Authority (CA) subsystem
+** Data Recovery Manager (DRM) subsystem
+** Online Certificate Status Protocol (OCSP) Manager subsystem
+** Token Key Service (TKS) subsystem
+** Token Processing System (TPS) subsystem
+** Enterprise Security Client (ESC) client
+** Registration Authority (RA) subsystem
+** Support for the Simple Certificate Enrollment Protocol (SCEP) designed by Cisco
+** An auto-enrollment Proxy
+* Provides a built-in mechanism to provide seemless data migration to future releases of this project
+* Provides a new way to store request attributes; the schema has been changed for this feature
+* Contains new build scripts
+* Incorporates several new junit tests
+'''Server Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>1.0.0</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 8 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 8 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 9 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 9 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+'''Client Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>1.0.0</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 8 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 8 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 9 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 9 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>

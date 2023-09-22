@@ -1,0 +1,21 @@
+= Overview =
+
+Some components of the PKI server can be customized. However, when the PKI packages are upgraded the customized components may not be upgraded automatically. It is the admin's responsibility to ensure that the customized components will continue to work with the new PKI packages. So it is important to determine which components to customize and try to minimize the customization.
+
+= Customizing PKI Subsystem =
+
+See [[Customizing PKI Subsystem]].
+
+= Customizing PKI Theme =
+
+See [[Customizing PKI Theme]].
+
+= Customizing TPS UI =
+
+See [https://github.com/dogtagpki/pki/wiki/TPS-Token-Lifecycle TPS Token Lifecycle].
+
+= See Also =
+
+* [[Customization Development]]
+* [http://tomcat.apache.org/tomcat-7.0-doc/config/context.html Apache Tomcat 7 - The Context Container]
+* [http://docs.oracle.com/javase/7/docs/api/java/util/ResourceBundle.html Class ResourceBundle]

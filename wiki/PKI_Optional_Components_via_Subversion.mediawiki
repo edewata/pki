@@ -1,0 +1,63 @@
+== Building Optional PKI Components (Dogtag 1.3 and Earlier ONLY) ==
+
+'''IMPORTANT:'''&nbsp;&nbsp; For ALL of the following components, "{flavor}" equals "dogtag"!
+
+=== PKI Management (pki-manage) ===
+
+'''<font color="RED">NOTE:  The 'pki-manage' RPM has been 'deprecated' on Fedora platforms in favor of 'yum' and 'yum-utils'!</font>'''
+
+To build pki-manage, do the following:
+
+    cd src/pki/{flavor}/manage
+    ./build_{flavor}
+
+The RPMs will be created in src/release/pki/base/manage/dist/rpmpkg/RPMS/noarch.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/base/manage/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+=== PKI Console (pki-console) ===
+
+To build pki-console-ui, do the following:
+
+    cd src/pki/{flavor}/console-ui
+    ./build_{flavor}
+
+The RPMs will be created in src/release/pki/{flavor}/console-ui/dist/rpmpkg/RPMS/noarch.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/{flavor}/console-ui/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+To build pki-console, do the following:
+
+    cd src/pki/base/console
+    ./build_{flavor}
+
+The RPMs will be created in src/release/pki/base/console/dist/rpmpkg/RPMS/noarch.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/base/console/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+=== PKI Silent Installer (pki-silent) ===
+
+To build pki-silent, do the following:
+
+    cd src/pki/{flavor}/silent
+    ./build_{flavor}
+
+The RPMs will be created in src/release/pki/base/silent/dist/rpmpkg/RPMS/noarch.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/base/silent/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+=== PKI Migration Scripts (pki-migrate) ===
+
+To build pki-migrate, do the following:
+
+    cd src/pki/{flavor}/migrate
+    ./build_{flavor}
+
+The RPMs will be created in src/release/pki/base/migrate/dist/rpmpkg/RPMS/noarch.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/base/migrate/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm

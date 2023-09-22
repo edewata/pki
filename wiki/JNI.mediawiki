@@ -1,0 +1,65 @@
+= Method Signatures =
+
+Format: (<arguments>)<return value>
+
+Examples:
+* ()V
+* (Ljava/lang/Object;)Ljava/lang/Object;
+
+= Getting JNI Environment =
+
+<pre>
+JNIEnv *env;
+(*jvm)->AttachCurrentThread(jvm, (void**)&env, NULL);
+</pre>
+
+= Getting Class =
+
+<pre>
+jclass clazz = (*env)->FindClass(env, name);
+</pre>
+
+= Getting Object Class =
+
+<pre>
+jclass clazz = (*env)->GetObjectClass(env, object);
+</pre>
+
+= Getting Constructor =
+
+<pre>
+jmethodID constructor = (*env)->GetMethodID(env, cls, "<init>", signature);
+</pre>
+
+= Getting Method =
+
+<pre>
+jmethodID method = (*env)->GetMethodID(env, clazz, name, signature);
+</pre>
+
+= Creating New Object =
+
+<pre>
+jobject object = (*env)->NewObject(env, clazz, constructor);
+</pre>
+
+= Invoking Void Method =
+
+<pre>
+(*env)->CallVoidMethod(env, object, method);
+</pre>
+
+= Creating Byte Array =
+
+<pre>
+jbyte *data = ...
+jint size = ...
+
+jbyteArray result = (*env)->NewByteArray(env, size);
+(*env)->SetByteArrayRegion(env, result, 0, size, data);
+</pre>
+
+= References =
+
+* [https://github.com/dogtagpki/jss/wiki JSS]
+* [http://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/jniTOC.html Java Native Interface Specification]

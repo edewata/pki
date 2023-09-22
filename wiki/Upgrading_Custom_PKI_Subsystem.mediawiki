@@ -1,0 +1,89 @@
+= Overview =
+
+This page describes the issues related to upgrading a customized PKI subsystems and the possible solutions.
+
+= Background =
+
+PKI subsystems are deployed as web applications (i.e. webapps) in Tomcat. The webapp generally contains the following:
+
+* HTML, JSP, JavaScript files
+* web.xml which defines the servlets, REST API, security constraints, etc.
+* velocity.properties which contains Velocity template engine configuration
+* logging.properties which contains logging configuration
+* links to Java libraries
+
+Here are the existing webapps:
+
+* https://github.com/dogtagpki/pki/tree/master/base/ca/shared/webapps/ca
+* https://github.com/dogtagpki/pki/tree/master/base/kra/shared/webapps/kra
+* https://github.com/dogtagpki/pki/tree/master/base/ocsp/shared/webapps/ocsp
+* https://github.com/dogtagpki/pki/tree/master/base/tks/shared/webapps/tks
+* https://github.com/dogtagpki/pki/tree/master/base/tps/shared/webapps/tps
+
+The webapp is deployed in Tomcat by creating a deployment descriptor in /etc/pki/<font color="red">pki-tomcat</font>/Catalina/localhost/<font color="red">ca</font>.xml.
+The deployment descriptor contains a '''docBase''' parameter which points to a directory that contains the webapp files.
+
+Currently by default the PKI installer will set the '''docBase''' to point to the default webapp in /usr/share/pki/<font color="red">ca</font>/webapps/<font color="red">ca</font>, which is a directory owned by a PKI package.
+
+Depending on the needs, some people might want to customize the subsystem. Note that there is a separate theme package that can be [[Customizing PKI Theme|customized]] as well to change the look and feel of the webapp. Although it's probably more rare, sometimes it is necessary to change the behaviour of the subsystem itself by changing the webapp files instead of just the theme files.
+
+A custom subsystem can be created by copying the default webapp (e.g. /usr/share/pki/<font color="red">ca</font>/webapps/<font color="red">ca</font>) into a new user-owned directory (e.g. /var/lib/pki/<font color="red">pki-tomcat</font>/webapps/<font color="red">ca</font>), making the changes there, then changing the '''docBase''' to point to the custom webapp. Also, in the past the PKI installer used to deploy the default subsystems as custom webapps by default.
+
+= Upgrade Issues =
+
+When the PKI package is upgraded, the default webapps will be updated automatically since they are owned by the package.
+However, custom webapps will not be updated automatically unless a specific upgrade script is written to update the custom webapps.
+
+If the custom webapp is not updated, <font color="red">'''parts of the webapp might break'''</font> after upgrading the package and they might not be known immediately:
+
+* New servlets or REST API may not be available
+* Existing servlets or REST API may no longer work correctly
+* Newer HTML, JSP, or JavaScript changes do not get deployed
+
+= Possible Solutions =
+
+== Option 1: Replace custom webapp with default webapp ==
+
+In this option, a general upgrade script will move the current custom webapp into another location as a backup. Then it will change the '''docBase''' to point to the default webapp. This way when the server is restarted, the default webapp will work properly, but it will lose all customizations.
+
+To restore the customizations, the admin will need to create a new custom webapp based on the new default webapp, then replace the '''docBase''' again to point to the new custom webapp.
+
+== Option 2: Replace custom files with default files ==
+
+In this option, PKI developers will need to carefully keep track of each file changed in the default webapp since the last release, then create specific upgrade scripts to replace the custom files with links to the updated default files. The '''docBase''' will not be changed so the links will reside in the custom webapp.
+
+The impact on the customization will be harder to identify since the admin will have to check whether any of the customized files has been replaced with a link.
+
+To restore the customization, the admin will need to create new custom files based on the new default files, then replace the links with the new custom files.
+
+== Option 3: Upgrade custom files ==
+
+In this option, PKI developers will need to carefully keep track of each file changed in the default webapp since the last release, then create specific upgrade scripts to update the custom files to match the updated default files. The '''docBase''' will continue to point to the custom webapp.
+
+The upgrade scripts will be harder to write since the changes might conflict with the customization that was already done to the file.
+
+If the upgrade completes successfully, there is no further action required, but depending on the customization there is a higher chance that the upgrade script will break, requiring a manual intervention to fix the issue.
+
+== Option 4: Do nothing ==
+
+In this option, there will be no upgrade script to change the '''docBase''' or the custom webapp. However, if the server is restarted immediately, there is a possibility the custom webapp will become broken.
+
+To avoid such problem, the admin will need to prepare a new custom webapp based on the new default webapp, then replace the old custom webapp directory with the new one before performing the upgrade.
+
+= Other Considerations =
+
+* Theme customization is generally rare
+* Behavior customization is generally even more rare
+* However, some customizations might be a business requirement
+* In IPA scenarios, IPA users generally do not use the PKI webapp directly, so it's probably safe to assume that there is no customization, which means that the old custom webapp can simply be replaced with the default one.
+
+= Conclusion =
+
+It was decided that Option 1 would be the best solution. The changes have been implemented in the following commit:
+
+* https://github.com/dogtagpki/pki/commit/f24ec55923ee01981954e41c64d7a7304707d41d
+
+= See Also =
+
+* [[Customization]]
+* [https://bugzilla.redhat.com/show_bug.cgi?id=1717229 Bug #1717229 - IPA upgrade issue]

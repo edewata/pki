@@ -1,0 +1,41 @@
+== Submitting Changes to PKI Source Code ==
+
+Select one of the following methods:
+
+=== Using the PKI Subversion (SVN) Repository ===
+
+* Follow the [[PKI_Subversion_Instructions|instructions to checkout a read-only copy of the PKI source code using subversion]].
+* Save a copy of each original file planned on being modified,
+* Apply changes as desired to each file, and
+* Send a unified diff of the changes between the original and modified files to the [http://www.redhat.com/mailman/listinfo/pki-devel pki-devel@redhat.com] mailing list:
+'''IMPORTANT:'''  A unified diff has the following format:
+ diff -U 8 &lt;original file&gt; &lt;modified file&gt;
+By default, the unified diff format is the only format provided by Subversion ('''svn diff'''), so this method should be followed when using the PKI subversion repository.
+
+See the [[PKI_Coding_Style|Coding Style]] guidelines for more information.
+
+=== Using the PKI SRPMs ===
+
+* Download the PKI SRPM(s):
+*: To download the PKI source RPMS, the user must first install the yum utilities:
+ yum install yum-utils
+* Use <code>yumdownloader</code> to download ALL of the PKI SRPMS (where "{flavor}" equals "dogtag"):
+ yumdownloader --source osutil pki-ca {flavor}-pki-ca-ui pki-common {flavor}-pki-common-ui\
+   pki-console {flavor}-pki-console-ui pki-java-tools pki-kra {flavor}-pki-kra-ui\
+   pki-manage pki-migrate pki-native-tools pki-ocsp {flavor}-pki-ocsp-ui\
+   pki-ra {flavor}-pki-ra-ui pki-setup pki-silent pki-symkey pki-tks {flavor}-pki-tks-ui pki-tps {flavor}-pki-tps-ui pki-util
+   
+   '''<font color="RED">NOTE:  The 'pki-manage' RPM has been 'deprecated' on Fedora platforms in favor of 'yum' and 'yum-utils'!</font>'''
+* Unpackage the SRPM(s):
+ for rpm in *.rpm
+ do
+   rpm2cpio ${rpm} | cpio -idumv
+   gtar -zxvf *.gz
+   rm *.gz
+ done
+* Save a copy of each original file planned on being modified
+* Apply changes as desired to each file
+* Send a unified diff of the changes between the original and modified files to the [http://www.redhat.com/mailman/listinfo/pki-devel pki-devel@redhat.com] mailing list:
+'''IMPORTANT:'''  A unified diff has the following format:
+ diff -U 8 <original file> <modified file>
+See the [[PKI_Coding_Style|Coding Style]] guidelines for more information.

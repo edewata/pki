@@ -1,0 +1,17 @@
+== Links ==
+The proposed new layout is based on FHS (Filesystem Hierarchy Standard) and Fedora Packaging.
+
+* [http://www.pathname.com/fhs/ FHS (Filesystem Hierarchy Standard)]
+* [http://fedoraproject.org/wiki/Packaging/Guidelines Fedora Packaging Guidelines]
+
+== Core Dogtag Certificate System ==
+System locations are being used for:
+
+* utilities (scripts & binaries)
+* libraries
+* log files
+* lock files
+* default schema
+* certificate databases
+
+Instance directories can exist wherever the user places them on the filesystem.

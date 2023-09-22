@@ -1,0 +1,12 @@
+= Install =
+
+<pre>
+$ wget http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+$ rpm -i epel-release-latest-7.noarch.rpm
+</pre>
+
+It will install epel-release-7-x package that contains /etc/yum.repos.d/epel.repo.
+
+= References =
+
+* [https://fedoraproject.org/wiki/EPEL EPEL]

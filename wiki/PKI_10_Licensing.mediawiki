@@ -1,0 +1,182 @@
+= RPM Licenses =
+
+These are the licenses listed in the RPM spec files:
+
+{| border="1" width="800" style="border-collapse: collapse;"
+! width="500" | Package
+! width="300" | Types
+|-
+| [https://github.com/dogtagpki/pki/blob/master/pki.spec#L11 pki.spec]
+| GPL 2 and LGPL 2
+|}
+
+= License Files =
+
+These are some of the license files found in PKI source repository:
+
+{| border="1" width="800" style="border-collapse: collapse;"
+! width="500" | File
+! width="300" | Types
+|-
+| [https://github.com/dogtagpki/pki/blob/master/LICENSE LICENSE]
+| ?
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/ca/LICENSE base/ca/LICENSE]
+| GPL 2
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/common/LICENSE base/common/LICENSE]
+| GPL 2
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/common/LICENSE.LESSER base/common/LICENSE.LESSER]
+| LGPL 3
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/common/THIRD_PARTY_LICENSES base/common/THIRD_PARTY_LICENSES]
+| MIT, GPL
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/console/LICENSE base/console/LICENSE]
+| GPL 2
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/java-tools/LICENSE base/java-tools/LICENSE]
+| GPL 2
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/LICENSE base/kra/LICENSE]
+| GPL 2
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/native-tools/LICENSE base/native-tools/LICENSE]
+| GPL 2
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/ocsp/LICENSE base/ocsp/LICENSE]
+| GPL 2
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/server/LICENSE base/server/LICENSE]
+| GPL 2
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/symkey/LICENSE base/symkey/LICENSE]
+| GPL 2
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/tks/LICENSE base/tks/LICENSE]
+| GPL 2
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/tps/LICENSE base/tps/LICENSE]
+| LGPL 2.1
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/tps-client/apache/LICENSE-2.0 base/tps-client/apache/LICENSE-2.0]
+| Apache License 2.0, others
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/tps-client/LICENSE base/tps-client/LICENSE]
+| LGPL 2.1
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/util/LICENSE base/util/LICENSE]
+| GPL 2
+|-
+| [https://github.com/dogtagpki/pki/blob/master/dogtag/common-ui/LICENSE dogtag/common-ui/LICENSE]
+| GPL 2
+|-
+| [https://github.com/dogtagpki/pki/blob/master/dogtag/console-ui/LICENSE dogtag/console-ui/LICENSE]
+| GPL 2
+|-
+| [https://github.com/dogtagpki/pki/blob/master/cmake/Modules/COPYING-CMAKE-SCRIPTS cmake/Modules/COPYING-CMAKE-SCRIPTS]
+| ?
+|-
+| [https://github.com/dogtagpki/pki/blob/master/tests/dogtag/shared/java/argparser/COPYRIGHT tests/dogtag/shared/java/argparser/COPYRIGHT]
+| ?
+|}
+
+= Source Code Licenses =
+
+These are some of the licenses found in some of PKI source code in addition to GPLv2 and LGPLv2:
+
+{| border="1" width="800" style="border-collapse: collapse;"
+! width="500" | File
+! width="300" | Type
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/common/python/pki/cli/__init__.py base/common/python/pki/cli/__init__.py]
+| LGPL 3+
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/common/python/setup.py base/common/python/setup.py]
+| LGPL 3
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/tps-client/apache/docroot/esc/sow/js/ajax-dynamic-list.js base/tps-client/apache/docroot/esc/sow/js/ajax-dynamic-list.js]
+| LGPL 2.1+
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/tps-client/apache/docroot/esc/sow/js/ajax.js base/tps-client/apache/docroot/esc/sow/js/ajax.js]
+| Modified X11 Licence
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/tps-client/apache/docroot/esc/sow/js/lightbox.js base/tps-client/apache/docroot/esc/sow/js/lightbox.js]
+| Creative Commons Attribution 2.5
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/tps-client/apache/docroot/esc/sow/js/prototype.js base/tps-client/apache/docroot/esc/sow/js/prototype.js]
+| MIT
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/tps-client/apache/docroot/esc/sow/js/scriptaculous.js base/tps-client/apache/docroot/esc/sow/js/scriptaculous.js]
+| ?
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/native-tools/src/revoker/getopt.c base/native-tools/src/revoker/getopt.c]
+| MPL 1.1 or GPL 2+
+|}
+
+= Copyright Notices =
+
+These are some of the copyright notices found in PKI source code:
+
+{| border="1" width="800" style="border-collapse: collapse;"
+! width="500" | File
+! width="300" | Owners
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/ca/shared/webapps/ca/admin/ca/adminEnroll.html base/ca/shared/webapps/ca/admin/ca/adminEnroll.html]
+| Red Hat, Inc.
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/ca/shared/webapps/ROOT/WEB-INF/web.xml base/ca/shared/webapps/ROOT/WEB-INF/web.xml]
+| The Apache Software Foundation
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/common/THIRD_PARTY_LICENSES base/common/THIRD_PARTY_LICENSES]
+| jQuery Foundation and other contributors, Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/native-tools/src/revoker/getopt.c base/native-tools/src/revoker/getopt.c]
+| Netscape Communications Corporation
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/server/setup/web-app_2_3.dtd base/server/setup/web-app_2_3.dtd]
+| Sun Microsystems, Inc.
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/server/share/webapps/pki/js/bootstrap.js base/server/share/webapps/pki/js/bootstrap.js]
+| Twitter, Inc.
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/tps-client/apache/docroot/esc/sow/js/ajax-dynamic-list.js base/tps-client/apache/docroot/esc/sow/js/ajax-dynamic-list.js]
+| DTHMLGoodies.com, Alf Magne Kalleland
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/tps-client/apache/docroot/esc/sow/js/ajax.js base/tps-client/apache/docroot/esc/sow/js/ajax.js]
+| Gregory Wild-Smith
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/tps-client/apache/docroot/esc/sow/js/prototype.js base/tps-client/apache/docroot/esc/sow/js/prototype.js]
+| Sam Stephenson
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/tps-client/apache/docroot/esc/sow/js/scriptaculous.js base/tps-client/apache/docroot/esc/sow/js/scriptaculous.js]
+| Thomas Fuchs
+|-
+| [https://github.com/dogtagpki/pki/blob/master/base/tps-client/apache/LICENSE-2.0 base/tps-client/apache/LICENSE-2.0]
+| Cisco Systems, Inc., Ian F. Darwin, Board of Trustees of the University of Illinois, Jeff Hostetler, Spyglass, Inc., Carnegie Mellon University, Bell Communications Research, Inc., RSA Data Security, Inc., The Apache Software Foundation., Massachusetts Institute of Technology, University of Cambridge, Zeus Technology Limited, Thai Open Source Software Center Ltd and Clark Cooper
+|-
+| [https://github.com/dogtagpki/pki/blob/master/cmake/Modules/FindAPR.cmake cmake/Modules/FindAPR.cmake]
+| Andreas Schneider
+|-
+| [https://github.com/dogtagpki/pki/blob/master/cmake/Modules/FindLdap.cmake cmake/Modules/FindLdap.cmake]
+| Matthew Harmsen, Alexander Neundorf, Andreas Schneider
+|-
+| [https://github.com/dogtagpki/pki/blob/master/cmake/Modules/MacroCopyFile.cmake cmake/Modules/MacroCopyFile.cmake]
+| Wengo, Andreas Schneider
+|-
+| [https://github.com/dogtagpki/pki/blob/master/dogtag/common-ui/shared/css/patternfly.css dogtag/common-ui/shared/css/patternfly.css]
+| bootstrap-select
+|-
+| [https://github.com/dogtagpki/pki/blob/master/tests/dogtag/shared/java/argparser/COPYRIGHT tests/dogtag/shared/java/argparser/COPYRIGHT]
+| John E. Lloyd
+|-
+| [https://github.com/dogtagpki/pki/blob/master/tools/jar/jar-query tools/jar/jar-query]
+| John Dennis
+|}
+
+= References =
+
+* [[PKI Licensing]]
+* [https://spdx.org/sites/cpstandard/files/pages/files/using_spdx_license_list_short_identifiers.pdf Using SPDX License List “short identifiers” in source files]
+* [https://spdx.org/licenses/ SPDX License List]

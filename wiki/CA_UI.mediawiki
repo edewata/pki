@@ -1,0 +1,166 @@
+= End-Entity Interface =
+
+URL: /ca/ee/ca/profileList
+
+== General Enrollment/Renewal ==
+
+{| border="1" style="border-collapse: collapse;"
+! width="150" | Profile ID
+! width="300" | Profile Name
+! width="350" | Description
+|-
+| [https://git.fedorahosted.org/cgit/pki.git/tree/base/ca/shared/profiles/ca/caUserCert.cfg caUserCert]
+| Manual User Dual-Use Certificate Enrollment
+| This certificate profile is for enrolling user certificates.
+|-
+| [https://git.fedorahosted.org/cgit/pki.git/tree/base/ca/shared/profiles/ca/caUserSMIMEcapCert.cfg caUserSMIMEcapCert]
+| Manual User Dual-Use S/MIME capabilities Certificate Enrollment
+| This certificate profile is for enrolling user certificates with S/MIME capabilities extension - OID: 1.2.840.113549.1.9.15
+|-
+| [https://git.fedorahosted.org/cgit/pki.git/tree/base/ca/shared/profiles/ca/AdminCert.cfg AdminCert]
+| Manual Administrator Certificate Enrollment
+| This certificate profile is for enrolling Administrator's certificates suitable for use by clients such as browsers.
+|-
+| [https://git.fedorahosted.org/cgit/pki.git/tree/base/ca/shared/profiles/ca/caSignedLogCert.cfg caSignedLogCert]
+| Manual Log Signing Certificate Enrollment
+| This profile is for enrolling audit log signing certificates
+|-
+| [https://git.fedorahosted.org/cgit/pki.git/tree/base/ca/shared/profiles/ca/caTPSCert.cfg caTPSCert]
+| Manual TPS Server Certificate Enrollment
+| This certificate profile is for enrolling TPS server certificates.
+|-
+| [https://git.fedorahosted.org/cgit/pki.git/tree/base/ca/shared/profiles/ca/caServerCert.cfg caServerCert]
+| Manual Server Certificate Enrollment
+| This certificate profile is for enrolling server certificates.
+|-
+| [https://git.fedorahosted.org/cgit/pki.git/tree/base/ca/shared/profiles/ca/caSubsystemCert.cfg caSubsystemCert]
+| Manual Subsystem Certificate Enrollment
+| This certificate profile is for enrolling subsystem certificates.
+|-
+| [https://git.fedorahosted.org/cgit/pki.git/tree/base/ca/shared/profiles/ca/caOtherCert.cfg caOtherCert]
+| Other Certificate Enrollment
+| This certificate profile is for enrolling other certificates.
+|-
+| [https://git.fedorahosted.org/cgit/pki.git/tree/base/ca/shared/profiles/ca/caCACert.cfg caCACert]
+| Manual Certificate Manager Signing Certificate Enrollment
+| This certificate profile is for enrolling Certificate Authority certificates.
+|-
+| [https://git.fedorahosted.org/cgit/pki.git/tree/base/ca/shared/profiles/ca/caInstallCACert.cfg caInstallCACert]
+| Manual Security Domain Certificate Authority Signing Certificate Enrollment
+| This certificate profile is for enrolling Security Domain Certificate Authority certificates.
+|-
+| [https://git.fedorahosted.org/cgit/pki.git/tree/base/ca/shared/profiles/ca/caOCSPCert.cfg caOCSPCert]
+| Manual OCSP Manager Signing Certificate Enrollment
+| This certificate profile is for enrolling OCSP Manager certificates.
+|-
+| [https://git.fedorahosted.org/cgit/pki.git/tree/base/ca/shared/profiles/ca/caStorageCert.cfg caStorageCert]
+| Manual Data Recovery Manager Storage Certificate Enrollment
+| This certificate profile is for enrolling Data Recovery Manager storage certificates.
+|-
+| [https://git.fedorahosted.org/cgit/pki.git/tree/base/ca/shared/profiles/ca/caTransportCert.cfg caTransportCert]
+| Manual Data Recovery Manager Transport Certificate Enrollment
+| This certificate profile is for enrolling Data Recovery Manager transport certificates.
+|-
+| [https://git.fedorahosted.org/cgit/pki.git/tree/base/ca/shared/profiles/ca/caCMCUserCert.cfg caCMCUserCert]
+| Signed CMC-Authenticated User Certificate Enrollment
+| This certificate profile is for enrolling user certificates by using the CMC certificate request with CMC Signature authentication.
+|-
+| [https://git.fedorahosted.org/cgit/pki.git/tree/base/ca/shared/profiles/ca/caManualRenewal.cfg caManualRenewal]
+| Renewal: Renew certificate to be manually approved by agents
+| This certificate profile is for renewing certificates to be approved manually by agents.
+|}
+
+== User Certificate-authenticated Renewal ==
+
+{| border="1" style="border-collapse: collapse;"
+! width="150" | Profile ID
+! width="300" | Profile Name
+! width="350" | Description
+|-
+| [https://git.fedorahosted.org/cgit/pki.git/tree/base/ca/shared/profiles/ca/caSSLClientSelfRenewal.cfg caSSLClientSelfRenewal]
+| Renewal: Self-renew user SSL client certificates
+| This certificate profile is for renewing SSL client certificates.
+|}
+
+== Directory-authenticated Enrollment/Renewal ==
+
+{| border="1" style="border-collapse: collapse;"
+! width="150" | Profile ID
+! width="300" | Profile Name
+! width="350" | Description
+|-
+| [https://git.fedorahosted.org/cgit/pki.git/tree/base/ca/shared/profiles/ca/caDirBasedDualCert.cfg caDirBasedDualCert]
+| Directory-authenticated User Signing & Encryption Certificates Enrollment
+| This certificate profile is for enrolling dual user certificates. It works only with Netscape 7.0 or later.
+|-
+| [https://git.fedorahosted.org/cgit/pki.git/tree/base/ca/shared/profiles/ca/caDirUserCert.cfg caDirUserCert]
+| Directory-authenticated User Dual-Use Certificate Enrollment
+| This certificate profile is for enrolling user certificates with directory-based authentication.
+|-
+| [https://git.fedorahosted.org/cgit/pki.git/tree/base/ca/shared/profiles/ca/caECDirUserCert.cfg caECDirUserCert]
+| Directory-authenticated User Dual-Use ECC Certificate Enrollment
+| This certificate profile is for enrolling user certificates with directory-based authentication.
+|-
+| [https://git.fedorahosted.org/cgit/pki.git/tree/base/ca/shared/profiles/ca/caDirUserRenewal.cfg caDirUserRenewal]
+| Renewal: Directory-authenticated User Certificate Self-Renew profile
+| This certificate profile is for renewing a certificate by serial number by using directory based authentication.
+|}
+
+== Agent-authenticated Enrollment/Renewal ==
+
+{| border="1" style="border-collapse: collapse;"
+! width="150" | Profile ID
+! width="300" | Profile Name
+! width="350" | Description
+|-
+| [https://git.fedorahosted.org/cgit/pki.git/tree/base/ca/shared/profiles/ca/caAgentServerCert.cfg caAgentServerCert]
+| Agent-Authenticated Server Certificate Enrollment
+| This certificate profile is for enrolling server certificates with agent authentication.
+|-
+| [https://git.fedorahosted.org/cgit/pki.git/tree/base/ca/shared/profiles/ca/caAgentFileSigning.cfg caAgentFileSigning]
+| Agent-Authenticated File Signing
+| This certificate profile is for getting file signing certificate with agent authentication.
+|-
+| [https://git.fedorahosted.org/cgit/pki.git/tree/base/ca/shared/profiles/ca/DomainController.cfg DomainController]
+| Domain Controller
+| This profile is for enrolling Domain Controller Certificate
+|}
+
+== Revocation ==
+
+=== User Certificate Revocation ===
+
+URL: /ca/ee/ca/UserRevocation.html
+
+=== CMC Certificate Revocation ===
+
+URL: /ca/ee/ca/CMCRevReq.html
+
+== Retrieval ==
+
+* Check Request Status
+* List Certificates
+* Search Certificates
+* Import CA Certificate Chain
+* Import Certificate Revocation List
+
+= Agent Interface =
+
+* List Requests
+* Search for Requests
+* List Certificates
+* Search for Certificates
+* Revoke Certificates
+* Display Revocation List
+* Update Revocation List
+* Update Directory Server
+* OCSP Service
+* Manage Certificate Profiles
+* View Server Statistics
+
+= References =
+
+* [[PKI UI]]
+* [https://github.com/dogtagpki/pki/wiki/Certificate-Profiles Certificate Profiles]
+* [https://github.com/dogtagpki/pki/wiki/PKI-Client-CLI PKI Client CLI]
+* [https://github.com/dogtagpki/pki/wiki/PKI-CA-Certificate-CLI PKI CA Certificate CLI]

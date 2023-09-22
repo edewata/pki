@@ -1,0 +1,52 @@
+= JSS Subsystem =
+
+<pre>
+jss.enable=true
+</pre>
+
+== NSS Database ==
+
+<pre>
+jss.configDir=[PKI_INSTANCE_PATH]/alias/
+jss.secmodName=secmod.db
+</pre>
+
+== OCSP ==
+
+<pre>
+jss.ocspcheck.enable=false
+</pre>
+
+== SSL ==
+
+<pre>
+jss.ssl.cipherfortezza=true
+jss.ssl.cipherpref=
+jss.ssl.cipherversion=cipherdomestic
+</pre>
+
+== Random Number Generator ==
+
+See [https://github.com/dogtagpki/pki/wiki/Configuring-Random-Generator Configuring Random Generator].
+
+== Debugging Password ==
+
+For debugging, NSS token password can be specified in the following parameter:
+
+<pre>
+jss.password=<password>
+</pre>
+
+If the password is defined, it will be used during CA/OCSP's SigningUnit initialization:
+
+<pre>
+PasswordCallback cb = JssSubsystem.getInstance().getPWCB();
+mToken.login(cb);
+</pre>
+
+'''Note:''' This functionality has been removed in PKI 10.6.
+
+= References =
+
+* [[PKI Subsystem Configuration]]
+* [https://github.com/dogtagpki/jss/wiki JSS]

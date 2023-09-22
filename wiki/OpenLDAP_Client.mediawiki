@@ -1,0 +1,56 @@
+= Installation =
+
+<pre>
+$ dnf install openldap-clients
+</pre>
+
+= CA Certificate Directory =
+
+Store CA certificates in a directory, then execute the following command:
+
+ $ openssl rehash <dir>
+
+= Environment Variables =
+
+* LDAP_BASEDN: default base DN for ldapsearch
+* LDAPTLS_CACERT: <CA certificate file>
+* LDAPTLS_CERT: <client certificate file>
+* LDAPTLS_KEY: <client key file>
+* LDAPTLS_CACERTDIR: <NSS database>
+
+= ldap.conf Parameters =
+
+* TLS_CERT: <nickname>
+* TLS_KEY: [<token>:]<password>
+* TLS_CACERTDIR: <NSS database>
+
+= Authentication =
+
+== Basic Authentication ==
+
+<pre>
+$ <command> -x -D "cn=Directory Manager" -w Secret.123 ...
+</pre>
+
+== LDAPI ==
+
+<pre>
+$ <command> -H <URL> -Y EXTERNAL
+</pre>
+
+= Searching LDAP Entries =
+
+<pre>
+$ ldapsearch -x -D "cn=Directory Manager" -w Secret.123 -b "dc=example,dc=com" -s base "(objectClass=*)"
+</pre>
+
+= See Also =
+
+* [[LDAP]]
+* [[OpenLDAP Server]]
+* [https://access.redhat.com/documentation/en-us/red_hat_directory_server/9.0/html/administration_guide/ldap-clients-ssl RHDS - Using SSL/TLS and Start TLS with LDAP Client Tools]
+* [https://access.redhat.com/documentation/en-us/red_hat_directory_server/9.0/html/administration_guide/ldap-tools-examples RHDS - Using LDAP Client Tools]
+* [https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system-level_authentication_guide/openldap RHEL - OpenLDAP]
+* [https://fedoraproject.org/wiki/OpenLDAP-and-MozNSS-Compatibility-Layer OpenLDAP and MozNSS Compatibility Layer]
+* [https://github.com/openshift/openldap OpenLDAP for OpenShift]
+* [https://medium.com/ibm-garage/how-to-host-and-deploy-an-openldap-sever-in-openshift-affab06a4365 How to host and deploy an OpenLDAP sever in OpenShift]

@@ -1,0 +1,27 @@
+= Systemd Unit File =
+
+The Systemd unit file for Jetty is located at /usr/lib/systemd/system/jetty.service:
+
+<pre>
+[Unit]
+Description=Jetty Web Application Server
+After=syslog.target network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/share/jetty/bin/jetty.sh
+User=jetty
+Group=jetty
+
+[Install]
+WantedBy=multi-user.target
+</pre>
+
+See also:
+
+* [https://src.fedoraproject.org/rpms/jetty/blob/master/f/jetty.service jetty.service]
+
+= See Also =
+
+* [[Jetty]]
+* [https://github.com/dogtagpki/pki/wiki/Systemd Systemd]

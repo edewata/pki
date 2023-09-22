@@ -1,0 +1,181 @@
+= Differences between NSS and OpenSSL CRLs =
+
+NSS Certificate Revocation Lists (CRLs) and OpenSSL CRLs can be stored in the Base-64 encoded format.  The only difference is between the accepted header and footer required by OpenSSL versus NSS CRLs<sup>&dagger;</sup>.  
+
+<sup>&dagger;</sup> - The Dogtag tool called '''PrettyPrintCrl''' is located in the '''pki-java-tools''' package, and reads both formats without the need for any conversion.   Additionally, the NSS tool called '''pp''' can be used to read either format.
+
+== NSS CRLs ==
+
+The following is an example of an NSS CRL:
+
+    '''-----BEGIN CERTIFICATE REVOCATION LIST-----'''
+    MIIBmDCBgQIBATANBgkqhkiG9w0BAQUFADA/MR0wGwYDVQQKExRVc2Vyc3lzUmVk
+    aGF0IERvbWFpbjEeMBwGA1UEAxMVQ2VydGlmaWNhdGUgQXV0aG9yaXR5Fw0wODAz
+    MjYxOTMzMDJaFw0wODAzMjYyMzMzMDJaoA4wDDAKBgNVHRQEAwIBHDANBgkqhkiG
+    9w0BAQUFAAOCAQEAK5w0zCzwtrIQaaTl8oF8TBFd+1ZSFar1Ue30OYd+ksSqzlMg
+    finc3qhKQxtem1vOwCgx4FO0/guHazRj/YLtMF4WhSSdM3qnTNKmJIv2aLhJh89C
+    oaObh0kXtvVr5QohTQKuEkg3iqyauEBZ1VRhdojAWFRNt43Zd6WIkyYwa8PzKGWb
+    HsJ1aLhOBFveoUqEFpKrUb+aDEfPgSIKJJomjH12Qg3NQzRILuqVIcWwrlHr6W+v
+    pHuHOdgtOJoT+Qe+fw2OgPtsgk72mgSfTRmVBWmnI48XwdyO9O5xscH1MWxxpW2K
+    7OkC/YzU/QKuIfW8c6Rr009fKFDwrixf4wIj0Q==
+    '''-----END CERTIFICATE REVOCATION LIST-----'''
+
+Store this CRL in a file called '''crl.txt'''.
+
+== OpenSSL CRLs ==
+
+The following is an example of an OpenSSL CRL:
+
+    '''-----BEGIN X509 CRL-----'''
+    MIIBmDCBgQIBATANBgkqhkiG9w0BAQUFADA/MR0wGwYDVQQKExRVc2Vyc3lzUmVk
+    aGF0IERvbWFpbjEeMBwGA1UEAxMVQ2VydGlmaWNhdGUgQXV0aG9yaXR5Fw0wODAz
+    MjYxOTMzMDJaFw0wODAzMjYyMzMzMDJaoA4wDDAKBgNVHRQEAwIBHDANBgkqhkiG
+    9w0BAQUFAAOCAQEAK5w0zCzwtrIQaaTl8oF8TBFd+1ZSFar1Ue30OYd+ksSqzlMg
+    finc3qhKQxtem1vOwCgx4FO0/guHazRj/YLtMF4WhSSdM3qnTNKmJIv2aLhJh89C
+    oaObh0kXtvVr5QohTQKuEkg3iqyauEBZ1VRhdojAWFRNt43Zd6WIkyYwa8PzKGWb
+    HsJ1aLhOBFveoUqEFpKrUb+aDEfPgSIKJJomjH12Qg3NQzRILuqVIcWwrlHr6W+v
+    pHuHOdgtOJoT+Qe+fw2OgPtsgk72mgSfTRmVBWmnI48XwdyO9O5xscH1MWxxpW2K
+    7OkC/YzU/QKuIfW8c6Rr009fKFDwrixf4wIj0Q==
+    '''-----END X509 CRL-----'''
+
+Store this CRL in a file called '''crl.pem'''.
+
+== Using Dogtag to Read CRLs ==
+
+Most Dogtag Certificate System installations include the following tool to read an NSS CRL:
+
+    '''PrettyPrintCrl crl.txt'''
+
+Alternatively, a user can execute the following to read an OpenSSL CRL:
+
+    '''PrettyPrintCrl crl.pem'''
+
+In either case, this tool outputs something similar to the following:
+
+    Certificate Revocation List:
+        Data:
+            Version:  v2
+            Signature Algorithm: SHA1withRSA - 1.2.840.113549.1.1.5
+            Issuer: CN=Certificate Authority,O=UsersysRedhat Domain
+            This Update: Wednesday, March 26, 2008 12:33:02 PM PDT America/Los_Angeles
+            Next Update: Wednesday, March 26, 2008 4:33:02 PM PDT America/Los_Angeles
+            Revoked Certificates:
+        Extensions:
+            Identifier: CRL Number - 2.5.29.20
+                Critical: no
+                Number: 28
+        Signature:
+            Algorithm: SHA1withRSA - 1.2.840.113549.1.1.5
+            Signature:
+                2B:9C:34:CC:2C:F0:B6:B2:10:69:A4:E5:F2:81:7C:4C:
+                11:5D:FB:56:52:15:AA:F5:51:ED:F4:39:87:7E:92:C4:
+                AA:CE:53:20:7E:29:DC:DE:A8:4A:43:1B:5E:9B:5B:CE:
+                C0:28:31:E0:53:B4:FE:0B:87:6B:34:63:FD:82:ED:30:
+                5E:16:85:24:9D:33:7A:A7:4C:D2:A6:24:8B:F6:68:B8:
+                49:87:CF:42:A1:A3:9B:87:49:17:B6:F5:6B:E5:0A:21:
+                4D:02:AE:12:48:37:8A:AC:9A:B8:40:59:D5:54:61:76:
+                88:C0:58:54:4D:B7:8D:D9:77:A5:88:93:26:30:6B:C3:
+                F3:28:65:9B:1E:C2:75:68:B8:4E:04:5B:DE:A1:4A:84:
+                16:92:AB:51:BF:9A:0C:47:CF:81:22:0A:24:9A:26:8C:
+                7D:76:42:0D:CD:43:34:48:2E:EA:95:21:C5:B0:AE:51:
+                EB:E9:6F:AF:A4:7B:87:39:D8:2D:38:9A:13:F9:07:BE:
+                7F:0D:8E:80:FB:6C:82:4E:F6:9A:04:9F:4D:19:95:05:
+                69:A7:23:8F:17:C1:DC:8E:F4:EE:71:B1:C1:F5:31:6C:
+                71:A5:6D:8A:EC:E9:02:FD:8C:D4:FD:02:AE:21:F5:BC:
+                73:A4:6B:D3:4F:5F:28:50:F0:AE:2C:5F:E3:02:23:D1
+
+== Using NSS to Read CRLs ==
+
+The following NSS command can also be executed to read an NSS CRL:
+
+ '''/usr/&lt;lib&gt;/nss/unsupported-tools/pp -t crl -i crl.txt -a'''
+where '''&lt;lib&gt;''' is either '''lib''' on 32-bit architectures, or '''lib64''' on 64-bit architectures.
+
+Alternatively, a user can execute the following to read an OpenSSL CRL:
+ '''/usr/&lt;lib&gt;/nss/unsupported-tools/pp -t crl -i crl.pem -a'''
+where '''&lt;lib&gt;''' is either '''lib''' on 32-bit architectures, or '''lib64''' on 64-bit architectures.
+
+In either case, this tool outputs something similar to the following:
+
+    CRL:
+        Data:
+            Version: 2 (0x1)
+            Signature Algorithm: PKCS #1 SHA-1 With RSA Encryption
+            Issuer: "CN=Certificate Authority,O=UsersysRedhat Domain"
+            This Update: Wed Mar 26 19:33:02 2008
+            Next Update: Wed Mar 26 23:33:02 2008
+            CRL Extensions:
+                Name: CRL Number
+                Data: 28 (0x1c)
+    
+        Signature Algorithm: PKCS #1 SHA-1 With RSA Encryption
+        Signature:
+            2b:9c:34:cc:2c:f0:b6:b2:10:69:a4:e5:f2:81:7c:4c:
+            11:5d:fb:56:52:15:aa:f5:51:ed:f4:39:87:7e:92:c4:
+            aa:ce:53:20:7e:29:dc:de:a8:4a:43:1b:5e:9b:5b:ce:
+            c0:28:31:e0:53:b4:fe:0b:87:6b:34:63:fd:82:ed:30:
+            5e:16:85:24:9d:33:7a:a7:4c:d2:a6:24:8b:f6:68:b8:
+            49:87:cf:42:a1:a3:9b:87:49:17:b6:f5:6b:e5:0a:21:
+            4d:02:ae:12:48:37:8a:ac:9a:b8:40:59:d5:54:61:76:
+            88:c0:58:54:4d:b7:8d:d9:77:a5:88:93:26:30:6b:c3:
+            f3:28:65:9b:1e:c2:75:68:b8:4e:04:5b:de:a1:4a:84:
+            16:92:ab:51:bf:9a:0c:47:cf:81:22:0a:24:9a:26:8c:
+            7d:76:42:0d:cd:43:34:48:2e:ea:95:21:c5:b0:ae:51:
+            eb:e9:6f:af:a4:7b:87:39:d8:2d:38:9a:13:f9:07:be:
+            7f:0d:8e:80:fb:6c:82:4e:f6:9a:04:9f:4d:19:95:05:
+            69:a7:23:8f:17:c1:dc:8e:f4:ee:71:b1:c1:f5:31:6c:
+            71:a5:6d:8a:ec:e9:02:fd:8c:d4:fd:02:ae:21:f5:bc:
+            73:a4:6b:d3:4f:5f:28:50:f0:ae:2c:5f:e3:02:23:d1
+        Fingerprint (MD5):
+            16:76:23:6A:BD:F8:8B:03:52:45:53:2F:FA:B8:1E:21
+        Fingerprint (SHA1):
+            0C:3D:57:C3:D6:06:87:1A:EA:8B:27:66:40:CD:31:90:F9:A1:AE:AC
+
+== Using OpenSSL to Read and Convert CRLs ==
+
+Similarly, running the following OpenSSL command:
+
+ '''openssl crl -in crl.pem -noout -text'''
+
+Produces the following:
+
+    Certificate Revocation List (CRL):
+            Version 2 (0x1)
+            Signature Algorithm: sha1WithRSAEncryption
+            Issuer: /O=UsersysRedhat Domain/CN=Certificate Authority
+            Last Update: Mar 26 19:33:02 2008 GMT
+            Next Update: Mar 26 23:33:02 2008 GMT
+            CRL extensions:
+                X509v3 CRL Number: 
+                    28
+    No Revoked Certificates.
+        Signature Algorithm: sha1WithRSAEncryption
+            2b:9c:34:cc:2c:f0:b6:b2:10:69:a4:e5:f2:81:7c:4c:11:5d:
+            fb:56:52:15:aa:f5:51:ed:f4:39:87:7e:92:c4:aa:ce:53:20:
+            7e:29:dc:de:a8:4a:43:1b:5e:9b:5b:ce:c0:28:31:e0:53:b4:
+            fe:0b:87:6b:34:63:fd:82:ed:30:5e:16:85:24:9d:33:7a:a7:
+            4c:d2:a6:24:8b:f6:68:b8:49:87:cf:42:a1:a3:9b:87:49:17:
+            b6:f5:6b:e5:0a:21:4d:02:ae:12:48:37:8a:ac:9a:b8:40:59:
+            d5:54:61:76:88:c0:58:54:4d:b7:8d:d9:77:a5:88:93:26:30:
+            6b:c3:f3:28:65:9b:1e:c2:75:68:b8:4e:04:5b:de:a1:4a:84:
+            16:92:ab:51:bf:9a:0c:47:cf:81:22:0a:24:9a:26:8c:7d:76:
+            42:0d:cd:43:34:48:2e:ea:95:21:c5:b0:ae:51:eb:e9:6f:af:
+            a4:7b:87:39:d8:2d:38:9a:13:f9:07:be:7f:0d:8e:80:fb:6c:
+            82:4e:f6:9a:04:9f:4d:19:95:05:69:a7:23:8f:17:c1:dc:8e:
+            f4:ee:71:b1:c1:f5:31:6c:71:a5:6d:8a:ec:e9:02:fd:8c:d4:
+            fd:02:ae:21:f5:bc:73:a4:6b:d3:4f:5f:28:50:f0:ae:2c:5f:
+            e3:02:23:d1
+
+Convert the PEM crl to binary (DER encoded) format:
+
+ '''openssl crl -in crl.pem -out binary.crl -outform DER'''
+
+Read a binary CRL (will produce same output above):
+
+ '''openssl crl -in binary.crl -inform DER -noout -text'''
+
+Convert the binary (DER encoded) crl to PEM format:
+
+ '''openssl crl -in binary.crl -inform DER -out crl.pem'''
+
+[[Category:Tech Notes]]

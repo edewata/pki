@@ -1,0 +1,32 @@
+= Overview =
+
+Releated modules:
+
+* [https://src.fedoraproject.org/modules/javapackages-tools Java Packages Tools]
+* [https://src.fedoraproject.org/modules/tomcat Tomcat Module]
+* [https://src.fedoraproject.org/modules/freeipa IPA Module]
+
+The list of PKI module builds is available here:
+
+* https://koji.fedoraproject.org/koji/packageinfo?packageID=24813
+
+= Prerequisites =
+
+<pre>
+$ dnf install fedora-repos-modular
+$ dnf config-manager --set-enabled updates-testing-modular
+</pre>
+
+= Installation =
+
+To install PKI 10.6 with the default profile:
+
+<pre>
+$ dnf module install pki:10.6
+</pre>
+
+= References =
+
+* [[Fedora Modules]]
+* [[PKI Module Release Procedure]]
+* [https://pagure.io/releng/issue/7623 Ticket #7623 - Taking over PKI module ownership]

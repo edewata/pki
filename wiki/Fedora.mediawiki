@@ -1,0 +1,28 @@
+= Installation =
+
+== Installing Official Builds ==
+
+* [https://getfedora.org/ Fedora ISO]
+* [https://alt.fedoraproject.org/cloud/ Fedora Cloud Base Images]
+
+Create a VM with [[KVM]].
+
+== Installing Development Builds ==
+
+See [https://fedoraproject.org/wiki/QA:Release_validation_test_plan QA:Release validation test plan].
+
+= References =
+
+* [[Fedora Releases]]
+* [[Fedora Modules]]
+* [[Fedora Packages]]
+* [[Fedora Setup]]
+* [[Fedora Dependencies]]
+* [[Fedora Upgrade]]
+* [[Fedora Tickets]]
+* [https://github.com/dogtagpki/pki/wiki/Fedora-Development-Guide Fedora Development]
+* [[Fedora Tests]]
+* [[Fedora CI]]
+* [[Releases]]
+* [[CentOS]]
+* [[Debian]]

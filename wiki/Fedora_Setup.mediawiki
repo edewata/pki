@@ -1,0 +1,131 @@
+= Setting Hostname =
+
+<pre>
+$ hostnamectl set-hostname <hostname>
+</pre>
+
+= Installing Desktop =
+
+To install desktop:
+
+<pre>
+$ dnf groupinstall "Fedora Workstation"
+</pre>
+
+To start desktop manually:
+
+ $ startx
+
+To adjust screen resolution:
+
+<pre>
+$ xrandr
+$ xrandr -s <resolution>
+</pre>
+
+To enable desktop:
+
+<pre>
+$ systemctl set-default graphical.target
+$ reboot
+</pre>
+
+To disable desktop:
+
+<pre>
+$ systemctl set-default multi-user.target
+$ reboot
+</pre>
+
+= Installing VNC =
+
+To install VNC service:
+<pre>
+$ dnf install tigervnc-server
+</pre>
+
+To set VNC password for a specific user:
+<pre>
+$ su <USER>
+$ vncpasswd
+Password: ********
+Verify: ********
+</pre>
+
+== Running VNC manually ==
+
+Login to console, then execute the following command:
+
+<pre>
+$ vncserver
+</pre>
+
+== Running VNC as service ==
+
+To enable VNC service:
+<pre>
+$ cp /usr/lib/systemd/system/vncserver@.service /etc/systemd/system
+</pre>
+
+Edit /etc/systemd/system/vncserver@.service and change <USER> with an actual user.
+
+<pre>
+$ systemctl daemon-reload
+$ systemctl enable vncserver@:1.service
+$ systemctl start vncserver@:1.service
+</pre>
+
+If VNC is broken after uninstalling IPA, reinstall GNOME:
+<pre>
+$ dnf install gnome-shell
+</pre>
+
+= Enabling Random Number Generator =
+
+<pre>
+$ yum install haveged
+$ systemctl enable haveged.service
+$ systemctl start haveged.service
+</pre>
+
+<pre>
+$ yum install rng-tools
+$ systemctl enable rngd.service
+$ systemctl start rngd.service
+</pre>
+
+= Enabling NTP =
+
+See [[NTP]].
+
+= Increasing Disk Space =
+
+See [[LVM]].
+
+= Disabling Firewall =
+
+See [[Firewall]].
+
+= Creating a User =
+
+To create a user:
+
+ $ useradd <username>
+ $ passwd <username>
+
+To give a user sudo privileges:
+
+ $ usermod -aG wheel <username>
+
+See also [https://www.digitalocean.com/community/tutorials/how-to-edit-the-sudoers-file-on-ubuntu-and-centos How To Edit the Sudoers File on Ubuntu and CentOS].
+
+= References =
+
+* [[Fedora]]
+* [[PKI Fedora Development]]
+* [[PKI Development Environments]]
+* [[RHEL Setup]]
+* [https://fedoraproject.org/wiki/Releases/Branched Fedora Release Branched]
+* [https://fedoraproject.org/wiki/Upgrading_Fedora_using_package_manager Upgrading Fedora using package manager]
+* [https://fedoraproject.org/wiki/DNF_system_upgrade DNF system upgrade]
+* [https://github.com/dogtagpki/pki/wiki/Setting-Up-Eclipse Setting Up Eclipse]

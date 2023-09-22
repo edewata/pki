@@ -1,0 +1,63 @@
+= Overview =
+
+SSL support in Tomcat using NSS/JSS is provided by [https://github.com/dogtagpki/tomcatjss Tomcat JSS].
+
+= Using PKCS #12 Key Store =
+
+== Generating a self-signed SSL server certificate ==
+
+To generate a self-signed SSL server certificate, first create an NSS database:
+
+ $ cd /usr/share/tomcat
+ $ echo Secret.123 > password.txt
+ $ mkdir -p nssdb
+ $ certutil -N -d nssdb -f password.txt
+ $ chown -R root.tomcat nssdb
+ $ chmod -R g+rw nssdb
+
+Then [https://github.com/dogtagpki/pki/wiki/Creating-Self-Signed-SSL-Server-Certificate-with-NSS create] a self-signed SSL server certificate.
+
+To export the SSL server certificate and key into a PKCS #12 file:
+
+ $ pk12util -d nssdb \
+     -k password.txt \
+     -n "sslserver" \
+     -o sslserver.p12 \
+     -w password.txt
+ $ chown -R root.tomcat sslserver.p12
+ $ chmod -R g+r sslserver.p12
+
+or:
+
+ $ pki -d nssdb -C password.txt
+     pkcs12-cert-import "sslserver" \
+     --pkcs12-file sslserver.p12 \
+     --pkcs12-password-file password.txt \
+     --cert-encryption "PBE/SHA1/RC2-40" \
+     --key-encryption "PBE/SHA1/DES3/CBC"
+
+== Exprorting existing SSL server certificate ==
+
+To export an existing SSL server certificate and key from a PKI server into a PKCS #12 file:
+
+ $ pki-server cert-export \
+     sslserver \
+     --instance "pki-tomcat" \
+     --pkcs12-file "/etc/pki/pki-tomcat/keystore.p12" \
+     --pkcs12-password-file "/etc/pki/pki-tomcat/keystore.pwd" \
+     --friendly-name "sslserver" \
+     --cert-encryption "PBE/SHA1/RC2-40" \
+     --key-encryption "PBE/SHA1/DES3/CBC"
+
+== Configuring SSL connector ==
+
+Uncomment the SSL connector in $CATALINA_BASE/conf/server.xml and add the keystore parameters as follows:
+
+ <Connector port="8443" protocol="org.apache.coyote.http11.Http11NioProtocol"
+            maxThreads="150" SSLEnabled="true" scheme="https" secure="true"
+            clientAuth="false" sslProtocol="TLS"
+            <font color="red">keystoreType="pkcs12"
+            keystoreFile="${catalina.base}/sslserver.p12"
+            keystorePass="Secret.123"
+            keyAlias="sslserver"</font>
+ />

@@ -1,0 +1,15 @@
+= Creating Dependency Graph =
+
+To create dependency graph:
+
+<pre>
+$ dnf install install rpmorphan
+$ rpmdep -dot pki-server.dot pki-server
+$ dot -Tpng pki-server.dot -o pki-server.png
+</pre>
+
+Then open pki-server.png in a browser.
+
+= See Also =
+
+* [[Fedora]]

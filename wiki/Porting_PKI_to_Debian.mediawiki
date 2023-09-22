@@ -1,0 +1,193 @@
+This page serves to track the overall effort to port Dogtag to Debian.  Specifically, we would like to port Dogtag 10.x to Debian.  We have no plans to port the 9.x version of Dogtag.
+
+= Dependencies =
+
+Dogtag has a large number of dependencies, which are not all packaged for Debian.  Packaging all of the dependencies is the first step in porting Dogtag to Debian.
+
+Timo Aaltonen worked on porting dependencies in Summer 2012 and generated the following list of dependencies that needs to be packaged (EDIT: dropped all that has been packaged already, moved to the table below or we know isn't needed):
+
+ keytool-maven-plugin
+ maven-help-plugin
+ maven-idea-plugin
+ maven-jarsigner-plugin
+ maven-jxr
+ geronimo-parent-poms
+ geronimo-annotation
+ plexus-mail-sender
+ maven-release
+ plexus-resources
+ maven-checkstyle-plugin
+ maven-pmd-plugin
+ maven-anno-plugin
+ maven-reporting-api
+ maven-changes-plugin
+ maven-deploy-plugin
+ apache-james-project
+ gdata-java
+ sonatype-oss-parent
+ forge-parent
+ mojo-parent
+ maven-plugin-build-helper
+ jvnet-parent
+ glassfish-jaxb
+ maven-jaxb2-plugin
+ jboss-parent
+ jboss-specs-parent
+ jboss-annotations
+ jetty-parent
+ jetty-toolchain
+ jetty-version-maven-plugin
+ resteasy
+
+This list needs to be reviewed, as the dependencies have likely changed in the last year.  Once the list of unpackaged dependencies has been determined, we should track them in the sections below.
+
+== RESTEasy ==
+
+One large dependency of Dogtag is RESTEasy.  RESTEasy has a large number of it's own requirements, so porting/packaging RESTEasy for Debian is a good place to start.  The build requirements for RESTEasy (as delivered in Fedora 19) have been reviewed to see what is available in Debian Wheezy.  A good number of these dependencies exist in Wheezy, but there are quite a few that are not packaged.  The below list shows the package name mapping from Fedora->Debian for these build requirements.  Anything that appears to be missing is simply listed with a question mark.
+
+Note: updating this list with the dependencies from resteasy-base.  This will have a mouch smaller set of dependencies because we will disable many modules as well as tests.
+
+{| class="wikitable" border="1"
+! Fedora !! Debian !! Notes
+|-
+|avro||?||reqd by infinispan
+|-
+|bea-stax||libstax-java||reqd by stax-ex, whichs is reqd by glassfish-jaxb
+|-
+|bean-validation-api||?||reqd by resteasy3?
+|-
+|classmate||?||reqd by resteasy3?
+|-
+|cglib||libcglib-java||
+|-
+|codehaus-parent||libcodehaus-parent-java||in progress, see below
+|-
+|geronimo-annotation||libgeronimo-commonj-spec-java?||or one of the other libgeronimo-* packages?
+|-
+|glassfish-dtd-parser||libglassfish-dtd-parser-java||in progress, see below
+|-
+|glassfish-fastinfoset||libglassfish-fastinfoset||in progress, see below
+|-
+|glassfish-jaxb||?||there are some glassfish-* packages, but not jaxb
+|-
+|glassfish-jaxb-api||libglassfish-jaxb-api-java||in progress, see below
+|-
+|hibernate-search||?||reqd by infinispan
+|-
+|hibernate-hql||?||reqd by infinispan
+|-
+|hibernate-validator||libhibernate-validator-java||
+|-
+|httpcomponents-client||libhttpclient-java||
+|-
+|httpcomponents-core||libhttpcore-java||
+|-
+|infinispan||?||reqd by resteasy3?
+|-
+|jackson-jaxrs-json-provider||libjackson-json-java?||
+|-
+|jackson-module-jaxb-annotations||?||
+|-
+|jakarta-commons-httpclient||libcommons-httpclient-java||
+|-
+|jandex||?||reqd by resteasy?
+|-
+|jboss-logging-tools||?||
+|-
+|jboss-servlet-2.5-api||libservlet2.5-java||
+|-
+|jboss-servlet-3.0-api||libservlet3.0-java||
+|-
+|jettison||libjettison-java||
+|-
+|jetty||jetty||or jetty8?
+|-
+|junit4||junit4||
+|-
+|maven-compiler-plugin||libmaven-compiler-plugin-java||
+|-
+|maven-failsafe-plugin||?||reqd by infinispan
+|-
+|maven-install-plugin||libmaven-install-plugin-java||
+|-
+|maven-javadoc-plugin||libmaven-javadoc-plugin-java||
+|-
+|maven-jaxb2-plugin||?||
+|-
+|maven-resources-plugin||libmaven-resources-plugin-java||reqd by maven-local
+|-
+|maven-source-plugin||libmaven-source-plugin-java||in progress, see below. needed still?
+|-
+|maven-surefire-plugin||libsurefire-java||
+|-
+|narayana||?||reqd by infinispan
+|-
+|netty||libnetty-java||reqd by resteasy3?
+|-
+|picketbox||?||reqd by resteasy3?
+|-
+|protostream||?||reqd by infinispan
+|-
+|rhq-plugin-annotations||?||
+|-
+|scannotation||libscannotation-java||in progress, see below
+|-
+|slf4j||libslf4j-java||
+|-
+|springframework-webmvc||libspring-web-servlet-java||
+|-
+|stax-ex||libstax-ex-java||in progress, see below
+|-
+|staxmapper||?||
+|-
+|tomcat-el-2.2-api||?||might be covered by one of the tomcat* packages
+|-
+|xerces-j2||libxerces2-java||
+|-
+|xmlstreambuffer||libxmlstreambuffer-java||in progress, see below
+|-
+|xsom||libxsom-java||in progress, see below
+|-
+|jetty-version-maven-plugin||?||
+|-
+|maven-local||maven?||
+|-
+|jboss-annotations-1.1-api||?||might be covered by one of the libjboss-* packages
+|-
+|java-devel||openjdk7-jdk||
+|}
+
+= Process =
+
+== In Progress ==
+
+*  In the initial phase, we will try to quickly package dogtag and all the dependant packages in a private repo.  That means the we can take a few shortcuts and not do all the things that are required for official package acceptace.  Once the initial packaging is complete, we can go back and go through the official process.
+* A number of packages have been packaged so far. Most of these have maven builds, so packaging is relatively simple using the debian-maven-helper.
+** xsom, libxom-java - packaged without javadoc, srpm contains bundled jars - note this is a problem in the fedora build too., needed by glassfish-fastinfoset
+** stax-ex, libstax-ex-java, - packaged without javadoc, needed by xmlstreambuffer
+** xmlstreambuffer, libxmlstreambuffer-java - packaged without javadoc, needed by glassfish-fastinfoset 
+** glassfish-dtd-parser, libglassfish-dtd-parser-java libglassfish-dtd-parser-java-doc, needed by glassfish-jaxb
+** glassfish-jaxb-api, libglassfish-jaxb-api-java, packaged without javadoc, needed by glassfish-jaxb
+** glassfish-fastinfoset, libglassfish-fastinfoset-java, packaged without javadoc, added patch without quilt, needed by glassfish-jaxb
+** scannotation, libscannotation-java, packaged without javadoc, required by resteasy
+** codemodel, libcodemodel-java, packaged without javadoc, patch done without quilt, this updates existing codemodel with a later version, needed by istack-commons
+** rngom, librngom-java, packaged without javadoc, needed by glassfish-jaxb
+** istack-commons, libistack-commons-java, packaged without javadoc, needed by glassfish-jaxb
+** txw2, libtxw2-java, packaged without javadoc, this is an update of existing version, needed by glassfish-jaxb
+** relaxngcc, librelaxngcc-java, packaged with javadoc, needed by glassfish-jaxb
+** glassfish-jaxb, libglassfish-jaxb-java - packaged with javadoc, needed by resteasy
+** resteasy, libresteasy-java, packaged without javadoc or tests
+** tomcatjss, libtomcatjss-java, existing package updated to latest version 7.1.0 to match tomcat7
+
+== Packaging Completed ==
+
+* codehaus-parent, libcodehaus-parent-java - packaged in git.debian.org, if needed
+* maven-source-plugin, libmaven-source-plugin - packaged in git.debian.org, if needed
+
+= Porting =
+
+The Dogtag code and packaging will likely need some changes for Debian.  The specifics still need to be determined, but path differences between distributions and deployment of servlets to Tomcat are areas that will most likely require some work.  This section should be filled in as we do the investigation.
+
+= References =
+
+* [[Debian]]

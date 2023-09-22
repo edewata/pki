@@ -1,0 +1,60 @@
+= Debug Log =
+
+<pre>
+Debug levels:
+         1 - trace
+         2 - packets
+         4 - arguments
+         8 - connections
+        16 - ber
+        32 - filters
+        64 - config
+       128 - accesscontrol
+       256 - stats
+       512 - stats2
+      2048 - parsing
+      4096 - housekeeping
+      8192 - replication
+     16384 - errors (always logged)
+     32768 - caches
+     65536 - plugins
+    131072 - timing
+    262144 - accesscontrolsummary
+    524288 - backend
+To activate multiple levels, add the numeric values together or separate the
+values with a + character, e.g., all of the following have the same effect:
+    -d connections+filters
+    -d 8+32
+    -d 40
+</pre>
+
+= Access Log =
+
+To configure access log level:
+
+<pre>
+$ ldapmodify -x -D "cn=Directory Manager" -w Secret.123
+dn: cn=config
+changetype: modify
+replace: nsslapd-accesslog-level
+nsslapd-accesslog-level: 256
+</pre>
+
+= Error Log =
+
+To configure error log level:
+
+<pre>
+$ ldapmodify -x -D "cn=Directory Manager" -w Secret.123
+dn: cn=config
+changetype: modify
+replace: nsslapd-errorlog-level
+nsslapd-errorlog-level: 16384
+</pre>
+
+= References =
+
+* [[DS]]
+* [https://access.redhat.com/documentation/en-US/Red_Hat_Directory_Server/10/html/Administration_Guide/Configuring_Logs.html#configuring-log-levels RHDS 10 - Administration Guide - Configuring Log Level]
+* [https://access.redhat.com/documentation/en-US/Red_Hat_Directory_Server/10/html/Configuration_Command_and_File_Reference/Core_Server_Configuration_Reference.html#cnconfig-nsslapd_accesslog_level RHDS 10 - Configuration, Command, and File Reference - nsslapd-accesslog-level (Access Log Level)]
+* [https://access.redhat.com/documentation/en-US/Red_Hat_Directory_Server/10/html/Configuration_Command_and_File_Reference/Core_Server_Configuration_Reference.html#cnconfig-nsslapd_errorlog_level_Error_Log_Level RHDS 10 - Configuration, Command, and File Reference - nsslapd-errorlog-level (Error Log Level)]

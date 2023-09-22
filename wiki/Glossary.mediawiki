@@ -1,0 +1,23 @@
+;CA:Certificate Authority
+;CEP:Certificate Enrollment Protocol
+;CMS:Certificate Management System
+;CRL:Certificate Revocation List
+;CRMF:Certificate Request Message Format
+;CUID:Card Unique ID
+;DCS:Dogtag Certificate System
+;DES:Digital Encryption Standard
+;DRM:Data Recovery Manager
+;ESC:Enterprise Security Client
+;FDS:Fedora Directory Server
+;KEK:Key Encryption Key
+;MAC:Message Authentication Code
+;OCSP:Online Certificate Status Protocol
+;PKI:Public Key Infrastructure
+;PKIX:Public Key Infrastructure (X509)
+;RA:Registration Authority
+;RFC:Request For Comment
+;SCEP:Simple Certificate Enrollment Protocol
+;TKS:Token Key Service
+;TPS:Token Processing System
+;VGI:Virtual Graphics Interface
+;X.509:Standard for Public-Key Infrastructure

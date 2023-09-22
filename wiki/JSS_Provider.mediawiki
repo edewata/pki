@@ -1,0 +1,109 @@
+= Overview =
+
+This document describes the JCA Provider shipped with JSS. The provider's name is "Mozilla-JSS". It implements cryptographic operations in native code using the NSS libraries.
+
+= Signed JAR file =
+
+JSS implements several JCE (Java Cryptography Extension) algorithms. These algorithms have at various times been export-controlled by the US government. Sun therefore requires that JAR files implementing JCE algorithms be digitally signed by an approved organization. Netscape has this approval and signs the official builds of jss32.jar. At runtime, the JRE automatically verifies this signature whenever a JSS class is loaded that implements a JCE algorithm. The verification is transparent to the application (unless it fails and throws an exception). If you are curious, you can verify the signature on the JAR file using the jarsigner tool, which is distributed with the JDK.
+
+If you build JSS yourself from source instead of using binaries downloaded from mozilla.org, your JAR file will not have a valid signature. This means you will not be able to use the JSS provider for JCE algorithms. You have two choices.
+
+* Use the binary release of JSS from mozilla.org.
+* Apply for your own JCE code-signing certificate following the procedure at [http://java.sun.com/javase/6/docs/technotes/guides/security/crypto/HowToImplAProvider.html#Step61 How to Implement a Provider for the JavaTM Cryptography Extension]. Then you can sign your own JSS JAR file.
+
+= Installing the Provider =
+
+In order to use any part of JSS, including the JCA provider, you must first call CryptoManager.initialize(). By default, the JCA provider will be installed in the list of providers maintained by the java.security.Security class.
+
+If you do not wish the provider to be installed, create a CryptoManager.InitializationValues object, set its installJSSProvider field to false, and pass the InitializationValues object to CryptoManager.initialize().
+
+= Specifying the CryptoToken =
+
+All cryptographic operations in JSS and NSS occur on a particular PKCS #11 token, implemented in software or hardware. There is no clean way to specify this token through the JCA API. By default, the JSS provider carries out all operations except MessageDigest on the Internal Key Storage Token, a software token included in JSS/NSS. MessageDigest operations take place by default on the Internal Crypto Token, another internal software token in JSS/NSS. There is no good design reason for this difference, but it is necessitated by a quirk in the NSS implementation.
+
+In order to use a different token, use CryptoManager.setThreadToken(). This sets the token to be used by the JSS JCA provider in the current thread. When you call getInstance() on a JCA class, the JSS provider checks the current per-thread default token (by calling CryptoManager.getThreadToken()) and instructs the new object to use that token for cryptographic operations. The per-thread default token setting is only consulted inside getInstance(). Once a JCA object has been created it will continue to use the same token, even if the application later changes the per-thread default token.
+
+Whenever a new thread is created, its token is initialized to the default, the Internal Key Storage Token. Thus, the thread token is not inherited from the parent thread.
+
+The following example shows how you can specify which token is used for various JCA operations:
+
+ // Lookup PKCS #11 tokens
+ CryptoManager manager = CryptoManager.getInstance();
+ CryptoToken tokenA = manager.getTokenByName("TokenA");
+ CryptoToken tokenB = manager.getTokenByName("TokenB");
+ 
+ // Create an RSA KeyPairGenerator using TokenA
+ manager.setThreadToken(tokenA);
+ KeyPairGenerator rsaKpg = KeyPairGenerator.getInstance("RSA", "Mozilla-JSS");
+ 
+ // Create a DSA KeyPairGenerator using TokenB
+ manager.setThreadToken(tokenB);
+ KeyPairGenerator dsaKpg  = KeyPairGenerator.getInstance("DSA", "Mozilla-JSS");
+ 
+ // Generate an RSA KeyPair. This will happen on TokenA because TokenA
+ // was the per-thread default token when rsaKpg was created.
+ rsaKpg.initialize(1024);
+ KeyPair rsaPair = rsaKpg.generateKeyPair();
+ 
+ // Generate a DSA KeyPair. This will happen on TokenB because TokenB
+ // was the per-thread default token when dsaKpg was created.
+ dsaKpg.initialize(1024);
+ KeyPair dsaPair = dsaKpg.generateKeyPair();
+
+= Classes =
+
+== Cipher ==
+
+See [[JSS Cipher]].
+
+== DSAPrivateKey ==
+
+getX() is not supported because NSS does not support extracting data from private keys.
+
+== KeyFactory ==
+
+See [[JSS KeyFactory]].
+
+== KeyGenerator ==
+
+See [[JSS KeyGenerator]].
+
+== KeyPairGenerator ==
+
+See [[JSS KeyPairGenerator]].
+
+== KeyStore ==
+
+See [https://github.com/dogtagpki/jss/wiki/JSS-KeyStore JSS KeyStore].
+
+== Mac ==
+
+See [[JSS Mac]].
+
+== MessageDigest ==
+
+See [[JSS MessageDigest]].
+
+== RSAPrivateKey ==
+
+See [[JSS RSA Key]].
+
+== SecretKeyFactory ==
+
+See [[JSS SecuretKeyFactory]].
+
+== SecretKey ==
+
+See [[JSS SecretKey]].
+
+== SecureRandom ==
+
+See [[JSS SecureRandom]].
+
+== Signature ==
+
+See [[JSS Signature]].
+
+= References =
+
+* [https://github.com/dogtagpki/jss/wiki JSS]

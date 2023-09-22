@@ -1,0 +1,23 @@
+= CA System Users =
+
+* caadmin
+* CA-<hostname>-<port>
+
+= KRA System Users =
+
+* kraadmin
+* CA-<hostname>-<port>
+
+= OCSP System Users =
+
+* ocspadmin
+* CA-<hostname>-<port>
+
+= TKS System Users =
+
+* tksadmin
+* TPS-<hostname>-<port>
+
+= TPS System Users =
+
+* tpsadmin

@@ -1,0 +1,22 @@
+= Overview =
+
+Supported algorithms:
+
+* SHA1withDSA (DSA, DSS, SHA/DSA, SHA-1/DSA, SHA1/DSA, DSAWithSHA1, SHAwithDSA)
+* SHA-1/RSA (SHA1/RSA, SHA1withRSA)
+* MD5/RSA (MD5withRSA)
+* MD2/RSA
+
+Notes:
+
+* The SecureRandom argument passed to initSign() and initVerify() is ignored, because NSS does not support specifying an external source of randomness.
+
+= Creating Signature =
+
+<pre>
+Signature signature = Signature.getInstance("SHA256withRSA");
+</pre>
+
+= References =
+
+* [[JSS Provider]]

@@ -1,0 +1,1030 @@
+= Background =
+
+Dogtag Certificate System comprises six major subsystems as described in [[PKI Architecture - Certificate System]].
+
+For Dogtag Certificate System 9.0 and earlier to be utilized, each PKI subsystem required the installation and configuration of one or more instances of this specific type of PKI subsystem.
+
+Each PKI instance of a CA, DRM, OCSP, or TKS were created as a unique instance of Tomcat, whereas each PKI instance of an RA or TPS were created as a unique instance of Apache, and more than one instance of the same type could reside on the same host machine or VM.
+
+== PKI Instance Installation (Legacy) ==
+
+Dogtag Certificate System 9.0 and earlier used the following command-line utilities to install PKI instances:  
+<ul>
+<table border=1>
+<tr bgcolor="darkgrey">
+<th width="20%">Operation</th>
+<th width="60%">Description</th>
+<th width="20%">Packages</th>
+</tr>
+<tr>
+<td valign="top">Installation</td>
+<td valign="top">The '''pkicreate''' command-line utility which consists of a Perl script with a large number of command-line options used to create the specified type of PKI instance.</td>
+<td valign="top">'''pki-setup'''<br>'''pki-selinux'''</td>
+</tr>
+</table>
+</ul>
+
+== PKI Instance Configuration (Legacy) ==
+
+For Dogtag Certificate System 9.0 and earlier, once a PKI instance was created, it needed to be configured before it could be used.  To accomplish this, the following two methods of operation were provided:
+<ul>
+<table border=1>
+<tr bgcolor="darkgrey">
+<th width="20%">Operation</th>
+<th width="60%">Description</th>
+<th width="20%">Packages</th>
+</tr>
+<tr>
+<td valign="top">Interactive (Manual) Configuration</td>
+<td valign="top">'''Firefox''' browser-based configuration using dogtag-specific branded panels.</td>
+<td valign="top">
+'''dogtag-pki-ca-theme'''<br>
+'''dogtag-pki-common-theme'''<br>
+'''dogtag-pki-kra-theme'''<br>
+'''dogtag-pki-ocsp-theme'''<br>
+'''dogtag-pki-ra-theme'''<br>
+'''dogtag-pki-tks-theme'''<br>
+'''dogtag-pki-tps-theme'''
+</td>
+</tr>
+<tr>
+<td valign="top">Batch Configuration</td>
+<td valign="top">The '''pkisilent''' command-line utility which consists of a Perl script with a large number of command-line options used to call the appropriate Java program to configure the appropriate PKI instance based upon the order of the 'Manual' configuration panels for that particular type of PKI instance.</td>
+<td valign="top">'''pki-silent'''</td>
+</tr>
+</table>
+</ul>
+
+== PKI Instance Removal (Legacy) ==
+
+Dogtag Certificate System 9.0 and earlier used the following command-line utilities to remove PKI instances:  
+<ul>
+<table border=1>
+<tr bgcolor="darkgrey">
+<th width="20%">Operation</th>
+<th width="60%">Description</th>
+<th width="20%">Packages</th>
+</tr>
+<tr>
+<td valign="top">Removal</td>
+<td valign="top">The '''pkiremove''' command-line utility which consists of a Perl script with a large number of command-line options used to remove the specified PKI instance.</td>
+<td valign="top">'''pki-setup'''<br>'''pki-selinux'''</td>
+</tr>
+</table>
+</ul>
+
+= Design Goals =
+For the embedded version of PKI, the following design goals are desired:
+=== PKI Instance Deployment (Proposed) ===
+* Encapsulate PKI instance installation and configuration within a single Python script which works in conjunction with the new Java PKI installation servlet, and provide the various command-line options via a configuration file.
+* For Tomcat deployment purposes, integrate the use of a common shared "war" file.
+* Integrate Python exception handling to elegantly deal with any errors encountered
+
+=== PKI Instance Installation (Proposed) ===
+* Collapse installation server code into a single servlet, replacing the '''pkicreate''' and '''pkiremove''' Perl scripts with alternatives written in Python, removing the need for any template-based substitutions.
+* Use a configuration file in lieu of command-line parameters, eliminating port and location choices being specified as passed-in parameters.
+* Use proxy logic by default to drastically reduce the number of ports (e. g. - 8009 AJP, 8080 http, and 8443 https) thus eliminating the '''pki-proxy''' tool.
+* Combine individual CA, DRM, OCSP, and TKS Tomcat-based instances into a single instance of Tomcat accessible via a [http://www.jboss.org/resteasy RESTEasy] interface.
+* Disallow the creation of multiple instances of a CA, DRM, OCSP, or TKS instance on a single host machine or VM, effectively eliminating the need for a PKI instance registry (although this would still be useful for non-default PKI instance installations).
+* Use the default Tomcat instance thereby eliminating the need for PKI subsystem SYS-V initialization scripts and/or PKI-specific systemd services.
+* Reuse the default system Tomcat SELinux policy to eliminate the need for PKI-specific SELinux policies.
+* Seamlessly integrate support for "upgrading" an existing PKI instance via integrating a '''-u''' update option from the command-line
+
+=== PKI Instance Configuration (Proposed) ===
+* Re-write the '''pki-silent''' Perl script as a Python script which utilizes the single Java PKI installation servlet identified above to perform PKI configuration making it completely independent of any previous manual browser-based panels.
+* Eliminate the ability to manually configure a PKI instance via a browser, thus removing the runtime requirement for any '''theme-based''' UI components.
+
+=== PKI Instance Removal (Proposed) ===
+* Provide PKI instance removal command-line options via a configuration file.
+
+= Associated Bugs =
+= Detailed Design =
+== Design Considerations ==
+
+Due to aggressive scheduling, this effort will be broken down into the following phases:
+=== Phase I ===
+* Install, configure, and remove a simple CA (no clone/no subordinate CA)
+* Install, configure, and remove a simple DRM (no clone)
+
+=== Phase II ===
+* Add support to allow a command-line option of specifying a customized configuration file that will be merged with the existing configuration file
+
+=== Phase III ===
+* '''&#91;TBD&#93;'''
+
+== High-Level Design ==
+=== PKI Deployment Package (Proposed) ===
+A new package called '''pki-deploy''' will be created which contains the following:
+<ul>
+<table border=1>
+<tr bgcolor="darkgrey">
+<th width="20%">Item</th>
+<th width="30%">Location</th>
+<th width="50%">Purpose</th>
+</tr>
+<tr>
+<td valign="top">'''pkispawn'''</td>
+<td valign="top">/usr/bin</td>
+<td valign="top">Python script utilized for installation and configuration of a PKI instance</td>
+</tr>
+<tr>
+<td valign="top">'''pkidestroy'''</td>
+<td valign="top">/usr/bin</td>
+<td valign="top">Python script utilized for removal of a PKI instance</td>
+</tr>
+<tr>
+<td valign="top">'''pkideployment.cfg</td>
+<td valign="top">/usr/share/pki/deployment/config</td>
+<td valign="top">Default pre-defined PKI instance configuration file</td>
+</tr>
+<tr>
+<td valign="top">'''"scriptlets"'''</td>
+<td valign="top">/usr/lib/python&lt;version&gt;/site-packages/pki/deployment</td>
+<td valign="top">General-purpose stand-alone Python scripts which will be invoked in a pre-determined numerical order by '''pkispawn''' and '''pkidestroy''' to perform all PKI instance installation, configuration, and removal tasks</td>
+</tr>
+<tr>
+<td valign="top">Symlinks (Installation/Configuration)</td>
+<td valign="top">/usr/share/pki/deployment/spawn/ca<br>/usr/share/pki/deployment/spawn/kra<br>/usr/share/pki/deployment/spawn/ocsp<br>/usr/share/pki/deployment/spawn/ra<br>/usr/share/pki/deployment/spawn/tks<br>/usr/share/pki/deployment/spawn/tps</td>
+<td valign="top">Enumerated symbolic links to corresponding Python installation/configuration '''"scriptlets"'''</td>
+</tr>
+<tr>
+<td valign="top">Symlinks (Removal)</td>
+<td valign="top">/usr/share/pki/deployment/destroy/ca<br>/usr/share/pki/deployment/destroy/kra<br>/usr/share/pki/deployment/destroy/ocsp<br>/usr/share/pki/deployment/destroy/ra<br>/usr/share/pki/deployment/destroy/tks<br>/usr/share/pki/deployment/destroy/tps</td>
+<td valign="top">Enumerated symbolic links to corresponding Python removal '''"scriptlets"'''</td>
+</tr>
+</table>
+</ul>
+
+The '''pkispawn''' and '''pkidestroy''' Python code will only contain basic installation and removal engine frameworks respectively.
+
+The code contained within these two engines will be minimal, primarily relying upon data obtained from a configuration file, and specific invocation execution based upon enumerated symlinks to scriptlets.
+
+Since configuration files will be utilized by the new '''pkispawn''' and '''pkidestroy''' command-line Python scripts, command-line options will be dramatically reduced.
+
+=== PKI Deployment Packages (Legacy) ===
+
+The '''pki-setup'''<strike>, '''pki-selinux''',</strike>  and '''pki-silent''' packages will be removed and replaced by the new '''pki-deploy''' package in the '''pki-core''' source package.
+
+<strike>Similarly, the '''dogtag-pki-ca-theme''', '''dogtag-pki-common-theme''', '''dogtag-pki-kra-theme''', '''dogtag-pki-ocsp-theme''', '''dogtag-pki-ra-theme''', '''dogtag-pki-tks-theme''', and '''dogtag-pki-tps-theme''' packages will be removed from the '''dogtag-pki-theme''' source package during their appropriate phase detailed above, and the various runtime dependency requirements will be deleted from their respective packages (e. g. - the '''pki-ca-theme''' runtime requirement will be removed from the '''pki-ca''' package).</strike>
+
+The following table summarizes the old and new command-line utilities and their associated packages:
+<ul>
+<table border=1>
+<tr bgcolor="darkgrey">
+<th>New Command (associated package)</th>
+<th>Old Command (associated packages)</th>
+</tr>
+<tr>
+<td valign="top">'''pkispawn (pki-deploy)'''</td>
+<td valign="top">
+'''pkicreate (pki-setup<strike>, pki-selinux</strike>)'''<br>
+'''pkisilent (pki-silent)'''<br><strike>
+'''dogtag-pki-ca-theme (dogtag-pki-theme)'''<br>
+'''dogtag-pki-common-theme (dogtag-pki-theme)'''<br>
+'''dogtag-pki-kra-theme (dogtag-pki-theme)'''<br>
+'''dogtag-pki-ocsp-theme (dogtag-pki-theme)'''<br>
+'''dogtag-pki-ra-theme (dogtag-pki-theme)'''<br>
+'''dogtag-pki-tks-theme (dogtag-pki-theme)'''<br>
+'''dogtag-pki-tps-theme (dogtag-pki-theme)'''</strike>
+</td>
+</tr>
+<tr>
+<td valign="top">'''pkidestroy (pki-deploy)'''</td>
+<td valign="top">'''pkiremove (pki-setup<strike>, pki-selinux</strike>)'''</td>
+</tr>
+</table>
+</ul>
+
+== Low-Level Design ==
+The following design was inspired by the Perl installation "scriptlets" used by the [http://directory.fedoraproject.org 389 Directory Server] project, as well as [http://en.wikipedia.org/wiki/Init System V init process].
+=== PKI Deployment Engines ===
+==== PKI Installation Engine ====
+
+The '''pkispawn''' Python code will be invoked from '''/usr/bin''' as follows (per [https://fedorahosted.org/pki/ticket/261 PKI TRAC Ticket #261 - Dogtag 10: Revisit command-line options of 'pkispawn' and 'pkidestroy' . . .]):
+
+    # pkispawn -h
+    usage: pkispawn -s <subsystem> -f <file> [--dry_run] [-h] [-u] [-v]
+                    [-p <prefix>]
+    
+    PKI Instance Installation and Configuration
+    
+    mandatory arguments:
+      -s <subsystem>       where <subsystem> is CA, KRA, OCSP, RA, TKS, or TPS
+      -f <file>            specifies configuration filename
+    
+    optional arguments:
+      --dry_run            do not actually perform any actions
+      -h, --help           show this help message and exit
+      -u                   update instance of specified subsystem
+      -v                   display verbose information (details below)
+    
+    test arguments:
+      -p <prefix>          directory prefix to specify local directory [TEST ONLY]
+    
+    {POSSIBLY ADDITIONAL HELP TEXT REGARDING INSTANCE, DOMAIN, PORT INTERACTIONS}
+    
+    VERBOSITY FLAGS    CONSOLE MESSAGE LEVEL       LOG MESSAGE LEVEL
+    =======================================================================
+      NONE             error|warning               error|warning|info
+      -v               error|warning|info          error|warning|info
+      -vv              error|warning|info          error|warning|info|debug
+      -vvv             error|warning|info|debug    error|warning|info|debug
+
+==== PKI Removal Engine ====
+
+Similarly, the '''pkidestroy''' Python code will be invoked from '''/usr/bin''' as follows (per [https://fedorahosted.org/pki/ticket/261 PKI TRAC Ticket #261 - Dogtag 10: Revisit command-line options of 'pkispawn' and 'pkidestroy' . . .]):
+
+    # pkidestroy -h
+    usage: pkidestroy -s <subsystem> -i <instance> [-d <admin_domain>]
+                      [--dry_run] [-h] [-v] [-p <prefix>]
+    
+    PKI Instance Removal
+    
+    mandatory arguments:
+      -s <subsystem>     where <subsystem> is CA, KRA, OCSP, RA, TKS, or TPS
+      -i <instance>      PKI instance name
+    
+    optional arguments:
+      -d <admin_domain>  PKI admin domain name (instance name suffix)
+      --dry_run          do not actually perform any actions
+      -h, --help         show this help message and exit
+      -v                 display verbose information (details below)
+    
+    test arguments:
+      -p <prefix>        directory prefix to specify local directory [TEST ONLY]
+    
+    {POSSIBLE ADDITIONAL HELP TEXT EXPLAINING WHEN DOMAIN MUST BE SPECIFIED}
+    
+    VERBOSITY FLAGS    CONSOLE MESSAGE LEVEL       LOG MESSAGE LEVEL
+    =======================================================================
+      NONE             error|warning               error|warning|info
+      -v               error|warning|info          error|warning|info
+      -vv              error|warning|info          error|warning|info|debug
+      -vvv             error|warning|info|debug    error|warning|info|debug
+
+=== PKI Configuration Files ===
+==== PKI Installation Configuration Files ====
+
+The '''pkispawn''' executable will obtain its default command-line options from a single configuration file stored at '''/usr/share/pki/config/pkideployment.cfg''' (which will have been copied and the required [Sensitive] parameters will have at least been filled out). The entire path to this copied 'pkideployment.cfg' file will be specified by the mandatory '''-f <file>''' command-line option); a copy of each instance-specific configuration file will be saved within the instance itself, as this will be used for instance removal.
+
+The default installation configuration file will contain general sections for Sensitive, Common, Apache, and Tomcat specific name-value pairs. Additionally, each PKI subsystem will have its own section which contains simple default name-value pairs:
+
+    ###############################################################################
+    ##  'Sensitive' Data:                                                        ##
+    ##                                                                           ##
+    ##  Values in this section pertain to various PKI subsystems, and contain    ##
+    ##  required 'sensitive' information which MUST ALWAYS be provided by users. ##
+    ##                                                                           ##
+    ##  IMPORTANT:  Sensitive data values must NEVER be displayed to the         ##
+    ##              console NOR stored in log files!!!                           ##
+    ###############################################################################
+    [Sensitive]
+    pki_admin_password=
+    pki_backup_password=
+    pki_client_pkcs12_password=
+    pki_clone_pkcs12_password=
+    pki_ds_password=
+    pki_security_domain_password=
+    ###############################################################################
+    ##  'Common' Data:                                                           ##
+    ##                                                                           ##
+    ##  Values in this section are common to more than one PKI subsystem, and    ##
+    ##  contain required information which MAY be overridden by users as         ##
+    ##  necessary.                                                               ##
+    ##                                                                           ##
+    ##  NOTE:  Default values will be generated for any and all required         ##
+    ##         'common' data values which are left undefined.                    ##
+    ###############################################################################
+    [Common]
+    pki_admin_cert_request_type=crmf
+    pki_admin_domain_name=
+    pki_admin_dualkey=False
+    pki_admin_email=
+    pki_admin_keysize=2048
+    pki_admin_name=admin
+    pki_admin_nickname=
+    pki_admin_subject_dn=
+    pki_admin_uid=admin
+    pki_audit_group=pkiaudit
+    pki_audit_signing_key_algorithm=SHA256withRSA
+    pki_audit_signing_key_size=2048
+    pki_audit_signing_key_type=rsa
+    pki_audit_signing_nickname=
+    pki_audit_signing_signing_algorithm=SHA256withRSA
+    pki_audit_signing_subject_dn=
+    pki_audit_signing_token=
+    pki_backup_file=
+    pki_backup_keys=False
+    pki_ds_base_dn=
+    pki_ds_bind_dn=cn=Directory Manager
+    pki_ds_database=
+    pki_ds_hostname=
+    pki_ds_ldap_port=389
+    pki_ds_ldaps_port=636
+    pki_ds_remove_data=True
+    pki_ds_secure_connection=False
+    pki_group=pkiuser
+    pki_security_domain_hostname=
+    pki_security_domain_https_port=8443
+    pki_security_domain_name=
+    pki_security_domain_user=admin
+    pki_ssl_server_key_algorithm=SHA256withRSA
+    pki_ssl_server_key_size=2048
+    pki_ssl_server_key_type=rsa
+    pki_ssl_server_nickname=
+    pki_ssl_server_subject_dn=
+    pki_ssl_server_token=
+    pki_subsystem_key_algorithm=SHA256withRSA
+    pki_subsystem_key_size=2048
+    pki_subsystem_key_type=rsa
+    pki_subsystem_nickname=
+    pki_subsystem_subject_dn=
+    pki_subsystem_token=
+    pki_user=pkiuser
+    ###############################################################################
+    ##  'Apache' Data:                                                           ##
+    ##                                                                           ##
+    ##  Values in this section are common to PKI subsystems that run             ##
+    ##  as an instance of 'Apache' (RA and TPS subsystems), and contain          ##
+    ##  required information which MAY be overridden by users as necessary.      ##
+    ###############################################################################
+    [Apache]
+    pki_instance_name=pki-apache
+    pki_http_port=80
+    pki_https_port=443
+    ###############################################################################
+    ##  'Tomcat' Data:                                                           ##
+    ##                                                                           ##
+    ##  Values in this section are common to PKI subsystems that run             ##
+    ##  as an instance of 'Tomcat' (CA, KRA, OCSP, and TKS subsystems            ##
+    ##  including 'Clones', 'Subordinate CAs', and 'External CAs'), and contain  ##
+    ##  required information which MAY be overridden by users as necessary.      ##
+    ##                                                                           ##
+    ##  PKI CLONES:  To specify a 'CA Clone', a 'KRA Clone', an 'OCSP Clone',    ##
+    ##               or a 'TKS Clone', change the value of 'pki_clone'           ##
+    ##               from 'False' to 'True'.                                     ##
+    ##                                                                           ##
+    ##    REMINDER:  PKI CA Clones, Subordinate CAs, and External CAs            ##
+    ##               are MUTUALLY EXCLUSIVE entities!!!                          ##
+    ###############################################################################
+    [Tomcat]
+    pki_ajp_port=8009
+    pki_clone=False
+    pki_enable_java_debugger=False
+    pki_http_port=8080
+    pki_https_port=8443
+    pki_instance_name=pki-tomcat
+    pki_proxy_http_port=
+    pki_proxy_https_port=
+    pki_security_manager=false
+    pki_tomcat_server_port=8005
+    ###############################################################################
+    ##  'CA' Data:                                                               ##
+    ##                                                                           ##
+    ##  Values in this section are common to CA subsystems including 'PKI CAs',  ##
+    ##  'Cloned CAs', 'Subordinate CAs', and 'External CAs', and contain         ##
+    ##  required information which MAY be overridden by users as necessary.      ##
+    ##                                                                           ##
+    ##     EXTERNAL CAs:  To specify an 'External CA', change the value          ##
+    ##                    of 'pki_external' from 'False' to 'True'.              ##
+    ##                                                                           ##
+    ##  SUBORDINATE CAs:  To specify a 'Subordinate CA', change the value        ##
+    ##                    of 'pki_subordinate' from 'False' to 'True'.           ##
+    ##                                                                           ##
+    ##         REMINDER:  PKI CA Clones, Subordinate CAs, and External CAs       ##
+    ##                    are MUTUALLY EXCLUSIVE entities!!!                     ##
+    ###############################################################################
+    [CA]
+    pki_ca_signing_key_algorithm=SHA256withRSA
+    pki_ca_signing_key_size=2048
+    pki_ca_signing_key_type=rsa
+    pki_ca_signing_nickname=
+    pki_ca_signing_signing_algorithm=SHA256withRSA
+    pki_ca_signing_subject_dn=
+    pki_ca_signing_token=
+    pki_external=False
+    pki_ocsp_signing_key_algorithm=SHA256withRSA
+    pki_ocsp_signing_key_size=2048
+    pki_ocsp_signing_key_type=rsa
+    pki_ocsp_signing_nickname=
+    pki_ocsp_signing_signing_algorithm=SHA256withRSA
+    pki_ocsp_signing_subject_dn=
+    pki_ocsp_signing_token=
+    pki_subordinate=False
+    pki_subsystem=CA
+    pki_subsystem_name=
+    pki_war_name=ca.war
+    ###############################################################################
+    ##  'KRA' Data:                                                              ##
+    ##                                                                           ##
+    ##  Values in this section are common to KRA subsystems                      ##
+    ##  including 'PKI KRAs' and 'Cloned KRAs', and contain                      ##
+    ##  required information which MAY be overridden by users as necessary.      ##
+    ###############################################################################
+    [KRA]
+    pki_storage_key_algorithm=SHA256withRSA
+    pki_storage_key_size=2048
+    pki_storage_key_type=rsa
+    pki_storage_nickname=
+    pki_storage_signing_algorithm=SHA256withRSA
+    pki_storage_subject_dn=
+    pki_storage_token=
+    pki_subsystem=KRA
+    pki_subsystem_name=
+    pki_transport_key_algorithm=SHA256withRSA
+    pki_transport_key_size=2048
+    pki_transport_key_type=rsa
+    pki_transport_nickname=
+    pki_transport_signing_algorithm=SHA256withRSA
+    pki_transport_subject_dn=
+    pki_transport_token=
+    pki_war_name=kra.war
+    ###############################################################################
+    ##  'OCSP' Data:                                                             ##
+    ##                                                                           ##
+    ##  Values in this section are common to OCSP subsystems                     ##
+    ##  including 'PKI OCSPs' and 'Cloned OCSPs', and contain                    ##
+    ##  required information which MAY be overridden by users as necessary.      ##
+    ###############################################################################
+    [OCSP]
+    pki_ocsp_signing_key_algorithm=SHA256withRSA
+    pki_ocsp_signing_key_size=2048
+    pki_ocsp_signing_key_type=rsa
+    pki_ocsp_signing_nickname=
+    pki_ocsp_signing_signing_algorithm=SHA256withRSA
+    pki_ocsp_signing_subject_dn=
+    pki_ocsp_signing_token=
+    pki_subsystem=OCSP
+    pki_subsystem_name=
+    pki_war_name=ocsp.war
+    ###############################################################################
+    ##  'RA' Data:                                                               ##
+    ##                                                                           ##
+    ##  Values in this section are common to PKI RA subsystems, and contain      ##
+    ##  required information which MAY be overridden by users as necessary.      ##
+    ###############################################################################
+    [RA]
+    pki_subsystem=RA
+    pki_subsystem_name=
+    ###############################################################################
+    ##  'TKS' Data:                                                              ##
+    ##                                                                           ##
+    ##  Values in this section are common to TKS subsystems                      ##
+    ##  including 'PKI TKSs' and 'Cloned TKSs', and contain                      ##
+    ##  required information which MAY be overridden by users as necessary.      ##
+    ###############################################################################
+    [TKS]
+    pki_subsystem=TKS
+    pki_subsystem_name=
+    pki_war_name=tks.war
+    ###############################################################################
+    ##  'TPS' Data:                                                              ##
+    ##                                                                           ##
+    ##  Values in this section are common to PKI TPS subsystems, and contain     ##
+    ##  required information which MAY be overridden by users as necessary.      ##
+    ###############################################################################
+    [TPS]
+    pki_subsystem=TPS
+    pki_subsystem_name=
+
+==== PKI Removal Configuration Files ====
+For '''pkidestroy''', the aforementioned instance-specific configuration file will be used to remove the specified instance.
+
+=== PKI Python Dictionaries ===
+Having obtained their default command-line options by reading the appropriate configuration file, the '''pkispawn''' and the '''pkidestroy''' executables will utilize Python's '''ConfigParser''' library to parse this information into four distinct Python dictionaries:
+<ul>
+* Sensitive
+* Common
+* Web
+* Subsystem
+</ul>
+
+Three of these Python dictionaries (Common, Web, and Subsystem) will be used to encapsulate all data relevant to the '''pkispawn''' and the '''pkidestroy''' executables and their associated stand-alone Python '''"scriptlets"''' and will be combined in a single "Master" Python dictionary.
+
+=== Command-line Processing of PKI Scriptlets ===
+==== Command-line Processing of PKI Installation Scriptlets ====
+Command-line processing of '''pkispawn''' will primarily be accomplished via individual enumerated symlinks to scriptlets stored under '''/usr/share/pki/deployment/spawn/&lt;subsystem&gt;/'''  which will be invoked in ascending order; these '''pkispawn''' symlinks will be located under the following directories:
+
+* '''CA (/usr/share/pki/deployment/spawn/ca/)'''<br>'''KRA (/usr/share/pki/deployment/spawn/kra/)'''<br>'''OCSP (/usr/share/pki/deployment/spawn/ocsp/)'''<br>'''TKS (/usr/share/pki/deployment/spawn/tks/)'''
+<ul>
+<table border=1>
+<tr>
+<th bgcolor="darkgrey">Execution Order</th>
+<th bgcolor="darkgrey">Python Scriptlet</th>
+<th bgcolor="darkgrey">Purpose</th>
+<th bgcolor="darkgrey">Installation</th>
+<th bgcolor="darkgrey">Upgrade</th>
+</tr>
+<tr>
+<td>000</td>
+<td>initialization.py</td>
+<td>First 'scriptlet' executed</td>
+<td align="center">&radic;</td>
+<td align="center">&radic;</td>
+</tr>
+<tr>
+<td>010</td>
+<td>infrastructure_layout.py</td>
+<td>Populate/Re-populate top-level PKI infrastructure directories, files, and symlinks</td>
+<td align="center">&radic;</td>
+<td align="center">&radic;</td>
+</tr>
+<tr>
+<td>020</td>
+<td>instance_layout.py</td>
+<td>Populate/Re-populate PKI instance directories, files, and symlinks</td>
+<td align="center">&radic;</td>
+<td align="center">&radic;</td>
+</tr>
+<tr>
+<td>030</td>
+<td>subsystem_layout.py</td>
+<td>Populate/Re-populate PKI subsystem directories, files, and symlinks</td>
+<td align="center">&radic;</td>
+<td align="center">&radic;</td>
+</tr>
+<tr>
+<td>040</td>
+<td>war_explosion.py</td>
+<td>Explode the subsystem "war" file</td>
+<td align="center">&radic;</td>
+<td align="center">&radic;</td>
+</tr>
+<tr>
+<td>050</td>
+<td>slot_substitution.py</td>
+<td>Substitute variables in various files</td>
+<td align="center">&radic;</td>
+<td align="center">&radic;</td>
+</tr>
+<tr>
+<td>060</td>
+<td>security_databases.py</td>
+<td>Create (if necessary) and initialize the shared PKI-specific Apache/Tomcat security databases</td>
+<td align="center">&radic;</td>
+<td align="center">&radic;</td>
+</tr>
+<tr>
+<td>070</td>
+<td>configuration.py</td>
+<td>Invoke Java client to configure PKI subsystem</td>
+<td align="center">&radic;</td>
+<td align="center">&radic;</td>
+</tr>
+<tr>
+<td>999</td>
+<td>finalization.py</td>
+<td>Last 'scriptlet' executed</td>
+<td align="center">&radic;</td>
+<td align="center">&radic;</td>
+</tr>
+</table>
+</ul>
+* '''RA (/usr/share/pki/deployment/spawn/ra/)'''<br>'''TPS (/usr/share/pki/deployment/spawn/tps/)'''
+    [TBD]
+
+==== Command-line Processing of PKI Removal Scriptlets ====
+Likewise, command-line processing of '''pkidestroy''' will primarily be accomplished via individual enumerated symlinks to scriptlets stored under '''/usr/share/pki/deployment/destroy/&lt;subsystem&gt;/'''  which will be invoked in descending order; these '''pkidestroy''' symlinks will be located under the following directories:
+
+* '''CA (/usr/share/pki/deployment/destroy/ca/)'''<br>'''KRA (/usr/share/pki/deployment/destroy/kra/)'''<br>'''OCSP (/usr/share/pki/deployment/destroy/ocsp/)'''<br>'''TKS (/usr/share/pki/deployment/destroy/tks/)'''
+<ul>
+<table border=1>
+<tr>
+<th bgcolor="darkgrey">Execution Order</th>
+<th bgcolor="darkgrey">Python Scriptlet</th>
+<th bgcolor="darkgrey">Purpose</th>
+<th bgcolor="darkgrey">Removal</th>
+</tr>
+<tr>
+<td>000</td>
+<td>initialization.py</td>
+<td>First 'scriptlet' executed</td>
+<td align="center">&radic;</td>
+</tr>
+<tr>
+<td>930</td>
+<td>configuration.py</td>
+<td>Invoke Java client to configure PKI subsystem</td>
+<td align="center">&radic;</td>
+</tr>
+<tr>
+<td>940</td>
+<td>security_databases.py</td>
+<td>Remove (if necessary) the shared PKI-specific Apache/Tomcat security databases</td>
+<td align="center">&radic;</td>
+</tr>
+<tr>
+<td>960</td>
+<td>war_explosion.py</td>
+<td>Remove previously exploded subsystem "war" directories, files, and symlinks</td>
+<td align="center">&radic;</td>
+</tr>
+<tr>
+<td>970</td>
+<td>subsystem_layout.py</td>
+<td>Remove PKI subsystem directories, files, and symlinks</td>
+<td align="center">&radic;</td>
+</tr>
+<tr>
+<td>980</td>
+<td>instance_layout.py</td>
+<td>Remove PKI instance directories, files, and symlinks</td>
+<td align="center">&radic;</td>
+</tr>
+<tr>
+<td>990</td>
+<td>infrastructure_layout.py</td>
+<td>Remove top-level PKI infrastructure directories, files, and symlinks</td>
+<td align="center">&radic;</td>
+</tr>
+<tr>
+<td>999</td>
+<td>finalization.py</td>
+<td>Last 'scriptlet' executed</td>
+<td align="center">&radic;</td>
+</tr>
+</table>
+</ul>
+* '''RA (/usr/share/pki/deployment/destroy/ra/)'''<br>'''TPS (/usr/share/pki/deployment/destroy/tps/)'''
+    [TBD]
+
+=== PKI Scriptlets ===
+==== Anatomy of a PKI Scriptlet ====
+All PKI '''"scriptlets"''' are defined to be implementations of the following abstract base class:
+
+    #!/usr/bin/python -t
+    # Authors:
+    #     Matthew Harmsen <mharmsen@redhat.com>
+    #
+    # This program is free software; you can redistribute it and/or modify
+    # it under the terms of the GNU General Public License as published by
+    # the Free Software Foundation; version 2 of the License.
+    #
+    # This program is distributed in the hope that it will be useful,
+    # but WITHOUT ANY WARRANTY; without even the implied warranty of
+    # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    # GNU General Public License for more details.
+    #
+    # You should have received a copy of the GNU General Public License along
+    # with this program; if not, write to the Free Software Foundation, Inc.,
+    # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+    #
+    # Copyright (C) 2011 Red Hat, Inc.
+    # All rights reserved.
+    #
+    
+    # System Imports
+    import abc
+    
+    
+    # PKI Deployment Classes
+    class AbstractBasePkiScriptlet(object):
+        __metaclass__ = abc.ABCMeta
+    
+        @abc.abstractmethod
+        def spawn(self):
+            """Retrieve data from the specified dictionaries and
+               use it to install a new PKI instance."""
+            return
+    
+        @abc.abstractmethod
+        def respawn(self):
+            """Retrieve data from the specified dictionaries and
+               use it to update an existing PKI instance."""
+            return
+    
+        @abc.abstractmethod
+        def destroy(self):
+            """Retrieve data from the specified dictionaries and
+               use it to destroy an existing PKI instance."""
+            return
+
+==== List of PKI Scriptlets ====
+
+All Python-based installation/removal scriptlets will be located under '''/usr/lib/python&lt;version&gt;/site-packages/pki/deployment/''':
+<ul>
+<table border=1>
+<tr>
+<th bgcolor="darkgrey">Python Scriptlet</th>
+<th bgcolor="darkgrey">Explanation</th>
+</tr>
+<tr>
+<td valign="top">initialization.py</td>
+<td valign="top">First 'scriptlet' executed</td>
+</tr>
+<tr>
+<td valign="top">infrastructure_layout.py</td>
+<td valign="top">Create top-level PKI infrastructure directories, files, and symlinks</td>
+</tr>
+<tr>
+<td valign="top">instance_layout.py</td>
+<td valign="top">Create top-level PKI instance directories, files, and symlinks</td>
+</tr>
+<tr>
+<td valign="top">subsystem_layout.py</td>
+<td valign="top">Create top-level PKI subsystem directories, files, and symlinks</td>
+</tr>
+<tr>
+<td valign="top">war_explosion.py</td>
+<td valign="top">Explode specified "war" file</td>
+</tr>
+<tr>
+<td valign="top">slot_substitution.py</td>
+<td valign="top">Make variable substitutions in various files</td>
+</tr>
+<tr>
+<td valign="top">security_databases.py</td>
+<td valign="top">Create/modify shared NSS security databases for this instance</td>
+</tr>
+<tr>
+<td valign="top">configuration.py</td>
+<td valign="top">FUTURE: Invoke the Java-based client to configure this instance</td>
+</tr>
+<tr>
+<td valign="top">finalization.py</td>
+<td valign="top">Last 'scriptlet' executed</td>
+</tr>
+</table>
+</ul>
+
+=== PKI (CA, KRA, OCSP, TKS) Instance Tomcat Class Loader Order ===
+For Tomcat 7, this is described in detail at the following link:
+* http://tomcat.apache.org/tomcat-7.0-doc/class-loader-howto.html
+
+In summary, from the perspective of a web application, class or resource loading looks in the following repositories, in this order:
+
+* Bootstrap classes of your JVM
+* System class loader classes (described above)
+* /WEB-INF/classes of your web application
+* /WEB-INF/lib/*.jar of your web application
+* Common class loader classes (described above)
+
+=== PKI Instance File System Directory Layout ===
+==== File System Directory Layout (Proposed) ====
+===== CA / KRA ''/ OCSP / RA / TKS / TPS'' =====
+ +    '''/etc/sysconfig/pki'''                                                                                                 (PKI-specific registry)
+ +    '''/etc/sysconfig/pki/apache'''                                                                                          (PKI-specific Apache registry)
+ +    '''/etc/sysconfig/pki/apache'''/&lt;apache_instance[.admin_domain]&gt;                                                         (PKI-specific &lt;apache_instance[.admin_domain]&gt; registry)
+      '''/etc/sysconfig/pki/apache'''/''&lt;apache_instance[.admin_domain]&gt;/ra                                                      (PKI-specific &lt;apache_instance[.admin_domain]&gt; RA-specific registry - contains installation manifest file)''
+      '''/etc/sysconfig/pki/apache'''/''&lt;apache_instance[.admin_domain]&gt;/tps                                                     (PKI-specific &lt;apache_instance[.admin_domain]&gt; TPS-specific registry - contains installation manifest file)''
+ +    '''/etc/sysconfig/pki/tomcat'''                                                                                          (PKI-specific Tomcat registry)
+ +    '''/etc/sysconfig/pki/tomcat'''/&lt;tomcat_instance[.admin_domain]&gt;                                                         (PKI-specific &lt;tomcat_instance[.admin_domain]&gt; registry)
+ +/-  '''/etc/sysconfig/pki/tomcat'''/&lt;tomcat_instance[.admin_domain]&gt;/ca                                                      (PKI-specific &lt;tomcat_instance[.admin_domain]&gt; CA-specific registry - contains installation manifest file)
+ +/=  '''/etc/sysconfig/pki/tomcat'''/&lt;tomcat_instance[.admin_domain]&gt;/kra                                                     (PKI-specific &lt;tomcat_instance[.admin_domain]&gt; KRA-specific registry - contains installation manifest file)
+      '''/etc/sysconfig/pki/tomcat'''/''&lt;tomcat_instance[.admin_domain]&gt;/ocsp                                                    (PKI-specific &lt;tomcat_instance[.admin_domain]&gt; OCSP-specific registry - contains installation manifest file)''
+      '''/etc/sysconfig/pki/tomcat'''/''&lt;tomcat_instance[.admin_domain]&gt;/tks                                                     (PKI-specific &lt;tomcat_instance[.admin_domain]&gt; TKS-specific registry - contains installation manifest file)''
+ +    '''/etc/pki'''                                                                                                           (PKI-specific configuration files)
+ +    '''/etc/pki'''/&lt;apache_instance[.admin_domain]&gt;                                                                          (PKI-specific &lt;apache_instance[.admin_domain]&gt; shared configuration files - e. g. - password.conf)
+ +    '''/etc/pki'''/&lt;apache_instance[.admin_domain]&gt;/alias                                                                    (PKI-specific &lt;apache_instance[.admin_domain]&gt; shared NSS security databases)
+      '''/etc/pki'''/''&lt;apache_instance[.admin_domain]&gt;/ra                                                                       (PKI-specific &lt;apache_instance[.admin_domain]&gt; RA-specific configuration files)''
+      '''/etc/pki'''/''&lt;apache_instance[.admin_domain]&gt;/tps                                                                      (PKI-specific &lt;apache_instance[.admin_domain]&gt; TPS-specific configuration files)''
+ +    '''/etc/pki'''/&lt;tomcat_instance[.admin_domain]&gt;                                                                          (PKI-specific &lt;tomcat_instance[.admin_domain]&gt; shared configuration files - e. g. - password.conf)
+ +    '''/etc/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/alias                                                                    (PKI-specific &lt;tomcat_instance[.admin_domain]&gt; shared NSS security databases)
+ +/-  '''/etc/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/ca                                                                       (PKI-specific &lt;tomcat_instance[.admin_domain]&gt; CA-specific configuration files)
+ +/=  '''/etc/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/kra                                                                      (PKI-specific &lt;tomcat_instance[.admin_domain]&gt; KRA-specific configuration files)
+      '''/etc/pki'''/''&lt;tomcat_instance[.admin_domain]&gt;/ocsp                                                                     (PKI-specific &lt;tomcat_instance[.admin_domain]&gt; OCSP-specific configuration files)''
+      '''/etc/pki'''/''&lt;tomcat_instance[.admin_domain]&gt;/tks                                                                      (PKI-specific &lt;tomcat_instance[.admin_domain]&gt; TKS-specific configuration files)''
+ +    '''/var/lib/pki'''                                                                                                       (PKI-specific base files)
+ +    '''/var/lib/pki'''/&lt;apache_instance[.admin_domain]&gt;                                                                      (PKI-specific &lt;apache_instance[.admin_domain]&gt; - RA / TPS shared base files)
+ #    '''/var/lib/pki'''/&lt;apache_instance[.admin_domain]&gt;/alias -> /etc/pki/[admin_domain]/[apache_instance]/alias             (link to PKI-specific &lt;apache_instance[.admin_domain]&gt; shared NSS security databases)
+ #    '''/var/lib/pki'''/&lt;apache_instance[.admin_domain]&gt;/conf -> /etc/pki/[admin_domain]/[apache_instance]                    (link to PKI-specific &lt;apache_instance[.admin_domain]&gt; shared configuration files)
+ #    '''/var/lib/pki'''/&lt;apache_instance[.admin_domain]&gt;/logs -> /var/log/pki/[admin_domain]/[apache_instance]                (link to PKI-specific &lt;apache_instance[.admin_domain]&gt; log files) 
+      '''/var/lib/pki'''/''&lt;apache_instance[.admin_domain]&gt;/ra                                                                   (PKI-specific &lt;tomcat_instance[.admin_domain]&gt; RA-specific base files)''
+ #    '''/var/lib/pki'''/''&lt;apache_instance[.admin_domain]&gt;/ra/alias -> /var/lib/pki/[admin_domain]/[apache_instance]/alias      (link to PKI-specific &lt;apache_instance[.admin_domain]&gt; NSS security databases)''
+      '''/var/lib/pki'''/''&lt;apache_instance[.admin_domain]&gt;/tps                                                                  (PKI-specific &lt;tomcat_instance[.admin_domain]&gt; TPS-specific base files)''
+ #    '''/var/lib/pki'''/''&lt;apache_instance[.admin_domain]&gt;/tps/alias -> /var/lib/pki/[admin_domain]/[apache_instance]/alias     (link to PKI-specific &lt;apache_instance[.admin_domain]&gt; shared NSS security databases)''
+ +    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;                                                                      (PKI-specific &lt;tomcat_instance[.admin_domain]&gt; - CA / KRA / OCSP / TKS shared base files)
+ #    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/alias -> /etc/pki/[admin_domain]/[tomcat_instance]/alias             (link to PKI-specific &lt;tomcat_instance[.admin_domain]&gt; shared NSS security databases)
+ #    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/bin -> /usr/share/[tomcat_instance]/bin                              (link to &lt;tomcat_instance[.admin_domain]&gt; binaries for use by Eclipse)
+ +/-  '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/ca                                                                   (PKI-specific &lt;tomcat_instance[.admin_domain]&gt; CA-specific base files)
+ #    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/ca/alias -> /var/lib/pki/[admin_domain]/[tomcat_instance]/alias      (link to PKI-specific &lt;apache_instance[.admin_domain]&gt; shared NSS security databases)
+ #    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/ca/conf -> /etc/pki/[admin_domain]/[tomcat_instance]/ca              (link to PKI-specific &lt;tomcat_instance[.admin_domain]&gt; CA-specific configuration files)
+ -    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/ca/emails                                                            (PKI-specific &lt;tomcat_instance[.admin_domain]&gt; CA-specific email files)
+ #    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/ca/logs -> /var/log/pki/[admin_domain]/[tomcat_instance]/ca          (link to PKI-specific &lt;tomcat_instance[.admin_domain]&gt; CA-specific log files)
+ -    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/ca/profiles                                                          (PKI-specific &lt;tomcat_instance[.admin_domain]&gt; CA-specific profiles)
+ #    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/ca/webapps -> /var/lib/pki/[admin_domain]/[tomcat_instance]/webapps  (link to PKI-specific &lt;tomcat_instance[.admin_domain]&gt; CA-specific webapps files)
+ +    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/common                                                               (PKI-specific &lt;tomcat_instance[.admin_domain]&gt; common files)
+ +    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/common/lib                                                           (PKI-specific &lt;tomcat_instance[.admin_domain]&gt; common libraries)
+ #    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/conf -> /etc/pki/[admin_domain]/[tomcat_instance]                    (link to PKI-specific &lt;tomcat_instance[.admin_domain]&gt; shared configuration files)
+ =    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/kra                                                                  (PKI-specific &lt;tomcat_instance[.admin_domain]&gt; KRA-specific base files)
+ #    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/kra/alias -> /var/lib/pki/[admin_domain]/[tomcat_instance]/alias     (link to PKI-specific &lt;apache_instance[.admin_domain]&gt; shared NSS security databases)
+ #    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/kra/conf -> /etc/pki/[admin_domain]/[tomcat_instance]/kra            (link to PKI-specific &lt;tomcat_instance[.admin_domain]&gt; KRA-specific configuration files)
+ #    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/kra/logs -> /var/log/pki/[admin_domain]/[tomcat_instance]/kra        (link to PKI-specific &lt;tomcat_instance[.admin_domain]&gt; KRA-specific log files)
+ #    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/kra/webapps -> /var/lib/pki/[admin_domain]/[tomcat_instance]/webapps (link to PKI-specific &lt;tomcat_instance[.admin_domain]&gt; KRA-specific webapps files)
+      '''/var/lib/pki'''/''&lt;tomcat_instance[.admin_domain]&gt;/ocsp                                                                 (PKI-specific &lt;tomcat_instance[.admin_domain]&gt; OCSP-specific base files)''
+      '''/var/lib/pki'''/''&lt;tomcat_instance[.admin_domain]&gt;/tks                                                                  (PKI-specific &lt;tomcat_instance[.admin_domain]&gt; TKS-specific base files)''
+ #    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/lib -> /usr/share/[tomcat_instance]/lib                              (link to &lt;tomcat_instance[.admin_domain]&gt; libraries for use by Eclipse)
+ #    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/logs -> /var/log/pki/[admin_domain]/[tomcat_instance]                (link to PKI-specific &lt;tomcat_instance[.admin_domain]&gt; log files) 
+ +    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps
+ +    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/ROOT
+ +    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/ROOT/WEB-INF
+ +    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/WEB-INF
+ +    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/WEB-INF/classes
+ +    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/WEB-INF/lib
+ +/-  '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/ca
+ -    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/ca/WEB-INF
+ #    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/ca/WEB-INF/classes -> /var/lib/pki/&lt;tomcat_instance[.admin_domain]&gt;/webapps/WEB-INF/classes
+ #    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/ca/WEB-INF/lib -> /var/lib/pki/&lt;tomcat_instance[.admin_domain]&gt;/webapps/WEB-INF/lib
+ -    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/ca/admin
+ -    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/ca/admin/ca
+ -    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/ca/admin/console
+ -    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/ca/admin/console/config
+ -    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/ca/admin/console/img
+ -    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/ca/admin/console/js
+ -    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/ca/admin/graphics
+ -    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/ca/agent
+ -    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/ca/agent/ca
+ -    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/ca/agent/graphics
+ -    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/ca/css
+ -    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/ca/ee
+ -    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/ca/ee/ca
+ -    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/ca/ee/ca/policyEnrollment
+ -    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/ca/ee/ca/profileEnrollment
+ -    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/ca/ee/graphics
+ -    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/ca/img
+ +/=  '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/kra
+ =    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/kra/WEB-INF
+ #    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/kra/WEB-INF/classes -> /var/lib/pki/&lt;tomcat_instance[.admin_domain]]&gt;/webapps/WEB-INF/classes
+ #    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/kra/WEB-INF/lib -> /var/lib/pki/&lt;tomcat_instance[.admin_domain]]&gt;/webapps/WEB-INF/lib
+ =    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/kra/admin
+ =    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/kra/admin/console
+ =    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/kra/admin/console/config
+ =    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/kra/admin/console/img
+ =    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/kra/admin/console/js
+ =    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/kra/agent
+ =    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/kra/agent/graphics
+ =    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/kra/agent/kra
+ =    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/kra/css
+ =    '''/var/lib/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/webapps/kra/img
+      '''''/var/lock/pki'''''                                                                                                      (PKI-specific locks)
+      '''''/var/lock/pki/apache'''''                                                                                               (PKI-specific Apache locks)
+      '''''/var/lock/pki/ca'''''                                                                                                   (CA-specific locks)
+      '''''/var/lock/pki/kra'''''                                                                                                  (KRA-specific locks)
+      '''''/var/lock/pki/ocsp'''                                                                                                 (OCSP-specific locks)''
+      '''''/var/lock/pki/ra'''                                                                                                   (RA-specific locks)''
+      '''''/var/lock/pki/tks'''                                                                                                  (TKS-specific locks)''
+      '''''/var/lock/pki/tomcat'''''                                                                                               (PKI-specific Tomcat locks)
+      '''''/var/lock/pki/tps'''                                                                                                  (TPS-specific locks)''
+ +    '''/var/log/pki'''                                                                                                       (PKI-specific log files)
+ +    '''/var/log/pki'''/&lt;apache_instance[.admin_domain]&gt;                                                                      (PKI-specific &lt;apache_instance[.admin_domain]&lt; log files)
+      '''/var/log/pki'''/''&lt;apache_instance[.admin_domain]&gt;/ra                                                                   (PKI-specific &lt;apache_instance[.admin_domain]&lt; RA-specific log files)''
+      '''/var/log/pki'''/''&lt;apache_instance[.admin_domain]&gt;/tps                                                                  (PKI-specific &lt;apache_instance[.admin_domain]&lt; TPS-specific log files)''
+      '''/var/log/pki'''/''&lt;apache_instance[.admin_domain]&gt;/tps/signedAudit                                                      (PKI-specific &lt;apache_instance[.admin_domain]&lt; TPS-specific signed audit log files)''
+ +    '''/var/log/pki'''/&lt;tomcat_instance[.admin_domain]&gt;                                                                      (PKI-specific &lt;tomcat_instance[.admin_domain]&lt; log files)
+ +    '''/var/log/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/ca                                                                   (PKI-specific &lt;tomcat_instance[.admin_domain]&lt; CA-specific log files)
+ +    '''/var/log/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/ca/signedAudit                                                       (PKI-specific &lt;tomcat_instance[.admin_domain]&lt; CA-specific signed audit log files)
+ +    '''/var/log/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/kra                                                                  (PKI-specific &lt;tomcat_instance[.admin_domain]&lt; KRA-specific log files)
+ +    '''/var/log/pki'''/&lt;tomcat_instance[.admin_domain]&gt;/kra/signedAudit                                                      (PKI-specific &lt;tomcat_instance[.admin_domain]&lt; KRA-specific signed audit log files)
+      '''/var/log/pki'''/''&lt;tomcat_instance[.admin_domain]&gt;/ocsp                                                                 (PKI-specific &lt;tomcat_instance[.admin_domain]&lt; OCSP-specific log files)''
+      '''/var/log/pki'''/''&lt;tomcat_instance[.admin_domain]&gt;/ocsp/signedAudit                                                     (PKI-specific &lt;tomcat_instance[.admin_domain]&lt; OCSP-specific signed audit log files)''
+      '''/var/log/pki'''/''&lt;tomcat_instance[.admin_domain]&gt;/tks                                                                  (PKI-specific &lt;tomcat_instance[.admin_domain]&lt; TKS-specific log files)''
+      '''/var/log/pki'''/''&lt;tomcat_instance[.admin_domain]&gt;/tks/signedAudit                                                      (PKI-specific &lt;tomcat_instance[.admin_domain]&lt; TKS-specific signed audit log files)''
+      '''''/var/run/pki'''''                                                                                                       (PKI-specific pids)
+      '''''/var/run/pki/apache'''''                                                                                                (PKI-specific Apache pids)
+      '''''/var/run/pki/ca'''''                                                                                                    (CA-specific pids)
+      '''''/var/run/pki/kra'''''                                                                                                   (KRA-specific pids)
+      '''''/var/run/pki/ocsp'''                                                                                                  (OCSP-specific pids)''
+      '''''/var/run/pki/ra'''                                                                                                    (RA-specific pids)''
+      '''''/var/run/pki/tks'''                                                                                                   (TKS-specific pids)''
+      '''''/var/run/pki/tomcat'''''                                                                                                (PKI-specific Tomcat pids)
+      '''''/var/run/pki/tps'''                                                                                                   (TPS-specific pids)''
+<ul>
+<table>
+<tr>
+<td valign="top" rowspan=6>'''NOTE:&nbsp;&nbsp;'''</td>
+<td valign="top">All references in '''bold''' are considered "fixed" directories which are not data-specific, and will be owned by the '''pki-deploy''' RPM rather than created by the '''pkispawn''' process.</td>
+</tr>
+<tr>
+<td valign="top">All references in '''''bold-italics''''' are considered "fixed" directories which are not data-specific, and will be owned by the appropriate '''pki-ca''' or '''pki-kra'''  RPM rather than created by the '''pkispawn''' process.</td>
+</tr>
+<tr>
+<td valign="top">All references preceded by a "+" (plus) are directories which will be generated via the initial '''pkispawn''' process (regardless of subsystem type).  As these are the top-level data directories, they cannot be "owned" by any RPM.</td>
+</tr>
+<tr>
+<td valign="top">All references preceded by a "-" (dash) are candidates for an exploded '''ca.war''' file (not all contents would be included as some would be populated via the '''pkispawn''' process).</td>
+</tr>
+<tr>
+<td valign="top">All references preceded by an "=" (equal sign) are candidates for an exploded '''kra.war''' file (not all contents would be included as some would be populated via the '''pkispawn''' process).</td>
+</tr>
+<tr>
+<td valign="top">All references preceded by a "#" (hash mark) are symlinks which will be created via a '''pkispawn''' scriptlet which will be generated AFTER an exploded war file.</td>
+</tr>
+</table>
+</ul>
+
+==== File System Directory Layout (Legacy) ====
+===== CA =====
+    # find /var/lib/pki-ca -type d -print | sort
+    /var/lib/pki-ca
+    /var/lib/pki-ca/alias
+    /var/lib/pki-ca/common
+    /var/lib/pki-ca/common/lib
+    /var/lib/pki-ca/emails
+    /var/lib/pki-ca/profiles
+    /var/lib/pki-ca/profiles/ca
+    /var/lib/pki-ca/shared
+    /var/lib/pki-ca/shared/classes
+    /var/lib/pki-ca/shared/lib
+    /var/lib/pki-ca/temp
+    /var/lib/pki-ca/webapps
+    /var/lib/pki-ca/webapps/ROOT
+    /var/lib/pki-ca/webapps/ROOT/WEB-INF
+    /var/lib/pki-ca/webapps/ca
+    /var/lib/pki-ca/webapps/ca/WEB-INF
+    /var/lib/pki-ca/webapps/ca/WEB-INF/classes
+    /var/lib/pki-ca/webapps/ca/WEB-INF/lib
+    /var/lib/pki-ca/webapps/ca/admin
+    /var/lib/pki-ca/webapps/ca/admin/ca
+    /var/lib/pki-ca/webapps/ca/admin/console
+    /var/lib/pki-ca/webapps/ca/admin/console/config
+    /var/lib/pki-ca/webapps/ca/admin/console/img
+    /var/lib/pki-ca/webapps/ca/admin/console/js
+    /var/lib/pki-ca/webapps/ca/admin/graphics
+    /var/lib/pki-ca/webapps/ca/agent
+    /var/lib/pki-ca/webapps/ca/agent/ca
+    /var/lib/pki-ca/webapps/ca/agent/graphics
+    /var/lib/pki-ca/webapps/ca/css
+    /var/lib/pki-ca/webapps/ca/ee
+    /var/lib/pki-ca/webapps/ca/ee/ca
+    /var/lib/pki-ca/webapps/ca/ee/ca/policyEnrollment
+    /var/lib/pki-ca/webapps/ca/ee/ca/profileEnrollment
+    /var/lib/pki-ca/webapps/ca/ee/graphics
+    /var/lib/pki-ca/webapps/ca/img
+    /var/lib/pki-ca/work
+    /var/lib/pki-ca/work/Catalina
+    /var/lib/pki-ca/work/Catalina/localhost
+    /var/lib/pki-ca/work/Catalina/localhost/_
+    /var/lib/pki-ca/work/Catalina/localhost/ca
+
+    # find /var/lib/pki-ca -type l -print | sort (manually excluded symlinks to files)
+    /var/lib/pki-ca/conf -> /etc/pki-ca
+    /var/lib/pki-ca/logs -> /var/log/pki-ca
+                            /var/log/pki-ca/signedAudit
+
+    # Named CA registries
+    /etc/sysconfig/pki/ca
+
+    # CA locks
+    /var/lock/pki
+    /var/lock/pki/ca
+
+    # CA pids
+    /var/run/pki
+    /var/run/pki/ca
+
+===== KRA =====
+    # find /var/lib/pki-kra -type d -print | sort
+    /var/lib/pki-kra
+    /var/lib/pki-kra/alias
+    /var/lib/pki-kra/common
+    /var/lib/pki-kra/common/lib
+    /var/lib/pki-kra/shared
+    /var/lib/pki-kra/shared/classes
+    /var/lib/pki-kra/shared/lib
+    /var/lib/pki-kra/temp
+    /var/lib/pki-kra/webapps
+    /var/lib/pki-kra/webapps/ROOT
+    /var/lib/pki-kra/webapps/ROOT/WEB-INF
+    /var/lib/pki-kra/webapps/kra
+    /var/lib/pki-kra/webapps/kra/WEB-INF
+    /var/lib/pki-kra/webapps/kra/WEB-INF/classes
+    /var/lib/pki-kra/webapps/kra/WEB-INF/lib
+    /var/lib/pki-kra/webapps/kra/admin
+    /var/lib/pki-kra/webapps/kra/admin/console
+    /var/lib/pki-kra/webapps/kra/admin/console/config
+    /var/lib/pki-kra/webapps/kra/admin/console/img
+    /var/lib/pki-kra/webapps/kra/admin/console/js
+    /var/lib/pki-kra/webapps/kra/agent
+    /var/lib/pki-kra/webapps/kra/agent/graphics
+    /var/lib/pki-kra/webapps/kra/agent/kra
+    /var/lib/pki-kra/webapps/kra/css
+    /var/lib/pki-kra/webapps/kra/img
+    /var/lib/pki-kra/work
+    /var/lib/pki-kra/work/Catalina
+    /var/lib/pki-kra/work/Catalina/localhost
+    /var/lib/pki-kra/work/Catalina/localhost/_
+    /var/lib/pki-kra/work/Catalina/localhost/kra
+
+    # find /var/lib/pki-kra -type l -print | sort (manually excluded symlinks to files)
+    /var/lib/pki-kra/conf -> /etc/pki-kra
+    /var/lib/pki-kra/logs -> /var/log/pki-kra
+                             /var/log/pki-kra/signedAudit
+
+    # Named KRA registries
+    /etc/sysconfig/pki/kra
+
+    # KRA locks
+    /var/lock/pki
+    /var/lock/pki/kra
+
+    # KRA pids
+    /var/run/pki
+    /var/run/pki/kra
+
+===== OCSP =====
+
+===== RA =====
+
+===== TKS =====
+
+===== TPS =====

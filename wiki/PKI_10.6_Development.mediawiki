@@ -1,0 +1,7 @@
+= Overview =
+
+This page has been migrated to [https://github.com/dogtagpki/pki/blob/DOGTAG_10_6_BRANCH/docs/development/Building_PKI.md PKI 10.6 Building PKI].
+
+= References =
+
+* [[PKI 10 Development]]

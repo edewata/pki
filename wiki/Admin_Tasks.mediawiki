@@ -1,0 +1,199 @@
+= Overview =
+
+This page describes the procedure to execute admin tasks.
+
+= Subsystem-specific Tasks =
+
+* [[CA Admin Tasks]]
+* [[KRA Admin Tasks]]
+* [https://github.com/dogtagpki/pki/wiki/TPS-Admin-Guide TPS Admin Tasks]
+
+= Certificate System Configuration Files =
+
+== Managing System Passwords ==
+
+=== Changing System Passwords ===
+
+Current procedure:
+* Open password.conf.
+* Change the password.
+* Save the changes.
+
+Proposed procedure:
+* pki-server password-mod -i <instance ID> <name>
+
+=== Removing System Passwords ===
+
+Current procedure:
+* Remove password.conf
+
+Proposed procedure:
+* pki-server password-del --all
+
+=== Restoring System Passwords ===
+
+Current procedure:
+* Create password.conf.
+* Add passwords listed in cms.passwordlist.
+* Save the changes.
+
+Proposed procedure:
+* pki-server password-add --all
+
+= Basic Subsystem Management =
+
+== Starting and Stopping Server Instances ==
+
+=== Starting and Stopping an Server Instance ===
+* pki-server instance-start [instance]
+* pki-server instance-stop [instance]
+
+=== Configuring Server Instance Auto-start ===
+* pki-server instance-enable/disable [instance]
+
+=== Checking the Server Instance Status ===
+* pki-server instance-status [instance]
+
+== Configuring Ports ==
+
+Current procedure:
+* Stop the subsystem instance.
+* Open the instance's configuration directory.
+* Open the server.xml file, and edit the appropriate port numbers.
+* Open the web.xml file, and edit the appropriate port numbers.
+* Configure SELinux to work with the new port.
+* Restart the subsystem.
+
+Proposed procedure:
+* pki-server instance-stop
+* pki-server instance-port-find
+* pki-server instance-port-mod <name> <value>
+* pki-server instance-start
+
+== Configuring the LDAP Database ==
+
+=== Changing the Internal Database Configuration ===
+
+Current procedure:
+* Log into the subsystem administrative console.
+* In the Configuration tab, select the Internal Database tab.
+* Change the Directory Server instance by changing the hostname, port, and bind DN fields.
+* Click Save.
+* Restart server.
+
+Proposed procedure:
+* pki-server instance-stop
+* pki-server instance-config-internal-find
+* pki-server instance-config-internal-mod <param> <value>
+* pki-server instance-start
+
+=== Enabling SSL Connection with Internal Database ===
+
+See [https://github.com/dogtagpki/pki/wiki/Enabling-SSL-Connection-with-Internal-Database [Enabling SSL Connection with Internal Database].
+
+=== Configuring Client Certificate Authentication to Internal Database ===
+
+See [https://github.com/dogtagpki/pki/wiki/Configuring-Client-Certificate-Authentication-to-Internal-Database Configuring Client Certificate Authentication to Internal Database].
+
+=== Restricting Access to the Internal Database ===
+
+== Viewing Security Domain Configuration ==
+
+== Backing up and Restoring Certificate System ==
+
+=== Backing up and Restoring the LDAP Internal Database ===
+=== Backing up and Restoring the SQLite Internal Database ===
+=== Backing up and Restoring the Instance Directory ===
+
+== Running Self-Tests ==
+
+=== Running Self-Tests ===
+=== Configuring Self-Tests ===
+=== Modifying Self-Test Configuration ===
+
+== Configuring POSIX System ACLs ==
+
+= Managing Certificate System Users and Groups =
+
+== Disabling Multi-Roles Support ==
+
+== Managing Users and Groups for a CA, OCSP, KRA, or TKS ==
+
+=== Managing Groups ===
+
+==== Creating a New Group ====
+==== Changing Members in a Group ====
+
+=== Managing Users (Administrators, Agents, and Auditors) ===
+
+==== Creating Users ====
+==== Changing a Certificate System User's Certificate ====
+==== Renewing Administrator, Agent, and Auditor User Certificates ====
+==== Deleting a Certificate System User ====
+
+=== Preventing Users from Belonging to Multiple Roles ===
+
+== Creating and Managing Users for a TPS ==
+
+=== Searching for Users ===
+=== Adding Users ===
+=== Setting Profiles for Users ===
+=== Changing Roles for Users ===
+=== Renewing TPS Agent and Administrator Certificates ===
+=== Deleting Users ===
+
+== Configuring Access Control for Users for the CA, OCSP, DRM, and TKS ==
+
+=== Changing the Access Control Settings for the Subsystem ===
+=== Editing ACLs ===
+
+= Configuring Subsystem Logs =
+
+== Viewing Logs ==
+== Configuring Logs ==
+== Managing Audit Logs ==
+
+=== A List of Audit Events ===
+=== Enabling Signed Audit Logs after Installation ===
+=== Configuring Signed Audit Logs in the Console ===
+=== Handling Audit Logging Failures ===
+=== Signing Log Files ===
+
+== Managing Log Modules ==
+
+= Managing Subsystem Certificates =
+
+== Requesting Certificates through the Console ==
+
+=== Requesting Signing Certificates ===
+=== Requesting Other Certificates ===
+
+== Renewing Subsystem Certificates ==
+
+=== Re-keying Certificates in the End-Entities Forms ===
+=== Renewing Certificates in the Console ===
+=== Renewing Certificates Using certutil ===
+
+== Changing the Names of Subsystem Certificates ==
+== Using Cross-Pair Certificates ==
+
+=== Installing Cross-Pair Certificates ===
+=== Searching for Cross-Pair Certificates ===
+
+== Managing the Certificate Database ==
+
+=== Installing Certificates in the Certificate System Database ===
+=== Viewing Database Content ===
+=== Deleting Certificates from the Database ===
+
+== Changing the Trust Settings of a CA Certificate ==
+
+== Managing Tokens Used by the Subsystems ==
+
+=== Detecting Tokens ===
+=== Viewing Tokens ===
+=== Changing a Token's Password ===
+
+= References =
+
+* [[Agent Tasks]]

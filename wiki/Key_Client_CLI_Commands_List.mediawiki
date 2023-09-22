@@ -1,0 +1,49 @@
+= New CLI commands to be added =
+
+New CLI commands are required for accessing/testing the key and the key request resources.
+
+The following are the new commands we would like to have.
+
+1. '''key-show'''
+
+Required Parameters : key-id. Output: Print the KeyInfo object returned.
+
+2. '''key-request-show'''
+
+Required parameters: request-id. Output: Print the KeyRequestInfo object.
+
+3. '''key-find'''
+
+Required parameters: client-key-id. Output: Print the KeyInfo object returned.
+Since there will be only one active key for a given client key id, key-find will suffice.
+
+4. '''key-mod'''
+
+Required parameters: key-id, status=[active/inactive]. Output: Success/Exception
+
+5. '''key-template-show'''
+
+Required parameters: type = [approve/reject/cancel], format=[XML/JSON], output=[file_name]. Output: print/create a file with the request xml
+
+6. '''key-recover'''
+
+Required parameters: key-id. Optional parameters: b64Cert=[file path with the cert], input=[KeyRecoveryRequest.xml](future). 
+Output: Print KeyRequestInfo object(for now).
+
+7. '''key-archive'''
+
+Required parameters: input=[KeyArchiveRequest.xml]. Output: Print the KeyRequestInfo object.
+
+8. '''key-retrieve'''
+
+Required parameters: key-id. Optional parameters: input = [KeyRecoveryRequest.xml]. Output: Print/Write the KeyData object.
+
+9. '''key-generate'''
+
+Required parameters: input=[SymKeyGenerationRequest.xml]. Output: Print the KeyRequestInfo object.
+
+10,11,12. '''key-request-review'''
+
+Required parameters: request-id, action=[approve/reject/cancel].
+
+13. '''key-template-find'''

@@ -1,0 +1,354 @@
+= RELOCATION OF PROJECT ISSUES, REPOSITORIES, AND WIKI INFORMATION =
+
+The fedorahosted.org sunset occurred on Tuesday, February 28, 2017; this involved migration of the numerous products away from the use of its TRAC Issue Trackers, storage of various SVN and GIT repositories, and movement away from TRAC Wiki material.
+
+<table>
+<tr>
+<td><b>IMPORTANT:&nbsp;&nbsp;</b></td>
+<td>For all local PKI GIT repositories that were previously checked out from fedorahosted.org, please follow these instuctions (published on http://pki.fedoraproject.org/wiki/PKI_Developers).</td>
+</tr>
+</table>
+
+== 389 ==
+<ul>
+<table border=1>
+<tr>
+<th bgcolor=darkgrey>&nbsp;</th>
+<th bgcolor=darkgrey>Previous Location</th>
+<th bgcolor=darkgrey>Current Location</th>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Bugs/Issues/Tickets</th>
+<td valign=top><ul><li> https://fedorahosted.org/389/report</ul></td>
+<td valign=top><ul>
+<li> https://pagure.io/389-admin<br>
+<li> https://pagure.io/389-admin-console<br>
+<li> https://pagure.io/389-adminutil<br>
+<li> https://pagure.io/389-console<br>
+<li> https://pagure.io/389-ds-base<br>
+<li> https://pagure.io/389-ds-console<br>
+<li> https://pagure.io/389-dsgw</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Source Repositories</th>
+<td valign=top><ul><li> git clone ssh://git.fedorahosted.org/git/389.git<br><li> git clone git://git.fedorahosted.org/git/389.git</ul></td>
+<td valign=top><ul>
+<li> git clone ssh://git@pagure.io/389-admin.git<br>
+<li> git clone https://pagure.io/389-admin.git<br>
+<li> git clone ssh://git@pagure.io/389-admin-console.git<br>
+<li> git clone https://pagure.io/389-admin-console.git<br>
+<li> git clone ssh://git@pagure.io/389-adminutil.git<br>
+<li> git clone https://pagure.io/389-adminutil.git<br>
+<li> git clone ssh://git@pagure.io/389-console.git<br>
+<li> git clone https://pagure.io/389-console.git<br>
+<li> git clone ssh://git@pagure.io/389-ds-base.git<br>
+<li> git clone https://pagure.io/389-ds-base.git<br>
+<li> git clone ssh://git@pagure.io/389-ds-console.git<br>
+<li> git clone https://pagure.io/389-ds-console.git<br>
+<li> git clone ssh://git@pagure.io/389-dsgw.git<br>
+<li> git clone https://pagure.io/389-dsgw.git
+</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Wiki Information</th>
+<td valign=top><ul><li> https://port389.org/</ul></td>
+<td valign=top><ul><li> https://port389.org/</ul></td>
+</tr>
+</table>
+</ul>
+
+== coolkey ==
+<ul>
+<table border=1>
+<tr>
+<th bgcolor=darkgrey>&nbsp;</th>
+<th bgcolor=darkgrey>Previous Location</th>
+<th bgcolor=darkgrey>Current Location</th>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Bugs/Issues/Tickets</th>
+<td valign=top><ul><li> https://bugzilla.redhat.com/</ul></td>
+<td valign=top><ul><li> https://bugzilla.redhat.com/</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Source Repositories</th>
+<td valign=top><ul><li> svn co svn+ssh://svn.fedorahosted.org/svn/coolkey/</ul></td>
+<td valign=top><ul><li> git clone git@github.com:dogtagpki/coolkey.git<br><li> git clone https://github.com/dogtagpki/coolkey.git</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Wiki Information</th>
+<td valign=top><ul><li> http://directory.fedoraproject.org/docs/389ds/FAQ/esc-guide.html</ul></td>
+<td valign=top><ul><li> http://pki.fedoraproject.org/wiki/CoolKey</ul></td>
+</tr>
+</table>
+</ul>
+
+== esc ==
+<ul>
+<table border=1>
+<tr>
+<th bgcolor=darkgrey>&nbsp;</th>
+<th bgcolor=darkgrey>Previous Location</th>
+<th bgcolor=darkgrey>Current Location</th>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Bugs/Issues/Tickets</th>
+<td valign=top><ul><li> https://bugzilla.redhat.com/</ul></td>
+<td valign=top><ul><li> https://bugzilla.redhat.com/</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Source Repositories</th>
+<td valign=top><ul><li> svn co svn+ssh://svn.fedorahosted.org/svn/esc/</ul></td>
+<td valign=top><ul><li> git clone git@github.com:dogtagpki/esc.git<br><li> git clone https://github.com/dogtagpki/esc.git</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Wiki Information</th>
+<td valign=top><ul><li> http://directory.fedoraproject.org/docs/389ds/FAQ/esc-guide.html</ul></td>
+<td valign=top><ul><li> http://pki.fedoraproject.org/wiki/ESC</ul></td>
+</tr>
+</table>
+</ul>
+
+== jss ==
+<ul>
+<table border=1>
+<tr>
+<th bgcolor=darkgrey>&nbsp;</th>
+<th bgcolor=darkgrey>Current Location</th>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Bugs/Issues/Tickets</th>
+<td valign=top><ul><li> https://bugzilla.mozilla.org/</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Source Repositories</th>
+<td valign=top><ul><li> hg clone https://hg.mozilla.org/projects/jss</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Wiki Information</th>
+<td valign=top><ul><li> https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS/JSS</ul></td>
+</tr>
+</table>
+</ul>
+
+== ldapjdk ==
+<ul>
+<table border=1>
+<tr>
+<th bgcolor=darkgrey>&nbsp;</th>
+<th bgcolor=darkgrey>Current Location</th>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Bugs/Issues/Tickets</th>
+<td valign=top><ul><li> https://bugzilla.mozilla.org/</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Source Repositories</th>
+<td valign=top><ul><li> hg clone https://hg.mozilla.org/projects/ldapjdk</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Wiki Information</th>
+<td valign=top><ul><li> http://www-archive.mozilla.org/directory/javaldapsp-relnotes.html</ul></td>
+</tr>
+</table>
+</ul>
+
+== legacy-pki ==
+<ul>
+<table border=1>
+<tr>
+<th bgcolor=darkgrey>&nbsp;</th>
+<th bgcolor=darkgrey>Previous Location</th>
+<th bgcolor=darkgrey>Current Location</th>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Bugs/Issues/Tickets</th>
+<td valign=top><ul><li> https://bugzilla.redhat.com/</ul></td>
+<td valign=top><ul><li> https://bugzilla.redhat.com/</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Source Repositories</th>
+<td valign=top><ul><li> svn co svn+ssh://svn.fedorahosted.org/svn/pki/branches/PKI_8_1_ADVANCED_ERRATA_BRANCH/pki</ul></td>
+<td valign=top><ul><li> git clone git@github.com:dogtagpki/legacy-pki.git<br><li> git clone https://github.com/dogtagpki/legacy-pki.git<br><li> '''NOTE:&nbsp;&nbsp; Use [https://kojipkgs.fedoraproject.org//packages/git/1.8.2.1/2.el5/x86_64/git-1.8.2.1-2.el5.x86_64.rpm git-1.8.2.1-2.el5.x86_64.rpm] EPEL 5 build!</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Wiki Information</th>
+<td valign=top><ul><li> http://pki.fedoraproject.org/wiki/PKI_Main_Page</ul></td>
+<td valign=top><ul><li> http://pki.fedoraproject.org/wiki/PKI_Main_Page</ul></td>
+</tr>
+</table>
+</ul>
+
+== mod_nss ==
+<ul>
+<table border=1>
+<tr>
+<th bgcolor=darkgrey>&nbsp;</th>
+<th bgcolor=darkgrey>Previous Location</th>
+<th bgcolor=darkgrey>Current Location</th>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Bugs/Issues/Tickets</th>
+<td valign=top><ul><li> https://fedorahosted.org/mod_nss/report</ul></td>
+<td valign=top><ul><li> https://pagure.io/mod_nss</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Source Repositories</th>
+<td valign=top><ul><li> git clone ssh://git.fedorahosted.org/git/mod_nss.git<br><li> git clone git://git.fedorahosted.org/git/mod_nss.git</ul></td>
+<td valign=top><ul><li> git clone ssh://git@pagure.io/mod_nss.git<br><li> git clone https://pagure.io/mod_nss.git</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Wiki Information</th>
+<td valign=top><ul><li> https://fedorahosted.org/mod_nss</ul></td>
+<td valign=top><ul><li> https://pagure.io/mod_nss</ul></td>
+</tr>
+</table>
+</ul>
+
+== mod_revocator ==
+<ul>
+<table border=1>
+<tr>
+<th bgcolor=darkgrey>&nbsp;</th>
+<th bgcolor=darkgrey>Previous Location</th>
+<th bgcolor=darkgrey>Current Location</th>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Bugs/Issues/Tickets</th>
+<td valign=top><ul><li> https://fedorahosted.org/mod_revocator/report</ul></td>
+<td valign=top><ul><li> https://pagure.io/mod_revocator</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Source Repositories</th>
+<td valign=top><ul><li> git clone ssh://git.fedorahosted.org/git/mod_revocator.git<br><li> git clone git://git.fedorahosted.org/git/mod_revocator.git</ul></td>
+<td valign=top><ul><li> git clone ssh://git@pagure.io/mod_revocator.git<br><li> git clone https://pagure.io/mod_revocator.git</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Wiki Information</th>
+<td valign=top><ul><li> https://fedorahosted.org/mod_revocator</ul></td>
+<td valign=top><ul><li> https://pagure.io/mod_revocator</ul></td>
+</tr>
+</table>
+</ul>
+
+== nspr ==
+<ul>
+<table border=1>
+<tr>
+<th bgcolor=darkgrey>&nbsp;</th>
+<th bgcolor=darkgrey>Current Location</th>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Bugs/Issues/Tickets</th>
+<td valign=top><ul><li> https://bugzilla.mozilla.org/</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Source Repositories</th>
+<td valign=top><ul><li> hg clone https://hg.mozilla.org/projects/nspr</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Wiki Information</th>
+<td valign=top><ul><li> https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSPR</ul></td>
+</tr>
+</table>
+</ul>
+
+== nss ==
+<ul>
+<table border=1>
+<tr>
+<th bgcolor=darkgrey>&nbsp;</th>
+<th bgcolor=darkgrey>Current Location</th>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Bugs/Issues/Tickets</th>
+<td valign=top><ul><li> https://bugzilla.mozilla.org/</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Source Repositories</th>
+<td valign=top><ul><li> hg clone https://hg.mozilla.org/projects/nss</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Wiki Information</th>
+<td valign=top><ul><li> https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS</ul></td>
+</tr>
+</table>
+</ul>
+
+== pki ==
+<ul>
+<table border=1>
+<tr>
+<th bgcolor=darkgrey>&nbsp;</th>
+<th bgcolor=darkgrey>Previous Location</th>
+<th bgcolor=darkgrey>Current Location</th>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Bugs/Issues/Tickets</th>
+<td valign=top><ul><li> https://fedorahosted.org/pki/report</ul></td>
+<td valign=top><ul><li> https://pagure.io/dogtagpki</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Source Repositories</th>
+<td valign=top><ul><li> git clone ssh://git.fedorahosted.org/git/pki.git<br><li> git clone git://git.fedorahosted.org/git/pki.git</ul></td>
+<td valign=top><ul><li> git clone git@github.com:dogtagpki/pki.git<br><li> git clone https://github.com/dogtagpki/pki.git</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Wiki Information</th>
+<td valign=top><ul><li> http://pki.fedoraproject.org/wiki/PKI_Main_Page</ul></td>
+<td valign=top><ul><li> http://pki.fedoraproject.org/wiki/PKI_Main_Page</ul></td>
+</tr>
+</table>
+</ul>
+
+== nuxwdog ==
+<ul>
+<table border=1>
+<tr>
+<th bgcolor=darkgrey>&nbsp;</th>
+<th bgcolor=darkgrey>Previous Location</th>
+<th bgcolor=darkgrey>Current Location</th>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Bugs/Issues/Tickets</th>
+<td valign=top><ul><li> https://fedorahosted.org/nuxwdog/report</ul></td>
+<td valign=top><ul><li> https://pagure.io/nuxwdog</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Source Repositories</th>
+<td valign=top><ul><li> svn co http://svn.fedorahosted.org/svn/nuxwdog</ul></td>
+<td valign=top><ul><li> git clone git@github.com:dogtagpki/nuxwdog.git<br><li> git clone https://github.com/dogtagpki/nuxwdog.git</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Wiki Information</th>
+<td valign=top><ul><li> https://fedorahosted.org/nuxwdog/</ul></td>
+<td valign=top><ul><li> http://pki.fedoraproject.org/wiki/Nuxwdog</ul></td>
+</tr>
+</table>
+</ul>
+
+== tomcatjss ==
+<ul>
+<table border=1>
+<tr>
+<th bgcolor=darkgrey>&nbsp;</th>
+<th bgcolor=darkgrey>Previous Location</th>
+<th bgcolor=darkgrey>Current Location</th>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Bugs/Issues/Tickets</th>
+<td valign=top><ul><li> https://fedorahosted.org/tomcatjss/report</ul></td>
+<td valign=top><ul><li> https://pagure.io/tomcatjss</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Source Repositories</th>
+<td valign=top><ul><li> svn co http://svn.fedorahosted.org/svn/tomcatjss</ul></td>
+<td valign=top><ul><li> git clone git@github.com:dogtagpki/tomcatjss.git<br><li> git clone https://github.com/dogtagpki/tomcatjss.git</ul></td>
+</tr>
+<tr>
+<th bgcolor=lightgrey>Wiki Information</th>
+<td valign=top><ul><li> http://pki.fedoraproject.org/wiki/TomcatJSS</ul></td>
+<td valign=top><ul><li> http://pki.fedoraproject.org/wiki/TomcatJSS</ul></td>
+</tr>
+</table>
+</ul>

@@ -1,0 +1,50 @@
+= Overview =
+
+The PKI server provides a web interface to access its services:
+
+* [[CA UI]]
+* [[KRA UI]]
+* [https://github.com/dogtagpki/pki/wiki/TPS-UI TPS UI]
+
+= Initialization =
+
+Find Firefox profile name:
+
+ $ FIREFOX_DIR=$HOME/.mozilla/firefox
+ $ PROFILE=`cat $FIREFOX_DIR/profiles.ini | \
+    awk '/\[Profile0\]/{flag=1;next}/^$/{flag=0}flag' | \
+    grep Path= | \
+    awk -F= '{print $2}'`
+
+Import CA signing certificate into Firefox NSS database:
+
+ $ pki-server cert-export ca_signing --cert-file ca_signing.crt
+ $ certutil -A -d sql:$FIREFOX_DIR/$PROFILE -n ca_signing -i ca_signing.crt -t CT,C,C
+
+Import CA admin certificate into Firefox NSS database:
+
+ $ pki -d $FIREFOX_DIR/$PROFILE pkcs12-import \
+     --pkcs12-file ~/.dogtag/pki-tomcat/ca_admin_cert.p12 \
+     --pkcs12-password-file ~/.dogtag/pki-tomcat/ca/pkcs12_password.conf
+
+Verify that the certificates are imported correctly with the following command:
+
+  $ certutil -L -d sql:$FIREFOX_DIR/$PROFILE
+
+= Roles =
+
+* End-entity
+* Administrator
+* Agent
+* Auditor
+
+= Authentication =
+
+* Anonymous
+* Directory
+* User Certificate
+
+= References =
+
+* [https://github.com/dogtagpki/pki/wiki/PKI-CLI PKI CLI]
+* [[Firefox]]

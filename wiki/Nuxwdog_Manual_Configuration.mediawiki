@@ -1,0 +1,70 @@
+Create a link to nuxwdog library:
+
+ $ ln -s /usr/lib/java/nuxwdog.jar /var/lib/pki/<font color="red">pki-tomcat</font>/common/lib
+
+Modify environment variables at /etc/sysconfig/<font color="red">pki-tomcat</font>:
+
+ JAVA_OPTS="... -Djava.library.path=/usr/lib64/nuxwdog-jni"
+ 
+ # Use Nuxwdog to start server
+ USE_NUXWDOG="true"
+
+Create a nuxwdog configuration at /var/lib/pki/<font color="red">pki-tomcat</font>/conf/nuxwdog.conf:
+
+ ExeFile /usr/lib/jvm/jre-1.8.0-openjdk/bin/java
+ ExeArgs /usr/lib/jvm/jre-1.8.0-openjdk/bin/java \
+  -DRESTEASY_LIB=/usr/share/java/resteasy-base \        
+  -Djava.library.path=/usr/lib64/nuxwdog-jni  \
+  -classpath /usr/share/tomcat/bin/bootstrap.jar:/usr/share/tomcat/bin/tomcat-juli.jar:/usr/share/java/commons-daemon.jar \
+  -Dcatalina.base=/var/lib/pki/<font color="red">pki-tomcat</font> \
+  -Dcatalina.home=/usr/share/tomcat \ 
+  -Djava.endorsed.dirs= \
+  -Djava.io.tmpdir=/var/lib/pki/<font color="red">pki-tomcat</font>/temp \
+  -Djava.util.logging.config.file=/var/lib/pki/<font color="red">pki-tomcat</font>/conf/logging.properties \
+  -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager org.apache.catalina.startup.Bootstrap start
+ TmpDir /var/lib/pki/<font color="red">pki-tomcat</font>/logs/pids 
+ ChildSecurity 1
+ ExeOut /var/lib/pki/<font color="red">pki-tomcat</font>/logs/catalina.out
+ ExeErr /var/lib/pki/<font color="red">pki-tomcat</font>/logs/catalina.out
+ ExeBackground 1
+ PidFile /var/lib/pki/<font color="red">pki-tomcat</font>/logs/wd-<font color="red">pki-tomcat</font>.pid
+ ChildPidFile /var/lib/pki/<font color="red">pki-tomcat</font>/logs/<font color="red">pki-tomcat</font>.pid
+
+Modify Tomcat configuration at /var/lib/pki/<font color="red">pki-tomcat</font>/conf/server.xml:
+
+ <Server port="8005" shutdown="SHUTDOWN">
+ 
+     <Listener className="com.netscape.cms.tomcat.PKIListener"/>
+ 
+     <Service name="Catalina">
+ 
+         <Connector name="Secure"
+             ...
+             passwordClass="com.netscape.cms.tomcat.NuxwdogPasswordStore"
+             passwordFile="/var/lib/pki/<font color="red">pki-tomcat</font>/ca/conf/CS.cfg"
+         />
+ 
+    </Service>
+ 
+ </Server>
+
+Replace systemd command:
+
+ $ rm -f /etc/systemd/system/pki-tomcatd.target.wants/pki-tomcatd@<font color="red">pki-tomcat</font>.service
+ $ ln -s /lib/systemd/system/pki-tomcatd-nuxwdog@.service /etc/systemd/system/pki-tomcatd-nuxwdog.target.wants/pki-tomcatd-nuxwdog@<font color="red">pki-tomcat</font>.service
+ $ systemctl daemon-reload
+
+Edit PKI configuration at /var/lib/pki/pki-tomcat/conf/ca/CS.cfg:
+
+ passwordClass=com.netscape.cmsutil.password.NuxwdogPasswordStore
+
+If any of the system certificates reside on cryptographic tokens other than the internal NSS token, the password.conf file
+will include directives like hardware-TOKEN_NAME=password.
+
+In that case, add the following parameter to CS.cfg.
+
+  cms.tokenList=TOKEN_NAME
+
+= References =
+
+* [[Nuxwdog]]

@@ -1,0 +1,200 @@
+= Installation =
+
+To install PostgreSQL server:
+
+<pre>
+$ dnf install postgresql-server
+</pre>
+
+To install PostgreSQL client:
+
+<pre>
+$ dnf install postgresql
+</pre>
+
+To install PostgreSQL JDBC driver:
+
+<pre>
+$ dnf install postgresql-jdbc
+</pre>
+
+The driver is located at <code>/usr/share/java/postgresql-jdbc/postgresql.jar</code>.
+
+= Configuration =
+
+The configuration files are located at:
+* /var/lib/pgsql/data/postgresql.conf
+* /var/lib/pgsql/data/pg_hba.conf
+
+To enable remote access, edit /var/lib/pgsql/data/postgresql.conf as follows:
+
+<pre>
+listen_addresses = '*'
+</pre>
+
+and edit /var/lib/pgsql/data/pg_hba.conf as follows:
+
+<pre>
+#host    all             all             127.0.0.1/32            ident
+host    all             all             127.0.0.1/32            md5
+
+#host    all             all             ::1/128                 ident
+host    all             all             ::1/128                 md5
+
+host    all             all             0.0.0.0/0               md5
+</pre>
+
+then restart the server:
+
+<pre>
+$ systemctl restart postgresql
+</pre>
+
+= Initializing Database =
+
+To initialize PostgreSQL:
+
+<pre>
+$ postgresql-setup --initdb --unit postgresql
+</pre>
+
+= Systemd Service =
+
+To start the PostgreSQL service:
+
+<pre>
+$ systemctl start postgresql
+</pre>
+
+To stop the PostgreSQL service:
+
+<pre>
+$ systemctl stop postgresql
+</pre>
+
+= Connecting to Database =
+
+To connect to the local server as the root user:
+
+<pre>
+$ sudo -u postgres psql
+</pre>
+
+To connect to a specific database on a local server as the root user:
+
+<pre>
+$ sudo -u postgres psql -d <database>
+</pre>
+
+To connect to a specific database on a local server as a regular user:
+
+<pre>
+$ sudo -u <username> psql -d <database>
+</pre>
+
+To connect to a specific database on a remote server:
+
+<pre>
+$ psql -h <hostname> -p <port> -d <database> -U <username>
+</pre>
+
+or
+
+<pre>
+$ psql postgres://<username>:<password>@<hostname>:<port>/<database>
+</pre>
+
+To execute a script:
+
+<pre>
+$ psql ... -f <path>
+</pre>
+
+= Managing Users =
+
+To list users:
+
+<pre>
+psql> \du
+</pre>
+
+To create a user:
+
+<pre>
+psql> create user <username> with password '<password>';
+</pre>
+
+To drop a user:
+
+<pre>
+psql> drop user <username>;
+</pre>
+
+= Managing Databases =
+
+To list databases:
+
+<pre>
+psql> \l
+</pre>
+
+To create a database:
+
+<pre>
+psql> create database <datatabase> owner <username>;
+</pre>
+
+To show the current database:
+
+<pre>
+psql> select current_database();
+</pre>
+
+To switch to another database:
+
+<pre>
+psql> \c <database>
+</pre>
+
+To drop a database;
+
+<pre>
+psql> drop database <database>;
+</pre>
+
+= Listing Tables =
+
+<pre>
+psql> \dt
+</pre>
+
+= Describing a Table =
+
+<pre>
+psql> \d <name>
+</pre>
+
+= Container =
+
+To run PostgreSQL container:
+
+<pre>
+$ podman run \
+    --name postgres \
+    --rm \
+    --network example \
+    -e POSTGRES_PASSWORD=Secret.123 \
+    -it \
+    postgres
+</pre>
+
+= See Also =
+
+* [https://www.postgresql.org/ PostgreSQL]
+* [https://www.elephantsql.com/ ElephantSQL]
+* [https://fedoraproject.org/wiki/PostgreSQL PostgreSQL on Fedora]
+* [https://hub.docker.com/_/postgres DockerHub postgres]
+* [https://www.openshift.com/blog/deploy-postgresql-in-openshift-backed-by-openshift-container-storage Deploy PostgreSQL in OpenShift backed by OpenShift Container Storage]
+* [https://jdbc.postgresql.org/documentation/head/connect.html Chapter 3. Initializing the Driver]
+* [https://jdbc.postgresql.org/documentation/head/ssl-client.html Chapter 4. Using SSL]
+* [https://github.com/pgjdbc/pgjdbc pgjdbc/pgjdbc]

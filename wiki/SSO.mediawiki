@@ -1,0 +1,28 @@
+= Keycloak =
+
+See [[Keycloak]].
+
+= Ipsilon =
+
+See also:
+
+* [https://pagure.io/ipsilon Ipsilon]
+
+= OneLogin =
+
+ $ git clone https://github.com/onelogin/java-saml.git
+ $ git checkout v2.4.0
+ $ mvn compile
+ $ mvn eclipse:eclipse
+ $ mvn -Declipse.workspace=<path-to-eclipse-workspace> eclipse:add-maven-repo
+
+See also:
+
+* [https://developers.onelogin.com/saml/java Code Your Java App to Provide SSO via OneLogin]
+* [https://github.com/onelogin/java-saml OneLogin's SAML Java Toolkit]
+
+= See Also =
+
+* [https://wiki.shibboleth.net/confluence/display/OS30/Home OpenSAML 3]
+* [https://blog.samlsecurity.com/ Decrypting a SAML Assertion in OpenSAML v3]
+* [https://build.shibboleth.net/nexus/service/local/repositories/releases/archive/org/opensaml/opensaml/2.5.3/opensaml-2.5.3-javadoc.jar/!/index.html OpenSAML-J 2.5.3 API]

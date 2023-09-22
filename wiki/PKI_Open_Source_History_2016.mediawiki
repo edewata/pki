@@ -1,0 +1,1117 @@
+= Open Source History (2016) =
+== Dogtag Certificate Server 10.3.0 (Alpha 1) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[03/07/2016] ==
+Dogtag Certificate System 10.3.0.a1 represents the first alpha of Dogtag 10.3, and is associated with Fedora 24.
+
+<font size="+1"><b>Project Name:</b></font>
+* '''''Dogtag Certificate System 10.3.0.a1'''''
+
+<font size="+1"><b>Releases:</b></font>
+* [03/07/2016] Dogtag Certificate Server 10.3.0.a1 [32-bit & 64-bit Fedora 24]
+
+<font><b>Packages</b></font>
+* Fedora 24
+** dogtag-pki-10.3.0.a1-1.fc24       [2016-03-08]
+** dogtag-pki-theme-10.3.0.a1-1.fc24 [2016-03-07]
+** pki-core-10.3.0.a1-2.fc24         [2016-03-23]
+** pki-console-10.3.0.a1-1.fc24      [2016-03-08]
+* Fedora 25
+** dogtag-pki-10.3.0.a1-1.fc25       [2016-03-08]
+** dogtag-pki-theme-10.3.0.a1-1.fc25 [2016-03-07]
+** pki-core-10.3.0.a1-2.fc25         [2016-03-23]
+** pki-console-10.3.0.a1-1.fc25      [2016-03-08]
+
+<font size="+1"><b>Upgrade Notes:</b></font>
+
+After running fedup, simply use dnf (as necessary) to update existing packages.
+
+PKI Instance updates from 10.2 to 10.3.0.a1 are not supported.
+
+<font size="+1"><b>Highlights since Dogtag 10.2.6</b></font>
+
+The primary purpose of Dogtag 10.3 was to continue adding features and stream-lining the java Tomcat-based TPS process that was created in Dogtag 10.2. 
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the [https://fedorahosted.org/pki/report/6 PKI TRAC Ticket Instance]:
+
+* 10.3.0.a1 - page 12 (15 tickets)
+* 10.3 - page 12 (64 tickets)
+
+<font size="+1"><b>Detailed Changes since Dogtag 10.2.6</b></font>
+
+The following list of dependencies was gleaned from the following procedure (which includes tickets from the 10.3 and 10.3.0.a1 milestones):
+
+    Dogtag 10_3:      [08/08/2015[ (master --> 10.3.0-0.1)
+    Dogtag 10.3.0.a1: [03/07/2016] (master --> end of 10.3.0.a1)
+    
+    Run the following commands on the "master" branch:
+    
+        # git --no-pager log --since "08/08/2015" --until "03/07/2016" > ../history_10.3.0.a1
+    
+    and compose the following list.
+
+<font size="+1"><b>Server Platforms:</b></font>
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.3.0.a1</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 24 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 24 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 25 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 25 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Dogtag Certificate Server 10.3.0 (Alpha 2) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[04/07/2016] ==
+Dogtag Certificate System 10.3.0.a2 represents the second alpha of Dogtag 10.3, and is associated with Fedora 24.
+
+<font size="+1"><b>Project Name:</b></font>
+* '''''Dogtag Certificate System 10.3.0.a2'''''
+
+<font size="+1"><b>Releases:</b></font>
+* [04/07/2016] Dogtag Certificate Server 10.3.0.a2 [32-bit & 64-bit Fedora 24]
+
+<font><b>Packages</b></font>
+* Fedora 24
+** dogtag-pki-10.3.0.a2-1.fc24       [2016-04-07]
+** dogtag-pki-theme-10.3.0.a2-1.fc24 [2016-04-07]
+** pki-core-10.3.0.a2-2.fc24         [2016-04-09]
+** pki-console-10.3.0.a2-1.fc24      [2016-04-08]
+* Fedora 25
+** dogtag-pki-10.3.0.a2-1.fc25       [2016-04-07]
+** dogtag-pki-theme-10.3.0.a2-1.fc25 [2016-04-07]
+** pki-core-10.3.0.a2-2.fc25         [2016-04-09]
+** pki-console-10.3.0.a2-1.fc25      [2016-04-08]
+
+<font size="+1"><b>Upgrade Notes:</b></font>
+
+After running fedup, simply use dnf (as necessary) to update existing packages.
+
+PKI Instance updates from 10.2 or 10.3.0.a1 to 10.3.0.a2 are not supported.
+
+<font size="+1"><b>Highlights since Dogtag 10.3.0.a1</b></font>
+
+The primary purpose of Dogtag 10.3 was to continue adding features and stream-lining the java Tomcat-based TPS process that was created in Dogtag 10.2. 
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the [https://fedorahosted.org/pki/report/6 PKI TRAC Ticket Instance]:
+
+* 10.3.0.a2 - pages 11-12 (16 tickets)
+
+<font size="+1"><b>Detailed Changes since Dogtag 10.3.0.a1</b></font>
+
+The following list of dependencies was gleaned from the following procedure:
+
+    Dogtag 10.3.0.a2: [03/08/2016] (master --> beginning of 10.3.0.a2)
+                      [04/07/2016] (master --> end of 10.3.0.a2)
+    
+    Run the following commands on the "master" branch:
+    
+        # git --no-pager log --since "03/08/2016" --until "04/07/2016" > ../history_10.3.0.a2
+    
+    and compose the following list.
+
+<font size="+1"><b>Server Platforms:</b></font>
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.3.0.a2</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 24 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 24 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 25 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 25 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Dogtag Certificate Server 10.3.0 (Beta 1) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[04/19/2016] ==
+Dogtag Certificate System 10.3.0.b1 represents the first beta of Dogtag 10.3, and is associated with Fedora 24.
+
+<font size="+1"><b>Project Name:</b></font>
+* '''''Dogtag Certificate System 10.3.0.b1'''''
+
+<font size="+1"><b>Releases:</b></font>
+* [04/19/2016] Dogtag Certificate Server 10.3.0.b1 [32-bit & 64-bit Fedora 24]
+
+<font><b>Packages</b></font>
+* Fedora 24
+** dogtag-pki-10.3.0.b1-1.fc24       [2016-04-18]
+** dogtag-pki-theme-10.3.0.b1-1.fc24 [2016-04-18]
+** pki-core-10.3.0.b1-1.fc24         [2016-04-19]
+** pki-console-10.3.0.b1-1.fc24      [2016-04-19]
+* Fedora 25
+** dogtag-pki-10.3.0.b1-1.fc25       [2016-04-18]
+** dogtag-pki-theme-10.3.0.b1-1.fc25 [2016-04-18]
+** pki-core-10.3.0.b1-1.fc25         [2016-04-19]
+** pki-console-10.3.0.b1-1.fc25      [2016-04-19]
+
+<font size="+1"><b>Upgrade Notes:</b></font>
+
+After running fedup, simply use dnf (as necessary) to update existing packages.
+
+PKI Instance updates from 10.2, 10.3.0.a1, or 10.3.0.a2 to 10.3.0.b1 are not supported.
+
+<font size="+1"><b>Highlights since Dogtag 10.2.6</b></font>
+
+The primary purpose of Dogtag 10.3 was to continue adding features and stream-lining the java Tomcat-based TPS process that was created in Dogtag 10.2. 
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the [https://fedorahosted.org/pki/report/6 PKI TRAC Ticket Instance]:
+
+* 10.3.0.b1 - page 11 (7 tickets)
+
+<font size="+1"><b>Detailed Changes since Dogtag 10.3.0.a2</b></font>
+
+The following list of dependencies was gleaned from the following procedure:
+
+    Dogtag 10.3.0.b1: [04/08/2016] (master --> start of 10.3.0.b1)
+                      [04/19/2016] (master --> end of 10.3.0.b1)
+    
+    Run the following commands on the "master" branch:
+    
+        # git --no-pager log --since "04/08/2016" --until "04/19/2016" > ../history_10.3.0.b1
+    
+    and compose the following list.
+
+<font size="+1"><b>Server Platforms:</b></font>
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.3.0.b1</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 24 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 24 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 25 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 25 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Dogtag Certificate Server 10.3.1 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[05/17/2016] ==
+Dogtag Certificate System 10.3.1 represents the first release of Dogtag 10.3, and is associated with Fedora 24.
+
+<font size="+1"><b>Project Name:</b></font>
+* '''''Dogtag Certificate System 10.3.1'''''
+
+<font size="+1"><b>Releases:</b></font>
+* [05/17/2016] Dogtag Certificate Server 10.3.1 [32-bit & 64-bit Fedora 24]
+
+<font><b>Packages</b></font>
+* Fedora 24
+** dogtag-pki-10.3.1-1.fc24       [2016-05-17]
+** dogtag-pki-theme-10.3.1-2.fc24 [2016-05-17]
+** pki-core-10.3.1-1.fc24         [2016-05-17]
+** pki-console-10.3.1-1.fc24      [2016-05-17]
+* Fedora 25
+** dogtag-pki-10.3.1-1.fc25       [2016-05-17]
+** dogtag-pki-theme-10.3.1-2.fc25 [2016-05-17]
+** pki-core-10.3.1-1.fc25         [2016-05-17]
+** pki-console-10.3.1-1.fc25      [2016-05-17]
+
+<font size="+1"><b>Upgrade Notes:</b></font>
+
+After running fedup, simply use dnf (as necessary) to update existing packages.
+
+PKI Instance updates from 10.3.0.a1, 10.3.0.a2, or 10.3.0.b1 to 10.3.1 are not supported.
+
+<font size="+1"><b>Highlights since Dogtag 10.3.0.b1</b></font>
+
+The primary purpose of Dogtag 10.3 was to continue adding features and stream-lining the java Tomcat-based TPS process that was created in Dogtag 10.2. 
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the [https://fedorahosted.org/pki/report/6 PKI TRAC Ticket Instance]:
+
+* 10.3.1 - page 11 (51 tickets)
+
+<font size="+1"><b>Detailed Changes since Dogtag 10.3.0.b1</b></font>
+
+The following list of dependencies was gleaned from the following procedure:
+
+    Dogtag 10.3.1:    [04/20/2016] (master --> start of 10.3.1)
+                      [05/17/2016] (master --> end of 10.3.1)
+    
+    Run the following commands on the "master" branch:
+    
+        # cd pki
+        
+        # git --no-pager log --since "04/20/2016" --until "05/17/2016" > ../history_10.3.1
+        
+        # cd ..
+        
+        # grep "Author:" history_10.3.1 | sort -u
+        Author: Ade Lee <alee@redhat.com>
+        Author: Christina Fu <cfu@redhat.com>
+        Author: Endi S. Dewata <edewata@redhat.com>
+        Author: Fraser Tweedale <ftweedal@redhat.com>
+        Author: Jack Magne <jmagne@dhcp-16-206.sjc.redhat.com>
+        Author: Matthew Harmsen <mharmsen@pki.usersys.redhat.com>
+        Author: Matthew Harmsen <mharmsen@redhat.com>
+        
+        # vi 10.3.1.log
+          * alee
+          * cfu
+          * edewata
+          * ftweedal
+          * jmagne
+          * mharmsen
+        
+    From history_10.3.1, manually add tickets/check-ins per user to 10.3.1.log to compose the following list.
+
+* alee (7)
+** 1247 - Fix error output when request is rejected
+** 2041 - Add authz realm check for cert enrollment
+** 2041 - Add migration script for realm changes in registry.cfg
+** 2043 - Add CLI to check system certificate status
+** 2043 - Add validity check for the signing certificate in pkispawn
+** Fix existing ca setup to work with HSM
+** Fix problem in creating certificate requests
+* cfu (2)
+** 1508 - Missing token prefix for connectors in TPS Installation with HSM
+** 2303 - Key recovery fails with KRA on lunaSA
+* edewata (29)
+** 1290 - Updated default TPS token state transitions.
+** 1654 - Added log messages for pre-op mode.
+** 1667 - Renamed pki-server ca-db-upgrade to db-upgrade.
+** 1736 - Removed unused code for existing CA installation.
+** 2043 - Fixed pki-server subsystem-cert-validate command.
+** 2261 - Fixed TPS UI navigation.
+** 2262 - Fixed TPS UI navigation.
+** 2264 - Removed unused TPS user fields and group.
+** 2265 - Removed unused TPS user fields and group.
+** 2266 - Removed unused TPS user fields and group.
+** 2268 - Replaced TPS OP_DO_TOKEN activity.
+** 2278 - Renamed CS.cfg.in to CS.cfg.<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Simplified slot substitution.<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Added deployment parameters for number ranges.
+** 2286 - Refactored TokenStatus enumeration.<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Renamed token status TEMP_LOST to SUSPENDED.
+** 2287 - Added token status UNFORMATTED.<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Added warning message for token reuse.
+** 2288 - Renamed token status READY to FORMATTED.<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Renamed token status UNINITIALIZED to READY.
+** 2296 - Fixed token status search filter.
+** 2304 - Removed default certificate validity delay.
+** 2312 - Fixed missing CSR extensions for external CA case.
+** Added TPSCertRecord.getSerialNumberInBigInteger().
+** Moved TPSTokendb.tdbGetTokenEntry() invocations.
+** Added TPSTokendb.revokeCert() and unrevokeCert().
+** Fixed activity logs for certificate revocations.
+** Updated TPS UI version number.
+** Removed unused variables in deployment scriptlets.
+** Fixed build issue with apache-commons-codec 1.8.
+** Fixed problem uninstalling standalone KRA.
+** Fixed duplicate executions of finalization scriptlet.
+** Fixed install-only message in external CA case.
+** Fixed error handling ConfigurationUtils.handleCertRequest().
+* ftweedal (8)
+** 1618 - Lightweight CAs: add issuer DN and serial to AuthorityData
+** 1625 - Lightweight CAs: fix bad import in key retriever script<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Lightweight CAs: accept "host-authority" as valid parent<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Lightweight CAs: allow specifying authority via ProfileSubmitServlet<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Lightweight CAs: add IPACustodiaKeyRetriever<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Lightweight CAs: add key retrieval framework<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Add ca-authority-key-export command<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Add method CryptoUtil.importPKIArchiveOptions<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Lightweight CAs: authority schema changes
+** 1667 - Add pki-server ca-db-upgrade command
+** 2301 - Fix NSSDB certificate search method
+** 2317 - Reject cert request if resultant subject DN is invalid
+** 2321 - Support certificate search by issuer DN.
+** 2322 - Include issuer DN in CertDataInfo
+** Lightweight CAs: add missing authoritySerial attr to default schema
+* jmagne (3)
+** 1636 - TPS auth special characters fix.
+** 1921 - Update default values of connectionTimeout to format smart cards
+** Enhance tkstool for capabilities and security
+* mharmsen (6)
+** 856 - Fixed incorrect clone installation summary
+** 1669 - Fixed adminEnroll servlet browser import issue
+** 2248 - Removed pkidaemon support of apache instances
+** 2249 - fix bashisms
+** 2306 - Detect inability to submit ECC CSR on Chrome
+** 2323 - Added Chrome keygen warning
+
+<font size="+1"><b>Server Platforms:</b></font>
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.3.1</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 24 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 24 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 25 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 25 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Dogtag Certificate Server 10.3.2 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[06/07/2016] ==
+Dogtag Certificate System 10.3.2 represents the second release of Dogtag 10.3, and is associated with Fedora 24.
+
+<font size="+1"><b>Project Name:</b></font>
+* '''''Dogtag Certificate System 10.3.2'''''
+
+<font size="+1"><b>Releases:</b></font>
+* [06/07/2016] Dogtag Certificate Server 10.3.2 [32-bit & 64-bit Fedora 24]
+
+<font><b>Packages</b></font>
+* Fedora 24
+** dogtag-pki-10.3.2-1.fc24       [2016-06-07]
+** dogtag-pki-theme-10.3.2-2.fc24 [2016-06-08]
+** pki-core-10.3.2-4.fc24         [2016-06-13]
+** pki-console-10.3.2-2.fc24      [2016-06-08]
+* Fedora 25
+** dogtag-pki-10.3.2-1.fc25       [2016-06-07]
+** dogtag-pki-theme-10.3.2-2.fc25 [2016-06-08]
+** pki-core-10.3.2-4.fc25         [2016-06-13]
+** pki-console-10.3.2-2.fc25      [2016-06-08]
+
+<font size="+1"><b>Upgrade Notes:</b></font>
+
+After running fedup, simply use dnf (as necessary) to update existing packages.
+
+PKI Instance updates from 10.3.0.a1, 10.3.0.a2, or 10.3.0.b1, to 10.3.2 are not supported.
+
+<font size="+1"><b>Highlights since Dogtag 10.3.1</b></font>
+
+The primary purpose of Dogtag 10.3 was to continue adding features and stream-lining the java Tomcat-based TPS process that was created in Dogtag 10.2. 
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the [https://fedorahosted.org/pki/report/6 PKI TRAC Ticket Instance]:
+
+* 10.3.2 - page 11 (43 tickets)
+
+<font size="+1"><b>Detailed Changes since Dogtag 10.3.2</b></font>
+
+The following list of dependencies was gleaned from the following procedure:
+
+    Dogtag 10.3.2:    [05/18/2016] (master --> start of 10.3.2)
+                      [06/05/2016] (master --> end of 10.3.2)
+    
+    Run the following commands on the "master" branch:
+    
+        # cd pki
+        
+        # git --no-pager log --since "05/18/2016" --until "06/05/2016" > ../history_10.3.2
+        
+        # cd ..
+        
+        # grep "Author:" history_10.3.2 | sort -u
+        Author: Ade Lee <alee@redhat.com>
+        Author: Christina Fu <cfu@redhat.com>
+        Author: Endi S. Dewata <edewata@redhat.com>
+        Author: Fraser Tweedale <ftweedal@redhat.com>
+        Author: Jack Magne <jmagne@dhcp-16-206.sjc.redhat.com>
+        Author: Matthew Harmsen <mharmsen@pki.usersys.redhat.com>
+        Author: Matthew Harmsen <mharmsen@redhat.com>
+        
+        # vi 10.3.2.log
+          * alee
+          * cfu
+          * edewata
+          * ftweedal
+          * jmagne
+          * mharmsen
+        
+    From history_10.3.2, manually add tickets/check-ins per user to 10.3.2.log to compose the following list.
+* alee (7)
+** 1053 - Allow cert-find using revocation reasons
+** 1055 - Add revocation information to pki CLI output.
+** 1717 - Add option to modify ajp_host to pkispawn
+** 2254 - Add parameters to purge old published files
+** 2275 - Add parameters to disable cert or crl publishing
+** 2319 - Added pki-server kra-db-vlv-add, kra-db-vlv-del, kra-db-vlv-reindex
+** 2320 - Add commands to db-server to help with DB related changes<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Added pki-server db-schema-upgrade<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- New VLV indexes for KRA including realm<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fix legacy servlets to check realm when requesting recovery<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Change legacy requests servlet to check realm<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fix old KRA servlets to check realm
+* cfu (4)
+** 1665 - Cert Revocation Reasons not being updated when on-hold<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- In the CA, when revokeCert is called, make it possible to move from<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; on_hold to revoke.<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- In the servlet that handles TPS revoke (DoRevokeTPS), make sure it<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; allows the on_hold cert to be put in the bucket to be revoked.<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- there are a few minor fixes such as typos and one have to do with<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; the populate method in SubjectDNInput.java needs better handling of<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; subject in case it's null.<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Note: This patch does not make attempt to allow agents to revoke<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; certs that are on_hold from agent interface.  The search<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; filter needs to be modified to allow that.
+** 2352 - This patch allows KRA agent to list netkeyKeyRecovery requests
+** 2271 - Part2:TMS:removing/reducing debug log printout of data<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fields are zeroed out before being deleted in KRA request records
+** 2298 - [non-TMS] for key archival/recovery, not to record certain data in<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ldap and logs
+* edewata (12)
+** &nbsp;850 - Updated system certificate selftests.
+** &nbsp;999 - Fixed problem submitting renewal request.<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fixed error reporting in RenewalProcessor.getSerialNumberFromCert().
+** 1434 - Added TPS UI for managing user certificates.
+** 2267 - Added TPS UI for managing user roles.
+** 2299 - Fixed truncated token activity message in TPS UI.
+** 2308 - Fixed cert enrollment problem with empty rangeUnit in profile.
+** 2312 - Fixed support for generic CSR extensions.
+** 2314 - Ignoring blank and comment lines in configuration files.
+** 2326 - Fixed error handling in ProxyRealm.
+** 2334 - Added TPS token state transition validation.
+** 2342 - Fixed invalid TPS VLV indexes.<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fixed hard-coded database name for TPS VLV indexes.
+** 2344 - Removed selftest interface from TPS UI.
+* ftweedal (9)
+** 1073 - Include serial of revoked cert in CertRequestInfo
+** 1625 - Lightweight CAs: remove pki-ipa-retrieve-key script<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Lightweight CAs: generalise subprocess-based key retrieval
+** 1640 - Lightweight CAs: remove redundant deletePrivateKey invocation
+** 2293 - Retry failed key retrieval with backoff<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Don't update obsolete CertificateAuthority after key retrieval<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Limit key retrieval to a single thread per CA
+** 2327 - Lightweight CAs: add method to renew certificate<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Lightweight CAs: renew certs with same issuer
+** 2328 - Lightweight CAs: remove NSSDB material when processing deletion
+** 2332 - Return 410 Gone if target CA of request has been deleted
+** 2343 - Fix LDAP schema violation when instance name contains '_'
+** 2351 - Modify ExternalProcessKeyRetriever to read JSON
+* jmagne (2)
+** 1512 - Show KeyOwner info when viewing recovery requests.
+** &nbsp;801 - Port symkey JNI to Java classes.<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Merge pki-symkey into jss
+* mharmsen (1)
+** 1677 - Fix unknown TKS host and port connector error during TPS removal
+
+<font size="+1"><b>Server Platforms:</b></font>
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.3.2</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 24 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 24 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 25 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 25 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Dogtag Certificate Server 10.3.3 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[06/21/2016] ==
+== Dogtag Certificate Server 10.3.4<sup>&dagger;</sup> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[07/05/2016] ==
+Dogtag Certificate System 10.3.3 represents the third (and fourth) releases of Dogtag 10.3, and is associated with Fedora 24.
+
+<font size="+1"><b>Project Name:</b></font>
+* '''''Dogtag Certificate System 10.3.3'''''
+
+<font size="+1"><b>Releases:</b></font>
+* [06/21/2016] Dogtag Certificate Server 10.3.3 [32-bit & 64-bit Fedora 24]
+* [07/05/2016] Dogtag Certificate Server 10.3.4<sup>&dagger;</sup> [32-bit & 64-bit Fedora 24]
+
+<sup>&dagger;</sup> - The 10.3.4 Milestone changes were added as patches to 10.3.3.
+
+<font><b>Packages</b></font>
+* Fedora 24
+** dogtag-pki-10.3.3-1.fc24       [2016-06-20]
+** dogtag-pki-theme-10.3.3-1.fc24 [2016-06-20]<strike>
+** pki-core-10.3.3-1.fc24         [2016-06-20]</strike>
+** pki-core-10.3.3-3.fc24         [2016-07-05]
+** pki-console-10.3.3-1.fc24      [2016-06-21]
+* Fedora 25
+** dogtag-pki-10.3.3-1.fc25       [2016-06-20]
+** dogtag-pki-theme-10.3.3-1.fc25 [2016-06-20]<strike>
+** pki-core-10.3.3-2.fc25         [2016-07-01]</strike>
+** pki-core-10.3.3-3.fc25         [2016-07-05]
+** pki-console-10.3.3-1.fc25      [2016-07-01]
+
+<font size="+1"><b>Upgrade Notes:</b></font>
+
+After running fedup, simply use dnf (as necessary) to update existing packages.
+
+PKI Instance updates from 10.3.0.a1, 10.3.0.a2, or 10.3.0.b1, to 10.3.3 are not supported.
+
+<font size="+1"><b>Highlights since Dogtag 10.3.2</b></font>
+
+The primary purpose of Dogtag 10.3 was to continue adding features and stream-lining the java Tomcat-based TPS process that was created in Dogtag 10.2. 
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the [https://fedorahosted.org/pki/report/6 PKI TRAC Ticket Instance]:
+
+* 10.3.3 - page 11    (27 tickets)
+* 10.3.4 - page 10-11 (28 tickets)
+
+<font size="+1"><b>Detailed Changes since Dogtag 10.3.2</b></font>
+
+The following list of dependencies was gleaned from the following procedure:
+
+    Dogtag 10.3.3:    [06/06/2016] (master --> start of 10.3.3)
+                      [06/21/2016] (master --> end of 10.3.3)
+    
+    Run the following commands on the "master" branch:
+    
+        # cd pki
+        
+        # git --no-pager log --since "06/06/2016" --until "06/21/2016" > ../history_10.3.3
+        
+        # cd ..
+        
+        # grep "Author:" history_10.3.3 | sort -u
+        Author: Ade Lee <alee@redhat.com>
+        Author: Amol Kahat <akahat@redhat.com>
+        Author: Asha Akkiangady <aakkiang@redhat.com>
+        Author: Christina Fu <cfu@redhat.com>
+        Author: Endi S. Dewata <edewata@redhat.com>
+        Author: Fraser Tweedale <ftweedal@redhat.com>
+        Author: Jack Magne <jmagne@dhcp-16-206.sjc.redhat.com>
+        Author: Matthew Harmsen <mharmsen@pki.usersys.redhat.com>
+        Author: Matthew Harmsen <mharmsen@redhat.com>
+        
+        # vi 10.3.3.log
+          * alee
+          * akahat
+          * aakkiang
+          * cfu
+          * edewata
+          * ftweedal
+          * jmagne
+          * mharmsen
+        
+    From history_10.3.3, manually add tickets/check-ins per user to 10.3.3.log to compose the following list.
+
+* aakkiang (1)
+** 1579 - Removed test cases for authentication plugin UdnPwdDirAuth since this plugin will be removed from dogtag
+* akahat (3)
+** BZ 1339263 - Fixed --help option for instance-show, instance-start, instance-stop, instance-migrate, instance-nuxwdog-enable, instance-nuxwdog-disable.
+** BZ 1341953 - Fixed pki-server instance-start &lt;instance&gt; command. Fixed pki-server instance-stop &lt;instance&gt; command.
+** Added entry of pki-server instance-cert command in man page.
+* alee (4)
+** 1563 - Fix name fields in man pages for correct man -k output
+** 2318 - Add man page info for number range parameters
+** 2339 - Add man page entry for pki-server instance-cert-export command
+** Add man page and clarify CLI for kra-connector
+* cfu (3)
+** 2298 - Part 2 - exclude some ldap record attributes with key archival
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Part 3 - trim down debug log in non-TMS crmf enrollments
+** 2346 - add patch to support SHA384withRSA signing algorithm
+* edewata (12)
+** 1276 - Fixed REST response format.
+** 2263 - Added TPS VLV management CLI.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Fixed TPS VLV sort orders.
+** 2269 - Added TPS VLV management CLI.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Fixed TPS VLV sort orders.
+** 2300 - Updated instructions to customize TPS token lifecycle.
+** 2342 - Fixed VLV usage in TPS token and activity services.
+** 2354 - Added TPS VLV management CLI.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Updated KRA VLV management CLI.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Fixed TPS VLV filters.
+** 2363 - Fixed Java dependency.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Added upgrade script to fix JAVA_HOME.
+** Added debugging log in ClientCertImportCLI.
+** Added pki pkcs12-cert-mod command.
+** Fixed problem with headerless PKCS #7 data.
+** Refactored SystemConfigService.processCerts().
+** Removed unused Tomcat 6 files.
+* ftweedal (1)
+** 2359 - Do not attempt cert update unless signing key is present
+* jmagne (4)
+** 1199 - Fix coverity warnings for 'tkstool'
+** 1579 - UdnPwdDirAuth authentication plugin instance is not working.
+** 2340 - Revocation failure causes AUDIT_PRIVATE_KEY_ARCHIVE_REQUEST
+** Comment server.xml about Enableocsp checking on KRA with CA's secure port shows self test failure.
+* mharmsen (1)
+** Spec file changes:
+** - Updated tomcat version dependencies
+** - Updated 'java', 'java-headless', and 'java-devel' dependencies to 1:1.8.0.
+** - Updated 'tomcatjss' dependencies
+** - Provided cleaner runtime dependency separation
+** - Updated resteasy packages for Fedora 25 and later
+
+<font size="+1"><b>Detailed Dogtag 10.3.4 Milestone Changes to Dogtag 10.3.3</b></font>
+
+The following list of dependencies was gleaned from the following procedure:
+
+    Dogtag 10.3.4:    [06/21/2016] (master --> start of 10.3.4)
+                      [07/05/2016] (master --> end of 10.3.4)
+    
+    Run the following commands on the "master" branch:
+    
+        # cd pki
+        
+        # git --no-pager log --since "06/21/2016" --until "07/05/2016" > ../history_10.3.4
+        
+        # cd ..
+        
+        # grep "Author:" history_10.3.4 | sort -u
+        Author: Abhijeet Kasurde <akasurde@redhat.com>
+        Author: Amol Kahat <akahat@redhat.com>
+        Author: Christina Fu <cfu@redhat.com>
+        Author: Endi S. Dewata <edewata@redhat.com>
+        Author: Fraser Tweedale <ftweedal@redhat.com>
+        Author: Jack Magne <jmagne@dhcp-16-206.sjc.redhat.com>
+        Author: Matthew Harmsen <mharmsen@pki.usersys.redhat.com>
+        Author: Matthew Harmsen <mharmsen@redhat.com>
+  
+        # vi 10.3.4.log
+          * akasurde
+          * akahat
+          * cfu
+          * edewata
+          * ftweedal
+          * jmagne
+          * mharmsen
+        
+    From history_10.3.4, manually add tickets/check-ins per user to 10.3.4.log to compose the following list.
+
+* akahat (2)
+** 2368 - Fixes pki-server subsystem-* --help options.
+** 2380 - Fixes: Invalid instance exception issue.
+* akasurde (1)
+** 2390 - Updated notification message for DB subsystem command
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Updated notification message for TPS subsystem command
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Updated notification message for TKS subsystem command
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Updated notification message for OCSP subsystem command
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Updated notification message for kra-db-vlv* command
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Updated notification message for kra-db-vlv-del command
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Added condition for checking instance id in kra commands
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Added fix for checking ldapmodify return code in db-schema-upgrade
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Added condition to verify instance id in db-schema-upgrade
+* cfu (4)
+** BZ 1203407 - tomcatjss: missing ciphers
+** 1306 - config params: Add granularity to token termination in TPS
+** 1308 - Provide ability to perform off-card key generation for non-encryption token keys
+** 2389 - Installation: subsystem certs could have notAfter beyond CA signing cert in case of external or existing CA
+* edewata (6)
+** 1711 - CLI :: pki-server ca-cert-request-find throws IOError
+** 2364 - Added instance and subsystem validation for pki-server ca-* commands.
+** 2374 - Fixed KRA cloning issue.
+** 2384 - Fixed problem reading HSM password from password file.
+** 2385 - Fixed pki-server subsystem-cert-update.
+** 2390 - Removed excessive error message in pki CLI.
+* ftweedal (4)
+** 2285 - Add profiles container to LDAP if missing
+** 2373 - Fix build on Fedora 25
+** 2387 - AuthInfoAccess: use default OCSP URI if configured
+** 2388 - Respond 400 if lightweight CA cert issuance fails
+* jmagne (3)
+** 1114 - Generating Symmetric key fails with key-generate when --usages verify is passed
+** 1664 - Add ability to disallow TPS to enroll a single user on multiple tokens.
+** 2349 - Separated TPS does not automatically receive shared secret from remote TKS.
+* mharmsen (4)
+** 1405 - [MAN] Add additional HSM details to 'pki_default.cfg' & 'pkispawn' man pages
+** 1607 - [MAN] Separate PKI Instances versus Shared PKI Instances (pkispawn man page)
+** 2228 - Added gcc-c++ as a build requirement.
+** 2311 - Normalize default softokn name
+
+<font size="+1"><b>Server Platforms:</b></font>
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.3.3</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 24 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 24 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 25 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 25 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Dogtag Certificate Server 10.3.5 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[08/08/2016&nbsp; 08/22/2016&nbsp; 08/29/2016&nbsp; 09/07/2016&nbsp; 09/12/2016&nbsp; 09/22/2016&nbsp; 10/10/2016&nbsp; 11/05/2016&nbsp; 12/15/2016&nbsp; 12/22/2016&nbsp; 01/31/2017] ==
+Dogtag Certificate System 10.3.5 represents the fifth release of Dogtag 10.3, and is associated with Fedora 24.
+
+<font size="+1"><b>Project Name:</b></font>
+* '''''Dogtag Certificate System 10.3.5'''''
+
+<font size="+1"><b>Releases:</b></font>
+* [08/08/2016] Dogtag Certificate Server 10.3.5 [32-bit & 64-bit Fedora 24]
+* [08/22/2016] update (10.3.5-3)
+* [08/29/2016] update (10.3.5-4)
+* [09/07/2016] update (10.3.5-5)
+* [09/12/2016] update (10.3.5-6)
+* [10/10/2016] update (10.3.5-7)
+* [11/05/2016] update (10.3.5-8)
+* [12/15/2016] update (10.3.5-9)
+* [12/22/2016] Fedora 26 rebuild for Python 3.6 (10.3.5-10)
+* [01/31/2017] update (10.3.5-11)
+
+<font><b>Packages</b></font>
+* Fedora 24
+** dogtag-pki-10.3.5-1.fc24       [2016-08-08]
+** dogtag-pki-theme-10.3.5-1.fc24 [2016-08-08]<strike>
+** pki-core-10.3.5-1.fc24         [2016-08-08]</strike><strike>
+** pki-core-10.3.5-3.fc24         [2016-08-22]</strike><strike>
+** pki-core-10.3.5-4.fc24         [2016-08-29]</strike><strike>
+** pki-core-10.3.5-5.fc24         [2016-09-07]</strike><strike>
+** pki-core-10.3.5-6.fc24         [2016-09-13]</strike><strike>
+** pki-core-10.3.5-7.fc24         [2016-10-11]</strike><strike>
+** pki-core-10.3.5-8.fc24         [2016-11-05]</strike><strike>
+** pki-core-10.3.5-9.fc24         [2016-12-15]</strike>
+** pki-core-10.3.5-11.fc24        [2017-01-31]
+** pki-console-10.3.5-1.fc24      [2016-08-08]
+* Fedora 25
+** dogtag-pki-10.3.5-1.fc25       [2016-08-08]
+** dogtag-pki-theme-10.3.5-1.fc25 [2016-08-08]<strike>
+** pki-core-10.3.5-1.fc25         [2016-08-08]</strike><strike>
+** pki-core-10.3.5-3.fc25         [2016-08-22]</strike><strike>
+** pki-core-10.3.5-4.fc25         [2016-08-29]</strike><strike>
+** pki-core-10.3.5-5.fc25         [2016-09-07]</strike><strike>
+** pki-core-10.3.5-6.fc25         [2016-09-13]</strike><strike>
+** pki-core-10.3.5-7.fc25         [2016-10-11]</strike><strike>
+** pki-core-10.3.5-8.fc25         [2016-11-05]</strike><strike>
+** pki-core-10.3.5-9.fc25         [2016-12-16]</strike>
+** pki-core-10.3.5-11.fc25        [2017-01-31]
+** pki-console-10.3.5-1.fc25      [2016-08-08]
+* Fedora 26
+** dogtag-pki-10.3.5-1.fc26       [2016-08-08]
+** dogtag-pki-theme-10.3.5-1.fc26 [2016-08-08]<strike>
+** pki-core-10.3.5-1.fc26         [2016-08-08]</strike><strike>
+** pki-core-10.3.5-3.fc26         [2016-08-22]</strike><strike>
+** pki-core-10.3.5-4.fc26         [2016-08-29]</strike><strike>
+** pki-core-10.3.5-5.fc26         [2016-09-07]</strike><strike>
+** pki-core-10.3.5-6.fc26         [2016-09-13]</strike><strike>
+** pki-core-10.3.5-7.fc26         [2016-10-19]</strike><strike>
+** pki-core-10.3.5-8.fc26         [2016-11-05]</strike><strike>
+** pki-core-10.3.5-9.fc26         [2016-12-16]</strike><strike>
+** pki-core-10.3.5-10.fc26        [2016-12-22]</strike>
+** pki-core-10.3.5-11.fc26        [2017-02-01]
+** pki-console-10.3.5-1.fc26      [2016-08-08]
+
+<font size="+1"><b>Upgrade Notes:</b></font>
+
+After running fedup, simply use dnf (as necessary) to update existing packages.
+
+PKI Instance updates from 10.3.0.a1, 10.3.0.a2, or 10.3.0.b1, to 10.3.3 are not supported.
+
+<font size="+1"><b>Highlights since Dogtag 10.3.4</b></font>
+
+The primary purpose of Dogtag 10.3 was to continue adding features and stream-lining the java Tomcat-based TPS process that was created in Dogtag 10.2. 
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the [https://fedorahosted.org/pki/report/6 PKI TRAC Ticket Instance]:
+
+* 10.3.5 - page 11    (27 tickets)
+
+<font size="+1"><b>Detailed Changes since Dogtag 10.3.4</b></font>
+
+The following list of dependencies was gleaned from the following procedure:
+
+    Dogtag 10.3.4:    [07/05/2016] (master --> start of 10.3.5)
+                      [08/08/2016] (master --> end of 10.3.5)
+    
+    Run the following commands on the "master" branch:
+    
+        # cd pki
+        
+        # git --no-pager log --since "07/05/2016" --until "08/08/2016" > ../history_10.3.5
+        
+        # cd ..
+        
+        # grep "Author:" history_10.3.5 | sort -u
+        Author: Abhijeet Kasurde <akasurde@redhat.com>
+        Author: Ade Lee <alee@redhat.com>
+        Author: bhavik bhavsar <bbhavsar@vm91.gsslab.pnq.redhat.com>
+        Author: Christian Heimes <cheimes@redhat.com>
+        Author: Christina Fu <cfu@dhcp-16-189.sjc.redhat.com>
+        Author: Christina Fu <cfu@redhat.com>
+        Author: Endi S. Dewata <edewata@redhat.com>
+        Author: Fraser Tweedale <ftweedal@redhat.com>
+        Author: Geetika Kapoor <gkapoor@redhat.com>
+        Author: Jack Magne <jmagne@dhcp-16-206.sjc.redhat.com>
+        Author: Matthew Harmsen <mharmsen@redhat.com>
+  
+        # vi 10.3.5.log
+          * akasurde
+          * alee
+          * bbhavsar
+          * cfu
+          * cheimes
+          * edewata
+          * ftweedal
+          * gkapoor
+          * jmagne
+          * mharmsen
+        
+    From history_10.3.5, manually add tickets/check-ins per user to 10.3.5.log to compose the following list.
+
+* akasurde (1)
+** 2399 - Added check for Subsystem data and request in 'pki-server subsystem-cert-export'
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Added instance and subsystem validation for pki-server subsystem-* commands.
+
+* alee (4)
+** ???? - Add pkispawn option to disable Master CRL
+** 2412 - Fix client-cert-import to set provided trust bits
+** 2418 - Fix deployment issue
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Do slot substitution for SERVER_KEYGEN
+** 2399 - Re-license the python client files to LGPLv3
+
+* bbhavsar (1)
+** 2249 - Fix 'bashisms' in tests
+
+* cheimes (1)
+** 2399 - Improve setup.py for standalone Dogtag client releases
+
+* cfu (4)
+** 978&nbsp;&nbsp; - PPS connector man page: add revocation routing info
+** 2246 - [MAN] Man Page: AuditVerify
+** 2389 - fix for regular CA installation
+** 2428 - broken request links for CA's system certs in agent request viewing
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- part2 handle NullPointerException
+
+* edewata (8)
+** 2376 - Fixed cert usage list in pki client-cert-validate.
+** 2377 - Fixed CLI error message on connection problems
+** 2381 - Added general exception handling for pki-server CLI.
+** 2383 - Added validation for pki client-cert-request extractable parameter.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Added validation for pki client-cert-request sensitive parameter.
+** 2399 - Fixed exception chain in SigningUnit.init().
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fixed problem with pki pkcs12-import --no-trust-flags.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fixed pki pkcs12-import output.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fixed certificate validation error message.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fixed cert usage list in pki client-cert-validate.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Removed redundant question in interactive pkispawn.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fixed pkispawn installation summary.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fixed error handling in SystemConfigService.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fixed param substitution problem.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Added log message in PKIClient.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Improved SystemConfigService.configure() error message.
+** 2403 - Added CMake target dependencies.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Removed hard-coded paths in pki.policy.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Removed hard-coded paths in pki CLI.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- RPM spec changes for removing hard-coded paths in pki CLI.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Removed hard-coded paths in deployment tool.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- RPM spec changes for removing hard-coded paths in deployment tool.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Added upgrade scripts to fix server library.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Updated RESTEasy dependency on Fedora 24.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fixed problem creating links to PKI JAR files.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fixed RPM spec for client-only build.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Split link customization in RPM spec.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Moved upgrade scripts for RHEL.
+** 2421 - Fixed SELinux contexts.
+** 2424 - Added log messages for certificate validation.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Added log messages for certificate import during cloning.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fixed PKCS #12 import for cloning.
+
+* ftweedal (2)
+** 2420 - Fix CA OCSP responder when LWCAs are not in use
+** 2433 - Fix lightweight CA PEM-encoded PKCS #7 cert chain retrieval
+
+* gkapoor (2)
+** ???? - Fixed NumberFormatException in tps-cert-find
+** 1667 - Added fix for pki-server for db-update
+
+* jmagne (4)
+** ???? - [MAN] Apply 'generateCRMFRequest() removed from Firefox' workarounds to appropriate 'pki' man page
+** 2399 - Stop using a java8 only constant. Will allow compilation with java7.
+** 2406 - Make starting CRL Number configurable.
+** 2430 - Fix to sort the output of a cert search by serialno.
+
+* mharmsen (5)
+** 690&nbsp;&nbsp; - pki-tools man pages - AtoB, BtoA, DRMTool, KRATool, PrettyPrintCert, and PrettyPrintCrl
+** 2399 - Allow PrettyPrintCert to process HEADERs and TRAILERs.
+** 2401 - Added 'hostname' as a runtime requirement to pki-server
+** 2402 - Fix conflict in file ownership in pki-base and pki-server
+** 2431 - Added python-urllib3 dependency
+
+<font size="+1"><b>Update [08/22/2016]:</b></font>
+
+* cheimes (1)
+** 2431 - Applied minimum python-requests dependencies to account for IPA server upgrade
+* edewata (7)
+** 833&nbsp;&nbsp; - modified LDAPExceptionConverter to wrap LDAPException with BadRequestException for invalid attribute syntax
+** 2429 - updated [https://github.com/dogtagpki/pki/wiki/TPS-Admin-Guide TPS Admin Guide] regarding adding profile properties in bulk
+** 2431 - Applied minimum python-requests dependencies to account for IPA server upgrade
+** 2432 - Fixed KRA selftest behavior
+** 2436 - Dogtag 10.3.6: Miscellaneous Enhancements
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- include JSS cert validation error message in selftest log
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- add debug messages to ConfigurationUtils.handleCerts()
+** 2437 - Removed PKCS #7 from TPS UI add user certificate dialog box
+** 2440 - Allow optional CA signing CSR
+* mharmsen (3)
+** 690&nbsp;&nbsp; - pki-tools man pages - CMCEnroll
+** 2431 - Applied minimum python-requests dependencies to account for IPA server upgrade
+** 2436 - Dogtag 10.3.6: Miscellaneous Enhancements
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- apply RFC 7468 Headers/Trailers to PKI tools
+
+<font size="+1"><b>Update [08/29/2016]:</b></font>
+
+* akasurde (1)
+** 2436 - Dogtag 10.3.6: Miscellaneous Enhancements
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- added check for pki-server-nuxwdog parameter
+* edewata (2)
+** 2423 - pki_ca_signing_token when not specified does not fallback to pki_token_name value
+** 2439 - Outdated deployment descriptors in upgraded server
+* gkapoor (1)
+** 2414 - pki pkcs12-cert-del shows a successfully deleted message when a wrong nickname is provided
+* jmagne (1)
+** 1578 - Authentication Instance Id PinDirEnrollment with authType value as SslclientAuth is not working
+
+<font size="+1"><b>Update [09/07/2016]:</b></font>
+
+* alee (1)
+** 2447 - Fix CertRequestInfo URLs
+* cfu (1)
+** 2446 - pkispawn: make subject_dn defaults unique per instance name
+* edewata (2)
+** 2436 - Removed FixSELinuxContexts upgrade script.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fixed debug log in UpdateNumberRange servlet.
+** 2449 - Added support to create system certificates in different tokens.
+* ftweedal (3)
+** 1638 - Revoke lightweight CA certificate on deletion
+** 2443 - Prevent deletion of host CA cert and key from NSSDB
+** 2444 - Accept LWCA entry with missing entryUSN if plugin enabled
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Perform host authority check before entryUSN check
+
+<font size="+1"><b>Update [09/12/2016]:</b></font>
+* edewata (1)
+** 2449 - Reverted patch for 'Added support to create system certificates in different tokens.'
+
+<font size="+1"><b>Update [09/22/2016]:</b></font>
+* Created external COPR builds of CentOS 7.3 PKI EPEL packages:
+** [https://copr.fedorainfracloud.org/coprs/g/pki/epel-7.3/repo/epel-7/group_pki-epel-7.3-epel-7.repo https://copr.fedorainfracloud.org/coprs/g/pki/epel-7.3/repo/epel-7/group_pki-epel-7.3-epel-7.repo]
+
+<font size="+1"><b>Update [10/10/2016]:</b></font>
+* cfu (3)
+** 1527 - TPS Enrollment always goes to "ca1"
+** 2496 - Cert/Key recovery is successful when the cert serial number and key id on the ldap user mismatches
+** 2498 - Token format with external reg fails when op.format.externalRegAddToToken.revokeCert=true
+* edewata (4)
+** 2463 - Troubleshooting improvements for SigningUnit.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Troubleshooting improvements for ConfigurationUtils
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Additional improvements for SigningUnit.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Troubleshooting improvements for GetCertChain.
+** 2476 - Fixed NSSDatabase.create_request().
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fixed Eclipse classpath for Fedora 23
+** 2497 - Fixed ConfigurationUtils.importCertChain().
+** 2505 - Removed duplicate classes.
+* ftweedal (3)
+** 2453 - Block reads during reload of LDAP-based profiles (10.4.0 and later ONLY)
+** 2466 - Do not attempt LWCA key retrieval for host authority
+** 2475 - Compare serialised DNs in host authority check
+* jmagne (1)
+** 1664 - Add ability to disallow TPS to enroll a single user on multiple tokens.
+* mharmsen (1)
+** 2478 - Added openssl runtime dependency for support of External CA.
+
+<font size="+1"><b>Update [11/05/2016]:</b></font>
+* cfu (1)
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- a few simple debugging messages in TPS that will make debugging easier.
+* cheimes (1)
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fix for flake8 errors on Fedora 26
+* edewata (8)
+** 2435 - Replaced deprecated ProxyParser.
+** 2460 - Fixed typo in UserPwdDirAuthentication.
+** 2463 - Troubleshooting improvement for ConfigurationUtils.handleCerts().
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Added constructors to chain EPropertyException.
+** 2476 - Fixed installation error message.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fixed pki-nsutil build order.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fixed default OCSP port in server.xml.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fixed exception message in PKCS12Util.loadFromByteArray().
+** 2500 - Fixed CryptoUtil.getTokenName().
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Reformatted SecurityDataRecoveryService.serviceRequest().
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fixed KRA key recovery via CLI in FIPS mode.
+** 2523 - Fixed TPS UI system menu. (fix was reverted by mharmsen)
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fixed TPS UI for agent approval. (fix was reverted by mharmsen)
+** 2530 - Fixed resource leak in OtherName.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fixed resource leak in GenericASN1Extension.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fixed resource leak in OCSPNoCheckExtension.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fixed resource leak in ExtendedKeyUsageExtension.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Fixed resource leak in InhibitAnyPolicyExtension.
+** 2531 - Replaced deprecated DefaultHttpClient.
+* jmagne (5)
+** 2483 - fix involving URL encoding glitch encountered when recovering keys using the "by cert" method.
+** 2486 - Automatic recovery of encryption cert is not working when a token is physically damaged and a temporary token is issue
+** 2496 - Cert/Key recovery is successful when the cert serial number and key id on the ldap user mismatches
+** 2510 - PIN_RESET policy is not giving expected results when set on a token.
+** 2513 - TPS token enrollment fails to setupSecureChannel when TPS and TKS security db is on fips mode.
+* mharmsen (1)
+** 2523 - Revert "Fixed TPS UI for agent approval."
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Revert "Fixed TPS UI system menu."           
+
+<font size="+1"><b>Update [12/15/2016]:</b></font>
+* cfu (1)
+** 2534 - Automatic recovery of encryption cert - CA and TPS tokendb shows different certificate status
+* edewata (7)
+** 1517 - user-cert-add --serial CLI request to secure port with remote CA shows authentication failure
+** 1897 - [MAN] Man page for logging configuration.
+** 1920 - [MAN] Man page for PKCS #12 utilities
+** 2226 - KRA installation: NullPointerException in ProxyRealm.findSecurityConstraints
+** 2289 - [MAN] pki ca-cert-request-submit fails presumably because of missing authentication even if it should not require any
+** 2523 - Changes to target.agent.approve.list parameter is not reflected in the TPS Web UI
+** 2543 - Unable to install subordinate CA with HSM in FIPS mode
+* jmagne (2)
+** 2544 - TPS throws "err=6" when attempting to format and enroll G&D Cards
+** 2552 - pkispawn does not change default ecc key size from nistp256 when nistp384 is specified in spawn config
+
+<font size="+1"><b>Update [12/22/2016]:</b></font>
+* churchyard
+** ???? - Fedora 26 Rebuild for Python 3.6
+
+<font size="+1"><b>Update [01/31/2017]:</b></font>
+* alee
+** 2573 - Add option to remove signing cert entry
+* cfu
+** 1741 - ECDSA certs Alg IDs contian parameter field 
+** 2534 - reset cert status after successful unrevoke (additional)
+* edewata
+** 2450 - Fixed problem searching the latest certificate request.
+** 2564 - Added global TCP Keep-Alive option.
+** 2570 - Replaced default AJP hostname with generic loopback address.
+** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Added upgrade script to update AJP loopback address. 
+** ???? - Fixed Javadoc failure caused by HTML special characters.
+** ???? - Fixed missing SLF4J in Javadoc classpath.
+* ftweedal
+** 2579 - Use BigInteger for entryUSN
+* mharmsen
+** ???? - Cast 'char *' to 'const char *' in C++ files.
+
+<font size="+1"><b>Server Platforms:</b></font>
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.3.3</th>
+    </tr>
+    <tr>
+    <td>64-bit CentOS 7 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 24 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 24 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 25 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 25 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 26 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 26 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>

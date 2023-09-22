@@ -1,0 +1,66 @@
+= Overview =
+
+Currently, the PKI repository (git@github.com:dogtagpki/pki.git) consists of source code which is utilized to build the following four SRPMS:
+* SOURCE REPOSITORY: '''pki'''
+** SRPM: dogtag-pki
+*** NOTE: This 'meta' package only contains a spec file (no tarball since it does not consist of any source).
+** SRPM: dogtag-pki-theme
+*** SOURCE CODE: pki/dogtag/
+** SRPM: pki-core
+*** SOURCE CODE: pki/base/ (with the exception of pki/base/console)
+** SRPM: pki-console
+*** SOURCE CODE: pki/base/console/
+
+Due to this layout, we need to utilize the various customized 'compose' scripts to create local RPMS and the various 'tarballs' for use in the SRPMS (some of which become 'official' tarballs):
+* BUILD SCRIPT: pki/scripts/compose_dogtag_pki_meta_packages
+** NOTE: RPM and SRPM only -- no tarball
+* BUILD SCRIPT: pki/scripts/compose_dogtag_pki_theme_packages
+* BUILD SCRIPT: pki/scripts/compose_pki_core_packages
+* BUILD SCRIPT: pki/scripts/compose_pki_console_packages
+
+Additionally, if Quality Engineering (QE) would like tests separated, the following additional repo could be created:
+* SRPM: pki-tests
+** SOURCE CODE: pki/tests/
+** BUILD SCRIPT: pki/scripts/compose_pki_test_package
+
+== Proposal ==
+
+This proposal is to separate this single PKI source repository into four distinct source repositories:
+* SOURCE REPOSITORY: '''dogtag-pki'''
+** SOURCE CODE: This 'meta' directory contains local development scripts and spec file templates (pki/scripts/, pki/specs/, and pki/tools/) and can be checked out in tandem with other PKI repos using 'git clone git@github.com:dogtagpki/dogtag-pki.git pki'.
+*** SRPM: dogtag-pki
+* SOURCE REPOSITORY: '''dogtag-pki-theme'''
+** SOURCE CODE: pki/dogtag/, pki/cmake/, pki/patches/, and pki/tests/
+*** SRPM: dogtag-pki-theme
+* SOURCE REPOSITORY: '''pki-core'''
+** SOURCE CODE: pki/base/ (with the exclusion of pki/base/console/, pki/cmake/, pki/patches/, and pki/tests/
+*** SRPM: pki-core
+* SOURCE REPOSITORY: '''pki-console'''
+** SOURCE CODE: pki/base/console/, pki/cmake/, pki/patches/, and pki/tests/
+*** SRPM: pki-console
+
+Each of these four repositories could be created to preserve existing by doing something like the following (e. g. - 'dogtag-pki'):
+* git clone git@github.com:dogtagpki/pki.git dogtag-pki
+** remove everything EXCEPT the two directories pki/scripts/ and pki/specs/
+* check in the new github repo as "dogtagpki/dogtag-pki.git"
+
+== Advantages ==
+* With this separation of source, it would now be possible to create full-source tarballs using standard methods (e. g. - git archive).
+* This would open up the possibility to use tools such as Tito in COPR to create builds by merely pointing to a repository.
+* The various tarballs would contain source code that is only relevant to the RPMS produced for that SRPM (i. e. - "clean" un-polluted source and no spec file template confusion).
+* To assist in local development, it "may" be possible that the original all-encompassing repo could still be recreated by merely checking out directories which cleanly overlay each other:
+  # git clone git@github.com:dogtagpki/dogtag-pki.git pki
+  # git clone git@github.com:dogtagpki/dogtag-pki-theme.git pki
+  # git clone git@github.com:dogtagpki/pki-core.git pki
+  # git clone git@github.com:dogtagpki/pki-console.git pki
+  
+  NOTE: One issue with this may be the common pki/cmake/ directories, common files within the pki/tests/ directory, common top-level files, etc.
+
+== Disadvantages ==
+* Continuous integration (CI) tools such as Travis may need to be replicated across multiple repositories (dogtag-pki-theme, pki-core, and pki-console)
+* Potential conflicts could arise with check-ins being required in two separate repositories (e. g. - pki-core and pki-console, or dogtag-pki-theme and pki-console)
+* Version mismatch may arise more easily in this model (e. g. - pki-server 10.7.0 and pki-console 10.6.1) making it more difficult on dependency tracking.
+* The pki/cmake/ directory and associated common top-level files may need to be replicated in multiple repositories.
+* The pki/tests/ directory may need to have common portions replicated across multiple repositories.
+== Alternatives ==
+[[Proposal to Combine Multiple SRPMS into a Single SRPM]]

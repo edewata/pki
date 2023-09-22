@@ -1,0 +1,43 @@
+= Supported HSMs =
+
+== Thales nFast Connect 6000 ==
+
+To enable debugging, specify the following parameters in /opt/nfast/cknfastrc:
+
+<pre>
+# CKNFAST_OVERRIDE_SECURITY_ASSURANCES=weak_des;silent;tokenkeys;explicitness
+CKNFAST_DEBUG=9
+CKNFAST_DEBUGFILE=/tmp/nethsm.log
+</pre>
+
+Then restart the service:
+
+<pre>
+$ /etc/init.d/nc_hardserver restart
+</pre>
+
+== Gemalto Luna SA ==
+
+To enable RSA key generation add the following parameter in /etc/Chrystoki.conf:
+
+ Misc = {
+    RSAKeyGenMechRemap = 1;
+ }
+
+== Nitrokey HSM ==
+
+See [https://shop.nitrokey.com/shop/product/nitrokey-hsm-7 Nitrokey HSM].
+
+== SoftHSM ==
+
+See [https://github.com/dogtagpki/pki/wiki/SoftHSM SoftHSM].
+
+= HSM Failover =
+
+See [https://github.com/dogtagpki/pki/wiki/Configuring-HSM-Failover Configuring HSM Failover].
+
+= References =
+
+* [[NSS]]
+* [[PKCS11]]
+* [https://safenet.gemalto.com/resources/integration-guide/data-protection/Encryption/OpenSSL-SafeNetLunaHSM-IntegrationGuide-RevL/ OpenSSL Integration Guide]

@@ -1,0 +1,457 @@
+== CS/IPA Implementation for Separating Default PKI Instance Creation from PKI Subsystem Packaging ==
+
+<table>
+<tr>
+<td valign="top">'''NOTE:&nbsp;&nbsp;</td>
+<td valign="top">While porting Dogtag from using '''tomcat5''' (Dogtag 1.3) to '''tomcat6''' (Dogtag 9.0), numerous changes were made to the registry model defined below.  These changes are discussed in [https://bugzilla.redhat.com/show_bug.cgi?id=632425 Bugzilla Bug #632425 - Port to tomcat6].</td>
+</tr>
+</table>
+
+=== Overview ===
+
+Implementation of the reviewed design has been captured in the following Bugzilla Bugs:
+* [https://bugzilla.redhat.com/show_bug.cgi?id=529070 Bugzilla Bug #529070 -  rpm packaging problems (cannot reinstall correctly)]
+* [https://bugzilla.redhat.com/show_bug.cgi?id=547471 Bugzilla Bug #547471 -  Apply PKI SELinux changes to PKI registry model]
+* [https://bugzilla.redhat.com/show_bug.cgi?id=553072 Bugzilla Bug #553072 -  Apply "registry" logic to pki-kra . . .]
+* [https://bugzilla.redhat.com/show_bug.cgi?id=553074 Bugzilla Bug #553074 -  Apply "registry" logic to pki-ocsp . . .]
+* [https://bugzilla.redhat.com/show_bug.cgi?id=553075 Bugzilla Bug #553075 -  Apply "registry" logic to pki-tks . . .]
+* [https://bugzilla.redhat.com/show_bug.cgi?id=553076 Bugzilla Bug #553076 -  Apply "registry" logic to pki-ra . . .]
+* [https://bugzilla.redhat.com/show_bug.cgi?id=553078 Bugzilla Bug #553078 -  Apply "registry" logic to pki-tps . . .]
+
+=== Packages ===
+
+As documented in the Bugzilla Bugs listed in the previous section, numerous files were changed in the following packages:
+* pki-ca
+* pki-common
+* pki-kra
+* pki-ocsp
+* pki-ra
+* pki-setup
+* pki-silent
+* pki-selinux
+* pki-tks
+* pki-tps
+
+=== Changes to the PKI Subsystem ===
+
+Key PKI subsystem changes include:
+* The PKI subsystem package contains the following new files and directories:
+<ul>
+{| border=1
+|-
+! PKI Subsystem !! PKI Controlling Daemon Init Script !! PKI Lock Directories !! PKI Run Directories
+|-
+| <center>CA</center>   || <center>/etc/rc.d/init.d/pki-cad</center>   || <center>/var/lock/pki/<br>/var/lock/pki/ca/</center>   || <center>/var/run/pki/<br>/var/run/pki/ca/</center>
+|-
+| <center>DRM</center>  || <center>/etc/rc.d/init.d/pki-krad</center>  || <center>/var/lock/pki/<br>/var/lock/pki/kra/</center>  || <center>/var/run/pki/<br>/var/run/pki/kra/</center>
+|-
+| <center>OCSP</center> || <center>/etc/rc.d/init.d/pki-ocspd</center> || <center>/var/lock/pki/<br>/var/lock/pki/ocsp/</center> || <center>/var/run/pki/<br>/var/run/pki/ocsp/</center>
+|-
+| <center>RA</center>   || <center>/etc/rc.d/init.d/pki-rad</center>   || <center>/var/lock/pki/<br>/var/lock/pki/ra/</center>   || <center>/var/run/pki/<br>/var/run/pki/ra/</center>
+|-
+| <center>TKS</center>  || <center>/etc/rc.d/init.d/pki-tksd</center>  || <center>/var/lock/pki/<br>/var/lock/pki/tks/</center>  || <center>/var/run/pki/<br>/var/run/pki/tks/</center>
+|-
+| <center>TPS</center>  || <center>/etc/rc.d/init.d/pki-tpsd</center>  || <center>/var/lock/pki/<br>/var/lock/pki/tps/</center>  || <center>/var/run/pki/<br>/var/run/pki/tps/</center>
+|}
+</ul>
+* Each PKI subsystem package no longer performs a post installation of a default PKI instance.  For example, since installation of the 'pki-ca' package no longer creates a default CA instance, one must always be installed using the 'pkicreate' utility.<br>For example, to create a new CA instance called 'pki-ca':
+  
+  pkicreate -pki_instance_root=/var/lib        \
+            -pki_instance_name=pki-ca          \
+            -subsystem_type=ca                 \
+            -agent_secure_port=9443            \
+            -ee_secure_port=9444               \
+            -admin_secure_port=9445            \
+            -unsecure_port=9180                \
+            -tomcat_server_port=9701           \
+            -user=pkiuser                      \
+            -group=pkiuser                     \
+            -redirect conf=/etc/pki-ca         \
+            -redirect logs=/var/log/pki-ca     \
+            -verbose
+
+and to remove this new CA instance called 'pki-ca':
+
+  pkiremove -pki_instance_root=/var/lib -pki_instance_name=pki-ca
+  
+  '''NOTE:'''  No command-line changes have been made to
+         EITHER the 'pkicreate' PKI instance creation utility,
+         OR the 'pkiremove' PKI instance deletion utility!
+         This was written prior to inclusion of a separate
+         EE ClientAuth port.
+
+* The individual PKI controller daemon init scripts, for example the 'pki-cad' file contains the following ownership and permissions:
+  # ls -lZ /etc/rc.d/init.d/pki-cad
+  -rwxr-xr-x. root root system_u:object_r:initrc_exec_t:s0 /etc/rc.d/init.d/pki-cad
+
+* Each PKI controller daemon init script controls ALL '''''new''''' PKI instances, replacing individual legacy PKI instance ownership and control of init scripts (legacy PKI instances are still controlled by their legacy init scripts), and operate with the following syntax (e. g. - 'pki-cad'):
+  Usage: /sbin/service pki-cad {start|stop|restart|condrestart|force-restart|try-restart|reload|status} [instance-name]
+  
+  '''NOTE:'''  If no optional [instance-name] is specified, 'pki-cad' attempts to perform the specified action
+         by looping through ALL CA entries contained in the '/etc/sysconfig/pki/ca/' registry ([[PKI_Registry_Implementation#Changes_to_CA_Instances|see below]]).
+
+* The values returned by PKI controller daemon init scripts attempt to satisfy the requirements specified by the following URL:
+  [http://fedoraproject.org/wiki/FCNewInit/Initscripts| FCNewInit/Initscripts]
+
+* The PKI subsystem lock directory (e. g. - '/var/lock/pki/ca/') contains the following ownership and permissions:
+  # ls -ldZ /var/lock/pki/ca/
+  drwxr-xr-x. root root system_u:object_r:var_lock_t:s0  /var/lock/pki/ca/
+
+* The PKI subsystem run directory (e. g. - '/var/run/pki/ca/') contains the following ownership and permissions:
+  # ls -ldZ /var/run/pki/ca/
+  drwxr-xr-x. root root system_u:object_r:pki_ca_var_run_t:s0 /var/run/pki/ca/
+
+* The following new PKI subsystem files and directories have been labeled by SELinux and enabled to run in enforcing mode:PKI instance creation (e. g. - CA):
+  /etc/rc.d/init.d/pki-cad
+  /etc/sysconfig/pki/ca/
+  /var/run/pki/ca/
+
+=== Changes to PKI Instances ===
+
+Key PKI instance changes include:
+* Since new PKI instances must ALWAYS be created by invoking the 'pkicreate' utility (i. e. - default instances are no longer created by installation of the 'pki-ca', 'pki-kra', 'pki-ocsp', 'pki-ra', 'pki-tks', or 'pki-tps' packages), the usage statement was updated:
+  PKI instance creation Utility ...
+  
+  
+  ###############################################################################
+  ###   USAGE:  CA, KRA, OCSP, or TKS subsystem instance creation (Tomcat)    ###
+  ###############################################################################
+  
+  pkicreate -pki_instance_root=<pki_instance_root>   # Instance root directory
+                                                     # destination
+  
+            -pki_instance_name=<pki_instance_id>     # Unique PKI subsystem
+                                                     # instance name
+  
+            -subsystem_type=<subsystem_type>         # Subsystem type
+                                                     # [ca | kra | ocsp | tks]
+  
+            #####################################################################
+            ###   SELECT separate secure ports for AGENT, EE, and ADMIN:      ###
+            #####################################################################
+  
+            -agent_secure_port=<agent_secure_port>   # Agent secure port
+  
+            -ee_secure_port=<ee_secure_port>         # EE secure port
+  
+            -admin_secure_port=<admin_secure_port>   # Admin secure port
+  
+            #####################################################################
+            ###   OR a single secure port shared by AGENT, EE, and ADMIN:     ###
+            #####################################################################
+  
+            -secure_port=<secure_port>               # Secure port
+                                                     # (shared by Agent,
+                                                     #  EE, and Admin)
+  
+            #####################################################################
+            ###   END secure port SELECTION                                   ###
+            #####################################################################
+  
+            -unsecure_port=<unsecure_port>           # Unsecure port
+  
+            -tomcat_server_port=<tomcat_server_port> # Unique port for each
+                                                     # Tomcat instance
+  
+            [-user=<username>]                       # User ownership
+                                                     # (must ALSO specify
+                                                     #  group ownership)
+                                                     #
+                                                     # [Default=pkiuser]
+  
+            [-group=<groupname>]                     # Group ownership
+                                                     # (must ALSO specify
+                                                     #  user ownership)
+                                                     #
+                                                     # [Default=pkiuser]
+  
+            [-redirect conf=<real conf dir path>]    # Redirection of
+                                                     # 'conf' directory
+  
+            [-redirect logs=<real logs dir path>]    # Redirection of
+                                                     # 'logs' directory
+  
+            [-verbose]                               # Print out liberal info
+                                                     # during 'pkicreate'
+  
+            [-help]                                  # Print out this screen
+  
+  
+  ###############################################################################
+  ###   USAGE:  RA or TPS subsystem instance creation (Apache)                ###
+  ###############################################################################
+  
+  pkicreate -pki_instance_root=<pki_instance_root>   # Instance root directory
+                                                     # destination
+  
+            -pki_instance_name=<pki_instance_id>     # Unique PKI subsystem
+                                                     # instance name
+  
+            -subsystem_type=<subsystem_type>         # Subsystem type
+                                                     # [ra | tps]
+  
+            -secure_port=<secure_port>               # Secure port
+                                                     # (clientauth)
+                                                     # for each
+                                                     # Apache instance
+  
+            -non_clientauth_secure_port=<non_clientauth_secure_port>
+  
+                                                     # Secure port
+                                                     # (non-clientauth)
+                                                     # for each
+                                                     # Apache instance
+  
+            -unsecure_port=<unsecure_port>           # Unsecure port
+  
+            [-user=<username>]                       # User ownership
+                                                     # (must ALSO specify
+                                                     #  group ownership)
+                                                     #
+                                                     # [Default=pkiuser]
+  
+            [-group=<groupname>]                     # Group ownership
+                                                     # (must ALSO specify
+                                                     #  user ownership)
+                                                     #
+                                                     # [Default=pkiuser]
+  
+            [-redirect conf=<real conf dir path>]    # Redirection of
+                                                     # 'conf' directory
+  
+            [-redirect logs=<real logs dir path>]    # Redirection of
+                                                     # 'logs' directory
+  
+            [-verbose]                               # Print out liberal info
+                                                     # during 'pkicreate'
+  
+            [-help]                                  # Print out this screen
+  
+  
+  ###############################################################################
+  ###   EXAMPLES:                                                             ###
+  ###       PKI (Tomcat) subsystem instance creation of a  CA                 ###
+  ###       PKI (Tomcat) subsystem instance creation of a  Subordinate CA     ###
+  ###       PKI (Tomcat) subsystem instance creation of a  KRA                ###
+  ###       PKI (Tomcat) subsystem instance creation of an OCSP               ###
+  ###       PKI (Tomcat) subsystem instance creation of a  TKS                ###
+  ###       PKI (Apache) subsystem instance creation of an RA                 ###
+  ###       PKI (Apache) subsystem instance creation of a  TPS                ###
+  ###       PKI (Apache) subsystem instance creation of a  second TPS         ###
+  ###############################################################################
+  
+  pkicreate -pki_instance_root=/var/lib        \
+            -pki_instance_name=pki-ca          \
+            -subsystem_type=ca                 \
+            -agent_secure_port=9443            \
+            -ee_secure_port=9444               \
+            -admin_secure_port=9445            \
+            -unsecure_port=9180                \
+            -tomcat_server_port=9701           \
+            -user=pkiuser                      \
+            -group=pkiuser                     \
+            -redirect conf=/etc/pki-ca         \
+            -redirect logs=/var/log/pki-ca     \
+            -verbose
+  
+  pkicreate -pki_instance_root=/var/lib        \
+            -pki_instance_name=pki-subca       \
+            -subsystem_type=ca                 \
+            -agent_secure_port=9543            \
+            -ee_secure_port=9544               \
+            -admin_secure_port=9545            \
+            -unsecure_port=9580                \
+            -tomcat_server_port=9801           \
+            -user=pkiuser                      \
+            -group=pkiuser                     \
+            -redirect conf=/etc/pki-subca      \
+            -redirect logs=/var/log/pki-subca  \
+            -verbose
+  
+  pkicreate -pki_instance_root=/var/lib        \
+            -pki_instance_name=pki-kra         \
+            -subsystem_type=kra                \
+            -agent_secure_port=10443           \
+            -ee_secure_port=10444              \
+            -admin_secure_port=10445           \
+            -unsecure_port=10180               \
+            -tomcat_server_port=10701          \
+            -user=pkiuser                      \
+            -group=pkiuser                     \
+            -redirect conf=/etc/pki-kra        \
+            -redirect logs=/var/log/pki-kra    \
+            -verbose
+  
+  pkicreate -pki_instance_root=/var/lib        \
+            -pki_instance_name=pki-ocsp        \
+            -subsystem_type=ocsp               \
+            -agent_secure_port=11443           \
+            -ee_secure_port=11444              \
+            -admin_secure_port=11445           \
+            -unsecure_port=11180               \
+            -tomcat_server_port=11701          \
+            -user=pkiuser                      \
+            -group=pkiuser                     \
+            -redirect conf=/etc/pki-ocsp       \
+            -redirect logs=/var/log/pki-ocsp   \
+            -verbose
+  
+  pkicreate -pki_instance_root=/var/lib        \
+            -pki_instance_name=pki-tks         \
+            -subsystem_type=tks                \
+            -agent_secure_port=13443           \
+            -ee_secure_port=13444              \
+            -admin_secure_port=13445           \
+            -unsecure_port=13180               \
+            -tomcat_server_port=13701          \
+            -user=pkiuser                      \
+            -group=pkiuser                     \
+            -redirect conf=/etc/pki-tks        \
+            -redirect logs=/var/log/pki-tks    \
+            -verbose
+  
+  pkicreate -pki_instance_root=/var/lib        \
+            -pki_instance_name=pki-ra          \
+            -subsystem_type=ra                 \
+            -secure_port=12889                 \
+            -non_clientauth_secure_port=12890  \
+            -unsecure_port=12888               \
+            -user=pkiuser                      \
+            -group=pkiuser                     \
+            -redirect conf=/etc/pki-ra         \
+            -redirect logs=/var/log/pki-ra     \
+            -verbose
+  
+  pkicreate -pki_instance_root=/var/lib        \
+            -pki_instance_name=pki-tps         \
+            -subsystem_type=tps                \
+            -secure_port=7889                  \
+            -non_clientauth_secure_port=7890   \
+            -unsecure_port=7888                \
+            -user=pkiuser                      \
+            -group=pkiuser                     \
+            -redirect conf=/etc/pki-tps        \
+            -redirect logs=/var/log/pki-tps    \
+            -verbose
+  
+  pkicreate -pki_instance_root=/var/lib        \
+            -pki_instance_name=pki-tps1        \
+            -subsystem_type=tps                \
+            -secure_port=7989                  \
+            -non_clientauth_secure_port=7990   \
+            -unsecure_port=7988                \
+            -user=pkiuser                      \
+            -group=pkiuser                     \
+            -redirect conf=/etc/pki-tps1       \
+            -redirect logs=/var/log/pki-tps1   \
+            -verbose
+  
+  IMPORTANT:  Must be run as root!
+  
+
+* When installed via the 'pkicreate' utility, each new PKI instance now automatically generates an instance-specific "registry" entry called '/etc/sysconfig/pki/&lt;pki_subsystem_name&gt;/&lt;instance_name&gt;'. For example, the registry entry of the [[PKI_Registry_Implementation#Changes_to_the_PKI_Subsystem|'pki-ca' instance created above]] looks like this:
+  # Establish PKI Variable "Slot" Substitutions
+  
+  PKI_FLAVOR=pki
+  export PKI_FLAVOR
+  
+  PKI_GROUP=pkiuser
+  export PKI_GROUP
+  
+  PKI_INSTANCE_ID=pki-ca
+  export PKI_INSTANCE_ID
+  
+  PKI_INSTANCE_PATH=/var/lib/pki-ca
+  export PKI_INSTANCE_PATH
+  
+  PKI_SERVER_XML_CONF=/etc/pki-ca/server.xml
+  export PKI_SERVER_XML_CONF
+  
+  PKI_SUBSYSTEM_TYPE=ca
+  export PKI_SUBSYSTEM_TYPE
+  
+  PKI_USER=pkiuser
+  export PKI_USER
+  
+  # Use CATALINA_BASE
+  
+  CATALINA_BASE=${PKI_INSTANCE_PATH}
+  export CATALINA_BASE
+  
+  # Get Tomcat config
+  
+  TOMCAT_CFG="${PKI_INSTANCE_PATH}/conf/tomcat5.conf"
+  export TOMCAT_CFG
+  
+  [ -r "$TOMCAT_CFG" ] && . "${TOMCAT_CFG}"
+  
+  # Path to the tomcat launch script (direct don't use wrapper)
+  TOMCAT_SCRIPT=/usr/bin/dtomcat5-${PKI_INSTANCE_ID}
+  export TOMCAT_SCRIPT
+  
+  # Path to the script that will refresh jar symlinks on startup
+  if [ ${OS} = "Linux" ] ; then
+      TOMCAT_RELINK_SCRIPT="/usr/share/tomcat5/bin/relink"
+      export TOMCAT_RELINK_SCRIPT
+  fi
+  
+  # Tomcat name :)
+  TOMCAT_PROG=${PKI_INSTANCE_ID}
+  export TOMCAT_PROG
+  
+  # if TOMCAT_USER is not set, use tomcat5 like Apache HTTP server
+  if [ -z "$TOMCAT_USER" ]; then
+      TOMCAT_USER="${PKI_USER}"
+      export TOMCAT_USER
+  fi
+  
+  # if TOMCAT_GROUP is not set, use tomcat5 like Apache HTTP server
+  if [ -z "$TOMCAT_GROUP" ]; then
+      TOMCAT_GROUP="${PKI_GROUP}"
+      export TOMCAT_GROUP
+  fi
+  
+  # Since the daemon function will sandbox $tomcat
+  # no environment stuff should be defined here anymore.
+  # Please use the ${PKI_INSTANCE_PATH}/conf/tomcat5.conf
+  # file instead ; it will be read by the $tomcat script
+  
+  PKI_LOCKDIR="/var/lock/pki/ca"
+  export PKI_LOCKDIR
+  PKI_LOCKFILE="${PKI_LOCKDIR}/${PKI_INSTANCE_ID}.pid"
+  export PKI_LOCKFILE
+  PKI_PIDFILE="${PKI_INSTANCE_ID}.pid"
+  export PKI_PIDFILE
+  pki_instance_configuration_file=${PKI_INSTANCE_PATH}/conf/CS.cfg
+  export pki_instance_configuration_file
+  
+  RESTART_SERVER=${PKI_INSTANCE_PATH}/conf/restart_server_after_configuration
+  export RESTART_SERVER
+
+* Newly created PKI instances no longer contain their own init script (e. g. - '/etc/rc.d/init.d/pki-ca', '/etc/rc.d/init.d/pki-subca', etc.); rather, they are controlled through the new centralized '/etc/rc.d/init.d/pki-cad' init script ([[PKI_Registry_Implementation#Changes_to_the_PKI_Subsystem|see above]]) which utilizes this new "registry" feature.  Note that previously installed PKI instances should continue to be controlled through their existing init scripts (e. g. - /etc/init.d/pki-ca)
+  '''IMPORTANT:'''  If a legacy PKI instance exists (e. g. - "/var/lib/pki-ca"), a new instance named 'pki-ca' may not be installed in the same location.
+              It is recommended to use a different name (rather than just a different location).
+  
+              Although it is highly unlikely, a naming collision problem could occur if a legacy PKI instance had been named the same name
+              as one of the new controlling daemon init scripts (e. g. - 'pki-cad')!
+
+* Newly created PKI instances contain a local shell script called /var/lib/&lt;instance_name&gt;/&lt;instance_name&gt; (rather than a legacy symlink which pointed to the instance's init script).  For example, the '/var/lib/pki-ca/pki-ca' script looks like this:
+  #!/bin/bash
+  if [ $# -ne 1 ]; then
+      echo "Usage: $0 {start|stop|restart|condrestart|force-restart|try-restart|reload|status}"
+      exit 3
+  fi
+  
+  /sbin/service pki-cad $1 pki-ca
+
+* Each running new PKI instance places an instance lockfile under /var/lock/pki/&lt;pki_subsystem_name&gt;/&lt;instance_name&gt;.pid.  For example, '/var/lock/pki/ca/pki-ca.pid' looks like this:
+  # ls -lZ /var/lock/pki/ca/pki-ca.pid
+  -rw-------. pkiuser pkiuser unconfined_u:object_r:var_lock_t:s0 /var/lock/pki/ca/pki-ca.pid
+
+* Each running new PKI instance places an instance pidfile under /var/run/pki/&lt;pki_subsystem_name&gt;/&lt;instance_name&gt;.pid.  For example, '/var/run/pki/ca/pki-ca.pid' looks like this:
+  # ls -lZ /var/run/pki/ca/pki-ca.pid 
+  -rw-------. pkiuser pkiuser system_u:object_r:pki_ca_var_run_t:s0 /var/run/pki/ca/pki-ca.pid
+
+* The following new PKI instance locations have been labeled by SELinux and enabled to run in enforcing mode:
+  /etc/sysconfig/pki/&lt;pki_subsystem_name&gt;/*
+  /var/run/pki/&lt;pki_subsystem_name&gt;/*

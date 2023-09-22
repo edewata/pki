@@ -1,0 +1,21 @@
+Dogtag Certificate System is available on Fedora 15 platforms.
+* use 'pkicreate' to create new instances of CA, DRM, OCSP, RA, TKS, and TPS.
+* use 'pkiremove' to delete instances of CA, DRM, OCSP, RA, TKS, and TPS.
+* use either a 'Firefox 3.x' browser or 'pkisilent' to configure instances of CA, DRM, OCSP, RA, TKS, and TPS.
+
+In addition to being available on the Fedora 15 platforms via 'yum', individual packages available from [http://koji.fedoraproject.org/koji/ Koji] include:
+
+* [http://koji.fedoraproject.org/koji/packageinfo?packageID=4397 jss 4.2.6-17]
+* [http://koji.fedoraproject.org/koji/packageinfo?packageID=9200 tomcatjss 6.0.0]
+* [http://koji.fedoraproject.org/koji/packageinfo?packageID=9479 osutil 2.0.1]
+* [http://koji.fedoraproject.org/koji/packageinfo?packageID=9999 dogtag-pki 9.0.0]
+* [http://koji.fedoraproject.org/koji/packageinfo?packageID=11475 pki-dogtag-theme 9.0.6]
+* [http://koji.fedoraproject.org/koji/packageinfo?packageID=11434 pki-core 9.0.9]
+* [http://koji.fedoraproject.org/koji/packageinfo?packageID=9863 pki-console 9.0.3]
+* [http://koji.fedoraproject.org/koji/packageinfo?packageID=9814 pki-kra 9.0.4]
+* [http://koji.fedoraproject.org/koji/packageinfo?packageID=9805 pki-ocsp 9.0.3]
+* [http://koji.fedoraproject.org/koji/packageinfo?packageID=9853 pki-ra 9.0.3]
+* [http://koji.fedoraproject.org/koji/packageinfo?packageID=9808 pki-tks 9.0.3]
+* [http://koji.fedoraproject.org/koji/packageinfo?packageID=9893 pki-tps 9.0.5]
+
+See the [[Release Notes]] for additional information about this release.

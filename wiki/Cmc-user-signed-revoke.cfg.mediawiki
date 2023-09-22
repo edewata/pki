@@ -1,0 +1,34 @@
+= Cmc-user-signed-revoke.cfg =
+<pre>
+#numRequests: Total number of PKCS10 requests or CRMF requests.
+numRequests=1
+
+#output: full path for the CMC request in binary format
+output=/root/cfu/test/cmc/cmc.revoke.userSigned.req
+
+#tokenname: name of token where user signing cert can be found (default is internal)
+tokenname=internal
+
+#nickname: nickname for user signing certificate which will be used
+#to sign the CMC full request.
+nickname=signer cfu cert
+
+#dbdir: directory for cert8.db, key3.db and secmod.db
+dbdir=/root/cfu/test/cmc/
+
+#password: password for cert8.db which stores the user signing
+#certificate and keys
+password=netscape
+
+#format: request format, either pkcs10 or crmf
+format=pkcs10
+
+## revocation parameters
+revRequest.enable=true
+#revRequest.nickname=signer cfu cert
+#revRequest.issuer=CN=CA Signing Certificate,OU=pki-tomcat,O=unknown00262DFC6A5E E Security Domain
+revRequest.serial=45
+revRequest.reason=unspecified
+#revRequest.sharedSecret=wrongtesting
+revRequest.comment=cfu test revocation
+</pre>

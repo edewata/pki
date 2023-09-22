@@ -1,0 +1,22 @@
+= Installation =
+
+<pre>
+$ dnf install nfs-utils nfs-utils-lib
+$ systemctl start nfs.service
+$ systemctl start rpcbind.service
+</pre>
+
+= Server Configuration =
+
+Edit /etc/exports:
+
+<pre>
+<shared dir> <client IP>(rw,sync,no_root_squash)
+</pre>
+
+= Client Configuration =
+
+<pre>
+$ showmount -e <server IP>
+$ mount -t nfs <server IP>:<shared dir> <local dir>
+</pre>

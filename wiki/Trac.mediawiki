@@ -1,0 +1,20 @@
+= Prerequisites =
+
+ $ wget http://peak.telecommunity.com/dist/ez_setup.py
+ $ python ez_setup.py
+ $ easy_install setuptools
+ $ easy_install Genshi
+
+= Installation =
+
+ $ wget https://download.edgewall.org/trac/Trac-0.12.5.tar.gz
+ $ tar xzvf Trac-0.12.5.tar.gz
+ $ cd Trac-0.12.5
+ $ python ./setup.py install
+
+= References =
+
+* [https://download.edgewall.org/trac/ Download Trac]
+* [https://trac.edgewall.org/wiki/0.12/TracInstall Trac Installation]
+* [https://developers.openshift.com/languages/python/getting-started.html OpenShift - Getting Started with Python 2.6, 2.7, and 3.3]
+* [https://blog.openshift.com/getting-started-python/ OpenShift - Getting Started With Python]

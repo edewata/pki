@@ -1,0 +1,163 @@
+= Overview (Work in Progress) =
+
+This document describes the process to run PKI server in a container. It assumes that the [[DS Container]] is already created.
+
+= Creating PKI Container =
+
+<pre>
+$ docker run \
+    --name pki-ca \
+    --hostname ca.example.com \
+    --privileged \
+    --tmpfs /tmp \
+    --tmpfs /run \
+    --volume /sys/fs/cgroup:/sys/fs/cgroup:ro \
+    --expose 8080 \
+    --publish 8080:8080 \
+    --detach \
+    fedora:29 "/usr/sbin/init"
+$ docker exec pki-ca dnf install -y dnf-plugins-core
+$ docker exec pki-ca dnf copr enable -y @pki/master
+$ docker exec pki-ca dnf install -y dogtag-pki
+</pre>
+
+= Creating PKI Network =
+
+<pre>
+$ docker network create example.com
+$ docker network connect example.com ds --alias ds.example.com
+$ docker network connect example.com pki-ca --alias ca.example.com
+</pre>
+
+= Creating PKI CA Instance =
+
+To create PKI CA instance with pkispawn:
+
+<pre>
+$ docker exec pki-ca sh -c 'cat > /tmp/ca.cfg << EOF
+[DEFAULT]
+pki_server_database_password=Secret.123
+
+[CA]
+pki_admin_email=caadmin@example.com
+pki_admin_name=caadmin
+pki_admin_nickname=caadmin
+pki_admin_password=Secret.123
+pki_admin_uid=caadmin
+
+pki_client_database_password=Secret.123
+pki_client_database_purge=False
+pki_client_pkcs12_password=Secret.123
+
+pki_ds_hostname=ds.example.com
+pki_ds_password=Secret.123
+pki_ds_base_dn=dc=ca,dc=pki,dc=example,dc=com
+pki_ds_database=ca
+
+pki_security_domain_name=EXAMPLE
+
+pki_ca_signing_nickname=ca_signing
+pki_ocsp_signing_nickname=ca_ocsp_signing
+pki_audit_signing_nickname=ca_audit_signing
+pki_sslserver_nickname=sslserver
+pki_subsystem_nickname=subsystem
+EOF'
+$ docker exec pki-ca pkispawn -f /tmp/ca.cfg -s CA
+</pre>
+
+To create PKI server manually:
+
+<pre>
+$ pki-server create
+$ pki-server nss-create --no-password
+$ pki -d /var/lib/pki/pki-tomcat/conf/alias \
+    -f /var/lib/pki/pki-tomcat/conf/password.conf \
+    nss-cert-request \
+    --subject "CN=$HOSTNAME" \
+    --ext /usr/share/pki/ca/certs/sslserver.conf \
+    --csr /var/lib/pki/pki-tomcat/conf/sslserver.csr
+$ pki -d /var/lib/pki/pki-tomcat/conf/alias \
+    -f /var/lib/pki/pki-tomcat/conf/password.conf \
+    nss-cert-issue \
+    --csr /var/lib/pki/pki-tomcat/conf/sslserver.csr \
+    --ext /usr/share/pki/ca/certs/sslserver.conf \
+    --cert /var/lib/pki/pki-tomcat/conf/sslserver.crt
+$ pki -d /var/lib/pki/pki-tomcat/conf/alias \
+    -f /var/lib/pki/pki-tomcat/conf/password.conf \
+    nss-cert-import \
+    --cert /var/lib/pki/pki-tomcat/conf/sslserver.crt \
+    sslserver
+$ pki-server jss-enable
+$ pki-server http-connector-add \
+    --port 8443 \
+    --scheme https \
+    --secure true \
+    --sslEnabled true \
+    --sslProtocol SSL \
+    Secure
+$ pki-server http-connector-mod \
+    --sslImpl org.dogtagpki.tomcat.JSSImplementation \
+    Secure
+$ pki-server http-connector-cert-add \
+    --keyAlias sslserver \
+    --keystoreType pkcs11 \
+    --keystoreProvider Mozilla-JSS
+</pre>
+
+To create PKI CA manually:
+
+<pre>
+$ pki-server ca-create
+</pre>
+
+To configure PKI CA database:
+
+<pre>
+$ pki-server ca-config-set internaldb.ldapconn.host $HOSTNAME
+$ pki-server ca-config-set internaldb.ldapconn.port 389
+$ pki-server ca-config-set internaldb.ldapauth.authtype BasicAuth
+$ pki-server ca-config-set internaldb.ldapauth.bindDN "cn=Directory Manager"
+$ pki-server ca-config-set internaldb.ldapauth.bindPassword Secret.123
+$ pki-server ca-config-set internaldb.database ca
+$ pki-server ca-config-set internaldb.basedn "dc=ca,dc=pki,dc=example,dc=com"
+</pre>
+
+To disable CRL:
+
+<pre>
+$ pki-server ca-config-set ca.crl.MasterCRL.enable false
+</pre>
+
+To disable FlatFileAuth:
+
+<pre>
+$ pki-server ca-config-unset auths.impl.FlatFileAuth.class
+$ pki-server ca-config-unset auths.instance.flatFileAuth.pluginName
+$ pki-server ca-config-unset auths.instance.flatFileAuth.fileName
+</pre>
+
+To run PKI server:
+
+<pre>
+$ pki-server run
+</pre>
+
+= Accessing PKI Container =
+
+<pre>
+$ pki ca-cert-find
+</pre>
+
+= Building PKI Container Image =
+
+See [https://github.com/dogtagpki/pki/wiki/Building-CA-Container Building CA Container].
+
+= References =
+
+* [[Container]]
+* [[PKI CA OpenShift]]
+* [[PKI 10 Installation]]
+* [[PKI CI Container]]
+* [[DS Container]]
+* [[Docker]]
+* [https://fedoramagazine.org/build-smaller-containers/ Build smaller containers]

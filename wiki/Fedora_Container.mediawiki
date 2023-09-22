@@ -1,0 +1,81 @@
+== Pulling Fedora Container ==
+
+<pre>
+$ docker pull fedora:29
+</pre>
+
+See also:
+
+* https://hub.docker.com/_/fedora/
+
+= Running Fedora Container =
+
+To run Fedora container:
+
+<pre>
+$ docker run \
+    --name fedora \
+    --hostname=server.example.com \
+    --privileged \
+    --tmpfs /tmp \
+    --tmpfs /run \
+    --volume /sys/fs/cgroup:/sys/fs/cgroup:ro \
+    --detach \
+    -ti \
+    fedora:29 "/usr/sbin/init"
+</pre>
+
+To access the container:
+
+<pre>
+$ docker exec -ti fedora /bin/bash
+</pre>
+
+= Creating Fedora Container =
+
+Create the following Dockerfile:
+
+<pre>
+FROM fedora:29
+MAINTAINER http://fedoraproject.org/wiki/Cloud
+
+ENV container docker
+
+RUN dnf -y update && dnf clean all
+
+RUN dnf -y install systemd && dnf clean all && \
+(cd /lib/systemd/system/sysinit.target.wants/; for i in *; do [ $i == systemd-tmpfiles-setup.service ] || rm -f $i; done); \
+rm -f /lib/systemd/system/multi-user.target.wants/*;\
+rm -f /etc/systemd/system/*.wants/*;\
+rm -f /lib/systemd/system/local-fs.target.wants/*; \
+rm -f /lib/systemd/system/sockets.target.wants/*udev*; \
+rm -f /lib/systemd/system/sockets.target.wants/*initctl*; \
+rm -f /lib/systemd/system/basic.target.wants/*;\
+rm -f /lib/systemd/system/anaconda.target.wants/*;
+
+VOLUME [ "/sys/fs/cgroup", "/tmp", "/run" ]
+CMD ["/usr/sbin/init"]
+</pre>
+
+To build the image:
+
+<pre>
+$ docker build -t fedora .
+</pre>
+
+To run the container:
+
+<pre>
+$ docker run --name fedora --detach -ti -v /sys/fs/cgroup:/sys/fs/cgroup:ro fedora /usr/sbin/init
+</pre>
+
+= See Also =
+
+* [[Fedora OpenShift]]
+* [[Container]]
+* [https://developers.redhat.com/blog/2014/05/05/running-systemd-within-docker-container/ Running systemd within a Docker Container]
+* [https://rhatdan.wordpress.com/2014/04/30/running-systemd-within-a-docker-container Running systemd within a docker container]
+* https://github.com/fedora-cloud/Fedora-Dockerfiles/tree/master/systemd/systemd
+* https://github.com/fedora-cloud/Fedora-Dockerfiles/blob/master/systemd/systemd/Dockerfile
+* [[HTTPD Docker]]
+* [[DS Container]]

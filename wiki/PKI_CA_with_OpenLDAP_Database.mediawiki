@@ -1,0 +1,50 @@
+= Modifying Core Schema =
+
+To modify core schema:
+
+<pre>
+$ ldapmodify -H ldapi:/// -Y EXTERNAL -f /usr/share/pki/ca/database/openldap/schema-mod.ldif
+</pre>
+
+= Importing CA Schema =
+
+To import CA schema:
+
+<pre>
+$ ldapadd -H ldapi:/// -Y EXTERNAL -f /usr/share/pki/ca/database/openldap/schema.ldif
+</pre>
+
+To check CA schema:
+
+<pre>
+$ ldapsearch -H ldapi:/// -Y EXTERNAL -b "cn={5}ca,cn=schema,cn=config"
+</pre>
+
+= Importing CA Base Entries =
+
+To import PKI base entry:
+
+<pre>
+$ ldapadd -H ldap://$HOSTNAME:10389 -x -D cn=Manager,dc=example,dc=com -w Secret.123
+dn: dc=pki,dc=example,dc=com
+objectClass: dcObject
+objectclass: organization
+o: PKI
+dc: pki
+</pre>
+
+To import CA base entries:
+
+<pre>
+$ ldapadd -H ldap://$HOSTNAME:10389 -x -D cn=Manager,dc=example,dc=com -w Secret.123 -f /usr/share/pki/ca/database/openldap/create.ldif
+</pre>
+
+To check CA subtree:
+
+<pre>
+$ ldapadd -H ldap://$HOSTNAME:10389 -x -D cn=Manager,dc=example,dc=com -w Secret.123 -b "dc=ca,dc=pki,dc=example,dc=com"
+</pre>
+
+= See Also =
+
+* [[OpenLDAP Server]]

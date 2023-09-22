@@ -1,0 +1,82 @@
+What is the rationale to change the instance naming schema? Are you going to store all portions of an instance (tps, ca, etc.) in a single subdirectory now as opposed to multiple? Is there still going to be a symbolic link to files in /var?
+[[User:Rcritten|Rcritten]] 23:35, 17 November 2009 (UTC)
+
+Q: What is the rationale to change the instance naming schema?<br>
+A: Currently, the "pkicreate" script creates instances and generates a startup script unique to that instance (e. g. - /etc/init.d/pki-ca1).  According to Fedora packaging requirements, since there can only be one startup script which must be associated with the "pki-ca" package (e. g. - /etc/init.d/pki-ca), it must control all instances of CAs on the machine.<br>
+[[User:Mharmsen|Mharmsen]] 9:35, 18 November 2009 (PST)
+
+Q: Are you going to store all portions of an instance (tps, ca, etc.) in a single subdirectory now as opposed to multiple?<br>
+A: If I understand your question, no.  The only difference will be that the "pkicreate" and "pkiremove" scripts will no longer create a startup script (e. g. - /etc/init.d/pki-ca1), but will rather create an informational file under the /etc/sysconfig/ directory for use with the single startup script owned by the "pki-ca" package.  The single startup script will process these new files created by each instance (e. g. - /etc/sysconfig/pki-ca-root, /etc/sysconfig/pki-ca-subordinate, /etc/sysconfig/pki-ca-clone1, etc.).  Each top-level package (pki-ca, pki-tps, etc.) will contain their own single startup script (/etc/init.d/pki-ca, /etc/init.d/pki-tps, etc.).<br>
+[[User:Mharmsen|Mharmsen]] 9:35, 18 November 2009 (PST)
+
+Q: Is there still going to be a symbolic link to files in /var?<br>
+A: The information as to the location specified during instance creation will be captured in the instance's information file under "/etc/sysconfig/".  Generally, we create instances under the "/var/lib/" directory (e. g. - /var/lib/pki-ca/) although users can optionally select a different location; we will document this in the revised usage statement of "pkicreate".  As always, the "pkicreate" options which allow users to redirect their configuration files and log files will continue to be supported.<br>
+[[User:Mharmsen|Mharmsen]] 9:35, 18 November 2009 (PST)
+
+"Installation, upgrading, or removing the pki-setup package will do nothing to existing PKI instances."
+
+Nor should it create an instance, not sure if that's what you meant or not. The pki-setup package should provide the tools to create an instance, it should not run anything by itself.
+
+With respect to the pki-*-instance naming convention for files. I'm not a fan of embedding the instance data in multiple filenames, rather I would prefer to see the instance data collected under a subdirectory bearing the name of the instance or as a single file bearing the name of the instance in a xxx.d directory. Not only does this seem easier to manage but it's more in keeping with existing practice. There is no packaging guideline you must follow with respect to this other than you must follow the guidelines of FHS (http://www.pathname.com/fhs), but making it easy to group files, locate them and conform to the expectations of existing practice has value.
+
+It's generally not a good idea to let user's select where files will be created. Not only might this lead to violation of the FHS but it greatly confounds SELinux which applies security labels based on the pathname.
+
+[[User:Jdennis|jdennis]] 13:40, 18 November 2009
+
+Comment: "Installation, upgrading, or removing the pki-setup package will do nothing to existing PKI instances." Nor should it create an instance, not sure if that's what you meant or not. The pki-setup package should provide the tools to create an instance, it should not run anything by itself.<br>
+A: This is correct -- the pki-setup package will only provide scripts to create and remove instances, it will not run anything by itself.<br>
+[[User:Mharmsen|Mharmsen]] 10:43, 18 November 2009 (PST)
+
+Comment: It's generally not a good idea to let user's select where files will be created. Not only might this lead to violation of the FHS but it greatly confounds SELinux which applies security labels based on the pathname.<br>
+A: At the time that the original implementation was done, we had customers which did not wish to conform with the FHS and were not using SELinux (e. g. - as I recall, they wanted to locate their instances on a raid partition).   As such, the implementation allowed users to specify where they wanted to locate their instances --- I need to check with product management to see if such flexibility is still desired/required.<br>
+[[User:Mharmsen|Mharmsen]] 10:52, 18 November 2009 (PST)
+
+Comment:
+
+With respect to where the instance data is located, that's what mount points are for. For example it would be a good administration practice to mount /var on a RAID device. As for what customers want vs. what customers get. One of our value propositions is consistency across the entire system. Major elements of that consistency and value proposition is FHS and SELinux.
+
+[[User:Jdennis|jdennis]]
+
+I believe that the pki-*-instance naming convention is simply doing what Directory Server is doing, which is not embedding the same all over the place in many different files.  
+
+In DS, we have a static initscript that can operate against all existing DS instances on the system.  The initscript knows what instances exist on the system by the existence of a "/etc/sysconfig/dirsrv-<instance>" file for each instance.  This file simply contains a handful of PATH locations that are the bare minimum needed for the initscript to perform it's start/stop/status operations.  The "<instance>" portion of the name allows you to do things like "service dirsrv start myinstance".  The instance name is used in a few other locations as the directory name.  It can not be simply one location sice we are following FHS standards, and not all instance files belong in the same location.  For this reason we have locations such as "/etc/dirsrv/slapd-myinstance", "/var/lib/dirsrv/slapd-myinstance", and "/usr/lib/dirsrv/slapd-myinstance".
+
+My understanding is that CS would be doing the same thing here (Matt can correct me if I am wrong).
+
+As for file locations, we are in the same boat with DS.  The default is to follow FHS, and it is what is recommended.  One can override certain key locations (database directory, log directory, etc.), but it is highly discouraged for the FHS and SELinux reasons mentioned.
+
+[[User:nkinder|nkinder]]
+
+Nkinder, yes, this is basically correct for CS as well.<br>
+[[User:Mharmsen|Mharmsen]] 11:54, 18 November 2009 (PST)
+
+I would like to offer a slight modification to the proposed design.  Rather than renaming instances and storing them under /etc/sysconfig, I would like to change the "pkicreate" and "pkiremove" tools to create/remove instance "registry" values located under a pki subsystem registry (e. g. - /etc/sysconfig/pki/ca/).  A single startup/shutdown script (e. g. - /etc/init.d/pki-ca) can loop over all files located underneath its associated pki subsystem registry.  The "pkicreate" tool will create this directory hierarchy as needed, and the "pkiremove" tool will remove this directory hierarchy as needed. I would still like to add a required option of "-subsystem_type=&lt;subsystem_type&gt;" to the "pkiremove" tool (although I could always obtain the subsystem from the instance's configuration file if necessary). This has the benefit of allowing no changes to existing IPA code (except for any calls to "pkiremove" if it is determined that we will add the afore-mentioned option).<br>
+[[User:Mharmsen|Mharmsen]] 8:54, 19 November 2009 (PST)
+
+Yes, I think this is a better idea. FWIW this is what I was trying to suggest when I talked about using subdirectories earlier rather than embedding the instance in a filename. This way you just iterate over the contents of the directory. So I agree, I think this is a better approach.
+
+[[User:Jdennis|Jdennis]] 17:29, 19 November 2009 (UTC)
+
+Per the 10:00 meeting on November 19, 2009, we reached a consensus that the PKI team will go forward with the latest suggested changes to the design.  Changes to the "pkiremove" script will be left up to the discretion of the PKI group during implementation, but ANY and ALL changes WILL be communicated immediately with the IPA group.<br>
+[[User:Mharmsen|Mharmsen]] 10:31, 19 November 2009 (PST)
+
+From an IRC discussion between RCritten and Mharmsen shortly after the meeting mentioned above:
+
+    <rcrit> mharmsen, ping. Sorry I missed the mtg, I think my questions were answered in the wiki discussion page
+    <mharmsen> rcrit:  pong --- so the only slightly "unresolved" question was about changing the mandatory options to "pkiremove"
+    <rcrit> ok, I saw mention to that, not sure what these options are
+    <mharmsen> currently, they are the "location" and the "name"
+    <mharmsen> I was thinking of adding a "subsystem type" option (and possibly deleting "location" as that information will now be contained in the registry)
+    <mharmsen> Current usage:  pkiremove -pki_instance_root=/var/lib -pki_instance_name=pki-ca1
+    <mharmsen> Potential revised usage:  pkiremove -pki_instance_name=pki-ca1 -subsystem_type=ca
+    <rcrit> ah
+    <mharmsen> If I don't make the change, I can still use the old usage (I just have to read the pki subsystem type out of the instance's CS.cfg file),
+               but I think that the new usage would be going in a slightly better direction
+    <mharmsen> as it would be using the new registry
+    <mharmsen> the down side of this change is that I don't know how much this would disrupt IPA code
+    <mharmsen> rcrit, do you have a strong preference one way or the other?
+    <rcrit> not really
+    <rcrit> my only concern is that registry's have a habit of getting corrupted, so you'll need to be careful :-)
+    <mharmsen> okay -- if I make this change I will make every effort to notify you as soon as possible so that you can make any necessary IPA code changes.
+
+[[User:Mharmsen|Mharmsen]] 13:31, 19 November 2009 (PST)

@@ -1,0 +1,25 @@
+= CMake Script =
+
+== Parameters ==
+
+To define a parameter:
+
+<pre>
+set(<name> <default value> CACHE STRING <description>)
+</pre>
+
+To override the default parameter value:
+
+<pre>
+$ cmake \
+    -D<name>=<value> \
+    -D<name>:<type>=<value> \
+    ...
+</pre>
+
+= References =
+
+* [[PKI CMake]]
+* [http://www.cmake.org/cmake/help/v2.8.10/cmake.html CMake 2.8.10 Documentation]
+* [http://www.cmake.org/cmake/help/cmake_tutorial.html CMake Tutorial]
+* [[RPM]]

@@ -1,0 +1,38 @@
+= Prerequisites =
+
+== Operating System ==
+
+The instructions are intended for the following platforms:
+
+* Dogtag 9.0
+** Fedora 15 (both 32-bit i686 and 64-bit x86_64)
+
+* Dogtag 1.3
+** Fedora 13 (both 32-bit i686 and 64-bit x86_64)
+** Fedora 12 (both 32-bit i686 and 64-bit x86_64)
+** Fedora 11 (both 32-bit i586 and 64-bit x86_64)
+** RHEL 5.5 [EPEL] (both 32-bit i386 and 64-bit x86_64)
+
+== Known Package Conflicts ==
+
+The following package(s) are known to conflict with the CA, DRM, OCSP, and TKS subsystems, and must be removed prior to running a Dogtag PKI:
+
+    rpm -ev tomcat-native.i386
+    rpm -ev tomcat-native.x86_64
+
+== Tools ==
+
+These, as well as all of the following, instructions rely upon the '''yum''' executable to download various packages.
+
+The following tools must be installed:
+
+  yum install db4-devel gzip rpm rpm-build subversion tar wget zip
+
+The following versions of these tools must also be installed:
+
+* Perl 5.8.5 or later
+  yum install perl 
+* ant 1.6.5 or later (Dogtag 1.3 and earlier and idm-console-framework and tomcatjss ONLY)
+  yum install ant
+* ant-junit 1.6.5 or later (Dogtag 1.3 and earlier ONLY)
+  yum install ant-junit

@@ -1,0 +1,75 @@
+= Installation =
+
+[https://beaker-project.org/download.html Download] and install Beaker:
+
+<pre>
+$ cd /etc/yum.repos.d/
+$ wget https://beaker-project.org/yum/beaker-server-Fedora.repo
+$ dnf install beaker-server --nogpgcheck
+$ dnf install mysql-server MySQL-python
+</pre>
+
+= Database Setup =
+
+Edit /etc/my.cnf:
+
+<pre>
+[mysqld]
+character-set-server=utf8
+</pre>
+
+Then execute the following commands:
+
+<pre>
+$ systemctl start mysqld.service
+$ mysql
+mysql> create database beaker;
+mysql> create user beaker;
+mysql> grant all on beaker.* to beaker identified by 'beaker';
+</pre>
+
+Edit /etc/beaker/server.cfg:
+
+<pre>
+sqlalchemy.dburi = "mysql://beaker:beaker@localhost/beaker?charset=utf8"
+</pre>
+
+= Server Setup =
+
+Execute the following commands:
+
+<pre>
+$ beaker-init -u admin -p testing -e <email>
+</pre>
+
+To run with HTTP port, edit /etc/httpd/conf.d/nss.conf:
+<pre>
+NSSEngine off
+</pre>
+
+To run with HTTPS port, edit /etc/httpd/conf.d/nss.conf:
+<pre>
+NSSPassPhraseDialog  file:/etc/httpd/alias/pwdfile.txt
+</pre>
+
+<pre>
+$ echo Secret.123 > /etc/httpd/alias/pwdfile.txt
+</pre>
+
+Then execute the following commands:
+
+<pre>
+$ systemctl enable httpd.service
+$ systemctl start httpd.service
+$ setenforce 0
+$ systemctl enable beakerd.service
+$ systemctl start beakerd.service
+</pre>
+
+= Server UI =
+
+Open http://$HOSTNAME/bkr/.
+
+= References =
+
+* [[Beaker]]

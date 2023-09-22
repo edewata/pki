@@ -1,0 +1,23 @@
+= Prerequisites =
+
+* [[Snap]]
+
+= Installation =
+
+<pre>
+$ snap install code --classic
+</pre>
+
+= Running Visual Studio Code =
+
+<pre>
+$ code
+</pre>
+
+= Installing Java Extension Pack =
+
+Install [https://code.visualstudio.com/docs/languages/java Java Extension Pack].
+
+= See Also =
+
+* [https://snapcraft.io/install/code/fedora How to install Visual Studio Code on Fedora]

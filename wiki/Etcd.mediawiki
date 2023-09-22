@@ -1,0 +1,34 @@
+= Installation =
+
+<pre>
+$ dnf install etcd
+</pre>
+
+= Configuration =
+
+The configuration is located at /etc/etcd/etcd.conf.
+
+= Systemd =
+
+The systemd unit file is located at /usr/lib/systemd/system/etcd.service.
+
+To start the service:
+
+<pre>
+$ systemctl start etcd
+</pre>
+
+To stop the service:
+
+<pre>
+$ systemctl stop etcd
+</pre>
+
+= See Also =
+
+* [https://coreos.com/etcd etcd]
+* [https://github.com/etcd-io/etcd etcd-io/etcd]
+* [https://github.com/etcd-io/jetcd etcd-io/jetcd]
+* [https://devopscube.com/setup-etcd-cluster-linux/ How To Setup a etcd Cluster On Linux – Beginners Guide]
+* [https://thenewstack.io/tutorial-set-up-a-secure-and-highly-available-etcd-cluster/ Tutorial: Set up a Secure and Highly Available etcd Cluster]
+* [https://coreos.com/blog/java-and-etcd-together-with-jetcd Java and etcd: together at last, with jetcd]

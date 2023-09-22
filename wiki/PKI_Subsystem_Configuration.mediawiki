@@ -1,0 +1,91 @@
+= Static Subsystems =
+
+* Debug
+* LogSubsystem
+* [[JSS Subsystem]]
+* DBSubsystem
+* UGSubsystem
+* PluginRegistry
+* OidLoaderSubsystem
+* X500NameSubsystem
+* RequestSubsystem
+
+= Dynamic Subsystems =
+
+Dynamic subsystems can be configured in the CS.cfg.
+
+== CA Subsystems ==
+
+<pre>
+subsystem.0.class=com.netscape.ca.CertificateAuthority
+subsystem.0.id=ca
+subsystem.1.class=com.netscape.cmscore.profile.[PKI_PROFILE_SUBSYSTEM]
+subsystem.1.id=profile
+subsystem.1.enabled=false
+subsystem.2.class=com.netscape.cmscore.selftests.SelfTestSubsystem
+subsystem.2.id=selftests
+subsystem.3.class=com.netscape.cmscore.cert.CrossCertPairSubsystem
+subsystem.3.id=CrossCertPair
+subsystem.4.class=com.netscape.cmscore.util.StatsSubsystem
+subsystem.4.id=stats
+</pre>
+
+See also https://github.com/dogtagpki/pki/blob/master/base/ca/shared/conf/CS.cfg.
+
+== KRA Subsystems ==
+
+<pre>
+subsystem.0.class=com.netscape.kra.KeyRecoveryAuthority
+subsystem.0.id=kra
+subsystem.1.class=com.netscape.cmscore.selftests.SelfTestSubsystem
+subsystem.1.id=selftests
+subsystem.2.class=com.netscape.cmscore.util.StatsSubsystem
+subsystem.2.id=stats
+</pre>
+
+See also https://github.com/dogtagpki/pki/blob/master/base/kra/shared/conf/CS.cfg.
+
+== OCSP Subsystems ==
+
+<pre>
+subsystem.0.class=com.netscape.ocsp.OCSPAuthority
+subsystem.0.id=ocsp
+subsystem.1.class=com.netscape.cmscore.selftests.SelfTestSubsystem
+subsystem.1.id=selftests
+subsystem.2.class=com.netscape.cmscore.util.StatsSubsystem
+subsystem.2.id=stats
+</pre>
+
+See also https://github.com/dogtagpki/pki/blob/master/base/ocsp/shared/conf/CS.cfg.
+
+== TKS Subsystems ==
+
+<pre>
+subsystem.0.class=com.netscape.tks.TKSAuthority
+subsystem.0.id=tks
+subsystem.1.class=com.netscape.cmscore.selftests.SelfTestSubsystem
+subsystem.1.id=selftests
+subsystem.2.class=com.netscape.cmscore.util.StatsSubsystem
+subsystem.2.id=stats
+</pre>
+
+See also https://github.com/dogtagpki/pki/blob/master/base/tks/shared/conf/CS.cfg.
+
+== TPS Subsystems ==
+
+<pre>
+subsystem.0.class=org.dogtagpki.server.tps.TPSSubsystem
+subsystem.0.id=tps
+subsystem.1.class=com.netscape.cmscore.selftests.SelfTestSubsystem
+subsystem.1.id=selftests
+subsystem.2.class=com.netscape.cmscore.util.StatsSubsystem
+subsystem.2.id=stats
+</pre>
+
+See also https://github.com/dogtagpki/pki/blob/master/base/tps/shared/conf/CS.cfg.
+
+= Final Subsystems =
+
+* AuthSubsystem
+* AuthzSubsystem
+* [https://github.com/dogtagpki/pki/wiki/Scheduler-Configuration JobsScheduler]

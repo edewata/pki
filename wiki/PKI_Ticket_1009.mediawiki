@@ -1,0 +1,206 @@
+= Overview =
+
+The pkidbuser is an LDAP user created to replace cn=Directory Manager, it is not a PKI user, so it can be moved from ou=people,<suffix> to the parent subtree <suffix>. All references to it should be updated accordingly.
+
+Since moving the user affects certificate mapping and ACL, the process should be done in multiple steps to minimize downtime.
+
+= New Instances =
+
+On new instances the pkidbuser will be added to the correct location automatically.
+
+= Existing Instances with Shared Database =
+
+This includes IPA.
+
+== Adding New User ==
+
+This should be executed on one of the clones only.
+
+Add the new user in the new location in the shared database:
+
+<pre>
+$ ldapadd -x -D "cn=Directory Manager" -w Secret.123
+dn: uid=pkidbuser,dc=ca,dc=example,dc=com
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: pkidbuser
+sn: pkidbuser
+uid: pkidbuser
+userCertificate: <subsystem certificate>
+</pre>
+
+Configure ACLs for the new user:
+
+<pre>
+$ pki-ds backend-access-grant ca uid=pkidbuser,dc=ca,dc=example,dc=com
+$ pki-ds backend-access-grant kra uid=pkidbuser,dc=ca,dc=example,dc=com
+$ pki-ds backend-access-grant ocsp uid=pkidbuser,dc=ca,dc=example,dc=com
+$ pki-ds backend-access-grant tks uid=pkidbuser,dc=ca,dc=example,dc=com
+$ pki-ds backend-access-grant tps uid=pkidbuser,dc=ca,dc=example,dc=com
+</pre>
+
+Switch certificate mapping:
+
+<pre>
+$ ldapmodify -x -D "cn=Directory Manager" -w Secret.123
+dn: uid=pkidbuser,dc=ca,dc=example,dc=com
+changetype: modify
+add: seeAlso
+seeAlso: CN=Subsystem Certificate,O=EXAMPLE
+
+dn: uid=pkidbuser,ou=people,dc=ca,dc=example,dc=com
+changetype: modify
+delete: seeAlso
+</pre>
+
+== Updating PKI Servers ==
+
+This should be executed one server at a time.
+
+Stop PKI server:
+<pre>
+$ systemctl stop pki-tomcatd@pki-tomcat.service
+</pre>
+
+Remove redundant references to the old user in CS.cfg (see [https://fedorahosted.org/freeipa/ticket/5298 IPA Ticket #5298]):
+<pre>
+internaldb.ldapauth.bindDN=uid=pkidbuser,dc=ca,dc=example,dc=com
+authz.instance.DirAclAuthz.ldap.ldapauth.bindDN=uid=pkidbuser,dc=ca,dc=example,dc=com
+</pre>
+
+Restart PKI server:
+<pre>
+$ systemctl start pki-tomcatd@pki-tomcat.service
+</pre>
+
+== Removing Old User ==
+
+This should be executed on one of the clones only.
+
+Remove ACLs for the old user:
+
+<pre>
+$ pki-ds backend-access-deny ca uid=pkidbuser,ou=people,dc=ca,dc=example,dc=com
+$ pki-ds backend-access-deny kra uid=pkidbuser,ou=people,dc=ca,dc=example,dc=com
+$ pki-ds backend-access-deny ocsp uid=pkidbuser,ou=people,dc=ca,dc=example,dc=com
+$ pki-ds backend-access-deny tks uid=pkidbuser,ou=people,dc=ca,dc=example,dc=com
+$ pki-ds backend-access-deny tps uid=pkidbuser,ou=people,dc=ca,dc=example,dc=com
+</pre>
+
+Remove the old user from the group:
+
+<pre>
+$ pki -d ~/.dogtag/pki-tomcat/ca/alias -c Secret.123 -n caadmin ca-group-user-del "Subsystem Group" pkidbuser
+</pre>
+
+Remove the old user:
+
+<pre>
+$ pki -d ~/.dogtag/pki-tomcat/ca/alias -c Secret.123 -n caadmin ca-user-del pkidbuser
+</pre>
+
+= Existing Instances with Separate Databases =
+
+== Adding New Users ==
+
+This should be executed once on the clone hosting the subsystem.
+
+Add the new users into the new location in each database:
+
+<pre>
+$ ldapadd -h <subsystem>.example.com -p 389 -x -D "cn=Directory Manager" -w Secret.123
+dn: uid=pkidbuser,dc=<subsystem>,dc=example,dc=com
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: pkidbuser
+sn: pkidbuser
+uid: pkidbuser
+userCertificate: <DER-encoded certificate>
+</pre>
+
+Configure ACLs for the new users:
+
+<pre>
+$ pki-ds backend-access-grant ca uid=pkidbuser,dc=ca,dc=example,dc=com
+$ pki-ds backend-access-grant kra uid=pkidbuser,dc=kra,dc=example,dc=com
+$ pki-ds backend-access-grant ocsp uid=pkidbuser,dc=ocsp,dc=example,dc=com
+$ pki-ds backend-access-grant tks uid=pkidbuser,dc=tks,dc=example,dc=com
+$ pki-ds backend-access-grant tps uid=pkidbuser,dc=tps,dc=example,dc=com
+</pre>
+
+Switch certificate mappings:
+
+<pre>
+$ ldapmodify -h <subsystem>.example.com -p 389 -x -D "cn=Directory Manager" -w Secret.123
+dn: uid=pkidbuser,dc=<subsystem>,dc=example,dc=com
+changetype: modify
+add: seeAlso
+seeAlso: CN=Subsystem Certificate,O=EXAMPLE
+
+dn: uid=pkidbuser,ou=people,dc=<subsystem>,dc=example,dc=com
+changetype: modify
+delete: seeAlso
+</pre>
+
+== Updating PKI Servers ==
+
+This should be executed one server at a time.
+
+Stop PKI server:
+<pre>
+$ systemctl stop pki-tomcatd@pki-tomcat.service
+</pre>
+
+Remove redundant references to the old user in CS.cfg (see [https://fedorahosted.org/freeipa/ticket/5298 IPA Ticket #5298]):
+<pre>
+internaldb.ldapauth.bindDN=uid=pkidbuser,dc=<subsystem>,dc=example,dc=com
+authz.instance.DirAclAuthz.ldap.ldapauth.bindDN=uid=pkidbuser,dc=<subsystem>,dc=example,dc=com
+</pre>
+
+Restart PKI server:
+<pre>
+$ systemctl start pki-tomcatd@pki-tomcat.service
+</pre>
+
+== Removing Old Users ==
+
+Remove ACLs for the old users:
+
+<pre>
+$ pki-ds backend-access-deny ca uid=pkidbuser,ou=people,dc=ca,dc=example,dc=com
+$ pki-ds backend-access-deny kra uid=pkidbuser,ou=people,dc=kra,dc=example,dc=com
+$ pki-ds backend-access-deny ocsp uid=pkidbuser,ou=people,dc=ocsp,dc=example,dc=com
+$ pki-ds backend-access-deny tks uid=pkidbuser,ou=people,dc=tks,dc=example,dc=com
+$ pki-ds backend-access-deny tps uid=pkidbuser,ou=people,dc=tps,dc=example,dc=com
+</pre>
+
+Remove the old users from the groups:
+
+<pre>
+$ pki -d ~/.dogtag/pki-tomcat/ca/alias -c Secret.123 -n caadmin ca-group-user-del "Subsystem Group" pkidbuser
+$ pki -d ~/.dogtag/pki-tomcat/ca/alias -c Secret.123 -n caadmin ca-group-user-del "Certificate Manager Agents" pkidbuser
+$ pki -d ~/.dogtag/pki-tomcat/ca/alias -c Secret.123 -n caadmin kra-group-user-del "Data Recovery Manager Agents" pkidbuser
+$ pki -d ~/.dogtag/pki-tomcat/ca/alias -c Secret.123 -n caadmin kra-group-user-del "Trusted Managers" pkidbuser
+$ pki -d ~/.dogtag/pki-tomcat/ca/alias -c Secret.123 -n caadmin ocsp-group-user-del "Trusted Managers" pkidbuser
+$ pki -d ~/.dogtag/pki-tomcat/ca/alias -c Secret.123 -n caadmin tks-group-user-del "Token Key Service Manager Agents" pkidbuser
+</pre>
+
+Remove the old users:
+
+<pre>
+$ pki -d ~/.dogtag/pki-tomcat/ca/alias -c Secret.123 -n caadmin ca-user-del pkidbuser
+$ pki -d ~/.dogtag/pki-tomcat/ca/alias -c Secret.123 -n caadmin kra-user-del pkidbuser
+$ pki -d ~/.dogtag/pki-tomcat/ca/alias -c Secret.123 -n caadmin ocsp-user-del pkidbuser
+$ pki -d ~/.dogtag/pki-tomcat/ca/alias -c Secret.123 -n caadmin tks-user-del pkidbuser
+$ pki -d ~/.dogtag/pki-tomcat/ca/alias -c Secret.123 -n caadmin tps-user-del pkidbuser
+</pre>
+
+= References =
+
+* [https://fedorahosted.org/pki/ticket/1009 Ticket #1009]
+* [[PKI Ticket 1595]]
+* [https://github.com/dogtagpki/pki/wiki/Shared-Subsystem-Certificate Shared Subsystem Certificate]
+* [[PKI DS CLI]]
+* [[PKI LDAP]]

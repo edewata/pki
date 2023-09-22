@@ -1,0 +1,82 @@
+= Overview =
+
+PKI provides two theme packages:
+
+* server theme
+* console theme
+
+To list theme changes between different versions:
+<pre>
+$ git diff DOGTAG_10_2_BRANCH:dogtag master:dogtag
+</pre>
+
+= Server Theme =
+
+The server theme determines the appearance of the PKI server web UI. The files are located in /usr/share/pki/common-ui.
+
+== Customizing Server Theme ==
+
+=== PKI 10.4 or later ===
+
+Copy the theme folder:
+
+<pre>
+$ cd /usr/share/pki
+$ cp -r common-ui custom-ui
+</pre>
+
+Create links to the files/folders in /usr/share/pki/server/webapps/pki:
+
+<pre>
+$ cd /usr/share/pki/custom-ui
+$ ln -s /usr/share/pki/server/webapps/pki/admin
+$ ln -s /usr/share/pki/server/webapps/pki/js
+$ ln -s /usr/share/pki/server/webapps/pki/WEB-INF
+</pre>
+
+Customize the theme files as needed, then change the theme deployment descriptor (e.g. <instance>/conf/Catalina/localhost/pki.xml) to use the custom theme:
+
+<pre>
+<Context docBase="/usr/share/pki/custom-ui" ...>
+  ...
+</Context>
+</pre>
+
+Restart the server:
+
+<pre>
+$ systemctl start pki-tomcatd@pki-tomcat.service
+</pre>
+
+=== PKI 10.3 or earlier ===
+
+Copy the theme folder:
+
+<pre>
+$ cd /usr/share/pki
+$ cp -r common-ui custom-ui
+</pre>
+
+Customize the theme files, then change the theme deployment descriptor (e.g. <instance>/conf/Catalina/localhost/pki.xml) to use the custom theme:
+
+<pre>
+<Context docBase="/usr/share/pki/custom-ui" ...>
+  ...
+</Context>
+</pre>
+
+Restart the server:
+
+<pre>
+$ systemctl start pki-tomcatd@pki-tomcat.service
+</pre>
+
+= Console Theme =
+
+The console theme determine the appearance of the PKI console. The files are packaged into /usr/share/java/pki/pki-console-theme.jar.
+
+= References =
+
+* [[Installing Theme]]
+* [[Cleaning up the UI theme packages]]
+* [[Customization]]

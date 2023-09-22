@@ -1,0 +1,30 @@
+= Installation =
+
+<pre>
+$ dnf install python3-pip
+</pre>
+
+= Listing installed Packages =
+
+<pre>
+$ pip list
+</pre>
+
+= Installing a Package =
+
+To install a package:
+
+<pre>
+$ pip install <package>
+</pre>
+
+To install from a requirements file:
+
+<pre>
+$ pip install -r <requirements>
+</pre>
+
+= See Also =
+
+* [[PyPI]]
+* [https://packaging.python.org/tutorials/installing-packages/ Installing Packages]

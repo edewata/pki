@@ -1,0 +1,73 @@
+= Overview =
+
+<font color=red>'''WARNING: As of 01 Apr 2019, this document is deprecated. Please see [[Automated COPR builds]]'''</font>
+
+
+As the product gets bigger and complex, building and maintaining the product gets difficult. So is the case with Dogtag. Currently, we have a nightly infrastructure that runs in 2 stages:
+
+* [[Nightly builds#PKI_Nightly_COPR_Build|Nightly COPR build]]
+* [[Nightly builds#IPA_Nightly_test|IPA build]]
+
+= Architecture =
+
+The overall architecture of the new Nightly infrastructure:
+
+[[File:New_Nightly_infrastructure.jpg]]
+
+= Configuring Travis =
+
+COPR uses API token to authenticate for every srpm submitted. <font color='red'>pkijenkinsbot</font> has it's own API token. To install this API onto travis:
+
+* Login into Travis
+* Click on the ''' pki-nightly-test''' repo 
+* Click on '''More Options''' -> '''Settings'''
+* If there is a '''COPR_API''' key, delete it (click on trash can)
+* Create a new key with name '''COPR_API''' and for value, follow the next steps
+* Log into COPR website
+* Get the API token from https://copr.fedorainfracloud.org/api/
+
+ [copr-cli]
+ login = xxxxxxxxxxxxxxxxxxxx
+ username = xxxxxxxx
+ token = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ copr_url = https://copr.fedorainfracloud.org"
+
+* Copy & paste the contents of the API to a notepad
+* At the end of every line place '\n' (without quotes)
+* Make the entire key into a single line
+* Add double quotes (") to the start and end of the line
+
+ "[copr-cli]\nlogin = xxxxxxxxxxxxxxxxxxxx\nusername = xxxxxxxx\ntoken = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\ncopr_url = https://copr.fedorainfracloud.org"
+
+* Copy the entire line and paste into '''value''' field of step #5
+
+= PKI Nightly COPR Build =
+
+Nightly COPR builds for PKI are done through a cron job linked to https://github.com/dogtagpki/pki-nightly-test
+
+== Under the hood ==
+
+A fedora image is pulled from the official Fedora registry for building and uploading the SRPMs to COPR
+
+Inside the container:
+# COPR credentials and config is set
+# Upstream PKI github repo is cloned
+# `./build.sh --with-timestamp --with-commit-id --work-dir=/packages srpm` is executed
+# `copr build /packages/*.src.rpm` is executed which submits the build to COPR `10.6-nightly` repo
+
+= IPA Nightly test =
+
+IPA uses components of Dogtag PKI to generate certificates, renew, etc. Cert related tests of IPA run every night. 
+
+== Under the hood ==
+
+There are 2 docker containers currently being spawned:
+
+# To download the RPMS from COPR: It is just used to download the RPMS using `dnf` tool and copies the rpms to the host Travis machine
+# `ipa-docker-test-runner` spawns the in-house maintained docker container (eg: f27_106_46 image available in dogtagpki/pki-ci) to run the ipa tests
+
+= Future Work =
+
+# Eliminate the use of docker image and avoid maintenance of docker repo (eg: dogtagpki/pki-ci) [DONE]
+# Eliminate the use of `ipa-docker-test-runner` tool and instead run the ipa-tests using the [https://www.freeipa.org/page/Testing#Run_tests python3-ipatests] tool [DONE]
+# Move the complete nightly builds from Travis to Gitlab to sync up with the QE team

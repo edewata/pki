@@ -1,0 +1,66 @@
+= Overview =
+
+Each PKI subsystem has a corresponding web application which contains:
+* HTML pages which contains texts, JavaScript codes, page layout, CSS formatting, etc.
+* web.xml which defines servlets, paths, security constraints, etc.
+* links to PKI libraries
+
+The subsystem web applications are deployed using context files located in /etc/pki/<font color="red">pki-tomcat</font>/Catalina/localhost/<font color="red">ca</font>.xml:
+
+ <Context docBase="/usr/share/pki/<font color="red">ca</font>/webapps/<font color="red">ca</font>" crossContext="true" allowLinking="true">
+     ...
+ </Context>
+
+The docBase points to the location of the default web application folder in /usr/share/pki.
+
+= Creating Custom Web Application =
+
+There are two ways to create a custom web application from the default one:
+
+* deep copy
+* shallow copy
+
+== Deep copy ==
+
+To create a deep copy of the web application, copy the web application folder into the instance's webapps folder:
+
+ $ cp -r /usr/share/pki/<font color="red">ca</font>/webapps/<font color="red">ca</font> /var/lib/pki/<font color="red">pki-tomcat</font>/webapps
+ $ chown -R pkiuser.pkiuser /var/lib/pki/<font color="red">pki-tomcat</font>/webapps/<font color="red">ca</font>
+
+== Shallow copy ==
+
+To create a shallow copy of the web application, create a folder in the instance's webapps folder, copy only the files that need to be customized, then create links for the other files/folders. For example, to customize web.xml:
+
+ $ mkdir -p /var/lib/pki/<font color="red">pki-tomcat</font>/webapps/<font color="red">ca</font>
+ $ cd /var/lib/pki/<font color="red">pki-tomcat</font>/webapps/<font color="red">ca</font>
+ $ ln -s /usr/share/pki/<font color="red">ca</font>/webapps/<font color="red">ca</font>/* .
+ $ rm -f WEB-INF
+ $ mkdir WEB-INF
+ $ ln -s /usr/share/pki/<font color="red">ca</font>/webapps/<font color="red">ca</font>/WEB-INF/* WEB-INF
+ $ rm -f WEB-INF/web.xml
+ $ cp /usr/share/pki/<font color="red">ca</font>/webapps/<font color="red">ca</font>/WEB-INF/web.xml WEB-INF
+ $ chown -R pkiuser.pkiuser .
+
+= Configuring Web Application Context =
+
+To use the customized web application, change the docBase in /etc/pki/<font color="red">pki-tomcat</font>/Catalina/localhost/<font color="red">ca</font>.xml to point to the custom web application folder relative from the webapps folder:
+
+ <Context docBase="<font color="red">ca</font>" crossContext="true" allowLinking="true">
+     ...
+ </Context>
+
+The change will be effective immediately. There is no need to restart the server.
+
+= Upgrading Custom PKI Subsystem =
+
+See [[Upgrading Custom PKI Subsystem]].
+
+= Removing Custom PKI Subsystem =
+
+To remove the custom web application simply revert the docBase and delete the custom web application folder:
+
+ $ rm -rf /var/lib/pki/<font color="red">pki-tomcat</font>/webapps/<font color="red">ca</font>
+
+= See Also =
+
+* [[Customization]]

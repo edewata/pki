@@ -1,0 +1,18 @@
+= Java Crypto Policy =
+
+Java crypto policy is located at /etc/crypto-policies/back-ends/java.config:
+
+<pre>
+jdk.tls.ephemeralDHKeySize=1023
+jdk.certpath.disabledAlgorithms=MD2, MD5, DSA, RSA keySize < 2048
+jdk.tls.disabledAlgorithms=DH keySize < 1023, SSLv2, SSLv3, DHE_DSS, RSA_EXPORT, DHE_DSS_EXPORT, DHE_RSA_EXPORT, DH_DSS_EXPORT, DH_RSA_EXPORT, DH_anon, ECDH_anon, DH_RSA, DH_DSS, ECDH, 3DES_EDE_CBC, DES_CBC, RC4_40, RC4_128, DES40_CBC, RC2, HmacMD5
+jdk.tls.legacyAlgorithms=
+</pre>
+
+= References =
+
+* [[FIPS]]
+* [[PKI 10.6 Support for System Crypto Policy]]
+* [https://docs.fedoraproject.org/en-US/packaging-guidelines/CryptoPolicies/ Enforcing system crypto policies]
+* [https://fedoraproject.org/wiki/Changes/CryptoPolicy Changes/CryptoPolicy]
+* [https://stackoverflow.com/questions/45336136/dhpublickey-does-not-comply-to-algorithm-constraints DHPublicKey does not comply to algorithm constraints]

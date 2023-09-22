@@ -1,0 +1,17 @@
+= Installation =
+
+<pre>
+$ dnf install bugzilla
+</pre>
+
+= Authentication =
+
+<pre>
+$ bugzilla login
+</pre>
+
+= Search by Component Owner =
+
+<pre>
+$ bugzilla info -o "Red Hat Enterprise Linux <version>" | grep -i <email>
+</pre>

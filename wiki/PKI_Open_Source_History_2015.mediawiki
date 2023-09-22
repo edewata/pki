@@ -1,0 +1,882 @@
+= Open Source History (2015) =
+
+== Dogtag Certificate Server 10.2.1 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[01/09/2015] ==
+Dogtag Certificate System 10.2.1 represents the second phase of Dogtag 10.2 and builds upon the bugs/features addressed by Dogtag 10.2.0. Dogtag 10.2.1 is associated with Fedora 22. 
+
+<table>
+<tr>
+<td valign="top"><b>NOTE:&nbsp;&nbsp;</b></td>
+<td valign="top">Due to the size, scope, and complexity of Dogtag 10.2, separate revisions of Dogtag 10.2 which incorporate a portion of the features will be released in phases over time.  Each phase will likely correspond to a specific version of Fedora.</td>
+</tr>
+</table>
+
+<font size="+1"><b>Project Name:</b></font>
+* '''''Dogtag Certificate System 10.2.1'''''
+
+<font size="+1"><b>Releases:</b></font>
+* [01/09/2015] Dogtag Certificate Server 10.2.1 [32-bit & 64-bit Fedora 21] (Release 1)
+
+<font><b>Packages (Revised)</b></font>
+* Release 1
+** pki-core-10.2.1-1.fc22         [01/09/2015]
+** dogtag-pki-10.2.1-1.fc22       [01/09/2015]
+** dogtag-pki-theme-10.2.1-1.fc22 [01/09/2015]
+** pki-console-10.2.1-1.fc22      [01/09/2015]
+
+<font size="+1"><b>Upgrade Notes:</b></font>
+
+After running fedup, simply use yum (as necessary) to update existing packages.
+
+<font size="+1"><b>Highlights since Dogtag 10.2.0</b></font>
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the [https://fedorahosted.org/pki/report/6 PKI TRAC Ticket Instance]:
+* 10.2.1 - page 8 (45 tickets)
+
+Additionally, this release addressed the following issues:
+
+* Release 1:
+** Added CLIs to simplify generating user certificates
+** Added enhancements to KRA Python API
+** Added a man page for pki ca-profile commands
+** Added python api docs
+** Change resteasy dependencies for F22+
+** PKI TRAC Ticket #1187 - mod_perl should be removed from requirements for 10.2
+** PKI TRAC Ticket #1205 - Outdated selinux-policy dependency.
+** Removed perl(XML::LibXML), perl-Crypt-SSLeay, and perl-Mozilla-LDAP runtime dependencies
+
+<font size="+1"><b>Detailed Changes since Dogtag 10.2.0</b></font>
+
+The following list of dependencies was gleaned from the following procedure:
+
+    Dogtag 10.2.0-1:  [09/06/2014] (master --> DOGTAG_10_2_0_BRANCH)
+    Dogtag 10.2.1-1:  [01/09/2015] (master --> DOGTAG_10_2_1_BRANCH)
+    
+    Run the following command on the "DOGTAG_10_2_1_BRANCH"
+    
+        # git --no-pager log --since "09/06/2014" --until "01/09/2015" > ../history_10.2.1
+    
+    and compose the following list.
+
+* abhishek(3)
+** 1037 - Incorrect status change in key-request-review.
+** 1150 - Fixing upstream trac ticket 1150.
+** Add a man page for profile CLI commands.
+* alee(10)
+** 1132 - Fix sub-CA installation with own security domain
+** 1157 - Added Python Client API Docs to build
+** Added idempotent 01-MoveWebApplicationContextFile migration script
+** Added missing audit event ASYMKEY_GENERATION_REQUEST to KRA CS.cfg
+** Remove pylint from rhel build
+** Fixes to spec file for RHEL build
+** Updates to some python client classes for prettier API docs.
+** Added missing .rst annotations and missing docstrings.
+** Added log file for sphinx runs.
+** Require resteasy sub modules for F22+
+* benjamin.drung@profitbricks.com (2)
+** Fix manpage errors (using lintian tool on Debian)
+** fix typo succesfully -> successfully
+* cfu(15)
+** 864 - (part 1 symkey, common) NIST SP800-108 KDF
+** 866 - (part 1 symkey, common) NIST SP800-108 KDF
+** 1110 - pkispawn (configuration) does not provide CA extensions in subordinate certificate signing requests (CSR)
+** 1158 - CMCRequest does not support internal token
+** 1173 - Directory-based renewal evaluator fails authorization
+** 1180 - RFE: show link to request record from cert display
+** 1198 - add TLS range support to server.xml by default and upgrade
+** 1198 - add TLS range support (spec file jss tomcatjss dependencies)
+** 1198 - add TLS range support to server.xml by default
+** 1206 - (java console) TLS range support: code change needed for cs when acting as client
+** BZ 871171 - (client-side code) Provide Tomcat support for TLS v1.1 and TLS v1.2
+** BZ 1151147 - issuerDN encoding correction
+** BZ 1158410 - add TLS range support to server.xml by default and upgrade
+** BZ 1158410 - add TLS range support (spec file jss tomcatjss dependencies)
+** BZ 1158410 - add TLS range support to server.xml by default
+* edewata(15)
+** 1093 - Fixed problem importing renewed system certificate.
+** 1147 - Removed profile input/output IDs from CLI output.
+** 1148 - Added client-cert-request CLI.
+** 1149 - Displaying request status in ca-cert-request-review.
+** 1151 - Added option to import user cert from CA.
+** 1152 - Added option to import client cert from CA.
+** 1226 - Added rangeUnit property to certificate profiles.
+** 1155 - Improvements for KeyClient.archive_encrypted_data().
+** 1156 - Improvements for KeyClient.archive_encrypted_data().
+** 1157 - Fixed incorrect Python API docs format.
+** 1192 - Updated JUnit JAR file name.
+** Added CLI to import/export certificates with private keys.
+** Updated KRA Python client library.
+** Fixed pylint failure on F21.
+** Cleaned up clone installation code.
+* ftweedal(5)
+** 1035 - Fix BasicConstraints min/max path length check
+** 1189 - CRL does not include Authority Key Identifier extension
+** 1221 - Decode challengePassword attribute as DirectoryString
+** Fix ECC curve name typos
+** Enable Authority Key Identifier CRL extension by default
+* jmagne(2)
+** BZ 1170867 - TPS-Installation-Failed
+** Provide standalone Pin Reset Processor.
+* mharmsen(14)
+** 1130 - Add RHEL/CentOS conditionals to spec
+** 1136 - Remove ipa-pki-theme component and old unused 'ca-ui', 'kra-ui', 'ocsp-ui', 'ra-ui', 'tks-ui', and 'tps-ui' directories
+** 1138 - Remove 'migrate' source code from master branch
+** 1139 - Remove 'selinux' code from 'master' branch
+** 1187 - mod_perl should be removed from requirements for 10.2
+** 1205 - Outdated selinux-policy dependency.
+** 1211 - New release overwrites old source tarball
+** BZ 1147924 - dogtag: syntax errors in /usr/share/pki/scripts/operations
+** BZ 1165351 - Errata TPS test fails due to dependent packages not found
+** Revised dependencies
+** Removed RA references
+** Changed Apache TPS references to Tomcat TPS references
+** Remove legacy multilib JNI_JAR_DIR logic
+** Removed perl(XML::LibXML), perl-Crypt-SSLeay, and perl-Mozilla-LDAP runtime dependencies
+* tjaalton@debian.org (1)
+** Fix Debian specific paths to jackson jars
+
+<font size="+1"><b>Server Platforms:</b></font>
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.2.1</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 22 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 22 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 21 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 21 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Dogtag Certificate Server 10.2.2 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[03/18/2015] ==
+Dogtag Certificate System 10.2.2 represents the third phase of Dogtag 10.2 and builds upon the bugs/features addressed by Dogtag 10.2.1. Like Dogtag 10.2.1, Dogtag 10.2.2 is also associated with Fedora 22. 
+
+<table>
+<tr>
+<td valign="top"><b>NOTE:&nbsp;&nbsp;</b></td>
+<td valign="top">Due to the size, scope, and complexity of Dogtag 10.2, separate revisions of Dogtag 10.2 which incorporate a portion of the features will be released in phases over time.  Each phase will likely correspond to a specific version of Fedora.</td>
+</tr>
+</table>
+
+<font size="+1"><b>Project Name:</b></font>
+* '''''Dogtag Certificate System 10.2.2'''''
+
+<font size="+1"><b>Releases:</b></font>
+* [03/18/2015] Dogtag Certificate Server 10.2.2 [32-bit & 64-bit Fedora 22] (Release 1)
+
+<font><b>Packages (Revised)</b></font>
+* Release 1
+** pki-core-10.2.2-1.fc22         [03/18/2015]
+** dogtag-pki-10.2.2-1.fc22       [03/18/2015]
+** dogtag-pki-theme-10.2.1-1.fc22 [03/17/2015]
+** pki-console-10.2.2-1.fc22      [03/18/2015]
+
+<font size="+1"><b>Upgrade Notes:</b></font>
+
+After running fedup, simply use yum (as necessary) to update existing packages.
+
+<font size="+1"><b>Highlights since Dogtag 10.2.1</b></font>
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the [https://fedorahosted.org/pki/report/6 PKI TRAC Ticket Instance]:
+* 10.2.2 - page 8 (32 tickets) including 3 duplicates, 4 fixed in previous versions, 1 invalid, 1 release task, 4 won't fix, and 3 works for me
+
+The primary purposes of this release addressed the following issues:
+
+* Release 1
+** TPS rewrite: provide externalReg functionality
+** NIST SP800-108 KDF -( GP Key sanity check & full feature test)
+** TPS Rewrite: Implement Secure Channel Protocol 02
+
+<font size="+1"><b>Detailed Changes since Dogtag 10.2.1</b></font>
+
+The following list of dependencies was gleaned from the following procedure:
+
+    Dogtag 10.2.1-1:  [01/09/2015] (master --> DOGTAG_10_2_1_BRANCH)
+    Dogtag 10.2.2-1:  [03/18/2015] (master --> DOGTAG_10_2_2_BRANCH)
+    
+    Run the following command on the "DOGTAG_10_2_2_BRANCH"
+    
+        # git --no-pager log --since "01/09/2015" --until "03/18/2015" > ../history_10.2.2
+    
+    and compose the following list.
+
+* alee(2)
+** 1305 - CRL publishing fails after Java heap out of memory error
+** 1306 - [RFE] Add granularity to token termination in TPS
+* cfu(3)
+** 822  - rhcs81 caManualRenewal with original profile modified for empty params.name creates root CA subject DN
+** 1028 - Phase1:TPS rewrite: provide externalReg functionality
+** 1308 - [RFE] Provide ability to perform off-card key generation for non-encryption token keys
+* edewata(12)
+** 703  - Fixed pylint
+** 745  - Service should not start if selftest fails
+** 915  - Enhance EBaseException class to suport the "cause" exception. 
+** 1074 - CLI for CRMF  Command-Line Utilities
+** 1164 - Refactored LDAPDatabase.createFilter().
+** 1183 - Starting/stopping individual subsystems
+** 1202 - Refactored OCSPClient.
+** 1235 - Fixed problem cloning Dogtag 10.1.x to 10.2.x.
+** 1252 - Missing python-lxml build dependency
+** 1254 - Simplifying resteasy/jackson dependencies on Fedora 22    Packaging
+** 1255 - Restart fails after upgrade
+** 1281 - CMake scripts have been updated to work on both F21 and F22.
+* ftweedal(1)
+** 1174 - RFE: support external authorization LDAP server
+* jmagne(6)
+** 865  - NIST SP800-108 KDF -( GP Key sanity check & full feature test)
+** 883  - TPS Rewrite: Implement Secure Channel Protocol 02
+** Implementation of the NISTSP800 derivation feature.
+** Support for both scp01 cards and scp02 cards
+** Fixed issue with extracting the kdd from the AppletInfo class
+** Fixed issue with sending the KDD to the encryptData TKS servlet.
+* mharmsen(6)
+** 1144 - pkispawn needs option to specify ca cert for ldap
+** 1211 - New release overwrites old source tarball
+** 1284 - pkispawn URL redirect issue
+** Fixed developer scripts for Fedora 21 and Fedora 22
+** Fixed CMake issue (Fedora 22)
+** Fixes for pylint 1.3 (Fedora 21) --> 1.4 (Fedora 22)
+
+<font size="+1"><b>Server Platforms:</b></font>
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.2.2</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 22 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 22 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Dogtag Certificate Server 10.2.3 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[04/24/2015] ==
+Dogtag Certificate System 10.2.3 represents the fourth phase of Dogtag 10.2 and builds upon the bugs/features addressed by Dogtag 10.2.2. Like Dogtag 10.2.2, Dogtag 10.2.3 is also associated with Fedora 22. 
+
+<table>
+<tr>
+<td valign="top"><b>NOTE:&nbsp;&nbsp;</b></td>
+<td valign="top">Due to the size, scope, and complexity of Dogtag 10.2, separate revisions of Dogtag 10.2 which incorporate a portion of the features will be released in phases over time.  Each phase will likely correspond to a specific version of Fedora.</td>
+</tr>
+</table>
+
+<font size="+1"><b>Project Name:</b></font>
+* '''''Dogtag Certificate System 10.2.3'''''
+
+<font size="+1"><b>Releases:</b></font>
+* [04/24/2015] Dogtag Certificate Server 10.2.3 [32-bit & 64-bit Fedora 22] (Release 1)
+
+<font><b>Packages (Revised)</b></font>
+* Release 1
+** pki-core-10.2.3-2.fc22         [04/24/2015]
+** dogtag-pki-10.2.3-2.fc22       [04/24/2015]
+** dogtag-pki-theme-10.2.3-2.fc22 [04/24/2015]
+** pki-console-10.2.3-1.fc22      [04/24/2015]
+
+<font size="+1"><b>Upgrade Notes:</b></font>
+
+After running fedup, simply use yum (as necessary) to update existing packages.
+
+<font size="+1"><b>Highlights since Dogtag 10.2.2</b></font>
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the [https://fedorahosted.org/pki/report/6 PKI TRAC Ticket Instance]:
+* 10.2.3 - pages 8-9 (31 tickets) including 4 duplicates, 2 invalid, 1 release task, 2 won't fix, and 1 works for me
+
+The primary purposes of this release continued addressing the following issues:
+
+* Release 1
+** TPS rewrite: provide externalReg functionality
+** NIST SP800-108 KDF -( GP Key sanity check & full feature test)
+** TPS Rewrite: Implement Secure Channel Protocol 02
+
+<font size="+1"><b>Detailed Changes since Dogtag 10.2.2</b></font>
+
+The following list of dependencies was gleaned from the following procedure:
+
+    Dogtag 10.2.2-1:  [03/18/2015] (master --> DOGTAG_10_2_2_BRANCH)
+    Dogtag 10.2.3-1:  [04/24/2015] (master --> DOGTAG_10_2_3_BRANCH)
+    
+    Run the following command on the "DOGTAG_10_2_3_BRANCH"
+    
+        # git --no-pager log --since "03/18/2015" --until "04/24/2015" > ../history_10.2.3
+    
+    and compose the following list.
+
+* alee (4)
+** 1230 - implement code using nuxwdog for cs9 (phase 1)
+*** Add nuxwdog functionality to Dogtag
+*** changes to CS.cfg, server.xml and tomcat.conf to support nuxwdog
+*** Added pki-server-nuxwdog tool to create config file for nuxwdog
+*** Remove duplicate prompt on nuxwdog startup
+** Add back the getPassword(tag) code to handle old tomcatjss interface
+** Fix some javadoc errors that prevent F23 build
+** Add conditional to disable doclint for javadocs on java >= 1.8
+* cfu (7)
+** 443 - SCEP: Invalid OID in CertRep signerInfo when using SHA-2 (Bugzilla Bug #824624 - fixed in JSS)
+** 1028 - TPS rewrite: provide externalReg functionality (phase 2)
+** 1200 - Add HSM passwords to pkispawn
+** 1296 - RHCS 9.0 theme
+*** Parameterized TKS
+** 1316 - Allow adding SAN to server cert during the install process Usage
+** 1339 - doRevoke error string doesn't clear after failure (Bugzilla Bug #1150142)
+** 1346 - pkispawn should have an HSM library option
+* edewata (14)
+** 499 - Direct web application deployment
+*** Added direct deployment for all subsystems.
+*** Added direct deployment for theme.
+*** Moved CSS files to theme package.
+*** Moved fonts and images to theme package.
+*** Fixed problem deploying without theme.
+** 802 - Added upgrade script to fix instance work folder ownership.
+** 936 - Added bulk property editor in TPS UI.
+** 1164 - Added interface to show TPS token certificates.
+** 1264 - Added support for Tomcat 8.
+*** Added server migration command.
+** 1270 - Fixed problem with TPS profile default status.
+** 1273 - Fixed problem deleting newly created TPS profiles.
+** 1274 - Fixed incorrect link in TPS UI.
+** 1292 - TPS UI: No Approve button when logged in as agent user
+*** Customized TPS UI menu based on user roles.
+*** Fixed TPS REST services.
+*** Fixed action menu in TPS UI.
+** 1293 - Fixed missing port error during installation.
+** 1296 - RHCS 9.0 theme
+*** Parameterized /ca/agent/header, ca/ee/ca/index.html, ROOT's index.jsp, services.template (all subsystems)
+*** Moved color settings to CSS.
+*** Parameterized CA templates.
+** 1332 - Fixed problem upgrading to F22.
+** 1343 - Simplified login response formats
+** modified code to fix tomcatjss and python-sphinx issues.
+* ftweedal (2)
+** [https://github.com/dogtagpki/pki/wiki/LDAP-Profile-Storage LDAP Profile Storage]
+*** Add schema for LDAP-based profiles
+*** Add LDAPConfigStore class
+*** Add LDAPProfileSubsystem to store profiles in LDAP
+*** Add ability to enable/disable dynamic subsystems
+*** Import profiles when spawning CA instance
+*** Update pki-profile CLI commands to work with "raw" format
+*** Monitor database for changes to LDAP profiles.
+*** Add pkispawn config option for ldap profiles
+*** Remove unneeded collection from profile subsystems
+*** Consolidate profile persistent search try/catch blocks
+*** Chain InvocationTargetException thrown during PKCS10Attribute decoding
+*** Remove unused RequestSubsystem constructor
+*** Remove duplicate getRequestQueue code
+*** Fix incorrect class name in debug message
+*** Remove unneeded class EnrollProfileContext
+*** Only read pki_profiles_in_ldap when spawning CA instance
+*** Enumerate profiles in order of discovery
+** 1220 - Improvement for ProfileSubsystem.isProfileEnable()
+* jmagne (2)
+** 1296 - RHCS 9.0 theme
+*** Parameterized OCSP
+** Bugzilla Bug #1186896 - NIST SP800-108 KDF
+*** add sanity checking
+*** remove harmful bit of sanity checking
+* mharmsen (9)
+** 1200 - Add HSM passwords to pkispawn
+** 1296 - RHCS 9.0 theme
+*** Parameterized KRA
+*** Added missing "logo" theme properties to OCSP and TKS "ports.template".
+*** Fixed minor UI inconsistencies.
+** 1313 - Create 'redhat-pki' meta-package
+** 1315 - pki-tomcatd fails to start on system boot
+** 1319 - Invalid upgrade script in 10.2.1
+** 1340 - pkidestroy should not remove /var/lib/pki
+** 1346 - pkispawn should have an HSM library option
+** Changed runtime requirement from "nuxwdog" to "nuxwdog-java-client".
+** Restored requirement for 'jss-javadocs' to meta packages
+
+<font size="+1"><b>Server Platforms:</b></font>
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.2.3</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 22 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 22 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 23 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 23 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Dogtag Certificate Server 10.2.4 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[05/26/2015] ==
+Dogtag Certificate System 10.2.4 represents the fifth phase of Dogtag 10.2 and builds upon the bugs/features addressed by Dogtag 10.2.3. Like Dogtag 10.2.3, Dogtag 10.2.4 is also associated with Fedora 22. 
+
+<table>
+<tr>
+<td valign="top"><b>NOTE:&nbsp;&nbsp;</b></td>
+<td valign="top">Due to the size, scope, and complexity of Dogtag 10.2, separate revisions of Dogtag 10.2 which incorporate a portion of the features will be released in phases over time.  Each phase will likely correspond to a specific version of Fedora.</td>
+</tr>
+</table>
+
+<font size="+1"><b>Project Name:</b></font>
+* '''''Dogtag Certificate System 10.2.4'''''
+
+<font size="+1"><b>Releases:</b></font>
+* [05/26/2015] Dogtag Certificate Server 10.2.4 [32-bit & 64-bit Fedora 22] (Release 1)
+
+<font><b>Packages (Revised)</b></font>
+* Release 1
+** pki-core-10.2.4-1.fc22         [04/24/2015]
+** dogtag-pki-10.2.4-1.fc22       [04/24/2015]
+** dogtag-pki-theme-10.2.4-1.fc22 [04/24/2015]
+** pki-console-10.2.4-1.fc22      [04/24/2015]
+
+<font size="+1"><b>Upgrade Notes:</b></font>
+
+After running fedup, simply use yum (as necessary) to update existing packages.
+
+<font size="+1"><b>Highlights since Dogtag 10.2.3</b></font>
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the [https://fedorahosted.org/pki/report/6 PKI TRAC Ticket Instance]:
+* 10.2.4 - pages 8-9 (27 tickets) including 1 release task, 1 won't fix, and 1 works for me
+
+The primary purposes of this release continued addressing the following issues:
+
+* Release 1
+** TPS rewrite: provide externalReg functionality
+** NIST SP800-108 KDF -( GP Key sanity check & full feature test)
+** TPS Rewrite: Implement Secure Channel Protocol 02
+
+<font size="+1"><b>Detailed Changes since Dogtag 10.2.3</b></font>
+
+The following list of dependencies was gleaned from the following procedure:
+
+    Dogtag 10.2.3-1:  [04/24/2015] (master --> DOGTAG_10_2_3_BRANCH)
+    Dogtag 10.2.4-1:  [05/26/2015] (master --> DOGTAG_10_2_4_BRANCH)
+    
+    Run the following command on the "DOGTAG_10_2_4_BRANCH"
+    
+        # git --no-pager log --since "04/24/2015" --until "05/26/2015" > ../history_10.2.4
+    
+    and compose the following list.
+
+* alee (5)
+** Code cleanup - simplify pkispawn code (All subsystems are now tomcat instances)
+** Fix interactive install to not reprompt for ports
+** 1230 - implement code using nuxwdog for cs9
+*** Add ability to pki-server to enable/disable nuxwdog for an instance
+*** Add nuxwdog to java security policy
+*** Patches to get nuxwdog working with systemd
+*** Update nuxwdog and tomcatjss dependencies
+** 1196 - serverCertNick.conf is replaced when second subsystem is installed
+** 1311 - Investigate 'python-sphinx' WARNING messages . . .
+* cfu (5)
+** 1028 - TPS rewrite: provide externalReg functionality
+** 1160 - audit logging needed: REST API auth/authz; kra for getKeyInfo
+*** audit needed for getKeyInfo; audit missing for auth/authz at REST
+** 1295 - CA: OCSP via GET does not work
+*** Upgrade script for - CA: OCSP via GET does not work
+** 1307 - [RFE] Support multiple keySets for different cards for ExternalReg
+*** (part1 refactoring)
+*** (part2 keySet mapping)
+** 1309 - Recovering of a revoked cert erroneously reflects "active" in the token db cert entry
+* edewata (11)
+** Fixed installation logs.
+** Added key-show option.
+** Fixed pylint warning in pkihelper.py.
+** 1054 - Fixed authentication data in audit log.
+** 1341 - Refactored upgrade scripts to get uid and gid
+** 1353 - Tomcat links not migrated
+*** Fixed migration tool to update Tomcat libraries.
+*** Fixed pylint warnings.
+** 1354 - Added options for internal token and replication passwords.
+** 1372 - Cleaned up log messages in ConfigurationUtils.getPortFromSecurityDomain().
+** 1381 - Fixed problem redeploying subsystem.
+** 1384 - Fixed key archival problem in CLI with separate KRA instance.
+** 1385 - Added deployment parameters to construct pki_clone_uri.
+* ftweedal (2)
+** Get profile ID from DN instead of CN attribute
+** Use SimpleProperties to handle raw profile format
+* jmagne (6)
+** 572 - CRL scheduler adds extra CRL generation at midnight for daily schedules.
+** 1058 - Clone OCSP install unsuccessfull
+** 1266 - Simple fix for this is not requiring the pki_client_database_password to be set when performing a clone operation.
+** 1294 - more install steps to be added to pkispawn for CA and OCSP
+** 1351 - pki securitydomain-get-install-token fails when run with caadmin user.
+** 1373 - Fix XSS attacks on the dogtag administration page
+* mharmsen (4)
+** 1267 - Parameter pki_client_database_purge not working as expected (worksforme)
+** 1370 - pkispawn: installation with HSM from external CA should hold off prepending token name in serverCertNick.conf till phase 2
+** 1371 - pkispawn: need to disable backup_keys when using an HSM (and provide recommendation); allow clones to share keys
+** 1388 - pylint unidiomatic-typecheck warnings cause koji builds to fail
+
+
+<font size="+1"><b>Server Platforms:</b></font>
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.2.4</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 22 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 22 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 23 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 23 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Dogtag Certificate Server 10.2.5 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[06/22/2015] ==
+Dogtag Certificate System 10.2.5 represents the sixth phase of Dogtag 10.2 and builds upon the bugs/features addressed by Dogtag 10.2.4. Like Dogtag 10.2.4, Dogtag 10.2.5 is also associated with Fedora 22. 
+
+<table>
+<tr>
+<td valign="top"><b>NOTE:&nbsp;&nbsp;</b></td>
+<td valign="top">Due to the size, scope, and complexity of Dogtag 10.2, separate revisions of Dogtag 10.2 which incorporate a portion of the features will be released in phases over time.  Each phase will likely correspond to a specific version of Fedora.</td>
+</tr>
+</table>
+
+<font size="+1"><b>Project Name:</b></font>
+* '''''Dogtag Certificate System 10.2.5'''''
+
+<font size="+1"><b>Releases:</b></font>
+* [06/22/2015] Dogtag Certificate Server 10.2.5 [32-bit & 64-bit Fedora 22] (Release 1)
+
+<font><b>Packages (Revised)</b></font>
+* Release 1
+** [http://koji.fedoraproject.org/koji/buildinfo?buildID=663803 pki-core-10.2.5-1.fc22]         [06/19/2015]
+** [http://koji.fedoraproject.org/koji/buildinfo?buildID=663833 dogtag-pki-10.2.5-1.fc22]       [06/19/2015]
+** [http://koji.fedoraproject.org/koji/buildinfo?buildID=663800 dogtag-pki-theme-10.2.5-1.fc22] [06/19/2015]
+** [http://koji.fedoraproject.org/koji/buildinfo?buildID=663831 pki-console-10.2.5-1.fc22]      [06/19/2015]
+
+<font size="+1"><b>Upgrade Notes:</b></font>
+
+After running fedup, simply use yum (as necessary) to update existing packages.
+
+<font size="+1"><b>Highlights since Dogtag 10.2.4</b></font>
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the [https://fedorahosted.org/pki/report/6 PKI TRAC Ticket Instance]:
+* 10.2.5 - pages 8-9 (28 tickets) including 1 release task, 3 invalid, and 1 works for me
+
+The primary purposes of this release continued addressing the following issues:
+
+* Release 1
+** TPS rewrite: provide externalReg functionality
+** NIST SP800-108 KDF -( GP Key sanity check & full feature test)
+** TPS Rewrite: Implement Secure Channel Protocol 02
+
+<font size="+1"><b>Detailed Changes since Dogtag 10.2.4</b></font>
+
+The following list of dependencies was gleaned from the following procedure:
+
+    Dogtag 10.2.4-1:  [05/26/2015] (master --> DOGTAG_10_2_4_BRANCH)
+    Dogtag 10.2.5-1:  [06/22/2015] (master --> DOGTAG_10_2_5_BRANCH)
+    
+    Run the following command on the "DOGTAG_10_2_5_BRANCH"
+    
+        # git --no-pager log --since "05/26/2015" --until "06/22/2015" > ../history_10.2.5
+    
+    and compose the following list.
+
+* alee (3)
+** 1403 - Fix for HSM cloning issue
+** Fix typo in CS.cfg
+** 1391 - pkidaemon script checks for wrong symlinks for nuxwdog startup (Bugzilla Bug #1226025)
+* cfu (6)
+** 867 - symkey library path link fix
+** fix pylint issue
+** 1412 - Should disable the caCrossSignedCACert and caRACert profile
+** 1410 - Issue with Generic Extension being critical
+** 867 - Need to support TPS as a separate tomcat instance.
+** remove extra space in CS.cfg for op.format.soCleanSOToken.validateCardKeyInfoAgainstTokenDB=true
+* cheimes (4)
+** Run pylint on upgrade scripts
+** 1069 - Make pki group-member-show case insensitive
+** 1382 - Add new KRA audit events to KRA's CS.cfg
+** 1361 - NPE when modifying profile without 'action' param
+* edewata (14)
+** 1433 - Fixed ProxyRealm for Tomcat 8.
+** Displaying pkispawn/pkidestroy log file names.
+** 1327 - Fixed thread leaks during shutdown.
+** 1278 - Fixed pkidaemon to show TPS status.
+** Fixed typos in Web UI.
+** 1406 - Startup log message improvements.
+** CRMFPopClient improvements.
+** Cleaned up links in main page.
+** 1407 - Fixed NPE in ROOT's index.jsp.
+** 1064 - Added man page for pki group-member.
+** 849 - Added man page for pki user-cert.
+** 835 - Fixed man page for pki user-mod.
+** 1393 - remove pki_pin from default.cfg to avoid overwriting the randomly generated default value.
+** Cleaned up python docs generation.
+* ftweedal (5)
+** Add profiles schema update file
+** Update: fix CS.cfg permissions
+** Upgrade: add scriptlet to fix nuxwdog listener class
+** Upgrade: check file exists before chowning
+** Invoke PKIInstance.load() during upgrade
+* jmagne (2)
+** 1398 - Provide UI Javascript warning for missing Mozilla Crypto Object in the CA.
+** Warning for the main index to tell the user that the crypto object is not available for use in the browser.
+* mharmsen (7)
+** Remove ExcludeArch directive
+** Check security module registration
+*** 1426 - pkispawn of KRA on HSM fails (shared instances)
+*** 1427 - pkispawn of OCSP on HSM fails (shared instances)
+*** 1429 - pkispawn of TKS on HSM fails (shared instances)
+** Bugzilla Bug #1230970 - Errata TPS tests for rpm verification failed
+** 1415 - add pkiuser to nfast group
+** 1417 - Suppress interactive HSM installation
+** 1392 - Remove i686/x86_64 architecture limitations
+** 1388 - pylint unidiomatic-typecheck warnings cause koji builds to fail
+
+<font size="+1"><b>Server Platforms:</b></font>
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.2.5</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 22 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 22 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 23 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 23 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Dogtag Certificate Server 10.2.6 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[07/18/2015 07/22/2015 07/25/2015 07/29/2015 08/09/2015 09/22/2016] ==
+Dogtag Certificate System 10.2.6 represents the seventh phase of Dogtag 10.2 and builds upon the bugs/features addressed by Dogtag 10.2.5. Like Dogtag 10.2.5, Dogtag 10.2.6 is also associated with Fedora 22. 
+
+<table>
+<tr>
+<td valign="top"><b>NOTE:&nbsp;&nbsp;</b></td>
+<td valign="top">Due to the size, scope, and complexity of Dogtag 10.2, separate revisions of Dogtag 10.2 which incorporate a portion of the features will be released in phases over time.  Each phase will likely correspond to a specific version of Fedora.</td>
+</tr>
+</table>
+
+<font size="+1"><b>Project Name:</b></font>
+* '''''Dogtag Certificate System 10.2.6'''''
+
+<font size="+1"><b>Releases:</b></font>
+* [07/18/2015] Dogtag Certificate Server 10.2.6 [32-bit & 64-bit Fedora 22] (Release 1)
+
+<font><b>Packages (Revised)</b></font>
+* Release 1
+** [http://koji.fedoraproject.org/koji/buildinfo?buildID=663803 pki-core-10.2.6-1.fc22]         [07/18/2015]
+** [http://koji.fedoraproject.org/koji/buildinfo?buildID=663833 dogtag-pki-10.2.6-1.fc22]       [07/18/2015]
+** [http://koji.fedoraproject.org/koji/buildinfo?buildID=663800 dogtag-pki-theme-10.2.6-1.fc22] [07/18/2015]
+** [http://koji.fedoraproject.org/koji/buildinfo?buildID=663831 pki-console-10.2.6-1.fc22]      [07/18/2015]
+* Release 2
+** [http://koji.fedoraproject.org/koji/buildinfo?buildID=670631 pki-core-10.2.6-2.fc22]         [07/22/2015]
+* Release 3
+** [http://koji.fedoraproject.org/koji/buildinfo?buildID=672045 pki-core-10.2.6-3.fc23]         [07/25/2015] (Fedora 23 and 24 only)
+* Release 4
+** [http://koji.fedoraproject.org/koji/buildinfo?buildID=673196 pki-core-10.2.6-4.fc22]         [07/29/2015]
+* Release 5
+** [http://koji.fedoraproject.org/koji/buildinfo?buildID=676279 pki-core-10.2.6-5.fc22]         [08/09/2015]
+
+<font size="+1"><b>Upgrade Notes:</b></font>
+
+After running fedup, simply use yum (as necessary) to update existing packages.
+
+<font size="+1"><b>Highlights since Dogtag 10.2.5</b></font>
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the [https://fedorahosted.org/pki/report/6 PKI TRAC Ticket Instance]:
+* 10.2.6 - page 9 (33 tickets) including 1 release task, 4 invalid, 1 duplicate, and 1 works for me
+
+The primary purposes of this release continued addressing the following issues:
+
+* Release 1
+** TPS rewrite: provide externalReg functionality
+** NIST SP800-108 KDF -( GP Key sanity check & full feature test)
+** TPS Rewrite: Implement Secure Channel Protocol 02
+
+<font size="+1"><b>Detailed Changes since Dogtag 10.2.5</b></font>
+
+The following list of dependencies was gleaned from the following procedure:
+
+    Dogtag 10.2.5-1:  [06/22/2015] (master --> DOGTAG_10_2_5_BRANCH)
+    Dogtag 10.2.6-1:  [07/18/2015] (master --> DOGTAG_10_2_6_BRANCH)
+    
+    Run the following command on the "DOGTAG_10_2_6_BRANCH"
+    
+        # git --no-pager log --since "06/22/2015" --until "07/18/2015" > ../history_10.2.6
+        # git --no-pager log --since "07/18/2015" --until "07/22/2015" > ../history_10.2.6-2
+        # git --no-pager log --since "07/22/2015" --until "07/25/2015" > ../history_10.2.6-3
+        # git --no-pager log --since "07/25/2015" --until "07/29/2015" > ../history_10.2.6-4
+        # git --no-pager log --since "07/29/2015" --until "08/09/2015" > ../history_10.2.6-5
+    
+    and compose the following list.
+
+* alee (9)
+** 1495 - Fixed exception when talking to dogtag 9 systems
+** 1356 - Added man pages for 'pki-server'
+** 1076 - Man page updates ('pkispawn') for cloning
+** 852 - Missing instruction to export system certs for cloning
+** 853 - Missing instruction to import system certs for cloning
+** 1414 - Add documentation of 'pki_clone_setup_replication'
+** '''Release 4'''
+** 1414 - Fix code to add replicationdb password unless already present
+** 1504 - Remove noise file generation code
+** '''Release 5'''
+** 1414 - Add code to re-index data during cloning without replication
+
+* cfu (6)
+** 1459 - Dogtag clients cannot connect when CS is configured with ECC clients are: cli, HttpClient, and java console
+** ecc Console - 1. clean up the tabs in the JSSConnection constructor
+** 1447 - 'pkispawn': findCertByNickname fails to find cert in creating shared tomcat subsystems on HSM
+** 1438 - 'pkispawn': SSL_ForceHandshake issue for non-CA on HSM on both shared and nonshared tomcat instances
+** '''Release 4'''
+** 1307 - FilterMappingResolver always returns target
+** '''Release 5'''
+** 1531 - Directory auth plugin requires LDAP anonymous binds
+
+* cheimes (4)
+** 1468 - Create pkiuser user and group during RPM installation
+** 1488 - Handle JSON decode error in handle_exceptions()
+** 696 - Added in-tree tests and ('pylint') linting with tox
+** '''Release 5'''
+** 1253 - Temporary silence InsecureRequestWarning
+
+* edewata (24)
+** 1271 - Added 'pki-tps-profile' man page
+** 1277 - Updated the man pages for 'pkispawn' and 'pki_default.cfg' to include TPS deployment parameters.
+** 827 - Errors in EXAMPLES section of 'pkispawn' man page
+** Updated 'pkispawn' man page for configuring secure LDAP connection
+** 1437 - Added 'pki-audit' man page; removed audit CLI from non-TPS subsystems
+** Updated 'pkispawn' man page by removing hard-coded '/root'
+** Clarified section headers in 'pkispawn' man page
+** 1224 - Fixed PKCS12Export output and refactored so that it can be reused as a library
+** Fixed cert-find performance
+** 1481 - Fixed NPE during key-retrieve
+** 1448 - Fixed user-cert-add --serial with remote CA
+** 1449 - Fixed default cert-find filter
+** 891 - Fixed fail-over in HttpConnection
+** 1445 - CA can not publish to KRA when configured with multiple KRAs
+** Fixed NPE in key-archive CLI
+** Fixed pki help CLI
+** Cleaned up SystemConfigService.configureClone()
+** Cleaned up SystemConfigService.validateRequest()
+** 1122 - Updated 'pki' man page to describe results paging parameters
+** 995 - Updated 'pki-cert' man page to describe the file format used to specify the search constraints
+** 1444 - Fixed Modutil.is_security_module_registered()
+** 1249 - Fixed selftests log message
+** '''Release 2'''
+** 1506 - PKCS12Export tool returns error
+** '''Release 5'''
+** 1535 - Fixed missing cert request hostname and address
+
+* ftweedal (1)
+** 1462 - Verify raw profile config before accepting it
+
+* jmagne (13)
+** 1486 - Documented workaround for 1454 in 'pkispawn' man page
+** 1466 - TPS add phone home URLs to pkidaemon status message
+** 1629 - Added a man page for 'tpsclient'
+** 1358 - Omit OCSP from clone description
+** 1446 - Unable to select ECC Curves from EE fix
+** 1423 - Fixed Pin Reset tokenType resolution
+** 793 - Added GP211 applet and latest GP201 applet for RSA
+** 1442 - Ability to toggle profile usablity in Web vs CLI tools
+** '''Release 4'''
+** 1515 - TPS UI: After successful key upgrade during pin reset operation the token db still shows old key
+** 1511 - op.format.externalRegAddToToken.revokeCert parameter missing in TPS CS.cfg
+** '''Release 5'''
+** 1523 - Fixed Firefox Warning
+** 1520 - Directory auth'd user certs have incorrect friendly name (required no code changes)
+** 1521 - RFE: User cert friendly name should have an option to be set by the user (required no code changes)
+
+* mharmsen (15)
+** Added 'pkidaemon' man page
+** 1492 - Removed 'setup' directory containing remaining Perl routines
+** Renamed deprecated pylint 'disable-msg' to 'disable'
+** Disable 'W1401' anomalous-backslash-in-string pylint warning for regex expressions used by system call to 'sed'
+** 1443 - remove inaccessible URLs from server.xml
+** 1460 - Added 'pkispawn' man page ECC example
+** 1425 - Added note on overriding 'pki_client_dir' when using an HSM
+** 1441 - Limited Interactive Installation Support
+** '''Release 3'''
+** Bugzilla Bug #1246620 - Please depend on policycoreutils-python-utils (mharmsen committed for tradej)
+** '''Release 4'''
+** 1524 - pkispawn: certutil options incorrect for creating ecc admin certificate
+** '''Release 5'''
+** 1522 - CA UI adds extra space in Base 64 encoded certificate display
+** 1443 - pkidaemon status tomcat list URLs under PKI subsystems which are not accessible
+** 1518 - OCSP ee url returned by pkidaemon status tomcat shows an error page
+** 1530 - Client pki-tools missing tomcat-servlet dependency
+** 1542 - Update tomcatjss dependency on Fedora 23 and later
+
+<font size="+1"><b>Update [09/22/2016]:</b></font>
+* Created external COPR builds of CentOS 7.2 PKI EPEL packages:
+** [https://copr.fedorainfracloud.org/coprs/g/pki/epel-7.2/repo/epel-7/group_pki-epel-7.2-epel-7.repo https://copr.fedorainfracloud.org/coprs/g/pki/epel-7.2/repo/epel-7/group_pki-epel-7.2-epel-7.repo]
+
+<font size="+1"><b>Server Platforms:</b></font>
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.2.6</th>
+    </tr>
+    <tr>
+    <td>64-bit CentOS 7 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 22 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 22 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 23 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 23 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 24 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 24 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>

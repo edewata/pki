@@ -1,0 +1,6 @@
+= See Also =
+
+* [https://www.youtube.com/watch?v=OkC7HKtiZC0 UML 2.0 Tutorial]
+* [https://www.youtube.com/watch?v=XFTAIj2N2Lc UML 2.0 Activity Diagrams]
+* [https://www.youtube.com/watch?v=nTtQwGoUUNc UML 2.0 Deployment Diagrams]
+* [https://tallyfy.com/uml-diagram All You Need to Know About UML Diagrams: Types and 5+ Examples]

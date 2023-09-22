@@ -1,0 +1,106 @@
+= Java Compilers =
+
+A java development kit (JDK) contains the java compiler required to build the PKI java-tools, the PKI console, or the CA, DRM, OCSP, or TKS subsystems.  Select the appropriate JDK based upon the operating system being utilized.
+
+== Fedora 9, Fedora 10, Fedora 11, etc. ==
+
+The CA, DRM, OCSP, and TKS subsystems, PKI java tools, and PKI console require the Java Development Kit (JDK) [http://openjdk.java.net Open JDK 1.6] '''javac''' compiler to be used:
+
+ yum install java-1.6.0-openjdk-devel
+
+To insure that the appropriate version of '''javac''' has been selected, become the '''root''' user, and run the following '''/usr/sbin/alternatives''' command to verify that this '''javac''' has been selected.  For example:
+
+ '''/usr/sbin/alternatives --config javac'''
+ 
+ There is 1 program which provides 'javac'.
+ 
+   Selection    Command
+ -----------------------------------------------
+ *+ 1           /usr/lib/jvm/java-1.6.0-openjdk/bin/javac
+ 
+ Enter to keep the current selection[+], or type selection number:
+
+<table>
+<tr>
+<td valign="top">'''IMPORTANT:&nbsp;&nbsp;'''</td>
+<td>Additionally, be sure that the '''JAVA_HOME''' and '''CLASSPATH''' environment variables are unset in the user's command-line shell, and that the '''PATH''' environment variable does not reference a '''javac''' executable that is different than the one set by the '''/usr/sbin/alternatives''' command.  This can be checked by running the command '''which javac''' which should return '''/usr/bin/javac''' and/or the command '''javac -version''' which should return the expected Java compiler version.</td>
+</tr>
+</table>
+
+== Fedora 8 ==
+
+The CA, DRM, OCSP, and TKS subsystems, PKI java tools, and PKI console require the Java Development Kit (JDK) [http://icedtea.classpath.org IcedTea Open JDK 1.7] '''javac''' compiler to be used:
+
+ yum install java-1.7.0-icedtea-devel
+
+To insure that the appropriate version of '''javac''' has been selected, become the '''root''' user, and run the following '''/usr/sbin/alternatives''' command to verify that this '''javac''' has been selected.  For example:
+
+ '''/usr/sbin/alternatives --config javac'''
+ 
+ There are 2 programs which provide 'javac'.
+ 
+   Selection    Command
+ -----------------------------------------------
+ *+ 1           /usr/lib/jvm/java-1.7.0-icedtea/bin/javac
+    2           /usr/lib/jvm/java-1.5.0-gcj/bin/javac
+ 
+ Enter to keep the current selection[+], or type selection number:
+
+<table>
+<tr>
+<td valign="top">'''IMPORTANT:&nbsp;&nbsp;'''</td>
+<td>Additionally, be sure that the '''JAVA_HOME''' and '''CLASSPATH''' environment variables are unset in the user's command-line shell, and that the '''PATH''' environment variable does not reference a '''javac''' executable that is different than the one set by the '''/usr/sbin/alternatives''' command.  This can be checked by running the command '''which javac''' which should return '''/usr/bin/javac''' and/or the command '''javac -version''' which should return the expected Java compiler version.</td>
+</tr>
+</table>
+
+== Fedora Core 6 and Fedora 7 ==
+
+The IBM Java JDK 5.0 is required to build most PKI subsystems. Please download the jpackage format (i.e. pxi32dev-20070511-jpackage.tar.gz) version from the following URL:
+
+* [http://www.ibm.com/developerworks/java/jdk/linux/download.html IBM's J2SE 5.0]
+
+After downloading the package, install the following RPM package:
+
+* java-1.5.0-ibm-devel-1.5.0.5-1jpp.{arch}.rpm
+
+<table>
+<tr>
+<td valign="top">'''NOTE:&nbsp;&nbsp;'''</td>
+<td>
+Currently, all components ''except'' pki-util and pki-console can be compiled using gcj.  Although [http://java.sun.com Sun's J2SE 5.0] could be used to build ''all'' components, changes to the existing spec files of the pki-util and pki-console components would be necessary to use this particular JDK. 
+</td>
+</tr>
+</table>
+
+To insure that the appropriate version of '''javac''' has been selected, become the '''root''' user, and run the following '''/usr/sbin/alternatives''' command to verify that this '''javac''' has been selected.  For example:
+
+ '''/usr/sbin/alternatives --config javac'''
+You will  see output like this: 
+ There are 2 programs which provide 'javac'.
+ 
+   Selection    Command
+ -----------------------------------------------
+    1           /usr/lib/jvm/java-1.4.2-gcj/bin/javac
+ *+ 2           /usr/lib/jvm/java-1.5.0-ibm/bin/javac
+ 
+ Enter to keep the current selection[+], or type selection number:
+
+<table>
+<tr>
+<td valign="top">'''IMPORTANT:&nbsp;&nbsp;'''</td>
+<td>Additionally, be sure that the '''JAVA_HOME''' and '''CLASSPATH''' environment variables are unset in the user's command-line shell, and that the '''PATH''' environment variable does not reference a '''javac''' executable that is different than the one set by the '''/usr/sbin/alternatives''' command.  This can be checked by running the command '''which javac''' which should return '''/usr/bin/javac''' and/or the command '''javac -version''' which should return the expected Java compiler version.</td>
+</tr>
+</table>
+
+= C/C++ Compilers =
+
+Additionally, the low-level JNI libraries (osutil and pki-symkey), the PKI native-tools, and the TPS subsystem require C and C++ compilers.  The following two packages can easily be installed via Fedora's development yum server:
+
+* gcc 4.1.2 or later
+ yum install gcc
+* g++ 4.1.2 or later
+ yum install gcc-c++
+
+= See Also =
+
+* [https://github.com/dogtagpki/pki/wiki/Setting-Up-Eclipse Setting Up Eclipse]

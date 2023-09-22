@@ -1,0 +1,99 @@
+= Overview =
+
+In PKI 10.6 the systemd log can be configured using java.util.logging (JUL) configuration.
+
+= Displaying Systemd Log =
+
+To view all logs:
+
+ journalctl -u pki-tomcatd@<font color="red">pki-tomcat</font>.service
+
+To follow logs:
+
+ journalctl -fu pki-tomcatd@<font color="red">pki-tomcat</font>.service
+
+= Configuration =
+
+The logging configuration is stored in /var/lib/pki/<font color="red">pki-tomcat</font>/conf/logging.properties which by default is a link to /usr/share/pki/server/conf/logging.properties: 
+
+<pre>
+handlers = 1catalina.org.apache.juli.FileHandler, \
+           2localhost.org.apache.juli.FileHandler, \
+           3manager.org.apache.juli.FileHandler, \
+           4host-manager.org.apache.juli.FileHandler, \
+           java.util.logging.ConsoleHandler
+
+############################################################
+# Handler specific properties.
+# Describes specific configuration info for Handlers.
+############################################################
+
+1catalina.org.apache.juli.FileHandler.level = FINE
+1catalina.org.apache.juli.FileHandler.directory = ${catalina.base}/logs
+1catalina.org.apache.juli.FileHandler.prefix = catalina.
+
+2localhost.org.apache.juli.FileHandler.level = FINE
+2localhost.org.apache.juli.FileHandler.directory = ${catalina.base}/logs
+2localhost.org.apache.juli.FileHandler.prefix = localhost.
+
+3manager.org.apache.juli.FileHandler.level = FINE
+3manager.org.apache.juli.FileHandler.directory = ${catalina.base}/logs
+3manager.org.apache.juli.FileHandler.prefix = manager.
+
+4host-manager.org.apache.juli.FileHandler.level = FINE
+4host-manager.org.apache.juli.FileHandler.directory = ${catalina.base}/logs
+4host-manager.org.apache.juli.FileHandler.prefix = host-manager.
+
+java.util.logging.ConsoleHandler.level = ALL
+java.util.logging.ConsoleHandler.formatter = java.util.logging.SimpleFormatter
+
+java.util.logging.SimpleFormatter.format = %4$s: %5$s%6$s%n
+
+############################################################
+# Facility specific properties.
+# Provides extra control for each logger.
+############################################################
+
+.level = WARNING
+.handlers = java.util.logging.ConsoleHandler
+
+org.apache.catalina.core.ContainerBase.[Catalina].[localhost].level = INFO
+org.apache.catalina.core.ContainerBase.[Catalina].[localhost].handlers = 2localhost.org.apache.juli.FileHandler
+
+org.apache.catalina.core.ContainerBase.[Catalina].[localhost].[/manager].level = INFO
+org.apache.catalina.core.ContainerBase.[Catalina].[localhost].[/manager].handlers = 3manager.org.apache.juli.FileHandler
+
+org.apache.catalina.core.ContainerBase.[Catalina].[localhost].[/host-manager].level = INFO
+org.apache.catalina.core.ContainerBase.[Catalina].[localhost].[/host-manager].handlers = 4host-manager.org.apache.juli.FileHandler
+
+org.mozilla.jss.level = WARNING
+org.dogtagpki.level = WARNING
+com.netscape.level = WARNING
+netscape.level = WARNING
+</pre>
+
+The messages will be formatted by [https://docs.oracle.com/javase/8/docs/api/java/util/logging/SimpleFormatter.html java.util.logging.SimpleFormatter].
+
+= Customization =
+
+To customize the logging configuration, replace the link with a copy of the logging.properties:
+
+ $ rm -f /var/lib/pki/<font color="red">pki-tomcat</font>/conf/logging.properties
+ $ cp /usr/share/pki/server/conf/logging.properties /var/lib/pki/<font color="red">pki-tomcat</font>/conf/
+ $ chown pkiuser.pkiuser /var/lib/pki/<font color="red">pki-tomcat</font>/conf/logging.properties
+
+Then customize /var/lib/pki/<font color="red">pki-tomcat</font>/conf/logging.properties, for example:
+
+<pre>
+# JSS
+org.mozilla.jss.level = FINE
+
+# Tomcat JSS
+org.apache.tomcat.util.net.jss.level = FINE
+org.dogtagpki.tomcat.level = FINE
+
+# PKI
+org.dogtagpki.level = FINE
+com.netscape.level = FINE
+netscape.level = FINE
+</pre>

@@ -1,0 +1,22 @@
+Unit testing is one way (of many) to test program code.  It focuses on the correctness of the individual functions that make up a program.  Each function is tested independently - and assumes that all other parts of the program operate correctly.  The most important thing to note is unit testing doesn't test that all the pieces work correctly together - that is the role of functional or integration testing.
+
+PKI uses a [[Unit Test Framework]] based on [[JUnit]].
+
+= Test Scripts =
+
+Current test scripts are available in the following locations:
+
+* https://github.com/dogtagpki/pki/tree/master/base/util/test
+* https://github.com/dogtagpki/pki/tree/master/base/server/test
+
+= Test Reports =
+
+Test results are generated in the build directory under following folders:
+
+* base/util/test/reports
+* base/server/test/reports
+
+= References =
+
+* [[Testing]]
+* [[Functional Tests]]

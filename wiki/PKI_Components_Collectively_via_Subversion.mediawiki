@@ -1,0 +1,215 @@
+= Building PKI Components Collectively via Subversion =
+
+
+
+== Checking out PKI Source Code via Subversion ==
+
+Follow the instructions to checkout a read-only copy of the PKI source code using subversion:
+* [[PKI_Subversion_Instructions|PKI Source Code Subversion Repository]].
+
+== Building All PKI Components Collectively as a Group ==
+
+=== Dogtag 9.0 ===
+A new [http://www.cmake.org/ CMake] build system was implemented for Dogtag 9.0 to replace the [http://ant.apache.org/ ant] / [http://www.gnu.org/software/autoconf/ autoconf] build system used to build previous versions of Dogtag.
+
+Additionally, packages were reorganized (see [[PKI 9 Packages]]) and a series of standalone 'compose' scripts were created to build the newly organized components as either an SRPM (suitable to be used by [http://fedoraproject.org/wiki/Projects/Mock 'mock']), RPMS, patched SRPM, or patched RPMS.  For example:
+
+    # pki/scripts/compose_pki_core_packages 
+    
+    Usage:  pki/scripts/compose_pki_core_packages <target>
+    
+           where <target> is one of the following:
+    
+                srpm         - produces tarball, spec, and SRPM
+                               [suitable for use by 'mock']
+    
+                rpms         - produces tarball, spec, SRPM, and
+                               RPMS(S)
+                               [built for 32-bit Fedora 15]
+    
+                patched_srpm - copies tarball, patches, and spec
+                               to produce an SRPM
+                               [suitable for use by 'mock']
+    
+                patched_rpms - copies tarball, patches, and spec
+                               to produce an SRPM and RPM(s)
+                               [built for 32-bit Fedora 15]
+
+The 'osutil' component is no longer considered a Dogtag component, and is now managed as a separate standalone component. However, it still contains its own 'compose' script:
+
+    # ./osutil/compose_osutil_packages rpms
+    # rpm -Uvh packages/RPMS/{i686} | {x86_64}/osutil*.rpm
+    # mv packages packages.osutil
+
+In order to build all PKI components collectively as a group, the '''sudo''' executable must be available on the development machine.  If present, then all PKI components can be built collectively through the use of a single convenience script, '''./pki/scripts/build_dogtag_pki''', by becoming the root user and adding the following two lines to the '''/etc/sudoers''' file:
+
+ {username}  ALL = NOPASSWD:       /bin/rpm
+ {username}  ALL = NOPASSWD:       /usr/bin/yum
+
+First, become the desired {username}, and change directories into the scripts directory:
+
+ cd ./pki/scripts
+
+Next, issue the following 'convenience' script to add all PKI dependencies:
+ script -c ./prepare_dogtag_pki typescript.prepare_dogtag_pki
+<ul>
+'''NOTE:'''  While the script command is optional, the user may find it useful for debugging purposes.
+</ul>
+
+Finally, issue the following 'convenience' script to build all PKI components:
+ script -c ./build_dogtag_pki typescript.build_dogtag_pki
+<ul>
+'''NOTE:'''  Again, while the script command is optional, the user may find it useful for debugging purposes.
+</ul>
+
+All PKI RPMS will be created in a 'packages' directory, and will also be automatically installed on the system.
+
+When you have finished, make sure you have all the packages installed: 
+ # ./pki/base/scripts/pkicheck
+
+For example, building Dogtag Certificate System 9.0 on a Fedora 15 platform, you'll see output similar to this:
+
+     1  dogtag-pki-ca-theme-9.0.6-1.fc15.noarch
+     2  dogtag-pki-common-theme-9.0.6-1.fc15.noarch
+     3  dogtag-pki-console-theme-9.0.6-1.fc15.noarch
+     4  dogtag-pki-kra-theme-9.0.6-1.fc15.noarch
+     5  dogtag-pki-ocsp-theme-9.0.6-1.fc15.noarch
+     6  dogtag-pki-ra-theme-9.0.6-1.fc15.noarch
+     7  dogtag-pki-tks-theme-9.0.6-1.fc15.noarch
+     8  dogtag-pki-tps-theme-9.0.6-1.fc15.noarch
+     9  osutil-2.0.1-2.fc15.i686
+    10  pki-ca-9.0.10-1.fc15.noarch
+    11  pki-common-9.0.10-1.fc15.noarch
+    12  pki-common-javadoc-9.0.10-1.fc15.noarch
+    13  pki-console-9.0.3-1.fc15.noarch
+    14  pki-java-tools-9.0.10-1.fc15.noarch
+    15  pki-java-tools-javadoc-9.0.10-1.fc15.noarch
+    16  pki-kra-9.0.4-1.fc15.noarch
+    17  pki-native-tools-9.0.10-1.fc15.i686
+    18  pki-ocsp-9.0.3-1.fc15.noarch
+    19  pki-ra-9.0.3-1.fc15.noarch
+    20  pki-selinux-9.0.10-1.fc15.noarch
+    21  pki-setup-9.0.10-1.fc15.noarch
+    22  pki-silent-9.0.10-1.fc15.noarch
+    23  pki-symkey-9.0.10-1.fc15.i686
+    24  pki-tks-9.0.3-1.fc15.noarch
+    25  pki-tps-9.0.5-1.fc15.i686
+    26  pki-util-9.0.10-1.fc15.noarch
+    27  pki-util-javadoc-9.0.10-1.fc15.noarch
+
+In the event that all components have '''not''' been built successfully, please debug the problem using the '''typescript.build_dogtag_pki''' file produced above, and make the appropriate changes.  
+
+If necessary, become the desired {username}, and change directories back into the scripts directory:
+
+    cd ./pki/scripts
+
+Next, run the following script to remove any '''default''' instances that may have been built:
+
+    ./remove_default_pki_instances   # answering "y" to remove all of the instances
+
+Then, run the following script to remove the PKI components just built:
+
+    ./remove_pki_components          # answering "n" to acknowledge that no existing instances need be removed
+
+Optionally, run the following script to remove the DS instance that was just installed, and then run the second script to recreate it:
+    
+    /usr/sbin/remove-ds.pl -i slapi-&lt;server_id&gt;    
+    
+    /usr/sbin/setup-ds.pl
+
+Save a copy of the '''typescript.build_dogtag_pki''' file to compare against the PKI packages that will be rebuilt.
+
+    mv typescript.build_dogtag_pki typescript.build_dogtag_pki.`date +%Y%m%d%H%M%S`
+
+Finally, re-issue the following command to re-build all PKI components and follow the instructions above until successful:
+
+    script -c ./build_dogtag_pki typescript.build_dogtag_pki
+
+=== Dogtag 1.3 and Earlier ===
+In order to build all PKI components collectively as a group, the '''sudo''' executable must be available on the development machine.  If present, then all PKI components can be built collectively through the use of two scripts, '''prepare_pki''' and '''build_pki''', by becoming the root user and adding the following two lines to the '''/etc/sudoers''' file:
+
+ {username}  ALL = NOPASSWD:       /bin/rpm
+ {username}  ALL = NOPASSWD:       /usr/bin/yum
+
+First, become the desired {username}, and change directories into the scripts directory:
+
+ cd src/pki/{flavor}/scripts      where "{flavor}" equals "dogtag"
+
+Next, invoke the preparation script to install all PKI support packages:
+ script -c ./prepare_pki typescript.prepare_pki
+'''NOTE:'''  While the script command is optional, the user may find it useful for debugging purposes.
+
+Finally, issue the following command to build all PKI components:
+ script -c ./build_pki typescript.build_pki
+'''NOTE:'''  While the script command is optional, the user may find it useful for debugging purposes.
+
+All non-UI PKI RPMs will be created in '''src/pki/release/pki/base/{component}/dist/rpmpkg/RPMS/{arch}''' and '''src/pki/release/pki/base/{component}/dist/rpmpkg/RPMS/noarch''', while all PKI UI components will be created in '''src/pki/release/pki/{flavor}/{component}/dist/rpmpkg/RPMS/noarch'''.  All PKI RPMs will also be automatically installed on the system.
+
+
+When you have finished, make sure you have all the packages installed:
+ rpm -qa | egrep -i pki-\|osutil\|symkey | sort | cat -n
+ 
+ (now encapsulated in a handy script entitled '''"pki/base/scripts/pkicheck"''')
+
+  NOTE:  With the renamed 'pki-symkey', the "\|symkey" can be dropped from the command
+For example, building Dogtag Certificate System 1.0.0 on a Fedora 8 platform, you'll see output like this (where "{flavor}" equals "dogtag"):
+
+     1  {flavor}-pki-ca-ui-1.0.0-7.fc8
+     2  {flavor}-pki-common-ui-1.0.0-6.fc8
+     3  {flavor}-pki-console-ui-1.0.0-3.fc8
+     4  {flavor}-pki-kra-ui-1.0.0-4.fc8
+     5  {flavor}-pki-ocsp-ui-1.0.0-3.fc8
+     6  {flavor}-pki-ra-ui-1.0.0-4.fc8
+     7  {flavor}-pki-tks-ui-1.0.0-3.fc8
+     8  {flavor}-pki-tps-ui-1.0.0-4.fc8
+     9  osutil-1.0.0-3.fc8
+    10  pki-ca-1.0.0-17.fc8
+    11  pki-common-1.0.0-28.fc8
+    12  pki-common-javadoc-1.0.0-28.fc8
+    13  pki-console-1.0.0-9.fc8
+    14  pki-java-tools-1.0.0-3.fc8
+    15  pki-java-tools-javadoc-1.0.0-3.fc8
+    16  pki-kra-1.0.0-8.fc8
+    17  pki-manage-1.0.0-3.fc8  '''<font color="RED">(NOTE: As of Dogtag 1.3, the 'pki-manage' RPM has been 'discontinued' on Fedora/EPEL platforms in favor of 'yum' and 'yum-utils'!)</font>''' 
+    18  pki-migrate-1.0.0-4.fc8 '''<font color="RED">(NOTE: As of Dogtag 1.3, the 'pki-migrate' RPM has been 'discontinued'!)</font>'''
+    19  pki-native-tools-1.0.0-3.fc8
+    20  pki-ocsp-1.0.0-7.fc8
+    21  pki-ra-1.0.0-7.fc8
+    22  pki-selinux-1.0.0-1.fc8
+    23  pki-setup-1.0.0-8.fc8
+    24  pki-silent-1.0.0-4.fc8
+    25  pki-tks-1.0.0-7.fc8
+    26  pki-tps-1.0.0-7.fc8
+    27  pki-util-1.0.0-8.fc8
+    28  pki-util-javadoc-1.0.0-8.fc8
+    29  symkey-1.0.0-3.fc8 '''<font color="RED">(NOTE: Prior to Dogtag 1.3, the 'pki-symkey' RPM was simply called 'symkey' and contained no subpackages!)</font>'''
+
+In the event that all components have '''not''' been built successfully, please debug the problem using the '''typescript.build_pki''' file produced above, and make the appropriate changes.  
+
+If necessary, become the desired {username}, and change directories back into the scripts directory:
+
+    cd src/pki/{flavor}/scripts      #where "{flavor}" equals "dogtag"
+
+Next, run the following script to remove the '''default''' instances just built:
+
+    ./remove_default_pki_instances   #answering "y" to remove all of the instances
+
+Then, run the following script to remove the PKI components just built:
+
+    ./remove_pki_components          #answering "n" to acknowledge that no existing instances need be removed
+
+Optionally, run the following script to remove the DS instance that was just installed, and then run the second script to recreate it:
+
+    <strike>./remove_ds_instance -s &lt;server_id&gt;</strike>  '''<font color="RED">(Deprecated)</font>'''
+    
+    /usr/sbin/remove-ds.pl -i slapi-&lt;server_id&gt;    
+    
+    /usr/sbin/setup-ds.pl
+
+Save a copy of the '''typescript.build_pki''' file to compare against the PKI packages that will be rebuilt.
+
+    mv typescript.build_pki typescript.build_pki.`date +%Y%m%d%H%M%S`
+
+Finally, re-issue the following command to re-build all PKI components and follow the instructions above until successful:
+
+    script -c ./build_pki typescript.build_pki

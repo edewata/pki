@@ -1,0 +1,90 @@
+= Overview =
+
+Travis CI is a hosted, distributed continuous integration service used to build and test software projects hosted at [[GitHub]].
+
+See also [[Travis CI Design]].
+
+= Travis CI Account for PKI =
+
+PKI uses two Travis accounts:
+* unmerged patches are built in https://travis-ci.org/pki-jenkins-bot/pki
+* merged patches are built in https://travis-ci.org/dogtagpki/pki
+
+Optional environment variables:
+* IMAGE_REPO: dogtagpki/pki-ci
+
+To configure environment variables, go to More options -> Settings.
+
+It is suggested to set up your own Travis CI account to prevent bugs from entering into official build. See [[Personal Travis CI build]].
+
+= Travis CI Containers for PKI =
+
+Dockerfiles are stored at https://github.com/dogtagpki/pki-ci/tree/master/docker.
+
+PKI uses two containers:
+* one container to build PKI and run PKI tests
+* one container to run IPA tests
+
+See also [[CI Containers]].
+
+= Travis CI Configuration for PKI =
+
+Travis CI configuration is located at https://github.com/dogtagpki/pki/blob/master/.travis.yml.
+
+= Troubleshooting =
+
+== Build Failure ==
+
+If the build fails, the Travis job may not stop immediately, but it may cause secondary problems such as:
+
+* dnf install shows usage
+* pkispawn: command not found
+
+If the above error appears in the log, find the following line in the log:
+
+ $ docker exec -ti ${CONTAINER} ${SCRIPTDIR}/10-compose-rpms
+
+Expand the line:
+
+ Runing compose_pki_core_packages rpms.
+ Build log will be posted to transfer.sh
+ Uploading build log to transfer
+ https://transfer.sh/rSzSe/pkitravis.txt
+
+Open the URL to inspect the build log. If there is a problem with the patch, submit a new patch (i.e. via [[Gerrit]]).
+
+== Network Failure ==
+
+Sometimes the build may fail due to network issues, for example:
+
+ $ docker pull ${IMAGE}
+ f26_105: Pulling from dogtagpki/pki-ci
+ No output has been received in the last 10m0s, this potentially indicates a stalled build or something wrong with the build itself.
+ Check the details on how to adjust your build configuration on: https://docs.travis-ci.com/user/common-build-problems/#Build-times-out-because-no-output-was-received
+ The build has been terminated
+
+If this happens before merging the patch, add a "recheck" comment in [[Gerrit]] to rerun the build.
+If this happens after merging the patch, rerun the build in Travis.
+
+== Jenkins CI Failure ==
+
+Sometimes the build may fail due to [[Jenkins CI]] issues, for example:
+
+ $ git clone --depth=50 --branch=bot_20180126-085916_9 https://github.com/pki-jenkins-bot/pki.git pki-jenkins-bot/pki
+ Cloning into 'pki-jenkins-bot/pki'...
+ warning: Could not find remote branch bot_20180126-085916_9 to clone.
+ fatal: Remote branch bot_20180126-085916_9 not found in upstream origin
+
+If this happens, add a "recheck" comment in [[Gerrit]] to rerun the build.
+
+= References =
+
+* [[Continuous Integration]]
+* [[COPR]]
+* [[Container]]
+* [https://travis-ci.org Travis CI]
+* [https://docs.travis-ci.com/ Travis CI Documentation]
+* [https://docs.travis-ci.com/user/environment-variables/ Environment Variables]
+* [https://docs.travis-ci.com/user/customizing-the-build/ Customizing the Build]
+* [[Personal_Travis_CI_build | Personal Travis CI build]]
+* [https://travispy.readthedocs.io/en/stable/ TravisPy]

@@ -1,0 +1,74 @@
+= Overview =
+
+This page assumes that the [[Beaker Client]] has been configured.
+
+= Creating a repository of the built rpms =
+
+Use --createrepo option in the compose scripts to create a repository
+of the rpms built, like:
+
+ $ ./compose_pki_core_packages --createrepo=conf/repository.cfg hybrid_rpms
+
+This command builds the rpms, copies them to the REPOSITORY_LOCATION specified in the
+file and creates it as a repository.
+If the location specified is hosted on a httpd server, this repository
+URL can be used in the job xml as a repo URL.
+
+If a remote host name is provided then the repos are scp'ed at the
+location provided on the remote host using the credentials provided.
+(If no login credentials are provided, then a prompt appears asking
+for them.)
+
+= Building the task rpm and submitting the job to a beaker server =
+
+Building the task rpm and submitting the job to a beaker server is done by executing the compose script in pki/scripts:
+
+ $ ./compose_pki_test_package unique_identifier [--submit-tests]
+
+The builds are done in <pki_source_root>/../package.tests/ folder.
+
+The unique_identifier is for personalizing the rpm.
+
+This path at which the test source is extracted from the rpm on the
+beaker server is specified by the TEST variable in the
+Makefile (pki/tests/dogtag/Makefile).
+
+So another rpm with the same to-be-extracted path overwrites
+the existing test code.
+In order to prevent it, a unique id is asked to personalize the rpm
+to provide a unique to-be-extracted path for every test rpm of
+dogtag tests (especially at a user level).
+
+The optional --submit-tests option.
+This option submits the test rpm to the beaker server.
+
+ $ ./create_beaker_job unique_identifier beaker_job_config [--submit-job]
+
+The unique_identifier has the same functionality as the one used in the
+compose_pki_test_rpm command.
+
+The "beaker_job_config" (the absolute path of the file from /)
+is for configuring the recipe of a job.
+
+A sample configuration file is at tests/conf/beaker-job.cfg.
+
+The repos parameter should point to the URL's to access the dogtag
+rpms. The hostname means the hostname of a specific beaker test
+machine. The distro_* are the details of the distribution on the
+beaker server, that has to be installed on the test machine.
+
+The optional --submit-job command submits the job to the beaker server.
+
+Note:  A beaker job is an XML file. The template used to create a job is in
+tests/dogtag/beakerjob.dogtag.xml.template.
+The task /distribution/reservesys is commented. On uncommenting this
+task in the template, the beaker test machine is reserved for a certain
+period of time after the tests are run. This option can be used to
+debug any tests that are failing.
+
+Note:  In the case of creating a repository on a remote machine, the remote
+machine must be a known_host to the local machine.
+
+= References =
+
+* [[Beaker]]

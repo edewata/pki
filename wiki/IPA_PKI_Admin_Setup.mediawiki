@@ -1,0 +1,92 @@
+= Overview =
+
+Sometimes it is necessary to access the PKI services in IPA directly. Some of the PKI services may require PKI admin authentication, so the PKI admin certificate needs to be imported into the PKI client environment.
+
+= Preparing PKI Client =
+
+If necessary, create a new security database on the client:
+
+<pre>
+$ pki -c Secret.123 client-init
+------------------
+Client initialized
+------------------
+</pre>
+
+= Importing PKI Admin Certificate =
+
+Import the PKI admin certificate which is stored in /root/ca-agent.p12 on the server with the following command:
+
+<pre>
+$ pki -c Secret.123 client-cert-import --pkcs12 /root/ca-agent.p12 --pkcs12-password <IPA admin's password>
+----------------------------------------
+Imported certificates from PKCS #12 file
+----------------------------------------
+</pre>
+
+Verify the import with this command:
+
+<pre>
+$ pki -c Secret.123 client-cert-find
+----------------------
+1 certificate(s) found
+----------------------
+  Serial Number: 0x6
+  Nickname: ipa-ca-agent
+  Subject DN: CN=ipa-ca-agent,O=EXAMPLE.COM
+  Issuer DN: CN=Certificate Authority,O=EXAMPLE.COM
+----------------------------
+Number of entries returned 1
+----------------------------
+</pre>
+
+= Using PKI Admin Certificate =
+
+The PKI admin certificate can be used by specifying the "ipa-ca-agent" nickname to access CA services:
+
+<pre>
+$ pki -c Secret.123 -n ipa-ca-agent ca-user-find
+-----------------
+4 entries matched
+-----------------
+  User ID: CA-server.example.com-8443
+  Full name: CA-server.example.com-8443
+
+  User ID: admin
+  Full name: admin
+
+  User ID: pkidbuser
+  Full name: pkidbuser
+
+  User ID: ipara
+  Full name: ipara
+----------------------------
+Number of entries returned 4
+----------------------------
+</pre>
+
+and KRA services:
+
+<pre>
+$ pki -c Secret.123 -n ipa-ca-agent kra-user-find
+-----------------
+3 entries matched
+-----------------
+  User ID: admin
+  Full name: admin
+
+  User ID: CA-server.example.com-443
+  Full name: CA-server.example.com-443
+
+  User ID: ipakra
+  Full name: IPA KRA User
+----------------------------
+Number of entries returned 3
+----------------------------
+</pre>
+
+= References =
+
+* [[IPA]]
+* [[IPA PKI Users]]
+* [https://github.com/dogtagpki/pki/wiki/PKI-Client-CLI PKI Client CLI]

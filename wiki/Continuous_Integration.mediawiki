@@ -1,0 +1,28 @@
+= CI Systems =
+
+* [[Travis CI]]
+* [[Jenkins CI]]
+
+= Development =
+
+CI-related files are stored in GitHub at https://github.com/dogtagpki/pki-ci.
+
+To clone the repository:
+
+<pre>
+$ git clone git@github.com:dogtagpki/pki-ci.git
+$ cd pki-ci
+</pre>
+
+To create a fork, create a fork in GitHub, then add a remote repository:
+
+<pre>
+$ git remote add <USER> git@github.com:<USER>/pki-ci.git
+$ git fetch <USER>
+</pre>
+
+= References =
+
+* [[Testing]]
+* [[Unit Tests]]
+* [[Functional Tests]]

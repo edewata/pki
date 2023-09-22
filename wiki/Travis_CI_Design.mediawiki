@@ -1,0 +1,200 @@
+= Overview =
+
+Travis CI is a hosted, distributed continuous integration service used to build and test software projects hosted at GitHub.
+
+The Travis CI project for Dogtag PKI is located at https://travis-ci.org/dogtagpki/pki.
+
+The Travis CI currently does the following jobs:
+
+# Build the dogtag rpms
+# Run CA tests
+# Run KRA tests
+# Upgrade FreeIPA-4-5 with new dogtag version
+# Run Cert Related test for IPA
+
+= Architecture =
+Following picture gives an overall idea of how Travis CI is currently functioning to do a smoke test with FreeIPA.
+
+There are 2 jobs that kick off simultaneously:
+# For building and running dogtag unit test cases.
+# For building dogtag rpms and running smoke test with FreeIPA.
+
+[[File:Travis-ci-dogtag-arch.jpg|600px]]
+[[File: Travis-ci-dogtag-arch-job2.jpg]]
+
+= Test Procedure =
+
+== PKI Test Procedure ==
+
+'''Note:''' Before you start, you need to set these variables: 
+<pre>
+CONTAINER=pkitest
+SCRIPTDIR=<path to cloned pki directory>/.travis
+RPMS_LOCATION=<path to ../cloned pki directory>/packages/RPMS    # The packages folder is present one level above pki directory
+</pre>
+
+The detailed steps in container #1 include:
+* Pull the Docker image from  [https://hub.docker.com/r/dogtagpki/pki-ci/builds/ f25_104 Build]: 
+    <pre>$ docker pull dogtagpki/pki-ci:f25_104</pre>
+* Run the docker container from the image pulled:
+    <pre>$ sudo docker run \
+    --detach \
+    --name=${CONTAINER}  \
+    --hostname='pki.test' \
+    --privileged \
+    --tmpfs /tmp \
+    --tmpfs /run \
+    -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+    -v $(pwd):/tmp/workdir/pki \
+    -e BUILDUSER_UID=$(id -u) \
+    -e BUILDUSER_GID=$(id -g) \
+    -ti \
+    dogtagpki/pki-ci:f25_104</pre>
+* Clone the [https://github.com/dogtagpki/pki Github repo]:
+    <pre>$ git clone https://github.com/dogtagpki/pki.git</pre>
+* Initialize build environment using the [https://github.com/dogtagpki/pki/blob/master/.travis/00-init init script]
+    <pre>$ docker exec -ti ${CONTAINER} ${SCRIPTDIR}/00-init</pre>
+* Build RPMs from the cloned repo using [https://github.com/dogtagpki/pki/blob/master/.travis/10-compose-rpms compose script]
+    <pre>$ docker exec -ti ${CONTAINER} ${SCRIPTDIR}/10-compose-rpms </pre>
+
+* Copy the built rpms to a temp directory which we will be using in Container #2 (Occurs only in '''Job #2''')
+    <pre>$ mkdir -p dogtag_rpms
+$ docker cp ${CONTAINER}:${RPMS_LOCATION}/. ${DOGTAG_PKI_RPMS}</pre>
+
+
+
+
+The following steps occur only in '''Job #1''':
+* Install RPMs from previous step using [https://github.com/dogtagpki/pki/blob/master/.travis/20-install-rpms install script]
+    <pre>$ docker exec -ti ${CONTAINER} ${SCRIPTDIR}/20-install-rpms</pre>
+* Setup Directory Server (DS) using [https://github.com/dogtagpki/pki/blob/master/.travis/30-setup-389ds setupDS script]
+    <pre>$ docker exec -ti ${CONTAINER} ${SCRIPTDIR}/30-setup-389ds</pre>
+* [https://github.com/dogtagpki/pki/blob/master/.travis/40-spawn-ca Spawn CA] and [https://github.com/dogtagpki/pki/blob/master/.travis/50-spawn-kra spawn KRA]
+    <pre>$ docker exec -ti ${CONTAINER} ${SCRIPTDIR}/40-spawn-ca
+$ docker exec -ti ${CONTAINER} ${SCRIPTDIR}/50-spawn-kra</pre>
+* Destroy all dogtag components using [https://github.com/dogtagpki/pki/blob/master/.travis/99-destroy destroy script]
+    <pre>$  docker exec -ti ${CONTAINER} ${SCRIPTDIR}/99-destroy</pre>
+Once all these steps are successful, [https://github.com/dogtagpki/pki/blob/master/.travis_run_ipa_task.sh .travis_run_ipa_task.sh] is triggered. 
+    <pre>$ ./.travis_run_ipa_task.sh</pre>
+
+'''Note: ''' The travis_wait command is being used as the logs produced for each step in executing this script isn't necessary. In case of failure, the logs are uploaded to transfer.sh ([http://pki.fedoraproject.org/wiki/Travis_CI#Logging More about logging])
+
+== IPA Test Procedure ==
+
+The container #2 kicks in when .travis_run_ipa_task.sh is run. The detailed steps in container #2 include:
+* Pull the Docker image from [https://hub.docker.com/r/dogtagpki/dogtag-freeipa-ci-containers/ dogtag-freeipa-integration]
+<pre>$ docker pull dogtagpki/dogtag-freeipa-ci-containers:f25_ipa_4-5</pre>
+* Run the [https://github.com/freeipa/ipa-docker-test-runner ipa-docker-test-runner] tool and supply the config ([https://github.com/dogtagpki/pki/blob/master/.test_runner_config.yaml .test_runner_config.yaml]), the location of the repo ($TRAVIS_BUILD_DIR), temp file name to log (optional) and image downloaded from previous step as arguments
+<pre>$ ipa-docker-test-runner -c .test_runner_config.yaml \
+    --developer-mode \
+    --container-image dogtagpki/dogtag-freeipa-ci-containers:f25_ipa_4-5 \
+    --git-repo <path to cloned pki directory> \
+    run-tests <cert related test names> # Check below for the list of tests being specified</pre>
+
+Following steps are specified inside the config file:
+* Install latest dogtag rpms built in Container #1
+<pre># find /freeipa/dogtag_rpms/ -name '*.rpm' -and -not -name '*debuginfo*' \
+    | xargs dnf install -y --best --allowerasing</pre>
+''Note: '' Here /freeipa is a mount point that is specified in the docker image. dogtag_rpms refers to the folder that you created and copied the RPMs that you built in Container #1. The location of the pki directory you specified using --git-repo will contain the dogtag_rpms folder.
+* Install IPA server and setup DNS and KRA
+<pre># ipa-server-install -U --domain ipa.test --realm IPA.TEST -p Secret.123 \
+    -a Secret.123 --setup-dns --setup-kra --auto-forwarders</pre>
+* Run cert related tests using ipa-run-tests
+<pre># ipa-run-tests <cert related tests>  # Look below for the names of different cert related tests</pre>
+* Once everything succeeds, uninstall all elements and delete the container
+<pre># ipa-server-install --uninstall -U</pre>
+
+In case of failure, the logs are uploaded to transfer.sh ([[#Logging|More about logging]])
+
+=== PKI-Related Tests ===
+
+Following PKI-related tests are executed:
+* [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_caacl_plugin.py test_caacl_plugin]
+* [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_caacl_profile_enforcement.py test_caacl_profile_enforcement]
+* [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_cert_plugin.py test_cert_plugin]
+* [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_certprofile_plugin.py test_certprofile_plugin]
+* [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_vault_plugin.py test_vault_plugin]
+
+= Configuration =
+
+The Travis CI configuration is stored in [https://github.com/dogtagpki/pki/blob/master/.travis.yml .travis.yml].
+
+Dogtag scripts are stored in [https://github.com/dogtagpki/pki/tree/master/.travis .travis] folder.
+
+FreeIPA related script is stored in [https://github.com/dogtagpki/pki/blob/master/.travis_run_ipa_task.sh .travis_run_ipa_task.sh]
+
+FreeIPA test configuration is stored in [https://github.com/dogtagpki/pki/blob/master/.test_runner_config.yaml .test_runner_config.yaml]
+
+Docker image for Container #2 is obtained from [https://hub.docker.com/r/dogtagpki/dogtag-freeipa-ci-containers/ DockerImage] with tag '''f25_ipa_4-5'''
+
+= Logging =
+The logs of both containers are transferred to transfer.sh under the names "dogtag_build_logs.txt" and "freeipa-integration.txt". The link to these files can be obtained from Travis build log of particular build (only if the build fails).
+
+= Test Containers =
+
+The Dockerfiles for the '''PKI Test Container''' and '''IPA Test Container''' are in the [https://github.com/dogtagpki/pki-ci/ pki-ci]. 
+
+The corresponding container images are hosted on [https://hub.docker.com/r/dogtagpki/ Docker Hub]. The project is set up as automated builds. New images are build whenever a change is pushed to the GitHub repository. A manual build can be triggered, too. Ideally images should be rebuild every couple of weeks.
+
+All test containers are set up as systemd containers with all build dependencies pre-installed. Although this makes the containers rather large, it also speeds up each test run a lot.
+
+== PKI Test Container ==
+
+The Dockerimage runs dnf update and has the following things installed and configured:
+
+=== Base Dependencies ===
+
+<pre>dnf-plugins-core 
+make python3-tox 
+python3-pyldap 
+rpm-build 
+sudo 
+389-ds-base 
+systemd</pre>
+
+=== Dogtag PKI Build Dependencies ===
+
+<pre>pki-core 
+slf4j 
+python2-cryptography 
+python3-cryptography</pre>
+
+=== Volumes Mounted ===
+
+<pre>/sys/fs/cgroup
+/tmp
+/run</pre>
+
+== IPA Test Container ==
+
+The Dockerimage runs dnf update and has the following things installed and configured:
+
+=== Dependencies ===
+
+<pre>python-srpm-macros 
+@buildsys-build 
+@development-tools</pre>
+
+=== Dogtag Related Build Dependencies ===
+
+<pre>COPR enabled for @pki/10.4 
+pki-base</pre>
+
+=== IPA related Build Dependencies ===
+
+<pre>COPR enabled for @freeipa/freeipa-4-5
+freeipa-server 
+freeipa-server-dns 
+freeipa-server-trust-ad 
+python-ipatests</pre>
+
+=== Volumes Mounted ===
+
+<pre>/freeipa
+/run
+/tmp</pre>
+
+= References =
+
+* [[Travis CI]]
+* [[Container]]

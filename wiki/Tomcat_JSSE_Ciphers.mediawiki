@@ -1,0 +1,185 @@
+= Configuration =
+
+The ciphers for JSSE connector can be configured in the '''ciphers''' attribute of the '''SSLHostConfig''' element as follows:
+
+ <Connector ...>
+ 
+     <SSLHostConfig ... <font color="red">ciphers="..."</font>>
+         <Certificate .../>
+     </SSLHostConfig>
+ 
+ </Connector>
+
+According to [https://tomcat.apache.org/tomcat-8.5-doc/config/http.html#SSL_Support_-_SSLHostConfig Tomcat documentation], the ciphers can be specified in several ways:
+* with [https://www.openssl.org/docs/man1.1.0/apps/ciphers.html OpenSSL syntax]
+* with comma-separated list of [https://www.openssl.org/docs/manmaster/man1/ciphers.html#CIPHER-SUITE-NAMES OpenSSL cipher names]
+* with [https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml JSSE cipher names]
+
+For example:
+
+ <SSLHostConfig ... <font color="red">ciphers="DHE-RSA-AES256-GCM-SHA384,DHE-RSA-AES128-GCM-SHA256"</font>>
+
+The order in which ciphers are defined is treated as an order of preference. See also honorCipherOrder.
+
+If the ciphers attribute is not specified, by default it will use the following ciphers:
+
+ <SSLHostConfig ... <font color="red">ciphers="HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!kRSA"</font>>
+
+To list the default ciphers:
+
+<pre>
+$ openssl ciphers 'HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!kRSA' | tr ':' '\n'
+ECDHE-ECDSA-AES256-GCM-SHA384
+ECDHE-RSA-AES256-GCM-SHA384
+...
+</pre>
+
+= Default Ciphers =
+
+The following ciphers are enabled by default by JSSE with RSA certificate:
+
+{| class="wikitable"
+! Cipher ID
+! IANA/NSS Cipher Name
+! OpenSSL Cipher Name
+|-
+| 0xc030
+| TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+| ECDHE-RSA-AES256-GCM-SHA384
+|-
+| 0x0033
+| TLS_DHE_RSA_WITH_AES_128_CBC_SHA
+| DHE-RSA-AES128-SHA
+|-
+| 0x0039
+| TLS_DHE_RSA_WITH_AES_256_CBC_SHA
+| DHE-RSA-AES256-SHA
+|-
+| 0x0067
+| TLS_DHE_RSA_WITH_AES_128_CBC_SHA256
+| DHE-RSA-AES128-SHA256
+|-
+| 0x006b
+| TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
+| DHE-RSA-AES256-SHA256
+|-
+| 0x009e
+| TLS_DHE_RSA_WITH_AES_128_GCM_SHA256
+| DHE-RSA-AES128-GCM-SHA256
+|-
+| 0x009f
+| TLS_DHE_RSA_WITH_AES_256_GCM_SHA384
+| DHE-RSA-AES256-GCM-SHA384
+|-
+| 0xc013
+| TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA
+| ECDHE-RSA-AES128-SHA
+|-
+| 0xc014
+| TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
+| ECDHE-RSA-AES256-SHA
+|-
+| 0xc027
+| TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+| ECDHE-RSA-AES128-SHA256
+|-
+| 0xc028
+| TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
+| ECDHE-RSA-AES256-SHA384
+|-
+| 0xc02f
+| TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+| ECDHE-RSA-AES128-GCM-SHA256
+|}
+
+
+The following ciphers are enabled by default by JSSE with ECC certificate:
+
+{| class="wikitable"
+! Cipher ID
+! IANA/NSS Cipher Name
+! OpenSSL Cipher Name
+|-
+| 0xc02b
+| TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+| ECDHE-ECDSA-AES128-GCM-SHA256
+|-
+| 0xc02c
+| TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+| ECDHE-ECDSA-AES256-GCM-SHA384
+|-
+| 0xc009
+| TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA
+| ECDHE-ECDSA-AES128-SHA
+|-
+| 0xc00a
+| TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA
+| ECDHE-ECDSA-AES256-SHA
+|-
+| 0xc023
+| TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256
+| ECDHE-ECDSA-AES128-SHA256
+|-
+| 0xc024
+| TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384
+| ECDHE-ECDSA-AES256-SHA384
+|}
+
+= FIPS Ciphers =
+
+If the Tomcat is configured as follows:
+
+<pre>
+<SSLHostConfig ciphers="DHE-RSA-AES128-SHA,DHE-RSA-AES256-SHA,DHE-RSA-AES128-SHA256,DHE-RSA-AES256-SHA256,DHE-RSA-AES128-GCM-SHA256,AES128-SHA256,AES256-SHA256">
+</pre>
+
+Tomcat will support the following ciphers:
+
+{| class="wikitable"
+! Cipher ID
+! IANA/NSS Cipher Name
+! OpenSSL Cipher Name
+|-
+| 0x0039
+| TLS_DHE_RSA_WITH_AES_256_CBC_SHA
+| DHE-RSA-AES256-SHA
+|-
+| 0x006b
+| TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
+| DHE-RSA-AES256-SHA256
+|}
+
+If the Tomcat is configured as follows:
+
+<pre>
+<SSLHostConfig ciphers="TLSv1.2+FIPS:kRSA+FIPS:!eNULL:!aNULL">
+</pre>
+
+Tomcat will support the following ciphers:
+
+{| class="wikitable"
+! Cipher ID
+! IANA/NSS Cipher Name
+! OpenSSL Cipher Name
+|-
+| 0xc028
+| TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384
+| ECDHE-RSA-AES256-SHA384
+|-
+| 0xc030
+| TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+| ECDHE-RSA-AES256-GCM-SHA384
+|-
+| 0x006b
+| TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
+| DHE-RSA-AES256-SHA256
+|-
+| 0x009f
+| TLS_DHE_RSA_WITH_AES_256_GCM_SHA384
+| DHE-RSA-AES256-GCM-SHA384
+|}
+
+= References =
+
+* [[Tomcat SSL Ciphers]]
+* [[JSSE]]

@@ -1,0 +1,71 @@
+= Gerrit =
+
+'''This page is obsolete. See [[Gerrit]]'''.
+
+"code-review"
+
+In gerrit, there is the concept of a group of core-reviewers.  These are the
+ones that determine what code ultimately gets merged into the repo.  These
+reviewers have the power to +2/-2.  Everyone else can review the code and
+signal their approval by providing +1/-1.  All the CS developers have been added
+to the core reviewer group, so you should all see +2/-2.
+
+Example, edewata submits a change.  msauton tries out a change and determines
+it works for him.  He will signal this by providing a +1.  cfu reviews the
+change and makes suggestions of things to fix.  She would provide a -1.
+
+Endi would make changes, and submit a new review.  cfu looks at the changes
+and approves them by giving them a +2.
+
+We have to decide what our policy is going to be.  iThe default policy is that
+a change cannot be sunbmitted to merge unless it receives at least one +2.
+This is independant of however many -1s or +1s a patch has.
+
+-2 is the core reviewer's indication of rejection with prejudice.  No patch
+can be submitted to  merge with a -2.  If a review gets a -2, the patch
+submitter must work with the core reviewer to have them remove their -2.
+
+In summary:
+-2 Do not merge this.  You're on the wrong path.  If you want to merge this,
+   you need to convince me first.  Even if you submit another patchset.
+   the -2 will remain until I'm satisfied.
+-1 This patch did not work for me, or this patch needs some work.
+ 0 Neutral.  I have some comments but have not really had a chance to give
+   it a thorough review.  Or maybe I'm commenting on my own patch.
++1 Patch looks good to me but I'm not a core reviewer, or  - I'm a core
+   reviewer and the patch looks good to me but its not really my area.  I
+   want someone else to look at this.
++2 Looks good to me (core reviewer).  Lets merge this puppy.
+
+*Workflow*
+
+This is a custom field that I added to follow what Openstack does.  Basically,
+this field is an indication that the change is ready to be merged.
+In Openstack, we often require more than one core reviewer to approve a change.
+The second reviewer specifies approval with +2 and +1 Workflow.
+
+The rule is that a change needs a +1 to be merged.  A -1 will prevent a merge.
+In general, the patch author will often set a -1 for workflow to indicate a
+patch that is still a work in progress.  This is useful to share patches
+between team members.
+
+"Verified"
+
+When we get around to it, we'll have a jenkins gate job that will run and
+at the very least confirm that the build does not break with this change.
+This will run automatically when workflow is set to +1.  Later, we can add
+CI tests, pylint etc.
+
+The rule is that you need a +1 to merge.  If the jenkins job fails, then
+it will set -1.
+
+Until those jobs are put in place, the developer who sets Workflow: +1 should
+also set Verified: +1.
+
+Submit Button:
+
+Once the conditions are satisfied: at least one +2 and no -2 for code review,
++1 for Verified and +1 for Workflow, then a submit button pops up.  Once clicked,
+the code is merged.  In Openstack, the submission is automatically done by
+some job once the conditions are met.  I have not figured out how to do that
+yet, but it should not be too hard.

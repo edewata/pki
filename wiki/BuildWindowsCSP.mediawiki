@@ -1,0 +1,26 @@
+Return tool the [[CoolKey]] page.
+== Prerequisites ==
+The windows CSP only builds and runs on Windows.
+You will need to following.
+* '''Microsoft Visual C++''' I've tested with VC 7.0. It should work with 6.0 and 8.0. VC 8.0 is available at (http://msdn.microsoft.com/visualc/)
+* '''Microsoft CAPI CSPDK''' currently available at http://www.microsoft.com/downloads/details.aspx?displaylang=en&FamilyID=7C249AD6-9BAC-4A20-A1A9-3F133D264A42
+
+== Setup ==
+
+# Install '''Microsoft Visual C++'''
+# Set the environment variables INCLUDE, LIB, and PATH to point to the compiler. There is a tool that comes with the compilier to do this.
+# Install '''Microsoft CAPI CSPDK'''
+# Set the CAPISDK evironment variable to point to the directory you installed '''Microsoft CAPI CSPDK''' in. For example, <pre>set CAPISDK=C:\CSPDK</pre>
+
+== Building ==
+In the root directory type:
+ nmake
+You will need the following files:
+  clkcsp.dll
+  clkcsp.sig
+  cspres.dll
+
+To run the CSP you will need to
+# follow the directions in the '''Microsoft CAPI SDK''' for setting up your system,
+# copy clkcsp.dll cspres.dll and cllkcsp.sig to your C:/Windows/System32 directory,
+# in your WINDOWS/System32 directory run '''regsvr32 clkcsp.dll'''.

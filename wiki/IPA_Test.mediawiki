@@ -1,0 +1,12 @@
+= Preparation =
+
+<pre>
+$ mkdir ~/.ipa/ &> /dev/null
+$ mkdir ~/.ipa/alias/ &> /dev/null
+$ certutil --empty-password -N -d ~/.ipa/alias/
+$ ln -sf /etc/ipa/default.conf ~/.ipa/default.conf
+</pre>
+
+= References =
+
+* [[IPA Tests]]

@@ -1,0 +1,81 @@
+RESTeasy is not currently in Fedora.  Marek Goldmann is responsible for moving JBoss packages into Fedora, but needs help.
+
+The status of JBOSS in Fedora is here: http://fedoraproject.org/wiki/JBossAS7
+
+Marek provided a template for package spec files here: https://gist.github.com/1383245
+
+Looking through the POMs, we see the following dependencies for the packages we care about (resteasy-jaxrs, resteasy-jaxb-provider, resteasy-jackson-provider?)
+
+<pre>
+1. resteasy-jaxrs
+2.     jaxrs-api --> no dependencies
+3.     tjws ->
+           servlet-api (in as tomcat6-servlet-2.5-api)
+           servlet-api (in fedora)
+           junit (in fedora)
+           log4j (in fedora)
+4.     scannotation ->
+           junit (in fedora)
+           javassist (in fedora as javassist)
+           titan-cruise ->
+5.             hibernate3
+6.             hibernate-annotations
+               hibernate-commons-annnotations (in fedora, same name)
+7.             hibernate-entitymanager
+               persistence-api (in fedora as hibernate-jpa-api or geronimo-jpa)
+               jta   (in as geronimo-jta)
+               antlr (in fedora as antlr)
+               hsqldb (in fedora)
+               jboss-common-core (in fedora)
+               commons-collections (in as apache-commons-collections)
+               javassist (in fedora)
+               cglib  (in fedora)
+               dom4j  (in fedora)
+               junit (in fedora)
+           servlet-api (in fedora)
+8.     jsr250-api (not in - as far as I can tell) ->
+           http://grepcode.com/snapshot/repo1.maven.org/maven2/javax.annotation/jsr250-api/1.0
+           http://jcp.org/aboutJava/communityprocess/final/jsr250/index.html
+           CDDL v.1 (ok for fedora, FSF free, not GPL compat)
+
+       activation (should be ok to comment out as it is bundled with jvm)
+       commons-httpclient (in fedora: jakarta-commons-httpclient)
+       httpclient -->  (in fedora httpcomponents-client)
+       jcip-annotations ---> (in fedora jcip-annotations)
+
+Also : jaxb from ws-jaxme (in fedora)
+
+Also: from providers
+
+9. resteasy-jaxb-provider ->
+10.     com.sun.xml.bind (jaxb-impl)
+            http://jaxb.java.net/  CDDL v1.1 and GPL v2.
+11.     com.sun.xml.stream (sjsxp)
+            http://sjsxp.java.net/ CDDL v1.0 and GPL v2.
+            can we use bea-stax (which is in fedora?)
+        servlet-api
+        tjws
+        resteasy-jaxrs
+        junit
+12. resteasy-jettison-provider (needed?)->
+            resteasy-jaxrs
+            resteasy-jaxb-provider
+            org.codehaus.jettison.jettison (in fedora)
+            servlet-api
+            tjws
+            junit
+13. resteasy-jackson-provider (needed?) ->
+        resteasy-jaxrs
+        resteasy-jettison-provider
+14.     org.codehaus.jackson.jackson-core-asl
+15.     org.codehaus.jackson.jackson-mapper-asl
+16.     org.codehaus.jackson.jackson-jaxrs
+17.     org.codehaus.jackson.jackson-xc
+        servlet-api
+        tjws
+        junit
+</pre>
+
+= References =
+
+* [[RESTEasy]]

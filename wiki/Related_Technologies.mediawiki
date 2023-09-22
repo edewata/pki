@@ -1,0 +1,41 @@
+The following is a list of open source technologies that relate to the Dogtag project.
+
+==NSS==
+The NSS (Network Security Services) cryptography libraries perform all the crypto operations in Dogtag. These libraries trace their roots back to the original SSL libraries Netscape wrote when it invented SSL. Here are some NSS pages you find interesting:
+* The [http://www.mozilla.org/projects/security/pki/nss/ NSS main project page].
+* An [http://www.mozilla.org/projects/security/pki/nss/overview.html overview of the features in NSS].
+* Primary source for [http://developer.mozilla.org/en/docs/NSS NSS developer documentation].
+* Information about [http://www.mozilla.org/projects/security/pki/nss/fips/ NSS FIPS 140 validations]. FIPS 140 is an important government standard for cryptography.
+* You can get the [http://www.mozilla.org/projects/security/pki/src/download.html source for NSS here].
+
+==FDS==
+The Fedora Directory Server (FDS) serves as the data repository for Dogtag. Certificates and requests for certificates are stored there.  The rich feature set of FDS allows Dogtag to be deployed in a flexible fashion based on customer requirements. One such feature of FDS is "multi-master replication", which allows complex deployments with excellent fail-over capabilities.
+
+More information on the Fedora Directory Server can be found below:
+
+URL - http://directory.fedoraproject.org/
+
+==AEP==
+The AEP (Auto-Enrollment Proxy) server translates Micosoft's proprietary certificate enrollment process into one that Dogtag CAs can understand.
+
+You can visit the main [http://directory.fedoraproject.org/wiki/Windows_Certificate_Auto_Enrollment AEP page here].
+
+== Smart Card Technologies==
+Dogtag ships with a token processing system known as TPS.  In order to assist users in actually putting these smart cards to work, we provide the following client based components:
+===CoolKey===
+CoolKey is the PKCS#11 driver that we use on client machines to actually access CoolKey smart cards. Many popular programs such as Firefox and Thunderbird accept PKCS#11 modules that will perform smart card operations with CoolKeys.
+
+The coolkey open source applet used by TPS also lives on this page.
+
+More information on the CoolKey project can be found below:
+
+URL - http://directory.fedoraproject.org/wiki/CoolKey
+
+===ESC or Smart Card Manager===
+ESC is the client software that forms a secure conduit of communication between TPS and the smart cards themselves. The client initiates common token operations with TPS that result in a token being "personalized" for a given user. The card is then ready to perform useful cryptographic functions such secure mail and secure web site access.
+
+More information on ESC can be found below:
+
+*URL - http://directory.fedoraproject.org/wiki/ESC_Guide
+*Get ESC  [http://directory.fedoraproject.org/wiki/ESC_Guide#How_to_Get_ESC here].
+*Get the source [http://directory.fedoraproject.org/wiki/ESC_Guide#How_to_get_the_source here].

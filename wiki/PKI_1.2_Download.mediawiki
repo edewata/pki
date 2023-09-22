@@ -1,0 +1,51 @@
+== Binary Packages ==
+
+<table border=1>
+<tr>
+<th>Platform</th>
+</tr>
+<tr>
+<td>32-bit Fedora 11 (i586)</td>
+</tr>
+<tr>
+<td>64-bit Fedora 11 (x86_64)</td>
+</tr>
+<tr>
+<td>32-bit Fedora 10 (i386)</td>
+</tr>
+<tr>
+<td>64-bit Fedora 10 (x86_64)</td>
+</tr>
+<tr>
+<td>32-bit Fedora 9 (i386)</td>
+</tr>
+<tr>
+<td>64-bit Fedora 9 (x86_64)</td>
+</tr>
+<tr>
+<td>32-bit Fedora 8 (i386)</td>
+</tr>
+<tr>
+<td>64-bit Fedora 8 (x86_64)</td>
+</tr>
+</table>
+
+== Source Packages ==
+
+<table border=1>
+<tr>
+<th>Platform</th>
+</tr>
+<tr>
+<td>Fedora 11</td>
+</tr>
+<tr>
+<td>Fedora 10</td>
+</tr>
+<tr>
+<td>Fedora 9</td>
+</tr>
+<tr>
+<td>Fedora 8</td>
+</tr>
+</table>

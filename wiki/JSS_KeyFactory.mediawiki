@@ -1,0 +1,52 @@
+= Overview =
+
+Supported algorithms:
+
+* DSA
+* RSA
+
+The following transformations are supported for generatePublic() and generatePrivate():
+
+{| border="1" style="border-collapse: collapse;"
+! width="200" | From
+! width="200" | To
+|-
+| RSAPublicKeySpec
+| RSAPublicKey
+|-
+| DSAPublicKeySpec
+| DSAPublicKey
+|-
+| X509EncodedKeySpec
+| RSAPublicKey
+|-
+| X509EncodedKeySpec
+| DSAPublicKey
+|-
+| RSAPrivateCrtKeySpec
+| RSAPrivateKey
+|-
+| DSAPrivateKeySpec
+| DSAPrivateKey
+|-
+| PKCS8EncodedKeySpec
+| RSAPrivateKey
+|-
+| PKCS8EncodedKeySpec
+| DSAPrivateKey
+|}
+
+Notes:
+
+* getKeySpec() is not supported. This method exports key material in plaintext and is therefore insecure. Note that a public key's data can be accessed directly from the key.
+* translateKey() simply gets the encoded form of the given key and then tries to import it by calling generatePublic() or generatePrivate(). Only X509EncodedKeySpec is supported for public keys, and only PKCS8EncodedKeySpec is supported for private keys.
+
+= Creating Key Factory =
+
+<pre>
+KeyFactory kf = KeyFactory.getInstance("RSA");
+</pre>
+
+= References =
+
+* [[JSS Provider]]

@@ -1,0 +1,693 @@
+==pki-ca==
+After updating an existing Dogtag installation from CA version 1.2.0 to 1.3.6, the CA would no longer start.  The following packages were updated:
+<pre>
+=============================================================================================================================================================================
+ Package                                            Arch                                 Version                                  Repository                            Size
+=============================================================================================================================================================================
+Installing:
+ pki-symkey                                         i386                                 1.3.2-4                                  dogtag                                33 k
+     replacing  symkey.i386 1.2.0-2
+
+Updating:
+ dogtag-pki-ca-ui                                   noarch                               1.3.2-1                                  dogtag                               311 k
+ dogtag-pki-common-ui                               noarch                               1.3.3-1                                  dogtag                                70 k
+ osutil                                             i386                                 1.3.1-3                                  dogtag                                25 k
+ pki-ca                                             noarch                               1.3.6-1                                  dogtag                               214 k
+ pki-common                                         noarch                               1.3.8-1                                  dogtag                               2.5 M
+ pki-java-tools                                     noarch                               1.3.1-1                                  dogtag                               115 k
+ pki-native-tools                                   i386                                 1.3.0-5                                  dogtag                               129 k
+ pki-selinux                                        noarch                               1.3.5-1                                  dogtag                                33 k
+ pki-setup                                          noarch                               1.3.4-1                                  dogtag                                50 k
+ pki-util                                           noarch                               1.3.2-1                                  dogtag                               541 k
+Installing for dependencies:
+ pki-silent                                         noarch                               1.2.0-1                                  dogtag                               264 k
+</pre>
+
+This CA was installed and configured as the default instance pki-ca.  The upgrade left all the data and configuration intact, the CA just wouldn't start when running <code>/etc/init.d/pki-ca start</code>.  The user is greeted with the following scary message:
+<pre>
+# /etc/init.d/pki-ca start
+This machine is missing all PKI subsystems!
+</pre>
+I realized there was now a <code>/etc/init.d/pki-cad</code> that also wouldn't start the CA:
+<pre>
+# /etc/init.d/pki-cad start
+This machine contains no registered 'pki-ca' subsystem instances!
+</pre>
+
+To get around this and allow the existing CA to start with the new pki-cad, you need to modify 2 existing config files and create one new one.
+
+* Create the folder that is now referred to as the PKI_REGISTRY:
+<pre>
+# mkdir -p /etc/sysconfig/pki/ca/
+</pre>
+* In this folder, create a file that has the same name as the instance of your CA (for example, my ca is pki-ca so I create the file <code>/etc/sysconfig/pki/ca/pki-ca</code>
+* Add the following as the contents of the file, making sure to edit references to pki-ca to be your instance name (These should be PKI_INSTANCE_ID,PKI_INSTANCE_PATH, and PKI_SERVER_XML_CONF):
+<pre>
+# Establish PKI Variable "Slot" Substitutions
+
+PKI_FLAVOR=pki
+export PKI_FLAVOR
+
+PKI_GROUP=pkiuser
+export PKI_GROUP
+
+PKI_INSTANCE_ID=pki-ca
+export PKI_INSTANCE_ID
+
+PKI_INSTANCE_PATH=/var/lib/pki-ca
+export PKI_INSTANCE_PATH
+
+PKI_SERVER_XML_CONF=/etc/pki-ca/server.xml
+export PKI_SERVER_XML_CONF
+
+PKI_SUBSYSTEM_TYPE=ca
+export PKI_SUBSYSTEM_TYPE
+
+PKI_USER=pkiuser
+export PKI_USER
+
+# Use CATALINA_BASE
+
+CATALINA_BASE=${PKI_INSTANCE_PATH}
+export CATALINA_BASE
+
+# Get Tomcat config
+
+TOMCAT_CFG="${PKI_INSTANCE_PATH}/conf/tomcat5.conf"
+export TOMCAT_CFG
+
+[ -r "$TOMCAT_CFG" ] && . "${TOMCAT_CFG}"
+
+# Path to the tomcat launch script (direct don't use wrapper)
+TOMCAT_SCRIPT=/usr/bin/dtomcat5-${PKI_INSTANCE_ID}
+export TOMCAT_SCRIPT
+
+# Path to the script that will refresh jar symlinks on startup
+if [ ${OS} = "Linux" ] ; then
+    TOMCAT_RELINK_SCRIPT="/usr/share/tomcat5/bin/relink"
+    export TOMCAT_RELINK_SCRIPT
+fi
+
+# Tomcat name :)
+TOMCAT_PROG=${PKI_INSTANCE_ID}
+export TOMCAT_PROG
+
+# if TOMCAT_USER is not set, use tomcat5 like Apache HTTP server
+if [ -z "$TOMCAT_USER" ]; then
+    TOMCAT_USER="${PKI_USER}"
+    export TOMCAT_USER
+fi
+
+# if TOMCAT_GROUP is not set, use tomcat5 like Apache HTTP server
+if [ -z "$TOMCAT_GROUP" ]; then
+    TOMCAT_GROUP="${PKI_GROUP}"
+    export TOMCAT_GROUP
+fi
+
+# Since the daemon function will sandbox $tomcat
+# no environment stuff should be defined here anymore.
+# Please use the ${PKI_INSTANCE_PATH}/conf/tomcat5.conf
+# file instead ; it will be read by the $tomcat script
+
+PKI_LOCKDIR="/var/lock/pki/ca"
+export PKI_LOCKDIR
+PKI_LOCKFILE="${PKI_LOCKDIR}/${PKI_INSTANCE_ID}.pid"
+export PKI_LOCKFILE
+PKI_PIDFILE="${PKI_INSTANCE_ID}.pid"
+export PKI_PIDFILE
+pki_instance_configuration_file=${PKI_INSTANCE_PATH}/conf/CS.cfg
+export pki_instance_configuration_file
+
+RESTART_SERVER=${PKI_INSTANCE_PATH}/conf/restart_server_after_configuration
+export RESTART_SERVER
+</pre>
+
+* Replace the contents of <code>/etc/pki-ca/tomcat5.conf</code> with the following (again, edit references to pki-ca to apply to your ca instance, and the filename may be different depending on your instance name):
+<pre>
+# tomcat5 service configuration file
+
+# Check to insure that this configuration file's associated PKI
+# subsystem currently resides on this system.
+PKI_SUBSYSTEM_TYPE=ca
+if [ ! -d /usr/share/pki/${PKI_SUBSYSTEM_TYPE} ] ; then
+	echo "This machine is missing the '${PKI_SUBSYSTEM_TYPE}' subsystem!"
+	exit 255
+fi
+
+# you could also override JAVA_HOME here
+# Where your java installation lives
+JAVA_HOME="/usr/lib/jvm/jre"
+
+# You can pass some parameters to java
+# here if you wish to
+#JAVA_OPTS="-Xminf0.1 -Xmaxf0.3"
+
+# Where your tomcat installation lives
+# That change from previous RPM where TOMCAT_HOME 
+# used to be /var/tomcat.
+# Now /var/tomcat will be the base for webapps only
+CATALINA_HOME="/usr/share/tomcat5"
+JASPER_HOME="/usr/share/tomcat5"
+CATALINA_TMPDIR="/usr/share/tomcat5/temp"
+JAVA_ENDORSED_DIRS="/usr/share/tomcat5/common/endorsed"
+
+# What user should run tomcat
+TOMCAT_USER="pkiuser"
+TOMCAT_GROUP="pkiuser"
+
+# You can change your tomcat locale here
+#LANG=en_US
+
+# Time to wait in seconds, while starting process
+STARTUP_WAIT=30
+
+# Time to wait in seconds, before killing process
+SHUTDOWN_WAIT=30
+
+
+# If you wish to further customize your tomcat environment,
+# put your own definitions here
+# (i.e. LD_LIBRARY_PATH for some jdbc drivers)
+# Just do not forget to export them :)
+
+OS=`uname -s`
+if [ $OS = "Linux" ]; then
+	PLATFORM=`uname -i`
+	if [ $PLATFORM = "i386" ]; then
+		# 32-bit Linux
+		LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/dirsec:/usr/lib
+	elif [ $PLATFORM = "x86_64" ]; then
+		# 64-bit Linux
+		LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib64/dirsec:/usr/lib64:/usr/lib
+	fi
+	export LD_LIBRARY_PATH
+elif [ $PLATFORM = "SunOS" ]; then
+	PLATFORM=`uname -p`
+	if	[ "${PLATFORM}" = "sparc" ] &&
+		[ -d "/usr/lib/sparcv9/" ] ; then
+		PLATFORM="sparcv9"
+	fi
+	if [ $PLATFORM = "sparc" ]; then
+		# 32-bit Solaris
+		LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/dirsec:/usr/lib
+	elif [ $PLATFORM = "sparcv9" ]; then
+		# 64-bit Solaris
+		JAVA_OPTS="-d64"
+		export JAVA_OPTS
+		LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/sparcv9/dirsec:/usr/lib/sparcv9:/usr/lib/dirsec:/usr/lib
+	fi
+	export LD_LIBRARY_PATH
+fi
+</pre>
+
+* Replace the contents of <code>/usr/bin/dtomcat5-pki-ca</code> with the following (again, edit references to pki-ca to apply to your ca instance and the filename may be different depending on your instance name):
+<pre>
+#!/bin/bash
+#
+# --- BEGIN COPYRIGHT BLOCK ---
+# Copyright (C) 2006 Red Hat, Inc.
+# All rights reserved.
+# --- END COPYRIGHT BLOCK ---
+#
+# -----------------------------------------------------------------------------
+# Start/Stop Script for the CATALINA Server
+#
+# Environment Variable Prequisites
+#
+#   CATALINA_HOME   May point at your Catalina "build" directory.
+#
+#   CATALINA_BASE   (Optional) Base directory for resolving dynamic portions
+#                   of a Catalina installation.  If not present, resolves to
+#                   the same directory that CATALINA_HOME points to.
+#
+#   CATALINA_OPTS   (Optional) Java runtime options used when the "start",
+#                   "stop", or "run" command is executed.
+#
+#   CATALINA_TMPDIR (Optional) Directory path location of temporary directory
+#                   the JVM should use (java.io.tmpdir).  Defaults to
+#                   $CATALINA_BASE/temp.
+#
+#   JAVA_HOME       Must point at your Java Development Kit installation.
+#                   Required to run the with the "debug" or "javac" argument.
+#
+#   JRE_HOME        Must point at your Java Development Kit installation.
+#                   Defaults to JAVA_HOME if empty.
+#
+#   JAVA_OPTS       (Optional) Java runtime options used when the "start",
+#                   "stop", or "run" command is executed.
+#
+#   JPDA_TRANSPORT  (Optional) JPDA transport used when the "jpda start"
+#                   command is executed. The default is "dt_socket".
+#
+#   JPDA_ADDRESS    (Optional) Java runtime options used when the "jpda start"
+#                   command is executed. The default is 8000.
+#
+#   JSSE_HOME       (Optional) May point at your Java Secure Sockets Extension
+#                   (JSSE) installation, whose JAR files will be added to the
+#                   system class path used to start Tomcat.
+#
+#   CATALINA_PID    (Optional) Path of the file which should contains the pid
+#                   of catalina startup java process, when start (fork) is used
+#
+# $Id: catalina.sh,v 1.19 2005/03/03 15:13:39 remm Exp $
+# -----------------------------------------------------------------------------
+
+# Disallow 'others' the ability to 'write' to new files
+umask 00002
+
+# Check to insure that this script's original invocation directory
+# has not been deleted!
+CWD=`/bin/pwd > /dev/null 2>&1`
+if [ $? -ne 0 ] ; then
+	echo "Cannot invoke '$0' from non-existent directory!"
+	exit 255
+fi
+
+# Check to insure that this script's associated PKI
+# subsystem currently resides on this system.
+PKI_SUBSYSTEM_TYPE=ca
+if [ ! -d /usr/share/pki/${PKI_SUBSYSTEM_TYPE} ] ; then
+	echo "This machine is missing the '${PKI_SUBSYSTEM_TYPE}' subsystem!"
+	exit 255
+fi
+
+# OS specific support.  $var _must_ be set to either true or false.
+OS=`uname -s`
+cygwin=false
+os400=false
+case "${OS}" in
+CYGWIN*) cygwin=true;;
+OS400*) os400=true;;
+esac
+
+TOMCAT_CFG=/var/lib/pki-ca/conf/tomcat5.conf
+JAVADIR="/usr/share/java"
+
+# resolve links - $0 may be a softlink
+PRG="$0"
+
+while [ -h "$PRG" ]; do
+  ls=`ls -ld "$PRG"`
+  link=`expr "$ls" : '.*-> \(.*\)$'`
+  if expr "$link" : '.*/.*' > /dev/null; then
+    PRG="$link"
+  else
+    PRG=`dirname "$PRG"`/"$link"
+  fi
+done
+
+# Get standard environment variables
+PRGDIR=`dirname "$PRG"`
+
+# Only set CATALINA_HOME if not already set
+[ -z "$CATALINA_HOME" ] && CATALINA_HOME=`cd "$PRGDIR/.." ; pwd`
+
+if [ -r "$CATALINA_HOME"/bin/setenv.sh ]; then
+  . "$CATALINA_HOME"/bin/setenv.sh
+fi
+
+# For Cygwin, ensure paths are in UNIX format before anything is touched
+if $cygwin; then
+  [ -n "$JAVA_HOME" ] && JAVA_HOME=`cygpath --unix "$JAVA_HOME"`
+  [ -n "$JRE_HOME" ] && JRE_HOME=`cygpath --unix "$JRE_HOME"`
+  [ -n "$CATALINA_HOME" ] && CATALINA_HOME=`cygpath --unix "$CATALINA_HOME"`
+  [ -n "$CATALINA_BASE" ] && CATALINA_BASE=`cygpath --unix "$CATALINA_BASE"`
+  [ -n "$CLASSPATH" ] && CLASSPATH=`cygpath --path --unix "$CLASSPATH"`
+  [ -n "$JSSE_HOME" ] && JSSE_HOME=`cygpath --absolute --unix "$JSSE_HOME"`
+fi
+
+# For OS400
+if $os400; then
+  # Set job priority to standard for interactive (interactive - 6) by using
+  # the interactive priority - 6, the helper threads that respond to requests
+  # will be running at the same priority as interactive jobs.
+  COMMAND='chgjob job('$JOBNAME') runpty(6)'
+  system $COMMAND
+
+  # Enable multi threading
+  export QIBM_MULTI_THREADED=Y
+fi
+
+[ -r "$TOMCAT_CFG" ] && . "${TOMCAT_CFG}"
+
+### Set up defaults if they were omitted in TOMCAT_CFG
+###  JVM lookup
+if [ -z "$JAVA_HOME" ]; then
+    # Search for java in PATH
+    JAVA=`which java`
+    if [ -z "$JAVA" ] ; then
+        JAVA_BINDIR=`dirname ${JAVA}`
+        JAVA_HOME="${JAVA_BINDIR}/.."
+    fi
+    # Default clean JAVA_HOME
+    [ -z "$JAVA_HOME" -a -d "/usr/lib/java" ] && JAVA_HOME="/usr/lib/java"
+    # Default IBM JAVA_HOME
+    [ -z "$JAVA_HOME" -a -d "/opt/IBMJava2-13" ] && \
+        JAVA_HOME="/opt/IBMJava2-13"
+    [ -z "$JAVA_HOME" -a -d "/opt/IBMJava2-131" ] && \
+        JAVA_HOME="/opt/IBMJava2-131"
+    [ -z "$JAVA_HOME" -a -d "/opt/IBMJava2-14" ] && \
+        JAVA_HOME="/opt/IBMJava2-14"
+    [ -z "$JAVA_HOME" -a -d "/opt/IBMJava2-141" ] && \
+        JAVA_HOME="/opt/IBMJava2-141"
+    # Another solution
+    [ -z "$JAVA_HOME" -a -d "/usr/java/jdk" ] && \
+        JAVA_HOME="/usr/java/jdk"
+    # madeinlinux JAVA_HOME
+    [ -z "$JAVA_HOME" -a -d "/usr/local/jdk1.2.2" ] && \
+        JAVA_HOME="/usr/local/jdk1.2.2"
+    # Kondara JAVA_HOME
+    [ -z "$JAVA_HOME"  -a -d "/usr/lib/java/jdk1.2.2" ] && \
+        JAVA_HOME="/usr/lib/java/jdk1.2.2"
+    # Other commonly found JAVA_HOMEs
+    [ -z "$JAVA_HOME"  -a -d "/usr/jdk1.2" ] && JAVA_HOME="/usr/jdk1.2"
+    # Default Caldera JAVA_HOME
+    [ -z "$JAVA_HOME"  -a -d "/opt/java-1.3" ] && \
+        JAVA_HOME="/opt/java-1.3"
+    # Add other locations here
+    if [ -z "$JAVA_HOME" ]; then
+        echo "No JAVA_HOME specified in ${TOMCAT_CFG} and no java found"
+        exit 1
+    else
+        echo "Found JAVA_HOME: ${JAVA_HOME}"
+        echo "Please complete your ${TOMCAT_CFG} so we won't have to look for it next time"
+    fi
+fi
+
+# Set juli LogManager if it is present
+if [ -r "$CATALINA_HOME"/bin/tomcat-juli.jar ]; then
+  JAVA_OPTS="$JAVA_OPTS "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager
+fi
+
+# Set standard commands for invoking Java.
+_RUNJAVA="$JAVA_HOME"/bin/java
+_RUNJAVAC="$JAVA_HOME"/bin/javac
+_RUNJDB="$JAVA_HOME"/bin/jdb
+
+# Set standard CLASSPATH
+# (always inherit any preset values from the PKI start script)
+if [ ${OS} = "Linux" ] ; then
+	# Checking for OpenJDK JVM
+	OPENJDK_JVM="`java -version 2>&1 | tail -1 | awk '{print $1};'`"
+	if	[ "${OPENJDK_JVM}" = "OpenJDK" ] ||
+		[ "${OPENJDK_JVM}" = "IcedTea" ]; then
+		# using OpenJDK
+		CLASSPATH="$CLASSPATH":"$JAVA_HOME"/lib/rt.jar
+
+		# add required classes to the CLASSPATH for OpenJDK
+		CLASSPATH="$CLASSPATH":"$JAVADIR"/commons-collections.jar
+	else
+		# NOT using OpenJDK
+		CLASSPATH="$CLASSPATH":"$JAVA_HOME"/lib/tools.jar
+	fi
+elif [ ${OS} = "SunOS" ] ; then
+	CLASSPATH="$CLASSPATH":"$JAVA_HOME"/lib/rt.jar
+fi
+
+# Add on extra jar files to CLASSPATH
+if [ -n "$JSSE_HOME" ]; then
+  CLASSPATH="$CLASSPATH":"$JSSE_HOME"/lib/jcert.jar:"$JSSE_HOME"/lib/jnet.jar:"$JSSE_HOME"/lib/jsse.jar
+fi
+
+# JPackage JSSE location check
+if [ -r "$JAVADIR/jsse/jcert.jar" ]; then
+  CLASSPATH="$CLASSPATH":"$JAVADIR"/jsse/jcert.jar:"$JAVADIR"/jsse/jnet.jar:"$JAVADIR"/jsse/jsse.jar
+fi
+
+if [ ${OS} = "Linux" ] ; then
+	CLASSPATH="$CLASSPATH":"$CATALINA_HOME"/bin/bootstrap.jar:"$CATALINA_HOME"/bin/commons-logging-api.jar:`/usr/bin/build-classpath mx4j/mx4j-impl`:`/usr/bin/build-classpath mx4j/mx4j-jmx`
+
+        # add jars in required components for velocity >= 1.6 (just in case)
+        VELOCITY=`rpm -q velocity|sed 's/velocity-\([0-9]*\)\.\([0-9]*\).*/\1\2/'`
+        if [ "$VELOCITY" -ge 16 ]; then 
+            CLASSPATH="$CLASSPATH":`/usr/bin/build-classpath bcel hsqldb commons-collections commons-lang commons-logging commons-logging-api jdom junit oro servletapi5 werken.xpath`
+        fi
+elif [ ${OS} = "SunOS" ] ; then
+	# The following definitions are provided for Solaris
+	# platforms since they are unable to execute the
+	# "/usr/bin/build-classpath" and
+	# "/usr/share/java-utils/java-functions" files . . .
+
+	CLASSPATH="$CLASSPATH":"$CATALINA_HOME"/bin/bootstrap.jar
+	CLASSPATH="$CLASSPATH":"$CATALINA_HOME"/bin/commons-logging-api.jar
+	CLASSPATH="$CLASSPATH":/usr/share/java/mx4j/mx4j-impl.jar
+	CLASSPATH="$CLASSPATH":/usr/share/java/mx4j/mx4j-jmx.jar
+	CLASSPATH="$CLASSPATH":/usr/share/java/pki/base.jar
+	CLASSPATH="$CLASSPATH":/usr/share/java/pki/certsrv.jar
+	CLASSPATH="$CLASSPATH":/usr/share/java/pki/cms.jar
+	CLASSPATH="$CLASSPATH":/usr/share/java/pki/cms72.jar
+	CLASSPATH="$CLASSPATH":/usr/share/java/pki/cms72_en.jar
+	CLASSPATH="$CLASSPATH":/usr/share/java/pki/cmsbundle.jar
+	CLASSPATH="$CLASSPATH":/usr/share/java/pki/cmscore.jar
+	CLASSPATH="$CLASSPATH":/usr/share/java/pki/cmsutil.jar
+	CLASSPATH="$CLASSPATH":/usr/share/java/pki/mcc70.jar
+	CLASSPATH="$CLASSPATH":/usr/share/java/pki/mcc70_en.jar
+	CLASSPATH="$CLASSPATH":/usr/share/java/pki/nmclf70.jar
+	CLASSPATH="$CLASSPATH":/usr/share/java/pki/nmclf70_en.jar
+	CLASSPATH="$CLASSPATH":/usr/share/java/pki/nsutil.jar
+
+	if [ -f /usr/share/java/pkitools.jar ]; then
+		CLASSPATH="$CLASSPATH":/usr/share/java/pkitools.jar
+	elif [ -f /usr/share/java/cstools.jar ]; then
+		CLASSPATH="$CLASSPATH":/usr/share/java/cstools.jar
+	elif [ -f /usr/share/java/pki/cstools.jar ]; then
+		CLASSPATH="$CLASSPATH":/usr/share/java/pki/cstools.jar
+	fi
+
+	if [ -f /usr/share/java/ca.jar ]; then
+		CLASSPATH="$CLASSPATH":/usr/share/java/ca.jar
+	elif [ -f /usr/share/java/pki/ca/ca.jar ]; then
+		CLASSPATH="$CLASSPATH":/usr/share/java/pki/ca/ca.jar
+	fi
+	if [ -f /usr/share/java/kra.jar ]; then
+		CLASSPATH="$CLASSPATH":/usr/share/java/kra.jar
+	elif [ -f /usr/share/java/pki/kra/kra.jar ]; then
+		CLASSPATH="$CLASSPATH":/usr/share/java/pki/kra/kra.jar
+	fi
+	if [ -f /usr/share/java/ocsp.jar ]; then
+		CLASSPATH="$CLASSPATH":/usr/share/java/ocsp.jar
+	elif [ -f /usr/share/java/pki/ocsp/ocsp.jar ]; then
+		CLASSPATH="$CLASSPATH":/usr/share/java/pki/ocsp/ocsp.jar
+	fi
+	if [ -f /usr/share/java/tks.jar ]; then
+		CLASSPATH="$CLASSPATH":/usr/share/java/tks.jar
+	elif [ -f /usr/share/java/pki/tks/tks.jar ]; then
+		CLASSPATH="$CLASSPATH":/usr/share/java/pki/tks/tks.jar
+	fi
+
+        # add jars for velocity 1.6 (just in case) 
+        CLASSPATH="$CLASSPATH":/usr/share/java/bcel.jar
+        CLASSPATH="$CLASSPATH":/usr/share/java/hsqldb.jar
+        CLASSPATH="$CLASSPATH":/usr/share/java/commons-collections.jar
+        CLASSPATH="$CLASSPATH":/usr/share/java/commons-lang.jar
+        CLASSPATH="$CLASSPATH":/usr/share/java/commons-logging.jar
+        CLASSPATH="$CLASSPATH":/usr/share/java/commons-logging-api.jar
+        CLASSPATH="$CLASSPATH":/usr/share/java/jdom.jar
+        CLASSPATH="$CLASSPATH":/usr/share/java/junit.jar
+        CLASSPATH="$CLASSPATH":/usr/share/java/oro.jar
+        CLASSPATH="$CLASSPATH":/usr/share/java/servletapi5.jar
+        CLASSPATH="$CLASSPATH":/usr/share/java/werken.xpath.jar
+fi
+
+if [ -z "$CATALINA_BASE" ] ; then
+  CATALINA_BASE="$CATALINA_HOME"
+fi
+
+if [ -z "$CATALINA_TMPDIR" ] ; then
+  # Define the java.io.tmpdir to use for Catalina
+  CATALINA_TMPDIR="$CATALINA_BASE"/temp
+fi
+
+if [ -z "$CATALINA_PID" ] ; then
+    export CATALINA_PID=/var/run/tomcat5.pid
+fi
+
+# For Cygwin, switch paths to Windows format before running java
+if $cygwin; then
+  JAVA_HOME=`cygpath --absolute --windows "$JAVA_HOME"`
+  JRE_HOME=`cygpath --absolute --windows "$JRE_HOME"`
+  CATALINA_HOME=`cygpath --absolute --windows "$CATALINA_HOME"`
+  CATALINA_BASE=`cygpath --absolute --windows "$CATALINA_BASE"`
+  CATALINA_TMPDIR=`cygpath --absolute --windows "$CATALINA_TMPDIR"`
+  CLASSPATH=`cygpath --path --windows "$CLASSPATH"`
+  [ -n "$JSSE_HOME" ] && JSSE_HOME=`cygpath --absolute --windows "$JSSE_HOME"`
+  JAVA_ENDORSED_DIRS=`cygpath --path --windows "$JAVA_ENDORSED_DIRS"`
+fi
+
+# ----- Execute The Requested Command -----------------------------------------
+echo "Using CATALINA_PID $CATALINA_PID"
+echo "Using CATALINA_BASE:   $CATALINA_BASE"
+echo "Using CATALINA_HOME:   $CATALINA_HOME"
+echo "Using CATALINA_TMPDIR: $CATALINA_TMPDIR"
+if [ "$1" = "debug" -o "$1" = "javac" ] ; then
+  echo "Using JAVA_HOME:       $JAVA_HOME"
+else
+  echo "Using JRE_HOME:       $JRE_HOME"
+fi
+
+if [ "$1" = "jpda" ] ; then
+  if [ -z "$JPDA_TRANSPORT" ]; then
+    JPDA_TRANSPORT="dt_socket"
+  fi
+  if [ -z "$JPDA_ADDRESS" ]; then
+    JPDA_ADDRESS="8000"
+  fi
+  if [ -z "$JPDA_OPTS" ]; then
+    JPDA_OPTS="-Xdebug -Xrunjdwp:transport=$JPDA_TRANSPORT,address=$JPDA_ADDRESS,server=y,suspend=n"
+  fi
+  CATALINA_OPTS="$CATALINA_OPTS $JPDA_OPTS"
+  shift
+fi
+
+if [ "$1" = "debug" ] ; then
+  if $os400; then
+    echo "Debug command not available on OS400"
+    exit 1
+  else
+    shift
+    if [ "$1" = "-security" ] ; then
+      echo "Using Security Manager"
+      shift
+      exec "$_RUNJDB" $JAVA_OPTS $CATALINA_OPTS \
+        -Djava.endorsed.dirs="$JAVA_ENDORSED_DIRS" -classpath "$CLASSPATH" \
+        -sourcepath "$CATALINA_HOME"/../../jakarta-tomcat-catalina/catalina/src/share \
+        -Djava.security.manager \
+        -Djava.security.policy=="$CATALINA_BASE"/conf/catalina.policy \
+        -Dcatalina.base="$CATALINA_BASE" \
+        -Dcatalina.home="$CATALINA_HOME" \
+        -Djava.io.tmpdir="$CATALINA_TMPDIR" \
+        org.apache.catalina.startup.Bootstrap "$@" start
+    else
+      exec "$_RUNJDB" $JAVA_OPTS $CATALINA_OPTS \
+        -Djava.endorsed.dirs="$JAVA_ENDORSED_DIRS" -classpath "$CLASSPATH" \
+        -sourcepath "$CATALINA_HOME"/../../jakarta-tomcat-catalina/catalina/src/share \
+        -Dcatalina.base="$CATALINA_BASE" \
+        -Dcatalina.home="$CATALINA_HOME" \
+        -Djava.io.tmpdir="$CATALINA_TMPDIR" \
+        org.apache.catalina.startup.Bootstrap "$@" start
+    fi
+  fi
+
+elif [ "$1" = "run" ]; then
+
+  shift
+  if [ "$1" = "-security" ] ; then
+    echo "Using Security Manager"
+    shift
+    exec "$_RUNJAVA" $JAVA_OPTS $CATALINA_OPTS \
+      -Djava.endorsed.dirs="$JAVA_ENDORSED_DIRS" -classpath "$CLASSPATH" \
+      -Djava.security.manager \
+      -Djava.security.policy=="$CATALINA_BASE"/conf/catalina.policy \
+      -Dcatalina.base="$CATALINA_BASE" \
+      -Dcatalina.home="$CATALINA_HOME" \
+      -Djava.io.tmpdir="$CATALINA_TMPDIR" \
+      org.apache.catalina.startup.Bootstrap "$@" start
+  else
+    exec "$_RUNJAVA" $JAVA_OPTS $CATALINA_OPTS \
+      -Djava.endorsed.dirs="$JAVA_ENDORSED_DIRS" -classpath "$CLASSPATH" \
+      -Dcatalina.base="$CATALINA_BASE" \
+      -Dcatalina.home="$CATALINA_HOME" \
+      -Djava.io.tmpdir="$CATALINA_TMPDIR" \
+      org.apache.catalina.startup.Bootstrap "$@" start
+  fi
+
+elif [ "$1" = "start" ] ; then
+
+  shift
+  touch "$CATALINA_BASE"/logs/catalina.out
+  if [ "$1" = "-security" ] ; then
+    echo "Using Security Manager"
+    shift
+    "$_RUNJAVA" $JAVA_OPTS $CATALINA_OPTS \
+      -Djava.endorsed.dirs="$JAVA_ENDORSED_DIRS" -classpath "$CLASSPATH" \
+      -Djava.security.manager \
+      -Djava.security.policy=="$CATALINA_BASE"/conf/catalina.policy \
+      -Dcatalina.base="$CATALINA_BASE" \
+      -Dcatalina.home="$CATALINA_HOME" \
+      -Djava.io.tmpdir="$CATALINA_TMPDIR" \
+      org.apache.catalina.startup.Bootstrap "$@" start \
+      >> "$CATALINA_BASE"/logs/catalina.out 2>&1 &
+
+      if [ ! -z "$CATALINA_PID" ]; then
+        echo $! > $CATALINA_PID
+      fi
+  else
+    "$_RUNJAVA" $JAVA_OPTS $CATALINA_OPTS \
+      -Djava.endorsed.dirs="$JAVA_ENDORSED_DIRS" -classpath "$CLASSPATH" \
+      -Dcatalina.base="$CATALINA_BASE" \
+      -Dcatalina.home="$CATALINA_HOME" \
+      -Djava.io.tmpdir="$CATALINA_TMPDIR" \
+      org.apache.catalina.startup.Bootstrap "$@" start \
+      >> "$CATALINA_BASE"/logs/catalina.out 2>&1 &
+
+      if [ ! -z "$CATALINA_PID" ]; then
+        echo $! > $CATALINA_PID
+      fi
+  fi
+
+elif [ "$1" = "stop" ] ; then
+
+  shift
+  FORCE=0
+  if [ "$1" = "-force" ]; then
+    shift
+    FORCE=1
+  fi
+
+  "$_RUNJAVA" $JAVA_OPTS $CATALINA_OPTS \
+    -Djava.endorsed.dirs="$JAVA_ENDORSED_DIRS" -classpath "$CLASSPATH" \
+    -Dcatalina.base="$CATALINA_BASE" \
+    -Dcatalina.home="$CATALINA_HOME" \
+    -Djava.io.tmpdir="$CATALINA_TMPDIR" \
+    org.apache.catalina.startup.Bootstrap "$@" stop
+
+  if [ $FORCE -eq 1 ]; then
+    if [ ! -z "$CATALINA_PID" ]; then
+       echo "Killing: `cat $CATALINA_PID`"
+       kill -9 `cat $CATALINA_PID`
+    fi
+  fi
+
+elif [ "$1" = "version" ] ; then
+
+    "$_RUNJAVA"   \
+      -classpath "$CATALINA_HOME/server/lib/catalina.jar" \
+      org.apache.catalina.util.ServerInfo
+
+else
+
+  echo "Usage: dtomcat5 ( commands ... )"
+  echo "commands:"
+  if $os400; then
+    echo "  debug             Start Catalina in a debugger (not available on OS400)"
+    echo "  debug -security   Debug Catalina with a security manager (not available on OS400)"
+  else
+    echo "  debug             Start Catalina in a debugger"
+    echo "  debug -security   Debug Catalina with a security manager"
+  fi
+  echo "  jpda start        Start Catalina under JPDA debugger"
+  echo "  run               Start Catalina in the current window"
+  echo "  run -security     Start in the current window with security manager"
+  echo "  start             Start Catalina in a separate window"
+  echo "  start -security   Start in a separate window with security manager"
+  echo "  stop              Stop Catalina"
+  echo "  stop -force       Stop Catalina (followed by kill -KILL)"
+  echo "  version           What version of tomcat are you running?"
+  exit 1
+
+fi
+</pre>
+
+* At this point you should be able to start the CA successfully:
+<pre>
+# /etc/init.d/pki-cad start pki-ca
+Starting pki-ca:                                           [  OK  ]
+
+pki-ca (pid 30194) is running ...
+
+
+pki-ca Status Definitions not found
+
+</pre>
+
+I assume "Status Definitions" are the listing of ports/urls that it used to dump out on stdout when starting the CA.  I haven't dug into figuring out how to fix that one.

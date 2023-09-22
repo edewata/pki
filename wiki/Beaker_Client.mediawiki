@@ -1,0 +1,32 @@
+= Overview =
+
+The following steps help setup a beaker client for creating the task rpm and submitting the beaker job to the beaker server.
+
+= Installation =
+
+Copy the file [https://github.com/dogtagpki/pki/blob/master/tests/dogtag/conf/beaker-client.cfg tests/dogtag/conf/beaker-client.repo] to
+/etc/yum.repos.d. Replace <version> with the version of Fedora. Run this command to find the Fedora version:
+
+ cat /etc/fedora-release
+
+Execute the following command:
+
+ $ yum install expect beakerlib beaker-client rhts-devel
+
+Create a folder /etc/beaker and copy the file [https://github.com/dogtagpki/pki/blob/master/tests/dogtag/conf/client.conf tests/dogtag/conf/client.conf] to that folder.
+
+Update the client.conf file with [[Beaker Server]]'s authentication details.
+
+For an Username/Password authentication enter values for HUB_URL, USERNAME, PASSWORD.
+The sample file has been configured for using this setting as default.
+
+For a Kerberos authentication, comment the AUTH_METHOD="password",
+USERNAME and PASSWORD fields uncomment and enter the values for
+HUB_URL and KRB_REALM and uncomment the line AUTH_METHOD="krbv".
+
+This sets up the machine as a beaker client, on which new task rpms can
+be built and new jobs submitted to the beaker server.
+
+= References =
+
+* [[Beaker]]

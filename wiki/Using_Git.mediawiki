@@ -1,0 +1,203 @@
+= Overview =
+
+This page shows how to accomplish some common development procedures using Git.  There are usually multiple ways to accomplish the same thing in Git, so keep in mind that the steps below are only one way of doing things.  There may be other shortcuts or different ways of doing things that you prefer.  
+
+= Creating a Local Repository =
+
+First, create a clone of the upstream repository on the local machine.
+There are two ways to do this depending on the purpose of the local repository.
+
+If the repository is to be used for read-only access (e.g. for builds, for pull requests),
+it can be cloned anonymously using the '''HTTPS URL''', for example:
+
+ $ git clone https://github.com/dogtagpki/pki.git
+
+If the repository is to be used for write access (e.g. pushing commits directly, creating upstream branches/tags),
+it should be cloned with authentication using the '''SSH URL''', for example;
+
+ $ git clone git@github.com:dogtagpki/pki.git
+
+Verify with the following commnad:
+
+ $ git remote -v
+ origin	git@github.com:dogtagpki/pki.git (fetch)
+ origin	git@github.com:dogtagpki/pki.git (push)
+
+= Forking Upstream Repository =
+
+For development it's recommended to [https://help.github.com/en/articles/fork-a-repo create a fork] of the upstream repository
+for submitting a [[GitHub Pull Request]] and/or to run [[Travis CI]].
+
+Once the fork has been created, add it into the local repository,
+for example:
+
+ $ cd pki
+ $ git remote add edewata git@github.com:edewata/pki.git
+ $ git fetch
+
+Verify with the following command:
+
+ $ git remote -v
+ origin	git@github.com:dogtagpki/pki.git (fetch)
+ origin	git@github.com:dogtagpki/pki.git (push)
+ edewata	git@github.com:edewata/pki.git (fetch)
+ edewata	git@github.com:edewata/pki.git (push)
+
+= Synchronizing Forked Repository =
+
+After sometime the upstream repository may have additional changes that do not exist in the forked repository.
+To synchronize these changes, pull the changes into a local branch that tracks the upstream branch (e.g. master):
+
+ $ git checkout master
+ $ git pull
+
+then push the local branch into the forked repository:
+
+ $ git push edewata master
+
+If the upstream and forked branches have diverged somehow, the push may fail. To resolve it, simply force push the changes:
+
+ $ git push edewata master --force
+
+= Developing on a Local Branch =
+The preferred way of doing development is to do your work on a local branch.  This makes it easy to isolate fixes you are working on from each other.  It also helps to prevent merge issues when you are ready to push your changes up to the remote repository.  The following example shows the commands a developer would use to fix a bug on a local branch.
+
+The first step is to create a local branch.  You should name your branch something descriptive, such as the bug number you are working on, or the name of the feature you are developing.  Here is an example of creating a new local branch from master:
+
+ $ git checkout master
+ $ git checkout -b local_branch
+
+Now that we are in a local branch, make the necessary changes, then make sure the changes are staged for commit.
+
+To check the status of the changes:
+
+ $ git status
+
+To stage the changes in a file or to add a new file:
+
+ $ git add <file>
+
+To commit the changes:
+
+ $ git commit
+
+If you want to revise the commit, make the necessary changes, stage the changes again as above, then amend the commit:
+
+ $ git commit --amend
+
+When you run the commit command, you will have to fill in the commit message for your commit.  The format should be a one-line summary of the fix (including the applicable bug or ticket number if appropriate), followed by a blank line and a more complete description of the change.  Now that our change is commited to our local branch, we can look at the commit history to confirm that our commit is there.  We'll also check the status of the tree to show that git considers the tree to be up to date.
+
+ $ git log
+ commit 535cf2d38b876ac784bd3449dea885b9da4b1c3c
+ Author: Nathan Kinder <nkinder@redhat.com>
+ Date:   Mon Jan 16 11:50:52 2012 -0800 
+ 
+     Updated copyright in README file
+    
+     The date in the copyright of README needed to be updated.
+
+= Rebasing the Local Branch =
+
+Sometimes the upstream master branch may have newer changes so your local branch may need to be rebased.
+
+To rebase the local branch, pull the latest from master with the following commands:
+
+ $ git checkout master
+ $ git pull
+
+Then go back to the local branch and rebase it against master:
+
+ $ git checkout local_branch
+ $ git rebase master
+
+If there's no conflict, the commands should complete immediately. If there are conflicts, it will show the files that have conflicts.
+
+You will need to fix the conflict, stage the changes, then resume the rebase with this command:
+
+ $ git rebase --continue
+
+= Pushing the Local Branch to Forked Repository =
+
+To push the local branch to the forked repository, specify the name of the repository and the branch:
+
+ $ git push edewata local_branch
+
+If you created additional commits into the local branch, you can simply push again.
+However, if you amended any of the commits, you may need to push with force:
+
+ $ git push edewata local_branch --force
+
+If [[Travis CI]] is configured in the forked repository, the push will trigger the CI automatically.
+
+= Creating a Pull Request =
+
+Once the changes are pushed from the local branch to the forked repository, you can submit a [[GitHub Pull Request]].
+
+After the pull request is merged, refresh the master branch with the following command:
+
+ $ git checkout master
+ $ git pull
+
+The changes should appear in the master branch.
+
+= Pushing Directly to Upstream Repository =
+
+'''Note:''' This should only be done for patches that do not need a review. It's always recommended to push the patches to the forked repository first to make sure it passes the CI.
+
+There are several ways to merge the changes from the local branch into master.
+
+If the local branch has been rebased against master, fast-forward the master branch to match the local branch:
+
+ $ git checkout master
+ $ git rebase local_branch
+
+If the local branch has not been rebased againt master, cherry-pick each change into master:
+
+ $ git checkout master
+ $ git cherry-pick <commit ID>
+
+Once the changes are in master, push the changes to upstream with the following command:
+
+ $ git push origin master
+
+= Squashing a Commit =
+
+To squash a commit into the previous commit (i.e. merging them into a single commit) in the local branch:
+
+ $ git reset --soft HEAD^
+ $ git commit --amend
+
+= Removing a Commit =
+
+To completely remove a commit from the local branch:
+
+ $ git reset --hard HEAD^
+
+= Backporting a Commit =
+
+To backport a commit into an older branch, first find the target branch:
+
+ $ git branch -r
+  origin/DOGTAG_10_5_BRANCH
+  origin/DOGTAG_10_6_BRANCH
+  origin/master
+
+Then checkout the branch:
+
+ $ git checkout DOGTAG_10_5_BRANCH
+
+It should create a tracking branch automatically. If not, that can be done with the following command:
+
+ $ git checkout -b DOGTAG_10_5_BRANCH origin/DOGTAG_10_5_BRANCH
+
+Then cherry-pick the changes from master:
+
+ $ git cherry-pick <commit ID>
+
+Finally, push the changes:
+
+ $ git push origin DOGTAG_10_5_BRANCH
+
+= References =
+
+* [[Git]]

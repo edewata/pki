@@ -1,0 +1,21 @@
+= Overview =
+
+Issues for PKI are currently maintained in [https://pagure.io/dogtagpki/issues Pagure]. Since github hosts it's own issues page, it will be easier to track and close issues.
+
+= Advantages of github issues =
+
+* Easier to track & user-friendly
+* Attracts more public attention
+* Possibility for more contributors
+* Issues can be referenced from comments/commits/PRs
+* Syncs easily once we move away from Gerrithub to Github Pull Requests. Refer [[Gerrit_vs_GitHub_Pull_Request|here]]
+
+
+= Reason for migrating away from Pagure = 
+ 
+* Difficult to track issues
+* Every time a commit is made, pagure URL needs to be copied and pasted in the commit message
+
+= Migration process =
+
+<steps for migrating away from Pagure>

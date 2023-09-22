@@ -1,0 +1,28 @@
+= Overview =
+
+This page describes how subsystem certificate is created and used.
+
+= Creation =
+
+= Usages =
+
+== CS.cfg ==
+
+<pre>
+pkiremove.cert.subsystem.nickname=subsystemCert cert-[PKI_INSTANCE_NAME]
+preop.cert.subsystem.nickname=subsystemCert cert-[PKI_INSTANCE_NAME]
+preop.name.subsystemnickname=subsystemCert cert-[PKI_INSTANCE_NAME]
+</pre>
+
+== Profiles ==
+
+* caSubsystemCert.cfg
+* caInternalAuthSubsystemCert.cfg
+
+== Servlets ==
+
+* /admin/ca/getSubsystemCert
+
+= References =
+
+* [[Subsystem User]]

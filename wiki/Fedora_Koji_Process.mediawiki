@@ -1,0 +1,978 @@
+== Creating Dogtag PKI Packages on Fedora Koji ==
+
+Official builds of Dogtag PKI packages for Fedora Koji can be created at anytime, but
+new builds should always ideally coincide with Fedora schedules. For example:
+
+* https://fedoraproject.org/wiki/Releases/28/Schedule
+
+This example utilizes Fedora 28.
+
+=== Verify that all Pagure Issues for a Given Milestone are Closed ===
+Verify that all of Pagure issues for a <major>.<minor>.<patch> milestone have been closed
+and moved to that <major>.<minor>.<patch> milestone, or remain open in the <major>.<minor>
+backlog.
+
+=== Edit the ~/.rpmmacros file in order to utilize the appropriate %{dist} value: ===
+<pre>
+# vi ~/.rpmmacros
+
+%dist .fc28
+</pre>
+
+=== Checkout and Build from 'master' PKI Source Branch ===
+<ul>
+<pre>
+# dnf update
+
+# git clone git@github.com:dogtagpki/pki.git
+
+# script -c "USE_TIMESTAMP=0 USE_GIT_COMMIT_ID=0 pki/scripts/compose_dogtag_pki_meta_packages rpms" typescript.meta
+# mv packages packages.meta
+
+# script -c "USE_TIMESTAMP=0 USE_GIT_COMMIT_ID=0 pki/scripts/compose_dogtag_pki_theme_packages rpms" typescript.theme
+# cd packages/RPMS/noarch
+# sudo dnf install ./*.rpm
+# cd ../../..
+# mv packages packages.theme
+
+# script -c "USE_TIMESTAMP=0 USE_GIT_COMMIT_ID=0 pki/scripts/compose_pki_core_packages rpms" typescript.core
+# cd packages/RPMS
+# mkdir combined
+# cp -p */*.rpm combined
+# cd combined
+# rm *debug*.rpm pki-javadoc*.rpm
+# sudo dnf install ./*.rpm
+# cd ../../..
+# mv packages packages.core
+
+# script -c "USE_TIMESTAMP=0 USE_GIT_COMMIT_ID=0 pki/scripts/compose_pki_console_packages rpms" typescript.console
+# cd packages/RPMS/noarch
+# sudo dnf install ./*.rpm
+# cd ../../..
+# mv packages packages.console
+</pre>
+
+<table>
+<tr>
+<td valign="top">'''NOTE:  '''</td>
+<td>If the [[Proposal to Combine Multiple SRPMS into a Single SRPM]] was adopted, it would only be necessary to run the ' compose_dogtag_pki_theme_packages' and 'compose_pki_core_packages' scripts, and would eliminate many of the complexities when attempting to build the official Fedora Koji Dogtag PKI packages.</td>
+</tr>
+</table>
+</ul>
+
+=== Create Patches from the 'master' PKI Source Branch (Optional) ===
+
+In the event that the build is going to utilize patches, rather than a new tarball, perform something similar to the following command:
+
+<ul>
+<pre>
+# git log
+# git format-patch <starting hash>^..<ending hash> --stdout > ../<component>-<version>-<patch name>.patch
+  (e. g. - git format-patch d06bed84e50ac3acb578d4e0acc0a538e3826979^..c02268cc025ebfb0860d5528e080e208e09b3cbb --stdout > ../pki-core-10.6.0-pki-server-migration.patch
+           git format-patch dfeb3c66d107123f173d58bf0a6571eb7fa3f260^..dfeb3c66d107123f173d58bf0a6571eb7fa3f260 --stdout > ../pki-core/10.6.0-link-zlib.patch)
+
+  NOTE:  For this command, check-in hash ranges flow from earlier check-ins to later check-ins; undesired check-ins in the middle of such a range must be manually removed from the patch as necessary.
+         Additionally, if a desired patch consists of a single check-in, then the starting and ending hashes are identical. 
+
+</pre>
+</ul>
+
+=== Execute PKI Smoke Tests (Optional) ===
+<ul>
+* Optionally install a 389 DS Server.
+* Optionally pkispawn a CA, KRA, OCSP, TKS, and TPS and sanity test them.
+* Optionally test out PKI CLI.
+* Optionally test out PKI Console for CA, KRA, OCSP, and TKS.
+</ul>
+
+=== Checkout fresh Koji branches ===
+<ul>
+<pre>
+# mkdir koji
+# cd koji
+# fedpkg clone -B dogtag-pki
+# fedpkg clone -B dogtag-pki-theme
+# fedpkg clone -B pki-core
+# fedpkg clone -B pki-console
+</pre>
+</ul>
+
+=== Setup Local 'rpmbuild' Creation Repos ===
+
+==== Download the 'compose' script ====
+The following local 'rpmbuild' repos utilize the 'compose' script:
+<ul>
+<pre>
+#!/bin/bash
+#
+# Authors:
+#     Matthew Harmsen <mharmsen@redhat.com>
+#
+# --- BEGIN COPYRIGHT BLOCK ---
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Copyright (C) 2016 Red Hat, Inc.
+# All rights reserved.
+# --- END COPYRIGHT BLOCK ---
+#
+
+SCRIPT=$0
+
+######################
+## Define Functions ##
+######################
+
+usage() {
+    echo
+    echo "Usage:  $0 <name> <action> [-a arch] [-d dist] [-h]"
+    echo
+    echo "        where <action> must be one of the following:"
+    echo
+    echo "            dry-run  Print contents of variables"
+    echo
+    echo "            patch    Apply patches to the source tarball"
+    echo
+    echo "            srpm     Create a patched SRPM from source tarball + patches"
+    echo
+    echo "            rpms     Create patched RPMS from source tarball + patches"
+    echo
+    echo "            build    Create patched SRPM and RPMS from source tarball + patches"
+    echo "                     (save build tree)"
+    echo
+    echo "            package  Create patched SRPM and RPMS from source tarball + patches"
+    echo "                     (remove build tree)"
+    echo
+}
+
+initialize() {
+    rm -rf BUILD BUILDROOT RPMS SRPMS
+
+    mkdir BUILD RPMS SRPMS
+}
+
+verify_prerequisite() {
+    executable=$1
+    rv=0
+
+    command -v ${executable} >/dev/null 2>&1
+    if [ $? -eq 1 ] ; then
+        echo
+        echo "The bash script \"${SCRIPT}\" requires \"${executable}\";"
+        echo "please install the package which provides \"${executable}\"."
+        echo
+        rv=1
+    fi
+
+    return ${rv}
+}
+
+###################################
+## Verify Required Prerequisites ##
+###################################
+
+PREREQUISITES=(date lsb_release pwd rpmbuild script)
+
+missing_prerequisites=0
+for prerequisite in "${PREREQUISITES[@]}" ; do
+    verify_prerequisite ${prerequisite}
+    missing_prerequisites=`expr ${missing_prerequisites} + $?`
+done
+
+if [ ${missing_prerequisites} -ne 0 ] ; then
+    usage
+    exit 255
+fi
+
+######################
+## Define Constants ##
+######################
+
+ACTIONS=(dry-run patch srpm rpms build package)
+
+ARCHES=(aarch64 armv7hl i686 ppc ppc64 ppc64le s390 s390x x86_64)
+
+DISTRIBUTION=`lsb_release -is`
+
+OS_RELEASE=`lsb_release -rs`
+
+PWD=`pwd`
+
+TIMESTAMP=`date +%Y%m%d%H%M%S`
+
+#################################
+## Test for Required Arguments ##
+#################################
+
+if [ $# -lt 1 ] ; then
+    echo
+    echo "Must specify a 'name'!"
+    usage
+    exit 255
+elif [ $# -lt 2 ] ; then
+    echo
+    echo "Must specify an 'action'!"
+    usage
+    exit 255
+fi
+
+## Test for expected directory infrastructure
+missing_directories=0
+if [ ! -d "${PWD}/SOURCES/" ] ; then
+    echo
+    echo "The '${PWD}/SOURCES/' directory is missing!"
+    echo
+    missing_directories=`expr ${missing_directories} + 1`
+fi
+
+if [ ! -d "${PWD}/SPECS/" ] ; then
+    echo
+    echo "The '${PWD}/SPECS/' directory is missing!"
+    echo
+    missing_directories=`expr ${missing_directories} + 1`
+fi
+
+if [ ${missing_directories} -ne 0 ] ; then
+    usage
+    exit 255
+fi
+
+NAME=$1
+
+SPEC=${NAME}.spec
+
+## Test for valid name
+if [ ! -f "${PWD}/SPECS/${SPEC}" ] ; then
+    echo
+    echo "The file '${PWD}/SPECS/${SPEC}' is missing!"
+    usage
+    exit 255
+fi
+
+ACTION=$2
+
+## Test for valid action
+if ! [[ " ${ACTIONS[@]} " =~ " ${ACTION} " ]]; then
+    echo
+    echo "Invalid action '${ACTION}'!"
+    usage
+    exit 255
+fi
+
+TYPESCRIPT=${NAME}-${ACTION}.${TIMESTAMP}
+
+##################
+## Set Defaults ##
+##################
+
+## Defaults to the architecture of your current machine
+ARCH=`uname -m`
+
+## Defaults to the distribution of your current machine
+##
+##     NOTE:  Double quotation marks '"' must surround values beginning
+##            with '-' to prevent '=-' misinterpretation and to still
+##            allow shell expansion of values which contain variables.
+##
+if [ "${DISTRIBUTION:0:6}" == "CentOS" ] ; then
+    DIST_RELEASE=${OS_RELEASE%.*}
+    DIST=.el${DIST_RELEASE}.centos
+    DIST_OPTION="-d ${DIST}"
+    DIST_RPMBUILD_OPTION="--define \"dist ${DIST}\""
+elif [ "${DISTRIBUTION:0:6}" == "Fedora" ] ; then
+    DIST=.fc${OS_RELEASE}
+    DIST_OPTION="-d ${DIST}"
+    DIST_RPMBUILD_OPTION="--define \"dist ${DIST}\""
+elif [ "${DISTRIBUTION:0:6}" == "RedHat" ] ; then
+    DIST_RELEASE=${OS_RELEASE%.*}
+    DIST=.el${DIST_RELEASE}
+    DIST_OPTION="-d ${DIST}"
+    DIST_RPMBUILD_OPTION="--define \"dist ${DIST}\""
+else
+    DIST=
+    DIST_OPTION=
+    DIST_RPMBUILD_OPTION=
+fi
+
+#####################
+## Parse Arguments ##
+#####################
+
+## Process any remaining command-line options
+OPTIND=3
+while getopts "a:d:h" option; do
+    case "${option}" in
+        a)
+            arch=${OPTARG}
+            ## Test for supported architecture
+            if [[ " ${ARCHES[@]} " =~ " ${arch} " ]]; then
+                ARCH=${arch}
+            else
+                echo
+                echo "Unsupported architecture '${arch}'!"
+                usage
+                exit 255
+            fi
+            ;;
+        d)
+            DIST=${OPTARG}
+            DIST_OPTION="-d ${DIST}"
+            DIST_RPMBUILD_OPTION="--define \"dist ${DIST}\""
+            ;;
+        h)
+            usage
+            exit 0
+            ;;
+        *)
+            usage
+            exit 255
+            ;;
+    esac
+done
+shift $((OPTIND-1))
+
+##################################
+## Perform the specified action ##
+##################################
+
+if [ "${ACTION}" == "dry-run" ] ; then
+    ## Print contents of variables
+    echo
+    echo "COMMAND = '${SCRIPT} ${NAME} ${ACTION} -a ${ARCH} ${DIST_OPTION}'"
+    echo
+    echo "    ACTION        = '${ACTION}'"
+    echo "    ACTIONS       = '(${ACTIONS[@]})'"
+    echo "    ARCH          = '${ARCH}'"
+    echo "    ARCHES        = '(${ARCHES[@]})'"
+    echo "    DIST          = '${DIST}'"
+    echo "    DISTRIBUTION  = '${DISTRIBUTION}'"
+    echo "    NAME          = '${NAME}'"
+    echo "    OS_RELEASE    = '${OS_RELEASE}'"
+    echo "    PREREQUISITES = '(${PREREQUISITES[@]})'"
+    echo "    SPEC          = '${SPEC}'"
+    echo "    TIMESTAMP     = '${TIMESTAMP}'"
+    echo "    TYPESCRIPT    = '${TYPESCRIPT}'"
+    echo
+elif [ "${ACTION}" == "patch" ] ; then
+    ## Apply patches to the source tarball
+    initialize
+    script -c "rpmbuild --define \"_topdir `pwd`\" ${DIST_RPMBUILD_OPTION} --target ${ARCH} -bp SPECS/${SPEC}" ${TYPESCRIPT}
+elif [ "${ACTION}" == "srpm" ] ; then
+    ## Create a patched SRPM from source tarball + patches
+    initialize
+    script -c "rpmbuild --define \"_topdir `pwd`\" ${DIST_RPMBUILD_OPTION} --target ${ARCH} -bs SPECS/${SPEC}" ${TYPESCRIPT}
+elif [ "${ACTION}" == "rpms" ] ; then
+    ## Create patched RPMS from source tarball + patches
+    initialize
+    script -c "rpmbuild --define \"_topdir `pwd`\" ${DIST_RPMBUILD_OPTION} --target ${ARCH} -bb SPECS/${SPEC}" ${TYPESCRIPT}
+elif [ "${ACTION}" == "build" ] ; then
+    ## Create patched SRPM and RPMS from source tarball + patches
+    ## (save build tree)
+    initialize
+    script -c "rpmbuild --define \"_topdir `pwd`\" ${DIST_RPMBUILD_OPTION} --target ${ARCH} -ba SPECS/${SPEC}" ${TYPESCRIPT}
+elif [ "${ACTION}" == "package" ] ; then
+    ## Create patched SRPM and RPMS from source tarball + patches
+    ## (remove build tree)
+    initialize
+    script -c "rpmbuild --define \"_topdir `pwd`\" ${DIST_RPMBUILD_OPTION} --target ${ARCH} -ba --clean SPECS/${SPEC}" ${TYPESCRIPT}
+fi
+</pre>
+</ul>
+
+==== '''''dogtag-pki''''' ====
+<ul>
+<pre>
+# mkdir -p DOGTAG-PKI/archives
+# mkdir -p DOGTAG-PKI/SOURCES
+# mkdir -p DOGTAG-PKI/SPECS
+# cd DOGTAG-PKI/SOURCES
+# wget <latest successful Fedora 28 Koji build of the dogtag-pki SRPM>
+# rpm2cpio ./dogtag-pki*.rpm | cpio -idumv
+# mv ./dogtag-pki.spec ..
+# mv ./dogtag-pki*.rpm ../archives
+# cp -p <path to source checkout>/packages.meta/SRPMS/dogtag-pki*.rpm .
+# rpm2cpio ./dogtag-pki*.rpm | cpio -idumv
+# mv ./dogtag-pki.spec ../SPECS
+# rm ./dogtag-pki*.rpm
+# cd ..
+# diff dogtag-pki.spec <path to Koji>/koji/dogtag-pki/f28/dogtag-pki.spec
+  (should be identical)
+
+Edit SPECS/dogtag-pki.spec making any changes necessary
+
+IMPORTANT:  Fedora Koji rules prohibit removal of any third-party changes to
+            spec files in the associated upstream Koji branches, therefore
+            care must be taken when merging spec file changes so as not to
+            accidentally overwrite any changes that may have been made to
+            the associated upstream Koji spec file since the last official
+            build.  Examples of this most often consist of automated mass
+            rebuilds captured in the %changelog section. 
+
+# diff dogtag-pki.spec SPECS/dogtag-pki.spec
+
+# compose dogtag-pki package -d .fc28
+</pre>
+</ul>
+
+==== '''''dogtag-pki-theme''''' ====
+<ul>
+<pre>
+# mkdir -p DOGTAG-PKI-THEME/archives
+# mkdir -p DOGTAG-PKI-THEME/SOURCES
+# mkdir -p DOGTAG-PKI-THEME/SPECS
+# cd DOGTAG-PKI-THEME/SOURCES
+# wget <latest successful Fedora 28 Koji build of the dogtag-pki-theme SRPM>
+# rpm2cpio ./dogtag-pki-theme*.rpm | cpio -idumv
+# mv ./dogtag-pki-theme.spec ..
+# rm ./dogtag-pki-theme*.tar.gz
+# mv ./dogtag-pki-theme*.rpm ../archives
+# cp -p <path to source checkout>/packages.theme/SRPMS/dogtag-pki-theme*.rpm .
+# rpm2cpio ./dogtag-pki-theme*.rpm | cpio -idumv
+# mv ./dogtag-pki-theme.spec ../SPECS
+# rm ./dogtag-pki-theme*.rpm
+# cd ..
+# diff dogtag-pki-theme.spec <path to Koji>/koji/dogtag-pki-theme/f28/dogtag-pki-theme.spec
+  (should be identical)
+
+Edit SPECS/dogtag-pki-theme.spec making any changes necessary
+(this is generally necessary when patches are utilized).
+
+IMPORTANT:  Fedora Koji rules prohibit removal of any third-party changes to
+            spec files in the associated upstream Koji branches, therefore
+            care must be taken when merging spec file changes so as not to
+            accidentally overwrite any changes that may have been made to
+            the associated upstream Koji spec file since the last official
+            build.  Examples of this most often consist of automated mass
+            rebuilds captured in the %changelog section. 
+
+# diff dogtag-pki-theme.spec SPECS/dogtag-pki-theme.spec
+# compose dogtag-pki-theme patch -d .fc28
+
+Fix any problems as necessary.
+
+Remember to check-in any non-patch changes
+(perhaps commented out patch logic to the
+ 'dogtag-pki-theme.spec' in the source repo)
+
+# compose dogtag-pki-theme package -d .fc28
+</pre>
+</ul>
+
+==== '''''pki-core''''' ====
+<ul>
+<pre>
+# mkdir -p PKI-CORE/archives
+# mkdir -p PKI-CORE/SOURCES
+# mkdir -p PKI-CORE/SPECS
+# cd PKI-CORE/SOURCES
+# wget <latest successful Fedora 28 Koji build of the pki-core SRPM>
+# rpm2cpio ./pki-core*.rpm | cpio -idumv
+# mv ./pki-core.spec ..
+# rm ./pki-core*.tar.gz
+# mv ./pki-core*.rpm ../archives
+# cp -p <path to source checkout>/packages.core/SRPMS/pki-core*.rpm .
+# rpm2cpio ./pki-core*.rpm | cpio -idumv
+# mv ./pki-core.spec ../SPECS
+# rm ./pki-core*.rpm
+# cd .8
+# diff pki-core.spec <path to Koji>/koji/pki-core/f28/pki-core.spec
+  (should be identical)
+
+Edit SPECS/pki-core.spec making any changes necessary
+(this is generally necessary when patches are utilized).
+
+IMPORTANT:  Fedora Koji rules prohibit removal of any third-party changes to
+            spec files in the associated upstream Koji branches, therefore
+            care must be taken when merging spec file changes so as not to
+            accidentally overwrite any changes that may have been made to
+            the associated upstream Koji spec file since the last official
+            build.  Examples of this most often consist of automated mass
+            rebuilds captured in the %changelog section. 
+
+# diff pki-core.spec SPECS/pki-core.spec
+# compose pki-core patch -d .fc28
+
+Fix any problems as necessary.
+
+Remember to check-in any non-patch changes
+(perhaps commented out patch logic to the
+ 'pki-core.spec' in the source repo)
+
+# compose pki-core package -d .fc28
+</pre>
+</ul>
+
+==== '''''pki-console''''' ====
+<ul>
+<pre>
+# mkdir -p PKI-CONSOLE/archives
+# mkdir -p PKI-CONSOLE/SOURCES
+# mkdir -p PKI-CONSOLE/SPECS
+# cd PKI-CONSOLE/SOURCES
+# wget <latest successful Fedora 28 Koji build of the pki-console SRPM>
+# rpm2cpio ./pki-console*.rpm | cpio -idumv
+# mv ./pki-console.spec ..
+# rm ./pki-console*.tar.gz
+# mv ./pki-console*.rpm ../archives
+# cp -p <path to source checkout>/packages.console/SRPMS/pki-console*.rpm .
+# rpm2cpio ./pki-console*.rpm | cpio -idumv
+# mv ./pki-console.spec ../SPECS
+# rm ./pki-console*.rpm
+# cd ..
+# diff pki-console.spec <path to Koji>/koji/pki-console/f28/pki-console.spec
+  (should be identical)
+
+Edit SPECS/pki-console.spec making any changes necessary
+(this is generally necessary when patches are utilized).
+
+IMPORTANT:  Fedora Koji rules prohibit removal of any third-party changes to
+            spec files in the associated upstream Koji branches, therefore
+            care must be taken when merging spec file changes so as not to
+            accidentally overwrite any changes that may have been made to
+            the associated upstream Koji spec file since the last official
+            build.  Examples of this most often consist of automated mass
+            rebuilds captured in the %changelog section. 
+
+# diff pki-console.spec SPECS/pki-console.spec
+# compose pki-console patch -d .fc28
+
+Fix any problems as necessary.
+
+Remember to check-in any non-patch changes
+(perhaps commented out patch logic to the
+ 'pki-console.spec' in the source repo)
+
+# compose pki-console package -d .fc28
+</pre>
+</ul>
+
+=== Publish tarballs and patches to Upstream Openshift Repository ===
+<ul>
+<pre>
+# kinit <yourFASloginname>@FEDORAPROJECT.ORG
+  (enter your FAS password)
+# /usr/bin/ssh-add $HOME/.ssh/id_rsa_fedora
+</pre>
+</ul>
+==== '''''dogtag-pki''''' ====
+<ul>
+<pre>
+NOTE:  Since the Dogtag PKI Meta package should never contain a tarball or any patches, there
+       is no need to publish anything to the Openshift repository.
+</pre>
+</ul>
+==== '''''dogtag-pki-theme''''' ====
+<ul>
+First Terminal:
+<ul>
+<pre>
+# oc rsh <pod> bash
+# export TERM=vt100
+# cd /opt/app-root/data/pki/sources
+# mkdir -p ./dogtag-pki-theme/10.6.0
+# cd app-root/data/pki/sources/dogtag-pki-theme/10.6.0
+# pwd
+/var/lib/openshift/<hash>/app-root/data/pki/sources/dogtag-pki-theme/10.6.0
+</pre>
+</ul>
+Second Terminal:
+<ul>
+<pre>
+Publish the tarball (and any patches) to the proper location in the OpenShift repository:
+# oc rsync . <pod>:/opt/app-root/data/pki/sources/dogtag-pki-theme/10.6.0 --exclude=* --include=dogtag-pki-theme-10.6.0.tar.gz --no-perms
+. . .
+</pre>
+</ul>
+
+Optionally perform a 'cksum' for each transferred file on both sides to verify that the transfer was successful.
+</ul>
+
+==== '''''pki-core''''' ====
+<ul>
+First Terminal:
+<ul>
+<pre>
+# oc rsh <pod> bash
+# export TERM=vt100
+# cd /opt/app-root/data/pki/sources
+# mkdir -p ./pki-core/10.6.0
+# cd app-root/data/pki/sources/pki-core/10.6.0
+# pwd
+/var/lib/openshift/<hash>/app-root/data/pki/sources/pki-core/10.6.0
+</pre>
+</ul>
+Second Terminal:
+<ul>
+<pre>
+Publish the tarball (and any patches) to the proper location in the OpenShift repository:
+# oc rsync . <pod>:/opt/app-root/data/pki/sources/pki-core/10.6.0 --exclude=* --include=pki-core-10.6.0.tar.gz --no-perms
+. . .
+</pre>
+</ul>
+
+Optionally perform a 'cksum' for each transferred file on both sides to verify that the transfer was successful.
+</ul>
+
+==== '''''pki-console''''' ====
+<ul>
+First Terminal:
+<ul>
+<pre>
+# oc rsh <pod> bash
+# export TERM=vt100
+# cd /opt/app-root/data/pki/sources
+# mkdir -p ./pki-console/10.6.0
+# cd app-root/data/pki/sources/pki-console/10.6.0
+# pwd
+/var/lib/openshift/<hash>/app-root/data/pki/sources/pki-console/10.6.0
+</pre>
+</ul>
+Second Terminal:
+<ul>
+<pre>
+Publish the tarball (and any patches) to the proper location in the OpenShift repository:
+# oc rsync . <pod>:/opt/app-root/data/pki/sources/pki-console/10.6.0 --exclude=* --include=pki-console-10.6.0.tar.gz --no-perms
+. . .
+</pre>
+</ul>
+
+Optionally perform a 'cksum' for each transferred file on both sides to verify that the transfer was successful.
+</ul>
+
+=== Create External COPR Builds (Optional) ===
+
+=== Create Koji Scratch Builds (Optional) ===
+
+=== Create Official Koji Builds ===
+==== '''''dogtag-pki''''' ====
+<ul>
+Verify that basically koji/dogtag-pki/f28 and koji/dogtag-pki/master are identical,
+otherwise, when constructing Fedora 28 builds below, one would need to
+construct Fedora 29 builds separately rather than merely using the
+same local SRPM for both koji/dogtag-pki/f28 AND koji/dogtag-pki/master!
+<pre>
+# diff koji/dogtag-pki/f28/dogtag-pki.spec koji/dogtag-pki/master/dogtag-pki.spec
+  (if these are identical, then the same local SRPM may be utilized)
+</pre>
+===== '''''f28 branch''''' =====
+<pre>
+# cd koji/dogtag-pki/f28
+# fedpkg import <path to local rpmbuild repos>/DOGTAG-PKI/SRPMS/dogtag-pki*.rpm
+# fedpkg clog (optional)
+# git add clog (optional)
+# git commit -a
+  "Resolves: dogtagpki Pagure Issue #<issue>,<issue>,..."
+
+  <most recent changelog messages>
+
+  NOTE: Sometimes the message can be as simple as "Re-base Dogtag to 10.6.0"
+
+# fedpkg push
+# fedpkg pull
+# fedpkg build
+# bodhi updates new --type bugfix --request testing --stable-karma 3 --unstable-karma -3 --notes 'Resolves: dogtagpki Pagure Issue #<issue>,<issue>,...' $(fedpkg verrel)
+</pre>
+
+===== '''''master branch''''' =====
+<pre>
+# cd koji/dogtag-pki/master
+# fedpkg import <path to local rpmbuild repos>/DOGTAG-PKI/SRPMS/dogtag-pki*.rpm
+# fedpkg clog (optional)
+# git add clog (optional)
+# git commit -a
+  "Resolves: dogtagpki Pagure Issue #<issue>,<issue>,..."
+
+  <most recent changelog messages>
+
+  NOTE: Sometimes the message can be as simple as "Re-base Dogtag to 10.6.0"
+
+# fedpkg push
+# fedpkg pull
+# fedpkg build
+
+NOTE: The 'bodhi' step is not necessary for 'rawhide'.
+</pre>
+</ul>
+
+==== '''''dogtag-pki-theme''''' ====
+<ul>
+Verify that basically koji/dogtag-pki-theme/f28 and koji/dogtag-pki-theme/master are identical,
+otherwise, when constructing Fedora 28 builds below, one would need to
+construct Fedora 29 builds separately rather than merely using the
+same local SRPM for both koji/dogtag-pki-theme/f28 AND koji/dogtag-pki-theme/master!
+<pre>
+# diff koji/dogtag-pki-theme/f28/dogtag-pki-theme.spec koji/dogtag-pki-theme/master/dogtag-pki-theme.spec
+  (if these are identical, then the same local SRPM may be utilized)
+
+Be sure to verify that these builds contain the same patches as well!
+</pre>
+===== '''''f28 branch''''' =====
+<pre>
+# cd koji/dogtag-pki-theme/f28
+# fedpkg import <path to local rpmbuild repos>/DOGTAG-PKI-THEME/SRPMS/dogtag-pki-theme*.rpm
+# fedpkg clog (optional)
+# git add clog (optional)
+# git commit -a
+  "Resolves: dogtagpki Pagure Issue #<issue>,<issue>,..."
+
+  <most recent changelog messages>
+
+  NOTE: Sometimes the message can be as simple as "Re-base Dogtag to 10.6.0"
+
+# fedpkg push
+# fedpkg pull
+# fedpkg build
+# bodhi updates new --type bugfix --request testing --stable-karma 3 --unstable-karma -3 --notes 'Resolves: dogtagpki Pagure Issue #<issue>,<issue>,...' $(fedpkg verrel)
+</pre>
+===== '''''master branch''''' =====
+<pre>
+# cd koji/dogtag-pki-theme/master
+# fedpkg import <path to local rpmbuild repos>/DOGTAG-PKI-THEME/SRPMS/dogtag-pki-theme*.rpm
+# fedpkg clog (optional)
+# git add clog (optional)
+# git commit -a
+  "Resolves: dogtagpki Pagure Issue #<issue>,<issue>,..."
+
+  <most recent changelog messages>
+
+  NOTE: Sometimes the message can be as simple as "Re-base Dogtag to 10.6.0"
+
+# fedpkg push
+# fedpkg pull
+# fedpkg build
+
+NOTE: The 'bodhi' step is not necessary for 'rawhide'.
+</pre>
+</ul>
+
+==== '''''pki-core''''' ====
+<ul>
+Verify that basically koji/pki-core/f28 and koji/pki-core/master are identical,
+otherwise, when constructing Fedora 28 builds below, one would need to
+construct Fedora 29 builds separately rather than merely using the
+same local SRPM for both koji/pki-core/f28 AND koji/pki-core/master!
+<pre>
+# diff koji/pki-core/f28/pki-core.spec koji/pki-core/master/pki-core.spec
+  (if these are identical, then the same local SRPM may be utilized)
+
+Be sure to verify that these builds contain the same patches as well!
+</pre>
+===== '''''f28 branch''''' =====
+<pre>
+# cd koji/pki-core/f28
+
+  NOTE: In order to build pki-core-10.6.0-1.fc28, the proper versions of several previously built dependencies
+        (e g. - jss, tomcatjss, nuxwdog) must exist in the 'f28-build' buildroot since 'pki-core' contains build
+        dependencies on these components. This can be checked using this command:
+
+        # koji latest-build f28-build jss tomcatjss nuxwdog
+        Build                                     Tag                   Built by
+        ----------------------------------------  --------------------  ----------------
+        jss-4.4.2-10.fc28                         f28                   releng
+        tomcatjss-7.2.4-3.fc28                    f28                   releng
+        nuxwdog-1.0.3-13.fc28                     f28                   mharmsen
+
+  Use the following URL to override a package in the Koji build system:
+    
+    * https://bodhi.fedoraproject.org/overrides/new
+      (IMPORTANT: No ending '/'!!!!)
+    
+    It will state to use the following:
+    
+    % koji wait-repo f28-build --build=tomcatjss-7.3.0-1.fc28
+    
+  If the override already exists but has EXPIRED, it will NOT let you add a NEW
+  override.  To fix this, specify the problematic override and try the following:
+    
+    # https://bodhi.fedoraproject.org/overrides/tomcatjss-7.3.0-1.fc28
+    
+    It will show it expired; change the Expiration Date (and the notes)
+    and re-submit.
+    
+    It will state to use the following:
+
+    % koji wait-repo f28-build --build=tomcatjss-7.3.0-1.fc28
+
+# fedpkg import <path to local rpmbuild repos>/PKI-CORE/SRPMS/pki-core*.rpm
+# fedpkg clog (optional)
+# git add clog (optional)
+# git commit -a
+  "Resolves: dogtagpki Pagure Issue #<issue>,<issue>,..."
+
+  <most recent changelog messages>
+
+  NOTE: Sometimes the message can be as simple as "Re-base Dogtag to 10.6.0"
+
+# fedpkg push
+# fedpkg pull
+# fedpkg build
+# bodhi updates new --type bugfix --request testing --stable-karma 3 --unstable-karma -3 --notes 'Resolves: dogtagpki Pagure Issue #<issue>,<issue>,...' $(fedpkg verrel)
+</pre>
+
+===== '''''master branch''''' =====
+<pre>
+# cd koji/pki-core/master
+
+NOTE: In order to build pki-core-10.6.0-1.fc29, the proper versions of several previously built dependencies
+        (e g. - jss, tomcatjss, nuxwdog) must exist in the 'f29-build' buildroot since 'pki-core' contains build
+        dependencies on these components. This can be checked using this command:
+
+        # koji latest-build f29-build jss tomcatjss nuxwdog
+        Build                                     Tag                   Built by
+        ----------------------------------------  --------------------  ----------------
+        jss-4.4.2-10.fc28                         f29                   releng
+        tomcatjss-7.3.0-1.fc28                    f29                   releng
+        nuxwdog-1.0.3-13.fc28                     f29                   mharmsen
+
+# fedpkg import <path to local rpmbuild repos>/PKI-CORE/SRPMS/pki-core*.rpm
+# fedpkg clog (optional)
+# git add clog (optional)
+# git commit -a
+  "Resolves: dogtagpki Pagure Issue #<issue>,<issue>,..."
+
+  <most recent changelog messages>
+
+  NOTE: Sometimes the message can be as simple as "Re-base Dogtag to 10.6.0"
+
+# fedpkg push
+# fedpkg pull
+# fedpkg build
+
+NOTE: The 'bodhi' step is not necessary for 'rawhide'.
+</pre>
+</ul>
+
+==== '''''pki-console''''' ====
+<ul>
+Verify that basically koji/pki-console/f28 and koji/pki-console/master are identical,
+otherwise, when constructing Fedora 28 builds below, one would need to
+construct Fedora 29 builds separately rather than merely using the
+same local SRPM for both koji/pki-console/f28 AND koji/pki-console/master!
+<pre>
+# diff koji/pki-console/f28/pki-core.spec koji/pki-console/master/pki-console.spec
+  (if these are identical, then the same local SRPM may be utilized)
+
+Be sure to verify that these builds contain the same patches as well!
+</pre>
+===== '''''f28 branch''''' =====
+<pre>
+# cd koji/pki-console/f28
+
+  NOTE: In order to build pki-console-10.6.0-1.fc28, the previously built pki-core-10.6.0-1.fc28 must exist in
+        the 'f28-build' buildroot since 'pki-console' contains the build dependency of  'pki-base-java >= 10.6.0'.
+        While a previous release of pki-core 10.6.0 may already exist in the buildroot, it is usually a good idea
+        to update the buildroot to the latest 10.6.0 release to be certain that 'pki-console' is married to the latest
+        10.6.0 release of 'pki-base-java' to prevent any possible compilation issues.  
+  
+  Use the following URL to override a package in the Koji build system:
+    
+    * https://bodhi.fedoraproject.org/overrides/new
+      (IMPORTANT: No ending '/'!!!!)
+    
+    It will state to use the following:
+    
+    % koji wait-repo f28-build --build=pki-core-10.6.0-1.fc28
+    
+  If the override already exists but has EXPIRED, it will NOT let you add a NEW
+  override.  To fix this, specify the problematic override and try the following:
+    
+    # https://bodhi.fedoraproject.org/overrides/pki-core-10.6.0-1.fc28
+    
+    It will show it expired; change the Expiration Date (and the notes)
+    and re-submit.
+    
+    It will state to use the following:
+
+    % koji wait-repo f28-build --build=pki-core-10.6.0-1.fc28
+    
+# fedpkg import <path to local rpmbuild repos>/PKI-CONSOLE/SRPMS/pki-console*.rpm
+# fedpkg clog (optional)
+# git add clog (optional)
+# git commit -a
+  "Resolves: dogtagpki Pagure Issue #<issue>,<issue>,..."
+
+  <most recent changelog messages>
+
+  NOTE: Sometimes the message can be as simple as "Re-base Dogtag to 10.6.0"
+
+# fedpkg push
+# fedpkg pull
+# fedpkg build
+# bodhi updates new --type bugfix --request testing --stable-karma 3 --unstable-karma -3 --notes 'Resolves: dogtagpki Pagure Issue #<issue>,<issue>,...' $(fedpkg verrel)
+</pre>
+===== '''''master branch''''' =====
+<pre>
+# cd koji/pki-console/master
+
+  NOTE: In order to build pki-console-10.6.0-1.fc29, the previously built pki-core-10.6.0-1.fc29 must exist in
+        the 'f29-build' buildroot since 'pki-console' contains the build dependency of  'pki-base-java >= 10.6.0'.
+        While a previous release of pki-core 10.6.0 may already exist in the buildroot, it is usually a good idea
+        to update the buildroot to the latest 10.6.0 release to be certain that 'pki-console' is married to the latest
+        10.6.0 release of 'pki-base-java' to prevent any possible compilation issues.  
+  
+  For 'rawhide', only the following is required:
+    
+    % koji wait-repo f29-build --build=pki-core-10.6.0-1.fc29
+    
+# fedpkg import <path to local rpmbuild repos>/PKI-CONSOLE/SRPMS/pki-console*.rpm
+# fedpkg clog (optional)
+# git add clog (optional)
+# git commit -a
+  "Resolves: dogtagpki Pagure Issue #<issue>,<issue>,..."
+
+  <most recent changelog messages>
+
+  NOTE: Sometimes the message can be as simple as "Re-base Dogtag to 10.6.0"
+
+# fedpkg push
+# fedpkg pull
+# fedpkg build
+
+NOTE: The 'bodhi' step is not necessary for 'rawhide'.
+</pre>
+</ul>
+
+=== Mark 'fixedinversion' in all Pagure Issues for a Given Milestone (Optional) ===
+For each Pagure issue for a <major>.<minor>.<patch> milestone that have been closed fixed,
+fill in the proper value(s) for the 'fixedinversion' field; use the lowest Fedora version
+of each component that needs to be specified.
+
+For example, for Fedora 28 and Fedora 29, simply use the earliest Fedora component:
+
+* pki-core-10.6.0-1.fc28
+
+Additionally, if there are any associated Fedora Bugzilla Bugs, fill in the "Fixed In Version:"
+field with the various space-separated NVRs, and mark each bug as MODIFIED.
+
+=== Update and Check-in any changes to the 'master' PKI Source Branch (e. g. - spec file templates) ===
+
+=== Create a Static Tag from the 'master' PKI Source Branch ===
+At this stage, tag the original source repository, since it has produced official Fedora builds:
+<ul>
+<pre>
+# cd pki
+# git branch
+# git tag
+# git tag -a "v10.6.0" -m "Build for 10.6.0 for Fedora 28"
+# git show v10.6.0
+# git push origin v10.6.0
+</pre>
+</ul>
+
+=== Document Resolved <major>.<minor>.<patch> Release Issues on the external Dogtag Wiki ===
+Document the resolved issues at [http://pki.fedoraproject.org/wiki/PKI_Open_Source_History PKI Open Source History].
+
+Specifically, there should be a Pagure Issue for each of these releases; unfortunately, this
+is one of the items that has fallen quite far behind; see the following:
+
+[https://pagure.io/dogtagpki/issue/2455 dogtagpki Pagure Issue #2455 Dogtag 10.4.0 Release Tasks]

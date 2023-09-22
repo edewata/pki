@@ -1,0 +1,60 @@
+= cmc-crmf-DecryptedPOP.cfg =
+<pre>
+#numRequests: Total number of PKCS10 requests or CRMF requests.
+numRequests=1
+
+#input: full path for the PKCS10 request or CRMF request,
+#the content must be in Base-64 encoded format
+#Multiple files are supported. They must be separated by space.
+input=crmf2.req
+
+#output: full path for the CMC request in binary format
+output=/root/cfu/test/cmc/cmc2.req
+
+#tokenname: name of token where agent signing cert can be found (default is internal)
+tokenname=internal
+
+#nickname: nickname for agent certificate which will be used
+#to sign the CMC full request.
+#nickname=caadmin
+nickname=lady cfu cert
+
+#dbdir: directory for cert8.db, key3.db and secmod.db
+dbdir=/root/cfu/test/cmc/
+
+#password: password for cert8.db which stores the agent
+#certificate
+password=mypass
+
+#format: request format, either pkcs10 or crmf
+format=crmf
+
+#identityProofV2.enable: if true, then the request will contain
+#this control. Otherwise, false.
+#Note that if both identityProof and identityProofV2
+#  are enabled, identityProofV2 takes precedence; Only one of them can be active at a time
+#Supported hashAlg are:
+# SHA-1, SHA-256, SHA-384, and SHA-512
+#Supported macAlg are:
+# SHA-1-HMAC, SHA-256-HMAC, SHA-384-HMAC, and SHA-512-HMAC
+identityProofV2.enable=false
+identityProofV2.hashAlg=SHA-512
+identityProofV2.macAlg=SHA-256-HMAC
+
+#witness.sharedSecret: Shared Secret
+witness.sharedSecret=testing
+
+#identification works with identityProofV2
+identification.enable=true
+identification=testuser
+
+decryptedPop.enable=true
+encryptedPopResponseFile=cmcResp2-round1
+request.privKeyId=-25aa0a8aad395ebac7e6a19c364f0dcb5350cfef
+request.selfSign=false
+decryptedPopRequestFile=cmc.decreyptedPOP.req
+
+#popLinkWitnessV2.enable=true
+#popLinkWitnessV2.keyGenAlg=SHA-256
+#popLinkWitnessV2.macAlg=SHA-256-HMAC
+</pre>

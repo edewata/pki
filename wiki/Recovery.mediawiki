@@ -1,0 +1,169 @@
+= Overview =
+
+This page describes the procedure to recover CS.cfg in case the file becomes corrupted. The recovery is based on a typical Dogtag configuration and information stored in other locations. However, it may not have all customizations that have been done to the original file.
+
+Currently the recovery procedure is manual. In the future a tool can be provided to automate some of the steps.
+
+= Prerequisites =
+
+The following information should be obtained to start the recovery procedure:
+* LDAP hostname
+* LDAP port (e.g. 7389)
+* LDAP suffix (e.g. o=ipaca)
+* LDAP Directory Manager's password
+* CA hostname
+* CA suffix (e.g. O=EXAMPLE.COM) used in certificate subject names
+
+= Recovery Procedure =
+
+== Stop Dogtag ==
+
+Make sure Dogtag server is stopped before modifying the CS.cfg.
+
+=== Dogtag 9.0 ===
+
+<pre>
+$ service pki-cad stop
+</pre>
+
+== Install CS.cfg template ==
+
+Save the original /etc/pki-ca/CS.cfg into CS.cfg.orig, then replace it with a template for the appropriate Dogtag version:
+* [https://edewata.fedorapeople.org/pki/files/dogtag-9.0-CA-CS.cfg Dogtag 9.0 CA].
+
+== Restore hostname ==
+
+Replace all occurrences of [HOSTNAME] with the CA hostname.
+
+== Restore suffix ==
+
+Replace all occurrences of [SUFFIX] with the CA suffix, not LDAP suffix.
+
+== Restore system certificate cache ==
+
+See [[System Certificate Cache]].
+
+== Restore private key IDs ==
+
+Some parameters in CS.cfg contain private key IDs. The IDs can be retrieved from the NSS database with the following commands:
+
+<pre>
+$ cat /etc/pki/pki-tomcat/password.conf | grep internal= | awk -F '=' '{print $2}' > /etc/pki/pki-tomcat/alias/password.txt
+$ certutil -K -d /etc/pki/pki-tomcat/alias -f /etc/pki/pki-tomcat/alias/password.txt
+</pre>
+
+In the CS.cfg the IDs are stored as signed hexadecimal numbers. In the NSS database the IDs are stored as unsigned hexadecimal numbers, so they need to be converted with the following program.
+
+KeyIDConverter.java:
+<pre>
+import java.math.BigInteger;
+
+public class KeyIDConverter {
+
+    public static void main(String[] args) {
+
+        String input = args[0];
+        byte[] bytes = new byte[input.length()/2];
+
+        for (int i=0; i<bytes.length; i++) {
+            String s = input.substring(i*2, i*2 + 2);
+            bytes[i] = (byte) Integer.parseInt(s, 16);
+        }
+
+        BigInteger value = new BigInteger(bytes);
+        System.out.println(value.toString(16));
+    }
+}
+</pre>
+
+To compile the program:
+<pre>
+$ javac KeyIDConverter java
+</pre>
+
+Run the program with the private key IDs produced by the certutil commands below:
+<pre>
+$ java -cp . KeyIDConverter <unsigned hexadecimal private key ID>
+</pre>
+
+=== cloning.audit_signing.privkey.id ===
+
+<pre>
+$ certutil -K -d /etc/pki/pki-tomcat/alias -f /etc/pki/pki-tomcat/alias/password.txt -n "auditSigningCert cert-pki-ca"
+</pre>
+
+=== cloning.ocsp_signing.privkey.id ===
+
+<pre>
+$ certutil -K -d /etc/pki/pki-tomcat/alias -f /etc/pki/pki-tomcat/alias/password.txt -n "ocspSigningCert cert-pki-ca"
+</pre>
+
+=== cloning.signing.privkey.id ===
+
+<pre>
+$ certutil -K -d /etc/pki/pki-tomcat/alias -f /etc/pki/pki-tomcat/alias/password.txt -n "caSigningCert cert-pki-ca"
+</pre>
+
+=== cloning.subsystem.privkey.id ===
+
+<pre>
+$ certutil -K -d /etc/pki/pki-tomcat/alias -f /etc/pki/pki-tomcat/alias/password.txt -n "subsystemCert cert-pki-ca"
+</pre>
+
+== Restore public key moduli and exponents ==
+
+Some parameters in CS.cfg contain hexadecimal public key moduli and exponents. The following commands will retrieve the values of from the NSS database. Copy the output into the corresponding parameters (without the ':' separators and '0x' prefix).
+
+=== cloning.audit_signing.pubkey.modulus/exponent ===
+
+<pre>
+$ certutil -L -d /var/lib/pki-ca/alias -n "auditSigningCert cert-pki-ca"
+</pre>
+
+=== cloning.ocsp_signing.pubkey.modulus/exponent ===
+
+<pre>
+$ certutil -L -d /var/lib/pki-ca/alias -n "ocspSigningCert cert-pki-ca"
+</pre>
+
+=== cloning.signing.pubkey.modulus/exponent ===
+
+<pre>
+$ certutil -L -d /var/lib/pki-ca/alias -n "caSigningCert cert-pki-ca"
+</pre>
+
+=== cloning.subsystem.pubkey.modulus/exponent ===
+
+<pre>
+$ certutil -L -d /var/lib/pki-ca/alias -n "subsystemCert cert-pki-ca"
+</pre>
+
+== Merge other parameters ==
+
+Compare the original CS.cfg with the new CS.cfg and merge the difference.
+
+<pre>
+$ diff CS.cfg.orig CS.cfg
+</pre>
+
+== Clean up temporary files ==
+
+<pre>
+$ rm -f /tmp/ldapsearch-*
+</pre>
+
+== Restart Dogtag ==
+
+Restart the server and verify its functionality.
+
+==== Dogtag 9.0 ====
+
+<pre>
+$ service pki-cad start
+</pre>
+
+= Related Bugs =
+
+* IPA: [https://fedorahosted.org/freeipa/ticket/4569 Corrupted CS.cfg during IPA upgrade]
+* Dogtag: [https://fedorahosted.org/pki/ticket/1163 CS.cfg corruption due to concurrent modification]
+* Dogtag: [https://fedorahosted.org/pki/ticket/1165 Remove redundant information in CS.cfg]

@@ -1,0 +1,895 @@
+= IP Port Separation <font color="RED">'''CURRENTLY UNDER CONSTRUCTION . . .'''</font> =
+== Overview ==
+=== Definition ===
+There are three types of '''IP Port Separation''':
+* '''IP Port Separation''' consists of specifying individual interfaces for a PKI subsystem in which all of the IP addresses, generally specified as hostnames represented by their fully qualified domain names (FQDNs), are combined with their associated ports to form unique addresses.
+* '''IP Separation''' is a special case of IP port separation in which a user specifies unique IP addresses but utilizes one port for the non-secure EE connection, another port for the non-secure Tomcat connection, and one common port for all of the secure ports.  If desired by the user, the installation host (e. g. - pki-ip-host.example.com) may be specified as one of the unique IP addresses (e. g. - the admin hostname) in order to have its port automatically labelled by SELinux.
+* '''Port Separation''' is a special case of IP port separation in which a user specifies all IP addresses as the same FQDN and specifies unique ports for the non-secure EE connection, the non-secure Tomcat connection, and unique ports for each of the secure ports.  If the installation hostname is specified as the FQDN, then the only difference between port separation defined in this manner and the legacy manner described below is that for the IP port separation method, the PKI subsystem SSL server certificate will contain a single subject alternative name extension which contains the installation host.
+
+Earlier versions of Dogtag separated CA, KRA, OCSP, and TKS interfaces by a single common IP address and unique port number for each interface '''[<protocol>://<hostname>:<port>]''':
+
+    Unsecure End-Entity URL                             http://pki-ip-host.example.com:9180
+    Secure Agent URL                                    https://pki-ip-host.example.com:9443
+    Secure End-Entity URL                               https://pki-ip-host.example.com:9444
+    Secure Admin URL                                    https://pki-ip-host.example.com:9445
+    Secure End-Entity using Clientauth URL (CA only)    https://pki-ip-host.example.com:9446
+
+Dogtag 10 introduced the concept of a PKI instance which consists of a single Tomcat instance which may contain a single java-based Tomcat CA, KRA, OCSP, TKS, and/or TPS subsystem within this common PKI instance, and was redesigned to separate these PKI instances by merely using a single common IP address with either an individual unsecure HTTP port number or an individual secure HTTPS port number and a URL path '''[<protocol>//:<hostname>:<port>/<path>]''':
+
+    Unsecure End-Entity URL                             http://pki-ip-host.example.com:8080/ca/ee/ca
+    Secure Agent URL                                    https://pki-ip-host.example.com:8443/ca/agent/ca
+    Secure End-Entity URL                               https://pki-ip-host.example.com:8443/ca/ee/ca
+    Secure Admin URL                                    https://pki-ip-host.example.com:8443/ca/admin/ca
+    Secure End-Entity using Clientauth URL (CA only)    https://pki-ip-host.example.com:8443/ca/eeca/ca
+
+An IP separated Dogtag 10 PKI instance would still be of the form '''[<protocol>//:<hostname>:<port>/<path>]''', and would resemble something like the following:
+
+    Unsecure End-Entity URL                             http://pki-ca-ee.example.com:8080/ca/ee/ca
+    Secure Agent URL                                    https://pki-ca-agent.example.com:8443/ca/agent/ca
+    Secure End-Entity URL                               https://pki-ca-ee.example.com:8443/ca/ee/ca
+    Secure Admin URL                                    https://pki-ca-admin.example.com:8443/ca/admin/ca
+    Secure End-Entity using Clientauth URL (CA only)    https://pki-ca-ee.example.com:8443/ca/eeca/ca
+=== Requirements ===
+
+== Associated Bugs and Tickets ==
+* [https://fedorahosted.org/pki/ticket/515 TRAC Ticket #515 - RFE: IP Port Separation]
+
+== Use Cases ==
+Hostname:
+* pki-ip-host.example.com
+HTTP Port:
+* 8080
+HTTPS Port:
+* 8443
+Virtual IP Hostnames:
+* pki-ca-admin.example.com
+* pki-ca-agent.example.com
+* pki-ca-ee.example.com
+* pki-kra-admin.example.com
+* pki-kra-agent.example.com
+* pki-kra-ee.example.com
+
+=== Case I: No IP Separation ===
+Example of a single PKI instance containing a CA and a KRA utilizing no IP Port Separation: 
+<ul>
+<table border=1>
+<tr>
+<th bgcolor="lightgrey">PKI Subsystem</th>
+<th bgcolor="lightgrey">PKI Connection Type</th>
+<th bgcolor="lightgrey">PKI Interface</th>
+<th bgcolor="lightgrey">PKI URL</th>
+</tr>
+<tr>
+<td>CA</td>
+<td>unsecure</td>
+<td>End-Entity</td>
+<td>http://pki-ip-host.example.com:8080/ca/ee/ca</td>
+</tr>
+<tr>
+<td>CA</td>
+<td>secure</td>
+<td>End-Entity</td>
+<td>https://pki-ip-host.example.com:8443/ca/ee/ca</td>
+</tr>
+<tr>
+<td>CA</td>
+<td>secure</td>
+<td>Agent</td>
+<td>https://pki-ip-host.example.com:8443/ca/agent/ca</td>
+</tr>
+<tr>
+<td>CA</td>
+<td>secure</td>
+<td>Administrator</td>
+<td>https://pki-ip-host.example.com:8443/ca/admin/ca</td>
+</tr>
+<tr>
+<td>KRA</td>
+<td>unsecure</td>
+<td>End-Entity</td>
+<td>http://pki-ip-host.example.com:8080/kra/ee/kra</td>
+</tr>
+<tr>
+<td>KRA</td>
+<td>secure</td>
+<td>End-Entity</td>
+<td>https://pki-ip-host.example.com:8443/kra/ee/kra</td>
+</tr>
+<tr>
+<td>KRA</td>
+<td>secure</td>
+<td>Agent</td>
+<td>https://pki-ip-host.example.com:8443/kra/agent/kra</td>
+</tr>
+<tr>
+<td>KRA</td>
+<td>secure</td>
+<td>Administrator</td>
+<td>https://pki-ip-host.example.com:8443/kra/admin/kra</td>
+</tr>
+</table>
+</ul>
+
+=== Case II: Partial IP Separation ===
+Example of a single PKI instance containing a CA and a KRA utilizing partial IP Port Separation (e. g. - for all End-Entity and Agent URLs but not for Admin URLs):
+<ul>
+<table border=1>
+<tr>
+<th bgcolor="lightgrey">PKI Subsystem</th>
+<th bgcolor="lightgrey">PKI Connection Type</th>
+<th bgcolor="lightgrey">PKI Interface</th>
+<th bgcolor="lightgrey">PKI URL</th>
+</tr>
+<tr>
+<td>CA</td>
+<td>unsecure</td>
+<td>End-Entity</td>
+<td>http://pki-ca-ee.example.com:8080/ca/ee/ca</td>
+</tr>
+<tr>
+<td>CA</td>
+<td>secure</td>
+<td>End-Entity</td>
+<td>https://pki-ca-ee.example.com:8443/ca/ee/ca</td>
+</tr>
+<tr>
+<td>CA</td>
+<td>secure</td>
+<td>Agent</td>
+<td>https://pki-ca-agent.example.com:8443/ca/agent/ca</td>
+</tr>
+<tr>
+<td>CA</td>
+<td>secure</td>
+<td>Administrator</td>
+<td>https://pki-ip-host.example.com:8443/ca/admin/ca</td>
+</tr>
+<tr>
+<td>KRA</td>
+<td>unsecure</td>
+<td>End-Entity</td>
+<td>http://pki-kra-ee.example.com:8080/kra/ee/kra</td>
+</tr>
+<tr>
+<td>KRA</td>
+<td>secure</td>
+<td>End-Entity</td>
+<td>https://pki-kra-ee.example.com:8443/kra/ee/kra</td>
+</tr>
+<tr>
+<td>KRA</td>
+<td>secure</td>
+<td>Agent</td>
+<td>https://pki-kra-agent.example.com:8443/kra/agent/kra</td>
+</tr>
+<tr>
+<td>KRA</td>
+<td>secure</td>
+<td>Administrator</td>
+<td>https://pki-ip-host.example.com:8443/kra/admin/kra</td>
+</tr>
+</table>
+</ul>
+
+=== Case III: Complete IP Separation ===
+Example of a single PKI instance containing a CA and a KRA utilizing complete IP Port Separation:
+<ul>
+<table border=1>
+<tr>
+<th bgcolor="lightgrey">PKI Subsystem</th>
+<th bgcolor="lightgrey">PKI Connection Type</th>
+<th bgcolor="lightgrey">PKI Interface</th>
+<th bgcolor="lightgrey">PKI URL</th>
+</tr>
+<tr>
+<td>CA</td>
+<td>unsecure</td>
+<td>End-Entity</td>
+<td>http://pki-ca-ee.example.com:8080/ca/ee/ca</td>
+</tr>
+<tr>
+<td>CA</td>
+<td>secure</td>
+<td>End-Entity</td>
+<td>https://pki-ca-ee.example.com:8443/ca/ee/ca</td>
+</tr>
+<tr>
+<td>CA</td>
+<td>secure</td>
+<td>Agent</td>
+<td>https://pki-ca-agent.example.com:8443/ca/agent/ca</td>
+</tr>
+<tr>
+<td>CA</td>
+<td>secure</td>
+<td>Administrator</td>
+<td>https://pki-ca-admin.example.com:8443/ca/admin/ca</td>
+</tr>
+<tr>
+<td>KRA</td>
+<td>unsecure</td>
+<td>End-Entity</td>
+<td>http://pki-kra-ee.example.com:8080/kra/ee/kra</td>
+</tr>
+<tr>
+<td>KRA</td>
+<td>secure</td>
+<td>End-Entity</td>
+<td>https://pki-kra-ee.example.com:8443/kra/ee/kra</td>
+</tr>
+<tr>
+<td>KRA</td>
+<td>secure</td>
+<td>Agent</td>
+<td>https://pki-kra-agent.example.com:8443/kra/agent/kra</td>
+</tr>
+<tr>
+<td>KRA</td>
+<td>secure</td>
+<td>Administrator</td>
+<td>https://pki-kra-admin.example.com:8443/kra/admin/kra</td>
+</tr>
+</table>
+</ul>
+
+== Operating System Platforms and Architectures ==
+This IP port separation design shall be designed, developed and tested on the following platforms:
+* Fedora 20 [i686 (32-bit)]
+* Fedora 20 [x86_64 (64-bit)]
+
+== Design ==
+=== Design Considerations ===
+==== Criteria ====
+Any PKI subsystem utilizing IP port separation must meet the following criteria:
+===== PKI Subsystem =====
+Dogtag 10 consists of the following five java-based Tomcat 7 PKI subsystems<sup>&dagger;&dagger;</sup> (hereafter referred to as simply a PKI subsystem):
+* Certificate Authority (CA)
+* Data Recovery Manager (DRM) [a.k.a. - Key Recovery Authority (KRA)]
+* Online Certificate Status Protocol (OCSP) Manager
+* Token Key Service (TKS)
+* Token Process System<sup>&dagger;&dagger;&dagger;</sup> (TPS)
+<table>
+<tr>
+<td valign="top"><sup>&dagger;&dagger;</sup> - &nbsp;&nbsp;</td>
+<td>Dogtag 10 also contains an Apache-based PKI subsystem called a Registration Authority (RA) to which IP port separation does not apply.</td>
+</tr>
+<tr>
+<td valign="top"><sup>&dagger;&dagger;&dagger;</sup> - &nbsp;&nbsp;</td>
+<td>Some versions of Dogtag 10 may also contain a legacy Apache-based PKI subsystem called TPS to which IP port separation does not apply.  For the purposes of this design, TPS always refers to the java-based Tomcat 7 TPS.</td>
+</tr>
+</table>
+
+Each PKI subsystem must be installed on a single installation host.
+
+===== PKI Interfaces =====
+Each PKI subsystem installed on the installation host must specify unique '''[<protocol>://<hostname>:<port>/<path>]''' interfaces:
+<ul>
+<table border=1>
+<tr>
+<th bgcolor="lightgrey">PKI Interface</th>
+<th bgcolor="lightgrey">PKI Connection Protocol</th>
+<th bgcolor="lightgrey">CA Path</th>
+<th bgcolor="lightgrey">DRM Path</th>
+<th bgcolor="lightgrey">OCSP Path</th>
+<th bgcolor="lightgrey">TKS Path</th>
+<th bgcolor="lightgrey">TPS Path</th>
+</tr>
+<tr>
+<td>End-Entity</td>
+<td>http</td>
+<td>ca/ee/ca</td>
+<td>kra/ee/kra</td>
+<td>ocsp/ee/ocsp</td>
+<td>tks/ee/tks</td>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td>End-Entity</td>
+<td>https</td>
+<td>ca/ee/ca</td>
+<td>kra/ee/kra</td>
+<td>ocsp/ee/ocsp</td>
+<td>tks/ee/tks</td>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td>Operator</td>
+<td>https</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+<td>tps/operator/tps</td>
+</tr>
+<tr>
+<td>Agent</td>
+<td>https</td>
+<td>ca/agent/ca</td>
+<td>kra/agent/kra</td>
+<td>ocsp/agent/ocsp</td>
+<td>tks/agent/tks</td>
+<td>tps/agent/tps</td>
+</tr>
+<tr>
+<td>Administrator</td>
+<td>https</td>
+<td>ca/admin/ca</td>
+<td>kra/admin/kra</td>
+<td>ocsp/admin/ocsp</td>
+<td>tks/admin/tks</td>
+<td>tps/admin/tps</td>
+</tr>
+</table>
+</ul>
+
+For each CA subsystem, a unique '''[<protocol>://<hostname>:<port>/<path>]''' combination must be specified for the agent, end-entity (EE), admin, and end-entity client authentication (EECA) interfaces
+
+For each DRM, OCSP, or TKS subsystem, a unique '''[<protocol>://<hostname>:<port>/<path>]''' combination must be specified for the agent, EE, and admin interfaces
+
+For each TPS subsystem, a unique '''[<protocol>://<hostname>:<port>/<path>]''' combination must be specified for the agent, operator, and admin interfaces
+
+===== PKI Ports =====
+Each PKI subsystem must specify a port for the non-secure HTTP EE port, the non-secure HTTP Tomcat port, and for each separated secure HTTPS port:
+* For each PKI subsystem, although each separated secure port does not need to be unique (e. g. - each "secure" port could be specified to be the same port number such as 8443), each '''[<protocol>://<hostname>:<port>/<path>]''' interface must still be unique.
+* For each PKI subsystem, the non-secure HTTP Tomcat port must be different from the non-secure HTTP EE port which must be different from all of the secure HTTPS ports.
+* For a CA subsystem, a port must be specified for each of the HTTP Tomcat, HTTP EE, HTTPS agent, HTTPS EE, HTTPS admin, and HTTPS EECA interfaces.
+* For a DRM, OCSP, or TKS subsystem, a port must be specified for each of the HTTP Tomcat, HTTP EE, HTTPS agent, HTTPS EE, and HTTPS admin interfaces.
+* For a TPS subsystem, a port must be specified for each of the HTTP Tomcat, HTTPS agent, HTTPS operator, and HTTPS admin interfaces.
+
+===== PKI Hostnames =====
+Each PKI subsystem must specify a hostname for each individual PKI interface which meet the following criteria:
+* For each PKI subsystem, although each designated hostname does not need to be unique, each '''[<protocol>://<hostname>:<port>/<path>]''' interface must still be unique.
+* For each PKI subsystem, the installation hostname shall be utilized as the hostname associated with the non-secure HTTP Tomcat port.
+* For each PKI subsystem, the hostname designated as the EE hostname shall be utilized for both the non-secure HTTP EE port as well as the secure HTTPS EE port.
+* For a CA subsystem, a hostname must be specified for each of the agent, EE, admin, and EECA interfaces.
+* For a DRM, OCSP, or TKS subsystem, a hostname must be specified for each of the agent, EE, and admin interfaces.
+* For a TPS subsystem, a hostname must be specified for each of the agent, operator, and admin interfaces.
+
+===== PKI Instances =====
+Each Dogtag 10 Tomcat 7-based instance (hereafter referred to as simply a PKI instance) must consist of at least one of these PKI subsystems, and may consist of any combination of these PKI subsystems with the limitation of up to one of each single type of PKI subsystem per PKI instance.  For example:
+* CA
+* DRM
+* CA, OCSP
+* CA, DRM, OCSP, TKS, TPS
+* etc.
+
+Each individual PKI instance is currently defined by the following characteristics:
+* a single IP address
+* a unique PKI instance name associated with this IP address
+* an unsecure http port
+* a secure https port
+* a unique Tomcat 7 AJP port
+* a unique Tomcat 7 server port used for shutting down the PKI instance
+* differentiation of an individual PKI subsystem type inside of a PKI instance via a unique URL path
+
+For example, given three PKI instances installed on the same machine (hostname) where:
+* the first IP instance (e. g. - pki-tomcat) contains a CA subsystem which utilizes no IP separation of its PKI interfaces,
+* the second IP instance (e. g. - pki-tomcat-1) contains a CA subsystem that contains partial IP separation of its PKI interfaces, and
+* the third PKI instance (e. g. - pki-tomcat-2) contains a CA subsystem and a KRA subsystem utilizing complete IP separation of all of its PKI interfaces,
+the following interfaces may be differentiated from each other by unique '''[<protocol>://<hostname>:<port>/<path>]''' on one or more of these interfaces:
+
+<ul>
+<table border=1>
+<tr>
+<th bgcolor="lightgrey">PKI Hostname</th>
+<th bgcolor="lightgrey">PKI Instance Name (first)</th>
+<th bgcolor="lightgrey">PKI Subsystem</th>
+<th bgcolor="lightgrey">PKI Connection Type</th>
+<th bgcolor="lightgrey">PKI Interface</th>
+<th bgcolor="lightgrey">PKI Path</th>
+<th bgcolor="lightgrey">PKI URL</th>
+</tr>
+<tr>
+<td>pki-ip-host.example.com</td>
+<td>pki-tomcat</td>
+<td>CA</td>
+<td>unsecure</td>
+<td>End-Entity</td>
+<td>ca/ee/ca</td>
+<td>http://pki-ip-host.example.com:8080/ca/ee/ca</td>
+</tr>
+<tr>
+<td>pki-ip-host.example.com</td>
+<td>pki-tomcat</td>
+<td>CA</td>
+<td>secure</td>
+<td>End-Entity</td>
+<td>ca/ee/ca</td>
+<td>https://pki-ip-host.example.com:8443/ca/ee/ca</td>
+</tr>
+<tr>
+<td>pki-ip-host.example.com</td>
+<td>pki-tomcat</td>
+<td>CA</td>
+<td>secure</td>
+<td>Agent</td>
+<td>ca/agent/ca</td>
+<td>https://pki-ip-host.example.com:8443/ca/agent/ca</td>
+</tr>
+<tr>
+<td>pki-ip-host.example.com</td>
+<td>pki-tomcat</td>
+<td>CA</td>
+<td>secure</td>
+<td>Administrator</td>
+<td>ca/admin/ca</td>
+<td>https://pki-ip-host.example.com:8443/ca/admin/ca</td>
+</tr>
+<tr>
+<th bgcolor="lightgrey">PKI Hostname</th>
+<th bgcolor="lightgrey">PKI Instance Name (second)</th>
+<th bgcolor="lightgrey">PKI Subsystem</th>
+<th bgcolor="lightgrey">PKI Connection Type</th>
+<th bgcolor="lightgrey">PKI Interface</th>
+<th bgcolor="lightgrey">PKI Path</th>
+<th bgcolor="lightgrey">PKI URL</th>
+</tr>
+<tr>
+<td>pki-ip-host.example.com</td>
+<td>pki-tomcat-1</td>
+<td>CA</td>
+<td>unsecure</td>
+<td>End-Entity</td>
+<td>ca/ee/ca</td>
+<td>http://pki-ca-ee.example.com:18080/ca/ee/ca</td>
+</tr>
+<tr>
+<td>pki-ip-host.example.com</td>
+<td>pki-tomcat-1</td>
+<td>CA</td>
+<td>secure</td>
+<td>End-Entity</td>
+<td>ca/ee/ca</td>
+<td>https://pki-ca-ee.example.com:18443/ca/ee/ca</td>
+</tr>
+<tr>
+<td>pki-ip-host.example.com</td>
+<td>pki-tomcat-1</td>
+<td>CA</td>
+<td>secure</td>
+<td>Agent</td>
+<td>ca/agent/ca</td>
+<td>https://pki-ca-agent.example.com:18443/ca/agent/ca</td>
+</tr>
+<tr>
+<td>pki-ip-host.example.com</td>
+<td>pki-tomcat-1</td>
+<td>CA</td>
+<td>secure</td>
+<td>Administrator</td>
+<td>ca/admin/ca</td>
+<td>https://pki-ip-host.example.com:18443/ca/admin/ca</td>
+</tr>
+<tr>
+<th bgcolor="lightgrey">PKI Hostname</th>
+<th bgcolor="lightgrey">PKI Instance Name (third)</th>
+<th bgcolor="lightgrey">PKI Subsystem</th>
+<th bgcolor="lightgrey">PKI Connection Type</th>
+<th bgcolor="lightgrey">PKI Interface</th>
+<th bgcolor="lightgrey">PKI Path</th>
+<th bgcolor="lightgrey">PKI URL</th>
+</tr>
+<tr>
+<td>pki-ip-host.example.com</td>
+<td>pki-tomcat-2</td>
+<td>CA</td>
+<td>unsecure</td>
+<td>End-Entity</td>
+<td>ca/ee/ca</td>
+<td>http://pki-ca-ee.example.com:28080/ca/ee/ca</td>
+</tr>
+<tr>
+<td>pki-ip-host.example.com</td>
+<td>pki-tomcat-2</td>
+<td>CA</td>
+<td>secure</td>
+<td>End-Entity</td>
+<td>ca/ee/ca</td>
+<td>https://pki-ca-ee.example.com:28443/ca/ee/ca</td>
+</tr>
+<tr>
+<td>pki-ip-host.example.com</td>
+<td>pki-tomcat-2</td>
+<td>CA</td>
+<td>secure</td>
+<td>Agent</td>
+<td>ca/agent/ca</td>
+<td>https://pki-ca-agent.example.com:28443/ca/agent/ca</td>
+</tr>
+<tr>
+<td>pki-ip-host.example.com</td>
+<td>pki-tomcat-2</td>
+<td>CA</td>
+<td>secure</td>
+<td>Administrator</td>
+<td>ca/admin/ca</td>
+<td>https://pki-ca-admin.example.com:28443/ca/admin/ca</td>
+</tr>
+<tr>
+<td>pki-ip-host.example.com</td>
+<td>pki-tomcat-2</td>
+<td>DRM</td>
+<td>unsecure</td>
+<td>End-Entity</td>
+<td>kra/ee/kra</td>
+<td>http://pki-kra-ee.example.com:28080/kra/ee/kra</td>
+</tr>
+<tr>
+<td>pki-ip-host.example.com</td>
+<td>pki-tomcat-2</td>
+<td>DRM</td>
+<td>secure</td>
+<td>End-Entity</td>
+<td>kra/ee/kra</td>
+<td>https://pki-kra-ee.example.com:28443/kra/ee/kra</td>
+</tr>
+<tr>
+<td>pki-ip-host.example.com</td>
+<td>pki-tomcat-2</td>
+<td>DRM</td>
+<td>secure</td>
+<td>Agent</td>
+<td>kra/agent/kra</td>
+<td>https://pki-kra-agent.example.com:28443/kra/agent/kra</td>
+</tr>
+<tr>
+<td>pki-ip-host.example.com</td>
+<td>pki-tomcat-2</td>
+<td>DRM</td>
+<td>secure</td>
+<td>Administrator</td>
+<td>kra/admin/kra</td>
+<td>https://pki-kra-admin.example.com:28443/kra/admin/kra</td>
+</tr>
+</table>
+</ul>
+
+=== High-Level Design ===
+==== 'default.cfg' ====
+The following variables will be added to the following [SECTION]s:
+    [CA]
+    pki_admin_hostname=%(pki_hostname)s
+    pki_agent_hostname=%(pki_hostname)s
+    pki_ee_hostname=%(pki_hostname)s
+    [KRA]
+    pki_admin_hostname=%(pki_hostname)s
+    pki_agent_hostname=%(pki_hostname)s
+    pki_ee_hostname=%(pki_hostname)s
+    [OCSP]
+    pki_admin_hostname=%(pki_hostname)s
+    pki_agent_hostname=%(pki_hostname)s
+    pki_ee_hostname=%(pki_hostname)s
+    [TKS]
+    pki_admin_hostname=%(pki_hostname)s
+    pki_agent_hostname=%(pki_hostname)s
+    pki_ee_hostname=%(pki_hostname)s
+    [TPS]
+    pki_admin_hostname=%(pki_hostname)s
+    pki_agent_hostname=%(pki_hostname)s
+    pki_operator_hostname=%(pki_hostname)s
+
+==== 'pkislots.cfg' ====
+The following variables will be added to the [Tomcat] section:
+    PKI_ADMIN_HOSTNAME_SLOT=[PKI_ADMIN_HOSTNAME]
+    PKI_AGENT_HOSTNAME_SLOT=[PKI_AGENT_HOSTNAME]
+    PKI_EE_HOSTNAME_SLOT=[PKI_EE_HOSTNAME]
+    PKI_OPERATOR_HOSTNAME_SLOT=[PKI_OPERATOR_HOSTNAME]
+
+==== 'pkispawn' ====
+The following slot variables will be added to the 'pkiparser.py' file:
+
+    self.pki_master_dict['PKI_ADMIN_HOSTNAME_SLOT'] = \
+        self.pki_master_dict['pki_admin_hostname']
+    self.pki_master_dict['PKI_AGENT_HOSTNAME_SLOT'] = \
+        self.pki_master_dict['pki_agent_hostname']
+    self.pki_master_dict['PKI_EE_HOSTNAME_SLOT'] = \
+        self.pki_master_dict['pki_ee_hostname']
+    self.pki_master_dict['PKI_OPERATOR_HOSTNAME_SLOT'] = \
+        self.pki_master_dict['pki_operator_hostname']
+
+The 'pki_hostname' variable will still be computed, and its value will be used as a default value for each specified 'default.cfg' [SECTION] as defined above.
+
+However, the usage of the 'pki_hostname' and 'hostname' variables within the 'pkihelper.py' and 'pkiparser.py' files will need to be reviewed and changed as necessary.
+
+==== 'server.xml' ====
+The 'PKI Status Definition' section will be altered to reference the new individual hostnames:
+<pre>
+    <!-- DO NOT REMOVE - Begin PKI Status Definitions -->
+    <!-- CA Status Definitions -->
+    <!--
+    Unsecure URL        = http://[PKI_EE_HOSTNAME]:[PKI_UNSECURE_PORT]/ca/ee/ca
+    Secure Agent URL    = https://[PKI_AGENT_HOSTNAME]:[PKI_AGENT_SECURE_PORT]/ca/agent/ca
+    Secure EE URL       = https://[PKI_EE_HOSTNAME]:[PKI_EE_SECURE_PORT]/ca/ee/ca
+    Secure Admin URL    = https://[PKI_ADMIN_HOSTNAME]:[PKI_ADMIN_SECURE_PORT]/ca/services
+    EE Client Auth URL  = https://[PKI_EE_HOSTNAME]:[PKI_EE_SECURE_CLIENT_AUTH_PORT]/ca/eeca/ca
+    PKI Console Command = pkiconsole https://[PKI_ADMIN_HOSTNAME]:[PKI_ADMIN_SECURE_PORT]/ca
+    Tomcat Port         = [TOMCAT_SERVER_PORT] (for shutdown)
+    -->
+    <!-- KRA Status Definitions -->
+    <!--
+    Unsecure URL        = http://[PKI_EE_HOSTNAME]:[PKI_UNSECURE_PORT]/kra/ee/kra
+    Secure Agent URL    = https://[PKI_AGENT_HOSTNAME]:[PKI_AGENT_SECURE_PORT]/kra/agent/kra
+    Secure EE URL       = https://[PKI_EE_HOSTNAME]:[PKI_EE_SECURE_PORT]/kra/ee/kra
+    Secure Admin URL    = https://[PKI_ADMIN_HOSTNAME]:[PKI_ADMIN_SECURE_PORT]/kra/services
+    PKI Console Command = pkiconsole https://[PKI_ADMIN_HOSTNAME]:[PKI_ADMIN_SECURE_PORT]/kra
+    Tomcat Port         = [TOMCAT_SERVER_PORT] (for shutdown)
+    -->
+    <!-- OCSP Status Definitions -->
+    <!--
+    Unsecure URL        = http://[PKI_EE_HOSTNAME]:[PKI_UNSECURE_PORT]/ocsp/ee/ocsp
+    Secure Agent URL    = https://[PKI_AGENT_HOSTNAME]:[PKI_AGENT_SECURE_PORT]/ocsp/agent/ocsp
+    Secure EE URL       = https://[PKI_EE_HOSTNAME]:[PKI_EE_SECURE_PORT]/ocsp/ee/ocsp
+    Secure Admin URL    = https://[PKI_ADMIN_HOSTNAME]:[PKI_ADMIN_SECURE_PORT]/ocsp/services
+    PKI Console Command = pkiconsole https://[PKI_ADMIN_HOSTNAME]:[PKI_ADMIN_SECURE_PORT]/ocsp
+    Tomcat Port         = [TOMCAT_SERVER_PORT] (for shutdown)
+    -->
+    <!-- TKS Status Definitions -->
+    <!--
+    Unsecure URL        = http://[PKI_EE_HOSTNAME]:[PKI_UNSECURE_PORT]/tks/ee/tks
+    Secure Agent URL    = https://[PKI_AGENT_HOSTNAME]:[PKI_AGENT_SECURE_PORT]/tks/agent/tks
+    Secure EE URL       = https://[PKI_EE_HOSTNAME]:[PKI_EE_SECURE_PORT]/tks/ee/tks
+    Secure Admin URL    = https://[PKI_ADMIN_HOSTNAME]:[PKI_ADMIN_SECURE_PORT]/tks/services
+    PKI Console Command = pkiconsole https://[PKI_ADMIN_HOSTNAME]:[PKI_ADMIN_SECURE_PORT]/tks
+    Tomcat Port         = [TOMCAT_SERVER_PORT] (for shutdown)
+    -->
+    <!-- TPS Status Definitions -->
+    <!--
+    Unsecure URL        = http://[PKI_OPERATOR_HOSTNAME]:[PKI_UNSECURE_PORT]/tps/operator/tps
+    Secure Agent URL    = https://[PKI_AGENT_HOSTNAME]:[PKI_AGENT_SECURE_PORT]/tps/agent/tps
+    Secure EE URL       = https://[PKI_OPERATOR_HOSTNAME]:[PKI_EE_SECURE_PORT]/tps/operator/tps
+    Secure Admin URL    = https://[PKI_ADMIN_HOSTNAME]:[PKI_ADMIN_SECURE_PORT]/tps/services
+    PKI Console Command = pkiconsole https://[PKI_ADMIN_HOSTNAME]:[PKI_ADMIN_SECURE_PORT]/tps
+    Tomcat Port         = [TOMCAT_SERVER_PORT] (for shutdown)
+    -->
+    <!-- DO NOT REMOVE - End PKI Status Definitions -->
+</pre>
+
+<font color="RED">'''TBD'''</font>
+
+==== PKI Security Domain ====
+Apply the following changes to the security domain:
+* Create the 'AgentHost', 'EEHost', 'AdminHost', 'EEClientAuthHost', and 'OperatorHost' attributes as syntax type 1.3.6.1.4.1.1466.115.121.1.15 (Directory String)
+* Add 'AgentHost', 'EEHost', 'AdminHost', 'EEClientAuthHost', and 'OperatorHost' to the MAY section of 'pkiSubsystem-oid' objectClass
+
+==== SSL Server Certificates ====
+The subject name of each PKI subsystem's SSL server certificate shall always reference the FQDN of the EE hostname.  For example:
+
+    Subject: CN=pki-ca-ee.example.com,OU=pki-ca,O=Example Domain
+
+Additionally, whenever any PKI subsystem is installed using any type of IP port separation, a PKI subsystem's SSL server certificate shall also always contain a subject alternative name extension which will contain a 'DNSName' entry for each unique hostname specified during the '''''pkispawn''''' installation process.  The first value will always reflect the DNS name of the machine referenced in the certificate's subject name. For example:
+
+    Identifier: Subject Alternative Name - 2.5.29.17
+        Critical: no 
+        Value: 
+            DNSName: pki-ca-ee.example.com
+            DNSName: pki-ca-agent.example.com
+            DNSName: pki-ca-admin.example.com
+
+<font color="RED">'''TBD'''</font>
+=== Low-Level Design ===
+
+== Implementation ==
+<table>
+<tr>
+<td valign="top">
+<font color="RED">'''IMPORTANT: &nbsp;&nbsp;</font>
+</td>
+<td valign="top">
+<font color="RED">Although this design document is entitled '''IP Port Separation''', at least initially, for the purposes of implementing this feature for Dogtag 10, only '''IP Separation''' will be implemented.</font>
+</td>
+</tr>
+</table>
+
+=== Virtual IPs ===
+No matter which port configuration mode is chosen, the PKI subsystem will be installed in its totality on a single installation host (i. e. - any given CA subsystem which specifies separate virtual IP interfaces for HTTP EE, HTTPS agent, HTTPS EE, HTTPS admin, and HTTPS EE clientauth must be installed on a single host which contains the Tomcat server; individual PKI subsystems such as a second CA, a DRM, etc. may reside on the same or different hosts provided that each PKI interface is unique across all of the PKI subsystems).
+
+In order to gain the flexibility provided by IP port separation, it is first necessary to establish IP addresses that will be utilized for each of the desired interfaces on this installation host.  The following IP addresses and FQDN hostnames are provided as examples:
+
+    127.0.0.1     localhost.localdomain localhost
+    ::1           localhost6.localdomain6 localhost6
+    10.14.1.11    pki-ip-host.example.com pki-ip-host
+    10.14.1.21    pki-ca-admin.example.com pki-ca-admin
+    10.14.1.22    pki-ca-agent.example.com pki-ca-agent
+    10.14.1.23    pki-ca-ee.example.com pki-ca-ee
+    10.14.1.24    pki-ca-ee-ca.example.com pki-ca-ee-ca
+    10.14.1.31    pki-kra-admin.example.com pki-kra-admin
+    10.14.1.32    pki-kra-agent.example.com pki-kra-agent
+    10.14.1.33    pki-kra-ee.example.com pki-kra-ee
+    10.14.1.41    pki-ocsp-admin.example.com pki-ocsp-admin
+    10.14.1.42    pki-ocsp-agent.example.com pki-ocsp-agent
+    10.14.1.43    pki-ocsp-ee.example.com pki-ocsp-ee
+    10.14.1.51    pki-tks-admin.example.com pki-tks-admin
+    10.14.1.52    pki-tks-agent.example.com pki-tks-agent
+    10.14.1.53    pki-tks-ee.example.com pki-tks-ee
+    10.14.1.61    pki-tps-admin.example.com pki-tps-admin
+    10.14.1.62    pki-tps-agent.example.com pki-tps-agent
+    10.14.1.63    pki-tps-operator.example.com pki-tps-operator
+    10.14.1.71    pki-subca-admin.example.com pki-subca-admin
+    10.14.1.72    pki-subca-agent.example.com pki-subca-agent
+    10.14.1.73    pki-subca-ee.example.com pki-subca-ee
+    10.14.1.74    pki-subca-ee-ca.example.com pki-subca-ee-ca
+
+After setting up an installation host and establishing its network, create virtual IP network addresses on the same NIC which will provide the ability to specify separate IP addresses for each desired PKI interface.
+
+=== IPTables ===
+When a user chooses to utilize a proxy (e. g. - in order to utilize ports less than 1024), the user may want to create something similar to the following scripts:
+
+    '''reset_iptables''':
+    
+        #!/bin/bash
+        IPTABLES="$(which iptables)"
+        
+        # RESET DEFAULT POLICIES
+        ${IPTABLES} -P INPUT ACCEPT
+        ${IPTABLES} -P FORWARD ACCEPT
+        ${IPTABLES} -P OUTPUT ACCEPT
+        ${IPTABLES} -t nat -P PREROUTING ACCEPT
+        ${IPTABLES} -t nat -P POSTROUTING ACCEPT
+        ${IPTABLES} -t nat -P OUTPUT ACCEPT
+        ${IPTABLES} -t mangle -P PREROUTING ACCEPT
+        ${IPTABLES} -t mangle -P OUTPUT ACCEPT
+        
+        # FLUSH ALL RULES, ERASE NON-DEFAULT CHAINS
+        ${IPTABLES} -F
+        ${IPTABLES} -X
+        ${IPTABLES} -t nat -F
+        ${IPTABLES} -t nat -X
+        ${IPTABLES} -t mangle -F
+        ${IPTABLES} -t mangle -X
+
+The following '''set_pki_proxy_iptables''' script is an example of what would be written for a CA using a proxy:
+
+    '''set_pki_proxy_iptables''':
+    
+        #!/bin/bash
+        IPTABLES="$(which iptables)"
+        
+        # SPECIFY EXTERNAL PKI HOSTNAMES
+        CA_AGENT_EXTERNAL_HOSTNAME=pki-ca-agent.example.com
+        CA_EE_EXTERNAL_HOSTNAME=pki-ca-ee.example.com
+        CA_ADMIN_EXTERNAL_HOSTNAME=pki-ca-admin.example.com
+        CA_EECA_EXTERNAL_HOSTNAME=pki-ca-ee-ca.example.com
+        
+        # SPECIFY INTERNAL PKI HOSTNAMES
+        CA_AGENT_INTERNAL_HOSTNAME=pki-ca-agent.example.com
+        CA_EE_INTERNAL_HOSTNAME=pki-ca-ee.example.com
+        CA_ADMIN_INTERNAL_HOSTNAME=pki-ca-admin.example.com
+        CA_EECA_INTERNAL_HOSTNAME=pki-ca-ee-ca.example.com
+        
+        # SPECIFY EXTERNAL PKI IP ADDRESSES
+        CA_AGENT_EXTERNAL_IP=10.14.1.22
+        CA_EE_EXTERNAL_IP=10.14.1.23
+        CA_ADMIN_EXTERNAL_IP=10.14.1.21
+        CA_EECA_EXTERNAL_IP=10.14.1.24
+        
+        # SPECIFY INTERNAL PKI IP ADDRESSES
+        CA_AGENT_INTERNAL_IP=10.14.1.22
+        CA_EE_INTERNAL_IP=10.14.1.23
+        CA_ADMIN_INTERNAL_IP=10.14.1.21
+        CA_EECA_INTERNAL_IP=10.14.1.24
+        
+        # SPECIFY EXTERNAL PKI PORTS
+        CA_EE_HTTP_EXTERNAL_PORT=80
+        CA_AGENT_HTTPS_EXTERNAL_PORT=443
+        CA_EE_HTTPS_EXTERNAL_PORT=443
+        CA_ADMIN_HTTPS_EXTERNAL_PORT=443
+        CA_EECA_HTTPS_EXTERNAL_PORT=443
+        
+        # SPECIFY INTERNAL PKI PORTS
+        CA_EE_HTTP_INTERNAL_PORT=8080
+        CA_AGENT_HTTPS_INTERNAL_PORT=8443
+        CA_EE_HTTPS_INTERNAL_PORT=8443
+        CA_ADMIN_HTTPS_INTERNAL_PORT=8443
+        CA_EECA_HTTPS_INTERNAL_PORT=8443
+        
+        # ESTABLISH "EXTERNAL IP:EXTERNAL PORT" --> "INTERNAL IP:INTERNAL PORT"
+        #
+        #     http://pki-ca-ee.example.com:80 -->
+        #     http://pki-ca-ee.example.com:8080
+        #
+        ${IPTABLES} -t nat -A PREROUTING -p tcp -d ${CA_EE_EXTERNAL_IP} --dport ${CA_EE_HTTP_EXTERNAL_PORT} -j DNAT --to-destination ${CA_EE_INTERNAL_IP}:${CA_EE_HTTP_INTERNAL_PORT}
+        ${IPTABLES} -A INPUT -m state --state NEW -p tcp -d ${CA_EE_INTERNAL_IP} --dport ${CA_EE_HTTP_INTERNAL_PORT} -j ACCEPT
+        #
+        #     https://pki-ca-agent.example.com:443 -->
+        #     https://pki-ca-agent.example.com:8443
+        #
+        ${IPTABLES} -t nat -A PREROUTING -p tcp -d ${CA_AGENT_EXTERNAL_IP} --dport ${CA_AGENT_HTTPS_EXTERNAL_PORT} -j DNAT --to-destination ${CA_AGENT_INTERNAL_IP}:${CA_AGENT_HTTPS_INTERNAL_PORT}
+        ${IPTABLES} -A INPUT -m state --state NEW -p tcp -d ${CA_AGENT_INTERNAL_IP} --dport ${CA_AGENT_HTTPS_INTERNAL_PORT} -j ACCEPT
+        #
+        #     https://pki-ca-ee.example.com:443 -->
+        #     https://pki-ca-ee.example.com:8443
+        #
+        ${IPTABLES} -t nat -A PREROUTING -p tcp -d ${CA_EE_EXTERNAL_IP} --dport ${CA_EE_HTTPS_EXTERNAL_PORT} -j DNAT --to-destination ${CA_EE_INTERNAL_IP}:${CA_EE_HTTPS_INTERNAL_PORT}
+        ${IPTABLES} -A INPUT -m state --state NEW -p tcp -d ${CA_EE_INTERNAL_IP} --dport ${CA_EE_HTTPS_INTERNAL_PORT} -j ACCEPT
+        #
+        #     https://pki-ca-admin.example.com:443 -->
+        #     https://pki-ca-admin.example.com:8443
+        #
+        ${IPTABLES} -t nat -A PREROUTING -p tcp -d ${CA_ADMIN_EXTERNAL_IP} --dport ${CA_ADMIN_HTTPS_EXTERNAL_PORT} -j DNAT --to-destination ${CA_ADMIN_INTERNAL_IP}:${CA_ADMIN_HTTPS_INTERNAL_PORT}
+        ${IPTABLES} -A INPUT -m state --state NEW -p tcp -d ${CA_ADMIN_INTERNAL_IP} --dport ${CA_ADMIN_HTTPS_INTERNAL_PORT} -j ACCEPT
+        #
+        #     https://pki-ca-ee-ca.example.com:443 -->
+        #     https://pki-ca-ee-ca.example.com:8443
+        #
+        ${IPTABLES} -t nat -A PREROUTING -p tcp -d ${CA_EECA_EXTERNAL_IP} --dport ${CA_EECA_HTTPS_EXTERNAL_PORT} -j DNAT --to-destination ${CA_EECA_INTERNAL_IP}:${CA_EECA_HTTPS_INTERNAL_PORT}
+        ${IPTABLES} -A INPUT -m state --state NEW -p tcp -d ${CA_EECA_INTERNAL_IP} --dport ${CA_EECA_HTTPS_INTERNAL_PORT} -j ACCEPT
+
+'''NOTE:&nbsp;&nbsp;''' If an Apache server is used as a proxy, iptables must be configured and the user must set 'pki_enable_proxy=True' prior to running '''pkispawn'''.
+=== Instance Separation ===
+Dogtag 10 currently allows separation of multiple PKI instances containing the same subsystem to co-exist on the same machine as long as they are separated by some sort of IP Port Separation.
+
+One potential implementation methodology to separate instances of the same subsystem on the same machine may utilize the notion of Linux Containers:
+* [http://linuxcontainers.org/ Linux Containers (LXC)]
+** [https://www.berrange.com/topics/libvirt/ libvirt]
+** [http://wiki.libvirt.org/page/Networking libvirt Networking]
+** [https://fedoraproject.org/wiki/Features/VirtSandbox Fedora Linux Containers]
+** [http://fedoraproject.org/wiki/Features/Securecontainers Secure Fedora Linux Containers (utilizing SELinux)]
+** [http://danwalsh.livejournal.com/59144.html Secure Linux Containers]
+** [http://www.cberendt.de/2013/01/sandboxing-services-using-virt-sandbox-service/ Sandboxing services using virt-sandbox-service]
+** [http://libvirt.org/drvlxc.html libvirt: LXC container driver]
+** [https://www.usenix.org/conference/lisa13/secure-linux-containers Secure Fedora Linux Containers (Video Presentation)]
+
+=== Interface Separation ===
+Each PKI subsystem contained within a PKI instance contains multiple distinct interfaces (e. g. - a CA contains an unsecure End-Entity interface, a secure End-Entity interface, an Agent interface, and an Administration interface).
+
+Currently, regardless of what form of IP Port Separation is chosen, access to these interfaces may be separated via ACLs based upon the deployment policy:
+* End-Entity interfaces require no certificate for client authentication whereas the Agent and Administration interfaces require a common certificate for client authentication (default)
+* End-Entity interfaces require no certificate for client authentication whereas the Agent interface and Administration interfaces require separate distinct certificates for client authentication
+
+Additionally, different forms of IP Port Separation could be utilized to provide interface separation based upon user roles (i. e. - distinct URLs to different interfaces within a common PKI subsystem existing inside a given PKI instance).
+
+It has been proposed that one means of accomplishing this may be through the use of one or more of the various Tomcat 7 '''server.xml''' configurations using the slot substitution method available via '''pkispawn''':
+* [http://tomcat.apache.org/tomcat-7.0-doc/api/index.html Tomcat 7 Javadocs]
+* [http://tomcat.apache.org/tomcat-7.0-doc/config/ Apache Tomcat 7 Configuration Directives for 'server.xml']
+** [http://tomcat.apache.org/tomcat-7.0-doc/realm-howto.html Tomcat 7 Realm Configuration HOW-TO]
+** [http://tomcat.apache.org/tomcat-7.0-doc/config/http.html Tomcat 7 Connector Component]
+** [http://tomcat.apache.org/tomcat-7.0-doc/config/valve.html Tomcat 7 Valve Component]
+*** Remote Address Valve (Raw IP Addresses)
+*** Remote Host Valve (DNS Hostnames -- requires HTTP Connector sets "enableLookups=true")
+*** [http://tomcat.apache.org/tomcat-7.0-doc/config/valve.html#Remote_IP_Valve Remote IP Valve (may be especially useful when a proxy or load balancer is utilized)]
+and/or through the use of one or more of the various Tomcat 7 '''web.xml''' configurations using the slot substitution method available via '''pkispawn''':
+* [http://tomcat.apache.org/tomcat-7.0-doc/config/filter.html Tomcat 7 Filters]
+** [http://tomcat.apache.org/tomcat-7.0-doc/config/filter.html#Remote_IP_Filter Remote IP Filter (may be especially useful when a proxy or load balancer is utilized)]
+** [http://tomcat.apache.org/tomcat-7.0-doc/config/filter.html#Remote_Address_Filter Remote Address Filter (Raw IP Addresses)]
+** [http://tomcat.apache.org/tomcat-7.0-doc/config/filter.html#Remote_Host_Filter Remote Host Filter (DNS Hostnames -- requires HTTP Connector sets "enableLookups=true")]
+
+== Major configuration options and enablement ==
+==== 'default.cfg' ====
+The default values contained in this file can be easily overriden through the use of an overlay configuration file during invocation of 'pkispawn -s <PKI> -f <overlay configuration file>'.
+
+For example:
+
+    # vi /tmp/pki/ca.cfg
+    
+      [DEFAULT]
+      pki_admin_password=<password>
+      pki_client_pkcs12_password=<password>
+      pki_ds_password=<password>
+      pki_security_domain_password=<password>
+      [CA]
+      pki_admin_hostname=pki-ca-admin.example.com
+      pki_agent_hostname=pki-ca-agent.example.com
+      pki_ee_hostname=pki-ca-ee.example.com
+    
+    # pkispawn -s CA -f /tmp/pki/ca.cfg
+
+== Cloning ==
+<font color="RED">'''TBD'''</font>
+
+== Updates and Upgrades ==
+<font color="RED">'''TBD'''</font>
+
+== Tests ==
+<font color="RED">'''TBD'''</font>
+
+== Dependencies ==
+<font color="RED">'''TBD'''</font>
+
+== Packages ==
+<font color="RED">'''TBD'''</font>
+
+== External Impact ==
+<font color="RED">'''TBD'''</font>
+
+== History ==
+'''ORIGINAL DESIGN DATE:&nbsp;&nbsp;''' November 8, 2013

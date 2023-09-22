@@ -1,0 +1,106 @@
+= Overview =
+
+This document describes a general systematic testing strategy using several stages. Each stage focuses on certain areas with well-defined boundaries. The result of each stage will show the confidence level of the test areas which will be used as a basis for the subsequent stage.
+
+The actual test coverage will be described in a separate Test Plan.
+
+= Unit Tests =
+
+See also [[Unit Tests]].
+
+Purpose:
+* Validate that each component is working correctly.
+
+Strategy:
+* Validate that the code compiles without error.
+* Validate that the components (e.g. classes, methods) works correctly in isolated environment (i.e. outside server environment).
+
+= Build Tests =
+
+Purpose:
+* Validate that the packages are built correctly.
+
+Assumption:
+* The unit test passed sufficiently.
+
+Strategy:
+* Validate that the packages can be installed and have the correct content.
+* Validate that the executables are minimally working.
+
+= Functional Tests =
+
+See also [[Functional Tests]].
+
+== Server Tests ==
+
+Purpose:
+* Validate that the server is working correctly.
+
+Assumption:
+* The build test passed sufficiently.
+* Third-party tools/libraries are working correctly.
+
+Strategy:
+* Validate that the server can be installed under various scenarios (e.g. CA/KRA, cloning, HSM, FIPS).
+* Validate that the server can be configured after installation (e.g. port, profiles).
+* Validate that the server performs and responds correctly given various pre-recorded inputs using third-party tools/libraries.
+* Validate that the server performs correctly without input (e.g. background tasks).
+
+Third-party tools:
+* wget
+* curl
+* Firefox
+
+Third-party libraries:
+* python-requests
+* Apache HTTP client
+
+Notes:
+* The pre-recorded inputs can be prepared by capturing the requests sent by the client.
+* The server output can be validated against by the responses normally received by the client.
+* Server test using a particular client will only validate the server for that particular client, whereas server test using pre-recorded input will validate the server for all clients.
+* Pre-recorded input can be used for performance testing.
+
+== Client Tests ==
+
+Purpose:
+* Validate that the clients (i.e. client library, CLI, UI) are working correctly.
+
+Assumption:
+* The server test passed sufficiently.
+
+Strategy:
+* Validate that clients can connect to server under various scenarios (e.g. HTTP/HTTPS, password/client cert).
+* Validate that input parameters are processed correctly and converted into the correct requests (e.g. XML/JSON requests).
+* Validate that server responses are processed properly and converted into the correct output.
+
+= Performance Tests =
+
+Purpose:
+* Validate that the server can achieve and sustain the required performance level.
+
+Assumption:
+* The server test passed sufficiently. 
+
+Strategy:
+* Validate that the server can perform with sufficient throughput for a given client.
+* Validate that the server can sufficiently handle up to the maximum number of supported simultaneous clients.
+* Validate that the server will gracefully handle loads greater than the supported limit.
+
+= Release/Smoke Tests =
+
+See also [[Smoke Tests]].
+
+Purpose:
+* Validate that everything is ready for release.
+
+Assumption:
+* All other tests passed sufficiently.
+
+Strategy:
+* Validate common scenarios that involve important components (e.g. install CA and issue cert via CLI and UI).
+
+= References =
+
+* [[Continuous Integration]]
+* [[PKI Testing]]

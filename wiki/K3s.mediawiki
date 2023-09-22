@@ -1,0 +1,197 @@
+= Installing k3s =
+
+To install k3s directly:
+
+<pre>
+$ curl -sfL https://get.k3s.io | sh -
+</pre>
+
+To install k3s from source:
+
+<pre>
+$ git clone https://github.com/rancher/k3s.git
+$ cd k3s
+$ ./install.sh
+</pre>
+
+To verify the installation:
+
+<pre>
+$ kubectl get nodes
+NAME                    STATUS   ROLES    AGE    VERSION
+localhost.localdomain   Ready    master   4m6s   v1.17.3+k3s1
+</pre>
+
+The admin password is stored in /etc/rancher/k3s/k3s.yaml:
+
+<pre>
+users:
+- name: default
+  user:
+    password: <password>
+    username: admin
+</pre>
+
+To verify with a browser, open https://localhost.localdomain:6443/version.
+
+To troubleshoot issues:
+
+<pre>
+$ kubectl run -i -t busybox --image=radial/busyboxplus:curl --restart=Never
+</pre>
+
+To uninstall k3s:
+
+<pre>
+$ /usr/local/bin/k3s-uninstall.sh
+</pre>
+
+= k3s Configuration =
+
+The configuration file is located at /etc/rancher/k3s/k3s.yaml.
+
+= Shell Container =
+
+To run a shell container:
+
+<pre>
+$ kubectl apply -f https://k8s.io/examples/application/shell-demo.yaml
+$ kubectl exec -it shell-demo -- /bin/bash
+</pre>
+
+= Kubernetes Dashboard =
+
+To install Kubernetes Dashboard:
+
+<pre>
+$ kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-rc6/aio/deploy/recommended.yaml
+</pre>
+
+To create an admin user, prepare the following file (e.g. dashboard-adminuser.yaml):
+
+<pre>
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admin-user
+  namespace: kubernetes-dashboard
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: admin-user
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: admin-user
+  namespace: kubernetes-dashboard
+</pre>
+
+then execute:
+
+<pre>
+$ kubectl apply -f dashboard-adminuser.yaml
+</pre>
+
+To get the access token:
+
+<pre>
+$ kubectl -n kubernetes-dashboard describe secret $(kubectl -n kubernetes-dashboard get secret | grep admin-user | awk '{print $1}')
+</pre>
+
+To access the dashboard:
+
+<pre>
+$ kubectl proxy
+</pre>
+
+then open http://127.0.0.1:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+and enter the access token.
+
+See also [https://rancher.com/docs/k3s/latest/en/installation/kube-dashboard/ Kubernetes Dashboard].
+
+= k3s Systemd Service =
+
+The k3s service is started automatically on installation. To check the status of k3s service:
+
+<pre>
+$ systemctl status k3s
+</pre>
+
+= Installing cert-manager =
+
+To install cert-manager:
+
+<pre>
+$ kubectl create namespace cert-manager
+$ kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v0.14.0/cert-manager.yaml
+</pre>
+
+To verify the installation:
+
+<pre>
+$ kubectl get pods --namespace cert-manager
+NAME                                       READY   STATUS    RESTARTS   AGE
+cert-manager-cainjector-75b6bc7b8b-9595c   1/1     Running   0          12s
+cert-manager-6f578f4565-wqtnm              1/1     Running   0          12s
+cert-manager-webhook-8444c4bc77-k2ffg      0/1     Running   0          12s
+</pre>
+
+= Creating Certificate Issuer =
+
+To create an issuer, prepare the following file (e.g. acme.yaml):
+
+<pre>
+apiVersion: cert-manager.io/v1alpha2
+kind: ClusterIssuer
+metadata:
+  name: acme
+spec:
+  acme:
+    email: admin@example.com
+    privateKeySecretRef:
+      name: acme-account-key
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    solvers:
+      - http01:
+          ingress:
+            class: traefik
+        selector: {}
+</pre>
+
+Then execute the following:
+
+<pre>
+$ kubectl apply -f acme.yaml
+</pre>
+
+To verify the issuer:
+
+<pre>
+$ kubectl describe clusterissuer acme
+</pre>
+
+To see the logs:
+
+<pre>
+$ kubectl logs <cert-manager pod> --namespace cert-manager
+</pre>
+
+To remove the issuer:
+
+<pre>
+$ kubectl delete clusterissuer acme
+</pre>
+
+= See Also =
+
+* [https://www.k3s.io/ K3s]
+* [https://rancher.com/docs/k3s/latest/en/installation/install-options/ K3s: Installation Options]
+* [https://www.thebookofjoel.com/cheap-production-k3s-with-dashboard-ui Cheap K3s Kubernetes Cluster with Dashboard UI]
+* [https://www.thebookofjoel.com/k3s-cert-manager-letsencrypt TLS on K3s with traefik, cert manger and letsencrypt]
+* [https://github.com/kubernetes/dashboard kubernetes/dashboard]
+* [[Kubernetes]]
+* [https://github.com/dogtagpki/kubernetes/wiki/cert-manager cert-manager]

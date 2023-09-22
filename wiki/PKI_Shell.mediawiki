@@ -1,0 +1,41 @@
+= PKI Shell =
+
+In PKI 10.4 the PKI CLI provides a shell mode to run multiple commands.
+
+= Starting PKI Shell =
+
+To start PKI shell, invoke the PKI CLI without any command:
+
+<pre>
+$ pki [CLI arguments]
+pki>
+</pre>
+
+= Executing PKI Commands =
+
+PKI commands can be executed at "pki>" prompt:
+
+<pre>
+pki> ca user add testuser --fullName "Test User"
+---------------------
+Added user "testuser"
+---------------------
+  User ID: testuser
+  Full name: Test User
+pki> ca user del testuser
+-----------------------
+Deleted user "testuser"
+-----------------------
+</pre>
+
+= Exiting PKI Shell =
+
+To exit the shell mode:
+
+<pre>
+pki> exit
+</pre>
+
+= References =
+
+* [https://github.com/dogtagpki/pki/wiki/PKI-CLI PKI CLI]

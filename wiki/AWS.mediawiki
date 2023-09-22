@@ -1,0 +1,39 @@
+= Creating AWS Account =
+
+Create AWS account [https://portal.aws.amazon.com/billing/signup here].
+
+= Provisioning EC2 using Terraform =
+
+Create a test.tf:
+
+<pre>
+provider "aws" {
+  access_key = "..."
+  secret_key = "..."
+  region     = "us-east-1"
+}
+
+resource "aws_instance" "example" {
+  ami           = "ami-2757f631"
+  instance_type = "t2.micro"
+}
+</pre>
+
+Then execute:
+
+<pre>
+$ terraform apply
+</pre>
+
+= Connecting to AWS Instance =
+
+<pre>
+$ ssh -i aws.pem ec2-user@<hostname>
+</pre>
+
+= See Also =
+
+* [https://aws.amazon.com/ Amazon Web Services]
+* [https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html Managing Access Keys for IAM Users]
+* [https://read.acloud.guru/building-a-highly-scalable-resilient-rest-api-with-terraform-go-and-aws-94377b90fd24 How to use Terraform, Go, and AWS to build a scalable and resilient REST API]
+* [https://github.com/dogtagpki/kubernetes/wiki/OpenShift OpenShift]

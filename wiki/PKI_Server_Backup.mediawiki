@@ -1,0 +1,51 @@
+= Overview =
+
+This page describes the process to backup a PKI server that can be [[PKI Server Restore|restored]] in the future.
+
+= Backing up Server Files =
+
+See [https://github.com/dogtagpki/pki/wiki/Backing-Up-PKI-Server Backing Up PKI Server].
+
+= Backing up LDAP Database =
+
+To backup the main database:
+
+<pre>
+$ db2ldif -V -Z localhost \
+    -n userRoot \
+    -a /var/lib/dirsrv/slapd-localhost/ldif/userRoot.ldif
+</pre>
+
+To backup each subsystem database, check the database name used by each subsystem:
+
+<pre>
+$ pki-server ca-db-config-show
+  Hostname: localhost
+  Port: 389
+  Secure: false
+  Authentication: BasicAuth
+  Bind DN: cn=Directory Manager
+  Bind Password Prompt: internaldb
+  Database: ca
+  Base DN: dc=ca,dc=pki,dc=example,dc=com
+  Multiple suffix: false
+  Maximum connections: 15
+  Minimum connections: 3
+</pre>
+
+Then execute the following command:
+
+<pre>
+$ db2ldif -V -Z localhost \
+    -n ca \
+    -a /var/lib/dirsrv/slapd-localhost/ldif/ca.ldif
+</pre>
+
+'''Note:''' The output directory must be writable by dirsrv user.
+
+= See Also =
+
+* [[PKI Server]]
+* [[PKI Server Restore]]
+* [[DS Backup]]
+* [https://access.redhat.com/documentation/en-us/red_hat_certificate_system/9/html-single/administration_guide/index#Backing_up_and_Restoring_CRTS RHCS - Backing up and Restoring Certificate System]

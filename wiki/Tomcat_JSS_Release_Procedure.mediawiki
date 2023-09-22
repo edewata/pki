@@ -1,0 +1,149 @@
+= Authentication =
+
+Obtain a Kerberos ticket for Fedora Account.
+
+= Update Version and Release Numbers =
+
+Update the version numbers and release numbers in the spec templates.
+
+Pre-release (i.e. alpha, beta):
+* x.y.0-0.n
+
+Initial release:
+* x.y.0-1
+
+Updates (i.e. upstream bug fixes):
+* x.y.z-1
+
+Downstream patch (e.g. Fedora-specific patches):
+* x.y.z-r
+
+See also [https://fedoraproject.org/wiki/Packaging:Versioning Versioning].
+
+= Merge Spec Changes =
+
+Merge the spec template with actual spec file:
+
+ $ meld tomcatjss.spec.in ../Fedora/tomcatjss/tomcatjss.spec
+
+'''Note:''' Do not override changes that were done downstream unless they were done improperly.
+
+In the actual spec file, add a change log entry for the new release in downstream spec file (unless there is one already that has not been released):
+
+ * Mon Mar 29 2018 Dogtag PKI Team <pki-devel@redhat.com> - 7.3.0-1
+ - Rebased to Tomcat JSS 7.3.0
+
+'''Note:''' Do not add a change log entry in the upstream spec template.
+
+= Commit Upstream Changes =
+
+Commit all changes to upstream:
+
+ $ git commit -a -m "Updated version number to x.y.z-r"
+
+Create a local tag with the following commands:
+
+ $ git tag v7.3.0
+
+For pre-releases, append the phase name to the version number, e.g. v7.3.0-a1.
+
+= Update Source Tarball =
+
+Generate a tarball with the following command:
+
+ $ cd tomcatjss
+ $ ./build.sh --source-tag=v7.3.0 src
+
+Import the source tarball with the following commands:
+
+ $ cd Fedora/tomcatjss
+ $ fedpkg new-sources tomcatjss-7.3.0.tar.gz
+
+Then verify with the following command:
+
+ $ fedpkg local
+ $ fedpkg lint
+
+= Creating Test Build =
+
+Create a [[COPR]] build with the following commands:
+
+ $ fedpkg copr-build @pki/10.6 --nowait
+
+or create a scratch build with the following commands:
+
+ $ fedpkg srpm
+ $ fedpkg scratch-build --nowait --srpm tomcatjss-4.5.0-1.fc28.src.rpm
+
+Once the COPR build is complete, push the tag upstream:
+
+ $ cd tomcatjss
+ $ git push origin master
+ $ git push origin v7.3.0
+
+= Creating Koji Build for Rawhide =
+
+Once the COPR build is complete, commit the changes to master (i.e. rawhide):
+
+ $ cd Fedora/tomcatjss
+ $ git commit -m "Rebased to Tomcat JSS 7.3.0"
+ $ git push origin master
+
+Then create a Koji build:
+
+ $ fedpkg build --nowait
+
+If necessary, the task can be monitored with the following command:
+
+ $ koji watch-task <task ID>
+
+Once the build is complete, tag package repository:
+
+ $ git tag tomcatjss-7.3.0-1.fc29
+ $ git push origin tomcatjss-7.3.0-1.fc29
+
+= Creating Koji Build for Current Branch =
+
+Cherry pick the changes from master into the current branch (e.g. f28):
+
+ $ cd Fedora/<package>
+ $ git checkout <branch>
+ $ git cherry-pick <prev tag>..<current tag>
+ $ git push origin <branch>
+
+If nececessary, create BuildRoot overrides for unpublished dependencies, for example:
+
+<pre>
+$ bodhi overrides save tomcat-8.5.29-1.fc28
+$ koji wait-repo f28-build --build=tomcat-8.5.29-1.fc28
+</pre>
+
+Then create a Koji build:
+
+ $ fedpkg build --nowait
+
+If necessary, the task can be monitored with the following command:
+
+ $ koji watch-task <task ID>
+
+Tag package repository:
+
+ $ git tag tomcatjss-7.3.0-1.fc28
+ $ git push origin tomcatjss-7.3.0-1.fc28
+
+= Creating Bodhi Update for Current Branch =
+
+'''If updating multiple packages at the same time (e.g., pki-core), wait to push all of them together'''
+
+Submit a Bodhi update:
+
+ $ bodhi updates new \
+  --request=testing \
+  --notes="Update to TomcatJSS 7.3.0-1" \
+  --type=enhancement \
+ tomcatjss-7.3.0-1.fc28
+
+= References =
+
+* [[Tomcat JSS Fedora Development]]
+* [[PKI Release Procedure]]

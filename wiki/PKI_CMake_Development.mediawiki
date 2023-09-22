@@ -1,0 +1,602 @@
+= Overview =
+
+PKI uses CMake to generate Makefiles that will be used to build RPM packages. The RPM build process consists of the following steps:
+* Generating Makefiles from CMake scripts
+* Build the binaries
+* Run unit tests
+* Install the binaries
+
+= CMake =
+
+== Directory structure ==
+
+The CMake scripts are stored in files called CMakeLists.txt. The main script is located in the top of the source folder. It may include other scripts in other subfolders.
+
+<pre>
+PKI_SOURCE_DIR
++ CMakeLists.txt -- defines variables
++ base/
+  + CMakeLists.txt -- determines components to include
+  + common/
+    + CMakeLists.txt -- installs component
+    + python/
+    + shared/
+    + src/
+      + CMakeLists.txt -- builds and installs binaries
+    + test/
+      + CMakeLists.txt -- builds and runs test cases
+</pre>
+
+== Modules ==
+
+CMake standard modules are included in PKI's source repository to avoid build compatibility issues. The modules are stored in the cmake/Modules folder.
+
+<pre>
+PKI_SOURCE_DIR
++ cmake/
+  + Modules/
+    + Java.cmake
+    + JavaFileList.cmake
+    + JUnit.cmake
+      ...
+</pre>
+
+It includes custom modules that provide the following CMake commands:
+* javac: compile Java code
+* jar: build JAR file
+* javadoc: generate Javadoc
+* link: create symbolic link
+* add_junit_test: run unit tests
+
+== Variables ==
+
+The main CMake script defines the following variables:
+* APPLICATION_NAME: pki
+* VERSION: 10.0.1 -- actual release version
+* APPLICATION_VERSION: 10.0.1 -- compatibility version
+* APPLICATION_VERSION_MAJOR: 10
+* APPLICATION_VERSION_MINOR: 0
+* APPLICATION_VERSION_PATCH: 1
+
+Some variables are defined in DefineInstallationPaths module:
+* JAVA_LIB_INSTALL_DIR: /usr/share/java
+* JAVA_JAR_INSTALL_DIR: /usr/lib64/java
+* SYSCONF_INSTALL_DIR: /etc
+* VAR_INSTALL_DIR: /var
+* SYSTEMD_LIB_INSTALL_DIR: /lib/systemd/system
+* SYSTEMD_ETC_INSTALL_DIR: /etc/systemd/system
+
+They can be overriden via command line arguments.
+
+See also:
+* [https://github.com/dogtagpki/pki/blob/master/cmake/Modules/DefineInstallationPaths.cmake DefineInstallationPaths.cmake]
+* [http://www.cmake.org/cmake/help/v2.8.10/cmake.html#section_Variables CMake built-in variables]
+
+== Commands ==
+
+The usage of the custom commands are shown below.
+
+See also [http://www.cmake.org/cmake/help/v2.8.10/cmake.html#section_Commands CMake built-in commands].
+
+= Build Process =
+
+== Generating Makefiles ==
+
+Prepare a build directory, then run CMake as follows:
+
+<pre>
+$ mkdir $BUILD_DIR
+$ cd $BUILD_DIR
+$ cmake <args> $SRC_DIR
+</pre>
+
+Some variables are defined via command-line argument:
+
+* VERSION: project version
+* VAR_INSTALL_DIR: location of /var directory
+* JAVA_LIB_INSTALL_DIR: JNI installation directory
+* SYSTEMD_LIB_INSTALL_DIR: systemd scripts installation directory
+* RESTEASY_LIB: RESTEasy installation directory
+* WITH_JAVADOC: option to build Javadoc
+
+To build a specific package, at least one of the following variables should be defined via command-line argument:
+* BUILD_IPA_PKI_THEME
+* BUILD_DOGTAG_PKI_THEME
+* BUILD_REDHAT_PKI_THEME
+* BUILD_PKI_CORE
+* BUILD_PKI_RA
+* BUILD_PKI_TPS
+* BUILD_PKI_CONSOLE
+* BUILD_PKI_MIGRATE
+* BUILD_PKI_SELINUX
+
+For example, on Fedora 26 the pki-core.spec generates the following commands:
+
+<pre>
+$ /usr/bin/mkdir -p build
+$ cd build
+$ CFLAGS="${CFLAGS:--O2 -g -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -m64 -mtune=generic}"
+$ export CFLAGS
+$ CXXFLAGS="${CXXFLAGS:--O2 -g -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -m64 -mtune=generic}"
+$ export CXXFLAGS
+$ FFLAGS="${FFLAGS:--O2 -g -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -m64 -mtune=generic -I/usr/lib64/gfortran/modules}"
+$ export FFLAGS
+$ FCFLAGS="${FCFLAGS:--O2 -g -pipe -Wall -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -specs=/usr/lib/rpm/redhat/redhat-hardened-cc1 -m64 -mtune=generic -I/usr/lib64/gfortran/modules}"
+$ export FCFLAGS
+$ LDFLAGS="${LDFLAGS:--Wl,-z,relro -specs=/usr/lib/rpm/redhat/redhat-hardened-ld}"
+$ export LDFLAGS
+$ /usr/bin/cmake \
+        -DCMAKE_C_FLAGS_RELEASE:STRING="-DNDEBUG" \
+        -DCMAKE_CXX_FLAGS_RELEASE:STRING="-DNDEBUG" \
+        -DCMAKE_Fortran_FLAGS_RELEASE:STRING="-DNDEBUG" \
+        -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+        -DCMAKE_INSTALL_PREFIX:PATH=/usr \
+        -DINCLUDE_INSTALL_DIR:PATH=/usr/include \
+        -DLIB_INSTALL_DIR:PATH=/usr/lib64 \
+        -DSYSCONF_INSTALL_DIR:PATH=/etc \
+        -DSHARE_INSTALL_PREFIX:PATH=/usr/share \
+        -DLIB_SUFFIX=64 \
+        -DBUILD_SHARED_LIBS:BOOL=ON \
+        -DVERSION=10.6.0-0.fc26 \
+        -DVAR_INSTALL_DIR:PATH=/var \
+        -DBUILD_PKI_CORE:BOOL=ON \
+        -DJAVA_HOME=/usr/lib/jvm/jre-1.8.0-openjdk \
+        -DJAVA_LIB_INSTALL_DIR=/usr/lib/java \
+        -DSYSTEMD_LIB_INSTALL_DIR=/usr/lib/systemd/system \
+        -DAPP_SERVER=tomcat8 \
+        -DJAXRS_API_JAR=/usr/share/java/jboss-jaxrs-2.0-api.jar \
+        -DRESTEASY_LIB=/usr/share/java/resteasy \
+        ..
+$ /usr/bin/make VERBOSE=1 -j8 all
+</pre>
+
+For each source folder that contains CMakeLists.txt, CMake will create a corresponding folder in the build directory and generate the Makefile there.
+
+<pre>
+PKI_SOURCE_DIR
++ CMakeLists.txt
++ base/
+  + CMakeLists.txt
+  + common/
+    + CMakeLists.txt
+    + src/
+      + CMakeLists.txt
+    + test/
+      + CMakeLists.txt
++ build/
+  + Makefile
+  + base/
+    + Makefile
+    + common/
+      + Makefile
+      + src/
+        + Makefile
+      + test/
+        + Makefile
+</pre>
+
+There are variables that can be used by the scripts to refer to these folders:
+* CMAKE_SOURCE_DIR: always points to PKI_SOURCE_DIR
+* CMAKE_BINARY_DIR: always points to PKI_SOURCE_DIR/build
+* CMAKE_CURRENT_SOURCE_DIR: points to current source dir, e.g. PKI_SOURCE_DIR/base/common/src
+* CMAKE_CURRENT_BINARY_DIR: points to current binary dir, e.g. PKI_BINARY_DIR/base/common/src
+
+== Build Dependency ==
+
+* symkey-jar
+* pki-nsutil-classes
+* pki-nsutil-jar
+* pki-cmsutil-classes
+* pki-cmsutil-jar
+* pki-certsrv-classes
+* pki-certsrv-jar
+* pki-examples-classes
+* tkstool
+* pki-tools-classes
+* pki-tools-jar
+* pki-javadoc
+* pki-tomcat-classes
+* pki-tomcat7-classes/pki-tomcat8-classes
+* pki-tomcat-jar
+* pki-tomcat
+* pki-cms-classes
+* pki-cms-jar
+* pki-cmsbundle-jar
+* pki-cmscore-classes
+* pki-cmscore-jar
+* pki-ca-classes
+* pki-ca-jar
+* pki-kra-classes
+* pki-kra-jar
+* pki-ocsp-classes
+* pki-ocsp-jar
+* pki-tks-classes
+* pki-tks-jar
+* pki-tps-classes
+* pki-tps-jar
+* pki-console-classes
+* pki-console-jar
+* pki-test-classes
+* pki-util-test-classes
+* pki-server-test-classes
+
+{| border="1" style="border-collapse: collapse;"
+! width="100" | Target
+! width="500" | Dependencies
+|-
+| pki-nsutil-jar
+| pki-nsutil-classes
+|-
+| pki-cmsutil-classes
+| pki-nsutil-jar
+|-
+| pki-cmsutil-jar
+| pki-cmsutil-classes
+|-
+| pki-certsrv-classes
+| pki-cmsutil-jar
+|-
+| pki-certsrv-jar
+| pki-certsrv-classes
+|-
+| pki-tools-classes
+| pki-certsrv-jar
+|-
+| pki-tools-jar
+| pki-tools-classes 
+|-
+| tkstool
+| pki-certsrv-jar
+|-
+| pki-tomcat-classes
+| pki-certsrv-jar, pki-tomcat7-classes or pki-tomcat8-classes
+|-
+| pki-tomcat-jar
+| pki-tomcat-classes
+|-
+| pki-cms-classes
+| pki-tomcat-jar
+|-
+| pki-cms-jar
+| pki-cms-classes
+|-
+| pki-cmscore-classes
+| pki-cms-jar
+|-
+| pki-cms-jar
+| pki-cmscore-classes
+|-
+| tps_library
+| pki-tps-jar
+|-
+| ldapauth_library
+| pki-tps-jar
+|-
+| tokendb_module
+| pki-tps-jar
+|-
+| tps_module
+| pki-tps-jar
+|-
+| tokendb_library
+| pki-tps-jar
+|}
+
+== Building the Binaries ==
+
+To build the binaries the RPM builder will execute the following command:
+
+<pre>
+make all
+</pre>
+
+It will execute build targets in Makefiles generated by the CMake scripts. For example, the following CMake command will compile Java source code into Java binaries:
+
+<pre>
+javac(pki-certsrv-classes
+    SOURCE_DIR
+        ...
+    SOURCES
+        com/netscape/certsrv/*.java
+    EXCLUDE
+        ...
+    CLASSPATH
+        ${PKI_NSUTIL_JAR} ${PKI_CMSUTIL_JAR}
+        ...
+    OUTPUT_DIR
+        ${CMAKE_BINARY_DIR}/classes
+    DEPENDS
+        pki-nsutil-jar pki-cmsutil-jar
+)
+</pre>
+
+See also [http://docs.oracle.com/javase/1.5.0/docs/tooldocs/solaris/javac.html javac tool documentation].
+
+Then the binaries will be packaged into a JAR file using the following command:
+
+<pre>
+jar(pki-certsrv-jar
+    CREATE
+        ${CMAKE_BINARY_DIR}/dist/pki-certsrv.jar
+    OPTIONS
+        m
+    PARAMS
+        ${CMAKE_CURRENT_BINARY_DIR}/pki-certsrv.mf
+    INPUT_DIR
+        ${CMAKE_BINARY_DIR}/classes
+    FILES
+        com/netscape/certsrv/*.class
+    EXCLUDE
+        ...
+    DEPENDS
+        pki-certsrv-classes
+)
+</pre>
+
+See also [http://docs.oracle.com/javase/1.5.0/docs/tooldocs/solaris/jar.html jar tool documentation].
+
+If the Javadoc option is enabled, it will also generate Javadoc files:
+
+<pre>
+javadoc(pki-javadoc
+    SOURCEPATH
+        ${CMAKE_SOURCE_DIR}/base/util/src
+        ${CMAKE_SOURCE_DIR}/base/common/src
+        ${CMAKE_SOURCE_DIR}/base/java-tools/src
+    DEST
+        ${CMAKE_CURRENT_BINARY_DIR}/javadoc/pki-${APPLICATION_VERSION}
+    SUBPACKAGES
+        com.netscape.certsrv
+        com.netscape.cms
+        com.netscape.cmstools
+        com.netscape.cmsutil
+    CLASSPATH
+        ${PKI_CMSUTIL_JAR} ${PKI_CERTSRV_JAR} ${PKI_CMS_JAR} ${PKI_TOOLS_JAR}
+        ...
+    OPTIONS
+        -windowtitle 'pki-javadoc'
+        -doctitle '<h1>PKI Javadoc</h1>'
+        -author
+        -use
+        -version
+    DEPENDS
+        pki-cmsutil-jar pki-certsrv-jar pki-cms-jar pki-tools-jar
+)
+</pre>
+
+See also [http://docs.oracle.com/javase/1.5.0/docs/tooldocs/solaris/javadoc.html javadoc tool documentation].
+
+== Running Unit Tests ==
+
+To run the unit tests the RPM builder will execute the following command:
+
+<pre>
+make test
+</pre>
+
+It will execute test targets in Makefiles generated by the CMake scripts. If the test code needs to be compiled, there should be a separate CMake command to compile it, for example:
+
+<pre>
+javac(pki-common-test-classes
+    SOURCES
+        com/netscape/certsrv/*.java
+        com/netscape/cmscore/*.java
+    CLASSPATH
+        ${PKI_NSUTIL_JAR} ${PKI_CMSUTIL_JAR}
+        ...
+        ${CMAKE_BINARY_DIR}/test/classes
+    OUTPUT_DIR
+        ${CMAKE_BINARY_DIR}/test/classes
+    DEPENDS
+        pki-test-classes
+        pki-nsutil-jar pki-cmsutil-jar
+        pki-certsrv-jar pki-cms-jar pki-cmscore-jar pki-cmsbundle-jar
+)
+</pre>
+
+The test itself is defined as follows:
+
+<pre>
+add_junit_test(test-pki-common
+    CLASSPATH
+        ${PKI_NSUTIL_JAR} ${PKI_CMSUTIL_JAR}
+        ...
+        ${CMAKE_BINARY_DIR}/test/classes
+    TESTS
+        com.netscape.certsrv.authentication.AuthTokenTest
+        com.netscape.certsrv.request.AgentApprovalsTest
+        ...
+    REPORTS_DIR
+        reports
+)
+
+add_dependencies(test test-pki-common)
+</pre>
+
+== Installing the Binaries ==
+
+To install the binaries the RPM builder will execute the following command:
+
+<pre>
+make install
+</pre>
+
+It will execute install targets in Makefiles generated by the CMake scripts, for example:
+
+<pre>
+install(
+    FILES
+        ${CMAKE_BINARY_DIR}/dist/pki-certsrv.jar
+    DESTINATION
+        ${JAVA_JAR_INSTALL_DIR}/pki
+)
+</pre>
+
+= Writing CMake Scripts =
+
+== Locating dependencies ==
+
+Dependencies such as Java libraries can be located as follows:
+
+<pre>
+find_file(JSS_JAR
+    NAMES
+        jss4.jar
+    PATHS
+        ${JAVA_LIB_INSTALL_DIR}
+        /usr/share/java
+)
+</pre>
+
+== Customizing templates ==
+
+Some source files are templates that contain CMake variables, for example:
+
+<pre>
+Name: pki-certsrv
+Specification-Version: ${APPLICATION_VERSION}
+Implementation-Version: ${VERSION}
+</pre>
+
+The variables can be replaced with the actual value using the following command:
+
+<pre>
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/pki-certsrv.mf
+    ${CMAKE_CURRENT_BINARY_DIR}/pki-certsrv.mf
+)
+</pre>
+
+== Writing a function ==
+
+Function can be defined as follows:
+
+<pre>
+function(javac target)
+
+    ...
+
+endfunction(javac)
+</pre>
+
+The arguments can be parsed as follows:
+
+<pre>
+    foreach (arg ${ARGN})
+
+        if (arg MATCHES "(SOURCE_DIR|SOURCES|EXCLUDE|CLASSPATH|OUTPUT_DIR|DEPENDS)")
+            set(param ${arg})
+
+        else ()
+
+            if (param STREQUAL "SOURCE_DIR")
+                set(source_dir ${arg})
+
+            elseif (param STREQUAL "SOURCES")
+                list(APPEND sources ${arg})
+
+            ...
+
+            endif(param STREQUAL "SOURCE_DIR")
+
+        endif(arg MATCHES "(SOURCE_DIR|SOURCES|EXCLUDE|CLASSPATH|OUTPUT_DIR|DEPENDS)")
+
+    endforeach(arg)
+
+</pre>
+
+Paths can be merged as follows:
+
+<pre>
+    if (UNIX)
+        set(separator ":")
+    else (UNIX)
+        set(separator ";")
+    endif(UNIX)
+
+    foreach (path ${classpath})
+       set(native_classpath "${native_classpath}${separator}${path}")
+    endforeach(path)
+</pre>
+
+To add the target into the build step and to specify the dependency:
+
+<pre>
+    add_custom_target(${target} ALL DEPENDS ${depends})
+</pre>
+
+To add commands to be executed by this function:
+
+<pre>
+    add_custom_command(
+        TARGET ${target}
+        COMMAND
+            ...
+        WORKING_DIRECTORY
+            ...
+    )
+</pre>
+
+= Example =
+
+Assuming PKI source code is already checked out in PKI_SRC folder, run the build as follows:
+
+<pre>
+$ mkdir -p ~/build
+$ cd ~/build
+$ cmake\
+ -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON\
+ -DCMAKE_INSTALL_PREFIX:PATH=/usr\
+ -DINCLUDE_INSTALL_DIR:PATH=/usr/include\
+ -DLIB_INSTALL_DIR:PATH=/usr/lib64\
+ -DSYSCONF_INSTALL_DIR:PATH=/etc\
+ -DSHARE_INSTALL_PREFIX:PATH=/usr/share\
+ -DLIB_SUFFIX=64\
+ -DBUILD_SHARED_LIBS:BOOL=ON\
+ -DVERSION=10.4.0-0.1.fc24\
+ -DVAR_INSTALL_DIR:PATH=/var\
+ -DBUILD_PKI_CORE:BOOL=ON\
+ -DJAVA_HOME=/usr/lib/jvm/jre-1.8.0-openjdk\
+ -DJAVA_LIB_INSTALL_DIR=/usr/lib/java\
+ -DSYSTEMD_LIB_INSTALL_DIR=/usr/lib/systemd/system\
+ -DWITH_TOMCAT7:BOOL=OFF\
+ -DJAXRS_API_JAR=/usr/share/java/jboss-jaxrs-2.0-api.jar\
+ -DRESTEASY_LIB=/usr/share/java/resteasy\
+ $PKI_SRC
+$ make
+</pre>
+
+= Future Enhancements =
+
+== RPM spec dependency ==
+
+Currently the build process has to be done using RPM which is quite slow because it needs to build the entire package. For development it would be better to build using CMake (without RPM) because it could compile only the code that is changed, and then install the binaries directly on the development machine.
+
+<pre>
+cd build
+cmake ..
+make ca
+make install
+</pre>
+
+However, this is currently not possible because the RPM spec file contains some additional build operations. These operations should be converted into CMake scripts.
+
+== JUnit command improvement ==
+
+Currently the JUnit test cases need to be specified explicitly. The CMake command should be modified to find all test classes automatically, so the CMake script may look like the following:
+
+<pre>
+junit(pki-common-test
+    SOURCES
+        **/*Test.java
+    CLASSPATH
+        ${PKI_NSUTIL_JAR} ${PKI_CMSUTIL_JAR}
+        ...
+    REPORTS_DIR
+        reports
+)
+</pre>
+
+= References =
+
+* [[PKI CMake]]

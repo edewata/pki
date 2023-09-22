@@ -1,0 +1,15 @@
+= Design Documents =
+
+This page contains a list of JSS design documents organized by the target version number.
+
+= JSS 4.5 =
+
+* [[JSS 4.5 Replacing outdated logging framework]]
+* [[JSS 4.5 API Changes]]
+* [[JSS 4.5 Support for RSAPrivateKey.getModulus()]]
+* [[JSS 4.5 Support for PKCS11 KeyStore]]
+* [[JSS 4.5 Support for TLS 1.3]]
+
+= References =
+
+* [[JSS Development]]

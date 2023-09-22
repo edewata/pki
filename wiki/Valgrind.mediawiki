@@ -1,0 +1,18 @@
+= Installation =
+
+<pre>
+$ dnf install valgrind
+$ debuginfo-install java-1.8.0-openjdk java-1.8.0-openjdk-devel
+</pre>
+
+= Running Valgrind =
+
+<pre>
+$ valgrind --trace-children=yes --tool=massif java ... -Djava.compiler=NONE ...
+</pre>
+
+= See Also =
+
+* [[Debugging]]
+* [https://access.redhat.com/articles/1277173 How to identify native memory leaks in a Java application using Valgrind]
+* [https://github.com/YaSuenag/hsdis-builder hsdis-builder]

@@ -1,0 +1,199 @@
+= Installation =
+
+== Installing from Fedora 30 Repository ==
+
+To install from Fedora 30 repository:
+
+<pre>
+$ dnf install cassandra cassandra-server cassandra-java-driver
+</pre>
+
+See also: https://lists.fedoraproject.org/archives/list/devel@lists.fedoraproject.org/message/P2MRYPASSCPC52JZWOHKC5BYIULEOCQC/
+
+== Installing from Upstream Repository ==
+
+To enable [https://downloads.apache.org/cassandra/ upstream repository]:
+
+<pre>
+$ cat > /etc/yum.repos.d/cassandra.repo << EOF
+[cassandra]
+name=Apache Cassandra
+baseurl=https://downloads.apache.org/cassandra/redhat/311x/
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://downloads.apache.org/cassandra/KEYS
+EOF
+</pre>
+
+To install from upstream repository:
+
+<pre>
+$ dnf install cassandra
+</pre>
+
+To download tarball from a [https://www.apache.org/dyn/closer.lua/cassandra/ mirror]:
+
+<pre>
+$ wget http://www.trieuvan.com/apache/cassandra/4.0-alpha4/apache-cassandra-4.0-alpha4-bin.tar.gz
+$ tar xzvf apache-cassandra-4.0-alpha4-bin.tar.gz
+$ cp apache-cassandra-4.0-alpha4/lib/apache-cassandra-4.0-alpha4.jar /usr/share/cassandra/apache-cassandra-4.0~alpha4.jar
+</pre>
+
+= Starting Cassandra Service =
+
+== Starting Fedora Service ==
+
+To start the service:
+
+<pre>
+$ systemctl start cassandra
+</pre>
+
+To monitor the logs:
+
+<pre>
+$ journalctl -fu cassandra.service
+</pre>
+
+If the server is timing out, edit /usr/lib/systemd/system/cassandra.service as follows:
+
+<pre>
+[Service]
+#Type=forking
+Type=simple
+</pre>
+
+then try again:
+
+<pre>
+$ systemctl daemon-reload
+$ systemctl restart cassandra
+</pre>
+
+== Starting Upstream Service ==
+
+To start the service:
+
+<pre>
+$ systemctl start cassandra
+</pre>
+
+To monitor the logs:
+
+<pre>
+$ tail -f /var/log/cassandra/system.log
+</pre>
+
+== Verifying Cassandra Service ==
+
+<pre>
+$ nodetool status
+Datacenter: datacenter1
+=======================
+Status=Up/Down
+|/ State=Normal/Leaving/Joining/Moving
+--  Address    Load       Tokens       Owns (effective)  Host ID                               Rack
+UN  127.0.0.1  114.85 KiB  256          100.0%            9561eae1-869a-476f-8708-340978a8fb24  rack1
+</pre>
+
+= Connecting to Database =
+
+To connect to a local database:
+
+<pre>
+$ cqlsh
+</pre>
+
+To connect to a remote database:
+
+<pre>
+$ cqlsh --cqlshrc=cqlshrc -u <username> -p <password> -k <keyspace>
+</pre>
+
+= Authentication =
+
+Edit /etc/cassandra/cassandra.yaml:
+
+<pre>
+authenticator: PasswordAuthenticator
+authorizer: CassandraAuthorizer
+</pre>
+
+Restart the server:
+
+<pre>
+$ systemctl restart cassandra
+</pre>
+
+To create a user:
+
+<pre>
+$ cqlsh -u cassandra -p cassandra
+cqlsh> CREATE ROLE acme WITH PASSWORD = 'Secret.123' and LOGIN = true;
+</pre>
+
+= Keyspaces =
+
+== Listing Keyspaces ==
+
+<pre>
+cqlsh> DESCRIBE KEYSPACES;
+</pre>
+
+== Creating a Keyspace ==
+
+<pre>
+cqlsh> CREATE KEYSPACE <keyspace> WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
+cqlsh> use <keyspace>;
+</pre>
+
+== Using a Keyspace ==
+
+<pre>
+cqlsh> USE <keyspace>;
+</pre>
+
+== Removing a Keyspace ==
+
+<pre>
+cqlsh> DROP KEYSPACE <keyspace>;
+</pre>
+
+= Tables =
+
+== Listing Tables ==
+
+<pre>
+cqlsh> DESCRIBE TABLES;
+</pre>
+
+== Creating a Table ==
+
+<pre>
+cqlsh> CREATE TABLE users (user_name varchar, password varchar, gender varchar, PRIMARY KEY (user_name));
+</pre>
+
+= Views =
+
+== Listing Views ==
+
+<pre>
+cqlsh> SELECT * FROM system_schema.views;
+</pre>
+
+= See Also =
+
+* [https://cassandra.apache.org/doc/latest/getting_started/index.html Getting Started]
+* [https://fedoramagazine.org/get-started-apache-cassandra-fedora/ Get started with Apache Cassandra on Fedora]
+* [https://issues.apache.org/jira/browse/CASSANDRA-15830 CASSANDRA-15830: Invalid version value: 4.0~alpha4 during startup]
+* [https://cassandra.apache.org/doc/latest/cql/index.html The Cassandra Query Language (CQL)]
+* [https://www.tutorialspoint.com/cassandra/index.htm Cassandra Tutorial]
+* [https://github.com/apache/cassandra Source Repository]
+* [https://github.com/PatrickCallaghan/datastax-ssl-example Connect to Cassandra with DSE with SSL]
+* [https://www.datastax.com/ DataStax]
+* [https://docs.datastax.com/en/developer/java-driver/latest/ DataStax Java Driver]
+* [https://github.com/adejanovski/cassandra-jdbc-wrapper adejanovski/cassandra-jdbc-wrapper]
+* [https://querysurge.zendesk.com/hc/en-us/articles/218199423-Connecting-QuerySurge-to-Cassandra-with-JDBC-Adejanovski-DataStax-Wrapper- Connecting QuerySurge to Cassandra with JDBC]
+* [https://community.datastax.com/questions/6515/how-can-i-connect-to-astra-using-jdbc-what-would-t.html How can I connect to Astra using a JDBC connection?]
+* [https://dbschema.com/jdbc-driver/Cassandra.html DbSchema: Download Cassandra JDBC Driver]
+* [[Mongo]]

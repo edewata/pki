@@ -1,0 +1,155 @@
+= Installation =
+
+On Fedora:
+
+ $ dnf install mercurial git-remote-hg
+
+On Debian:
+
+ $ apt install mercurial mercurial-git
+
+= Authentication =
+
+For Mozilla, request an SSH access, for example:
+
+* https://bugzilla.mozilla.org/show_bug.cgi?id=1322699
+* https://bugzilla.mozilla.org/show_bug.cgi?id=1322821
+* https://bugzilla.mozilla.org/show_bug.cgi?id=1349638
+* https://bugzilla.mozilla.org/show_bug.cgi?id=1350451
+* https://bugzilla.mozilla.org/show_bug.cgi?id=1350584
+* https://bugzilla.mozilla.org/show_bug.cgi?id=1404498
+* https://bugzilla.mozilla.org/show_bug.cgi?id=1412461
+
+Then add the following entries into ~/.ssh/config:
+<pre>
+Host hg.mozilla.org
+  User <email>
+
+Host reviewboard-hg.mozilla.org
+  User <email>
+</pre>
+
+See [http://mozilla-version-control-tools.readthedocs.io/en/latest/hgmozilla/auth.html Configuring Authentication].
+
+= Configuration =
+
+The configuration file is located at ~/.hgrc.
+
+= Cloning a repository =
+
+<pre>
+$ hg clone <repository>
+</pre>
+
+= Committing Changes =
+
+<pre>
+$ hg commit
+</pre>
+
+= Displaying the logs =
+
+<pre>
+$ hg log | less
+</pre>
+
+= Creating a Patch =
+
+<pre>
+$ hg export tip > bug-nnnnn.patch
+</pre>
+
+= Applying a patch =
+
+<pre>
+$ hg import <patch>
+</pre>
+
+= Reverting changes =
+
+<pre>
+$ hg revert --all
+</pre>
+
+= Reverting a commit =
+
+<pre>
+$ hg rollback
+</pre>
+
+= Cleaning Up Working Directory =
+
+ $ hg pull
+ $ hg update -r <branch> -C
+ $ hg purge
+
+= Pulling Changes =
+
+<pre>
+$ hg pull
+$ hg update
+</pre>
+
+= Pushing Changes =
+
+<pre>
+$ hg push <SSH URL>
+</pre>
+
+= Branches =
+
+To list branches:
+
+<pre>
+$ hg branches
+</pre>
+
+To check the current branch:
+
+<pre>
+$ hg identify -b
+</pre>
+
+To checkout a branch:
+
+<pre>
+$ hg checkout <name>
+</pre>
+
+= Tags =
+
+To list tags:
+
+<pre>
+$ hg tags
+</pre>
+
+To create a tag:
+
+<pre>
+$ hg tag <name>
+</pre>
+
+To checkout a tag:
+
+<pre>
+$ hg checkout <name>
+</pre>
+
+= Migration =
+
+To migrate from Mercurial to Git:
+
+<pre>
+$ git push <new repo> refs/remotes/<old repo>/*:refs/heads/*
+$ git push <new repo> refs/tags/*:refs/tags/*
+$ git push <new repo> :HEAD
+</pre>
+
+= References =
+
+* [https://www.mercurial-scm.org/ Mercurial]
+* [https://wiki.mozilla.org/NSS:UsingHG Using Mercurial]
+* [[Git]]
+* [http://mozilla-version-control-tools.readthedocs.io/en/latest/hgmozilla/auth.html Configuring Authentication]
+* [https://confluence.atlassian.com/get-started-with-bitbucket/git-and-mercurial-commands-860009656.html Git and Mercurial commands]

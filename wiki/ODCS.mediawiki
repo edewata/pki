@@ -1,0 +1,16 @@
+= Installation =
+
+<pre>
+$ dnf install odcs-client
+</pre>
+
+= Composing a Module =
+
+<pre>
+$ odcs create module pki:10.6 --sigkey none
+</pre>
+
+= References =
+
+* [https://pagure.io/odcs ODCS]
+* [[PKI Module]]

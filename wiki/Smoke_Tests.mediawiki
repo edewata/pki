@@ -1,0 +1,391 @@
+= Machine Setup =
+
+== Installing the Operating System ==
+
+Create a virtual machine and install [http://fedoraproject.org/en/get-fedora-options#formats Fedora 18] from a DVD ISO or [https://fedoraproject.org/wiki/Upgrading_Fedora_using_yum upgrade an existing Fedora installation].
+
+* OS: Linux Generic 2.6.25 or later with VirtIO
+* Memory: 4096 MB
+* Processor: 1
+* Storage:
+** Type: VirtIO disk
+** Max Capacity: 20 GB
+** Cache mode: default
+** Format: qcow2
+* Architecture: i686 or x86-64
+* Packages:
+** Graphical Desktop
+** Fedora Repo
+** Fedora Updates Repo
+
+To check disk type:
+<pre>
+% qemu-img info <image>
+file format: ...
+</pre>
+
+To convert raw to qcow2:
+<pre>
+% qemu-img convert -O qcow2 <old image> <new image>
+</pre>
+
+== Create Test User ==
+
+* Full Name: Test User
+* Username: test
+
+== Disable Firewall ==
+
+As root user execute the following command:
+<pre>
+% service iptables stop
+% iptables -F
+</pre>
+
+== Configure SELinux ==
+
+Switch to permissive mode:
+
+<pre>
+% setenforce 0
+</pre>
+
+Edit /etc/selinux/config:
+
+<pre>
+SELINUX=permissive
+</pre>
+
+== Setting up VNC Server ==
+
+As root user install a VNC server:
+<pre>
+% yum install tigervnc-server
+</pre>
+
+As test user run VNC server:
+<pre>
+% vncserver
+</pre>
+
+== Installing GIT ==
+
+As root execute the following command:
+<pre>
+% yum install git
+</pre>
+
+== Increasing Disk Space ==
+
+Shutdown the VM. In the host machine check the logical volumes in the VM disk:
+
+<pre>
+% virt-filesystems --long -h -a vm.img
+Name                        Type        VFS   Label  Size
+/dev/sda1                   filesystem  ext4  -      500M
+/dev/VolGroup/lv_root       filesystem  ext4  -      9.5G
+</pre>
+
+Check the partitions:
+
+<pre>
+% virt-filesystems --long --parts --blkdevs -h -a vm.img
+Name       Type       MBR  Size  Parent
+/dev/sda1  partition  83   500M  /dev/sda
+/dev/sda2  partition  8e   12G   /dev/sda
+/dev/sda   device     -    12G   -
+</pre>
+
+Create a new disk:
+<pre>
+% qemu-img create -f qcow2 new.img 20G
+Formatting 'new.img', fmt=qcow2 size=21474836480 encryption=off cluster_size=65536 
+</pre>
+
+Expand the root partition into the new disk:
+
+<pre>
+% virt-resize --expand /dev/sda2 vm.img new.img 
+Examining vm.img ...
+ 100% ⟦▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓⟧ 00:00
+**********
+
+Summary of changes:
+
+/dev/sda1: This partition will be left alone.
+
+/dev/sda2: This partition will be resized from 11.5G to 19.5G.  The LVM 
+    PV on /dev/sda2 will be expanded using the 'pvresize' method.
+
+**********
+Setting up initial partition table on new.img ...
+Copying /dev/sda1 ...
+ 100% ⟦▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓⟧ 00:00
+Copying /dev/sda2 ...
+ 100% ⟦▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓⟧ 00:00
+ 100% ⟦▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓⟧ 00:00
+Expanding /dev/sda2 using the 'pvresize' method ...
+
+Resize operation completed with no errors.  Before deleting the old 
+disk, carefully check that the resized disk boots and works correctly.
+</pre>
+
+Verify the new disk:
+
+<pre>
+% virt-filesystems --long --parts --blkdevs -h -a new.img
+Name       Type       MBR  Size  Parent
+/dev/sda1  partition  83   500M  /dev/sda
+/dev/sda2  partition  8e   20G   /dev/sda
+/dev/sda   device     -    20G   -
+</pre>
+
+Replace the old disk:
+
+<pre>
+% mv vm.img old.img
+% mv new.img vm.img
+</pre>
+
+Restart the VM. In the guest VM resize the logical volume:
+
+<pre>
+% lvresize -L +8G /dev/VolGroup/lv_root
+  Extending logical volume lv_root to 17.50 GiB
+  Logical volume lv_root successfully resized
+</pre>
+
+Resize the file system:
+
+<pre>
+% resize2fs /dev/VolGroup/lv_root
+resize2fs 1.42.3 (14-May-2012)
+Filesystem at /dev/VolGroup/lv_root is mounted on /; on-line resizing required
+old_desc_blocks = 1, new_desc_blocks = 2
+The filesystem on /dev/VolGroup/lv_root is now 4587520 blocks long.
+</pre>
+
+Delete the old disk.
+
+= Test Setup =
+
+== Getting the Source Codes ==
+
+In test user's home directory prepare a working directory as follows:
+
+ WORK_DIR
+ + pki (source code)
+ + pki-dev (development tools)
+
+As test user get the PKI source code:
+
+ % git clone git://git.fedorahosted.org/git/pki.git
+
+As test user get the PKI development tools:
+
+ % git clone git://fedorapeople.org/home/fedora/edewata/public_git/pki-dev.git
+
+The tools are located in pki-dev/scripts:
+
+ % cd WORK_DIR/pki-dev/scripts
+
+== Installing Dependencies ==
+
+As root user run the following script to install the dependencies:
+
+ % ./dev-init.sh
+
+Note that since the source code keeps changing, this script might be outdated. There might be missing dependencies that need to be installed manually.
+
+On Fedora 16 [http://sourceforge.net/projects/resteasy/files/Resteasy%20JAX-RS/ download RESTEasy 2.3.2] and install it in /usr/share/resteasy-jaxrs-2.3.2.Final, then execute the following:
+
+ % ./f16-setup.sh
+
+If you use a later version you will need to update the script.
+
+On Fedora 17 run the following script:
+
+ % ./f17-setup.sh
+
+Download and install [http://edewata.fedorapeople.org/files/python-nss-0.13-1.fc17.src.rpm python-nss-0.13-1.fc17.src.rpm]:
+
+ % rpmbuild --rebuild python-nss-0.13-1.fc17.src.rpm
+ % rpm -i ~/rpmbuild/RPMS/x86_64/python-nss-0.13-1.fc17.x86_64.rpm
+
+== Eclipse Setup ==
+
+As test user run Eclipse and do the following:
+
+* Create a 'pki' project in Eclipse pointing to the source code at WORK_DIR/pki.
+* Right click on the project -> Properties -> Java Build Path -> Source.
+* Make sure the 'Default output folder' is '<project name>/build/classes'.
+* Open the 'Problems' tab (Window -> Show View -> Problems), make sure there's no error.
+
+= Test Procedures =
+
+== Build Test ==
+
+The Build Test is used to verify that a particular build is good enough to run further testing on it.
+
+=== Building and installing RPMs ===
+
+Execute the following scripts to build & install the RPM files:
+
+ % ./theme-build.sh
+ % ./theme-install.sh
+ % ./core-build.sh
+ % ./core-install.sh
+ % ./ra-build.sh
+ % ./ra-install.sh
+ % ./tps-build.sh
+ % ./tps-install.sh
+ % ./console-build.sh
+ % ./console-install.sh
+
+=== Creating DS instance ===
+
+Make sure you have a 'dirsrv' user.
+
+ % useradd dirsrv
+
+Create a DS instance:
+
+ % ./ds-create.sh
+
+Verify that it's running:
+
+ % ./ds-status.sh
+
+=== Creating and configuring CA instance ===
+
+ % ./ca-create.sh
+
+=== Creating and configuring KRA instance ===
+
+ % ./kra-create.sh
+
+=== Import certificates into Firefox ===
+
+Close all Firefox windows, run the following:
+
+ % ./firefox-certs-import.sh
+ % ./firefox-certs-list.sh
+
+The following certificates should exist:
+
+* Certificate Authority - EXAMPLE-COM
+* caadmin
+* kraadmin
+
+Then start Firefox again.
+
+=== Verify Web UI ===
+* Open CA Web UI at https://localhost:9443/ca/services.
+* Click 'Agent Services' and authenticate using 'caadmin' certificate.
+* Open KRA Web UI at https://localhost:10443/kra/services.
+* Click 'Agent Services' and authenticate using 'kraadmin' certificate.
+
+== Smoke Test ==
+
+The Smoke Test is used to verify that the basic functionality is still working after code changes. This test is a continuation of the Build Test.
+
+=== Create requests ===
+Using Web UI:
+* Open CA Web UI, click 'SSL End Users Services'.
+* Click the third profile: 'Manual User Signing & Encryption Certificates Enrollment'.
+* Enter the UID, email, common name, click Submit.
+* A window titled 'Encryption Key Copy' will appear, click OK.
+* Verify the page will show 2 requests. Note the serial numbers (e.g. 13 and 14).
+
+Using CLI:
+* pki -U http://localhost:8013/ca cert-request-submit <file>
+
+=== Approve requests ===
+Using Web UI:
+* Open CA Web UI, click 'Agent Services'.
+* In 'List Requests' page click Find, the requests should appear as pending.
+* On each pending request, click to open it, select 'Approve request', then click submit.
+* Verify in the 'List Requests' page that the requests are no longer pending.
+
+Using CLI:
+* pki -U http://localhost:8013/ca -d /tmp/pki-master_client/alias -w `cat /tmp/pki-master_client/password.conf` -n admin cert-request-review <request id> --output <file>
+* pki -U http://localhost:8013/ca -d /tmp/pki-master_client/alias -w `cat /tmp/pki-master_client/password.conf` -n admin cert-request-approve <file>
+
+=== Revoke certificates ===
+Using Web UI:
+* In 'Revoke Certificates' page click the checkbox under 'Serial Number Range'.
+* Enter one of the serial numbers in the 'Lowest serial number' field, click Find.
+* Click 'Revoke' on one of the certificates.
+* Select 'Certificate is on hold', then click Submit.
+* Go to 'List Certificates' page, enter the serial number, click Find. Verify that the certificate is revoked.
+
+Using CLI:
+* pki -U http://localhost:8013/ca -d /tmp/pki-master_client/alias -w `cat /tmp/pki-master_client/password.conf` -n admin cert-hold <cert id>
+
+=== Update CRL ===
+* In 'Display Revocation List' click Display, there should be no revoked certificates.
+* In 'Update Revocation List' click Update.
+* Back to 'Display Revocation List', click Display, verify the the revoked certificate now appears.
+
+=== Optional: Unrevoke certificates ===
+Using Web UI:
+* Go to 'List Certificates' page, find the certificate, open it, click 'Take Certificate Off Hold'. Update the CRL again to verify.
+
+Using CLI:
+* pki -U http://localhost:8013/ca -d /tmp/pki-master_client/alias -w `cat /tmp/pki-master_client/password.conf` -n admin cert-release-hold <cert id>
+
+== CA Test ==
+
+Run the following script:
+
+ % ./ca-test.sh
+
+Verify there's no failure.
+
+== DRM Test ==
+
+=== Java client tests ===
+Run the following script:
+
+ % ./drm-java-test.sh
+
+Verify there's no failure.
+
+=== Python client tests ===
+Run the following script:
+
+ % ./drm-python-test.sh
+
+Verify there's no failure.
+
+== Console Test ==
+
+Run the following script:
+
+ % ./ca-console.sh
+
+Login as 'admin' with password 'Secret.123'. Verify some screens that there is no failure.
+
+= Test Clean-Up =
+
+Before running the test again, remove the instances:
+
+ % ./kra-remove.sh
+ % ./ca-remove.sh
+ % ./ds-remove.sh
+
+Uninstall the RPM packages:
+
+ % ./console-uninstall.sh
+ % ./tps-uninstall.sh
+ % ./ra-uninstall.sh
+ % ./core-uninstall.sh
+ % ./theme-uninstall.sh
+
+Close Firefox and remove the certificates:
+
+ % ./firefox-certs-remove.sh
+
+= References =
+
+* [[Testing]]

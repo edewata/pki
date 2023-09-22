@@ -1,0 +1,276 @@
+= Open Source History (2012) =
+
+== Red Hat Certificate Server 8.1 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[02/01/2012] ==
+
+Red Hat Certificate System 8.1 fixed various bugs, added numerous enhancements, and provided a product that has been Common Criteria certified to comply with NIAP/CIMC PP at EAL4 augmented with ALC_FLR.2.
+
+'''Project Name:'''
+* '''''Red Hat Certificate System 8.1'''''
+'''Releases:'''
+* [02/01/2012] Red Hat Certificate Server 8.1
+'''Major Features:'''
+* Common Criteria Certified
+** [http://www.niap-ccevs.org/st/vid10359/ Validated Product - Red Hat Certificate System 8]
+* Numerous Token Processing (TPS) System Enhancements:
+** An enhanced administrative interface which provides the ability to edit and validate configuration of the TPS, including profiles, server settings, and logs
+** New subsystem self-tests
+** An expanded list of auditable events, including new audit events for TPS server configuration changes
+** Improved audit log configuration, including new configuration parameters for the log size, logging flush interval, and rolling log files
+** Automatically shutting down the TPS server when its audit logs have hit the size limit and no rollover option is given
+* Asynchronous Key Recovery
+* UI for Setting the Number of Key Recovery Agents
+* Separate Enrollment and Publishing Environments
+* Client Authentication with OCSP Publishing
+* Different CA and Certificate LDAP Schema Elements for LDAP Publishing
+* Generating a CRL from Cache
+* Updated CRL Scheduling Mechanism
+* New and Updated Default Subsystem ACIs
+* Port Forwarding for Simpler User-Facing URLs
+* Configurable SSL Session Timeout Periods
+* Using a Java Subsystems with the Java Security Manager
+* In-Place Upgrade
+* Numerous bug fixes and security enhancements
+'''Server Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>8.1</th>
+    </tr>
+    <tr>
+    <td>32-bit RHEL 5 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit RHEL 5 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+'''Client Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>1.1.0</th>
+    </tr>
+    <tr>
+    <td>32-bit Macintosh Leopard (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit RHEL 5 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit RHEL 5 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Windows XP (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Windows Vista (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Dogtag Certificate Server 10.0 (Alpha 1) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[03/14/2012] ==
+
+Dogtag Certificate System 10.0 (Alpha 1) builds upon Dogtag Certificate System 9.0 and represents the first alpha release of future Dogtag PKI technology.
+
+'''Project Name:'''
+* '''''Dogtag Certificate System 10.0 (Alpha 1)'''''
+'''Releases:'''
+* [03/14/2012] Dogtag Certificate Server 10.0 (Alpha 1) [32-bit & 64-bit Fedora 16 & Fedora 17]
+'''Major Features:'''
+* Extension of the functionality of the DRM to store and retrieve symmetric keys and passphrases, rather than only asymmetric keys
+* Exposed new DRM functionality through a new REST interface, provided by the RESTEasy framework
+* Extracted authentication and authorization code from the individual servlets into a standard Tomcat authentication realm
+* Enhanced Java subsystems so that they could connect to the internal database using a non-directory manager user, that is authenticated using client authentication
+* Provided initial framework for a new Python-based installer, pki-deploy, which will eventually replace the pki-setup and pki-silent packages
+* Cleaned up and modernized the Dogtag source code including:
+** Dogtag source code has been moved to git &#91;git clone ssh://git.fedorahosted.org/git/pki.git pki&#93;
+** Revised Java coding standards to comply with current versions of OpenJDK
+** Integration of Java-based source code with Eclipse
+** Elimination of dependency upon OSUtil JNI component
+** Improved handling of short and long lived threads which allow threads to exit gracefully on shutdown
+* New platform support for the following 32-bit and 64-bit versions of Fedora
+'''Server Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.0 (Alpha 1)</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 16 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 16 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 17 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 17 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Dogtag Certificate Server 10.0 (Alpha 2) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[10/01/2012] ==
+
+Dogtag Certificate System 10.0 (Alpha 2) builds upon Dogtag Certificate System 10.0 (Alpha 1) and represents the second alpha release of future Dogtag PKI technology.
+
+'''Project Name:'''
+* '''''Dogtag Certificate System 10.0 (Alpha 2)'''''
+'''Releases:'''
+* [10/01/2012] Dogtag Certificate Server 10.0 (Alpha 2) [32-bit & 64-bit Fedora 18]
+'''Major Features:'''
+* Dogtag 10 can now clone from Dogtag 9 masters.  We will fall back to the old installation servlet if needed.<sup>&dagger;</sup>
+* Startup state of a server can be determined from the getStatus() servlet<sup>&dagger;</sup>
+* Consistent database user provided during installation for client authentication (used in IPA merged database install)
+* Fixed package dependency issue with pki-symkey<sup>&dagger;</sup>
+* pki-setup merged into pki-server<sup>&dagger;</sup>
+* Audit Cert Renewal time extended to two years<sup>&dagger;</sup>
+* Versioning added to jar manifest files and VERSION file and reported in getStatus
+* ECC enhancements in DRM and TMS environment
+* Addition of time based searches in preparation for randomized serial numbers
+* Enhanced escaping of LDAP attributes
+* Improved transition control for token operations in the TPS.
+* New platform support for the following 32-bit and 64-bit versions of Fedora
+
+<sup>&dagger;</sup> - denotes IPA related/reported issue
+
+'''Server Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.0 (Alpha 2)</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 18 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 18 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Dogtag Certificate Server 10.0 (Beta 1) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[10/09/2012] ==
+
+Dogtag Certificate System 10.0 (Beta 1) builds upon Dogtag Certificate System 10.0 (Alpha 2) and represents the first beta release of future Dogtag PKI technology.
+
+'''Project Name:'''
+* '''''Dogtag Certificate System 10.0 (Beta 1)'''''
+'''Releases:'''
+* [10/09/2012] Dogtag Certificate Server 10.0 (Beta 1) [32-bit & 64-bit Fedora 18]
+'''Major Features:'''
+* Merged pki-silent into pki-server.
+* Added Provides to packages replacing obsolete packages.
+* Added needed link for updated d9 -> d10 instances. Found in IPA testing.<sup>&dagger;</sup>
+* Backed up CS.cfg before upgrading from d9 -> d10
+* New selinux policy for all components.  The Java components now take advantage of a tomcat domain defined in the base selinux policy, and the RA/TPS policies have been cleaned up considerably.  The policy that is now delivered is very close to the final version that will be delivered in the base policy.  That will be a deliverable for beta 2.
+* Selinux context for startup scripts for all components set so that runcon is not required.
+* Cleaned up lock and pid files generation and removal for java processes.
+* Rebuilt packages against the latest F18 base selinux policy packages to resolve an issue in installing pki-selinux due to removal of a boolean in F18 base selinux policies.  This issue was reported by IPA.<sup>&dagger;</sup>
+
+<sup>&dagger;</sup> - denotes IPA related/reported issue
+
+'''Server Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.0 (Beta 1)</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 18 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 18 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Dogtag Certificate Server 10.0 (Beta 2) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[10/30/2012] ==
+
+Dogtag Certificate System 10.0 (Beta 2) builds upon Dogtag Certificate System 10.0 (Beta 1) and represents the second beta release of future Dogtag PKI technology.
+
+'''Project Name:'''
+* '''''Dogtag Certificate System 10.0 (Beta 2)'''''
+'''Releases:'''
+* [10/30/2012] Dogtag Certificate Server 10.0 (Beta 2) [32-bit & 64-bit Fedora 18]
+'''Major Features:'''
+* Selinux policy moved into system selinux policy.  For F18, pki-selinux will no longer be built and delivered by the dogtag team.  The PKI policy will instead be managed by the selinux base packages team.
+* Added option to install schema on a clone, rather than simply replicating it.  This is to resolve an IPA issue when replicating from a non-merged to a merged database.<sup>&dagger;</sup>
+* Restricted AJP to allow access from localhost only by default.  This is an IPA reported issue.<sup>&dagger;</sup>
+* Changes to allow the TPS and RA to install and configure correctly.
+* Enabled Tomcat security manager and added mechanism to configure custom security policy.
+* Added CLI tools to obtain security domain information and install tokens.
+* Refactored REST client classes to support multiple operations over authenticated HTTP session.
+* Added automatic recovery to the LDAP modification listener.
+* Added login service to protect REST services including certificate operations, key operations, security domain, TKS and OCSP.
+* Added option to pkispawn to exit before configuration, in case the installer wants to go through the UI configuration panels.  In this way, pkispawn can be operated like pkicreate/pkisilent.
+* Removed version numbers from jar files to comply with Fedora packaging recommendations.
+
+<sup>&dagger;</sup> - denotes IPA related/reported issue
+
+'''Server Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.0 (Beta 2)</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 18 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 18 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Dogtag Certificate Server 10.0 (Release Candidate 1) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[12/11/2012] ==
+
+Dogtag Certificate System 10.0 (Release Candidate 1) builds upon Dogtag Certificate System 10.0 (Beta 2) and represents the first release candidate release of future Dogtag PKI technology.
+
+'''Project Name:'''
+* '''''Dogtag Certificate System 10.0 (Release Candidate 1)'''''
+'''Releases:'''
+* [12/11/2012] Dogtag Certificate Server 10.0 (Release Candidate 1) [32-bit & 64-bit Fedora 18]
+'''Major Features:'''
+* Simplified and enhanced pkispawn.
+** Added detailed man pages to document use of pkispawn, pkidestroy and the command line utility pki.  
+** Removed --dry-run option and unused respawn() code.
+** Replaced links of scriptlets with lists
+** Modified the way pkispawn parses configuration files.  pkispawn now reads a template file for default settings, and a much smaller and simpler user-defined configuration file for customizations and overrides.  Moreover, pkispawn uses interpolation to substitute in values.  See the man pages for details.
+** Added the ability to import an admin cert into the administrative user created for each subsystem.  This allows multiple subsystems within the same instance to be more easily managed within the same browser.
+** Implemented ability to install a subordinate CA using pkispawn.
+** Implemented ability to install an externally signed CA using pkispawn.
+* Simplified the structure of the UI packages
+** All images and css files have been moved to dogtag-pki-server-theme for all subsystems.  
+** Removed unused and duplicated files.
+** Template files have been moved to the underlying subsystem files.  In future, all theme related messages in those files will be parameterized and placed in dogtag-pki-server-theme.  This will significantly simplify the process of customizing or internationalizing an instance and its theme.
+** Retired all the subsystem specific UI packages, reducing the number of UI packages from 7 to 1.
+* Security fixes for CVE-2012-4543 Certificate System: Multiple cross-site scripting flaws by displaying CRL or processing.
+* Memory fixes for the TPS 
+* Updated to latest version of cmake, removing obsolete modules.
+
+'''Server Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.0 (Release Candidate 1)</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 18 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 18 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>

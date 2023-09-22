@@ -1,0 +1,92 @@
+= Overview =
+
+JSS Fedora source package is located at https://src.fedoraproject.org/rpms/jss.
+
+= Prerequisites =
+
+ $ dnf install git fedpkg rpm-build
+ $ dnf builddep jss
+
+= Getting Source Package  =
+
+To get the source package:
+
+ $ fedpkg clone jss <font color="red">Fedora/jss</font>
+
+The above command will create a new <font color="red">Fedora/jss</font> folder.
+
+= Updating JSS Source Tarball =
+
+To update JSS source in Fedora, first generate a new JSS source archive (no need to build upstream binaries).
+
+Go to <font color="red">jss</font> folder, make sure all changes are committed.
+
+To create a source tarball execute the following:
+
+ $ ./build.sh --source-tag=HEAD src
+
+or
+
+ $ git archive --format=tar.gz --prefix jss-<font color="red">4.5.0</font>/jss/ -o ../<font color="red">Fedora/jss</font>/jss-<font color="red">4.5.0</font>.tar.gz -v HEAD
+
+Then go to <font color="red">Fedora/jss</font> folder and follow the instructions below.
+
+Update the source checksum, for example:
+
+ $ sha512sum --tag jss-<font color="red">4.5.0</font>.tar.gz > sources
+
+= Building JSS Packages =
+
+== Creating Local Build ==
+
+To create a local build:
+
+<pre>
+$ fedpkg local
+</pre>
+
+== Creating SRPM ==
+
+To create an SRPM:
+
+<pre>
+$ fedpkg srpm
+</pre>
+
+== Creating COPR Build ==
+
+To create a COPR build for all platforms:
+
+<pre>
+$ fedpkg copr-build <username>/<COPR repo>
+</pre>
+
+To create a COPR build for certain platforms only, create an SRPM, then execute the following command:
+
+<pre>
+$ copr build <username>/pki-10.6 <SRPM> \
+  -r fedora-27-x86_64 \
+  -r fedora-28-x86_64 \
+  -r fedora-rawhide-x86_64
+</pre>
+
+= Installing JSS Packages =
+
+To install JSS package for Fedora:
+
+<pre>
+$ sudo dnf install x86_64/*.rpm
+</pre>
+
+or reinstall the packages (if the same version/release number has already been installed):
+
+<pre>
+$ sudo dnf reinstall x86_64/*.rpm
+</pre>
+
+= References =
+
+* [[JSS Development]]
+* [[JSS Release Procedure]]
+* [[ELF Application Hardening]]
+* [https://bugzilla.redhat.com/show_bug.cgi?id=1548548 Bug 1548548 - jss: Partial Fedora build flags injection]

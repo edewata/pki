@@ -1,0 +1,11 @@
+= Examples =
+
+* https://github.com/dogtagpki/pki/blob/master/base/common/python/pki/cli/pkcs12.py#L150
+* https://github.com/dogtagpki/pki/blob/master/base/common/python/pki/cli/pkcs12.py#L211
+* https://github.com/dogtagpki/pki/blob/master/base/server/python/pki/server/deployment/scriptlets/configuration.py#L525
+
+= Tools =
+
+* srm
+* shred
+* wipe

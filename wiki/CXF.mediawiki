@@ -1,0 +1,19 @@
+= Overview =
+
+{| border="1" style="border-collapse: collapse;"
+! width="100" | Platform
+! width="200" | CXF
+|-
+| Fedora 28
+| [https://koji.fedoraproject.org/koji/packageinfo?packageID=14279 CXF 3.1]
+|-
+| Fedora 27
+| [https://koji.fedoraproject.org/koji/packageinfo?packageID=14279 CXF 3.1]
+|-
+| Debian
+| N/A
+|}
+
+= References =
+
+* [http://cxf.apache.org/ Apache CXF]

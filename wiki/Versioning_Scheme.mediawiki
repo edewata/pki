@@ -1,0 +1,98 @@
+= Overview =
+
+The primary upstream development is done in the master branch. Currently it contains 10.4 source code and will be released initially as 10.4.0 tarball and 10.4.0-1 Fedora package. After the release, it will be used for 10.5 development.
+
+= Branching Strategy =
+
+<pre>
+master (10.4)
+  |
+  |
+  +- 10.4.0 tag --> 10.4.0-1 release
+  |                 (10.4.0 source)
+  |
+  +- 10.4.1 tag --> 10.4.1-1 release
+  |                 (10.4.1 source)
+  |
+  +------------------ 10.4 branch
+  |                       |
+  |                       |
+  |                       +- 10.4.2 tag --> 10.4.2-1 release
+  |                       |                 (10.4.2 source)
+  |                       |
+  |                       +- 10.4.3 tag --> 10.4.3-1 release  -  -  -  downstream 10.4 branch (rebase) --> downstream 10.4.3-1 release
+  |                       |                 (10.4.3 source)                     |                          (10.4.3 source)
+  |                       |                                                     |
+  |                       +- 10.4.4 tag --> 10.4.4-1 release  -  -  -  -  -  -  +  -  -  -  -  -  -  - --> downstream 10.4.3-2 release
+  |                       |                 (10.4.4 source)                     |                          (10.4.3 source + patch 1)
+  |                       |                                                     |
+  |                       +- 10.4.5 tag --> 10.4.5-1 release  -  -  -  -  -  -  +  -  -  -  -  -  -  - --> downstream 10.4.3-3 release
+  |                                         (10.4.5 source)                                                (10.4.3 source + patch 1-2)
+  |
+(10.5)
+  |
+  |
+  +- 10.5.0 tag --> 10.5.0-1 release
+  |                 (10.5.0 source)
+  |
+  +- 10.5.1 tag --> 10.5.1-1 release
+  |                 (10.5.1 source)
+  |
+  +------------------ 10.5 branch
+  |                       |
+  |                       |
+  |                       +- 10.5.2 tag --> 10.5.2-1 release
+  |                       |                 (10.5.2 source)
+  |                       |
+  |                       +- 10.5.3 tag --> 10.5.3-1 release  -  -  -  downstream 10.5 branch (rebase) --> downstream 10.5.3-1 release
+  |                       |                 (10.5.3 source)                     |                          (10.5.3 source)
+  |                       |                                                     |
+  |                       +- 10.5.4 tag --> 10.5.4-1 release  -  -  -  -  -  -  +  -  -  -  -  -  -  - --> downstream 10.5.3-2 release
+  |                       |                 (10.5.4 source)                     |                          (10.5.3 source + patch 1)
+  |                       |                                                     |
+  |                       +- 10.5.5 tag --> 10.5.5-1 release  -  -  -  -  -  -  +  -  -  -  -  -  -  - --> downstream 10.4.3-3 release
+  |                                         (10.5.5 source)                                                (10.5.3 source + patch 1-2)
+(10.6)
+</pre>
+
+= Master Branch =
+
+Primary development should be done in the [https://github.com/dogtagpki/pki/commits/master master branch].
+
+= Maintenance Branch =
+
+The maintenance branch is created to fix source code issues found after the initial release.
+
+* DOGTAG_10_4_BRANCH
+* [https://github.com/dogtagpki/pki/commits/DOGTAG_10_3_BRANCH DOGTAG_10_3_BRANCH]
+* [https://github.com/dogtagpki/pki/commits/DOGTAG_10_2_6_BRANCH DOGTAG_10_2_6_BRANCH]
+* [https://github.com/dogtagpki/pki/commits/DOGTAG_10_2_5_BRANCH DOGTAG_10_2_5_BRANCH]
+* [https://github.com/dogtagpki/pki/commits/DOGTAG_10_2_4_BRANCH DOGTAG_10_2_4_BRANCH]
+* [https://github.com/dogtagpki/pki/commits/DOGTAG_10_2_3_BRANCH DOGTAG_10_2_3_BRANCH]
+* [https://github.com/dogtagpki/pki/commits/DOGTAG_10_2_2_BRANCH DOGTAG_10_2_2_BRANCH]
+* [https://github.com/dogtagpki/pki/commits/DOGTAG_10_2_1_BRANCH DOGTAG_10_2_1_BRANCH]
+* [https://github.com/dogtagpki/pki/commits/DOGTAG_10_2_0_BRANCH DOGTAG_10_2_0_BRANCH]
+* [https://github.com/dogtagpki/pki/commits/DOGTAG_10_2_BRANCH DOGTAG_10_2_BRANCH]
+* [https://github.com/dogtagpki/pki/commits/DOGTAG_10_1_BRANCH DOGTAG_10_1_BRANCH]
+* [https://github.com/dogtagpki/pki/commits/DOGTAG_10_0_BRANCH DOGTAG_10_0_BRANCH]
+* [https://github.com/dogtagpki/pki/commits/DOGTAG_9_0_BRANCH DOGTAG_9_0_BRANCH]
+
+There is only one active maintenance branch for each major version. For example, for PKI 10 the development will happen in master (10.5), the 10.4 branch will be maintained, but 10.3 branches will no longer be maintained. For PKI 9 there is no active development, but 9.0 branch will be maintained.
+
+= Fedora Packaging Branch =
+
+The Fedora packaging branch is only created to fix Fedora packaging issues found after the initial release.
+
+* [https://src.fedoraproject.org/cgit/rpms/pki-core.git/log/?h=f27 f27] This branch contains pki-core-10.4.8-3.
+* [https://src.fedoraproject.org/cgit/rpms/pki-core.git/log/?h=f26 f26] This branch contains pki-core-10.4.0-1.
+* [https://src.fedoraproject.org/cgit/rpms/pki-core.git/log/?h=f25 f25] This branch contains pki-core-10.4.0-1.
+
+The packaging for other distributions (RHEL, Debian, Ubuntu) are maintained separately outside the upstream PKI repository. The Fedora packaging itself might eventually be moved to a separate repository (see [https://fedorahosted.org/pki/ticket/1342 Ticket #1342: Distribution-less releases]).
+
+= References =
+
+* [[Dogtag branches and releases]]
+* [[API Versioning]]
+* [https://pagure.io/dogtagpki/issue/1210 Ticket #1210: New versioning scheme]
+* [https://semver.org/ Semantic Versioning]
+* [http://openjdk.java.net/jeps/223 JEP 223: New Version-String Scheme]

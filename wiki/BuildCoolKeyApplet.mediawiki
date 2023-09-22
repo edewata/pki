@@ -1,0 +1,121 @@
+Return tool the [[CoolKey]] page.
+= Prerequisites =
+
+== Java Development Kit ==
+
+Download and install [http://www.oracle.com/technetwork/java/javase/downloads/index.html JDK 7]. To install automatically using yum:
+
+<pre>
+% yum install java-1.7.0-openjdk-devel
+</pre>
+
+With manual installation, set JAVA_HOME environment variable to the installation directory and add $JAVA_HOME/bin to the PATH.
+
+== Java Card Development Kit ==
+
+Download and unpack [http://www.oracle.com/technetwork/java/javacard/downloads/index.html Java Card Development Kit 2.2.2].
+
+Unpack java_card_kit-2_2_2-rr-bin-<platform>-do.zip into a folder, then set the JAVACARD_KIT_DIR environment variable to that folder.
+
+Unpack java_card_kit-2_2_2-rr-ant-tasks.zip into the same folder.
+
+Optionally, unpack java_card_kit-2_2_2-rr-bin-docs-do.zip and java_card_kit-2_2_2-rr-specs.zip to the same folder as well.
+
+== Open Platform Card ==
+Download and unpack [http://www.globalplatform.org/specifications/archived/card-tech-201.zip Open Platform Card 2.0.1]. Unpack the included op20iad6.zip into a directory, then set the OPEN_PLATFORM_DIR environment variable to that directory.
+
+== CAP File Transformer ==
+Download and unpack [http://www.trusted-logic.com/down.php CAP File Transformer 1.5].
+
+== Git SVN ==
+
+Download and install git-svn. To install automatically using yum:
+
+<pre>
+% yum install git-svn
+</pre>
+
+See also [https://www.kernel.org/pub/software/scm/git/docs/git-svn.html git-svn(1) Manual Page].
+
+== Ant ==
+
+Download and install [http://ant.apache.org/bindownload.cgi Ant]. To install automatically using yum:
+
+<pre>
+% yum install ant
+</pre>
+
+With manual installation, set the ANT_HOME to the installation folder and add $ANT_HOME/bin into the PATH.
+
+See also [http://ant.apache.org/manual/index.html Ant Manual].
+
+== jCardSim ==
+
+Download [http://jcardsim.org/ jCardSim] JAR file.
+
+To get the source code:
+
+<pre>
+% git svn clone -s http://jcardsim.googlecode.com/svn jcardsim
+</pre>
+
+= Getting CoolKey Source Code =
+
+Use git-svn to checkout the source code as follows:
+
+<pre>
+% git svn clone -s http://svn.fedorahosted.org/svn/coolkey
+</pre>
+
+The applet is located in the coolkey/applet folder.
+
+Copy the default.properties to build.properties and configure the following properties:
+* jcdk.dir
+* openplatform.dir
+* jcardsim.jar
+
+= Building =
+
+To build the applet execute the following command in the coolkey/applet folder:
+
+<pre>
+% ant
+</pre>
+
+= Testing =
+
+To run the tests execute the following command in the coolkey/applet folder:
+
+<pre>
+% ant test
+</pre>
+
+= Deploying =
+
+To generate the deployment files execute the following command in coolkey/applet folder:
+
+<pre>
+% ant deploy
+</pre>
+
+For e-gate cards use the CAP File Transformer:
+
+<pre>
+% java -jar captransf.jar lang.exp framework.exp security.exp cryto.exp -noint CardEdge.cap
+</pre>
+
+Extract the generated CAP files:
+
+<pre>
+% jar xvf CardEdge.cap.transf
+</pre>
+
+Concatenate CAP files: 
+
+<pre>
+C:\> copy Header.cap + Directory.cap + Import.cap + Applet.cap + Class.cap + Method.cap + StaticField.cap + ConstantPool.cap + RefLocation.cap + Descriptor.cap  CardEdge.bin
+</pre>
+
+<pre>
+% cat Header.cap Directory.cap Import.cap Applet.cap Class.cap Method.cap StaticField.cap ConstantPool.cap RefLocation.cap Descriptor.cap > CardEdge.bin
+</pre>

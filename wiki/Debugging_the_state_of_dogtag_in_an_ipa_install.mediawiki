@@ -1,0 +1,20 @@
+First, make sure that you have dogtag instance configured.
+
+ls /var/log/pki/pki-tomcat
+
+Should see ca and possibly kra.
+
+Check that dogtag is running:
+
+ps -ef |grep java |grep pki-tomcat
+
+Check that you can list certificates:
+ pki -P https -h `hostname` -p 8443 -d /etc/httpd/alias/ cert-find
+
+Check that you can issue a cert through the REST API:
+
+Check that you can list keys (for a KRA):
+
+Check that you can issue a cert through the ipa client:
+
+Check that you can store a key through the IPA client:

@@ -1,0 +1,14 @@
+==Goal of this page==
+Is this page about:
+# Migrating keys from an OpenSSL CA to Dogtag, -or-
+# Obtaining a certificate for an existing personal cert/key
+
+The title suggestions #1 (Reuse Existing CA Keypair), but the text suggests #2.
+
+--[[User:Blord|blord]] 17:58, 2 April 2008 (EDT)
+
+== Can we doc using pk12util? ==
+
+I'd rather use pk12util than openssl for examples.
+
+--[[User:Blord|blord]] 17:58, 2 April 2008 (EDT)

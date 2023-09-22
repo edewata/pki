@@ -1,0 +1,57 @@
+= Systemd Files =
+
+Templates:
+
+* [https://pagure.io/389-ds-base/blob/master/f/wrappers/systemd.group.in /usr/lib/systemd/system/dirsrv.target]
+* [https://pagure.io/389-ds-base/blob/master/f/wrappers/systemd.template.service.in /usr/lib/systemd/system/dirsrv@.service]
+
+Unit Files:
+* /etc/sysconfig/dirsrv-localhost
+
+Targets:
+* /etc/systemd/system/dirsrv.target.wants
+
+= Unit File =
+
+<pre>
+[Unit]
+Description=389 Directory Server %i.
+PartOf=dirsrv.target
+After=chronyd.service ntpd.service network-online.target syslog.target
+Before=radiusd.service
+
+[Service]
+Type=notify
+NotifyAccess=all
+TimeoutStartSec=0
+TimeoutStopSec=600
+EnvironmentFile=/etc/sysconfig/dirsrv
+EnvironmentFile=/etc/sysconfig/dirsrv-%i
+PIDFile=/var/run/dirsrv/slapd-%i.pid
+ExecStartPre=/usr/libexec/dirsrv/ds_systemd_ask_password_acl /etc/dirsrv/slapd-%i/dse.ldif
+ExecStart=/usr/sbin/ns-slapd -D /etc/dirsrv/slapd-%i -i /var/run/dirsrv/slapd-%i.pid
+
+# Hardening options:
+# PrivateDevices=true
+# ProtectSystem=true
+# ProtectHome=true
+# PrivateTmp=true
+
+# if you need to set other directives e.g. LimitNOFILE=8192
+# set them in this file
+.include /etc/sysconfig/dirsrv.systemd
+
+[Install]
+WantedBy=multi-user.target
+</pre>
+
+= Enabling DS Service =
+
+<pre>
+$ systemctl enable dirsrv@localhost.service
+</pre>
+
+= See Also =
+
+* [[DS]]
+* [https://github.com/dogtagpki/pki/wiki/Systemd Systemd]

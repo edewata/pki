@@ -1,0 +1,47 @@
+==Submit certificate request to the CA==
+
+The certificate request you just created in the file "certreq.tx" will have a blob of data looking something like this:
+
+  -----BEGIN NEW CERTIFICATE REQUEST-----
+ MIH6MIGiAgEAMEAxHDAaBgNVBAoTE0V4YW1wbGUgRG9tYWluIDEwMjMxIDAeBgNV
+ BAMTF2RoY3AtMTI4LnNqYy5yZWRoYXQuY29tMFkwEwYHKoZIzj0CAQYIKoZIzj0D
+ AQcDQgAExknz78rhNGhUfd/d256ERbAXSBQzVPgxDnBKZA5CfPizmjfoYCGcDGKF
+ sG3Xl5HeggKhDq0uxGyShY1WQyNguKAAMAkGByqGSM49BAEDSAAwRQIhAKkTlR+g
+ Pq1M1Fw59SG4xFEcm77Y0u0u8thG1Nwbzs7eAiAvINKFxslTSFKUzBkte9lvm7bf
+ 20IftfHtB1/2Qpmpfg==
+ -----END NEW CERTIFICATE REQUEST-----
+
+Proceed to submit this request to Dogtag by performing the following steps:
+
+* Proceed to the Dogtag CA main page at for example: <nowiki>https://example.host.com:9443/ca/services</nowiki>
+* Click on "SSL End Users Services"
+* Click on the certificate profile "Manual Server Certificate Enrollment"
+* Copy to the clipboard the entire  request blob above including the "--BEGIN" and "--END" dividers.
+* Paste the blob into the large edit box in Dogtag while accepting the default format "PKCS#10".
+* Click "Submit".
+* If successful, Dogtag will indicate that a new request has been created for your certificate. It will also give the request number that an "agent" user will need later.
+
+Proceed through these steps to process the certificate.
+
+* Proceed to the Dogtag CA main page at (for example): <nowiki>https://example.host.com:9443/ca/services</nowiki>
+* If you have "agent" privileges, proceed to the link "Agent Services". Otherwise, you must get the help of an actual Dogtag agent user.
+* Click on "List Requests" on the left frame.
+* Search for the request  number recalled from before and click on the link provided for it.
+* The agent will now see a screen where they are able to "approve" the request for the server certificate.
+* In this case, it should be sufficient for the agent to simply approve the request with no further action and move on.
+
+Proceed through these steps to obtain the created certificate.
+
+* Using the "End Users Services" page like before, search for and display the page representing the newly created certificate.
+* Locate the blob representing your certificate on the page and save it in the file <code>cert.txt</code>. 
+* Locate and save the CA cert in a new text file called <code>ca.txt</code>. Do this by using the  "Retrieval" tab and "List Certificates" link. The UI will give you the first 20 or so certificates. The very first one in the list is the CA cert.
+* Add the newly obtained certs to the database:
+ /etc/int.d/httpd stop  #stop Apache
+ cd /etc/httpd/alias    #Add the certs to the database
+ certutil -A -d . -n cacert -t "CT,CT," -a -h "''THIRD_PARTY_MODULE_TOKEN''" < ca.txt
+ certutil -A -d . -n "Server-Cert" -t "u,u,u" -a -h "''THIRD_PARTY_MODULE_TOKEN''" < cert.txt
+ 
+
+Note: If any of the above certutil commands complain about not being able to authenticate to the database, try resetting the "THIRD_PARTY_MODULE" password  in order to log into the token:
+
+  modutil -dbdir . -nocertdb -changepw "THIRD_PARTY_MODULE_TOKEN"

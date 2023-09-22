@@ -1,0 +1,56 @@
+= Installation =
+
+<pre>
+$ dnf install rpkg
+</pre>
+
+= Creating Spec Template =
+
+<pre>
+Name:       {{{ git_dir_name }}}
+Version:    {{{ git_dir_version }}}
+Release:    1%{?dist}
+Summary:    This is a test package.
+
+License:    GPLv2+
+URL:        https://someurl.org
+VCS:        {{{ git_dir_vcs }}}
+
+Source:     {{{ git_dir_pack }}}
+
+%description
+This is a test package.
+
+%prep
+{{{ git_dir_setup_macro }}}
+
+%changelog
+{{{ git_dir_changelog }}}
+</pre>
+
+See also [https://docs.pagure.org/rpkg-util/spec_templates_from_scratch.html Spec templates from scratch].
+
+= Generating Spec File =
+
+<pre>
+$ rpkg spec
+</pre>
+
+= Creating Source RPM =
+
+<pre>
+$ rpkg srpm
+</pre>
+
+= Creating Local Build =
+
+<pre>
+$ rpkg local
+</pre>
+
+= See Also =
+
+* [[COPR]]
+* [https://pagure.io/rpkg rpkg]
+* [https://pagure.io/rpkg-util rpkg-util]
+* [https://docs.pagure.org/rpkg-util/quick_start.html Quick start]

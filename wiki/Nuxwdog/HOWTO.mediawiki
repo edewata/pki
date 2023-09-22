@@ -1,0 +1,364 @@
+== About ==
+nuxwdog provides a lightweight process that can be used to start, stop, monitor and even reconfigure a server process.  It is especially useful
+when users need to be prompted for passwords to start a server, because it caches those passwords securely so that restarts can be done automatically
+in the case of a server crash.  
+
+nuxwdog opens a Unix domain socket on which it accepts requests from the server.   These could include requests to prompt for a password, for example.
+To make communicating with nuxwdog easy, a C/C++ shared library is provided (libnuxwdog.so).  Details on how to link with the shared library and use
+the Watchdog Client API are given below.
+
+In addition, nuxwdog provides JNI interfaces and Perl bindings to the libnuxwdog.so library, so that calls can be made from Java and Perl programs.
+
+Note: To avoid confusion, "server" will refer to the program which nuxwdog is being used to start, rather than to nuxwdog itself.  This will be the
+case even though nuxwdog will act as a server in accepting messages from the server (which is acting as a client here).
+
+== Platforms ==
+RHEL 5, Fedora 8+
+
+== Building ==
+
+The source code can be obtained by accessing the svn source tree:
+
+svn co http://svn.fedorahosted.org/svn/nuxwdog/trunk
+
+<< TBD - any build requirements >>
+
+To build (on RHEL5 or Fedora 8+), execute the ./build_nuxwdog script.[[BR]] 
+This will generate the following rpm packages in the release/dist/rpmpkg directory:
+
+     [exec] Wrote: ./release/dist/rpmpkg/SRPMS/nuxwdog-1.0.0-2.src.rpm
+     [exec] Wrote: ./release/dist/rpmpkg/RPMS/i386/nuxwdog-1.0.0-2.i386.rpm
+     [exec] Wrote: ./release/dist/rpmpkg/RPMS/i386/nuxwdog-client-1.0.0-2.i386.rpm
+     [exec] Wrote: ./release/dist/rpmpkg/RPMS/i386/nuxwdog-client-devel-1.0.0-2.i386.rpm
+     [exec] Wrote: ./release/dist/rpmpkg/RPMS/i386/nuxwdog-client-java-1.0.0-2.i386.rpm
+     [exec] Wrote: ./release/dist/rpmpkg/RPMS/i386/nuxwdog-client-perl-1.0.0-2.i386.rpm
+     [exec] Wrote: ./release/dist/rpmpkg/RPMS/i386/nuxwdog-debuginfo-1.0.0-2.i386.rpm
+
+These rpms include the nuxwdog server and client libraries and bindings.
+
+== Installation ==
+
+For Fedora or RHEL, build the rpms containing the nuxwdog server and client libraries as described above.
+Simply install using rpm.
+
+== Running nuxwdog ==
+
+nuxwdog can be started using the following command:
+
+/usr/bin/nuxwdog -f nuxwdog.conf
+
+The configuration file is a text file containing lines of the format: parameter value.
+The following parameters are available:
+ * !ExeFile - full path to executable to be started
+ * !ExeArgs - arguments to the executable.  The first argument must be the full path to the executable.
+ * !TmpDir  - directory where the unix socket domain will be created. 
+ * !ChildSecurity  - set to 1 if we require that only requests from parent (or ancestor really) to child, where nuxwdog is the parent and the server to be started is the child be accepted.  nuxwdog will check the pid for any client sending a request to the unix domain socket.  If the client and nuxwdog do not have an ancestral relationship, the message is dropped.
+ * !ExeOut  - file for stdout for the server to be started
+ * !ExeErr  - file for stderr for the server to be started
+ * !ExeBackground - set to 1 if the server and nuxwdog is to be put into the background (daemon mode) once initialization is complete (0 otherwise)
+ * !PidFile - file to store the pid for nuxwdog
+ * !ChildPidFile - file to store the pid for the server process
+ * !ExeContext - selinux context in which to start the server process.
+
+Below is a configuration file for a Java process.  In this case, this is a CA for the Red Hat Certificate Server.
+
+  ExeFile /usr/lib/jvm/jre/bin/java
+  ExeArgs /usr/lib/jvm/jre/bin/java   -Djava.endorsed.dirs=/usr/share/tomcat5/common/endorsed -classpath :/usr/lib/jvm/jre/lib/rt.jar:/usr/share/java/commons-collections.jar:/usr/share/tomcat5/bin/bootstrap.jar:/usr/share/tomcat5/bin/commons-logging-api.jar:/usr/share/java/mx4j/mx4j-impl.jar:/usr/share/java/mx4j/mx4j-jmx.jar:/usr/share/tomcat5/common/lib/nuxwdog.jar -Dcatalina.base=/var/lib/pki-ca2 -Dcatalina.home=/usr/share/tomcat5 -Djava.io.tmpdir=/usr/share/tomcat5/temp org.apache.catalina.startup.Bootstrap  start
+  TmpDir /var/lib/pki-ca2/logs/pids 
+  ChildSecurity 1
+  ExeOut /var/lib/pki-ca2/logs/catalina.out
+  ExeErr /var/lib/pki-ca2/logs/catalina.out
+  ExeBackground 1
+  PidFile /var/lib/pki-ca2/logs/wd-pki-ca2.pid
+  ChildPidFile /var/run/pki-ca2.pid
+
+Below is a configration file for an apache process.  In this case, this is a TPS (token processing server) for the Red Hat Certificate Server.
+
+  ExeFile /usr/sbin/httpd.worker
+  ExeArgs /usr/sbin/httpd.worker -f /etc/pki-tps1/httpd.conf
+  TmpDir /var/lib/pki-tps1/logs/pids
+  PidFile /var/lib/pki-tps1/logs/wd-pki-tps1.pid
+  ExeContext pki_tps_t
+
+
+nuxwdog can be started in interactive mode by specifying a -i command line switch.  In this case, nuxwdog will not [[BR]]
+close STDOUT and daemonize (go into the background) at the end of the initialization phase.
+
+== Watchdog Client ==
+
+A server that is started by nuxwdog can send messages to nuxwdog by calling functions in the !WatchdogClient API.
+These calls are implemented in a Watchdog client library (libnuxwdog.so) which can be linked into the server code.
+
+The !WatchdogClient API (which is detailed in !WatchdogClient.h) has the following calls:
+
+ static PRStatus init(void)::
+    Creates a listen socket binding it to the unix domain socket 
+    specified by the environment variable WD_PIPE_NAME. nuxwdog creates the listen sockets
+    on behalf of this method and passes the file descriptors to this process. 
+    This is typically the first call that is made by the server to nuxwdog.
+  
+ static PRStatus close(void)::
+    Closes the socket connection to nuxwdog.
+ 
+ static PRStatus reconnect(void)::
+    Reconnects to nuxwdog.
+ 
+ static PRStatus sendPIDPath(const char* pidPath)::
+    Sends the path of the pid file for this process to nuxwdog
+ 
+ static PRStatus closeLS(const char* lsName, const char* ip, const PRUint16 port, const PRUint16 family)::
+    Asks nuxwdog to close the listening socket on the specified IP and port.
+ 
+ static PRStatus sendEndInit(PRInt32 numprocs)::
+    Notify nuxwdog that the server initialization phase is complete.  At this point,
+    unless nuxwdog is started in interactive mode, stdout, stdin and stderr streams are closed 
+    and the nuxwdog process goes into the background (is daemonized).  nuxwdog then enters
+    a message loop where it waits for messages from the server. 
+ 
+ static PRStatus getPassword(const char *prompt, const PRInt32 serial, char **password)::
+    Asks nuxwdog for a password.  Passwords are stored in the nuxwdog in an encrypted  
+    hash table with the prompt (passed in above) as the key.  
+ 
+    If an entry corresponding to the prompt is not found in the hash table and the initialization  
+    phase is not yet complete, then the user will be prompted on the console (STDOUT) for the password, 
+    using the prompt passed in above.  
+ 
+    If the initialization phase is complete, then nuxwdog has been daemonized and STDOUT/STDIN are not 
+    available.  In this case, nuxwdog sends back the string "send-non-empty-message".
+    
+ static PRStatus sendTerminate(void)::
+    Inform nuxwdog that the server has completed its business. At this point, nuxwdog exits too.
+ 
+ static PRBool isWDRunning(void)::
+    Return whether nuxwdog is running.
+ 
+ static PRStatus sendReconfigureStatus(char *statusmsg)::
+    Send status in response to a reconfiguration command.
+    
+ static PRStatus sendReconfigureStatusDone()::
+    Inform nuxwdog that the reconfiguration is done.
+   
+ static WDMessages getAdminMessage(void)::
+    Receive message from nuxwdog and return the message type
+ 
+ static int getFD(void)::
+    Return the native file descriptor of the channel.
+
+All of the above are static methods on a !WatchdogClient object, and can therefore be called as WatchdogClient::init() etc.
+
+Internally, the !WatchdogClient sends and receives messages of the following types.  See the code for more details.
+
+
+    typedef enum {
+        wdmsgFirst,                     // unused
+        wdmsgGetPWD,                    // get Password from terminal
+        wdmsgGetPWDreply,               // reply to Password request
+        wdmsgGetLS,                     // get Listen Socket, return fd
+        wdmsgGetLSreply,                // reply to Listen Socket request
+        wdmsgCloseLS,                   // close Listen Socket
+        wdmsgCloseLSreply,              // reply to close Listen Socket
+        wdmsgEndInit,                   // done with server initialization (can clean
+                                        //      up watchdog and terminal)
+        wdmsgEndInitreply,              // reply to initialization done message
+        wdmsgSetPIDpath,                // get PID path from server
+        wdmsgSetPIDpathreply,           // reply to PID path request
+        wdmsgRestart,                   // Admin message to restart servers
+        wdmsgRestartreply,              // reply to Admin message to restart servers
+        wdmsgTerminate,                 // clean shut down from server
+        wdmsgTerminatereply,            // reply to server that Terminate received
+        wdmsgReconfigure,               // Admin message to start a reconfiguration
+        wdmsgReconfigurereply,          // reply to Admin reconfig message
+        wdmsgGetReconfigStatus,         // get status from reconfiguration
+        wdmsgGetReconfigStatusreply,    // reply to get status reconfig message
+        wdmsgReconfigStatus,            // status from server from reconfiguration
+        wdmsgReconfigStatusreply,       // reply to status from server
+        wdmsgReconfigStatusDone,        // done sending status from reconfiguration
+        wdmsgReconfigStatusDonereply,   // reply to done sending status
+        wdmsgEmptyRead,                 // Empty read receiving msg => closed socket
+        wdmsgLast                       // unused
+    } WDMessages;
+
+=== Watchdog Client Calls (C) ===
+A few calls have had C wrapper functions written for them so that they can be called from C programs.
+It is fairly trivial to extend this mechanism for all the other calls if needed.
+
+The current C calls are:
+
+    PRStatus call_WatchdogClient_init() {
+        return cpp_call_WatchdogClient_init();
+    }
+    
+    PRStatus call_WatchdogClient_sendEndInit(int numProcs) {
+        return cpp_call_WatchdogClient_sendEndInit(numProcs);
+    }
+    
+    char * call_WatchdogClient_getPassword(char *prompt, int serial) {
+        return cpp_call_WatchdogClient_getPassword(prompt, serial);
+    }
+
+As an example of how these calls are used, here is a code snippet for the Red Hat Certificate Server Token Processing
+System (TPS).  This function is used to obtain passwords for a database - and is called both during and post-initialization.
+When it is called during initialization, nuxwdog prompts for the relevant password.  When it is called post initialization,
+nuxwdog returns the password that had been previously cached. 
+
+    char *get_pwd_from_conf(char *filepath, char *name)
+    {
+        PRFileDesc *fd;
+        char line[MAX_CFG_LINE_LEN];
+        int removed_return;
+        PRStatus status;
+        char *val= NULL;
+        char prompt[128];
+        char *wd_pipe = NULL;
+        
+        if (strlen(filepath) == 0) {
+            return NULL;
+        }
+        if (debug_fd)
+            PR_fprintf(debug_fd, "get_pwd_from_conf looking for %s\n", name);
+        fd= PR_Open(filepath, PR_RDONLY, 400);
+        if (fd == NULL) {
+            // password file is not readable.
+            // if started by the watchdog, ask the watchdog instead.
+            wd_pipe = PR_GetEnv("WD_PIPE_NAME");
+            if ((wd_pipe != NULL) && (strlen(wd_pipe) > 0)) {
+                status = call_WatchdogClient_init();
+                if (status != PR_SUCCESS) {
+                    PR_fprintf(debug_fd, "get_pwd_from_conf unable to initialize connection to Watchdog");
+                    return NULL;
+                }
+                sprintf(line, "Please enter the password for %s:", name);
+                val = call_WatchdogClient_getPassword(line, 0);
+                if (val == NULL) {
+                    PR_fprintf(debug_fd, "get_pwd_from_conf failed to get password from watchdog");
+                    return NULL;
+                }
+                return val;
+            } else {
+                // not started by watchdog 
+                // Even if this is pre-fork, getting password from stdin is problematic.
+                return NULL;
+            }
+        } ...
+
+=== Watchdog Client Calls (Java) ===
+
+Some JNI calls have been added to allow nuxwdog to be called from Java programs.  The method is easily extensible to
+the other functions if needed.  The current JNI calls are:
+
+    JNIEXPORT jint JNICALL Java_com_redhat_nuxwdog_WatchdogClient_init
+      (JNIEnv *, jclass );
+    
+    JNIEXPORT jint JNICALL Java_com_redhat_nuxwdog_WatchdogClient_sendEndInit
+      (JNIEnv *, jclass, jint);
+    
+    JNIEXPORT jstring JNICALL Java_com_redhat_nuxwdog_WatchdogClient_getPassword
+      (JNIEnv *, jclass, jstring, jint);
+
+Here is an example from the startup code for the Java subsystems in the Red Hat Certificate Server. 
+In this case, we check for the existence of a password file.  If that does not exist, we ask nuxwdog
+to prompt the user for a password.  At the end of initialization, we notify nuxwdog by sending a EndInit
+message.
+
+    import com.redhat.nuxwdog.*;
+    
+    public void init(ISubsystem owner, IConfigStore config)
+        throws EBaseException {
+        ....
+        // get the list of passwords 
+        String passwordList = config.getString("cms.passwordlist", "internaldb,replicationdb");
+        
+        // initialize the PasswordReader and PasswordWriter
+        String pwdPath = config.getString("passwordFile");
+        String pwdClass = config.getString("passwordClass");
+        
+        // check if started by the nuxwdog
+        String wdPipeName = OSUtil.getenv("WD_PIPE_NAME");
+        if ((wdPipeName != null) && (! wdPipeName.equals(""))) {
+            WatchdogClient.init();
+            startedByWD = true;
+        }
+        
+        if (pwdClass != null) {
+            try {
+                mPasswordStore = (IPasswordStore)Class.forName(pwdClass).newInstance();
+                try {
+                    mPasswordStore.init(pwdPath);
+                } catch (IOException io) {
+                    // Error in reading file at pwdPath 
+                    // This might be because the file has been removed for security reasons.
+                    // Prompt for the passwords instead if started by the nuxwdog watchdog
+                    if (! startedByWD) {
+                        CMS.debug("CMSEngine: init(): Cannot prompt for passwords as server has not been started by nuxwdog");
+                        throw new IOException("Not started by nuxwdog");
+                    }
+                    String tags[] = passwordList.split(",");
+                    for (int i=0; i < tags.length; i++) {
+                        CMS.debug("CMSEngine: init(): prompting for password for " + tags[i]);
+                        mPasswordStore.putPassword(tags[i],
+                            WatchdogClient.getPassword("Please provide password for " + tags[i] + ": ", 0));
+                    }
+                }
+         
+                CMS.debug("CMSEngine: init(): password store initialized for "+
+                       pwdClass);
+            } catch (Exception e) {
+                CMS.debug("CMSEngine: init(): Error initializing password store for " + pwdClass);
+            }
+        
+        ... more init stuff ...
+       
+        }        if (startedByWD) {
+            WatchdogClient.sendEndInit(0);
+        }
+
+=== Watchdog Client Calls (Perl) ===
+
+A Perl XS module has been written to allow the C client wrapper functions to be called from Perl.
+The XS module specification looks like this:
+
+    MODULE = Nuxwdogclient          PACKAGE = Nuxwdogclient
+    
+    INCLUDE: const-xs.inc
+    
+    PRStatus
+    call_WatchdogClient_init()
+    
+    PRStatus
+    call_WatchdogClient_sendEndInit(numProcs)
+        int numProcs
+    
+    char *
+    call_WatchdogClient_getPassword(prompt, serial)
+        char * prompt
+        int serial
+
+As an example of this is used, here is a code snippet from a Perl handler used when starting a mod_perl module in the TPS.
+
+    use Nuxwdogclient;
+    
+    package PKI::TPS::Startup;
+    
+    sub handler {
+      ....
+      #read password file
+      my $pwdfile = $config->get("tokendb.bindPassPath");
+      if ((-e $pwdfile) && (-r $pwdfile)) {
+        $x_global_bindpwd = `grep -e "^tokendbBindPass" $pwdfile | cut -c17-`;
+        if ($x_global_bindpwd) {
+          return Apache2::Const::OK;
+      }
+    }
+    
+    &debug_log("startup::post_config: bindpwd not found. Prompting for it");
+    
+    #initialize client socket connection - TODO: check status
+    my $status = Nuxwdogclient::call_WatchdogClient_init();
+    &debug_log("startup::post_config: watchdog client initialized.");
+  
+    #get password
+    my $prompt = "Please enter the password for tokendbBindPass:";
+    $x_global_bindpwd = Nuxwdogclient::call_WatchdogClient_getPassword($prompt, 0);
+  
+    return Apache2::Const::OK;
+    }

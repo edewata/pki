@@ -1,0 +1,21 @@
+= Modules =
+
+To list modules:
+
+<pre>
+$ java --list-modules
+</pre>
+
+To view module details:
+
+<pre>
+$ java --describe-module <module>
+</pre>
+
+= References =
+
+* [[Java]]
+* [https://blog.codefx.org/java/java-9-migration-guide/ Java 9 Migration Guide: The Seven Most Common Challenges]
+* [http://openjdk.java.net/projects/jigsaw/talks/prepare-for-jdk9-j1-2016.pdf Prepare for JDK 9]
+* [https://blog.codefx.org/java/five-command-line-options-to-hack-the-java-9-module-system/ Five Command Line Options To Hack The Java 9 Module System]
+* [https://www.oracle.com/corporate/features/understanding-java-9-modules.html Understanding Java 9 Modules]

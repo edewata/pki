@@ -1,0 +1,47 @@
+= Overview =
+
+This page describes the process to create DS release for Fedora.
+
+= Authentication =
+
+Obtain a Kerberos ticket for FEDORAPROJECT.ORG account and [[COPR]] authentication token.
+
+= Getting Source Package =
+
+The repository for DS source package for Fedora is located at https://src.fedoraproject.org/rpms/389-ds-base. To clone the repository locally:
+
+ $ fedpkg clone 389-ds-base
+ $ cd 389-ds-base
+
+The repository can be forked for development. To add the fork into the local repository:
+
+ $ git remote add <username> ssh://<username>@pkgs.fedoraproject.org/forks/<username>/rpms/389-ds-base.git
+ $ git fetch <username>
+
+= Update Source Tarball =
+
+Generate a tarball with the following commands:
+
+ $ cd <font color="red">389-ds-base</font>
+ $ git archive --prefix=389-ds-base-VERSION/ HEAD | bzip2 > 389-ds-base-VERSION.tar.bz2
+
+Generate the checksum for the source tarball with the following command:
+
+ $ cd <font color="red">Fedora/389-ds-base</font>
+ $ sha512sum --tag 389-ds-base-VERSION.tar.bz2
+
+= Creating Test Build =
+
+Create a [[COPR]] build with the following command:
+
+ $ cd <font color="red">Fedora/389-ds-base</font>
+ $ fedpkg copr-build edewata/pki --nowait
+
+or create a scratch build with the following commands:
+
+ $ fedpkg srpm
+ $ fedpkg scratch-build --nowait --srpm <SRPM>
+
+= See Also =
+
+* [[DS]]

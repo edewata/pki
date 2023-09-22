@@ -1,0 +1,772 @@
+== Background ==
+<ul>
+There is a goal to allow data from an existing Dogtag 9 instance to be re-used in a Dogtag 10 system.
+</ul>
+
+== Design Goals ==
+=== Phase I:  Run an existing Dogtag 9 CA Instance using Dogtag 10 RPMS ===
+<ul>
+The purpose of this phase is to allow an existing Dogtag 9 CA instance (e. g. - as optionally used by [http://freeipa.org freeIPA]) to continue running once Dogtag 9 RPMS have been replaced by Dogtag 10 RPMS.
+</ul>
+=== Phase II: Migrate an existing Dogtag 9 CA Instance (Phase I) to a new Dogtag 10 Instance ===
+<ul>
+The purpose of this phase is to allow the data from an existing Dogtag 9 CA instance (e. g. - as optionally used by [http://freeipa.org freeIPA]) to be migrated to a freshly minted Dogtag 10 CA instance.
+</ul>
+=== Phase III:  Run any existing Dogtag 9 PKI Instance using Dogtag 10 RPMS ===
+<ul>
+The purpose of this phase is to allow any existing Dogtag 9 PKI instance (i. e. - CA, DRM, OCSP, TKS, RA, or TPS) to continue running once Dogtag 9 RPMS have been replaced by Dogtag 10 RPMS.
+</ul>
+=== Phase IV:  Migrate any existing Dogtag 9 PKI Instance to a new Dogtag 10 Instance ===
+<ul>
+The purpose of this phase is to allow the data from any existing Dogtag 9 PKI instance (i. e. - CA, DRM, OCSP, TKS, RA, or TPS]) to be migrated to a freshly minted Dogtag 10 PKI instance.
+</ul>
+
+== Associated TRAC tasks and/or Bugzilla Bugs ==
+=== [https://fedorahosted.org/pki/report PKI TRAC] ===
+<ul>
+* [https://fedorahosted.org/pki/ticket/293 TRAC Ticket #293 - Merge CS and IPA databases]
+* [https://fedorahosted.org/pki/ticket/294 TRAC Ticket #294 - Write Migration script for IPA dogtag 9 -> 10 instances]
+* <strike>[https://fedorahosted.org/pki/ticket/301 TRAC Ticket #301 - Need to modify init scripts to verify needed symlinks in an instance]</strike>
+* <strike>[https://fedorahosted.org/pki/ticket/303 TRAC Ticket #303 - Dogtag 10: CS.cfg parameters for Dogtag 9 instance running under Dogtag 10 packages . . .]</strike>
+</ul>
+=== [https://bugzilla.redhat.com/bugzilla/index.cgi Bugzilla Bugs] ===
+<ul>
+</ul>
+
+== Detailed Design ==
+=== Design Considerations ===
+==== Phase I ====
+<ul>
+<table>
+<tr>
+<td valign="top"><b>USE CASE I:&nbsp;&nbsp;</b></td>
+<td valign="top">Whenever Dogtag 9 RPMS are being upgraded to Dogtag 10 RPMS, and an existing Dogtag 9 CA exists (e. g. - an optional [http://freeipa.org freeIPA] CA)<td>
+</tr>
+</table>
+<table>
+<tr>
+<td valign="top"><b>LIMITATIONS:&nbsp;&nbsp;</b></td>
+<td>This phase will only be supported as an "in-place" option (i. e. - a machine that is running a Dogtag 9 CA instance upgrades its packages to Dogtag 10 RPMS)</td>
+</tr>
+</table>
+</ul>
+
+==== Phase II ====
+<ul>
+<table>
+<tr>
+<td valign="top"><b>USE CASE I:&nbsp;&nbsp;</b></td>
+<td valign="top">[http://freeipa.org freeIPA] users that have chosen to migrate their existing IPA framework from Fedora 17 to Fedora 18.<br>This case covers the very specific case of migrating the default IPA v2.2 CA (Dogtag 9) instance to the default IPA v3.0 CA (Dogtag 10) instance.</td>
+</tr>
+</table>
+<table>
+<tr>
+<td valign="top"><b>LIMITATIONS:&nbsp;&nbsp;</b></td>
+<td valign="top">This phase will only be supported as an "in-place" option (i. e. - a machine that is running a Dogtag 9 CA instance upgrades its packages to Dogtag 10 RPMS).</td>
+</tr>
+</table>
+</ul>
+
+==== Phase III ====
+<ul>
+'''TBD'''
+</ul>
+==== Phase IV ====
+<ul>
+'''TBD'''
+</ul>
+
+=== High-Level Design ===
+==== Phase I ====
+<ul>
+Implementation of this phase will only require changes to the '''pki/base/setup/scripts/functions''' bash script.
+<table>
+<tr>
+<td valign="top"><b>NOTE:&nbsp;&nbsp;</b></td>
+<td valign="top">A "restart" of the existing Dogtag 9 CA instance will be necessary once the system has been upgraded from Dogtag 9 RPMS to Dogtag 10 RPMS.</td>
+</tr>
+</table>
+</ul>
+==== Phase II ====
+<ul>
+Implementation of this phase will be constrained to changes made to [http://freeipa.org freeIPA].<br>
+<br>
+Differences between the Dogtag 9 CA instance and the Dogtag 10 CA instance will include:
+<ul>
+* LDAP Internal database '''[use Dogtag 9 data]'''
+* NSS Security databases '''[use Dogtag 9 data]'''
+* password.conf '''[use Dogtag 9 data]'''
+* CS.cfg
+** directory paths and URLS '''[use Dogtag 10 data]'''
+** separated ports (Dogtag 9) versus shared ports (Dogtag 10) '''[use Dogtag 10 data]'''
+** certificate "blobs" '''[use Dogtag 9 data]'''
+</ul>
+The initial plan is to edit the '''freeipa/ipaserver/install/cainstance.py''' Python file, and create a new function called '''migrate_instance''' utilizing the function called '''configure_instance''' as a template.  The '''migrate_instance''' function will NOT create users, agent databases, import CA chains, create an RA, or handle renewals, and will
+be called via a new standalone program called '''/usr/sbin/ipa-ca-migrate'''.
+
+The proposed flow for how a migration will take place consists of the following steps:
+<ul>
+Master CA:
+<ul>
+* '''# ipa-server-install'''
+* '''# ipa-ca-migrate''' (Dogtag 9 --> Dogtag 10)
+</ul>
+Cloned CA:
+<ul>
+* '''# ipa-replica-prepare &lt;hostname of clone machine&gt;''' (produces '''&lt;file&gt;''')
+* '''# ipa-replica-install --setup-ca &lt;file&gt;'''<br>--- OR ---<br>'''# ipa-replica-install &lt;file&gt;''' AND '''# ipa-ca-install &lt;file&gt;''' (Dogtag 10)
+* '''# ipa-ca-migrate''' (Dogtag 9 --> Dogtag 10)
+</ul>
+</ul>
+
+==== Phase III ====
+<ul>
+'''TBD'''
+</ul>
+==== Phase IV ====
+<ul>
+'''TBD'''
+</ul>
+
+=== Low-Level Design ===
+==== Phase I ====
+<ul>
+* Add '''/var/lib/pki-ca/common/lib/apache-commons-codec.jar -> /usr/share/java/commons-codec.jar'''
+* Add '''/var/lib/pki-ca/common/lib/pki-tomcat.jar -> /usr/share/java/pki/pki-tomcat.jar'''
+* Add the following values to the end of '''/var/lib/pki-ca/conf/CS.cfg''':
+<ul>
+<pre>
+# diff 9/var/lib/pki-ca/conf/CS.cfg 9_under_10/var/lib/pki-ca/conf/CS.cfg
+1090a1091,1113
+> processor.caDoRevoke.authorityId=ca
+> processor.caDoRevoke.authzMgr=BasicAclAuthz
+> processor.caDoRevoke.authzResourceName=certServer.ee.certificates
+> processor.caDoRevoke.getClientCert=false
+> processor.caDoRevoke-agent.authMgr=certUserDBAuthMgr
+> processor.caDoRevoke-agent.authorityId=ca
+> processor.caDoRevoke-agent.authzMgr=BasicAclAuthz
+> processor.caDoRevoke-agent.authzResourceName=certServer.ca.certificates
+> processor.caDoRevoke-agent.getClientCert=true
+> processor.caDoUnrevoke.authMgr=certUserDBAuthMgr
+> processor.caDoUnrevoke.authorityId=ca
+> processor.caDoUnrevoke.authzMgr=BasicAclAuthz
+> processor.caDoUnrevoke.authzResourceName=certServer.ca.certificate
+> processor.caDoUnrevoke.getClientCert=true
+> processor.caProfileProcess.authMgr=certUserDBAuthMgr
+> processor.caProfileProcess.authorityId=ca
+> processor.caProfileProcess.authzMgr=BasicAclAuthz
+> processor.caProfileProcess.authzResourceName=certServer.ca.request.profile
+> processor.caProfileProcess.getClientCert=true
+> processor.caProfileSubmit.authorityId=ca
+> processor.caProfileSubmit.authzMgr=BasicAclAuthz
+> processor.caProfileSubmit.authzResourceName=certServer.ee.profile
+> processor.caProfileSubmit.getClientCert=false
+</pre>
+</ul>
+</ul>
+
+==== Phase II ====
+<ul>
+* Export LDAP Internal database data from Dogtag 9 using '''db2ldif()'''
+* Import LDAP Internal database data to Dogtag 10 using '''ldif2db()'''
+* Copy '''/var/lib/pki-ca/alias/cert8.db''' to '''/var/lib/pki/pki-tomcat/alias/cert8.db'''
+* Copy '''/var/lib/pki-ca/alias/key3.db''' to '''/var/lib/pki/pki-tomcat/alias/key3.db'''
+* Copy '''/var/lib/pki-ca/alias/secmod.db''' to '''/var/lib/pki/pki-tomcat/alias/secmod.db'''
+* Copy '''/var/lib/pki-ca/conf/password.conf''' to '''/var/lib/pki/pki-tomcat/conf/password.conf'''
+* Resolve differences between '''/var/lib/pki-ca/conf/CS.cfg''' and '''/var/lib/pki/pki-tomcat/conf/ca/CS.cfg''':
+<ul>
+<pre>
+# diff 9_under_10/var/lib/pki-ca/conf/CS.cfg 10/var/lib/pki/pki-tomcat/conf/ca/CS.cfg 
+5,7c5,8
+< installDate=Wed Sep  5 11:15:13 2012
+< instanceId=pki-ca
+< instanceRoot=/var/lib/pki-ca
+---
+> configurationRoot=/ca/conf/
+> installDate=Wed Sep  5 13:42:34 2012
+> instanceId=pki-tomcat
+> instanceRoot=/var/lib/pki/pki-tomcat
+10c11,12
+< passwordFile=/var/lib/pki-ca/conf/password.conf
+---
+> passwordFile=/var/lib/pki/pki-tomcat/conf/password.conf
+> pidDir=/var/run/pki/tomcat
+44c46
+< auths.instance.flatFileAuth.fileName=/var/lib/pki-ca/conf/flatfile.txt
+---
+> auths.instance.flatFileAuth.fileName=/var/lib/pki/pki-tomcat/conf/ca/flatfile.txt
+70,71c72,73
+< authz.instance.DirAclAuthz.ldap.basedn=dc=dogtag17-clone.usersys.redhat.com-pki-ca
+< authz.instance.DirAclAuthz.ldap.database=dogtag17-clone.usersys.redhat.com-pki-ca
+---
+> authz.instance.DirAclAuthz.ldap.basedn=o=pki-tomcat
+> authz.instance.DirAclAuthz.ldap.database=pki-tomcat
+78,79c80
+< authz.instance.DirAclAuthz.ldap.ldapconn.cloneStartTLS=false
+< authz.instance.DirAclAuthz.ldap.ldapconn.host=localhost
+---
+> authz.instance.DirAclAuthz.ldap.ldapconn.host=dogtag17-clone.usersys.redhat.com
+426,428c427,429
+< ca.audit_signing.cert=MIIDqjCCApKgAwIBAgIBBTANBgkqhkiG9w0BAQsFADBQMR0wGwYDVQQKExRVc2Vyc3lzUmVkaGF0IERvbWFpbjEPMA0GA1UECxMGcGtpLWNhMR4wHAYDVQQDExVDZXJ0aWZpY2F0ZSBBdXRob3JpdHkwHhcNMTIwOTA1MTg0MzI5WhcNMTQwODI2MTg0MzI5WjBXMR0wGwYDVQQKExRVc2Vyc3lzUmVkaGF0IERvbWFpbjEPMA0GA1UECxMGcGtpLWNhMSUwIwYDVQQDExxDQSBBdWRpdCBTaWduaW5nIENlcnRpZmljYXRlMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAruxDwgcJwCAIBcaDCrswvtNNiL2byFVb9C/LN9G6k2Ud87GMPb7cSrpKkArYBRJN3575YJgVKjyXVbfjHxge67zBy8XmYGmHe3NCS0c6M3VkUI3atA2yMo2UkAkK5EnSaB8Y+kh9leQERyng/9RHYvJ1j33nJ4gQX9bRloEYT5XsVR9VUjiHD/LWApDqN5e7OS5jBXVVdNKaZo3hLQT/sXLspgyGRkuICVZaq6EVKgmlbtMJ6hpmXlpI4dHj3OnSWBk551dHEGgPwvNzbvght5ncHvtZ1oakq9GJeQeXTD/TCoQ8iyygviilgqh/NVFAgDqlpnsyxyrCSUvLp735wwIDAQABo4GHMIGEMB8GA1UdIwQYMBaAFNZHCq+pERhB3C0xo13pI/yt5tZgMA4GA1UdDwEB/wQEAwIGwDBRBggrBgEFBQcBAQRFMEMwQQYIKwYBBQUHMAGGNWh0dHA6Ly9kb2d0YWcxNy1jbG9uZS51c2Vyc3lzLnJlZGhhdC5jb206OTE4MC9jYS9vY3NwMA0GCSqGSIb3DQEBCwUAA4IBAQBN8QL9sNHjW5CuqgFe1rk9fJ4Zi/mKKLYRZij9tTNPyyX8j0L7x5+KSMGQ+914SX3II2ClgHEwm9UN0jwLbpwzuaitop1ESCnrdIZESSNA6KY9MWcFT+MqgFkj0/zdLYxhc9ZxEftwfQREq1LbR3LWkVStU2MZ445n6dP2O4m9RBtAXCKXFjgs3YFa9E8d8+s49dLbEfmil4Bc/WjSeHZA+ZgoD7k6/g6AFsqkYPOCx9IIQrs4rz63GY3NCP7K2gMF1W3x2YhQxF2buW4/ePN+T7TTguXY/Bt5RDO9eeDWen1tr0b8JpjCT2IdD2W9769o0Ujy9PdTY9QkYTBkbOXT
+< ca.audit_signing.certreq=MIICnDCCAYQCAQAwVzEdMBsGA1UEChMUVXNlcnN5c1JlZGhhdCBEb21haW4xDzANBgNVBAsTBnBraS1jYTElMCMGA1UEAxMcQ0EgQXVkaXQgU2lnbmluZyBDZXJ0aWZpY2F0ZTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAK7sQ8IHCcAgCAXGgwq7ML7TTYi9m8hVW/QvyzfRupNlHfOxjD2+3Eq6SpAK2AUSTd+e+WCYFSo8l1W34x8YHuu8wcvF5mBph3tzQktHOjN1ZFCN2rQNsjKNlJAJCuRJ0mgfGPpIfZXkBEcp4P/UR2LydY995yeIEF/W0ZaBGE+V7FUfVVI4hw/y1gKQ6jeXuzkuYwV1VXTSmmaN4S0E/7Fy7KYMhkZLiAlWWquhFSoJpW7TCeoaZl5aSOHR49zp0lgZOedXRxBoD8Lzc274IbeZ3B77WdaGpKvRiXkHl0w/0wqEPIssoL4opYKofzVRQIA6paZ7MscqwklLy6e9+cMCAwEAAaAAMA0GCSqGSIb3DQEBCwUAA4IBAQAgD4WT5IgKILiVazbveQsw43KWjixPvYpfbDTY6m5RrzXZrNDijhiJ+i5QspDb5EqiBjsZYfkzr0XlYibFFlxjiFXdr+TId6hXRk3YnMU9SlAXHM/IGbNdvDKe5C59TBSGyvh4Kg9ufrr7lrFuPguIbHX1PdOCXgDUwiYScd0MKq/LoGh5wfAUSpUgN5xzC+qwDZlzLLMWvfWhJyXgfsZf9S7SHe1JyHKz8BsNtZqLAKUEJZhCrRJMdGjzgcnCWFbyXazjrNEs7fa7W3SDtXu7DM8OCDgOI5cQt9PTZgZU3UhVrlK3uU37z3zt428ZKKRr+AcPq5rNFUGLtB9KAL4K
+< ca.audit_signing.nickname=auditSigningCert cert-pki-ca
+---
+> ca.audit_signing.cert=MIIDpTCCAo2gAwIBAgIBBTANBgkqhkiG9w0BAQsFADBOMSswKQYDVQQKEyJ1c2Vyc3lzLnJlZGhhdC5jb20gU2VjdXJpdHkgRG9tYWluMR8wHQYDVQQDExZDQSBTaWduaW5nIENlcnRpZmljYXRlMB4XDTEyMDkwNTIwNDMxNloXDTE0MDgyNjIwNDMxNlowVDErMCkGA1UEChMidXNlcnN5cy5yZWRoYXQuY29tIFNlY3VyaXR5IERvbWFpbjElMCMGA1UEAxMcQ0EgQXVkaXQgU2lnbmluZyBDZXJ0aWZpY2F0ZTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMGZ5aHQ0UI3yepGEW0OSglHUc5dkOSh8HVlz7CX60QuO6jbKmvQPO3E9Hi1wg+M0OhnLygygZ7RWlXrVNIES5VYTpdgcwSR254m/+8MUhBnNeThz5F0NP8oSEPaxfo3PtoHdYWExLegfaCR2Q2eA78XFv2enfxt/HGiuQZzJZvskaVGZ6d5QQZFvAAYWzXTR2oFKSBfCZkLMEVJonyUWe7g7sPxXNIpgkbsJXS0gCizcbgWJdcsMDHy0aYkBL8AC0DtbjgbqjXBA2zsUqwI8qwWQ3vDr+F0YvfmgKoey8514rBThClWPtBcgrtWZ0VVp5iAK1zK8Q/YM9OdP2i5L7MCAwEAAaOBhzCBhDAfBgNVHSMEGDAWgBStLySKFbQ96UEhLmJ6dFCEP1BTjTAOBgNVHQ8BAf8EBAMCBsAwUQYIKwYBBQUHAQEERTBDMEEGCCsGAQUFBzABhjVodHRwOi8vZG9ndGFnMTctY2xvbmUudXNlcnN5cy5yZWRoYXQuY29tOjgwODAvY2Evb2NzcDANBgkqhkiG9w0BAQsFAAOCAQEAhPulbd67c0Xv7GsgP2X4bC91q5RyLvQgN6NEr5pC+oyFKht9QCP8AI6aEZhK5IAr+WDrpKc9M9D9xAhfWoAD33Tu87fqp66u7u/8fAEM+pERzn0qtayyBwx6dEdTFuxxEZBlolbzr94Qkm6WX7p4UB6GV7giT6mEZJZecryS3Y8oOC8rlSolMddp9Jldx0on/Uyc2BCDwIbVRUEGyFhL0pQzxCax8KJNYKkehE4HoOYcCRmK1Duc0tgaCl6DWTwEaQXO9O0/HUOVMwzFjsO2b3kvAIA9ebbONzhCBcjmCbws91tnHSufoYZkrDZ0kmQEukzokaRcTjyGTSxQ4bh5SQ==
+> ca.audit_signing.certreq=MIICmTCCAYECAQAwVDErMCkGA1UEChMidXNlcnN5cy5yZWRoYXQuY29tIFNlY3VyaXR5IERvbWFpbjElMCMGA1UEAxMcQ0EgQXVkaXQgU2lnbmluZyBDZXJ0aWZpY2F0ZTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMGZ5aHQ0UI3yepGEW0OSglHUc5dkOSh8HVlz7CX60QuO6jbKmvQPO3E9Hi1wg+M0OhnLygygZ7RWlXrVNIES5VYTpdgcwSR254m/+8MUhBnNeThz5F0NP8oSEPaxfo3PtoHdYWExLegfaCR2Q2eA78XFv2enfxt/HGiuQZzJZvskaVGZ6d5QQZFvAAYWzXTR2oFKSBfCZkLMEVJonyUWe7g7sPxXNIpgkbsJXS0gCizcbgWJdcsMDHy0aYkBL8AC0DtbjgbqjXBA2zsUqwI8qwWQ3vDr+F0YvfmgKoey8514rBThClWPtBcgrtWZ0VVp5iAK1zK8Q/YM9OdP2i5L7MCAwEAAaAAMA0GCSqGSIb3DQEBCwUAA4IBAQBpLNyAnESiClmuVEZE2egY36puyou8mtdwow1DFNGZdJq8gPtY1km9yLMUdzdPGKIPVvEE7QmaC7OkNhawu22RPl1Z5h6GMa0oeCx6gXOByBYcixs7D0haP26ea7lmx5Y3q4aecq3ZkP5+/bcQOmDHVIFWPgDaXqeqGiA8kO2a3RY2LGghZfqhUwRz5lYQG+J+p7/yurT5Ra6c8ATUKqPiRKbA4ISmIlmplLAngPM1e3x49Gr+oHpykBY9bg1AbX6w7RrDt/3gEwIV0jDa3X+fPDWuyHTsvVbqydkkHRQQBVfLsbcsBRBt7aMU3NsychnKLgnjsrpC5OHWEj+aXvF8
+> ca.audit_signing.nickname=auditSigningCert cert-pki-tomcat
+432c433
+< ca.cert.audit_signing.nickname=auditSigningCert cert-pki-ca
+---
+> ca.cert.audit_signing.nickname=auditSigningCert cert-pki-tomcat
+434c435
+< ca.cert.ocsp_signing.nickname=ocspSigningCert cert-pki-ca
+---
+> ca.cert.ocsp_signing.nickname=ocspSigningCert cert-pki-tomcat
+436c437
+< ca.cert.signing.nickname=caSigningCert cert-pki-ca
+---
+> ca.cert.signing.nickname=caSigningCert cert-pki-tomcat
+438c439
+< ca.cert.sslserver.nickname=Server-Cert cert-pki-ca
+---
+> ca.cert.sslserver.nickname=Server-Cert cert-pki-tomcat
+440c441
+< ca.cert.subsystem.nickname=subsystemCert cert-pki-ca
+---
+> ca.cert.subsystem.nickname=subsystemCert cert-pki-tomcat
+521c522
+< ca.notification.certIssued.emailTemplate=/var/lib/pki-ca/emails/certIssued_CA.html
+---
+> ca.notification.certIssued.emailTemplate=/var/lib/pki/pki-tomcat/ca/emails/certIssued_CA.html
+525c526
+< ca.notification.certRevoked.emailTemplate=/var/lib/pki-ca/emails/certRevoked_CA.html
+---
+> ca.notification.certRevoked.emailTemplate=/var/lib/pki/pki-tomcat/ca/emails/certRevoked_CA.html
+529c530
+< ca.notification.requestInQ.emailTemplate=/var/lib/pki-ca/emails/reqInQueue_CA.html
+---
+> ca.notification.requestInQ.emailTemplate=/var/lib/pki/pki-tomcat/ca/emails/reqInQueue_CA.html
+533,536c534,537
+< ca.ocsp_signing.cacertnickname=ocspSigningCert cert-pki-ca
+< ca.ocsp_signing.cert=MIIDuzCCAqOgAwIBAgIBAjANBgkqhkiG9w0BAQsFADBQMR0wGwYDVQQKExRVc2Vyc3lzUmVkaGF0IERvbWFpbjEPMA0GA1UECxMGcGtpLWNhMR4wHAYDVQQDExVDZXJ0aWZpY2F0ZSBBdXRob3JpdHkwHhcNMTIwOTA1MTg0MzI3WhcNMTQwODI2MTg0MzI3WjBTMR0wGwYDVQQKExRVc2Vyc3lzUmVkaGF0IERvbWFpbjEPMA0GA1UECxMGcGtpLWNhMSEwHwYDVQQDExhPQ1NQIFNpZ25pbmcgQ2VydGlmaWNhdGUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC1MgSqnp/9815xpRKZQztoSRbTe60k9l1mj57nozNVYQl+8kaY9MzG1WT1CfJTaCpvRf/GuVD8HY7iX7cRsMhgPYr26spcOqyKAjtamQJf1pt+EghwuiqB9Zm35ehRNVjT/nbV0x7Sp4Ov+VpzHoI85WrB9MrpiZXdfohFnc08hbhlY57sbrsE4gRtby6WPrjk8JrFNltVlHkynYHnmKUHi9eACWjyoX2eydTGvIgo9mAHd5eeTnC+eey1JzxeZbCiGsEhtdkEpkSGyH9UU4OoPDkBNCSpespgkOxJG5w2g6TMrE++X22z8g8xyQEv6R+PkqmvdN2UcnO5+uKqQP+XAgMBAAGjgZwwgZkwHwYDVR0jBBgwFoAU1kcKr6kRGEHcLTGjXekj/K3m1mAwDgYDVR0PAQH/BAQDAgHGMFEGCCsGAQUFBwEBBEUwQzBBBggrBgEFBQcwAYY1aHR0cDovL2RvZ3RhZzE3LWNsb25lLnVzZXJzeXMucmVkaGF0LmNvbTo5MTgwL2NhL29jc3AwEwYDVR0lBAwwCgYIKwYBBQUHAwkwDQYJKoZIhvcNAQELBQADggEBAGogFKk0xVJmf9hjWkoc0h/Eigwtdn+HPVzVH7DHklXS2rXMSa3WnQf2pKDYlRca8DWR6iqBnSjG3OdAVLsqGQG/d40DZYGsUXTi8JXtY4PGkYipzGwMUZAKxHo2U5qqQMcTGnLnREoSEqBrryJr2uyO2zCYXdgYc+vIIh3mBM/X7swQsSdPf60JncV0UIcnoUO6iGaD3QYBvyZBZdio+1EU3GeDkVWaO6E/VWkaXP/+FkSzlfi7aw4DCbV5GV5y0ycjlR+dXj3VC5I4xG7fkfbvIeFn3YI+2XBzObxo5t9D+m+wxZ/T6c5xgQ63biWT21SgkZiEYiN9xsmLrFtq3j0=
+< ca.ocsp_signing.certnickname=ocspSigningCert cert-pki-ca
+< ca.ocsp_signing.certreq=MIICmDCCAYACAQAwUzEdMBsGA1UEChMUVXNlcnN5c1JlZGhhdCBEb21haW4xDzANBgNVBAsTBnBraS1jYTEhMB8GA1UEAxMYT0NTUCBTaWduaW5nIENlcnRpZmljYXRlMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtTIEqp6f/fNecaUSmUM7aEkW03utJPZdZo+e56MzVWEJfvJGmPTMxtVk9QnyU2gqb0X/xrlQ/B2O4l+3EbDIYD2K9urKXDqsigI7WpkCX9abfhIIcLoqgfWZt+XoUTVY0/521dMe0qeDr/lacx6CPOVqwfTK6YmV3X6IRZ3NPIW4ZWOe7G67BOIEbW8ulj645PCaxTZbVZR5Mp2B55ilB4vXgAlo8qF9nsnUxryIKPZgB3eXnk5wvnnstSc8XmWwohrBIbXZBKZEhsh/VFODqDw5ATQkqXrKYJDsSRucNoOkzKxPvl9ts/IPMckBL+kfj5Kpr3TdlHJzufriqkD/lwIDAQABoAAwDQYJKoZIhvcNAQELBQADggEBAKtqiz3knzF2rK8BD58Vv5wx9krQl7hKHaHSPfa6mFt/OSDFSx5i+NEgmSZ0WLRBO9etuARePEhoslHb6QGN+FzlJQ3MMteUem1qk5mk7l8AfZCb7O8aXKDuddCBFIr33PKyChQyMUdaA6FI1cjL8qdHuPns4Gf3ECAGroloFCCv+4VUeKp+2VJOi/Sx/ANUJb5ogY7GyTi9+eEVy+FG42nOBxopwViQjfBUT5luYZJcvZZfuzuUegZBxt/Y+avys+9/cmVxcxWb2tAThfv7fvwpgDdjo95Etlt9f+w36xuxcghQlN2QtO8GC+CNE5vWTXWZOA33LrjhnDP1y/FwGkc=
+---
+> ca.ocsp_signing.cacertnickname=ocspSigningCert cert-pki-tomcat
+> ca.ocsp_signing.cert=MIIDuTCCAqGgAwIBAgIBAjANBgkqhkiG9w0BAQsFADBOMSswKQYDVQQKEyJ1c2Vyc3lzLnJlZGhhdC5jb20gU2VjdXJpdHkgRG9tYWluMR8wHQYDVQQDExZDQSBTaWduaW5nIENlcnRpZmljYXRlMB4XDTEyMDkwNTIwNDMxMloXDTE0MDgyNjIwNDMxMlowUzErMCkGA1UEChMidXNlcnN5cy5yZWRoYXQuY29tIFNlY3VyaXR5IERvbWFpbjEkMCIGA1UEAxMbQ0EgT0NTUCBTaWduaW5nIENlcnRpZmljYXRlMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp+1W5De11RN0JWsUWcACwpwfFncDLSij/KCC8+qO+a7InmndQvhhzVOaM1bBIENkpEN5BBUxnW0GFvq6YWHL8dsMpAASoNEXTV7WmjRoBKv9FV85NyBnEUvl6bWJ0Zv0WuWORr1n12ZmtCg6UR3bsFKL+zQtIN6hePLx058hfTobKz7VqruKKTcUtKqTSbT1KSMQVMliMyzEPONGT5lwtSsQQBNsePJtQrutjoaAOJ6scXUoG1XtS8kdFNoPTIaxJY4Dku4HeacwfG899INFQ1yyHjCsjgJwz/BiFQPTmPCRr+DKHiipYeBUJdcigojJfEqML9dfATT52NVDV7HrEQIDAQABo4GcMIGZMB8GA1UdIwQYMBaAFK0vJIoVtD3pQSEuYnp0UIQ/UFONMA4GA1UdDwEB/wQEAwIBxjBRBggrBgEFBQcBAQRFMEMwQQYIKwYBBQUHMAGGNWh0dHA6Ly9kb2d0YWcxNy1jbG9uZS51c2Vyc3lzLnJlZGhhdC5jb206ODA4MC9jYS9vY3NwMBMGA1UdJQQMMAoGCCsGAQUFBwMJMA0GCSqGSIb3DQEBCwUAA4IBAQAj1hGNtcCOKudBWNwaFU6MMIRnj0bCxGXIssYPbAhXcQqe5A4yttJhmZeDhJ70xfrE+jhZyq8f+lXdjS/nLNRzOYXJkfRQe6/DuthkTCCYRe0fcYiAvi+ca/iAj+UIN3zTKul0Pb5q2E+7aiKGs+FRa1T7HuD+Mac1CC4pz1WJ8XyT5nYNP8gF1QF5Ge+p9/J5sn6Wqp/6WNth5rVvFMTKbSaAxT/qi2g7PRJcGUNz1+noe/PgnL6+/3GAO4/EkfVNGIPQ0OzbmfSHz4DfQ4u6YRHdmZOcj6tLJBnMA2tzVtX1KHu+lbeqdOi1qKw9MwCjGMqgayN2aUPJOeffSOgu
+> ca.ocsp_signing.certnickname=ocspSigningCert cert-pki-tomcat
+> ca.ocsp_signing.certreq=MIICmDCCAYACAQAwUzErMCkGA1UEChMidXNlcnN5cy5yZWRoYXQuY29tIFNlY3VyaXR5IERvbWFpbjEkMCIGA1UEAxMbQ0EgT0NTUCBTaWduaW5nIENlcnRpZmljYXRlMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAp+1W5De11RN0JWsUWcACwpwfFncDLSij/KCC8+qO+a7InmndQvhhzVOaM1bBIENkpEN5BBUxnW0GFvq6YWHL8dsMpAASoNEXTV7WmjRoBKv9FV85NyBnEUvl6bWJ0Zv0WuWORr1n12ZmtCg6UR3bsFKL+zQtIN6hePLx058hfTobKz7VqruKKTcUtKqTSbT1KSMQVMliMyzEPONGT5lwtSsQQBNsePJtQrutjoaAOJ6scXUoG1XtS8kdFNoPTIaxJY4Dku4HeacwfG899INFQ1yyHjCsjgJwz/BiFQPTmPCRr+DKHiipYeBUJdcigojJfEqML9dfATT52NVDV7HrEQIDAQABoAAwDQYJKoZIhvcNAQELBQADggEBAI2i1tiDpfPA3KR8cf/Tsie2bexwosxpEmrI6PDI8sZyJz4wF6BwjaMtocE3D95jGRKxELc3f+kNB1TiGBxU2OwMc5gGiodOzqI0A/2l30wR/w8bo2Tvr7YsgafvGAYj/4rk885sXab2VbaskjhNkcL+kpuZsfJ4t0zmLWNPcmO81sy+/WLHt6NhRugWRa8PGAPcuScCAKpKpvI9m9W1Pw1GlEwkTEJj/4Zb8Rg8i16g7SvGssH3tH6px4I8lmW6b2N8N0UCJ5STxEpt4xeAzSvW5oOVGQy1J0jbAGPBycYBJB7q7wgTwRewVroYA6ABZchvtEPrl/1YKP/+1R2yyDU=
+538,539c539,540
+< ca.ocsp_signing.newNickname=ocspSigningCert cert-pki-ca
+< ca.ocsp_signing.nickname=ocspSigningCert cert-pki-ca
+---
+> ca.ocsp_signing.newNickname=ocspSigningCert cert-pki-tomcat
+> ca.ocsp_signing.nickname=ocspSigningCert cert-pki-tomcat
+622,625c623,626
+< ca.signing.cacertnickname=caSigningCert cert-pki-ca
+< ca.signing.cert=MIID0zCCArugAwIBAgIBATANBgkqhkiG9w0BAQsFADBQMR0wGwYDVQQKExRVc2Vyc3lzUmVkaGF0IERvbWFpbjEPMA0GA1UECxMGcGtpLWNhMR4wHAYDVQQDExVDZXJ0aWZpY2F0ZSBBdXRob3JpdHkwHhcNMTIwOTA1MTg0MzI1WhcNMjAwOTA1MTg0MzI1WjBQMR0wGwYDVQQKExRVc2Vyc3lzUmVkaGF0IERvbWFpbjEPMA0GA1UECxMGcGtpLWNhMR4wHAYDVQQDExVDZXJ0aWZpY2F0ZSBBdXRob3JpdHkwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC34XoFm9t+AKUiMhdlZGUBfSLGCor6HrR2q0azvwWErvZSjucq4MUvZK72Tdp3aA6kukS6thXodNjx8xZGZM1t6mMTaFxfZ9TamKAkhB4DaYbfAq2W1si4fvH5NWBzQW/TINzGicyfR6dTknFLy35NKFyY0zvt1LF9m/dDkSDA8iw14zPo7gRqKFAwLjiFnqcsxNEZilk7RSMfqg5qwYhmafsCIooj4m5/qYLeL07sqnHA/yNQ5Cxh2Mmg0fBZZ8w+Wp4m7ik+Ds0kaye01q/X7BWLqARydlrFib+8TICemEhBM0NR/OXcS/x+r9eXaZgIChCCgNiVWbnsJ5KmjCT3AgMBAAGjgbcwgbQwHwYDVR0jBBgwFoAU1kcKr6kRGEHcLTGjXekj/K3m1mAwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMCAcYwHQYDVR0OBBYEFNZHCq+pERhB3C0xo13pI/yt5tZgMFEGCCsGAQUFBwEBBEUwQzBBBggrBgEFBQcwAYY1aHR0cDovL2RvZ3RhZzE3LWNsb25lLnVzZXJzeXMucmVkaGF0LmNvbTo5MTgwL2NhL29jc3AwDQYJKoZIhvcNAQELBQADggEBAFI0wSPTqZtxGK+p+AQrpgw//dtL6Ty4r+PgDMkR3EYSRU1zSiE4LJivw2caO/sxDLoyRN2eiJ8b3NCFpQm1MXOf/p4evkP1zBRDhcWhSltLxsRM65/kqg+515RYmEs3LMArJyFsttdaAZ3kePDiOsrrrzniPHgKOZwnq1rX6NG82C+DVSjecaFvH5VYoSlydTNtcCC2bRr/OyPdfQhtjNVqUx4nupYX+zNsQmi+YDTSPsOVdfEaS45o3GFMbLHj7af9dnkeD/IYV2/5LZGHrT3B/EqE17JXIYTSnTEiSDu75FvZU42/moeG7amRBErkcxJhu9R6n47mT7TlmwUlEPU=
+< ca.signing.certnickname=caSigningCert cert-pki-ca
+< ca.signing.certreq=MIIClTCCAX0CAQAwUDEdMBsGA1UEChMUVXNlcnN5c1JlZGhhdCBEb21haW4xDzANBgNVBAsTBnBraS1jYTEeMBwGA1UEAxMVQ2VydGlmaWNhdGUgQXV0aG9yaXR5MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAt+F6BZvbfgClIjIXZWRlAX0ixgqK+h60dqtGs78FhK72Uo7nKuDFL2Su9k3ad2gOpLpEurYV6HTY8fMWRmTNbepjE2hcX2fU2pigJIQeA2mG3wKtltbIuH7x+TVgc0Fv0yDcxonMn0enU5JxS8t+TShcmNM77dSxfZv3Q5EgwPIsNeMz6O4EaihQMC44hZ6nLMTRGYpZO0UjH6oOasGIZmn7AiKKI+Juf6mC3i9O7KpxwP8jUOQsYdjJoNHwWWfMPlqeJu4pPg7NJGsntNav1+wVi6gEcnZaxYm/vEyAnphIQTNDUfzl3Ev8fq/Xl2mYCAoQgoDYlVm57CeSpowk9wIDAQABoAAwDQYJKoZIhvcNAQELBQADggEBADvSTIo/2Iak0wJIxj14VoU7mtFR5mYuktGwBbwQCDqaSB4Q+COoGfhVowQLVm9CRd+w/wODH2Jtqy9bI0VL/QLmdTQVBUpfz17D5N4XIgk8Rvu+ACwKLYd6JBV93vhfe9BC5ImHiQRimsriIHOfTcXuVxqQcKsd+FfYz47LAYKThVcdNLA8bgXMITxxUQZ/tTxEpIjnZe2zaupG3buFQSvfAhyfgT3lOh1G+bEbS4FJsSEQuyTjkpOBhgycyRE1i/m/5ZXLC/m4w4uisYcFhsbkmxV91wFkTwNvwR7jNk/MyBo8VX3jBFEyEok7Lucnngz6xkY6zkF4NbYyCXaKWWY=
+---
+> ca.signing.cacertnickname=caSigningCert cert-pki-tomcat
+> ca.signing.cert=MIIDzzCCAregAwIBAgIBATANBgkqhkiG9w0BAQsFADBOMSswKQYDVQQKEyJ1c2Vyc3lzLnJlZGhhdC5jb20gU2VjdXJpdHkgRG9tYWluMR8wHQYDVQQDExZDQSBTaWduaW5nIENlcnRpZmljYXRlMB4XDTEyMDkwNTIwNDMwN1oXDTIwMDkwNTIwNDMwN1owTjErMCkGA1UEChMidXNlcnN5cy5yZWRoYXQuY29tIFNlY3VyaXR5IERvbWFpbjEfMB0GA1UEAxMWQ0EgU2lnbmluZyBDZXJ0aWZpY2F0ZTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMc8g5TvUOzlu05Lc2PGkgSU/zWQccjyhMgTMVONnCeGB+IygifOcLVc6z7THYYgxoQBJ5IrA1gYWqIYUPgL8FpXtmjvT9IYzudig6wkV4s3IuiVmzJw8uax9GrzJ3fug29nYAUA8CfH9Hj6MD8HkhZJHjs6hJL3ZhCvIHGkiMMmHTxdY1s8r6uEie8R/VAVcNbeDKhkLCLjfJDPf8Q3fHor8z/5Khy9nwHdtkBcC9J0K/JTWHRFCB8UrbsFpBU3xen5jQLG6HzJpLt/vRq/w/lFbiikDHM4MC8V9Kz6js3Q3lLnrcHB+h6vYPLZBdq3xEDJCLc5a262m4I6uB9PVdkCAwEAAaOBtzCBtDAfBgNVHSMEGDAWgBStLySKFbQ96UEhLmJ6dFCEP1BTjTAPBgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQEAwIBxjAdBgNVHQ4EFgQUrS8kihW0PelBIS5ienRQhD9QU40wUQYIKwYBBQUHAQEERTBDMEEGCCsGAQUFBzABhjVodHRwOi8vZG9ndGFnMTctY2xvbmUudXNlcnN5cy5yZWRoYXQuY29tOjgwODAvY2Evb2NzcDANBgkqhkiG9w0BAQsFAAOCAQEAHlYCwTjHvp3v6Tgoe2Si1iculfsYZv9WlzTLVOa1o+jVODwI31HJpF83uMnTx1+tXo/ja57IVcLoFZvWyEwYItx4RsAYd/sECKZrv0p3wfCREnzZYErems7iGW2wCd3QcDpbHNFt32KPiizckdtk6pph+fojZKA7PaY3bR+6KWcK/RCWYjoyKxc/Jb/wRXezOLLEwv/eQhOpIRdMk+PrxI9vLuw9doJtg2Eifkv2SMs17uWKXWJF1KHJ0g8g+EKbluM0PcmEiyu7mUqtuR3zQ6GmmYjv1mdMEDTuIADcqP3mqWDkywVEeLIkcUBxoq5P4hXz9Vev5MgM2saJVGzS5g==
+> ca.signing.certnickname=caSigningCert cert-pki-tomcat
+> ca.signing.certreq=MIICkzCCAXsCAQAwTjErMCkGA1UEChMidXNlcnN5cy5yZWRoYXQuY29tIFNlY3VyaXR5IERvbWFpbjEfMB0GA1UEAxMWQ0EgU2lnbmluZyBDZXJ0aWZpY2F0ZTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMc8g5TvUOzlu05Lc2PGkgSU/zWQccjyhMgTMVONnCeGB+IygifOcLVc6z7THYYgxoQBJ5IrA1gYWqIYUPgL8FpXtmjvT9IYzudig6wkV4s3IuiVmzJw8uax9GrzJ3fug29nYAUA8CfH9Hj6MD8HkhZJHjs6hJL3ZhCvIHGkiMMmHTxdY1s8r6uEie8R/VAVcNbeDKhkLCLjfJDPf8Q3fHor8z/5Khy9nwHdtkBcC9J0K/JTWHRFCB8UrbsFpBU3xen5jQLG6HzJpLt/vRq/w/lFbiikDHM4MC8V9Kz6js3Q3lLnrcHB+h6vYPLZBdq3xEDJCLc5a262m4I6uB9PVdkCAwEAAaAAMA0GCSqGSIb3DQEBCwUAA4IBAQAV6dN+w99CA867Gn5fDeRUfS8so9pLbLOwN9BCf8PYzWkgQFxtTIWQfrlxwpIiuneUigIJR3xi+2JBm7BlKC9F1rlzWEpJkcpxtqhuS565T20a3cAfRjrvspEyax/U99x7pagVwHUafKxHbVgQTpkfUTT7fw0bW4lxMq+8FbaknqMDSJ8WhR4COlztV3FXNyF1bzbLJ8Agul/pprhwZ5oPmmD8cOpewccM/gZ+1cZAqEOEWoGfsXGPn/N1+cchoX5Kf4CkANb3CfwbtrwN8XRCm4rdkKv18vWx4hudd+33IIPZ2Uom0s+Rw2DFqmmcWCK3qzCOkqHBT8T5FG3hcxmh
+627,628c628,629
+< ca.signing.newNickname=caSigningCert cert-pki-ca
+< ca.signing.nickname=caSigningCert cert-pki-ca
+---
+> ca.signing.newNickname=caSigningCert cert-pki-tomcat
+> ca.signing.nickname=caSigningCert cert-pki-tomcat
+630,632c631,633
+< ca.sslserver.cert=MIIDxDCCAqygAwIBAgIBAzANBgkqhkiG9w0BAQsFADBQMR0wGwYDVQQKExRVc2Vyc3lzUmVkaGF0IERvbWFpbjEPMA0GA1UECxMGcGtpLWNhMR4wHAYDVQQDExVDZXJ0aWZpY2F0ZSBBdXRob3JpdHkwHhcNMTIwOTA1MTg0MzI4WhcNMTQwODI2MTg0MzI4WjBcMR0wGwYDVQQKExRVc2Vyc3lzUmVkaGF0IERvbWFpbjEPMA0GA1UECxMGcGtpLWNhMSowKAYDVQQDEyFkb2d0YWcxNy1jbG9uZS51c2Vyc3lzLnJlZGhhdC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC9MFJ02E9xpypSUOI+lEXVv8arNYqxc/chF5+VCjBz5VR00n88Hs5o433gcgGecnf1xVS4sVevrUID39WmH60yDygCUTra8q42fSsZKATrP5WaJs0Z8Httn7GjuyDOPd+2+7he3mM/FLGuw6O/lSO55uyVyVMFyfcSQgPv+zkX+By283NA3HK/qxqtg/mZOSDD4eG28PoWQkCyFDgLjaN5oGRhUkR4p8i1bhVX9rbV4P3Ks1IAj42ztVFtAEub7RdDJ10I7iIiMTtAGEkZp2po4VuwB9+bx9L1TFfCMcBf8KaDE2refm1PZbEIjwZwyn3KPT+4kMwtoA7vRg5VQjT9AgMBAAGjgZwwgZkwHwYDVR0jBBgwFoAU1kcKr6kRGEHcLTGjXekj/K3m1mAwUQYIKwYBBQUHAQEERTBDMEEGCCsGAQUFBzABhjVodHRwOi8vZG9ndGFnMTctY2xvbmUudXNlcnN5cy5yZWRoYXQuY29tOjkxODAvY2Evb2NzcDAOBgNVHQ8BAf8EBAMCBPAwEwYDVR0lBAwwCgYIKwYBBQUHAwEwDQYJKoZIhvcNAQELBQADggEBAHSs2sjJSBz3uX+ZA5t2FfUQzLT4VFYI+EwUu/7ujCCHxvfwmWs3CBMh9hpL/jBf9hxJw9SVHXNF8dX1bWNr4A7JN9BcxtlOyJ7usA7n0S4mwJYy426oRvEn9pYH2CamlEHqJyC+j41zOvbNQh1w0Y3DeSEFNB5Qdvi+7pTOBtLa1ECMmOyLgs2pHVDxz6B3gN9kB+vDZ2P/iI5o5RPNzvbDDapsI0fDA96bdfYVvPl4pzYfVfvqjDhvL4DAeyRoWJ25W0G8E87oPLNI4RGB5pUS76vNFjPJX0dDkHey0HTeI7wDtLdyfzTT4VynKExOqG92n+eT7iOcU/XQwM/IDE8=
+< ca.sslserver.certreq=MIICoTCCAYkCAQAwXDEdMBsGA1UEChMUVXNlcnN5c1JlZGhhdCBEb21haW4xDzANBgNVBAsTBnBraS1jYTEqMCgGA1UEAxMhZG9ndGFnMTctY2xvbmUudXNlcnN5cy5yZWRoYXQuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvTBSdNhPcacqUlDiPpRF1b/GqzWKsXP3IReflQowc+VUdNJ/PB7OaON94HIBnnJ39cVUuLFXr61CA9/Vph+tMg8oAlE62vKuNn0rGSgE6z+VmibNGfB7bZ+xo7sgzj3ftvu4Xt5jPxSxrsOjv5UjuebslclTBcn3EkID7/s5F/gctvNzQNxyv6sarYP5mTkgw+HhtvD6FkJAshQ4C42jeaBkYVJEeKfItW4VV/a21eD9yrNSAI+Ns7VRbQBLm+0XQyddCO4iIjE7QBhJGadqaOFbsAffm8fS9UxXwjHAX/CmgxNq3n5tT2WxCI8GcMp9yj0/uJDMLaAO70YOVUI0/QIDAQABoAAwDQYJKoZIhvcNAQELBQADggEBAABk32E+7XD1g51KS4gqx/u1kXAM4ZntmDf3GnLKsnt6GYBwoUdyOvPv7su6niXStVxiywb3emJFKZ9ZBvcLFKMkYjlDyvp2+eMJd3vz6m0Nydyt66d6cs6/vpKTCQ4crzargGODfwZSGschO50zDSnShHWgmgfTJTYleu5hioi6qrMqtxdNNiRyi3d/nt7HyCqAlVHAYcjmTefTX1JEpCSmbafdQAGc8DTYBRAV5G3d6jWy+tWLxcLTSHEAdEPTZWNq9QN+IGCaKxVVOGNL8KtnE8wFt6ORbisZBNyfzIQNKC1MOtA5jAsaT30mwa0QvC6dKp/tGaNo59bJ8AafLOk=
+< ca.sslserver.nickname=Server-Cert cert-pki-ca
+---
+> ca.sslserver.cert=MIIDvzCCAqegAwIBAgIBAzANBgkqhkiG9w0BAQsFADBOMSswKQYDVQQKEyJ1c2Vyc3lzLnJlZGhhdC5jb20gU2VjdXJpdHkgRG9tYWluMR8wHQYDVQQDExZDQSBTaWduaW5nIENlcnRpZmljYXRlMB4XDTEyMDkwNTIwNDMxM1oXDTE0MDgyNjIwNDMxM1owWTErMCkGA1UEChMidXNlcnN5cy5yZWRoYXQuY29tIFNlY3VyaXR5IERvbWFpbjEqMCgGA1UEAxMhZG9ndGFnMTctY2xvbmUudXNlcnN5cy5yZWRoYXQuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuHl/CTdKPzZkf4GE3Zr3AAjbU0OrpHen9rUfnNRvUto8rGuj991N64arziqEbJSSgGmqDDfCv8b7gA+DC0ymChuuvspq7zfIbQ1OS9vWr4r4oehMlWmJkPutVgK0nGKl3IoLM13kLhTR6rwjUwG+Vi16HTPTSeooI7IVRA2PiJ96BfHJYgNGrD+IxdwMTAYvog4IIt9Z6+uh6CDc9NbW/9H9WxKiSCLPhzmfhgTVd6lgXrFw88KjBgUYsCikFv9o9XvYteX4UvtDMBmNX6qSehUXICbW0jGCMCuIQf951V4Ap32dvS+Py3CmByPY55eZQ4zh+GRYzS7pbHA8TEu69wIDAQABo4GcMIGZMB8GA1UdIwQYMBaAFK0vJIoVtD3pQSEuYnp0UIQ/UFONMFEGCCsGAQUFBwEBBEUwQzBBBggrBgEFBQcwAYY1aHR0cDovL2RvZ3RhZzE3LWNsb25lLnVzZXJzeXMucmVkaGF0LmNvbTo4MDgwL2NhL29jc3AwDgYDVR0PAQH/BAQDAgTwMBMGA1UdJQQMMAoGCCsGAQUFBwMBMA0GCSqGSIb3DQEBCwUAA4IBAQBlnMomHxnNMFTI7rPpY8ZXS5UpdItalC65mOgO9+v0km8IYq61I1Yl1AxkAUub/3kJfgTr1MbNzImLSU8ZFuevBSBXb7zHmxGz+uDbIsOrFz8rsb6ebsx4IotkM2VlTZ+ShUIe5mCbYhk72Qg++Lel3M1kSAnFln6g+pHvNGYWglkwCuXXAHfs3yBAw8NnhSnkCfwjcOGXh3dOxH39Oij6tD7KhSZdbOgM8WDTQjhZFBq28QwosB52vfvl3TD0to/W4llQIiLIyc1hiIV12nrYh2M80vyvNW238w/tX//tMfOaBFNjpe0jZajqUvGv6K2nndtqrEeMTchQzcGFgsuj
+> ca.sslserver.certreq=MIICnjCCAYYCAQAwWTErMCkGA1UEChMidXNlcnN5cy5yZWRoYXQuY29tIFNlY3VyaXR5IERvbWFpbjEqMCgGA1UEAxMhZG9ndGFnMTctY2xvbmUudXNlcnN5cy5yZWRoYXQuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuHl/CTdKPzZkf4GE3Zr3AAjbU0OrpHen9rUfnNRvUto8rGuj991N64arziqEbJSSgGmqDDfCv8b7gA+DC0ymChuuvspq7zfIbQ1OS9vWr4r4oehMlWmJkPutVgK0nGKl3IoLM13kLhTR6rwjUwG+Vi16HTPTSeooI7IVRA2PiJ96BfHJYgNGrD+IxdwMTAYvog4IIt9Z6+uh6CDc9NbW/9H9WxKiSCLPhzmfhgTVd6lgXrFw88KjBgUYsCikFv9o9XvYteX4UvtDMBmNX6qSehUXICbW0jGCMCuIQf951V4Ap32dvS+Py3CmByPY55eZQ4zh+GRYzS7pbHA8TEu69wIDAQABoAAwDQYJKoZIhvcNAQELBQADggEBAATL4rcFuwyqhNhGMk6OncW8XQ3YBcDO8REO9VGI76nqyVfSjPjUCuTZh3EdgcMQfK9SbmXOC2bfzGnwqakc4h9e8sO3sC7CV1O3TVtN/cIkLm8NjJOBbeP4i1NsL6aa6fXXZ07kJSb5BN5TM6un9Nw1auU3YPFglT/3H8FajduvMoq9hWXLuWAL3u5PT/cUZ4ZRTjkTemVEwZEJS0snlggwb7DVWsETx1lnvD8l71F6EI0QHIXbdBHZz3vYepMM2oEdWNsFvv5onfXiaYXsvf+RYU5ZSv0vbQ+e1D17Qu8AQr1p9wfaud2oyG6b8iBRI/clzUGxNzfXXsPZhI2wWlw=
+> ca.sslserver.nickname=Server-Cert cert-pki-tomcat
+634,636c635,637
+< ca.subsystem.cert=MIIDxTCCAq2gAwIBAgIBBDANBgkqhkiG9w0BAQsFADBQMR0wGwYDVQQKExRVc2Vyc3lzUmVkaGF0IERvbWFpbjEPMA0GA1UECxMGcGtpLWNhMR4wHAYDVQQDExVDZXJ0aWZpY2F0ZSBBdXRob3JpdHkwHhcNMTIwOTA1MTg0MzI4WhcNMTQwODI2MTg0MzI4WjBTMR0wGwYDVQQKExRVc2Vyc3lzUmVkaGF0IERvbWFpbjEPMA0GA1UECxMGcGtpLWNhMSEwHwYDVQQDExhDQSBTdWJzeXN0ZW0gQ2VydGlmaWNhdGUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC9+hkwFbpORGgyNUtQdJGwL7jO9P0hwDplIblobgg52JztW30GjS5/KEG2Vq4yBf8xQhAVaAmwdV04cjp3y8a+AnrcOXT0bBPbbGqdt/1wutTdV5TjNovq+t2b3UX8KPgD4nylnEkRVOx1GtyaPAcGNNLcOVSDKGGPo7mxhJDQH6MGNjX+GYz9mlMAfMHTSQm7pTomztNwASZi7gygB/YcsqTh6rzJa7pHk/6GF4rBRKUDHVgT1tJ79eHS2nnEliS8NGo/E/6h3t1W2I69f0bqOgMr0lBFMHFR4FgFLRjhjD68yBY10Nka8fWsM5ZU/+baM6yDWl4XiLcIYpI1XEtXAgMBAAGjgaYwgaMwHwYDVR0jBBgwFoAU1kcKr6kRGEHcLTGjXekj/K3m1mAwUQYIKwYBBQUHAQEERTBDMEEGCCsGAQUFBzABhjVodHRwOi8vZG9ndGFnMTctY2xvbmUudXNlcnN5cy5yZWRoYXQuY29tOjkxODAvY2Evb2NzcDAOBgNVHQ8BAf8EBAMCBPAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMA0GCSqGSIb3DQEBCwUAA4IBAQBFigeNU1zKwXojbBRjhynhomCo57gOulOYQxPJXG0w6FQv1FOwbTN8v381UYhKG4hnjblErD6GF0yBjdtD45iDcwa8RfslUtzu4ziEmmdcSC3W2p1zp7AdabzpmfCb7TMjspxVuNVnPS4kOMhUPFuGc7gzigxmBCp/+VLbMgj42mqrpYvRBGhpkFLJb/qV7dE1d+tXn3URhrUKLlOJMmYK+1q/r9l4RNip1V+Us0gGJSK9hAKLO8sxySbbhLo/A9ydIN+DgejugonZeEIk6iLL95RzmF9Tg+PBHWFyUG7WWHN7xevryCH4Lm5vtLgWhGNETm1SGbEVyuaIocSoYqkZ
+< ca.subsystem.certreq=MIICmDCCAYACAQAwUzEdMBsGA1UEChMUVXNlcnN5c1JlZGhhdCBEb21haW4xDzANBgNVBAsTBnBraS1jYTEhMB8GA1UEAxMYQ0EgU3Vic3lzdGVtIENlcnRpZmljYXRlMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvfoZMBW6TkRoMjVLUHSRsC+4zvT9IcA6ZSG5aG4IOdic7Vt9Bo0ufyhBtlauMgX/MUIQFWgJsHVdOHI6d8vGvgJ63Dl09GwT22xqnbf9cLrU3VeU4zaL6vrdm91F/Cj4A+J8pZxJEVTsdRrcmjwHBjTS3DlUgyhhj6O5sYSQ0B+jBjY1/hmM/ZpTAHzB00kJu6U6Js7TcAEmYu4MoAf2HLKk4eq8yWu6R5P+hheKwUSlAx1YE9bSe/Xh0tp5xJYkvDRqPxP+od7dVtiOvX9G6joDK9JQRTBxUeBYBS0Y4Yw+vMgWNdDZGvH1rDOWVP/m2jOsg1peF4i3CGKSNVxLVwIDAQABoAAwDQYJKoZIhvcNAQELBQADggEBADMKJzqPBdiFcJcn+8tj3eN3X9LvB/9kQoesPhT9BMrhAPZfzK8aFHuRuZvx7CdaH4n8/mVIWLML3VUZh+Q2OrOa1g6hvJJ7kqFHGQ4QtJMwxXP7Y458HmVQj3z73I8Kt0ClNBKYiyhhLoWVJpMxc6Z8K/1/SnWzJkR2x0wblZByFgIwAXFFpf7es/HIIi0/NHfubqW7SisOJ/3zTsbYHK1I6rDC4Et+N5kF2pYIkBcY3A7GfVEmTexxmjk0S+dl+vS38tvT8eBko7Kn1c2ze2WOmCrtwYSH5Es/ALP4gHoybRqTWam55APu/QnUjSp3fbxD2xI4wDdw93WSJE5DwLA=
+< ca.subsystem.nickname=subsystemCert cert-pki-ca
+---
+> ca.subsystem.cert=MIIDwDCCAqigAwIBAgIBBDANBgkqhkiG9w0BAQsFADBOMSswKQYDVQQKEyJ1c2Vyc3lzLnJlZGhhdC5jb20gU2VjdXJpdHkgRG9tYWluMR8wHQYDVQQDExZDQSBTaWduaW5nIENlcnRpZmljYXRlMB4XDTEyMDkwNTIwNDMxNFoXDTE0MDgyNjIwNDMxNFowUDErMCkGA1UEChMidXNlcnN5cy5yZWRoYXQuY29tIFNlY3VyaXR5IERvbWFpbjEhMB8GA1UEAxMYQ0EgU3Vic3lzdGVtIENlcnRpZmljYXRlMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAydXoU6J04KQpe5lTa8UVpC9vQRTT5KMew4A4aejyUlBQAuOrn+puQaRZFk5ahBFLItyyd1z/WzdSjlmBJTR1kyapUrGRKjEt2T54zRKbk5O2joWa+DkbbqyqMeXgsfuim3xNtPoBEsI2oiCATw4ClLfh/v27no90iEKNWqhd9E59QN0VVSnZN4qHcXuddl/kFy0ApvltOLCkwRRV4dIzXMLBmxGy+Z4gXpFVh0QW8MK1+0Zj/FZtLKmf2CjBKDK5FGBEnC16/PKHDsDFPq545eLktOQrFrrzJV9n/NOTtPoSf9WE0fwqtgUX3yOH72vXZogDcDodbOlAVHFeAjOJ2QIDAQABo4GmMIGjMB8GA1UdIwQYMBaAFK0vJIoVtD3pQSEuYnp0UIQ/UFONMFEGCCsGAQUFBwEBBEUwQzBBBggrBgEFBQcwAYY1aHR0cDovL2RvZ3RhZzE3LWNsb25lLnVzZXJzeXMucmVkaGF0LmNvbTo4MDgwL2NhL29jc3AwDgYDVR0PAQH/BAQDAgTwMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjANBgkqhkiG9w0BAQsFAAOCAQEAm2Tu2ID5lrXIsy9iK+ACAOGdrrJhvwH7r+eTz4kXpwIXv435dIIs8Fep3BqlbxPcMwL8XNoNeiImVCn0uH/2ypdlnuyvt9WKcBRlZx2Ss4PBw6aao74/dR8by3A2hMjnDcc5ZHmU03yUCEbLGxmjL9Onv4+CSplt5gacbhQWztJGbU+Xyx4GCejAlESuRd+UuXhd87H+A7jY6s/OwWSVNOendS4LbX0lJDdeEWLQaR58rm/UBntEvKWM4yns+1QyeMGk0glILuk8hiBNL0YkPUsNKrT7nR6hFH3qCEyAevq+RcNgfcL1sd4CtQm7DDwCX2Z5fJR+EYuaZmX+RI6auA==
+> ca.subsystem.certreq=MIIClTCCAX0CAQAwUDErMCkGA1UEChMidXNlcnN5cy5yZWRoYXQuY29tIFNlY3VyaXR5IERvbWFpbjEhMB8GA1UEAxMYQ0EgU3Vic3lzdGVtIENlcnRpZmljYXRlMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAydXoU6J04KQpe5lTa8UVpC9vQRTT5KMew4A4aejyUlBQAuOrn+puQaRZFk5ahBFLItyyd1z/WzdSjlmBJTR1kyapUrGRKjEt2T54zRKbk5O2joWa+DkbbqyqMeXgsfuim3xNtPoBEsI2oiCATw4ClLfh/v27no90iEKNWqhd9E59QN0VVSnZN4qHcXuddl/kFy0ApvltOLCkwRRV4dIzXMLBmxGy+Z4gXpFVh0QW8MK1+0Zj/FZtLKmf2CjBKDK5FGBEnC16/PKHDsDFPq545eLktOQrFrrzJV9n/NOTtPoSf9WE0fwqtgUX3yOH72vXZogDcDodbOlAVHFeAjOJ2QIDAQABoAAwDQYJKoZIhvcNAQELBQADggEBAJLJtLt3zzpCb6KecDrDUm/gXT8kXmWvRLjEBmO49aJwHIFhXG+GTwWxTl+e3qGfnbl/h1xCyVxcdENLo7QJKcU73C0xiy9EGSi0X+mXKH0E+lL5abEWET12YQsRUL5Q9U9mT90d2bizwCn2UyaNKHELZksvcasRIYy0coAFt6Vk6hpreX+/nBnCmC2JPN/rvuNd5ga88+X/XeP7whzjJPDGyslc/5FhcDlxLJzfu2bFvRAfULnaTmZ8JMTzEXs3yei3ImUO//Crm1jeffESaavK33fYZ9EAuoJs6CyK+GPin4UW49xcOjD5hQKBy8+Nm6tlLroiYhqMiOAWOkimP/Q=
+> ca.subsystem.nickname=subsystemCert cert-pki-tomcat
+639c640
+< cloning.audit_signing.dn=CN=CA Audit Signing Certificate,OU=pki-ca,O=UsersysRedhat Domain
+---
+> cloning.audit_signing.dn=cn=CA Audit Signing Certificate,o=usersys.redhat.com Security Domain
+642,643c643,644
+< cloning.audit_signing.nickname=auditSigningCert cert-pki-ca
+< cloning.audit_signing.privkey.id=362d1eb7489029cc7468110fc51e527a77720feb
+---
+> cloning.audit_signing.nickname=auditSigningCert cert-pki-tomcat
+> cloning.audit_signing.privkey.id=-58d574b319ac319580a59b7b6dd4a798cc89c4d1
+646c647
+< cloning.audit_signing.pubkey.modulus=aeec43c20709c0200805c6830abb30bed34d88bd9bc8555bf42fcb37d1ba93651df3b18c3dbedc4aba4a900ad805124ddf9ef96098152a3c9755b7e31f181eebbcc1cbc5e66069877b73424b473a337564508ddab40db2328d9490090ae449d2681f18fa487d95e4044729e0ffd44762f2758f7de72788105fd6d19681184f95ec551f555238870ff2d60290ea3797bb392e6305755574d29a668de12d04ffb172eca60c86464b8809565aaba1152a09a56ed309ea1a665e5a48e1d1e3dce9d2581939e7574710680fc2f3736ef821b799dc1efb59d686a4abd1897907974c3fd30a843c8b2ca0be28a582a87f355140803aa5a67b32c72ac2494bcba7bdf9c3
+---
+> cloning.audit_signing.pubkey.modulus=c199e5a1d0d14237c9ea46116d0e4a094751ce5d90e4a1f07565cfb097eb442e3ba8db2a6bd03cedc4f478b5c20f8cd0e8672f2832819ed15a55eb54d2044b95584e9760730491db9e26ffef0c52106735e4e1cf917434ff284843dac5fa373eda07758584c4b7a07da091d90d9e03bf1716fd9e9dfc6dfc71a2b90673259bec91a54667a779410645bc00185b35d3476a0529205f09990b304549a27c9459eee0eec3f15cd2298246ec2574b48028b371b81625d72c3031f2d1a62404bf000b40ed6e381baa35c1036cec52ac08f2ac16437bc3afe17462f7e680aa1ecbce75e2b0538429563ed05c82bb56674555a798802b5ccaf10fd833d39d3f68b92fb3
+648c649
+< cloning.ocsp_signing.dn=CN=OCSP Signing Certificate,OU=pki-ca,O=UsersysRedhat Domain
+---
+> cloning.ocsp_signing.dn=cn=CA OCSP Signing Certificate,o=usersys.redhat.com Security Domain
+651,652c652,653
+< cloning.ocsp_signing.nickname=ocspSigningCert cert-pki-ca
+< cloning.ocsp_signing.privkey.id=-6e4a576dc1203a3029ac8ba87d952f4e88bd9586
+---
+> cloning.ocsp_signing.nickname=ocspSigningCert cert-pki-tomcat
+> cloning.ocsp_signing.privkey.id=-7a21a00c8ae4e3b8b6a1c1a7a95a81cbfdba00f7
+655,656c656,657
+< cloning.ocsp_signing.pubkey.modulus=b53204aa9e9ffdf35e71a51299433b684916d37bad24f65d668f9ee7a3335561097ef24698f4ccc6d564f509f253682a6f45ffc6b950fc1d8ee25fb711b0c8603d8af6eaca5c3aac8a023b5a99025fd69b7e120870ba2a81f599b7e5e8513558d3fe76d5d31ed2a783aff95a731e823ce56ac1f4cae98995dd7e88459dcd3c85b865639eec6ebb04e2046d6f2e963eb8e4f09ac5365b559479329d81e798a5078bd7800968f2a17d9ec9d4c6bc8828f6600777979e4e70be79ecb5273c5e65b0a21ac121b5d904a64486c87f545383a83c39013424a97aca6090ec491b9c3683a4ccac4fbe5f6db3f20f31c9012fe91f8f92a9af74dd947273b9fae2aa40ff97
+< cloning.signing.dn=CN=Certificate Authority,OU=pki-ca,O=UsersysRedhat Domain
+---
+> cloning.ocsp_signing.pubkey.modulus=a7ed56e437b5d51374256b1459c002c29c1f1677032d28a3fca082f3ea8ef9aec89e69dd42f861cd539a3356c1204364a443790415319d6d0616faba6161cbf1db0ca40012a0d1174d5ed69a346804abfd155f39372067114be5e9b589d19bf45ae58e46bd67d76666b4283a511ddbb0528bfb342d20dea178f2f1d39f217d3a1b2b3ed5aabb8a293714b4aa9349b4f529231054c962332cc43ce3464f9970b52b1040136c78f26d42bbad8e8680389eac7175281b55ed4bc91d14da0f4c86b1258e0392ee0779a7307c6f3df48345435cb21e30ac8e0270cff0621503d398f091afe0ca1e28a961e05425d7228288c97c4a8c2fd75f0134f9d8d54357b1eb11
+> cloning.signing.dn=cn=CA Signing Certificate,o=usersys.redhat.com Security Domain
+659,660c660,661
+< cloning.signing.nickname=caSigningCert cert-pki-ca
+< cloning.signing.privkey.id=55f55eb4de217657421224f9be1590ef477bba30
+---
+> cloning.signing.nickname=caSigningCert cert-pki-tomcat
+> cloning.signing.privkey.id=-7d9244e03b4afb811ef42636eb654be5293bb577
+663,664c664,665
+< cloning.signing.pubkey.modulus=b7e17a059bdb7e00a5223217656465017d22c60a8afa1eb476ab46b3bf0584aef6528ee72ae0c52f64aef64dda77680ea4ba44bab615e874d8f1f3164664cd6dea6313685c5f67d4da98a024841e036986df02ad96d6c8b87ef1f9356073416fd320dcc689cc9f47a75392714bcb7e4d285c98d33bedd4b17d9bf7439120c0f22c35e333e8ee046a2850302e38859ea72cc4d1198a593b45231faa0e6ac1886669fb02228a23e26e7fa982de2f4eecaa71c0ff2350e42c61d8c9a0d1f05967cc3e5a9e26ee293e0ecd246b27b4d6afd7ec158ba80472765ac589bfbc4c809e984841334351fce5dc4bfc7eafd7976998080a108280d89559b9ec2792a68c24f7
+< cloning.subsystem.dn=CN=CA Subsystem Certificate,OU=pki-ca,O=UsersysRedhat Domain
+---
+> cloning.signing.pubkey.modulus=c73c8394ef50ece5bb4e4b7363c6920494ff359071c8f284c81331538d9c278607e2328227ce70b55ceb3ed31d8620c6840127922b0358185aa21850f80bf05a57b668ef4fd218cee76283ac24578b3722e8959b3270f2e6b1f46af32777ee836f67600500f027c7f478fa303f079216491e3b3a8492f76610af2071a488c3261d3c5d635b3cafab8489ef11fd501570d6de0ca8642c22e37c90cf7fc4377c7a2bf33ff92a1cbd9f01ddb6405c0bd2742bf253587445081f14adbb05a41537c5e9f98d02c6e87cc9a4bb7fbd1abfc3f9456e28a40c7338302f15f4acfa8ecdd0de52e7adc1c1fa1eaf60f2d905dab7c440c908b7396b6eb69b823ab81f4f55d9
+> cloning.subsystem.dn=cn=CA Subsystem Certificate,o=usersys.redhat.com Security Domain
+667,668c668,669
+< cloning.subsystem.nickname=subsystemCert cert-pki-ca
+< cloning.subsystem.privkey.id=63b63c8838126fdd1c5e24ddfbf93a5a18c67ab3
+---
+> cloning.subsystem.nickname=subsystemCert cert-pki-tomcat
+> cloning.subsystem.privkey.id=-42a8c65aa238b830712561aefc10d3be6f69ee42
+671c672
+< cloning.subsystem.pubkey.modulus=bdfa193015ba4e446832354b507491b02fb8cef4fd21c03a6521b9686e0839d89ced5b7d068d2e7f2841b656ae3205ff314210156809b0755d38723a77cbc6be027adc3974f46c13db6c6a9db7fd70bad4dd5794e3368beafadd9bdd45fc28f803e27ca59c491154ec751adc9a3c070634d2dc39548328618fa3b9b18490d01fa3063635fe198cfd9a53007cc1d34909bba53a26ced370012662ee0ca007f61cb2a4e1eabcc96bba4793fe86178ac144a5031d5813d6d27bf5e1d2da79c49624bc346a3f13fea1dedd56d88ebd7f46ea3a032bd25045307151e058052d18e18c3ebcc81635d0d91af1f5ac339654ffe6da33ac835a5e1788b7086292355c4b57
+---
+> cloning.subsystem.pubkey.modulus=c9d5e853a274e0a4297b99536bc515a42f6f4114d3e4a31ec3803869e8f252505002e3ab9fea6e41a459164e5a84114b22dcb2775cff5b37528e59812534759326a952b1912a312dd93e78cd129b9393b68e859af8391b6eacaa31e5e0b1fba29b7c4db4fa0112c236a220804f0e0294b7e1fefdbb9e8f7488428d5aa85df44e7d40dd155529d9378a87717b9d765fe4172d00a6f96d38b0a4c11455e1d2335cc2c19b11b2f99e205e9155874416f0c2b5fb4663fc566d2ca99fd828c12832b91460449c2d7afcf2870ec0c53eae78e5e2e4b4e42b16baf3255f67fcd393b4fa127fd584d1fc2ab60517df2387ef6bd7668803703a1d6ce94054715e023389d9
+678c679
+< cms.version=9.0
+---
+> cms.version=10.0
+686,687c687,688
+< cmsgateway._006=##   (2) Type:  'service pki-ca stop'
+< cmsgateway._007=##   (3) Edit '/var/lib/pki-ca/conf/CS.cfg'
+---
+> cmsgateway._006=##   (2) Type:  'service pki-tomcat stop'
+> cmsgateway._007=##   (3) Edit '/etc/pki/pki-tomcat/ca/CS.cfg'
+693c694
+< cmsgateway._013=##   (4) Type:  'service pki-ca start'
+---
+> cmsgateway._013=##   (4) Type:  'service pki-tomcat start'
+697c698
+< cmsgateway._017=##           https://dogtag17-clone.usersys.redhat.com:9445/ca/admin/ca/adminEnroll.html
+---
+> cmsgateway._017=##           https://dogtag17-clone.usersys.redhat.com:8443/ca/admin/ca/adminEnroll.html
+702c703
+< cmsgateway._022=##           https://dogtag17-clone.usersys.redhat.com:9443/ca/agent/ca/
+---
+> cmsgateway._022=##           https://dogtag17-clone.usersys.redhat.com:8443/ca/agent/ca/
+739c740
+< debug.filename=/var/lib/pki-ca/logs/debug
+---
+> debug.filename=/var/lib/pki/pki-tomcat/logs/ca/debug
+750,751c751,752
+< internaldb.basedn=dc=dogtag17-clone.usersys.redhat.com-pki-ca
+< internaldb.database=dogtag17-clone.usersys.redhat.com-pki-ca
+---
+> internaldb.basedn=o=pki-tomcat
+> internaldb.database=pki-tomcat
+758,759c759
+< internaldb.ldapconn.cloneStartTLS=false
+< internaldb.ldapconn.host=localhost
+---
+> internaldb.ldapconn.host=dogtag17-clone.usersys.redhat.com
+774c774
+< jobsScheduler.job.certRenewalNotifier.emailTemplate=/var/lib/pki-ca/emails/rnJob1.txt
+---
+> jobsScheduler.job.certRenewalNotifier.emailTemplate=/var/lib/pki/pki-tomcat/ca/emails/rnJob1.txt
+781c781
+< jobsScheduler.job.certRenewalNotifier.summary.emailTemplate=/var/lib/pki-ca/emails/rnJob1Summary.txt
+---
+> jobsScheduler.job.certRenewalNotifier.summary.emailTemplate=/var/lib/pki/pki-tomcat/ca/emails/rnJob1Summary.txt
+783c783
+< jobsScheduler.job.certRenewalNotifier.summary.itemTemplate=/var/lib/pki-ca/emails/rnJob1Item.txt
+---
+> jobsScheduler.job.certRenewalNotifier.summary.itemTemplate=/var/lib/pki/pki-tomcat/ca/emails/rnJob1Item.txt
+790c790
+< jobsScheduler.job.publishCerts.summary.emailTemplate=/var/lib/pki-ca/emails/publishCerts.html
+---
+> jobsScheduler.job.publishCerts.summary.emailTemplate=/var/lib/pki/pki-tomcat/ca/emails/publishCerts.html
+792c792
+< jobsScheduler.job.publishCerts.summary.itemTemplate=/var/lib/pki-ca/emails/publishCertsItem.html
+---
+> jobsScheduler.job.publishCerts.summary.itemTemplate=/var/lib/pki/pki-tomcat/ca/emails/publishCertsItem.html
+800c800
+< jobsScheduler.job.requestInQueueNotifier.summary.emailTemplate=/var/lib/pki-ca/emails/riq1Summary.html
+---
+> jobsScheduler.job.requestInQueueNotifier.summary.emailTemplate=/var/lib/pki/pki-tomcat/ca/emails/riq1Summary.html
+808c808
+< jobsScheduler.job.unpublishExpiredCerts.summary.emailTemplate=/var/lib/pki-ca/emails/euJob1.html
+---
+> jobsScheduler.job.unpublishExpiredCerts.summary.emailTemplate=/var/lib/pki/pki-tomcat/ca/emails/euJob1.html
+810c810
+< jobsScheduler.job.unpublishExpiredCerts.summary.itemTemplate=/var/lib/pki-ca/emails/euJob1Item.html
+---
+> jobsScheduler.job.unpublishExpiredCerts.summary.itemTemplate=/var/lib/pki/pki-tomcat/ca/emails/euJob1Item.html
+816c816
+< jss.configDir=/var/lib/pki-ca/alias/
+---
+> jss.configDir=/var/lib/pki/pki-tomcat/alias/
+843c843
+< log.instance.SignedAudit.fileName=/var/lib/pki-ca/logs/signedAudit/ca_audit
+---
+> log.instance.SignedAudit.fileName=/var/lib/pki/pki-tomcat/logs/ca/signedAudit/ca_audit
+851c851
+< log.instance.SignedAudit.signedAuditCertNickname=auditSigningCert cert-pki-ca
+---
+> log.instance.SignedAudit.signedAuditCertNickname=auditSigningCert cert-pki-tomcat
+859c859
+< log.instance.System.fileName=/var/lib/pki-ca/logs/system
+---
+> log.instance.System.fileName=/var/lib/pki/pki-tomcat/logs/ca/system
+872c872
+< log.instance.Transactions.fileName=/var/lib/pki-ca/logs/transactions
+---
+> log.instance.Transactions.fileName=/var/lib/pki/pki-tomcat/logs/ca/transactions
+879,880c879,880
+< logAudit.fileName=/var/lib/pki-ca/logs/access
+< logError.fileName=/var/lib/pki-ca/logs/error
+---
+> logAudit.fileName=/var/lib/pki/pki-tomcat/logs/ca/access
+> logError.fileName=/var/lib/pki/pki-tomcat/logs/ca/error
+905,911c905,911
+< pkicreate.admin_secure_port=9445
+< pkicreate.agent_secure_port=9443
+< pkicreate.ee_secure_client_auth_port=9446
+< pkicreate.ee_secure_port=9444
+< pkicreate.pki_instance_name=pki-ca
+< pkicreate.pki_instance_root=/var/lib
+< pkicreate.secure_port=9443
+---
+> pkicreate.admin_secure_port=8443
+> pkicreate.agent_secure_port=8443
+> pkicreate.ee_secure_client_auth_port=8443
+> pkicreate.ee_secure_port=8443
+> pkicreate.pki_instance_name=pki-tomcat
+> pkicreate.pki_instance_root=/var/lib/pki
+> pkicreate.secure_port=8443
+913,914c913,914
+< pkicreate.tomcat_server_port=9701
+< pkicreate.unsecure_port=9180
+---
+> pkicreate.tomcat_server_port=8005
+> pkicreate.unsecure_port=8080
+917,918c917,941
+< pkicreate.systemd.servicename=pki-cad@pki-ca.service
+< pkiremove.cert.subsystem.nickname=subsystemCert cert-pki-ca
+---
+> pkicreate.systemd.servicename=pki-tomcatd@pki-tomcat.service
+> pkiremove.cert.subsystem.nickname=subsystemCert cert-pki-tomcat
+> processor.caDoRevoke.authorityId=ca
+> processor.caDoRevoke.authzMgr=BasicAclAuthz
+> processor.caDoRevoke.authzResourceName=certServer.ee.certificates
+> processor.caDoRevoke.getClientCert=false
+> processor.caDoRevoke-agent.authMgr=certUserDBAuthMgr
+> processor.caDoRevoke-agent.authorityId=ca
+> processor.caDoRevoke-agent.authzMgr=BasicAclAuthz
+> processor.caDoRevoke-agent.authzResourceName=certServer.ca.certificates
+> processor.caDoRevoke-agent.getClientCert=true
+> processor.caDoUnrevoke.authMgr=certUserDBAuthMgr
+> processor.caDoUnrevoke.authorityId=ca
+> processor.caDoUnrevoke.authzMgr=BasicAclAuthz
+> processor.caDoUnrevoke.authzResourceName=certServer.ca.certificate
+> processor.caDoUnrevoke.getClientCert=true
+> processor.caProfileProcess.authMgr=certUserDBAuthMgr
+> processor.caProfileProcess.authorityId=ca
+> processor.caProfileProcess.authzMgr=BasicAclAuthz
+> processor.caProfileProcess.authzResourceName=certServer.ca.request.profile
+> processor.caProfileProcess.getClientCert=true
+> processor.caProfileSubmit.authorityId=ca
+> processor.caProfileSubmit.authzMgr=BasicAclAuthz
+> processor.caProfileSubmit.authzResourceName=certServer.ee.profile
+> processor.caProfileSubmit.getClientCert=false
+921c944
+< profile.DomainController.config=/var/lib/pki-ca/profiles/ca/DomainController.cfg
+---
+> profile.DomainController.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/DomainController.cfg
+923c946
+< profile.caAdminCert.config=/var/lib/pki-ca/profiles/ca/caAdminCert.cfg
+---
+> profile.caAdminCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caAdminCert.cfg
+925c948
+< profile.caAgentFileSigning.config=/var/lib/pki-ca/profiles/ca/caAgentFileSigning.cfg
+---
+> profile.caAgentFileSigning.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caAgentFileSigning.cfg
+927c950
+< profile.caAgentServerCert.config=/var/lib/pki-ca/profiles/ca/caAgentServerCert.cfg
+---
+> profile.caAgentServerCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caAgentServerCert.cfg
+929c952
+< profile.caCACert.config=/var/lib/pki-ca/profiles/ca/caCACert.cfg
+---
+> profile.caCACert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caCACert.cfg
+931c954
+< profile.caCMCUserCert.config=/var/lib/pki-ca/profiles/ca/caCMCUserCert.cfg
+---
+> profile.caCMCUserCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caCMCUserCert.cfg
+933c956
+< profile.caDirUserCert.config=/var/lib/pki-ca/profiles/ca/caDirUserCert.cfg
+---
+> profile.caDirUserCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caDirUserCert.cfg
+935c958
+< profile.caDirUserRenewal.config=/var/lib/pki-ca/profiles/ca/caDirUserRenewal.cfg
+---
+> profile.caDirUserRenewal.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caDirUserRenewal.cfg
+937c960
+< profile.caDualCert.config=/var/lib/pki-ca/profiles/ca/caDualCert.cfg
+---
+> profile.caDualCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caDualCert.cfg
+939c962
+< profile.caDualRAuserCert.config=/var/lib/pki-ca/profiles/ca/caDualRAuserCert.cfg
+---
+> profile.caDualRAuserCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caDualRAuserCert.cfg
+941c964
+< profile.caECDirUserCert.config=/var/lib/pki-ca/profiles/ca/caECDirUserCert.cfg
+---
+> profile.caECDirUserCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caECDirUserCert.cfg
+943c966
+< profile.caECDualCert.config=/var/lib/pki-ca/profiles/ca/caECDualCert.cfg
+---
+> profile.caECDualCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caECDualCert.cfg
+945c968
+< profile.caECUserCert.config=/var/lib/pki-ca/profiles/ca/caECUserCert.cfg
+---
+> profile.caECUserCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caECUserCert.cfg
+947c970
+< profile.caEncECUserCert.config=/var/lib/pki-ca/profiles/ca/caEncECUserCert.cfg
+---
+> profile.caEncECUserCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caEncECUserCert.cfg
+949c972
+< profile.caEncUserCert.config=/var/lib/pki-ca/profiles/ca/caEncUserCert.cfg
+---
+> profile.caEncUserCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caEncUserCert.cfg
+951c974
+< profile.caFullCMCUserCert.config=/var/lib/pki-ca/profiles/ca/caFullCMCUserCert.cfg
+---
+> profile.caFullCMCUserCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caFullCMCUserCert.cfg
+953c976
+< profile.caIPAserviceCert.config=/var/lib/pki-ca/profiles/ca/caIPAserviceCert.cfg
+---
+> profile.caIPAserviceCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caIPAserviceCert.cfg
+955c978
+< profile.caInstallCACert.config=/var/lib/pki-ca/profiles/ca/caInstallCACert.cfg
+---
+> profile.caInstallCACert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caInstallCACert.cfg
+957c980
+< profile.caInternalAuthAuditSigningCert.config=/var/lib/pki-ca/profiles/ca/caInternalAuthAuditSigningCert.cfg
+---
+> profile.caInternalAuthAuditSigningCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caInternalAuthAuditSigningCert.cfg
+959c982
+< profile.caInternalAuthDRMstorageCert.config=/var/lib/pki-ca/profiles/ca/caInternalAuthDRMstorageCert.cfg
+---
+> profile.caInternalAuthDRMstorageCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caInternalAuthDRMstorageCert.cfg
+961c984
+< profile.caInternalAuthOCSPCert.config=/var/lib/pki-ca/profiles/ca/caInternalAuthOCSPCert.cfg
+---
+> profile.caInternalAuthOCSPCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caInternalAuthOCSPCert.cfg
+963c986
+< profile.caInternalAuthServerCert.config=/var/lib/pki-ca/profiles/ca/caInternalAuthServerCert.cfg
+---
+> profile.caInternalAuthServerCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caInternalAuthServerCert.cfg
+965c988
+< profile.caInternalAuthSubsystemCert.config=/var/lib/pki-ca/profiles/ca/caInternalAuthSubsystemCert.cfg
+---
+> profile.caInternalAuthSubsystemCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caInternalAuthSubsystemCert.cfg
+967c990
+< profile.caInternalAuthTransportCert.config=/var/lib/pki-ca/profiles/ca/caInternalAuthTransportCert.cfg
+---
+> profile.caInternalAuthTransportCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caInternalAuthTransportCert.cfg
+969c992
+< profile.caJarSigningCert.config=/var/lib/pki-ca/profiles/ca/caJarSigningCert.cfg
+---
+> profile.caJarSigningCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caJarSigningCert.cfg
+971c994
+< profile.caManualRenewal.config=/var/lib/pki-ca/profiles/ca/caManualRenewal.cfg
+---
+> profile.caManualRenewal.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caManualRenewal.cfg
+973c996
+< profile.caOCSPCert.config=/var/lib/pki-ca/profiles/ca/caOCSPCert.cfg
+---
+> profile.caOCSPCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caOCSPCert.cfg
+975c998
+< profile.caOtherCert.config=/var/lib/pki-ca/profiles/ca/caOtherCert.cfg
+---
+> profile.caOtherCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caOtherCert.cfg
+977c1000
+< profile.caRACert.config=/var/lib/pki-ca/profiles/ca/caRACert.cfg
+---
+> profile.caRACert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caRACert.cfg
+979c1002
+< profile.caRARouterCert.config=/var/lib/pki-ca/profiles/ca/caRARouterCert.cfg
+---
+> profile.caRARouterCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caRARouterCert.cfg
+981c1004
+< profile.caRAagentCert.config=/var/lib/pki-ca/profiles/ca/caRAagentCert.cfg
+---
+> profile.caRAagentCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caRAagentCert.cfg
+983c1006
+< profile.caRAserverCert.config=/var/lib/pki-ca/profiles/ca/caRAserverCert.cfg
+---
+> profile.caRAserverCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caRAserverCert.cfg
+985c1008
+< profile.caRouterCert.config=/var/lib/pki-ca/profiles/ca/caRouterCert.cfg
+---
+> profile.caRouterCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caRouterCert.cfg
+987c1010
+< profile.caSSLClientSelfRenewal.config=/var/lib/pki-ca/profiles/ca/caSSLClientSelfRenewal.cfg
+---
+> profile.caSSLClientSelfRenewal.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caSSLClientSelfRenewal.cfg
+989c1012
+< profile.caServerCert.config=/var/lib/pki-ca/profiles/ca/caServerCert.cfg
+---
+> profile.caServerCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caServerCert.cfg
+991c1014
+< profile.caSignedLogCert.config=/var/lib/pki-ca/profiles/ca/caSignedLogCert.cfg
+---
+> profile.caSignedLogCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caSignedLogCert.cfg
+993c1016
+< profile.caSimpleCMCUserCert.config=/var/lib/pki-ca/profiles/ca/caSimpleCMCUserCert.cfg
+---
+> profile.caSimpleCMCUserCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caSimpleCMCUserCert.cfg
+995c1018
+< profile.caTPSCert.config=/var/lib/pki-ca/profiles/ca/caTPSCert.cfg
+---
+> profile.caTPSCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caTPSCert.cfg
+997c1020
+< profile.caTempTokenDeviceKeyEnrollment.config=/var/lib/pki-ca/profiles/ca/caTempTokenDeviceKeyEnrollment.cfg
+---
+> profile.caTempTokenDeviceKeyEnrollment.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caTempTokenDeviceKeyEnrollment.cfg
+999c1022
+< profile.caTempTokenUserEncryptionKeyEnrollment.config=/var/lib/pki-ca/profiles/ca/caTempTokenUserEncryptionKeyEnrollment.cfg
+---
+> profile.caTempTokenUserEncryptionKeyEnrollment.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caTempTokenUserEncryptionKeyEnrollment.cfg
+1001c1024
+< profile.caTempTokenUserSigningKeyEnrollment.config=/var/lib/pki-ca/profiles/ca/caTempTokenUserSigningKeyEnrollment.cfg
+---
+> profile.caTempTokenUserSigningKeyEnrollment.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caTempTokenUserSigningKeyEnrollment.cfg
+1003c1026
+< profile.caTokenDeviceKeyEnrollment.config=/var/lib/pki-ca/profiles/ca/caTokenDeviceKeyEnrollment.cfg
+---
+> profile.caTokenDeviceKeyEnrollment.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caTokenDeviceKeyEnrollment.cfg
+1005c1028
+< profile.caTokenMSLoginEnrollment.config=/var/lib/pki-ca/profiles/ca/caTokenMSLoginEnrollment.cfg
+---
+> profile.caTokenMSLoginEnrollment.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caTokenMSLoginEnrollment.cfg
+1007c1030
+< profile.caTokenUserEncryptionKeyEnrollment.config=/var/lib/pki-ca/profiles/ca/caTokenUserEncryptionKeyEnrollment.cfg
+---
+> profile.caTokenUserEncryptionKeyEnrollment.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caTokenUserEncryptionKeyEnrollment.cfg
+1009c1032
+< profile.caTokenUserEncryptionKeyRenewal.config=/var/lib/pki-ca/profiles/ca/caTokenUserEncryptionKeyRenewal.cfg
+---
+> profile.caTokenUserEncryptionKeyRenewal.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caTokenUserEncryptionKeyRenewal.cfg
+1011c1034
+< profile.caTokenUserSigningKeyEnrollment.config=/var/lib/pki-ca/profiles/ca/caTokenUserSigningKeyEnrollment.cfg
+---
+> profile.caTokenUserSigningKeyEnrollment.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caTokenUserSigningKeyEnrollment.cfg
+1013c1036
+< profile.caTokenUserSigningKeyRenewal.config=/var/lib/pki-ca/profiles/ca/caTokenUserSigningKeyRenewal.cfg
+---
+> profile.caTokenUserSigningKeyRenewal.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caTokenUserSigningKeyRenewal.cfg
+1015c1038
+< profile.caTransportCert.config=/var/lib/pki-ca/profiles/ca/caTransportCert.cfg
+---
+> profile.caTransportCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caTransportCert.cfg
+1017c1040
+< profile.caUUIDdeviceCert.config=/var/lib/pki-ca/profiles/ca/caUUIDdeviceCert.cfg
+---
+> profile.caUUIDdeviceCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caUUIDdeviceCert.cfg
+1019c1042
+< profile.caUserCert.config=/var/lib/pki-ca/profiles/ca/caUserCert.cfg
+---
+> profile.caUserCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caUserCert.cfg
+1021c1044
+< profile.caUserSMIMEcapCert.config=/var/lib/pki-ca/profiles/ca/caUserSMIMEcapCert.cfg
+---
+> profile.caUserSMIMEcapCert.config=/var/lib/pki/pki-tomcat/ca/profiles/ca/caUserSMIMEcapCert.cfg
+1024c1047
+< registry.file=/var/lib/pki-ca/conf/registry.cfg
+---
+> registry.file=/var/lib/pki/pki-tomcat/conf/ca/registry.cfg
+1029,1033c1052,1056
+< securitydomain.httpport=9180
+< securitydomain.httpsadminport=9445
+< securitydomain.httpsagentport=9443
+< securitydomain.httpseeport=9444
+< securitydomain.name=UsersysRedhat Domain
+---
+> securitydomain.httpport=8080
+> securitydomain.httpsadminport=8443
+> securitydomain.httpsagentport=8443
+> securitydomain.httpseeport=8443
+> securitydomain.name=usersys.redhat.com Security Domain
+1053c1076
+< selftests.container.logger.fileName=/var/lib/pki-ca/logs/selftests.log
+---
+> selftests.container.logger.fileName=/var/lib/pki/pki-tomcat/logs/ca/selftests.log
+1065,1067c1088,1090
+< service.clientauth_securePort=9446
+< service.instanceDir=/var/lib
+< service.instanceID=pki-ca
+---
+> service.clientauth_securePort=8443
+> service.instanceDir=/var/lib/pki
+> service.instanceID=pki-tomcat
+1069,1072c1092,1095
+< service.non_clientauth_securePort=9444
+< service.securePort=9443
+< service.securityDomainPort=9443
+< service.unsecurePort=9180
+---
+> service.non_clientauth_securePort=8443
+> service.securePort=8443
+> service.securityDomainPort=8443
+> service.unsecurePort=8080
+1091,1113d1113
+< processor.caDoRevoke.authorityId=ca
+< processor.caDoRevoke.authzMgr=BasicAclAuthz
+< processor.caDoRevoke.authzResourceName=certServer.ee.certificates
+< processor.caDoRevoke.getClientCert=false
+< processor.caDoRevoke-agent.authMgr=certUserDBAuthMgr
+< processor.caDoRevoke-agent.authorityId=ca
+< processor.caDoRevoke-agent.authzMgr=BasicAclAuthz
+< processor.caDoRevoke-agent.authzResourceName=certServer.ca.certificates
+< processor.caDoRevoke-agent.getClientCert=true
+< processor.caDoUnrevoke.authMgr=certUserDBAuthMgr
+< processor.caDoUnrevoke.authorityId=ca
+< processor.caDoUnrevoke.authzMgr=BasicAclAuthz
+< processor.caDoUnrevoke.authzResourceName=certServer.ca.certificate
+< processor.caDoUnrevoke.getClientCert=true
+< processor.caProfileProcess.authMgr=certUserDBAuthMgr
+< processor.caProfileProcess.authorityId=ca
+< processor.caProfileProcess.authzMgr=BasicAclAuthz
+< processor.caProfileProcess.authzResourceName=certServer.ca.request.profile
+< processor.caProfileProcess.getClientCert=true
+< processor.caProfileSubmit.authorityId=ca
+< processor.caProfileSubmit.authzMgr=BasicAclAuthz
+< processor.caProfileSubmit.authzResourceName=certServer.ee.profile
+< processor.caProfileSubmit.getClientCert=false
+</pre>
+</ul>
+</ul>
+
+==== Phase III ====
+<ul>
+'''TBD'''
+</ul>
+==== Phase IV ====
+<ul>
+'''TBD'''
+</ul>

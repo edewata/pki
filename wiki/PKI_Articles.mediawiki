@@ -1,0 +1,12 @@
+= Overview =
+
+This page contains a list of articles related to PKI.
+
+= Articles =
+
+* [https://www.google.com/search?q=site%3Aadam.younglogic.com+dogtag Adam Young’s Web Log]
+* [https://frasertweedale.github.io/blog-redhat/tags/dogtag.html Fraser's IdM Blog]
+* [http://dminnich.com/blog/Dogtag-pki/ Setting Up a Dogtag PKI system]
+* [http://blog.benjaminlipton.com/2016/07/19/csr-generation-templating.html Thinking about templating for automatic CSR generation]
+* [https://magnus-k-karlsson.blogspot.com/2019/08/installing-dogtag-on-fedora-30-with.html Installing Dogtag on Fedora 30 with SoftHSM]
+* [https://floblanc.wordpress.com/2017/12/05/demystifying-the-certificate-authority-component-in-freeipa/ Demystifying the Certificate Authority component in FreeIPA]

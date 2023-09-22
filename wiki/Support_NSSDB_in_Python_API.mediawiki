@@ -1,0 +1,379 @@
+= &#91;Support NSSDB in PKI's Python API&#93; =
+
+<font color="RED">'''Draft, work in progress!'''</font>
+
+== Overview ==
+<font color="RED">'''TBD'''</font>
+
+FreeIPA clients use X.509 client certs to authenticate themselves against
+the server. FreeIPA stores certificates securely in a NSSDB and depends on
+python-nss for secure connections and client certificates handling.
+Internally it uses a low level httplib interface with a custom connection
+factory. '''[XXX: verify]'''
+
+Dogtag API uses python-requests for HTTP connections. Python-requests
+also known as "HTTP for Humans" because it provides a modern,
+feature-rich yet easy to use API for HTTP. However it depends on Python's
+SSL stack and OpenSSL, which are both unable to retrieve certificates
+from a NSSDB directly. Further more python-requests <= 2.7 and the
+underlying library urllib3 only expose a subset of Python's SSL module,
+which is already limited all by itself.
+
+As a consequence and in order to make authenticated requests Dogtag's
+Python API has to keep the client certs private key in an unencrypted
+PEM file on the file system. Python's SSL module can neither interface
+NSSDB directly nor load certs from memory. Requests doesn't support a
+password callback for encrypted certificates although it is supported
+by Python's SSL module. The need for an unencrypted copy of the client
+certificate adds an extra synchronisation step and imposes a security
+risk as well.
+
+This design document explores possible ways to directly and securely
+interface NSSDB from Dogtag API.
+
+
+== Associated Bugs and Tickets ==
+
+https://fedorahosted.org/pki/ticket/1360
+
+
+== Use Cases ==
+<font color="RED">'''TBD'''</font>
+
+Walk through one or more full examples of how the feature will be used. These 
+should not all be the simplest cases.
+
+
+== Operating System Platforms and Architectures ==
+
+The feature will be developed and initially tested on Linux (Fedora 22). It
+should run on other Linux platforms easily.
+
+
+== Technology Stack ==
+
+=== python-requests ===
+
+[http://python-requests.org/ Python-requests] is build on top of a deep
+technology stack. This propals plan to make the stack even deeper. This
+chapter explains the relationship between the involved libraries.
+
+The '''requests''' package provides the public interface. Internally it
+contains 3rd party package such as urllib3 and a 
+[http://docs.python-requests.org/en/latest/user/advanced/#ca-certificates copy]
+of Mozilla's trust store.
+
+[https://urllib3.readthedocs.org/ urllib3] is used as the underlying library
+for connection handling and HTTP parsing. It's a redesign of Python's urllib
+and urllib2 modules (hence the name) with a more modern design. It has
+elaborate features such a connection pool for HTTP/1.1 keep-alive. urllib3
+uses Python's [https://docs.python.org/3/library/socket.html socket]
+module for network connections and Python's 
+[https://docs.python.org/3/library/ssl.html
+ssl] module for TLS/SSL by default. It can use 
+[https://pyopenssl.readthedocs.org/ PyOpenSSL] as an alternative SSL library,
+too. As of now urllib3 1.10 does not support advanced options of both
+'''ssl''' and '''PyOpenSSL''', for instance password callbacks for password
+protected private keys.
+
+
+=== OpenSSL ===
+
+[https://pyopenssl.readthedocs.org/ PyOpenSSL] is an alternative TLS/SSL
+package with a different API. The basic concepts are similar to Python's
+standard library but method names and arguments are different. It's possible
+to adapt PyOpenSSL to a mostly compatible implementation with e.g. hyper's
+[https://github.com/Lukasa/hyper/blob/development/hyper/ssl_compat.py ssl_compat]
+
+PyOpenSSL used to be written in plain C, but it was rewritten a while ago.
+Nowadays it relies on [https://cryptography.io PyCA's cryptography]
+and [https://cffi.readthedocs.org CFFI] (C Foreign Function Interface for
+Python). CFFI simplifies development and ensure compatibility with CPython
+and PyPy without extra work. That means improvements for PyOpenSSL are
+available in PyPy!
+
+Both the ssl module in Python's standard library and PyOpenSSL rely
+on [http://openssl.org/ OpenSSL] for TLS/SSL protocol, X.509 handling and
+cryptographic primitives. OpenSSL is able to load client certs in DER and
+PEM format from files or in-memory buffers. It can't interface with NSSDB
+directly.
+
+=== NSS ===
+
+[https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS/Reference NSS]
+(Mozilla's Network Security Services) is an alternative TLS/SSL library
+that is used in amongst others Firefox and Red Hat Directory Server. NSSDB
+(aka CertDB) provides the certificate store for trust anchors, client certs
+and other X.509 certificates.
+
+[https://www.mozilla.org/projects/security/pki/python-nss python-nss] is a
+Python wrapper for NSS. 
+
+
+== Design ==
+
+In order to provide NSSDB support in python-requests OpenSSL must be able
+look up client certificates in NSSDB. Several upstream packages must be
+altered and improved to achieve that goal. Since Python's ssl module is
+feature-locked to new minor releases of Python, this proposal only focuses
+on PyOpenSSL as TLS library. Even if the necessary improvements are
+implemented and later accepted by upstream, it would take more than 18 months
+until the release of Python 3.6.0 before the mandatory callback is available.
+
+The idea here boils down to a SSL context with a client cert request
+callback, that fetches the client certificate from NSSDB
+during the SSL handshake and returns it to the server. In OpenSSL a SSL
+context acts as a central configuration and session instance for one or more
+SSL connection. Beside options like TLS protocol, ciphers, verification and
+validation flags it holds trusted root CAs, certificates, callback functions
+and many more. A SSL context contains several hooks for client
+certificate requests.
+
+In both Python's ssl module and PyOpenSSL SSL context objects play the same
+role as configuration instance. Contexts also act as factories which wrap 
+BSD socket connections into a SSL-aware connections. Libraries usually
+create a TCP/IP connection first and then upgrade the connection to a SSL
+connection.
+
+All network related Python standard library modules like urllib or smtplib
+take an optional SSLContext object as an argument. As of now neither urllib3
+nor python-requests support a context argument. Upstream is going to
+implement the feature soonish.
+
+The
+[https://docs.python.org/3/library/ssl.html#ssl-contexts SSLContext] class of
+Python's ssl module and PyOpenSSL's 
+[https://pyopenssl.readthedocs.org/en/latest/api/ssl.html#context-objects 
+Context] type have a different and incompatible API. urllib3 only wants to
+support a Python stdlib compatible SSLContext object. The PyOpenSSL Context
+type must be wrapped in a SSLContext compatible interface.
+
+python-nss needs to support a lookup method for client certs that is able to
+handle information from PyOpenSSL. 
+
+Finally Dogtag needs to set up all necessary bits and pieces.
+
+Pseudo code:
+
+    from OpenSSL.crypto import load_certificate, FILETYPE_ASN1
+    from OpenSSL.SSL import Context
+    from nss import nss
+    import requests
+    
+    certdb = nss.get_default_certdb()
+    
+    def client_cert_cb(sslcon):
+       for cert in in sslcon.get_peer_cert_chain():
+           issuer = cert.get_issuer().der()
+           client_cert = certdb.find_client_cert_by_issuer(issuer)
+           if client_cert is not None:
+               x509 = load_certificate(FILETYPE_ASN1, client_cert.der())
+               sslcon.add_client_cert(x509)
+               break
+    
+    pyctx = Context(OpenSSL.SSL.SSLv23_METHOD)
+    pyctx.set_client_cert_cb(client_cert_cb)
+    # more configuration
+    
+    ctx = SSLContextAdapter(pyctx)
+    
+    requests.get('https://dogtag.example.org/api', ssl_context=ctx)
+
+
+== Implementation ==
+
+
+=== Cryptography ===
+
+PyCA Cryptography has to wrap and expose additional functions. First of all
+we need one or both of the callback setters in order to install a callback
+function in a SSL context:
+
+* [https://www.openssl.org/docs/ssl/SSL_CTX_set_client_cert_cb.html SSL_CTX_set_client_cert_cb()]
+* [https://www.openssl.org/docs/ssl/SSL_CTX_set_cert_cb.html SSL_CTX_set_cert_cb()]
+
+For the more generic <tt>SSL_CTX_set_cert_cb()</tt> the client public
+and private key must be added to the SSL connection instead of the SSL
+context. Cryptography just exposes the SSL_CTX variants of the functions yet,
+so these four function must be provided, too. The ASN1 variants are
+probably easier to use in order to add certs from NSSDB.
+
+* [https://www.openssl.org/docs/ssl/SSL_use_certificate.html SSL_use_certificate( )]
+* <tt>SSL_use_certificate_ASN1()</tt>
+* <tt>SSL_use_PrivateKey()</tt>
+* <tt>SSL_use_PrivateKey_ASN1()</tt>
+
+Finally this check function can become in handy:
+
+* <tt>SSL_check_private_key()</tt>
+
+
+=== PyOpenSSL ===
+
+PyOpenSSL has to include these new function and add them to the appropriate
+classes.
+
+
+=== urllib3 ===
+
+pull request [https://github.com/shazow/urllib3/pull/507 #570] for 
+<tt>ssl_context</tt> argument is work in progress.
+
+
+=== requests ===
+
+python-requests needs to support a <tt>ssl_context</tt> argument, too.
+
+
+=== PyOpenSSL to stdlib SSL adapter ===
+
+Cory Benfield's HTTP/2 library hyper has a 
+[https://github.com/Lukasa/hyper/blob/development/hyper/ssl_compat.py ssl_compat]
+module. He has expressed his interest in a standalone compatibility layer.
+
+
+=== python-nss ===
+
+TBD, python-nss may need to provide additional functions in order to
+get a client cert by issuer DN for purpose <tt>TLS Web Client Authentication</tt>.
+
+
+=== Dogtag API ===
+
+Dogtag API is where it all comes together.
+
+1) Dogtag has to create and '''carefully''' configure a PyOpenSSL Context object
+and wrap it into a <tt>SSLContext adapter</tt>. Options (TLS protocol version,
+ciphers, trust anchors) should probably be taken from a config file with 
+sensible secure settings applied. For performance reasons the SSL context 
+should be cached. A single instance make use of SSL session resumption, too.
+
+2) Dogtag API needs to open the correct NSS CertDB and install a callback 
+like shown in the pseudo code example in the design section.
+
+3) All HTTP API calls with requests must apply the SSL context object as
+ssl_context argument.
+
+
+== Major configuration options and enablement ==
+<font color="RED">'''TBD'''</font>
+
+Any configuration options? Any commands to enable/disable the feature or turn 
+on/off its parts?
+
+
+== Cloning ==
+<font color="RED">'''TBD'''</font>
+
+Any impact on cloning?
+
+
+== Open Questions ==
+
+* Should it be possible to specify a different NSS' CertDB than the default
+  DB? How?
+ 
+* How should the API deal with a password callback for encrypted client
+  certs in NSSDB?
+
+* What is the correct way to lookup client certs in NSSDB?  How to deal with
+  multiple matching client certs?
+
+
+== Alternative design ==
+
+OpenSSL has a little known 
+feature called [https://www.openssl.org/docs/crypto/engine.html ENGINE] 
+cryptographic modules. An engine can replace or offload certain functions
+of OpenSSL, e.g. run RSA on a hardware accelerator, get strong random data
+from a hardware CPRNG or load a private key from a smart card. Engines can be
+compiled into OpenSSL as well as loaded dynamically at runtime.
+
+Further more there exists an undocumented feature called
+<tt>ENGINE_set_load_ssl_client_cert_function()</tt> in the public engine
+interface. This engine function hooks into 
+<tt>ssl/s3_clnt.c:ssl_do_client_cert_cb()</tt> right before the
+[https://www.openssl.org/docs/ssl/SSL_CTX_set_client_cert_cb.html SSL_CTX_set_client_cert_cb()]
+callback. OpenSSL's CAPI engine for Windows uses the feature in
+[https://github.com/openssl/openssl/blob/OpenSSL_1_0_2/engines/e_capi.c#L1636 capi_load_ssl_client_cert()]
+to provide an engine that fetches client certificates from Windows' cert
+store. By default a <tt>SSL_CTX</tt> doesn't use an engine for client cert
+lookups. The engine must be installed with <tt>SSL_CTX_set_client_cert_engine()</tt>.
+
+We might want to consider this approach because it has some benefits. An
+engine hook would work with Python's ssl module, too. A pure C implementation
+would even work for every program that uses OpenSSL.
+
+
+== Further things to consider ==
+
+Implement [http://www.umich.edu/~x509/ssleay/x509_lookup.html X509_LOOKUP] to
+retrieve trust anchors from NSSDB? A NSS-based X509_LOOKUP could eliminate
+the need for <tt>/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem</tt>. It's
+out of scope for this proposal but it might be worth investigation in the 
+future.
+
+
+== Updates and Upgrades ==
+<font color="RED">'''TBD'''</font>
+
+Any impact on updates and upgrades?
+
+
+== Tests ==
+<font color="RED">'''TBD'''</font>
+
+
+== Dependencies ==
+
+* A new version of python-requests with support for a <tt>ssl_context</tt> argument.
+
+* A new version of urllib3 with support for a <tt>ssl_context</tt> argument.
+
+* An adapter that is able to adapt PyOpenSSL's Context and Connection instances into Python stdlib compatible APIs.
+
+* A new version of PyOpenSSL with support for a client cert callback and the injection of client certs into a connection.
+
+* A new version of Cryptography with the necessary infrastructure for PyOpenSSL.
+
+
+== Packages ==
+<font color="RED">'''TBD'''</font>
+
+
+
+== External Impact ==
+<font color="RED">'''TBD'''</font>
+
+Impact on other development teams and components?
+
+
+== History ==
+'''ORIGINAL DESIGN DATE:&nbsp;&nbsp;''' &#91;Provide the original design date 
+in 'Month DD, YYYY' format (e. g. - September 5, 2013).&#93;
+
+=== Don't use python-requests ===
+
+Ticket #1360 listed an alternative approach. Instead of interfacing NSSDB
+from python-requests Dogtag could also be refactored to not use
+python-requests but rather a custom library. The alternative is not desired.
+Requests is a convenient solution and speeds up development considerable.
+Dogtag can also benefit from more advanced features of
+python-requests like connection pooling or future features like HTTP/2.
+
+Besides the accompanying improvements in python-requests and other 3rd party
+components are mutually benefitial for Dogtag, FreeIPA and other Open Source
+projects throughout and outside Red Hat.
+
+
+=== Replace OpenSSL with NSS as TLS library ===
+
+PyOpenSSL has several vantages compaerd to python-nss. In general we like
+to benefits from the improvements and features of PyCA Cryptography like
+PyPy support. NSPR's abstraction layer are another issue. It is incompatible
+with Python's sockets and asyncio because NSPR uses its own I/O layer. In
+theory the underlying BSD socket could be imported into a NSPR with
+[https://developer.mozilla.org/en-US/docs/PR_ImportTCPSocket PR ImportTCPSocket]
+but even the documentation warns about compatibility issues. Finally OpenSSL
+and PyOpenSSL are better understood and maintained by more people than
+NSS.

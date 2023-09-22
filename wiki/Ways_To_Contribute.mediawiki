@@ -1,0 +1,22 @@
+= Ways To Contribute =
+
+Successful open source development communities are made up of many different kinds of people with different skills, backgrounds, and interests.  Likewise, the needs of a project like Dogtag are vast. We need developers, QA, documentation, and people to work the mailing lists, just to name a few. Don't worry that you're "not a programmer".  The programmers are "not deployment experts", and maybe you are.
+
+Here are some other ways to contribute:
+* If there are '''missing features''' from Dogtag that you see in other PKI products, add them to [http://pki.fedoraproject.org/wiki/Wishlist the wishlist page]. Provide some detail, and a little background.  Will 1% of deployments care, or 90%?
+* '''Polish''' a wiki page.
+* File '''bug reports about problems''' you run into (crashes, something doesn't work).
+* File '''bugs reports about fit and finish''' (incorrectly sized windows, typos, lack of keyboard shortcuts).
+* Report a difference between the '''Red Hat Certificate System docs''' and the Dogtag system.  They should be pretty close right now, but maybe we changed something and didn't update the docs.  We need a bug on that so when we update the docs we know to fix that problem.
+* '''Create a wiki page''' showing the steps to accomplish some goal that might otherwise be confusing to new people.
+* Document any differences between our Fedora-centric wiki pages and whatever system you are on (if not Fedora 8 or later).
+* Reproduce and '''narrow the scope of bugs''' already reported.  Some of the bugs are obvious and don't need any extra detail. But some bugs may be harder to reproduce.  Getting an extra set of eyes may help.
+* When we mark a bug as MODIFIED, that means that the developer thinks it's fixed.  We need people to '''verify the patch''' actually fixed the problem.
+
+There are so many ways to help and make a real difference. It's up to you to look around and see what you can do.
+
+There's no process to follow.  Short of blatantly anti-social behavior, there are no real mistakes! We're all learning how to build community and to work together.
+
+Thank you so much for your interest!
+
+See also [https://github.com/dogtagpki/pki/wiki/Related-Projects Related Projects].

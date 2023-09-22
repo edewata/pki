@@ -1,0 +1,395 @@
+== Overview ==
+A Continuous Integration([http://en.wikipedia.org/wiki/Continuous_integration CI]) testing framework is a test-driven framework for automating 
+the execution of all unit tests while integrating changes from different developer working branches into the main master.   
+
+Trac Tickets :657,721,722,723,724,725,726
+
+== Why do we need this? ==
+Three primary goals that are achieved by having such a framework are:
+
+Continuous Integration (CI):
+---------------------------
+
+A CI server (Jenkins) will be run continuously by the developer team to execute the tests on every commit (on availability of resources) and publish the results to the concerned parties
+
+boosting the time for error detection and their fixes.
+
+Developer Testing:
+-----------------
+
+The developers can add new tests, be it an addition to the QE tests, a custom JUnit tests / a custom python tests (not yet available).
+
+Opensource the tests for the user:
+---------------------------------
+
+All the tests (QE/Unit tests) will be available even for the users, to setup and test the product. This will also help debug the issues they have.
+
+== Design ==
+The entire framework can be divided into the following segments:
+
+1. Jenkins CI server - to initiate the the entire process - checking out the latest source, building the rpms, running the tests and reporting the results.
+ The source checkout is configured in the Jenkins server and the build process can be initiated in a post-checkout script.
+
+2. Beaker Server - For managing resources and running the tests and generating the reports.
+
+3. Tests - All the QE tests and JUnit tests, which are built as an RPM and passed to a beaker job and executed.
+
+ How the Java tests are run on the beaker machine?
+ 
+   Unit tests by developers can be written in Java/Python for it is easy to write and maintain the tests.
+   This will also help in interacting with the source code directly. (Since most of the code is written in Java).
+   A similar case is applicable for testing the python client. (In future.)
+   An extension to JUnit TestRunner is provided to generate the output in a beaker understandable format.
+   
+   ------------------------------------------------
+   Design and implementation of the Java test-suite
+   ------------------------------------------------
+   
+   The BeakerTestSuite is the entry point for executing the tests.
+   A wrapper script is written which invokes this Suite on the Beaker machine. (Can be seen at the end of the section.)
+      
+   @RunWith(PKITestSuite.class) -- //Extended test runner (type: junit.runners.Suite)
+   @SuiteClasses({CATestJunit.class, SampleTest1.class}) // List all the test classes here to be run by the custom runner. 
+   public class BeakerTestSuite {
+     // Just a holder for all the test cases.
+   
+   }
+   
+   The PKITestSuite class is an extension of the the junit.runners.Suite class. 
+   The run method is overwritten to add the Journal start beaker command and adding a custom listener
+   to the RunNotifier. This custom listener BeakerResultReporter will add the beaker commands 
+   for the corresponding JUnit events.
+   
+   /**
+    * Extension of the junit.runners.Suite class.
+    * Using this runner will provide additional functionality to create
+    * a corresponding beaker script. Which when run, outputs the results understood by
+    * beaker. 
+    * @author akoneru
+    *
+    */
+   public class PKITestSuite extends Suite {
+   
+   	public PKITestSuite(Class<?> klass, RunnerBuilder builder)
+   			throws InitializationError {
+   		super(klass, builder);
+   		beakerScript = BeakerScript.getInstance();
+   		bRR = new BeakerResultReporter();
+   	}
+   
+   	private BeakerScript beakerScript;
+   	private BeakerResultReporter bRR;
+   
+   	protected PKITestSuite(Class<?> klass, Class<?>[] suiteClasses)
+   			throws InitializationError {
+   		super(klass, suiteClasses);
+   		beakerScript = BeakerScript.getInstance();
+   		bRR = new BeakerResultReporter();
+   	}
+   
+   	@Override
+   	protected void runChild(Runner runner, RunNotifier notifier) {
+   		super.runChild(runner, notifier);
+   	}
+   
+   	@Override
+   	public void run(RunNotifier notifier) {
+   		beakerScript.addBeakerCommand(new String[] { "rlJournalStart" });
+   		notifier.addListener(bRR);
+   		super.run(notifier);
+   		beakerScript.addBeakerCommand(new String[] { "rlJournalEnd" });
+   		writeAndExecuteBeakerCommands();
+   	}
+   
+   	private void writeAndExecuteBeakerCommands() {
+   		File file = new File("java-tests-script.sh");
+   		PrintWriter pw = null;
+   		try {
+   			pw = new PrintWriter(file);
+   			pw.write(beakerScript.getAllCommandsToRun());
+   		} catch (FileNotFoundException e) {
+   			e.printStackTrace();
+   		} finally {
+   			if (pw != null)
+   				pw.close();
+   		}
+   	}
+   
+   }
+   
+   The BeakerResultReporter is an extension of the RunListener which reports the 
+   the test run events to the beaker script.
+   /**
+    * A custom definition of the RunListener class.
+    * This listener is added to the custom runner (PKITestSuite).
+    * It reports the start and end of test case as well as the 
+    * atomic tests in each test case. And the results of the test
+    * to the beaker script.
+    * @author akoneru
+    *
+    */
+   class BeakerResultReporter extends RunListener {
+   
+   	private boolean result = true;
+   	BeakerScript beakerScript;
+   
+   	public BeakerResultReporter() {
+   		beakerScript = BeakerScript.getInstance();
+   	}
+   
+   	@Override
+   	public void testRunStarted(Description description) throws Exception {
+   		beakerScript.addBeakerCommand(new String[] { "rlPhaseStart",
+   				description.getDisplayName() });
+   		super.testRunStarted(description);
+   	}
+   
+   	@Override
+   	public void testRunFinished(Result result) throws Exception {
+   		super.testRunFinished(result);
+   		beakerScript.addBeakerCommand(new String[] { "rlPhaseEnd" });
+   	}
+   
+   	@Override
+   	public void testAssumptionFailure(Failure failure) {
+   		super.testAssumptionFailure(failure);
+   	}
+   
+   	@Override
+   	public void testStarted(Description description) throws Exception {
+   		super.testStarted(description);
+   		beakerScript.addBeakerCommand(new String[] { "rlPhaseStartTest",
+   				description.getDisplayName() });
+   	}
+   
+   	@Override
+   	public void testFailure(Failure failure) throws Exception {
+   		super.testFailure(failure);
+   		result = false;
+   		beakerScript.addBeakerCommand(new String[] { "rlFail",
+   				failure.getMessage() });
+   	}
+   
+   	@Override
+   	public void testFinished(Description description) throws Exception {
+   		super.testFinished(description);
+   		if (result) {
+   			beakerScript
+   					.addBeakerCommand(new String[] { "rlPass",
+   							description.getDisplayName(),
+   							description.getMethodName() });
+   		}
+   		beakerScript.addBeakerCommand(new String[] { "rlPhaseEnd" });
+   	}
+   
+   	@Override
+   	public void testIgnored(Description description) throws Exception {
+   		super.testIgnored(description);
+   	}
+   
+   }
+   
+   The BeakerScript class. (The representation of the beakerscript file.)
+   /**
+    * An object of this class represents the beaker script file
+    * that is generated at the end of the test run.
+    * This is a singleton class because the object of this class 
+    * is shared between the testcase and the custom RunListener(BeakerResultReporter)
+    * @author akoneru
+    *
+    */
+   final class BeakerScript {
+   
+   	private static BeakerScript beakerScript = new BeakerScript();
+   
+   	private String beakerLib;
+   	private StringBuilder commandStore;
+   
+   	private BeakerScript() {
+   		// TODO Auto-generated constructor stub
+   		// Add a check for the availability of beaker lib.
+   		String bashHeader = "#!/bin/bash";
+   		beakerLib = ". /usr/share/beakerlib/beakerlib.sh";
+   		commandStore = new StringBuilder(bashHeader);
+   		commandStore.append("\n");
+   		commandStore.append(beakerLib);
+   		commandStore.append("\n");
+   	}
+   
+   	public static BeakerScript getInstance() {
+   		return beakerScript;
+   	}
+   
+   	public void addBeakerCommand(String[] command) {
+   		for (int i = 0; i < command.length; i++) {
+   			commandStore.append(command[i]);
+   			commandStore.append(" ");
+   			if (i == 0 && command.length > 1) {
+   				commandStore.append("\"");
+   			}
+   		}
+   		if (command.length > 1)
+   			commandStore.append("\"");
+   		commandStore.append("\n");
+   	}
+   
+   	public String getAllCommandsToRun() {
+   		return commandStore.toString();
+   	}
+   
+   	public void close() {
+   		beakerScript = new BeakerScript();
+   	}
+   }
+   
+   The PKIJUnitTest has to be extended by all the testcases. It currently provides
+   the log functionality and setting the log level. Any other common code between all the testcases
+   like the environment variable etc. can go in here.
+   /**
+    * This class has to be parent class to all the test cases.
+    * It provides a logging api to write all the information to
+    * the beaker script. It will also be used to store any common 
+    * information shared between all the test cases. 
+    * @author akoneru
+    *
+    */
+   public class PKIJUnitTest {
+   
+   	public static String INFO = "rlLogInfo";
+   	public static String DEBUG = "rlLogDebug";
+   	public static String WARNING = "rlLogWarning";
+   	public static String ERROR = "rlLogError";
+   	public static String CRITICAL = "rlLogFatal";
+   
+   	private BeakerScript beakerScript;
+   	String logLevel;
+   
+   	public PKIJUnitTest() {
+   		beakerScript = BeakerScript.getInstance();
+   		logLevel = INFO;
+   	}
+   
+   	public void setLogLevel(String logLevel) {
+   		this.logLevel = logLevel;
+   	}
+   
+   	public void log(String message) {
+   		beakerScript.addBeakerCommand(new String[] { logLevel, message });
+   	}
+   
+   }
+
+   Sample JUnit test to list completed cert requests.
+    
+   public class CATestJunit extends PKIJUnitTest {
+   
+   	String host = "localhost";
+   	String port = "8443";
+   	String token_pwd = "XXXXXXX";
+   	String db_dir = "/tmp/nssdb";
+   	String protocol = "https";
+   	String clientCertNickname = "caadmin";
+   	CryptoManager manager = null;
+   	CryptoToken token = null;
+   	CAClient client;
+   
+   	public CATestJunit() {
+   		super();
+   	}
+   
+   	@Before
+   	public void initializeDB() {
+   
+   		// Initialize token
+   		try {
+   			CryptoManager.initialize(db_dir);
+   		} catch (AlreadyInitializedException e) {
+   			// it is ok if it is already initialized
+   		} catch (Exception e) {
+   			log(("INITIALIZATION ERROR: " + e.toString()));
+   			System.exit(1);
+   		}
+   		// log into token
+   		try {
+   			manager = CryptoManager.getInstance();
+   			token = manager.getInternalKeyStorageToken();
+   			Password password = new Password(token_pwd.toCharArray());
+   			try {
+   				token.login(password);
+   			} catch (Exception e) {
+   				log("login Exception: " + e.toString());
+   				if (!token.isLoggedIn()) {
+   					token.initPassword(password, password);
+   				}
+   			}
+   		} catch (Exception e) {
+   			log("Exception in logging into token:" + e.toString());
+   		}
+   		try {
+   			ClientConfig config = new ClientConfig();
+   			config.setServerURI(protocol + "://" + host + ":" + port + "/ca");
+   			config.setCertNickname(clientCertNickname);
+   
+   			client = new CAClient(new PKIClient(config));
+   		} catch (Exception e) {
+   			e.printStackTrace();
+   			return;
+   		}
+   	}
+   
+   	@Test
+   	public void listCompleteCertRequests() {
+   		Collection<CertRequestInfo> list = null;
+   		try {
+   			list = client.listRequests("complete", null);
+   		} catch (Exception e) {
+   			e.printStackTrace();
+   		}
+   
+   		printRequests(list);
+   	}
+   }
+
+   The wrapper script called on the beaker machine.
+   #!/bin/bash
+   
+   ### Add all the pki packages and other dependent pki packages to the class path
+   export CLASSPATH=/usr/share/java/junit4.jar:/usr/share/java/pki/*:/usr/lib64/jss/jss4.jar:/usr/share/java/pki/pki-certsrv.jar:/usr/share/java/pki/pki-ca.jar:/usr/share/java/pki/pki-cms.jar:/usr/share/java/pki/pki-cmsbundle.jar:   /usr/share/java/pki/pki-cmscore.jar:/usr/share/java/pki/pki-cmsutil.jar:/usr/share/java/pki/pki-console-theme.jar:/usr/share/java/pki/pki-kra.jar:/usr/share/java/pki/pki-nsutil.jar:/usr/share/java/pki/pki-ocsp.jar:/usr/share/java/pki      /pki-silent.jar:/usr/share/java/pki/pki-tks.jar:/usr/share/java/pki/pki-tomcat.jar:/usr/share/java/pki/pki-tools.jar:/usr/share/java/pki/pki-tps.jar:/usr/share/java/jss/jss4.jar:/usr/share/java/httpcomponents/httpclient.jar:/usr/share/java/httpcomponents/httpcore.jar:/usr/share/java/resteasy/jaxrs-api.jar:/usr/share/java/resteasy/resteasy-atom-provider.jar:/usr/share/java/resteasy/resteasy-jaxb-provider.jar:/usr/share/java/resteasy/resteasy-jaxrs.jar:/usr/share/java/resteasy/resteasy-jaxrs-jandex.jar:/usr/share/java/resteasy/resteasy-jettison-provider.jar:/usr/share/java/apache-commons-cli.jar:/usr/share/java/apache-commons-codec.jar:/usr/share/java/apache-commons-logging.jar:/usr/share/java/commons-codec.jar:/usr/share/java/commons-httpclient.jar:/usr/share/java/idm-console-base-1.1.7.jar:/usr/share/java/idm-console-mcc.jar:/usr/share/java/idm-console-nmclf.jar:/usr/share/java/jakarta-commons-httpclient.jar:/usr/share/java/jaxb-api.jar:/usr/share/java/ldapjdk.jar:/usr/share/java/apache-commons-lang.jar:/usr/share/java/istack-commons-runtime.jar:/usr/share/java/scannotation.jar:/usr/share/java/servlet.jar:/usr/share/java/velocity.jar:/usr/share/java/xerces-j2.jar:/usr/share/java/xml-commons-apis.jar:/usr/share/java/tomcat/catalina.jar:/usr/share/java/tomcat/tomcat-util.jar:/usr/share/java/commons-io.jar:/home/akoneru/workspace/PKIUnitTests/bin
+   
+   cd bin
+   
+   java org.junit.runner.JUnitCore BeakerTestSuite > /dev/null 2>&1
+   
+   chmod +x java-tests-script.sh
+   
+   sh java-tests-script.sh
+  
+= Running the Tests =
+
+See also [https://github.com/dogtagpki/pki/blob/master/tests/dogtag/README README].
+
+The entire environment can be initiated from the configured project in the Jenkins server.
+
+All the prerequisite scripts can be configured to run as a pre-build procedure.
+
+Then the latest code is checked out and the rpms built. (It can also be configured to use the local branch as the source from where the rpms are built.)
+
+[https://wiki.jenkins-ci.org/display/JENKINS/Beaker+Builder+Plugin Beaker Plugin] for Jenkins can be used to schedule a job on the installed beaker machine to run the tests.
+
+Some of the post test scripts can be configured to run to provide better results.
+
+== Results ==
+All the results from various test suites are integrated on the beaker server. The results can be posted publicly.
+
+== Tools proposed ==
+*1. [https://wiki.jenkins-ci.org/display/JENKINS/Meet+Jenkins Jenkins CI server]
+*2. [https://github.com/junit-team/junit/wiki JUnit 4.11 ]
+*3. py.test/nose for the python client framework.
+*4. A collection of bash scripts for setting up the test environment (ENV variables/Subsystem installation/Addressing dependencies).
+(Can use the installation scripts already written - Source: git clone git://fedorapeople.org/home/fedora/edewata/public_git/pki-dev.git)
+
+= References =
+
+* [[Jenkins CI]]
+* [https://wiki.jenkins.io/display/JENKINS/Meet+Jenkins Jenkins]
+* [[Beaker]]

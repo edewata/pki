@@ -1,0 +1,51 @@
+= Overview (Under Construction) =
+
+This page describes the process to run PKI Functional Tests locally on a single machine.
+
+= Prerequisites =
+
+Run the following commands to install the required packages:
+
+<pre>
+$ pip install pytest-ansible
+$ pip install pytest-autochecklog
+</pre>
+
+= Building and Installing Test Package =
+
+To build the test package:
+
+<pre>
+$ ...
+</pre>
+
+To install the test package:
+
+<pre>
+$ dnf install ...
+</pre>
+
+= Configuring Test Parameters =
+
+Create a file containing the list of machines to be used for testing (e.g. test.cfg):
+
+<pre>
+[host]
+localhost
+</pre>
+
+= Running the Tests =
+
+To run the tests:
+
+<pre>
+$ py.test --ansible-inventory test.cfg --ansible-host-pattern host test_pki.py -q -s
+</pre>
+
+= References =
+
+* [[Testing]]
+* [[Unit Tests]]
+* [[Beaker Tests]]
+* [[Legacy Functional Tests]]
+* [[Ansible]]

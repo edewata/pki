@@ -1,0 +1,43 @@
+= PKCS #12 =
+
+* OID: 2.16.840.1.113730.5.1
+
+== PKCS #12 Attributes ==
+
+* OID: 2.16.840.1.113730.5.1.1
+
+=== PKCS #12 Trust Flags Attribute ===
+
+The Trust Flags Attribute stores NSS certificate trust attributes with the same encoding used in certutil.
+
+* OID: 2.16.840.1.113730.5.1.1.1
+* Data Type: BMPString
+* Example: CTu,Cu,Cu
+
+= ACME =
+
+* OID: 2.16.840.1.113730.5.2
+
+== ACME Attribute Types ==
+
+* OID: 2.16.840.1.113730.5.2.1
+
+== ACME Object Classes ==
+
+* OID: 2.16.840.1.113730.5.2.2
+
+= CA =
+
+* OID: 2.16.840.1.113730.5.3
+
+== CA Attribute Types ==
+
+* OID: 2.16.840.1.113730.5.3.1
+
+== CA Object Classes ==
+
+* OID: 2.16.840.1.113730.5.3.2
+
+= See Also =
+
+* [https://www.alvestrand.no/objectid/2.16.840.1.113730.5.html 2.16.840.1.113730.5 - Netscape Certificate Server]

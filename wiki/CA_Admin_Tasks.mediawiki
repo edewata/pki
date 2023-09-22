@@ -1,0 +1,404 @@
+= Making Rules for Issuing Certificates =
+
+== Setting up Certificate Profiles ==
+
+=== Creating Certificate Profiles through the CA Console ===
+=== Editing Certificate Profiles in the Console ===
+=== Creating and Editing Certificate Profiles through the Command Line ===
+
+=== Defining Key Defaults in Profiles ===
+=== Configuring Cross-Pair Profiles ===
+=== List of Certificate Profiles ===
+
+== Configuring Renewal Profiles ==
+
+=== Creating Custom Renewal Profiles ===
+
+==== Default Renewal Profiles ====
+==== Creating an Enrollment Profile ====
+==== Creating the Renewal Profile ====
+
+== Managing Smart Card CA Profiles ==
+
+=== Editing Enrollment Profiles for the TPS ===
+=== Creating Custom TPS Profiles ===
+
+== Setting the Signing Algorithms for Certificates ==
+
+=== Setting the CA's Default Signing Algorithm ===
+=== Setting the Signing Algorithm Default in a Profile ===
+
+== Managing CA-Related Profiles ==
+
+=== Setting Restrictions on CA Certificates ===
+=== Changing the Restrictions for CAs on Issuing Certificates ===
+=== Allowing a CA Certificate to Be Renewed Past the CA's Validity Period ===
+
+== Managing Subject Names and Subject Alternative Names ==
+=== Inserting LDAP Directory Attribute Values and Other Information into the Subject Alt Name ===
+=== Changing DN Attributes in CA-Issued Certificates ===
+
+= Requesting, Enrolling, and Managing Certificates =
+
+== Requesting and Receiving Certificates ==
+
+Current procedure:
+* Open the Certificate Manager's end-entities page.
+* Select the user certificate enrollment form from the list of certificate profiles.
+* Fill in the user information, click Submit.
+* Click the Retrieval tab.
+* Fill in the request ID, and click Submit.
+* Click the Issued certificate link.
+* Click Import your certificate.
+
+Proposed procedure:
+* pki client-cert-request <subject DN> --profile <profile> --type <type>
+* pki client-cert-import <nickname> --serial <serial>
+
+== Enrolling a Certificate on a Cisco Router ==
+
+=== Enabling SCEP Enrollments ===
+
+Current procedure:
+* Stop the CA server.
+* Open the CA's CS.cfg file.
+* Set the ca.scep.enable to true.
+* Restart the CA server.
+
+Proposed procedure:
+* pki ca-scep-enable/disable
+
+=== Configuring Security Settings for SCEP ===
+
+Current procedure:
+* Stop the CA server.
+* Open the CA's CS.cfg file.
+* Set the desired security parameters.
+* Restart the CA server.
+
+Proposed procedure:
+* pki ca-scep-mod <parameter=value>...
+
+=== Generating the SCEP Certificate for a Router ===
+
+Current procedure:
+* Pick a random PIN.
+* Add the PIN and the router's ID to the flatfile.txt.
+
+Proposed procedure:
+* pki ca-scep-router-add <router> --random-pin
+
+== Renewing Certificates ==
+
+=== Agent-Approved or Directory-Based Renewals ===
+
+Current procedure:
+* Open the end-entities services page.
+* Click the name of the renewal form to use.
+* Enter the serial number of the certificate to renew.
+* Click the renew button.
+
+Proposed procedure:
+* pki cert-renew <serial number>
+
+=== Certificate-Based Renewal ===
+
+Current procedure:
+* Open the end-entities services page.
+* Click the name of the renewal form to use.
+* There is no input field, so click the Renew button.
+* When prompted, select the certificate to renew.
+* The request is submitted and the renewed certificate is automatically returned.
+
+Proposed procedure:
+* pki -n <nickname> client-cert-renew
+
+=== Re-keying Certificates ===
+
+Current procedure:
+* List the certificates for the instance.
+* Delete the original certificate from the database.
+* Generate a new key and request for the new certificate.
+* Submit and approve the certificate.
+* Import the new certificate into the subsystem's certificate database.
+
+Proposed procedure:
+* pki <subsystem>-system-cert-rekey <nickname>
+
+= Revoking Certificates and Issuing CRLs =
+
+== Issuing CRLs ==
+
+=== Configuring Issuing Points ===
+
+Current procedure:
+* Open the Certificate System Console.
+* In the Configuration tab, select Certificate Manager from the left navigation menu. Then select CRL Issuing Points.
+* To edit an issuing point, select the issuing point, and click Edit. The only parameters which can be edited are the name of the issuing point and whether the issuing point is enabled or disabled.
+* To add an issuing point, click Add. Fill in the following fields: Enable, CRL Issuing Point name, Description. Click OK.
+
+Proposed procedure:
+* pki ca-crl-issuing-point-add <name> --description <description>
+* pki ca-crl-issuing-point-mod <name> --name <new name>
+* pki ca-crl-issuing-point-enable/disable <name>
+
+=== Configuring CRLs for Each Issuing Point ===
+
+Current procedure:
+* Open the CA console.
+* In the navigation tree, select Certificate Manager, and then select CRL Issuing Points.
+* Select the issuing point name below the Issuing Points entry.                     
+* Configure how and how often the CRLs are updated by supplying information in the Update tab for the issuing point.
+* The Cache tab sets whether caching is enabled and the cache frequency.
+* The Format tab sets the formatting and contents of the CRLs that are created.
+* Click Save.
+
+Proposed procedure:
+* pki ca-crl-issuing-point-mod <name> [OPTIONS]
+
+=== Setting CRL Extensions ===
+
+Current procedure:
+* Open the CA console.
+* In the navigation tree, select Certificate Manager, and then select CRL Issuing Points.
+* Select the issuing point name below the Issuing Points entry, and select the CRL Extension entry below the issuing point.
+* To modify a rule, select it, and click Edit/View.
+* Click OK.
+* Click Refresh to see the updated status of all the rules.
+
+Proposeed procedure:
+* pki ca-crl-issuing-point-extension-mod <name> <extension> [OPTIONS]
+
+=== Setting a CA to Use a Different Certificate to Sign CRLs ===
+
+Current procedure:
+* Request and install a CRL signing certificate for the Certificate Manager.
+* Log into the agent services page.
+* Approve the request.
+* Install the certificate in the Certificate Manager's database through System Keys and Certificates in the console.
+* Stop the Certificate Manager.
+* Update the Certificate Manager's configuration to recognize the new key pair and certificate.
+** Open the Certificate Manager instance configuration directory.
+** Open the CS.cfg file.
+** Add the following lines to the configuration file.
+** Save the changes, and close the file.
+* Restart the Certificate Manager.
+
+Proposed procedure:
+* pki cert-request-submit
+* pki cert-request-review <request ID> --action=approve
+* pki ca-crl-signing-mod --nickname <nickname> --algorithm <algorithm> --token <token>
+
+=== Generating CRLs from Cache ===
+
+Current procedure:
+* Stop the CA server.
+* Open the CA configuration directory.                         
+* Edit the CS.cfg file.
+* Restart the CA server.
+
+Proposed procedure:
+* pki ca-crl-issuing-point-mod --crl-cache=enabled --cache-recovery=enabled
+
+== Setting Full and Delta CRL Schedules ==
+
+=== Configuring CRL Update Intervals in the Console ===
+
+Current procedure:
+* Open the console.
+* In the Configuration tab, expand the Certificate Manager folder and the CRL Issuing Points subfolder.
+* Select the MasterCRL node.
+* Enter the required interval in the Generate full CRL every # delta(s) field.
+* Set the update frequency.
+* Save the changes.
+
+Proposed procedure:
+* pki ca-crl-issuing-point-mod --update-at=<list of times> --update-interval=<interval>
+
+=== Configuring Update Intervals for CRLs in CS.cfg ===
+
+Current procedure:
+* Stop the CA server.
+* Open the CA configuration directory.
+* Edit the CS.cfg file, and add the line to set the update interval.
+* Set the update frequency.
+* Restart the CA server.
+
+Proposed procedure:
+* pki ca-crl-config-mod --update-mode=<daily|interval> --full-crl-interval=<interval> --update-times=<list> --update-interval=<interval>
+
+== Enabling Revocation Checking ==
+
+=== Enabling Automatic Revocation Checking on the CA ===
+
+Current procedure:
+* Stop the subsystem instance.
+* Open the CS.cfg file.
+* Edit the revocation-related parameters.
+* Start the Certificate System instance.
+
+Proposed procedure:
+* pki ca-auth-revocation-checking-enabled/disabled
+* pki ca-auth-revocation-checking-mod --buffer-size=<...> --ca=<...> --unknown-state-interval=<...> --validity-interval=<...>
+
+=== Enabling Certificate Revocation Checking for non-CA ===
+
+Current procedure:
+* Get the name of the OCSP signing certificate for the OCSP or CA which will be used to check certificate status.
+* Open the server.xml file for the subsystem.
+* The OCSP signing certificate must be imported into the subsystems's security database.
+* There are three critical parameters to enable OCSP checking.
+* Other parameters can be used to define the OCSP communication.
+* The OCSP parameters need to be added to both sections to enable and configure OCSP checking.
+* If the given OCSP service is not the CA, then the OCSP service's signing certificate must be imported into the subsystem's NSS database.
+* Restart the subsystem.
+
+Proposed procedure:
+* pki <subsystem>-auth-revocation-checking-enabled/disabled
+* pki ca-auth-revocation-checking-mod --ocsp-url=<...> --ocsp-cert=<...>
+
+== Using the Online Certificate Status Protocol Responder ==
+
+=== Setting up the OCSP Responder ===
+
+* Configure the CRLs for every CA that will publish to an OCSP responder.
+* Enable publishing, set up a publisher, and set publishing rules in every CA that the OCSP service will handle
+* The certificate profiles must be configured to include the Authority Information Access extension, pointing to the location at which the Certificate Manager listens for OCSP service requests
+* Configure the OCSP Responder.
+* Restart both subsystems after configuring them.
+* Verify that the CA is properly connected to the OCSP responder.
+
+=== Identifying the CA to the OCSP Responder ===
+
+* Get the Certificate Manager's base-64 CA signing certificate from the end-entities page of the CA.
+* Open the Online Certificate Status Manager agent page.
+* Click Add Certificate Authority.
+* In the form, paste the encoded CA signing certificate inside the text area labeled Base 64 encoded certificate.
+* To verify that the certificate is added successfully, in the left frame, click List Certificate Authorities.
+
+=== Configure the Revocation Info Stores: Internal Database ===
+
+* Open the Online Certificate Status Manager Console.
+* In the Configuration tab, select Online Certificate Status Manager, and then select Revocation Info Stores.
+* Select the defStore, and click Edit/View.
+* Edit the defStore values.
+
+=== Configure the Revocation Info Stores: LDAP Directory ===
+
+* Open the Online Certificate Status Manager Console.
+* In the Configuration tab, select Online Certificate Status Manager, and then select Revocation Info Stores.
+* Click Set Default to enable the ldapStore option.
+* Select ldapStore, and click Edit/View.
+* Set the ldapStore parameters.
+
+=== Setting the Response for Bad Serial Numbers ===
+
+* Open the Online Certificate Status Manager Console.
+* In the Configuration tab, select Online Certificate Status Manager, and then select Revocation Info Stores.
+* Select the defStore, and click Edit/View.
+* Edit the notFoundAsGood value.
+* Restart the OCSP Manager.
+
+=== Enabling the Certificate Manager's Internal OCSP Service ===
+
+* Go to the CA's end-entities page.
+* Find the CA signing certificate.
+* Look for the Authority Info Access extension in the certificate, and note the Location URIName value.
+* Update the enrollment profiles to enable the Authority Information Access extension, and set the Location parameter to the Certificate Manager's URI.
+* Restart the CA instance.
+
+=== Submitting OCSP Requests Using the GET Method ===
+
+* Generate an OCSP request for the certificate that's status is being queried.
+* Paste the URL in the address bar of a web browser to return the status information.
+* The OCSP Manager responds with the certificate status which the browser can interpret.
+
+* Generate an OCSP request for the certificate that's status is being queried.
+* Connect to the OCSP Manager using wget to send the OCSP request.
+
+= Publishing Certificates and CRLs =
+
+== Configuring Publishing to a File ==
+== Configuring Publishing to an OCSP ==
+=== Enabling Publishing to an OCSP with Client Authentication ===
+=== Enabling Publishing to an OCSP without Client Authentication ===
+== Configuring Publishing to an LDAP Directory ==
+=== Configuring the LDAP Directory ===
+=== Configuring LDAP Publishers ===
+=== Creating Mappers ===
+=== Completing Configuration: Rules and Enabling ===
+
+== Creating Rules ==
+
+== Enabling Publishing ==
+
+== Enabling a Publishing Queue ==
+
+== Setting up Resumable CRL Downloads ==
+=== Configuring Resumable CRL Downloads ===
+=== Retrieving CRLs ===
+=== Retrieving Partial CRLs ===
+
+== Publishing Cross-Pair Certificates ==
+== Updating Certificates and CRLs in a Directory ==
+=== Manually Updating Certificates in the Directory ===
+=== Manually Updating the CRL in the Directory ===
+
+== Registering Custom Mapper and Publisher Plug-in Modules==
+
+= Authentication for Enrolling Certificates =
+
+== Configuring Agent-Approved Enrollment ==
+== Automated Enrollment ==
+
+=== Setting up Directory-Based Authentication ===
+=== Setting up PIN-Based Enrollment ===
+=== Using Certificate-Based Authentication ===
+=== Configuring Flat File Authentication ===
+
+== Using CMC Enrollment ==
+
+=== Sending Multiple Requests in a Full CMC Request ===
+=== Testing CMCEnroll ===
+
+== Testing Enrollment ==
+
+== Registering Custom Authentication Plug-ins ==
+
+= Using Automated Notifications =
+
+See [https://github.com/dogtagpki/pki/wiki/Configuring-Notifications Configuring Notifications].
+
+== Setting up Automated Notifications for the CA ==
+
+=== Setting up Automated Notifications in the Console ===
+=== Configuring Specific Notifications by Editing the CS.cfg File ===
+=== Testing Configuration ===
+
+== Customizing Notification Messages ==
+
+=== Customizing CA Notification Messages ===
+
+== Configuring a Mail Server for Certificate System Notifications ==
+== Creating Custom Notifications for the CA ==
+
+= Setting Automated Jobs =
+
+See [https://github.com/dogtagpki/pki/wiki/Configuring-Scheduler Configuring Scheduler].
+
+== Setting up the Job Scheduler ==
+== Setting up Specific Jobs ==
+
+=== Configuring Specific Jobs Using the Certificate Manager Console ===
+=== Configuring Jobs by Editing the Configuration File ===
+=== Configuration Parameters of certRenewalNotifier ===
+=== Configuration Parameters of requestInQueueNotifier ===
+=== Configuration Parameters of publishCerts ===
+=== Configuration Parameters of unpublishExpiredCerts ===
+=== Frequency Settings for Automated Jobs ===
+
+== Registering a Job Module ==
+
+= References =
+
+* [[Admin Tasks]]

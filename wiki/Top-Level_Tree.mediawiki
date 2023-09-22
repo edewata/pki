@@ -1,0 +1,255 @@
+= Top-Level Tree for Dogtag Subsystems =
+
+== Overview ==
+In Dogtag 10, we have allowed the hosting of multiple subsystems within the same tomcat instance.  Each of those instances, however, uses their own database (with its own tree), so that while they may share the same internal database instance, they need to be handled separately for things like replication agreements.
+
+<pre>
+o=pki-tomcat-CA
++ ou=people
++ ou=groups
++ ...
+
+o=pki-tomcat-KRA
++ ou=people
++ ou=groups
++ ...
+</pre>
+
+This will be problematic for IPA.  Right now, only CA subsystems are added to the IPA setup - but we are about to add DRM, and in future, possibly TKS and TPS subsystems.  Moreover, when we add support for Puppet and lightweight subCA's, even more replication agreements will be required for cloning.
+
+<pre>
+dc=example,dc=com
++ cn=accounts
+  + cn=users
+  + cn=groups
++ ..
+
+o=ipaca
++ ou=people
++ ou=groups
++ ...
+
+o=ipadrm
++ ou=people
++ ou=groups
++ ...
+</pre>
+
+The proposal here is to add the ability to provide pkispawn with a top-level tree, which will be created if it does not currently exist. Each subsystem will create its database as a subtree under the top-level tree.  This will allow replication agreements to be defined for all subsystems in an instance simply by creating a replication agreement for the top-level tree.
+ 
+<pre>
+o=pki-tomcat
++ ou=users
++ ou=groups
++ ou=CA
+  + ou=people
+  + ou=groups
+  + ...
++ ou=KRA
+  + ou=people
+  + ou=groups
+  + ...
+</pre>
+
+'''Note:'''
+
+There have also been tickets in the past regarding how to specify users and groups that exist across the different subsystems.  There are, for example, users which have the subsystem certificate and are used to communicate with the database.  Having these users defined in multiple places has caused problems because the user selected may not have the right ACLs.  There have been a number of solutions that have been implemented -- looking for certain attributes for the database user, for example, but the cleanest solution by far is a top level ou=users and ou=groups definition.  Implementing this will require a lot more database changes, and may be better tackled in 10.3 when we have a database upgrade option in place.  I will start a different design spec for this change.
+
+== Associated Bugs and Tickets ==
+* https://fedorahosted.org/pki/ticket/1045
+** Create a top level tree for a dogtag tomcat instance
+* https://fedorahosted.org/pki/ticket/1046
+** Create a migration script to migrate older subsystems to a new tree containing a top level DN
+
+IPA tickets to be created in consultation with IPA team.
+
+== Use Cases ==
+
+=== Default Tomcat (Shared) Instance ===
+
+The default tomcat instance (which can contain all of the CA, KRA, TKS, TPS) is the instance that is created when you do an interactive install and select all the defaults.  It will have a top-level tree (o=%(pki_instance_name)).  Each subsystem's database tree will be located under this top-level tree: CA under ou=CA; KRA under ou=KRA; TPS under ou=TPS etc. When we have subCA's, they would reside under ou=subCA1, ou=subCA2, etc.
+
+<pre>
+o=pki-tomcat
++ ou=CA
++ ou=KRA
++ ou=TPS
++ ou=subCA1
++ ou=subCA2
++ ...
+</pre>
+
+=== Tomcat Separated Instances ===
+It is possible to define separated tomcat instances with no top-level tree.  In this case, the top level containers for users and groups are
+not created, and we have exactly the same databases as we do today.
+
+=== IPA ===
+
+There are several options.
+
+==== Option 1: Keep the original Dogtag tree ====
+
+The existing o=ipaca will become a top level tree. The old CA content will be moved into ou=CA subtree. The new KRA subtree will be created under ou=DRM.
+
+<pre>
+o=ipaca
++ ou=CA
++ ou=DRM
+</pre>
+
+This option may be easier for migration because the replication agreements already exist. We'll discuss migration below.
+
+==== Option 2: Create a new Dogtag tree ====
+
+A new top level tree such as o=pki-tomcat will be created for Dogtag subtrees. The old CA tree will be moved into ou=CA,o=pki-tomcat. Then new KRA tree will be called ou=DRM,o=pki-tomcat.
+
+<pre>
+o=pki-tomcat
++ ou=CA
++ ou=DRM
+</pre>
+
+New replication agreements will need to be created for the top level DN.  This option provides a better end state than option 1.
+
+==== Option 3: Merge into IPA tree ====
+
+edewata: The CA and KRA trees will be moved into ou=CA and ou=DRM under the existing IPA tree.
+
+<pre>
+dc=example,dc=com
++ ou=CA
++ ou=DRM
+</pre>
+
+The old CA replication agreement can be removed.
+
+alee: I think this option may be too ambitious and problematic.  For one thing, it is now possible to have an IPA instance that does not contain a CA.  By adding it to the IPA tree, we end up with CA/DRM data on nodes without these subsystems.  Also, there is some security in having only specific users be able to access the Dogtag trees - in IPA we do this by using trusted agents.  While we could recreate some of the same security using ACLs, there is much more to consider here.
+
+== Operating System Platforms and Architectures ==
+Linux (Fedora, RHEL, Debian)
+
+== Design ==
+
+=== Installing a new instance ===
+* pkispawn will take a new option in the [TOMCAT] section:
+<pre>
+pki_base_dn=o=%(pki_instance_name)
+</pre>
+
+* edewata: A new parameter needs to be added to specify the name of the subsystem. This is required to rename KRA into DRM and to support multiple subsystems of the same type in the same instance:
+<pre>
+pki_subsystem_name=CA
+</pre>
+
+* The the subsystem subtree can be specified as follows:
+<pre>
+pki_subsystem_base_dn=ou=%(pki_subsystem_name),o=%(pki_base_dn)
+</pre>
+
+* The logic in the database panel would be changed to create the top level tree in a new database if it does not exist, and then to create the subsystem tree in the relevant base DN.  Otherwise, we will create the DB as before.
+
+* edewata: The installation tool should also provide an option to install the subsystem in an existing LDAP tree without creating a new database.
+
+* A new field will need to be added to the DatabasePanel for the install wizard.
+
+=== Cloning Changes ===
+* When a clone is created, it gets configuration parameters from the master.  We need to add the pki_base_dn to the data that is requested.
+* If a pki_base_dn is received, then the pki_base_dn is created if it does not exist, and a replication agreement should be created between the pki_base_dns.
+* If a pki_base_dn is received and it already exists, then we should check for the existence of a replication agreement between the top level dn's and if not, create one.
+* If a top level base DN is not received, then do replication as before.
+* We should also provide options to:
+** Not create a replication agreement - For those who know that the data is being replicated at another level.
+** Create a replication agreement at the subsystem subtree level, rather than the top level tree.
+
+=== Config Changes ===
+* Parameters in various CS.cfg files refering to base DN's will need to be parmetrized accordingly.
+* ACLs will need to be updated accordingly as well.
+
+=== LDAP Changes ===
+* edewata: A new object class should be added to mark the root entry of the subsystem subtrees (e.g. pkiSubsystem). This would be useful to enumerate the available subsystems in an instance and distinguish them from non-subsystem entries (e.g. ou=users).
+
+== Implementation ==
+<font color="RED">'''TBD'''</font>
+
+Any additional requirements or changes discovered during the implementation phase.
+
+== Major configuration options and enablement ==
+in pkispawn (default.cfg):
+pki_base_dn=o=%(pki_instance_name)
+
+Additional options to be added here during implementation.
+
+== Cloning ==
+Cloning impact has been discussed in the previous sections.
+
+== Updates and Upgrades ==
+* The subsystem subtrees are still treated as essentially independent, even though they are aggregated under the same top level base DN.
+* Already configured subsystems will not be affected by upgrading to the new code.  Their config files still refer to the old database locations and they should continue to function without issues.
+* Cloning behavior is defined by the parameters returned from the cloned subsystem.  So, if the cloned subsystem is an old system, it should create replication agreements as before.
+* Therefore, this behavior will only affect newly configured instances (and their clones).
+* A script will need to be written to update old instances to the new format.  Essentially this script will need to:
+** Create a top level base DN (if needed)
+** Move the subsystem subtrees and their data under the top level DN.
+** Modify ACLs accordingly.
+** Modify CS.cfg files to refer to the new base DN locations.
+** Modify replication agreements.
+* Running this script will probably require a PKI outage, because the database changes will be propagated across all nodes, but the config and ACL chnges may not have followed suit.  Therefore it will not be done as part of an automatic upgrade.  Rather, it will be performed on each node at the discretion of the admin.
+
+=== IPA ===
+* Dogtag 10.2 will contain the ability to define a top level DN, and in fact, will define a top level DN by default unless defined otherwise.
+
+* IPA 4.1 will make use of this new structure by defining say o=ipa-dogtag as the to level DN, and having the subtrees: 
+    ou=CA, o=ipa-dogtag
+    ou=DRM, o=ipa-dogtag
+
+* There will also be changes in things like certmap.conf to set the right DN.
+
+* Because we do not want to have a situation where someone tries to install a new IPA master with old (ipa <4.1) and pki-core 10.2, we will include a Conflicts freeipa-base <4.1 on pki-core-10.2.
+
+Now all we are doing is essentially moving the data from one location to another.  Dogtag knows where the data is because the location is defined
+in CS.cfg.
+
+Now lets consider a few cases:
+
+* New IPA 4.1 server is installed with dogtag 10.2.  We will use the new structure above.
+
+* Old (ipa < 4.1) server is upgraded to dogtag 10.2.  This server will continue to work - although because of the Conflicts, it will also need to be upgraded to ipa 4.1.  This instance will continue to work just fine using the old DB layout because the DB locations are defined in CS.cfg (and that has not changed).
+
+* An old (ipa < 4.1) server is cloned to a new replica instance on 10.2.  During cloning, the clone retrieves information about the master's database configuration from the master.  It will detect that the master does not have a top-level DN, and will create a clone as before.  The end result will be an IPA server like that in tha above case - i.e. an IPA 4.1 instance running dogtag 10.2 software, with the old database layout.  Again, all db locations are configured in CS.cfg.
+
+* We would encourage users to upgrade their ipa instances to the new configuration.  They would do this by running a migration script that would:
+** create the new top level db
+** migrate the data to the top-level db (probably export from old db, change ldif, import into new db)
+** update the configuration files (certmap.conf, CS.cfg)
+** destroy the old and create new replication agreements.
+
+* This migration script would require an outage, ie. all the replicas would be shut down, but then they could be brought up one at a time.
+* We need a mechanism to ensure that the migration script will not be run if there are replicas where the Dogtag code does not support a top level DN.  Failure to do this will manifest itself in errors when that system is cloned. This could be a script (called by the migration script), that iterates through the CA's in the security domain, and calls getStatus() on each replica instance.  Since Dogtag 10.0, this servlet provides the version information for pki-core.  If the required version is not present, then the migration stops and the user is prompted to upgrade the instance to the relevant Dogtag version.
+
+* We need to determine which Dogtag branches need to have the top level DN support backported.  Another way to ask this question is "Which IPA versions should we support for upgrade?"
+** IPA 3.1 required at least Dogtag 10.
+** IPA 3.3 required at least Dogtag 10.1 (I think, could be 4.0)
+** IPA 4.1 will require Dogtag 10.2
+** IPA in RHEL6 requires Dogtag 9
+** IPA in RHEL7 requires Dogtag 10.0 (I think)
+
+== Tests ==
+<font color="RED">'''TBD'''</font>
+
+Identify any tests associated with this feature including:
+* JUnit
+* Functional
+* Build Time
+* Runtime
+
+== Dependencies ==
+Most likely Conflicts: ipa-server < X
+
+== Packages ==
+pki-core-10.2.0
+
+== External Impact ==
+Will affect IPA
+
+== History ==
+'''ORIGINAL DESIGN DATE: June 20 2014

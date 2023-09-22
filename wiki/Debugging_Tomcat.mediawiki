@@ -1,0 +1,20 @@
+= Enabling Tomcat Debugging =
+
+Add the following in /etc/sysconfig/tomcat or /etc/sysconfig/tomcat@<instance>:
+
+<pre>
+JAVA_OPTS="-Xdebug -agentlib:jdwp=transport=dt_socket,address=<port>,server=y,suspend=y -Djava.security.debug=all"
+</pre>
+
+Then restart Tomcat.
+
+= Connecting with JDB =
+
+<pre>
+$ jdb -attach localhost:<port>
+</pre>
+
+= References =
+
+* [[Debugging]]
+* [[Debugging PKI in Tomcat]]

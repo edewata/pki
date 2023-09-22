@@ -1,0 +1,84 @@
+= Overview =
+
+This page describes the process to setup DS instance for PKI server.
+
+= Creating Instance =
+
+== Manual Setup ==
+
+A DS instance can be created manually with the following command (see [https://access.redhat.com/documentation/en-US/Red_Hat_Directory_Server/10/html-single/Installation_Guide/index.html#Advanced_Configuration-Silent RHCS Installation Guide: Silent Setup]):
+
+<pre>
+$ setup-ds.pl --silent\
+ General.FullMachineName=`hostname`\
+ General.SuiteSpotUserID=nobody\
+ General.SuiteSpotGroup=nobody\
+ slapd.ServerPort=389\
+ slapd.ServerIdentifier=pki-tomcat\
+ slapd.Suffix=dc=example,dc=com\
+ slapd.RootDN="cn=Directory Manager"\
+ slapd.RootDNPwd=Secret.123
+</pre>
+
+A [[PKI DS CLI#Creating_Instance|simpler CLI]] will be added in the future.
+
+== Automated Setup (NOT IMPLEMENTED) ==
+
+A DS instance can be created automatically by adding the following parameter in PKI server deployment configuration (see [https://fedorahosted.org/pki/ticket/1586 ticket #1586]):
+<pre>
+pki_ds_create_instance=True
+pki_ds_instance_name=pki-tomcat
+</pre>
+
+= Creating Admin Server =
+
+To create a DS instance with an Admin Server:
+
+<pre>
+$ setup-ds-admin.pl --silent\
+ General.FullMachineName=`hostname`\
+ General.SuiteSpotUserID=nobody\
+ General.SuiteSpotGroup=nobody\
+ General.AdminDomain=`hostname -d`\
+ General.ConfigDirectoryAdminID=admin\
+ General.ConfigDirectoryAdminPwd=Secret.123\
+ slapd.ServerPort=389\
+ slapd.ServerIdentifier=pki-tomcat\
+ slapd.Suffix=dc=example,dc=com\
+ slapd.RootDN="cn=Directory Manager"\
+ slapd.RootDNPwd=Secret.123\
+ admin.Port=9830\
+ admin.ServerAdminID=admin\
+ admin.ServerAdminPwd=Secret.123
+</pre>
+
+To create Admin Server to an existing DS instance (see [https://access.redhat.com/documentation/en-US/Red_Hat_Directory_Server/10/html-single/Installation_Guide/index.html#adding-ads-later RHCS Installation Guide: Installing an Admin Server After Installing Directory Server]):
+
+<pre>
+$ register-ds-admin.pl --silent\
+ General.FullMachineName=`hostname`\
+ General.SuiteSpotUserID=nobody\
+ General.SuiteSpotGroup=nobody\
+ General.AdminDomain=`hostname -d`\
+ General.ConfigDirectoryAdminID=admin\
+ General.ConfigDirectoryAdminPwd=Secret.123\
+ admin.Port=9830\
+ admin.ServerAdminID=admin\
+ admin.ServerAdminPwd=Secret.123\
+ register.configinst="slapd-pki-tomcat::cn=Directory Manager::Secret.123"\
+ register.instance="slapd-pki-tomcat::cn=Directory Manager::Secret.123"\
+ register.remotehost=`hostname`\
+ register.remoteport=389\
+ register.remotebinddn="cn=Directory Manager"\
+ register.remotebindpw=Secret.123\
+ register.localcertdir=/etc/dirsrv/slapd-pki-tomcat\
+ register.admindomain=`hostname -d`\
+ register.admindn=uid=admin,ou=Administrators,ou=TopologyManagement,o=NetscapeRoot\
+ register.adminpw=Secret.123\
+ register.destination=remote
+</pre>
+
+= References =
+
+* [[PKI LDAP]]
+* [https://github.com/dogtagpki/pki/wiki/Enabling-SSL-Connection-with-Internal-Database Enabling SSL Connection with Internal Database]

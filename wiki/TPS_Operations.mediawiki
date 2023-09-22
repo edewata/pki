@@ -1,0 +1,15 @@
+= Explicit Operations =
+
+* enroll
+* format
+* pinReset
+
+= Implicit Operations =
+
+* keyGen
+* renewal
+* update.applet
+* update
+* recovery
+* serverKeygen
+* revocation

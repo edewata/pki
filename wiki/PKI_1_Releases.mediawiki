@@ -1,0 +1,70 @@
+= Dogtag Certificate System 1.3 =
+
+Dogtag Certificate System 1.3 was primarily created for integration into the Fedora 13 release.
+
+Dogtag Certificate System 1.3 builds upon Dogtag Certificate System 1.2.0 and provides the following changes:
+* Spec File changes required for integration into the Fedora 13 release
+* [[PKI_Registry|Separation of default PKI instance creation from PKI subsystem packaging via means of an integrated 'registry']]
+* Numerous Bug Fixes (see [[PKI_Bugs#Bugzilla_Bug_Database|Bugzilla Bug Database]])
+* Support for 32-bit and 64-bit versions of Fedora 11, Fedora 12, and Fedora 13
+* Support for 32-bit and 64-bit versions of EPEL packages on RHEL 5.5
+* An additional port is now required on the CA for EE client auth interactions.  This is required so that the CA can work seamlessly with the latest NSS patches that address the TLS renegotiation MITM vulnerability (CVE-2009-3555).  Refer to http://kbase.redhat.com/faq/docs/DOC-23543 for more details.
+* Numerous improvements to cloning, including the ability to clone a clone without referring to the original master as the master of the security domain.
+* Support for asynchronous key recovery.
+Currently the TPS and RA subsystems will not work on RHEL5.5 as they require a later version of mod_nss
+For details on this and other know issues, please review the [[PKI_Known_Issues | List of Known Issues ]]
+
+= Dogtag Certificate System 1.2.0 =
+
+Dogtag Certificate System 1.2.0 is primarily a bug fix release, with approximately 300 bugs fixed. Improvements have been made to virtually every subsystem.
+
+Dogtag Certificate System 1.2.0 builds upon Dogtag Certificate System 1.1.0 and resolves numerous bugs including:
+* Fixes to installation scripts and the configuration wizard
+* Improvements for the handling of UTF8 Characters
+* Migration script and tool improvements
+* Fixes numerous problems related to HSM configurations
+* Smartcard Middleware and TPS server improvements
+* Fixes the way ECC signature requests are handled
+* New platform support for 32-bit and 64-bit versions of Fedora 11
+
+Further details on all the Dogtag bugs fixed in this release, as well as details on bugs that remain unresolved, can be found at the [[PKI_Bugs#Bugzilla_Bug_Database|Bugzilla Bug Database]].
+
+= Dogtag Certificate System 1.1.0 =
+
+The release of Dogtag Certificate System 1.1.0 serves as the development base for Red Hat Certificate System 8.0.0, and contains the following enhancements:
+
+* Dogtag Certificate System 1.1.0 builds upon the open source model originally established by Dogtag Certificate System 1.0.0 and adds numerous features including:
+** Enhanced integration with FreeIPA
+** Supports UUID issuance natively
+** Provides data storage by the latest Fedora Directory Server
+** Support for IPv6
+** SELinux policy integration
+** Support for 3rd party ECC plugin modules
+** Numerous smart card enhancements including support for additional hardware tokens and 2048-bit keys
+** Certificate Renewal
+** TPS Roles
+** Support for using HTTP 1.1 for CRL distribution
+** Port Separation of End Entity (EE), Agent, and Admin users
+** Numerous bug fixes and security enhancements
+** Platform support for 32-bit and 64-bit versions of Fedora 8, Fedora 9, and Fedora 10
+
+= Dogtag Certificate System 1.0.0 =
+
+This initial release of Dogtag Certificate System 1.0.0 has been heavily modeled after Red Hat Certificate System 7.3.0, and contains the following enhancements:
+
+* The source code for Dogtag Certificate System 1.0.0 is completely open source!
+* Dogtag Certificate System 1.0.0 separates the user interface (ui) information from the various six top-level subsystems:
+** Certificate Authority (CA),
+** Data Recovery Manager (DRM),
+** Online Certificate Status Protocol (OCSP) Responder,
+** Registration Authority (RA),
+** Token Key Service (TKS), and
+** Token Processing System (TPS).
+* Dogtag Certificate System 1.0.0 provides a built-in mechanism to provide seemless data migration to future releases of this project.
+* Provides a new way to store request attributes. Schema has been changed for this feature.
+* Contains new build scripts
+* Incorporates several new junit tests
+
+= References =
+
+* [[PKI Release Notes]]

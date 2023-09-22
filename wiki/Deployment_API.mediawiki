@@ -1,0 +1,52 @@
+= Overview =
+
+'''This is a work in progress.'''
+
+This page describes how to use PKI server deployment API.
+
+= Creating PKI Server =
+
+<pre>
+import pki
+
+deployer = pki.server.deployment.PKIDeployer()
+deployer.instance_name = 'pki-tomcat'
+deployer.config_file = 'pki-tomcat.cfg'
+deployer.create_instance()
+</pre>
+
+= Creating PKI Subsystem =
+
+<pre>
+import pki
+
+deployer = pki.server.deployment.PKIDeployer()
+deployer.instance_name = 'pki-tomcat'
+deployer.config_file = 'pki-tomcat.cfg'
+deployer.deploy('CA')
+</pre>
+
+= Removing PKI Subsystem =
+
+<pre>
+import pki
+
+deployer = pki.server.deployment.PKIDeployer()
+deployer.instance_name = 'pki-tomcat'
+deployer.undeploy('CA')
+</pre>
+
+= Removing PKI Server Instance =
+
+<pre>
+import pki
+
+deployer = pki.server.deployment.PKIDeployer()
+deployer.instance_name = 'pki-tomcat'
+deployer.remove_instance()
+</pre>
+
+= References =
+
+* [[Deployment]]
+* [[PKI 10 Deployment]]

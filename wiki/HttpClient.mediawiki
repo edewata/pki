@@ -1,0 +1,36 @@
+= HttpClient =
+
+Prepare an NSS database (e.g. ~/.dogtag/pki-tomcat/ca/alias).
+
+Import CA certificate into the NSS database.
+
+Generate a CSR (e.g. /tmp/httpclient.in).
+
+Prepare a configuration file (e.g. httpclient.cfg):
+
+<pre>
+host=localhost
+port=8080
+secure=false
+
+input=/tmp/httpclient.in
+output=/tmp/httpclient.out
+
+tokenname=internal
+dbdir=/root/.dogtag/pki-tomcat/ca/alias
+clientmode=false
+password=Secret.123
+nickname=caadmin
+
+servlet=/ca/ee/ca/profileSubmit
+</pre>
+
+Execute the command as follows:
+
+<pre>
+$ HttpClient httpclient.cfg
+</pre>
+
+= See Also =
+
+* [https://access.redhat.com/documentation/en-US/Red_Hat_Certificate_System/9/html/Command-Line_Tools_Guide/HTTP_Client.html RHCS 9 - HttpClient]

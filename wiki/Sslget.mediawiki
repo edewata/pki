@@ -1,0 +1,34 @@
+= SSL Ciphers =
+
+<pre>
+$ sslget -v -d ~/.dogtag/nssdb -p Secret.123 -r / $HOSTNAME:8443 2>&1 | grep -i enabled
+enabled  TLS_AES_128_GCM_SHA256                    
+enabled  TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256   
+enabled  TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256     
+enabled  TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384   
+enabled  TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384     
+enabled  TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA      
+enabled  TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA      
+enabled  TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA        
+enabled  TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256   
+enabled  TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256     
+enabled  TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA        
+enabled  TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384   
+enabled  TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384     
+enabled  TLS_DHE_RSA_WITH_AES_128_GCM_SHA256       
+enabled  TLS_DHE_RSA_WITH_AES_256_GCM_SHA384       
+enabled  TLS_DHE_RSA_WITH_AES_128_CBC_SHA          
+enabled  TLS_DHE_RSA_WITH_AES_128_CBC_SHA256       
+enabled  TLS_DHE_RSA_WITH_AES_256_CBC_SHA          
+enabled  TLS_DHE_RSA_WITH_AES_256_CBC_SHA256       
+enabled  TLS_RSA_WITH_AES_128_GCM_SHA256           
+enabled  TLS_RSA_WITH_AES_256_GCM_SHA384           
+enabled  TLS_RSA_WITH_AES_128_CBC_SHA              
+enabled  TLS_RSA_WITH_AES_128_CBC_SHA256           
+enabled  TLS_RSA_WITH_AES_256_CBC_SHA              
+enabled  TLS_RSA_WITH_AES_256_CBC_SHA256 
+</pre>
+
+= See Also =
+
+* [https://github.com/dogtagpki/pki/wiki/Accessing-PKI-Services-with-sslget Accessing PKI Services with sslget]

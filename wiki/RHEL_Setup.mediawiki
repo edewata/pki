@@ -1,0 +1,32 @@
+= Desktop =
+
+<pre>
+$ yum groupinstall "Server with GUI"
+$ systemctl set-default graphical.target
+$ reboot
+</pre>
+
+= VNC =
+
+<pre>
+$ yum install tigervnc-server
+</pre>
+
+<pre>
+$ vncpasswd
+Password: ********
+Verify: ********
+$ vncserver
+</pre>
+
+= PKI =
+
+<pre>
+$ yum install 389-ds-base redhat-pki
+</pre>
+
+= References =
+
+* [[LVM]]
+* [[Fedora Setup]]
+* [https://access.redhat.com/solutions/637583 How do I upgrade from Red Hat Enterprise Linux 6 to Red Hat Enterprise Linux 7?]

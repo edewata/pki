@@ -1,0 +1,70 @@
+= Overview =
+
+Currently, the PKI repository (git@github.com:dogtagpki/pki.git) consists of source code which is utilized to build the following four SRPMS:
+* SOURCE REPOSITORY: '''pki'''
+** SRPM: dogtag-pki
+*** NOTE: This 'meta' package only contains a spec file (no tarball since it does not consist of any source).
+** SRPM: dogtag-pki-theme
+*** SOURCE CODE: pki/dogtag/
+** SRPM: pki-core
+*** SOURCE CODE: pki/base/ (with the exception of pki/base/console)
+** SRPM: pki-console
+*** SOURCE CODE: pki/base/console/
+
+Due to this layout, we need to utilize the various customized 'compose' scripts to create local RPMS and the various 'tarballs' for use in the SRPMS (some of which become 'official' tarballs):
+* BUILD SCRIPT: pki/scripts/compose_dogtag_pki_meta_packages
+** NOTE: RPM and SRPM only -- no tarball
+* BUILD SCRIPT: pki/scripts/compose_dogtag_pki_theme_packages
+* BUILD SCRIPT: pki/scripts/compose_pki_core_packages
+* BUILD SCRIPT: pki/scripts/compose_pki_console_packages
+
+Additionally, if Quality Engineering (QE) would like tests separated, the following additional repo could be created:
+* SRPM: pki-tests
+** SOURCE CODE: pki/tests/
+** BUILD SCRIPT: pki/scripts/compose_pki_test_package
+
+== Proposal ==
+
+This proposal is to combine the packages from the separate SRPMS that exist within this single PKI source repository into a single SRPM (containing a single tarball):
+* SOURCE REPOSITORY: '''pki'''
+** SOURCE CODE: pki (tarball would exclude pki/patches/, pki/specs/, etc.; specific directories and files may be excluded from the tarball via use of a '''.gitattributes''' or '''.git/info/attributes''' files)
+*** SRPM: pki-core
+*** RPMS:
+**** dogtag-pki-console-theme (originally had separate dogtag-pki-theme SRPM)
+**** dogtag-pki-server-theme (originally had separate dogtag-pki-theme SRPM)
+**** pki-base
+**** pki-base-java
+**** pki-base-python3 (only on platforms using Python 3)
+**** pki-ca
+**** pki-console (originally had separate pki-console SRPM)
+**** pki-javadoc
+**** pki-kra
+**** pki-ocsp
+**** pki-server
+**** pki-tks
+**** pki-symkey (architecture specific)
+**** pki-tools (architecture specific)
+**** pki-tps (architecture specific)
+**** pki-core-debuginfo (architecture specific)
+**** pki-core-debugsource (architecture specific)
+**** pki-symkey-debuginfo (architecture specific)
+**** pki-tools-debuginfo (architecture specific)
+**** pki-tps-debuginfo (architecture specific)
+
+NOTE: There will actually be a second 'meta' SRPM created called '''dogtag-pki'''; however, this 'meta' package only contains a spec file (no tarball since it does not consist of any source).
+
+== Advantages ==
+* All content contained in a single tarball and a single spec file (CAVEAT:  There will be a second separate 'meta' spec file.)
+* With this separation of source, it would now be possible to create full-source tarballs using standard methods (e. g. - git archive).
+* This would open up the possibility to use tools such as Tito in COPR to create builds by merely pointing to a repository.
+* The individual tarball would contain all source code relevant to the RPMS produced for that SRPM (i. e. - "clean" un-polluted source and no spec file template confusion).
+* Continuous integration (CI) tools such as Travis would not need to be replicated across multiple repositories per one of the counter-proposal of separate repos (dogtag-pki-theme, pki-core, and pki-console)
+* The "compose" scripts could be reduced and transparently modified for local creation of packages for development purposes.
+
+== Disadvantages ==
+* An already large complex spec file (pki-core.spec) would need to integrate the logic from pki-console.spec and dogtag-pki-theme.spec.
+* This approach places everything and the kitchen sink into a single tarball that is less modular than other solutions.
+* Not all RPMS produced from this lone SRPM may be available on all platforms which may cause some confusion.
+
+== Alternatives ==
+* [[Proposal to Separate Existing Single PKI Source Repository into Multiple PKI Source Repositories]]

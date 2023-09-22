@@ -1,0 +1,38 @@
+= Configuration =
+
+The class loader can be configured in $CATALINA_BASE/conf/catalina.properties:
+
+<pre>
+common.loader="${catalina.base}/common/lib/*.jar","${catalina.base}/lib","${catalina.base}/lib/*.jar","${catalina.home}/lib","${catalina.home}/lib/*.jar"
+
+server.loader=
+
+shared.loader=
+</pre>
+
+= Bootstrap =
+
+* Java default libraries
+* Java extension libraries: $JAVA_HOME/jre/lib/ext
+
+= System =
+
+* $CATALINA_HOME/bin/bootstrap.jar
+* $CATALINA_BASE/bin/tomcat-juli.jar or $CATALINA_HOME/bin/tomcat-juli.jar
+* $CATALINA_HOME/bin/commons-daemon.jar
+
+= Common =
+
+* $CATALINA_BASE/lib
+* $CATALINA_HOME/lib
+
+= Web Application =
+
+* /WEB-INF/classes
+* /WEB-INF/lib
+
+= References =
+
+* [[Tomcat]]
+* [https://github.com/dogtagpki/tomcatjss/wiki/Installing-Tomcat-JSS Installing Tomcat JSS]
+* [https://tomcat.apache.org/tomcat-8.5-doc/class-loader-howto.html Class Loader HOW-TO]

@@ -1,0 +1,79 @@
+== [https://fedorahosted.org/pki/ Dogtag Trac Instance] ==
+The Dogtag PKI project uses Trac for tracking all development work (bugs, new features, etc.).  Our Trac instance is hosted by fedorahosted.org, so anyone with a Fedora Project account can file new tickets.
+* [https://admin.fedoraproject.org/accounts/ Register a Fedora Project Account] if you don't already have one
+* Access the [https://fedorahosted.org/pki/ Dogtag Trac instance] 
+== [http://bugzilla.redhat.com/bugzilla/ Bugzilla Bug Database] ==
+Bugzilla is our old way of tracking bugs and new development work.  We now use Trac as described above.  The below links to Bugzilla can be used to see information about old bugs:
+* [http://bugzilla.redhat.com/bugzilla/createaccount.cgi Register a bugzilla account if you don't already have one]
+* [https://bugzilla.redhat.com/buglist.cgi?product=Dogtag+Certificate+System&version=&component=&target_milestone=&bug_status=NEW&bug_status=ASSIGNED&bug_status=NEEDINFO&bug_status=ON_DEV&bug_status=FAILS_QA&short_desc_type=allwordssubstr&short_desc=&long_desc_type=allwordssubstr&long_desc= Display "Open" Dogtag Certificate System bugs]
+* [https://bugzilla.redhat.com/buglist.cgi?product=Dogtag+Certificate+System&version=&component=&bug_status=MODIFIED&bug_status=ON_DEV&bug_status=ON_QA&bug_status=VERIFIED&bug_status=FAILS_QA&bug_status=RELEASE_PENDING&bug_status=POST&bug_status=PASSES_QA&bug_status=CLOSED&short_desc_type=allwordssubstr&short_desc=&long_desc_type=allwordssubstr&long_desc=           Display "Closed" Dogtag Certificate System bugs]
+* [https://bugzilla.redhat.com/enter_bug.cgi?product=Dogtag%20Certificate%20System Enter new bug for Dogtag Certificate System]
+
+== Security Vulnerabilities ==
+
+If you believe you have discovered a bug which has possible security consequences
+please let us know.  You can enter security sensitive bugs in bugzilla (making sure that the "Security Sensitive Bug" permission option is checked) or by direct contact to the 
+[http://www.redhat.com/security/team/contact/ Security Response Team].
+
+== How to Write a Bug Report ==
+
+The better the bug report the more likely the bug will get fixed. What makes a good report?
+
+=== See if the bug already exists ===
+
+Before entering a new bug do a quick search of existing ones to see if you have found a known issue/problem.
+
+=== Provide clear and minimal steps to reproduce the bug ===
+
+Certainly there are unexplained problems with software but often one can cause the bug to happen upon command. If this is the case, in as few steps as possible, clearly describe what you are doing. If this includes some specific data, include that as well (possibly as an attachment).
+
+If you do have an unexplained crash, include as much information as possible as to what was going on: Was the server under load? How long had it been running? Did you run out of memory? Was the machine doing anything else at the time?
+
+=== Describe the problem well ===
+
+This includes the ticket "Summary" field. "Server crashes" isn't a particularly descriptive title.
+
+=== Include only one issue per bug report ===
+
+This is for your benefit and for the developers. It will help ensure that things don't slip through the cracks.
+
+=== Other things you might want to include ===
+
+* Snippets from the server error log
+* Snippets from the server access log
+* truss or strace output of the server process
+* stack trace (from a debug build)
+
+== How a Source Code Bug gets Fixed ==
+
+Presuming that the existing bug report is clear and concise, these steps will be followed when fixing a source code issue.
+
+=== Bug Assignment ===
+
+Once an engineer has decided to work on a particular problem, the Trac ticket is moved from the "new" state to the "assigned" state.
+
+=== Code Changes ===
+
+The engineer fixes the bug in their own tree performing whatever tests are necessary to prove that their fix is valid.  Additionally, presuming that the source code change will be made to a particular component, the engineer must update the release number and add a descriptive changelog message to the appropriate spec file(s).  The engineer should then create an "svn diff" file which contains all source code and spec file changes, and place this diff file as an attachment to the bug report.  No source code may be checked in to the official repository at this time!
+
+=== Code Review ===
+
+The engineer must then ask another colleague to review their source code changes by having that individual review the attached diff file, and document any changes necessary.  This process continues until the source code change is accepted, until finally, the reviewer provides their approval in the bug report by attaching something similar to this:
+
+    attachment (id: 301315) +<reviewer>
+
+=== Source Code Checkin ===
+
+Once all changes to a given bug report have been approved, the engineer should perform a final subversion update on their tree to insure that all conflicts have been resolved:
+
+    svn update
+
+Next, the engineer should execute the following command and place the output into the bug report:
+
+    svn status | grep -v ^$ | grep -v ^? | grep -v ^P | grep -v ^X
+
+Finally, the engineer should execute the following command providing a subversion log message which references the bug number and purpose, and place the output of this command into the bug report:
+
+    svn commit
+
+Lastly, the engineer should move the ticket status from "assigned" to "fixed".

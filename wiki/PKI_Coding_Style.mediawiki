@@ -1,0 +1,6 @@
+This manual contains the coding standards and guidelines for Dogtag Certificate System and Fedora Directory Server contributors. 
+
+These projects have evolved over a very long time, and are comprised of numerous languages including C, C++, HTML, Java, Perl, Shell Scripts, and XML.  As a result, not all of the existing code conforms to these standards.  All new code should adhere to these standards but please do not go back and make wholesale formatting changes to the old code.  It just confuses things and is generally a waste of time.  Please follow the coding standards and guidelines related to your particular language from the list of manuals below:
+
+* [[PKI_C_Coding_Style|C Coding Style]]
+* [[PKI_Java_Coding_Style|Java Coding Style]]

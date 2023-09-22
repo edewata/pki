@@ -1,0 +1,6 @@
+Export OCSP certificates with the following command:
+
+ $ certutil -L -d /var/lib/pki/<font color="red">pki-tomcat</font>/alias -n "<font color="red">ocsp_signing</font>" -a > ocsp_signing.crt
+ $ certutil -L -d /var/lib/pki/<font color="red">pki-tomcat</font>/alias -n "<font color="red">ocsp_audit_signing</font>" -a > ocsp_audit_signing.crt
+ $ certutil -L -d /var/lib/pki/<font color="red">pki-tomcat</font>/alias -n "<font color="red">subsystem</font>" -a > subsystem.crt
+ $ certutil -L -d /var/lib/pki/<font color="red">pki-tomcat</font>/alias -n "<font color="red">sslserver</font>" -a > sslserver.crt

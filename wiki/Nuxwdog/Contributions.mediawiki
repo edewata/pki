@@ -1,0 +1,26 @@
+== Contribute ==
+
+There are many ways you can contribute to nuxwdog. This page should provide some basic pointers.
+
+Most of the nuxwdog code originated from the watchdog daemon used to start the NES server. (uxwdog)  This server
+was originally used in Red Hat Certificate Server 6.1.  The certificate server has seen moved on to using tomcat as
+its servlet engine, but a need arose to prompt for passwords on server startup, and nuxwdog was introduced
+into RHCS 8.1.  nuxwdog discussions occur on the dogtag-pki IRC channel on freenode.
+
+== Source Code Repository ==
+
+For the nuxwdog project, we use git for source control. The code can be retrieved with the command
+
+git clone https://github.com/dogtagpki/nuxwdog
+
+== QA, Development and Bug Triage ==
+
+For opening, triaging or resolving Trac tickets for the SSSD, we have a process document describing our bug lifecycle
+available.  Furthermore, we have adopted the code style and formatting specification used by the Dogtag project to
+describe our C, Java and Perl coding styles.
+
+Our code submission process amounts to this. Clone a copy of the source code repository above. Make some changes and
+commit them locally, then send the patch as an attachment to the nuxwdog-devel@lists.fedorahosted.org mailing list. The code 
+will be reviewed by one or more engineers on the Dogtag project, and will be replied to either with an "Ack" (in which case the 
+code will be pushed to the upstream repository the next time a repo administrator is available) or with a "Nack" (in which 
+case the reasons why the patch was refused will be detailed).

@@ -1,0 +1,266 @@
+== IOS version ==
+
+Not all versions of IOS have the relevant 'crypto' features. You must install a firmware image with the "Certification Authority Interoperability" feature.
+
+SCEP support for the CA subsystem was tested on a Cisco 2611 router running the following version of IOS:
+
+<pre>IOS (tm) C2600 Software (C2600-JK9S-M), Version 12.2(40), RELEASE SOFTWARE (fc1)</pre>
+
+== Preparation ==
+
+Your router must be configured with an IP address, DNS server, and routing information.
+The router's date/time must be correct. Also, the router's hostname and dnsname must be configured. See [[Configuring Cisco Router]].
+
+== Certificate Enrollment ==
+
+Our router's hostname is scep.
+
+Log into the router's console, you'll see the following prompt:
+
+<pre>
+scep> 
+</pre>
+
+Now run the following commands in sequence:
+
+Enable Privileged Commands:
+
+<pre>
+scep> enable
+</pre>
+
+Enter Configuration Mode:
+
+<pre>
+scep# conf t
+</pre>
+
+Set up a CA identity:
+
+<pre>
+scep(config)# crypto ca identity CA
+scep(ca-identity)# enrollment url http://enroll.example.com:9080/ca/cgi-bin
+scep(ca-identity)# crl optional
+scep(ca-identity)# exit
+</pre>
+
+Get the CA's certificate:
+
+<pre>
+scep(config)# crypto ca authenticate CA
+Certificate has the following attributes:
+Fingerprint: 145E3825 31998BA7 F001EA9A B4001F57
+% Do you accept this certificate? [yes/no]: yes
+</pre>
+
+Generate rsa key pair:
+
+<pre>
+scep(config)# crypto key generate rsa
+The name for the keys will be: scep.dsdev.sjc.redhat.com
+Choose the size of the key modulus in the range of 360 to 2048 for your
+General Purpose Keys. Choosing a key modulus greater than 512 may take
+a few minutes.
+
+How many bits in the modulus [512]:
+Generating RSA keys ...
+[OK]
+</pre>
+
+Enroll:
+
+ scep(config)# '''crypto ca enroll CA'''
+ %
+ % Start certificate enrollment ..
+ % Create a challenge password. You will need to verbally provide this
+   password to the CA Administrator in order to revoke your certificate.
+   For security reasons your password will not be saved in the configuration.
+   Please make a note of it.
+ 
+ Password: '''12345'''
+ Re-enter password: '''12345'''
+ 
+ % The subject name in the certificate will be: scep.dsdev.sjc.redhat.com
+ % Include the router serial number in the subject name? [yes/no]: '''yes'''
+ % The serial number in the certificate will be: 57DE391C
+ % Include an IP address in the subject name? [yes/no]: '''yes'''
+ % Interface: '''Ethernet0/0'''
+ % Request certificate from CA? [yes/no]: '''yes'''
+ % Certificate request sent to Certificate Authority
+ % The certificate request fingerprint will be displayed.
+ % The 'show crypto ca certificate' command will also show the fingerprint.
+ 
+ % Fingerprint:  D89DB555 E64CC2F7 123725B4 3DBDF263
+ 
+ Jan 12 13:41:17.348: %CRYPTO-6-CERTRET: Certificate received from Certificate 
+
+
+Exit from conf mode:
+
+<pre>
+scep(config)# exit
+</pre>
+
+Show certificates:
+
+<pre>
+scep# show crypto ca certificates
+Certificate
+ Status: Available
+ Certificate Serial Number: 0C
+ Key Usage: General Purpose
+ Issuer:
+   CN = Certificate Authority
+    O = Sfbay Red hat Domain 20070111d12
+ Subject Name Contains:
+   Name: scep.dsdev.sjc.redhat.com
+   IP Address: 10.14.1.94
+   Serial Number: 57DE391C
+ Validity Date:
+   start date: 21:42:40 UTC Jan 12 2007
+   end   date: 21:49:50 UTC Dec 31 2008
+ Associated Identity: CA
+
+CA Certificate
+ Status: Available
+ Certificate Serial Number: 01
+ Key Usage: Signature
+ Issuer:
+   CN = Certificate Authority
+    O = Sfbay Red hat Domain 20070111d12
+ Subject:
+   CN = Certificate Authority
+    O = Sfbay Red hat Domain 20070111d12
+ Validity Date:
+   start date: 21:49:50 UTC Jan 11 2007
+   end   date: 21:49:50 UTC Dec 31 2008
+ Associated Identity: CA
+</pre>
+
+= Removing Keys =
+
+Zeroize keys (necessary to re-enroll):
+
+<pre>
+scep(config)# crypto key zeroize rsa
+% Keys to be removed are named scep.dsdev.sjc.redhat.com.
+Do you really want to remove these keys? [yes/no]: yes
+</pre>
+
+= Removing CA Identity =
+
+<pre>
+scep(config)# no crypto ca identity CA
+% Removing an identity will destroy all certificates received from
+the related Certificate Authority.
+
+Are you sure you want to do this? [yes/no]: yes
+% Be sure to ask the CA administrator to revoke your certificates.
+
+No enrollment sessions are currently active.
+</pre>
+
+= Working with Chained (Subordinate) CAs =
+
+Before running the 'crypto ca authenticate' command above, you must import all certificates in the chain, starting with the root. In conf mode (Note: the following example has only two CAs in the chain, therefore the root starts at 1, and the subordinate CA is 0),
+
+Note: The following URLs in the example are for enrollment via an RA.  If you want to bypass RA and directly talk to CA or subordinate CA, you need to change the URLs to point to them, e.g.:
+
+* root CEP http://paw.sfbay.redhat.com:9280/ca/cgi-bin
+* enrollment url http://paw.sfbay.redhat.com:9280/ca/cgi-bin
+
+Example to enroll via an RA to a subordinate CA:
+
+<pre>
+scep(config)# crypto ca trusted-root 1
+scep(ca-root)# root CEP http://paw.sfbay.redhat.com:12888/ee/scep/pkiclient.cgi
+scep(ca-root)# crl optional
+scep(ca-root)# exit
+scep(config)# cry ca authenticate 1
+scep(config)# crypto ca trusted-root 0
+scep(ca-root)# root CEP http://paw.sfbay.redhat.com:12888/ee/scep/pkiclient.cgi
+scep(ca-root)# crl optional
+scep(ca-root)# exit
+scep(config)# cry ca authenticate 0
+</pre>
+
+In the above example, if your CA certs do not have CRL distribution point extension in them, you must turn off the CRL requirement:
+
+<pre>
+scep(ca-root)# crl optional
+</pre>
+
+Set up a CA identity:
+
+<pre>
+scep(config)# crypto ca identity CA
+scep(ca-identity)# enrollment url http://paw.sfbay.redhat.com:12888/ee/scep/pkiclient.cgi
+scep(ca-identity)# crl optional
+scep(ca-identity)# exit
+</pre>
+
+Submit enrollment request to subordinate CA in this example:
+
+<pre>
+scep(config)# crypto ca authenticate CA
+scep(config)# crypto ca enroll CA
+</pre>
+
+= Debugging =
+
+The router will provide additional debugging during SCEP operations if you execute the following debug statements.
+
+<pre>
+scep# debug crypto pki callbacks
+Crypto PKI callbacks debugging is on
+
+scep# debug crypto pki messages
+Crypto PKI Msg debugging is on
+
+scep# debug crypto pki transactions
+Crypto PKI Trans debugging is on
+
+scep#  debug crypto verbose
+verbose debug output debugging is on
+</pre>
+
+= Troubleshooting =
+
+If you see the following when you do "crypto ca authenticate CA" that means the router clock is not in sync with the current time (example).
+
+<pre>
+% CA Cert not yet valid or is expired -
+    start date: 17:00:43 UTC Jun 14 2007
+    end   date: 17:00:43 UTC Jun 3 2009
+
+% Error processing Certificate Authority certificate.
+</pre>
+
+Run the following to see the current time (example):
+
+<pre>
+scep#show clock
+*18:41:44.303 UTC Sun Mar 7 1993
+</pre>
+
+To set the clock (example):
+
+<pre>
+scep#clock set ?
+  hh:mm:ss  Current Time
+
+scep#clock set 11:42:00 ?
+  <1-31>  Day of the month
+  MONTH   Month of the year
+
+scep#clock set 11:42:00 20 ?
+  MONTH  Month of the year
+
+scep#clock set 11:42:00 20 June ?
+  <1993-2035>  Year
+
+scep#clock set 11:42:00 20 June 2007
+scep#show clock
+11:42:02.676 UTC Wed Jun 20 2007
+scep#
+</pre>

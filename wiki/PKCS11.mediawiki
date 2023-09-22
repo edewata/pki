@@ -1,0 +1,67 @@
+= Overview =
+
+See also:
+
+* [https://www.dnssec.cz/files/nic/doc/hsm.pdf An introduction to the use of HSM]
+* [http://docs.oasis-open.org/pkcs11/pkcs11-base/v2.40/os/pkcs11-base-v2.40-os.html PKCS #11 Cryptographic Token Interface Base Specification Version 2.40]
+
+= Java =
+
+See also:
+* [[Java PKCS11]]
+* [https://tomcat.apache.org/tomcat-8.5-doc/ssl-howto.html Tomcat SSL/TLS Configuration HOW-TO]
+
+= Python =
+
+See also:
+
+* [http://python-pkcs11.readthedocs.io/en/latest/ Python PKCS#11 - High Level Wrapper API]
+* [http://docs.oracle.com/cd/E19253-01/816-4863/pkcs-2/index.html Writing User-Level Cryptographic Applications and Providers]
+
+= C =
+
+See also:
+
+* [https://github.com/dogtagpki/nss/wiki/PKCS11-API PKCS11 API]
+
+= PKCS #11 Kit =
+
+To list trusts:
+
+<pre>
+$ trust list
+</pre>
+
+To add an anchor stored in a cert file:
+
+<pre>
+$ trust anchor <cert file>
+</pre>
+
+To remove an anchor stored in a cert file:
+
+<pre>
+$ trust anchor --remove <cert file>
+</pre>
+
+To remove an anchor by ID:
+
+<pre>
+$ trust anchor --remove "pkcs11:id=<cert ID>;type=cert"
+</pre>
+
+See also:
+
+* [https://p11-glue.github.io/p11-glue/p11-kit.html p11-kit]
+* [https://p11-glue.github.io/p11-glue/p11-kit/manual/trust-nss.html Using the Trust Policy Module with NSS]
+
+= References =
+
+* [[OpenSSL]]
+* [[Tomcat]]
+* [https://developers.yubico.com/YubiHSM2/Usage_Guides/OpenSSL_with_pkcs11_engine.html OpenSSL with YubiHSM 2 via engine_pkcs11 and yubihsm_pkcs11]
+* [[HSM]]
+* [https://github.com/dogtagpki/pki/wiki/SoftHSM SoftHSM]
+* [https://github.com/OpenSC/OpenSC/wiki/PKCS11-Module OpenSC]
+* [https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS/PKCS11/Module_Specs NSS PKCS #11 Module Specs]
+* [https://github.com/Pkcs11Interop/pkcs11-logger pkcs11-logger]

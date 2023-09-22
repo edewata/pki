@@ -1,0 +1,12 @@
+= Configuration =
+
+<pre>
+ca.signing.cacertnickname=ca_signing
+ca.signing.cert=MIIDxz...8=
+ca.signing.certnickname=ca_signing
+ca.signing.certreq=MIICvz..8=
+ca.signing.defaultSigningAlgorithm=SHA256withRSA
+ca.signing.newNickname=ca_signing
+ca.signing.nickname=ca_signing
+ca.signing.tokenname=Internal Key Storage Token
+</pre>

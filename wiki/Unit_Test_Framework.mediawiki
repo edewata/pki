@@ -1,0 +1,116 @@
+= Overview =
+
+If you're adding some code, please take the time to write a unit test.  If you are significantly changing a method, try to write some sort of test for the change.
+
+All unit tests should inherit from com.netscape.cmscore.test.CMSBaseTestCase.  This base class stubs out various CMS subsystems before invoking the unit tests.  Your test should implement the cmsTestSetup() and cmsTestTearDown() methods (these are currently abstract in the base class).  All test code should be located in the test directory for a package, and should be in the same package the the class it is testing.
+
+Tests are automatically run as part of the builds, but you can also execute 'build_{flavor} test' to run them separately.
+Right now, there is an issue of how to share testing code.  We will likely have to create '-devel' packages that need to be installed to run unit tests.  Until we get that sorted out, it's probably best to run the tests in an IDE.
+
+'''IMPORTANT:'''&nbsp;&nbsp; Currently, "{flavor}" equals "dogtag"!
+
+= Defining Unit Tests =
+
+In order to include the unit tests into the build process, they have to be defined in a CMake list files, e.g. base/common/test/CMakeLists.txt:
+
+<pre>
+project(pki-common-test Java)
+
+# build test jar file
+add_jar(pki-common-test ${pki-common-test_SRCS})
+
+# create test target
+add_junit_test(test-pki-common
+    CLASSPATH
+        ${pki-common-test_JAR_FILE}
+        ${HAMCREST_JAR} ${JUNIT_JAR}
+        ...
+    TESTS
+        com.netscape.certsrv.authentication.AuthTokenTest
+        ...
+    REPORTS_DIR
+        reports
+)
+
+# include test into the main test
+add_dependencies(test test-pki-common)
+</pre>
+
+Current tests are located in [https://github.com/dogtagpki/pki/tree/master/base/server/test base/server/test].
+
+= Running Unit Tests =
+
+The unit tests can also be executed manually. Suppose PKI source code is checked out into SRC_DIR. Create a build folder somewhere, we'll call this BUILD_DIR. Change into BUILD_DIR and execute the following commands:
+
+<pre>
+cmake\
+ -DCMAKE_VERBOSE_MAKEFILE=ON\
+ -DCMAKE_INSTALL_PREFIX:PATH=/usr\
+ -DCMAKE_INSTALL_LIBDIR:PATH=/usr/lib64\
+ -DINCLUDE_INSTALL_DIR:PATH=/usr/include\
+ -DLIB_INSTALL_DIR:PATH=/usr/lib64\
+ -DSYSCONF_INSTALL_DIR:PATH=/etc\
+ -DSHARE_INSTALL_PREFIX:PATH=/usr/share\
+ -DLIB_SUFFIX=64\
+ -DBUILD_SHARED_LIBS:BOOL=ON\
+ -DVAR_INSTALL_DIR:PATH=/var\
+ -DBUILD_PKI_CORE:BOOL=ON\
+ -DJAVA_LIB_INSTALL_DIR=/usr/lib/java\
+ ${SRC_DIR}/pki
+make all
+make test
+</pre>
+
+= Test Results =
+
+The test results will be stored in a 'reports' folder in each package under the BUILD_DIR, e.g. base/common/test/reports. The result for each test suite will be stored in a file called TEST-<test suite>.xml. The content will look like the following:
+
+<pre>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+
+<testsuite
+    tests="10" errors="0" failures="0"
+    hostname="dev.example.com"
+    name="com.netscape.certsrv.authentication.AuthTokenTest"
+    time="0.131" timestamp="2011-12-06T19:30:35">
+
+<properties>
+    <property name="java.runtime.name" value="OpenJDK Runtime Environment"/>
+    ...
+</properties>
+
+<testcase classname="com.netscape.certsrv.authentication.AuthTokenTest" name="testGetSetString" time="0.009"/>
+...
+
+<system-out/>
+<system-err/>
+
+</testsuite>
+</pre>
+
+= Common Gotchas =
+
+== Test First ==
+
+The first impression people have of testing is "it's boring", and that can be true at times (but so can coding sometimes!).  The way to make testing interesting and write better tests is to write the tests first, then the code to make them pass.
+
+When you are writing a method, before you code the method it's best to create a set of tests for how you expect the method to behave (and how it should behave with abnormal input).  Doing this makes you think behaviour through before you implement it.  Run the tests first (they should fail).  Pick one of the failures and "fix" it - by writing the code.  Then re-run the tests and make sure that test passes.  Then pick another test and "fix" it.  Ideally when all the tests pass, you should be done coding the new method.
+
+The mistake TDD (test driven design) proponents make is claiming this somehow makes it easier to code, as if it allows you to turn off your brain and just follow the tests.  It doesn't.  The tests don't automaticaly lead to a brilliant solution.  You need to use your brain to think of good tests and to code a good solution.
+
+The tests do help in many ways though.  They help you to break coding the method into parts.  They serve as targets/goals.  They can even serve as todos.  As you are coding, it's not uncommon to realize some aspect of the design you hadn't thought of before.  With test-driven development, you can just write a test (that will fail) as a reminder to deal with the problem, without having to lose your train of thought.
+
+== Not stubbing other classes out ==
+
+When you are coding a method that calls other methods to get its work done, it's easy to get caught up in trying to test that the other method works too.  In unit testing, that's almost always a mistake.  The way to test external call-outs is to stub the external method and simply make sure it was called, and was called with the correct parameters.  Unit testing assumes the other method is '''already''' tested - so all you need to do is make sure it's called correctly and let the other unit test verify it.
+
+== Slow tests ==
+
+Unit tests should be fast - let the functional and integration tests run slowly and be run once a day.  The unit tests should be run by developers as they are coding, so they have to stay fast.  If you need to write a slow unit test, please ask the development list and we'll try to find a solution.
+
+[[Category:Tech Notes]]
+
+= References =
+
+* [[Unit Tests]]
+* [[JUnit]]

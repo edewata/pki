@@ -1,0 +1,22 @@
+= CS.cfg =
+
+<pre>
+proxy.securePort=[PKI_PROXY_SECURE_PORT]
+proxy.unsecurePort=[PKI_PROXY_UNSECURE_PORT]
+</pre>
+
+= AJP Connector =
+
+If pki_enable_proxy is set to True, the following element will be added into server.xml:
+
+<pre>
+<Connector port="[PKI_AJP_PORT]"
+        protocol="AJP/1.3"
+        redirectPort="[PKI_AJP_REDIRECT_PORT]"
+        address="[PKI_AJP_HOST]" />
+</pre>
+
+= References =
+
+* [[Deployment Configuration]]
+* [[IPA PKI 10 CA Installation]]

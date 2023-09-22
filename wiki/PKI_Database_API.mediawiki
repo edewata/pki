@@ -1,0 +1,49 @@
+= Creating Database Registry =
+
+<pre>
+IDBSubsystem subsystem = CMS.getSubsystem(IDBSubsystem.SUB_ID);
+IDBRegistry registry = new DBRegistry();
+registry.init(subsystem, null);
+</pre>
+
+= Creating Database Session =
+
+<pre>
+IDBSubsystem subsystem = CMS.getSubsystem(IDBSubsystem.SUB_ID);
+IDBSSession session = mDBService.createSession();
+...
+session.close();
+</pre>
+
+= Creating Database Record =
+
+<pre>
+IDBObj record = new DBRecord();
+record.set(attribute, value);
+</pre>
+
+= Adding Database Record =
+
+<pre>
+String dn = ...;
+IDBObj record = ...;
+session.add(dn, record);
+</pre>
+
+= Reading Database Record =
+
+<pre>
+String dn = ...;
+IDBObj record = session.read(dn);
+</pre>
+
+= Deleting Database Record =
+
+<pre>
+String dn = ...;
+session.delete(dn);
+</pre>
+
+= See Also =
+
+* [[PKI API]]

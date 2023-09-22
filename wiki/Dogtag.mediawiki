@@ -1,0 +1,127 @@
+== Source Code ==
+
+Dogtag source code is managed via the [http://git-scm.com/ Git Revision Control System] and can be viewed at the [https://git.fedorahosted.org/cgit/pki.git/ pki.git repository]:
+* [https://git.fedorahosted.org/cgit/pki.git/log/ Dogtag 10.4 (master)]
+* [https://git.fedorahosted.org/cgit/pki.git/log/?h=DOGTAG_10_3_BRANCH Dogtag 10.3 (maintenance branch)]
+* [https://git.fedorahosted.org/cgit/pki.git/log/?h=DOGTAG_10_2_BRANCH Dogtag 10.2 (maintenance branch)]
+* [https://git.fedorahosted.org/cgit/pki.git/log/?h=DOGTAG_10_2_6_BRANCH Dogtag 10.2.6 (maintenance branch)]
+* [https://git.fedorahosted.org/cgit/pki.git/log/?h=DOGTAG_10_2_5_BRANCH Dogtag 10.2.5 (maintenance branch)]
+* [https://git.fedorahosted.org/cgit/pki.git/log/?h=DOGTAG_10_2_4_BRANCH Dogtag 10.2.4 (maintenance branch)]
+* [https://git.fedorahosted.org/cgit/pki.git/log/?h=DOGTAG_10_2_3_BRANCH Dogtag 10.2.3 (maintenance branch)]
+* [https://git.fedorahosted.org/cgit/pki.git/log/?h=DOGTAG_10_2_2_BRANCH Dogtag 10.2.2 (maintenance branch)]
+* [https://git.fedorahosted.org/cgit/pki.git/log/?h=DOGTAG_10_2_1_BRANCH Dogtag 10.2.1 (maintenance branch)]
+* [https://git.fedorahosted.org/cgit/pki.git/log/?h=DOGTAG_10_2_0_BRANCH Dogtag 10.2.0 (maintenance branch)]
+* [https://git.fedorahosted.org/cgit/pki.git/log/?h=DOGTAG_10_1_BRANCH Dogtag 10.1 (maintenance branch)]
+* <strike>[https://git.fedorahosted.org/cgit/pki.git/log/?h=DOGTAG_10_0_BRANCH Dogtag 10.0 (maintenance branch)]</strike>
+* <strike>[https://git.fedorahosted.org/cgit/pki.git/log/?h=DOGTAG_9_0_BRANCH Dogtag 9.0 (maintenance branch)]</strike>
+
+=== Revised Branch Names ===
+On September 16, 2014, the PKI git repository branches were renamed to follow our new naming conventions:
+
+<table border=1>
+<tr>
+<th>ORIGINAL BRANCH NAME</th>
+<th>NEW BRANCH NAME</th>
+</tr>
+<tr>
+<td>remotes/origin/DOGTAG_10_0_BRANCH</td>
+<td>remotes/origin/DOGTAG_10_0_BRANCH</td>
+</tr>
+<tr>
+<td>remotes/origin/IPA_V3_RHEL_7_ERRATA_BRANCH</td>
+<td>remotes/origin/DOGTAG_10_0_RHEL_BRANCH</td>
+</tr>
+<tr>
+<td>remotes/origin/DOGTAG_10_1_BRANCH</td>
+<td>remotes/origin/DOGTAG_10_1_BRANCH</td>
+</tr>
+<tr>
+<td>remotes/origin/IPA_V4_RHEL_7_1_ERRATA_BRANCH</td>
+<td>remotes/origin/DOGTAG_10_1_RHEL_BRANCH</td>
+</tr>
+<tr>
+<td>'master' 7cf3bd73a7c41d8633fb2a92053a55e0e36a4925</td>
+<td>remotes/origin/DOGTAG_10_2_RHEL_BRANCH</td>
+</tr>
+<tr>
+<td>remotes/origin/DOGTAG_9_BRANCH</td>
+<td>remotes/origin/DOGTAG_9_0_BRANCH</td>
+</tr>
+<tr>
+<td>remotes/origin/IPA_v2_RHEL_6_ERRATA_BRANCH</td>
+<td>remotes/origin/DOGTAG_9_0_RHEL_BRANCH</td>
+</tr>
+<tr>
+<td>remotes/origin/RHEL_7_0_BRANCH</td>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td>remotes/origin/RHEL_7_BRANCH</td>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td>remotes/origin/autoformat</td>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td>remotes/origin/autoformat2</td>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td>remotes/origin/HEAD -> origin/master</td>
+<td>remotes/origin/HEAD -> origin/master</td>
+</tr>
+<tr>
+<td>remotes/origin/master</td>
+<td>remotes/origin/master</td>
+</tr>
+</table>
+
+The following table shows the corresponding platform vs. product version vs. branch names:
+
+* [[Dogtag_branches_and_releases|Platform vs. Product Version vs. Branch]]
+
+The following describes the branching philosophy associated with packaging:
+
+* [[Package Versioning]]
+
+=== Example of Updating an Existing Branch that has been Previously Checked-Out ===
+(1) Identify the local branch
+    # git branch
+    IPA_V3_RHEL_7_ERRATA_BRANCH
+(2) Rename the local branch
+    # git branch -m IPA_V3_RHEL_7_ERRATA_BRANCH DOGTAG_10_0_RHEL_BRANCH
+(3) Identify the local branch
+    # git branch
+    DOGTAG_10_0_RHEL_BRANCH
+(4) Attempt to update the local branch from the remote branch
+    # git pull
+    . . .
+    Your configuration specifies to merge with the ref 'IPA_V3_RHEL_7_ERRATA_BRANCH'
+    from the remote, but no such ref was fetched.
+(5) Setup remote upstream tracking on the branch you just renamed
+    # git branch -u origin/DOGTAG_10_0_RHEL_BRANCH
+    Branch DOGTAG_10_0_RHEL_BRANCH set up to track remote branch DOGTAG_10_0_RHEL_BRANCH from origin.
+(6) Attempt to update the local branch from the remote branch
+    # git pull
+    Already up-to-date.
+
+== Platform ==
+
+This new version of Dogtag will begin development using '''64-bit x86_64''' [http://fedoraproject.org/ Fedora 16].
+
+== Development Tools ==
+
+See [https://github.com/dogtagpki/pki/wiki/Development-Tools Development Tools].
+
+== Javadocs ==
+* [[Javadocs | On-line Dogtag Javadocs]]
+== Designs ==
+[https://github.com/dogtagpki/pki/wiki/Design-Documents Design Documents]
+
+== How-To Procedures ==
+* [[Installing Theme|How to apply a theme to a previously installed PKI server instance]]
+
+== Miscellaneous ==
+The fedorahosted.org sunset on Tuesday, February 28, 2017; this involved migration of the numerous products away from the use of its TRAC Issue Trackers, storage of various SVN and GIT repositories, and movement away from TRAC Wiki material:
+* [[RELOCATION OF PROJECT ISSUES, REPOSITORIES, AND WIKI INFORMATION]]

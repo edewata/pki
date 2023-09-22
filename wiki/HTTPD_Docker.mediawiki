@@ -1,0 +1,27 @@
+= Creating HTTPD Container =
+
+Create the following Dockerfile:
+
+<pre>
+FROM fedora29
+RUN dnf -y install httpd; dnf all; systemctl enable httpd.service
+EXPOSE 80
+CMD [“/usr/sbin/init”]
+</pre>
+
+To build the image:
+
+<pre>
+$ docker build -t httpd .
+</pre>
+
+To run the container:
+
+<pre>
+$ docker run --privileged -ti -v /sys/fs/cgroup:/sys/fs/cgroup:ro -p 80:80 httpd
+</pre>
+
+= See Also =
+
+* [[Docker]]
+* [[Fedora Container]]

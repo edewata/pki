@@ -1,0 +1,11 @@
+= References =
+
+* [http://askubuntu.com/questions/14584/are-there-any-gui-man-page-editors-are-available GUI man page editors]
+* [http://www.docbook.org/tdg/en/html/docbook.html DocBook: The Definitive Guide]
+* [http://www.openoffice.org/xml/xmerge/docbook/ DocBook Filters - Read and write docbook xml using OpenOffice.org]
+* [http://www.openoffice.org/xml/xmerge/docbook/UserGuide.html Getting Started With DocBook on OpenOffice]
+* [https://help.ubuntu.com/community/DocBookEditors DocBookEditors]
+* [http://wiki.docbook.org/OpenOffice OpenOffice and DocBook]
+* [http://wiki.docbook.org/DocBookTools DocBookTools]
+* [https://gitlab.com/esr/doclifter doclifter]
+* [http://aaa-sec.com/nroffedit/ nroffedit]

@@ -1,0 +1,27 @@
+== Team ==
+
+The Dogtag Certificate System was designed, developed, tested, and implemented by the following individuals:
+
+* [[PKI_Team|Dogtag Certificate System Team]]
+
+== History ==
+
+Dogtag went live on March 19, 2008. Read the [http://www.press.redhat.com/2008/03/19/source-code-for-red-hat-certificate-system-released/ Red Hat announcement here], and [http://boblord.livejournal.com/19010.html Bob Lord's blog post here].
+
+The open source release history of Dogtag Certificate System and its Descendents:
+
+* [[PKI_Open_Source_History | Certificate System History (Dogtag Descendents)]]
+
+The Dogtag Certificate System owes its creation to a long and distinguished line of proprietary products:
+
+* [[PKI_History | Certificate System History (Dogtag Ancestors)]]
+
+== Credit ==
+
+The Dogtag Certificate System also owes its creation to the many various talented men and women who designed, developed, tested, marketed, sold, and supported its predecessors and descendents:
+
+* [[PKI_Contributors | Certificate System Contributors]]
+* [http://directory.fedoraproject.org/wiki/Developers#Contributors Directory Server Contributors]
+* [http://www.mozilla.org/projects/security/pki/nss/contributors.html NSS Contributors]
+
+If you should discover a contributor that was not in any of these lists, please mail this information to [http://www.redhat.com/mailman/listinfo/pki-devel pki-devel@redhat.com].

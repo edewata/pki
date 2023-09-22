@@ -1,0 +1,63 @@
+= Open Source History =
+
+<table border=1>
+<tr><td colspan=3 bgcolor="black"></td></tr>
+<tr><th bgcolor="darkgrey">Year</th><th bgcolor="darkgrey">Product Version</th><th bgcolor="darkgrey">Release Date</th></tr>
+<tr><td colspan=3 bgcolor="black"></td></tr>
+<tr><td>[[PKI Open Source History 2008 | 2008]]</td><td>Dogtag Certificate Server 1.0.0</td><td>[03/18/2008]</td></tr>
+<tr><td colspan=3 bgcolor="black"></td></tr>
+<tr><td>[[PKI Open Source History 2009 | 2009]]</td><td>Dogtag Certificate Server 1.1.0</td><td>[04/06/2009]</td></tr>
+<tr><td>[[PKI Open Source History 2009 | 2009]]</td><td>Red Hat Certificate Server 8.0</td><td>[07/22/2009]</td></tr>
+<tr><td>[[PKI Open Source History 2009 | 2009]]</td><td>Dogtag Certificate Server 1.2.0</td><td>[07/31/2009]</td></tr>
+<tr><td colspan=3 bgcolor="black"></td></tr>
+<tr><td>[[PKI Open Source History 2010 | 2010]]</td><td>Dogtag Certificate Server 1.3</td><td>[05/03/2010]</td></tr>
+<tr><td colspan=3 bgcolor="black"></td></tr>
+<tr><td>[[PKI Open Source History 2011 | 2011]]</td><td>Dogtag Certificate Server 9.0</td><td>[07/22/2011]</td></tr>
+<tr><td colspan=3 bgcolor="black"></td></tr>
+<tr><td>[[PKI Open Source History 2012 | 2012]]</td><td>Red Hat Certificate Server 8.1</td><td>[02/01/2012]</td></tr>
+<tr><td>[[PKI Open Source History 2012 | 2012]]</td><td>Dogtag Certificate Server 10.0 (Alpha 1)</td><td>[03/14/2012]</td></tr>
+<tr><td>[[PKI Open Source History 2012 | 2012]]</td><td>Dogtag Certificate Server 10.0 (Alpha 2)</td><td>[10/01/2012]</td></tr>
+<tr><td>[[PKI Open Source History 2012 | 2012]]</td><td>Dogtag Certificate Server 10.0 (Beta 1)</td><td>[10/09/2012]</td></tr>
+<tr><td>[[PKI Open Source History 2012 | 2012]]</td><td>Dogtag Certificate Server 10.0 (Beta 2)</td><td>[10/30/2012]</td></tr>
+<tr><td>[[PKI Open Source History 2012 | 2012]]</td><td>Dogtag Certificate Server 10.0 (Release Candidate 1)</td><td>[12/11/2012]</td></tr>
+<tr><td colspan=3 bgcolor="black"></td></tr>
+<tr><td>[[PKI Open Source History 2013 | 2013]]</td><td>Dogtag Certificate Server 10.0</td><td>[01/15/2013]</td></tr>
+<tr><td>[[PKI Open Source History 2013 | 2013]]</td><td>Dogtag Certificate Server 10.0.1</td><td>[01/23/2013]</td></tr>
+<tr><td>[[PKI Open Source History 2013 | 2013]]</td><td>Dogtag Certificate Server 10.0.2</td><td>[05/02/2013]</td></tr>
+<tr><td>[[PKI Open Source History 2013 | 2013]]</td><td>Dogtag Certificate Server 10.0.3</td><td>[06/07/2013]</td></tr>
+<tr><td>[[PKI Open Source History 2013 | 2013]]</td><td>Dogtag Certificate Server 10.0.4</td><td>[07/26/2013]</td></tr>
+<tr><td>[[PKI Open Source History 2013 | 2013]]</td><td>Dogtag Certificate Server 10.0.5</td><td>[09/09/2013]</td></tr>
+<tr><td>[[PKI Open Source History 2013 | 2013]]</td><td>Dogtag Certificate Server 10.0.6</td><td>[11/03/2013]</td></tr>
+<tr><td>[[PKI Open Source History 2013 | 2013]]</td><td>Dogtag Certificate Server 10.1</td><td>[11/22/2013]</td></tr>
+<tr><td colspan=3 bgcolor="black"></td></tr>
+<tr><td>[[PKI Open Source History 2014 | 2014]]</td><td>Dogtag Certificate Server 10.0.7</td><td>[04/01/2014]</td></tr>
+<tr><td>[[PKI Open Source History 2014 | 2014]]</td><td>Dogtag Certificate Server 10.1.1</td><td>[04/01/2014]</td></tr>
+<tr><td>[[PKI Open Source History 2014 | 2014]]</td><td>Dogtag Certificate Server 10.2.0</td><td>[09/06/2014]</td></tr>
+<tr><td>[[PKI Open Source History 2014 | 2014]]</td><td>Dogtag Certificate Server 10.1.2</td><td>[09/22/2014]</td></tr>
+<tr><td colspan=3 bgcolor="black"></td></tr>
+<tr><td>[[PKI Open Source History 2015 | 2015]]</td><td>Dogtag Certificate Server 10.2.1</td><td>[01/09/2015]</td></tr>
+<tr><td>[[PKI Open Source History 2015 | 2015]]</td><td>Dogtag Certificate Server 10.2.2</td><td>[03/18/2015]</td></tr>
+<tr><td>[[PKI Open Source History 2015 | 2015]]</td><td>Dogtag Certificate Server 10.2.3</td><td>[04/24/2015]</td></tr>
+<tr><td>[[PKI Open Source History 2015 | 2015]]</td><td>Dogtag Certificate Server 10.2.4</td><td>[05/26/2015]</td></tr>
+<tr><td>[[PKI Open Source History 2015 | 2015]]</td><td>Dogtag Certificate Server 10.2.5</td><td>[06/22/2015]</td></tr>
+<tr><td>[[PKI Open Source History 2015 | 2015]]</td><td>Dogtag Certificate Server 10.2.6</td><td>[07/18/2015]</td></tr>
+<tr><td>[[PKI Open Source History 2015 | 2015]]</td><td>Red Hat Certificate Server 9.0</td><td>[08/27/2015]</td></tr>
+<tr><td colspan=3 bgcolor="black"></td></tr>
+<tr><td>[[PKI Open Source History 2016 | 2016]]</td><td>Dogtag Certificate Server 10.3.0 (Alpha 1)</td><td>[03/07/2016]</td></tr>
+<tr><td>[[PKI Open Source History 2016 | 2016]]</td><td>Dogtag Certificate Server 10.3.0 (Alpha 2)</td><td>[04/07/2016]</td></tr>
+<tr><td>[[PKI Open Source History 2016 | 2016]]</td><td>Dogtag Certificate Server 10.3.0 (Beta 1)</td><td>[04/19/2016]</td></tr>
+<tr><td>[[PKI Open Source History 2016 | 2016]]</td><td>Dogtag Certificate Server 10.3.1</td><td>[05/17/2016]</td></tr>
+<tr><td>[[PKI Open Source History 2016 | 2016]]</td><td>Dogtag Certificate Server 10.3.2</td><td>[06/07/2016]</td></tr>
+<tr><td>[[PKI Open Source History 2016 | 2016]]</td><td>Dogtag Certificate Server 10.3.3</td><td>[06/21/2016]</td></tr>
+<tr><td>[[PKI Open Source History 2016 | 2016]]</td><td>Dogtag Certificate Server 10.3.4<sup>&dagger;</sup></td><td>[07/05/2016]</td></tr>
+<tr><td>[[PKI Open Source History 2016 | 2016]]</td><td>Dogtag Certificate Server 10.3.5</td><td>[08/08/2016]</td></tr>
+<tr><td>[[PKI Open Source History 2016 | 2016]]</td><td>Red Hat Certificate Server 9.1</td><td>[11/07/2016]</td></tr>
+<tr><td colspan=3 bgcolor="black"></td></tr>
+<tr><td>[[PKI Open Source History 2017 | 2017]]</td><td>Red Hat Certificate Server 9.2</td><td>[08/03/2017]</td></tr>
+<tr><td colspan=3 bgcolor="black"></td></tr>
+<tr><td>[[PKI Open Source History 2018 | 2018]]</td><td>Red Hat Certificate Server 9.3</td><td>[04/10/2018]</td></tr>
+<tr><td>[[PKI Open Source History 2018 | 2018]]</td><td>Red Hat Certificate Server 9.4</td><td>[10/30/2018]</td></tr>
+<tr><td colspan=3 bgcolor="black"></td></tr>
+<tr><td>[[PKI Open Source History 2019 | 2019]]</td><td>Red Hat Certificate Server 9.5</td><td>[08/07/2019]</td></tr>
+<tr><td colspan=3 bgcolor="black"></td></tr>
+</table>

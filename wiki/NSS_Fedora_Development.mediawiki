@@ -1,0 +1,134 @@
+= Getting Source Package =
+
+To clone Fedora NSS package repository: 
+
+<pre>
+$ fedpkg clone nss Fedora/nss
+</pre>
+
+= Getting Patched Source Code =
+
+Extract the patched source code with the following commands:
+
+<pre>
+$ cd Fedora/nss
+$ fedpkg prep
+</pre>
+
+The above commands will extract the patched source code into Fedora/nss/nss-3.36.1 folder.
+
+= Creating a New Patch =
+
+Create a copy of the patched source code:
+
+<pre>
+$ cd nss-3.36.1
+$ git init .
+$ git add .
+$ git commit -a -m "Initial import"
+</pre>
+
+Change the code as needed, commit the changes, then generate a patch:
+
+<pre>
+$ git format-patch -1 -o ..
+</pre>
+
+Edit nss.spec to include the patch:
+
+<pre>
+Source0:     ...
+...
+Patch<N>:    <patch>
+</pre>
+
+<pre>
+%prep
+...
+%patch<N> -p1
+</pre>
+
+Verify with the following command:
+
+<pre>
+$ fedpkg prep
+</pre>
+
+= Updating Source Tarball =
+
+To generate a new source tarball:
+
+<pre>
+$ cd nss
+$ git archive --format=tar.gz --prefix nss-3.58/nss/ -o nss-3.58.tar.gz NSS_3_58_BRANCH
+</pre>
+
+To remove the old tarball checksum:
+
+<pre>
+$ cd Fedora/nss
+$ sed -i '/\(nss-.*.tar.gz\)/d' sources
+</pre>
+
+To add a new tarball checksum:
+
+<pre>
+$ cd Fedora/nss
+$ sha512sum nss-*.tar.gz --tag >> sources
+</pre>
+
+= Creating Binary Packages =
+
+== Creating Local Build ==
+
+To build the binary packages:
+
+<pre>
+$ cd Fedora/nss
+$ fedpkg local
+</pre>
+
+To build the packages without running the test suite:
+
+<pre>
+$ SKIP_NSS_TEST_SUITE=1 fedpkg local
+</pre>
+
+To include specific tests only, edit nss.spec as follows:
+
+<pre>
+%global nss_cycles "standard"
+%global nss_tests "ssl_gtests"
+%global nss_ssl_tests "normal_fips"
+%global nss_ssl_run "auth"
+</pre>
+
+Then build the packages as follows:
+
+<pre>
+$ fedpkg local
+</pre>
+
+== Creating COPR Build ==
+
+To create a COPR build for Rawhide:
+
+<pre>
+$ fedpkg srpm
+$ copr build @pki/10.6 <SRPM> -r fedora-rawhide-x86_64
+</pre>
+
+To create a COPR build for released Fedora:
+
+<pre>
+$ fedpkg srpm
+$ copr build @pki/10.6 <SRPM> -r fedora-27-x86_64 -r fedora-28-x86_64
+</pre>
+
+= Installing Binary Packages =
+
+To install the packages:
+
+<pre>
+$ dnf reinstall x86_64/*.rpm
+</pre>

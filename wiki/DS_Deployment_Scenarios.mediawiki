@@ -1,0 +1,181 @@
+= Overview =
+
+This page describes different DS deployment scenarios supported by PKI.
+
+The tables below describe the contents of each DS instance. The '''Shared''' column indicates whether the content is shared among all backends in the same DS instance. The '''Replicated''' column indicates whether the contenet is replicated to other DS clones.
+
+= Shared DS Instance with Separate Backends =
+
+This is the default deployment scenario. In this scenario multiple PKI subsystems are configured to use separate backends in the same DS instance.
+
+=== Shared DS instance ===
+
+{| border="1" style="border-collapse: collapse;"
+! width="200" | Content
+! width="400" | DN
+! width="100" | Shared
+! width="100" | Replicated
+|-
+| DS Schema
+| cn=schema
+| yes
+| yes
+|-
+| DS configuration
+| cn=config
+| yes
+| no
+|-
+| CA backend (e.g. ca):
+|
+|
+|
+|-
+| &nbsp;&nbsp;CA subtree
+| dc=ca,dc=example,dc=com
+| no
+| yes
+|-
+| &nbsp;&nbsp;CA indexes
+| cn=ca,cn=ldbm database,cn=plugins,cn=config
+| no
+| no
+|-
+| KRA backend (e.g. kra):
+|
+|
+|
+|-
+| &nbsp;&nbsp;KRA subtree
+| dc=kra,dc=example,dc=com
+| no
+| yes
+|-
+| &nbsp;&nbsp;KRA indexes
+| cn=kra,cn=ldbm database,cn=plugins,cn=config
+| no
+| no
+|}
+
+= Shared DS Instance with Shared Backend =
+
+In this scenario multiple PKI subsystems are configured to use a shared backend (e.g. userRoot). This scenario is used in IPA to minimize the number of replication agreements.
+
+=== Shared DS instance ===
+
+{| border="1" style="border-collapse: collapse;"
+! width="200" | Content
+! width="400" | DN
+! width="100" | Shared
+! width="100" | Replicated
+|-
+| DS schema
+| cn=schema
+| yes
+| yes
+|-
+| DS configuration
+| cn=config
+| yes
+| no
+|-
+| Shared backend (e.g. userRoot):
+|
+|
+|-
+| &nbsp;&nbsp;CA subtree
+| dc=ca,dc=example,dc=com
+| no
+| yes
+|-
+| &nbsp;&nbsp;CA indexes
+| cn=userRoot,cn=ldbm database,cn=plugins,cn=config
+| no
+| no
+|-
+| &nbsp;&nbsp;KRA subtree
+| dc=kra,dc=example,dc=com
+| no
+| yes
+|-
+| &nbsp;&nbsp;KRA indexes
+| cn=userRoot,cn=ldbm database,cn=plugins,cn=config
+| no
+| no
+|}
+
+= Separate DS Instances =
+
+In this scenario multiple PKI subsystems are configured to use separate DS instances. This scenario is used by legacy PKI subsystems and in large PKI deployments where the PKI subsystems are deployed on separate hosts.
+
+=== CA DS instance ===
+
+{| border="1" style="border-collapse: collapse;"
+! width="200" | Content
+! width="400" | DN
+! width="100" | Shared
+! width="100" | Replicated
+|-
+| DS schema
+| cn=schema
+| no
+| yes
+|-
+| DS configuration
+| cn=config
+| no
+| no
+|-
+| CA backend (e.g. ca):
+|
+|
+|
+|-
+| &nbsp;&nbsp;CA subtree
+| dc=ca,dc=example,dc=com
+| no
+| yes
+|-
+| &nbsp;&nbsp;CA indexes
+| cn=ca,cn=ldbm database,cn=plugins,cn=config
+| no
+| no
+|}
+
+=== KRA DS instance ===
+
+{| border="1" style="border-collapse: collapse;"
+! width="200" | Content
+! width="400" | DN
+! width="100" | Shared
+! width="100" | Replicated
+|-
+| DS schema
+| cn=schema
+| no
+| yes
+|-
+| DS configuration
+| cn=config
+| no
+| no
+|-
+| KRA backend (e.g. kra):
+|
+|
+|
+|-
+| &nbsp;&nbsp;KRA subtree
+| dc=kra,dc=example,dc=com
+| no
+| yes
+|-
+| &nbsp;&nbsp;KRA indexes
+| cn=kra,cn=ldbm database,cn=plugins,cn=config
+| no
+| no
+|}
+
+= References =
+
+* [[PKI LDAP]]

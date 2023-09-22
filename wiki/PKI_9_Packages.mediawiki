@@ -1,0 +1,1862 @@
+= PKI Component Packages =
+
+== Dogtag 9.0 ==
+
+The following table lists all PKI component packages with a brief description of their purpose along with their Fedora build and runtime dependencies:
+
+<table border=1>
+<tr>
+<th width="20%" bgcolor="#5252bf"><b><font color="white">PKI Component</font></b></th>
+<th width="40%" bgcolor="#5252bf"><b><font color="white">Description</font></b></th>
+<th width="20%" bgcolor="#5252bf"><b><font color="white">Fedora Build Dependencies</font></b></th>
+<th width="20%" bgcolor="#5252bf"><b><font color="white">Fedora Runtime Dependencies</font></b></th>
+</tr>
+<tr>
+<th bgcolor="darkgrey" colspan=4>'dogtag-pki-theme' (svn+ssh://svn.fedorahosted.org/svn/pki/trunk/pki)</th>
+</tr>
+<tr>
+<th valign="top">
+dogtag-pki-common-theme
+</th>
+<td valign="top">
+User interface "flavor" for pki-common component:<br>
+<ul>
+<table>
+<tr>
+<td>Conflicts:&nbsp;&nbsp;</td>
+<td>redhat-pki-common-theme</td>
+</tr>
+<tr>
+<td>Conflicts:&nbsp;&nbsp;</td>
+<td> redhat-pki-common-ui</td>
+</tr>
+<tr>
+<td>Obsoletes:&nbsp;&nbsp;</td>
+<td>ipa-pki-common-theme <= 9999</td>
+</tr>
+<tr>
+<td>Provides:&nbsp;&nbsp;</td>
+<td>ipa-pki-common-theme = %{version}-%{release}</td>
+</tr>
+<tr>
+<td>Obsoletes:&nbsp;&nbsp;</td>
+<td>dogtag-pki-common-ui <= 9</td>
+</tr>
+<tr>
+<td>Provides:&nbsp;&nbsp;</td>
+<td>pki-common-theme = %{version}-%{release}</td>
+</tr>
+<tr>
+<td>Provides:&nbsp;&nbsp;</td>
+<td>pki-common-ui = %{version}-%{release}</td>
+</tr>
+</table>
+</ul>
+</td>
+<td valign="top">
+cmake,<br>
+java-devel > = 1:1.6.0,<br>
+jpackage-utils
+</td>
+<td valign="top">&nbsp;</td>
+</tr>
+<tr>
+<th valign="top">
+dogtag-pki-ca-theme
+</th>
+<td valign="top">
+User interface "flavor" for pki-ca component:<br>
+<ul>
+<table>
+<tr>
+<td>Conflicts:&nbsp;&nbsp;</td>
+<td>redhat-pki-ca-theme</td>
+</tr>
+<tr>
+<td>Conflicts:&nbsp;&nbsp;</td>
+<td> redhat-pki-ca-ui</td>
+</tr>
+<tr>
+<td>Obsoletes:&nbsp;&nbsp;</td>
+<td>ipa-pki-ca-theme <= 9999</td>
+<tr>
+</tr>
+<td>Provides:&nbsp;&nbsp;</td>
+<td>ipa-pki-ca-theme = %{version}-%{release}</td>
+</tr>
+<tr>
+<td>Obsoletes:&nbsp;&nbsp;</td>
+<td>dogtag-pki-ca-ui <= 9</td>
+</tr>
+<tr>
+<td>Provides:&nbsp;&nbsp;</td>
+<td>pki-ca-theme = %{version}-%{release}</td>
+</tr>
+<tr>
+<td>Provides:&nbsp;&nbsp;</td>
+<td>pki-ca-ui = %{version}-%{release}</td>
+</tr>
+</table>
+</ul>
+</td>
+<td valign="top">
+cmake,<br>
+java-devel > = 1:1.6.0,<br>
+jpackage-utils
+</td>
+<td valign="top">dogtag-pki-common-theme = %{version}-%{release}</td>
+</tr>
+<tr>
+<th valign="top">
+dogtag-pki-kra-theme
+</th>
+<td valign="top">
+User interface "flavor" for pki-kra component:<br>
+<ul>
+<table>
+<tr>
+<td>Conflicts:&nbsp;&nbsp;</td>
+<td>redhat-pki-kra-theme</td>
+</tr>
+<tr>
+<td>Conflicts:&nbsp;&nbsp;</td>
+<td> redhat-pki-kra-ui</td>
+</tr>
+<tr>
+<td>Obsoletes:&nbsp;&nbsp;</td>
+<td>ipa-pki-kra-theme <= 9999</td>
+</tr>
+<tr>
+<td>Provides:&nbsp;&nbsp;</td>
+<td>ipa-pki-kra-theme = %{version}-%{release}</td>
+</tr>
+<tr>
+<td>Obsoletes:&nbsp;&nbsp;</td>
+<td>dogtag-pki-kra-ui <= 9</td>
+</tr>
+<tr>
+<td>Provides:&nbsp;&nbsp;</td>
+<td>pki-kra-theme = %{version}-%{release}</td>
+</tr>
+<tr>
+<td>Provides:&nbsp;&nbsp;</td>
+<td>pki-kra-ui = %{version}-%{release}</td>
+</tr>
+</table>
+</ul>
+</td>
+<td valign="top">
+cmake,<br>
+java-devel > = 1:1.6.0,<br>
+jpackage-utils
+</td>
+<td valign="top">dogtag-pki-common-theme = %{version}-%{release}</td>
+</tr>
+<tr>
+<th valign="top">
+dogtag-pki-ocsp-theme
+</th>
+<td valign="top">
+User interface "flavor" for pki-ocsp component:<br>
+<ul>
+<table>
+<tr>
+<td>Conflicts:&nbsp;&nbsp;</td>
+<td>redhat-pki-ocsp-theme</td>
+</tr>
+<tr>
+<td>Conflicts:&nbsp;&nbsp;</td>
+<td> redhat-pki-ocsp-ui</td>
+</tr>
+<tr>
+<td>Obsoletes:&nbsp;&nbsp;</td>
+<td>ipa-pki-ocsp-theme <= 9999</td>
+</tr>
+<tr>
+<td>Provides:&nbsp;&nbsp;</td>
+<td>ipa-pki-ocsp-theme = %{version}-%{release}</td>
+</tr>
+<tr>
+<td>Obsoletes:&nbsp;&nbsp;</td>
+<td>dogtag-pki-ocsp-ui <= 9</td>
+</tr>
+<tr>
+<td>Provides:&nbsp;&nbsp;</td>
+<td>pki-ocsp-theme = %{version}-%{release}</td>
+</tr>
+<tr>
+<td>Provides:&nbsp;&nbsp;</td>
+<td>pki-ocsp-ui = %{version}-%{release}</td>
+</tr>
+</table>
+</ul>
+</td>
+<td valign="top">
+cmake,<br>
+java-devel > = 1:1.6.0,<br>
+jpackage-utils
+</td>
+<td valign="top">dogtag-pki-common-theme = %{version}-%{release}</td>
+</tr>
+<tr>
+<th valign="top">
+dogtag-pki-ra-theme
+</th>
+<td valign="top">
+User interface "flavor" for ra component:<br>
+<ul>
+<table>
+<tr>
+<td>Conflicts:&nbsp;&nbsp;</td>
+<td>redhat-pki-ra-theme</td>
+</tr>
+<tr>
+<td>Conflicts:&nbsp;&nbsp;</td>
+<td> redhat-pki-ra-ui</td>
+</tr>
+<tr>
+<td>Obsoletes:&nbsp;&nbsp;</td>
+<td>ipa-pki-ra-theme <= 9999</td>
+</tr>
+<tr>
+<td>Provides:&nbsp;&nbsp;</td>
+<td>ipa-pki-ra-theme = %{version}-%{release}</td>
+</tr>
+<tr>
+<td>Obsoletes:&nbsp;&nbsp;</td>
+<td>dogtag-pki-ra-ui <= 9</td>
+</tr>
+<tr>
+<td>Provides:&nbsp;&nbsp;</td>
+<td>pki-ra-theme = %{version}-%{release}</td>
+</tr>
+<tr>
+<td>Provides:&nbsp;&nbsp;</td>
+<td>pki-ra-ui = %{version}-%{release}</td>
+</tr>
+</table>
+</ul>
+</td>
+<td valign="top">
+cmake,<br>
+java-devel > = 1:1.6.0,<br>
+jpackage-utils
+</td>
+<td valign="top">&nbsp;</td>
+</tr>
+<tr>
+<th valign="top">
+dogtag-pki-tks-theme
+</th>
+<td valign="top">
+User interface "flavor" for pki-tks component:<br>
+<ul>
+<table>
+<tr>
+<td>Conflicts:&nbsp;&nbsp;</td>
+<td>redhat-pki-tks-theme</td>
+</tr>
+<tr>
+<td>Conflicts:&nbsp;&nbsp;</td>
+<td> redhat-pki-tks-ui</td>
+</tr>
+<tr>
+<td>Obsoletes:&nbsp;&nbsp;</td>
+<td>ipa-pki-tks-theme <= 9999</td>
+</tr>
+<tr>
+<td>Provides:&nbsp;&nbsp;</td>
+<td>ipa-pki-tks-theme = %{version}-%{release}</td>
+</tr>
+<tr>
+<td>Obsoletes:&nbsp;&nbsp;</td>
+<td>dogtag-pki-tks-ui <= 9</td>
+</tr>
+<tr>
+<td>Provides:&nbsp;&nbsp;</td>
+<td>pki-tks-theme = %{version}-%{release}</td>
+</tr>
+<tr>
+<td>Provides:&nbsp;&nbsp;</td>
+<td>pki-tks-ui = %{version}-%{release}</td>
+</tr>
+</table>
+</ul>
+</td>
+<td valign="top">
+cmake,<br>
+java-devel > = 1:1.6.0,<br>
+jpackage-utils
+</td>
+<td valign="top">dogtag-pki-common-theme = %{version}-%{release}</td>
+</tr>
+<tr>
+<th valign="top">
+dogtag-pki-tps-theme
+</th>
+<td valign="top">
+User interface "flavor" for pki-tps component:<br>
+<ul>
+<table>
+<tr>
+<td>Conflicts:&nbsp;&nbsp;</td>
+<td>redhat-pki-tps-theme</td>
+</tr>
+<tr>
+<td>Conflicts:&nbsp;&nbsp;</td>
+<td> redhat-pki-tps-ui</td>
+</tr>
+<tr>
+<td>Obsoletes:&nbsp;&nbsp;</td>
+<td>ipa-pki-tps-theme <= 9999</td>
+</tr>
+<tr>
+<td>Provides:&nbsp;&nbsp;</td>
+<td>ipa-pki-tps-theme = %{version}-%{release}</td>
+</tr>
+<tr>
+<td>Obsoletes:&nbsp;&nbsp;</td>
+<td>dogtag-pki-tps-ui <= 9</td>
+</tr>
+<tr>
+<td>Provides:&nbsp;&nbsp;</td>
+<td>pki-tps-theme = %{version}-%{release}</td>
+</tr>
+<tr>
+<td>Provides:&nbsp;&nbsp;</td>
+<td>pki-tps-ui = %{version}-%{release}</td>
+</tr>
+</table>
+</ul>
+</td>
+<td valign="top">
+cmake,<br>
+java-devel > = 1:1.6.0,<br>
+jpackage-utils
+</td>
+<td valign="top">&nbsp;</td>
+</tr>
+<tr>
+<th valign="top">
+dogtag-pki-console-theme
+</th>
+<td valign="top">
+User interface "flavor" for pki-console component:<br>
+<ul>
+<table>
+<tr>
+<td>Conflicts:&nbsp;&nbsp;</td>
+<td>redhat-pki-console-theme</td>
+</tr>
+<tr>
+<td>Conflicts:&nbsp;&nbsp;</td>
+<td> redhat-pki-console-ui</td>
+</tr>
+<tr>
+<td>Obsoletes:&nbsp;&nbsp;</td>
+<td>ipa-pki-console-theme <= 9999</td>
+</tr>
+<tr>
+<td>Provides:&nbsp;&nbsp;</td>
+<td>ipa-pki-console-theme = %{version}-%{release}</td>
+</tr>
+<tr>
+<td>Obsoletes:&nbsp;&nbsp;</td>
+<td>dogtag-pki-console-ui <= 9</td>
+</tr>
+<tr>
+<td>Provides:&nbsp;&nbsp;</td>
+<td>pki-console-theme = %{version}-%{release}</td>
+</tr>
+<tr>
+<td>Provides:&nbsp;&nbsp;</td>
+<td>pki-console-ui = %{version}-%{release}</td>
+</tr>
+</table>
+</ul>
+</td>
+<td valign="top">
+cmake,<br>
+java-devel > = 1:1.6.0,<br>
+jpackage-utils
+</td>
+<td valign="top">
+java >= 1:1.6.0
+</td>
+</tr>
+<tr>
+<th bgcolor="darkgrey" colspan=4>'pki-core' (svn+ssh://svn.fedorahosted.org/svn/pki/trunk/pki)</th>
+</tr>
+<tr>
+<th valign="top">
+pki-setup
+</th>
+<td valign="top">
+Perl scripts intended for management of CA, DRM, OCSP, RA, TKS, and TPS subsystem instances
+</td>
+<td valign="top">
+cmake,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6-17,<br>
+ldapjdk,<br>
+nspr-devel,<br>
+nss-devel,<br>
+openldap-devel,<br>
+osutil,<br>
+pkgconfig,<br>
+policycoreutils,<br>
+selinux-policy-devel,<br>
+tomcatjss >= 6.0.0,<br>
+velocity,<br>
+xalan-j2,<br>
+xerces-j2
+</td>
+<td valign="top">
+perl-Crypt-SSLeay,<br>
+policycoreutils,<br>
+openldap-clients
+</td>
+</tr>
+<tr>
+<th valign="top">
+pki-symkey<br>
+</th>
+<td valign="top">
+A Java Native Interface (JNI) library composed of symmetric key functions
+</td>
+<td valign="top">
+cmake,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6-17,<br>
+ldapjdk,<br>
+nspr-devel,<br>
+nss-devel,<br>
+openldap-devel,<br>
+osutil,<br>
+pkgconfig,<br>
+policycoreutils,<br>
+selinux-policy-devel,<br>
+tomcatjss >= 6.0.0,<br>
+velocity,<br>
+xalan-j2,<br>
+xerces-j2
+</td>
+<td valign="top">
+java >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6-17,<br>
+nss 
+</td>
+</tr>
+<tr>
+<th valign="top">
+pki-native-tools
+</th>
+<td valign="top">
+Various stand-alone PKI tools created from C, C++, Perl, bash, etc. 
+</td>
+<td valign="top">
+cmake,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6-17,<br>
+ldapjdk,<br>
+nspr-devel,<br>
+nss-devel,<br>
+openldap-devel,<br>
+osutil,<br>
+pkgconfig,<br>
+policycoreutils,<br>
+selinux-policy-devel,<br>
+tomcatjss >= 6.0.0,<br>
+velocity,<br>
+xalan-j2,<br>
+xerces-j2
+</td>
+<td valign="top">
+openldap-clients,<br>
+nss,<br>
+nss-tools
+</td>
+</tr>
+<tr>
+<th valign="top">
+pki-util
+</th>
+<td valign="top">
+Low-level PKI utilities
+</td>
+<td valign="top">
+cmake,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6-17,<br>
+ldapjdk,<br>
+nspr-devel,<br>
+nss-devel,<br>
+openldap-devel,<br>
+osutil,<br>
+pkgconfig,<br>
+policycoreutils,<br>
+selinux-policy-devel,<br>
+tomcatjss >= 6.0.0,<br>
+velocity,<br>
+xalan-j2,<br>
+xerces-j2
+</td>
+<td valign="top">
+java >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6-17,<br>
+ldapjdk,<br>
+osutil
+</td>
+</tr>
+<tr>
+<th valign="top">
+pki-util-javadoc
+</th>
+<td valign="top">
+'pki-util' Javadocs.
+</td>
+<td valign="top">&nbsp;</td>
+<td valign="top">pki-util = %{version}-%{release}</td>
+</tr>
+<tr>
+<th valign="top">
+pki-java-tools
+</th>
+<td valign="top">
+Various PKI tools created as stand-alone Java applications.
+</td>
+<td valign="top">
+cmake,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6-17,<br>
+ldapjdk,<br>
+nspr-devel,<br>
+nss-devel,<br>
+openldap-devel,<br>
+osutil,<br>
+pkgconfig,<br>
+policycoreutils,<br>
+selinux-policy-devel,<br>
+tomcatjss >= 6.0.0,<br>
+velocity,<br>
+xalan-j2,<br>
+xerces-j2
+</td>
+<td valign="top">
+java >= 1:1.6.0,<br>
+pki-native-tools = %{version}-%{release},<br>
+pki-util = %{version}-%{release}
+</td>
+</tr>
+<tr>
+<th valign="top">
+pki-java-tools-javadoc
+</th>
+<td valign="top">
+'pki-java-tools' Javadocs.
+</td>
+<td valign="top">&nbsp;</td>
+<td valign="top">pki-java-doc = %{version}-%{release}</td>
+</tr>
+<tr>
+<th valign="top">
+pki-common
+</th>
+<td valign="top">
+Common PKI functions shared by the CA, DRM, OCSP, and TKS subsystems
+</td>
+<td valign="top">
+cmake,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6-17,<br>
+ldapjdk,<br>
+nspr-devel,<br>
+nss-devel,<br>
+openldap-devel,<br>
+osutil,<br>
+pkgconfig,<br>
+policycoreutils,<br>
+selinux-policy-devel,<br>
+tomcatjss >= 6.0.0,<br>
+velocity,<br>
+xalan-j2,<br>
+xerces-j2
+</td>
+<td valign="top">
+apache-commons-lang,<br>
+apache-commons-logging,<br>
+java >= 1:1.6.0,<br>
+jss >= 4.2.6-17,<br>
+pki-common-theme >= 9.0.0,<br>
+pki-java-tools = %{version}-%{release},<br>
+pki-setup = %{version}-%{release},<br>
+pki-symkey = %{version}-%{release},<br>
+tomcatjss >= 6.0.0,<br>
+%{_javadir}/ldapjdk.jar,<br>
+%{_javadir}/velocity.jar,<br>
+%{_javadir}/xalan-j2.jar,<br>
+%{_javadir}/xalan-j2-serializer.jar,<br>
+%{_javadir}/xerces-j2.jar,<br>
+%{_javadir}/xml-commons-apis.jar,<br>
+%{_javadir}/xml-commons-resolver.jar,<br>
+velocity
+</td>
+</tr>
+<tr>
+<th valign="top">
+pki-common-javadoc
+</th>
+<td valign="top">
+'pki-common' Javadocs.
+</td>
+<td valign="top">&nbsp;</td>
+<td valign="top">pki-common = %{version}-%{release}</td>
+</tr>
+<tr>
+<th valign="top">
+pki-selinux
+</th>
+<td valign="top">
+Selinux policies used by the PKI components.
+</td>
+<td valign="top">
+cmake,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6-17,<br>
+ldapjdk,<br>
+nspr-devel,<br>
+nss-devel,<br>
+openldap-devel,<br>
+osutil,<br>
+pkgconfig,<br>
+policycoreutils,<br>
+selinux-policy-devel,<br>
+tomcatjss >= 6.0.0,<br>
+velocity,<br>
+xalan-j2,<br>
+xerces-j2
+</td>
+<td valign="top">
+policycoreutils,<br>
+selinux-policy-targeted
+</td>
+</tr>
+<tr>
+<th valign="top">
+pki-ca
+</th>
+<td valign="top">
+Certificate Authority
+</td>
+<td valign="top">
+cmake,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6-17,<br>
+ldapjdk,<br>
+nspr-devel,<br>
+nss-devel,<br>
+openldap-devel,<br>
+osutil,<br>
+pkgconfig,<br>
+policycoreutils,<br>
+selinux-policy-devel,<br>
+tomcatjss >= 6.0.0,<br>
+velocity,<br>
+xalan-j2,<br>
+xerces-j2
+</td>
+<td valign="top">
+java >= 1:1.6.0,<br>
+pki-ca-theme >= 9.0.0,<br>
+pki-common = %{version}-%{release},<br>
+pki-selinux = %{version}-%{release},<br>
+initscripts<br>
+<table>
+<tr>
+<td>Requires(post):&nbsp;&nbsp;</td>
+<td>chkconfig</td>
+</tr>
+<tr>
+<td>Requires(preun):&nbsp;&nbsp;</td>
+<td>chkconfig</td>
+</tr>
+<tr>
+<td>Requires(preun):&nbsp;&nbsp;</td>
+<td>initscripts</td>
+</tr>
+<tr>
+<td>Requires(postun):&nbsp;&nbsp;</td>
+<td>initscripts</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<th valign="top">
+pki-silent
+</th>
+<td valign="top">
+Java utility used for batch configuration of CA, DRM, OCSP, TKS, RA, and TPS subsystem instances
+</td>
+<td valign="top">
+cmake,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6-17,<br>
+ldapjdk,<br>
+nspr-devel,<br>
+nss-devel,<br>
+openldap-devel,<br>
+osutil,<br>
+pkgconfig,<br>
+policycoreutils,<br>
+selinux-policy-devel,<br>
+tomcatjss >= 6.0.0,<br>
+velocity,<br>
+xalan-j2,<br>
+xerces-j2
+</td>
+<td valign="top">
+java >= 1:1.6.0,<br>
+pki-common = %{version}-%{release}
+</td>
+</tr>
+<tr>
+<th valign="top">
+pki-core-debuginfo
+</th>
+<td valign="top">
+'pki-core' subpackage for debugging containing symbols for 'pki-symkey' and 'pki-native-tools'
+</td>
+<td valign="top">&nbsp;</td>
+<td valign="top">&nbsp;</td>
+</tr>
+<tr>
+<th bgcolor="darkgrey" colspan=4>'pki-kra' (svn+ssh://svn.fedorahosted.org/svn/pki/trunk/pki)</th>
+</tr>
+<tr>
+<th valign="top">
+pki-kra
+</th>
+<td valign="top">
+Data Recovery Manager
+</td>
+<td valign="top">
+cmake,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6-17,<br>
+nspr-devel,<br>
+nss-devel,<br>
+pki-common,<br>
+pki-util
+</td>
+<td valign="top">
+java >= 1:1.6.0,<br>
+pki-common,<br>
+pki-kra-theme,<br>
+pki-selinux,<br>
+initscripts<br>
+<table>
+<tr>
+<td>Requires(post):&nbsp;&nbsp;</td>
+<td>chkconfig</td>
+</tr>
+<tr>
+<td>Requires(preun):&nbsp;&nbsp;</td>
+<td>chkconfig</td>
+</tr>
+<tr>
+<td>Requires(preun):&nbsp;&nbsp;</td>
+<td>initscripts</td>
+</tr>
+<tr>
+<td>Requires(postun):&nbsp;&nbsp;</td>
+<td>initscripts</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<th bgcolor="darkgrey" colspan=4>'pki-ocsp' (svn+ssh://svn.fedorahosted.org/svn/pki/trunk/pki)</th>
+</tr>
+<tr>
+<th valign="top">
+pki-ocsp
+</th>
+<td valign="top">
+Online Certificate Status Protocol Manager
+</td>
+<td valign="top">
+cmake,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6-17,<br>
+nspr-devel,<br>
+nss-devel,<br>
+pki-common,<br>
+pki-util
+</td>
+<td valign="top">
+java >= 1:1.6.0,<br>
+pki-common,<br>
+pki-ocsp-theme,<br>
+pki-selinux,<br>
+initscripts<br>
+<table>
+<tr>
+<td>Requires(post):&nbsp;&nbsp;</td>
+<td>chkconfig</td>
+</tr>
+<tr>
+<td>Requires(preun):&nbsp;&nbsp;</td>
+<td>chkconfig</td>
+</tr>
+<tr>
+<td>Requires(preun):&nbsp;&nbsp;</td>
+<td>initscripts</td>
+</tr>
+<tr>
+<td>Requires(postun):&nbsp;&nbsp;</td>
+<td>initscripts</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<th bgcolor="darkgrey" colspan=4>'pki-ra' (svn+ssh://svn.fedorahosted.org/svn/pki/trunk/pki)</th>
+</tr>
+<tr>
+<th valign="top">
+pki-ra
+</th>
+<td valign="top">
+Registration Authority
+</td>
+<td valign="top">
+cmake,<br>
+nspr-devel,<br>
+nss-devel
+</td>
+<td valign="top">
+mod_nss >= 1.0.8,<br>
+mod_perl >= 1.99_16,<br>
+mod_revocator >= 1.0.3,<br>
+pki-native-tools,<br>
+pki-ra-theme,<br>
+pki-selinux,<br>
+pki-setup,<br>
+perl-DBD-SQLite,<br>
+sqlite,<br>
+/usr/sbin/sendmail,<br>
+initscripts<br>
+<table>
+<tr>
+<td>Requires(post):&nbsp;&nbsp;</td>
+<td>chkconfig</td>
+</tr>
+<tr>
+<td>Requires(preun):&nbsp;&nbsp;</td>
+<td>chkconfig</td>
+</tr>
+<tr>
+<td>Requires(preun):&nbsp;&nbsp;</td>
+<td>initscripts</td>
+</tr>
+<tr>
+<td>Requires(postun):&nbsp;&nbsp;</td>
+<td>initscripts</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<th bgcolor="darkgrey" colspan=4>'pki-tks' (svn+ssh://svn.fedorahosted.org/svn/pki/trunk/pki)</th>
+</tr>
+<tr>
+<th valign="top">
+pki-tks
+</th>
+<td valign="top">
+Token Key Service for Smartcards
+</td>
+<td valign="top">
+cmake,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6-17,<br>
+nspr-devel,<br>
+nss-devel,<br>
+pki-common,<br>
+pki-util
+</td>
+<td valign="top">
+java >= 1:1.6.0,<br>
+pki-common,<br>
+pki-selinux,<br>
+pki-tks-theme,<br>
+initscripts<br>
+<table>
+<tr>
+<td>Requires(post):&nbsp;&nbsp;</td>
+<td>chkconfig</td>
+</tr>
+<tr>
+<td>Requires(preun):&nbsp;&nbsp;</td>
+<td>chkconfig</td>
+</tr>
+<tr>
+<td>Requires(preun):&nbsp;&nbsp;</td>
+<td>initscripts</td>
+</tr>
+<tr>
+<td>Requires(postun):&nbsp;&nbsp;</td>
+<td>initscripts</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<th bgcolor="darkgrey" colspan=4>'pki-tps' (svn+ssh://svn.fedorahosted.org/svn/pki/trunk/pki)</th>
+</tr>
+<tr>
+<th valign="top">
+pki-tps
+</th>
+<td valign="top">
+Token Processing System for Smartcards
+</td>
+<td valign="top">
+cmake,<br>
+apr-devel,<br>
+apr-util-devel,<br>
+cyrus-sasl-devel,<br>
+httpd-devel,<br>
+openldap-devel,<br>
+nspr-devel,<br>
+nss-devel,<br>
+pcre-devel,<br>
+svrcore-devel,<br>
+zlib,<br>
+zlib-devel
+</td>
+<td valign="top">
+mod_nss,<br>
+mod_perl,<br>
+mod_revocator,<br>
+openldap-clients,<br>
+perl-Mozilla-LDAP,<br>
+pki-native-tools,<br>
+pki-selinux,<br>
+pki-setup,<br>
+pki-tps-theme,<br>
+initscripts<br>
+<table>
+<tr>
+<td>Requires(post):&nbsp;&nbsp;</td>
+<td>chkconfig</td>
+</tr>
+<tr>
+<td>Requires(preun):&nbsp;&nbsp;</td>
+<td>chkconfig</td>
+</tr>
+<tr>
+<td>Requires(preun):&nbsp;&nbsp;</td>
+<td>initscripts</td>
+</tr>
+<tr>
+<td>Requires(postun):&nbsp;&nbsp;</td>
+<td>initscripts</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<th valign="top">
+pki-tps-debuginfo
+</th>
+<td valign="top">
+'pki-tps' subpackage for debugging.
+</td>
+<td valign="top">&nbsp;</td>
+<td valign="top">&nbsp;</td>
+</tr>
+<tr>
+<th bgcolor="darkgrey" colspan=4>'pki-console' (svn+ssh://svn.fedorahosted.org/svn/pki/trunk/pki)</th>
+</tr>
+<tr>
+<th valign="top">
+pki-console
+</th>
+<td valign="top">
+PKI console for management of the CA, DRM, OCSP, and TKS subsystems
+</td>
+<td valign="top">
+cmake,<br>
+idm-console-framework,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6-17,<br>
+ldapjdk,<br>
+nspr-devel,<br>
+nss-devel,<br>
+pki-util
+</td>
+<td valign="top">
+idm-console-framework,<br>
+java >= 1:1.6.0,<br>
+jss >= 4.2.6-17,<br>
+ldapjdk,<br>
+pki-console-theme
+</td>
+</tr>
+<tr>
+<th bgcolor="darkgrey" colspan=4>'dogtag-pki' (svn+ssh://svn.fedorahosted.org/svn/pki/trunk/pki)</th>
+</tr>
+<tr>
+<th valign="top">
+dogtag-pki
+</th>
+<td valign="top">
+Meta package used for convenient installation of all 'dogtag-pki' "flavored" services:<br>
+<ul>
+<table>
+<tr>
+<td>Obsoletes:&nbsp;&nbsp;</td>
+<td>ipa-pki</td>
+</tr>
+<tr>
+<td>Conflicts:&nbsp;&nbsp;</td>
+<td> redhat-pki</td>
+</tr>
+</table>
+</ul>
+</td>
+<td valign="top">&nbsp;</td>
+<td valign="top">
+jss >= 4.2.6-17,<br>
+osutil >= 2.0.1,<br>
+tomcatjss >= 6.0.0,<br>
+jss-javadoc >= 4.2.6-17,<br>
+dogtag-pki-ca-theme >= 9.0.0,<br>
+dogtag-pki-common-theme >= 9.0.0,<br>
+dogtag-pki-console-theme >= 9.0.0,<br>
+dogtag-pki-kra-theme >= 9.0.0,<br>
+dogtag-pki-ocsp-theme >= 9.0.0,<br>
+dogtag-pki-ra-theme >= 9.0.0,<br>
+dogtag-pki-tks-theme >= 9.0.0,<br>
+dogtag-pki-tps-theme >= 9.0.0,<br>
+pki-ca >= 9.0.0,<br>
+pki-common >= 9.0.0,<br>
+pki-java-tools >= 9.0.0,<br>
+pki-native-tools >= 9.0.0,<br>
+pki-selinux >= 9.0.0,<br>
+pki-setup >= 9.0.0,<br>
+pki-silent >= 9.0.0,<br>
+pki-symkey >= 9.0.0,<br>
+pki-util >= 9.0.0,<br>
+pki-common-javadoc >= 9.0.0,<br>
+pki-java-tools-javadoc >= 9.0.0,<br>
+pki-util-javadoc >= 9.0.0,<br>
+pki-kra >= 9.0.0,<br>
+pki-ocsp >= 9.0.0,<br>
+pki-ra >= 9.0.0,<br>
+pki-tks >= 9.0.0,<br>
+pki-tps >= 9.0.0,<br>
+pki-console >= 9.0.0,<br>
+esc >= 1.1.0
+</td>
+</tr>
+</table>
+
+
+
+The following table lists the PKI "support" component packages which are separately managed by various members of the PKI team with a brief description of their purpose along with their Fedora build and runtime dependencies:
+
+<table border=1>
+<tr>
+<th width="20%" bgcolor="#5252bf"><b><font color="white">PKI Support Component</font></b></th>
+<th width="40%" bgcolor="#5252bf"><b><font color="white">Description</font></b></th>
+<th width="20%" bgcolor="#5252bf"><b><font color="white">Fedora Build Dependencies</font></b></th>
+<th width="20%" bgcolor="#5252bf"><b><font color="white">Fedora Runtime Dependencies</font></b></th>
+</tr>
+<tr>
+<th bgcolor="darkgrey" colspan=4>'osutil' (ssh://git.fedorahosted.org/git/osutil.git)</th>
+</tr>
+<tr>
+<th valign="top">
+osutil
+</th>
+<td valign="top">
+A Java Native Interface (JNI) library composed of operating system utilities - PKI subsystems only utilize the various Base64 and getpid() functions
+</td>
+<td valign="top">
+cmake,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+nspr-devel,<br>
+nss-devel,<br>
+pkgconfig
+</td>
+<td valign="top">
+java >= 1:1.6.0,<br>
+jpackage-utils,<br>
+nss
+</td>
+</tr>
+<tr>
+<th valign="top">
+osutil-debuginfo
+</th>
+<td valign="top">
+'osutil' subpackage for debugging.
+</td>
+<td valign="top">&nbsp;</td>
+<td valign="top">&nbsp;</td>
+</tr>
+<tr>
+<th bgcolor="darkgrey" colspan=4>'tomcatjss' (svn+ssh://svn.fedorahosted.org/svn/tomcatjss/trunk/tomcatjss)</th>
+</tr>
+<tr>
+<th valign="top">
+tomcatjss
+</th>
+<td valign="top">
+A Java Secure Socket Extension (JSSE) implementation using Java Security Services (JSS) for Tomcat 6.<br>
+<ul>
+<table>
+<tr>
+<td>Conflicts:&nbsp;&nbsp;</td>
+<td>tomcat-native</td>
+</tr>
+</table>
+</ul>
+</td>
+<td valign="top">
+ant,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+tomcat6 >= 6.0.30-6,<br>
+jss >= 4.2.6-17
+</td>
+<td valign="top">
+java >= 1:1.6.0,<br>
+jpackage-utils,<br>
+tomcat6 >= 6.0.30-6,<br>
+jss >= 4.2.6-17
+</td>
+</tr>
+</table>
+
+== Dogtag 1.3 and Earlier ==
+
+'''IMPORTANT:'''   For ALL of the following components, "{flavor}" equals "dogtag"!
+
+The following table lists all PKI component packages with a brief description of their purpose along with their Fedora/EPEL build and runtime dependencies:
+
+<table border=1>
+<tr>
+<th width="20%">PKI Component</th>
+<th width="40%">Description</th>
+<th width="20%">Fedora/EPEL Build Dependencies</th>
+<th width="20%">Fedora/EPEL Runtime Dependencies</th>
+</tr>
+<tr>
+<th valign="top">
+osutil
+</th>
+<td valign="top">
+A Java Native Interface (JNI) library composed of operating system utilities - PKI subsystems only utilize the various Base64 and getpid() functions
+</td>
+<td valign="top">
+ant,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+nspr-devel >= 4.6.99,<br>
+nss-devel >= 3.12.3.99,<br>
+pkgconfig
+</td>
+<td valign="top">
+java >= 1:1.6.0,<br>
+jpackage-utils,<br>
+nss >= 3.12.3.99
+</td>
+</tr>
+<tr>
+<th valign="top">
+osutil-debuginfo
+</th>
+<td valign="top">
+'osutil' subpackage for debugging.
+</td>
+<td valign="top">&nbsp;</td>
+<td valign="top">&nbsp;</td>
+</tr>
+<tr>
+<th valign="top">
+pki-symkey<br>
+</th>
+<td valign="top">
+A Java Native Interface (JNI) library composed of symmetric key functions
+
+<table>
+<tr>
+<td valign="top">'''<font color="RED">NOTE:&nbsp;&nbsp;</font>'''</td>
+<td>'''<font color="RED">Prior to Dogtag 1.3, the 'pki-symkey' RPM was simply called 'symkey' and contained no subpackages!</font>'''</td>
+</tr>
+</table>
+</td>
+<td valign="top">
+ant,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6,<br>
+nspr-devel >= 4.6.99,<br>
+nss-devel >= 3.12.3.99,<br>
+pkgconfig
+</td>
+<td valign="top">
+java >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6,<br>
+nss >= 3.12.3.99 
+</td>
+</tr>
+<tr>
+<th valign="top">
+pki-symkey-debuginfo
+</th>
+<td valign="top">
+'pki-symkey' subpackage for debugging.
+</td>
+<td valign="top">&nbsp;</td>
+<td valign="top">&nbsp;</td>
+</tr>
+<tr>
+<th valign="top">
+pki-native-tools
+</th>
+<td valign="top">
+Various stand-alone PKI tools created from C, C++, Perl, bash, etc.
+</td>
+<td valign="top">
+cyrus-sasl-devel,<br>
+mozldap-devel,<br>
+nspr-devel >= 4.6.99,<br>
+nss-devel >= 3.12.3.99,<br>
+svrcore-devel
+</td>
+<td valign="top">
+mozldap-tools,<br>
+nss >= 3.12.3.99,<br>
+nss-tools >= 3.12.3.99
+</td>
+</tr>
+<tr>
+<th valign="top">
+pki-native-tools-debug
+</th>
+<td valign="top">
+'pki-native-tools' subpackage for debugging.
+</td>
+<td valign="top">&nbsp;</td>
+<td valign="top">&nbsp;</td>
+</tr>
+<tr>
+<th valign="top">
+pki-util
+</th>
+<td valign="top">
+Low-level PKI utilities
+</td>
+<td valign="top">
+ant,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6,<br>
+ldapjdk,<br>
+osutil,<br>
+xerces-j2
+</td>
+<td valign="top">
+java >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6,<br>
+ldapjdk
+</td>
+</tr>
+<tr>
+<th valign="top">
+pki-util-javadoc
+</th>
+<td valign="top">
+'pki-util' Javadocs.
+</td>
+<td valign="top">&nbsp;</td>
+<td valign="top">%{name} = %{version}-%{release}</td>
+</tr>
+<tr>
+<th valign="top">
+pki-setup
+</th>
+<td valign="top">
+Perl scripts intended for management of CA, DRM, OCSP, RA, TKS, and TPS subsystem instances
+</td>
+<td valign="top">
+ant
+</td>
+<td valign="top">
+perl-Crypt-SSLeay,<br>
+policycoreutils,<br>
+%{?fc11:policycoreutils-python},<br>
+%{?fc12:policycoreutils-python}
+</td>
+</tr>
+<tr>
+<th valign="top">
+pki-java-tools
+</th>
+<td valign="top">
+Various PKI tools created as stand-alone Java applications.
+</td>
+<td valign="top">
+ant,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6,<br>
+osutil,<br>
+pki-util
+</td>
+<td valign="top">
+java >= 1:1.6.0,<br>
+pki-native-tools,<br>
+pki-util
+</td>
+</tr>
+<tr>
+<th valign="top">
+pki-java-tools-javadoc
+</th>
+<td valign="top">
+'pki-java-tools' Javadocs.
+</td>
+<td valign="top">&nbsp;</td>
+<td valign="top">%{name} = %{version}-%{release}</td>
+</tr>
+<tr>
+<th valign="top">
+{flavor}-pki-common-ui
+</th>
+<td valign="top">
+User interface "flavor" for pki-common component<br>Provides:  pki-common-ui
+</td>
+<td valign="top">
+ant
+</td>
+<td valign="top">&nbsp;</td>
+</tr>
+<tr>
+<th valign="top">
+pki-common
+</th>
+<td valign="top">
+Common PKI functions shared by the CA, DRM, OCSP, and TKS subsystems
+</td>
+<td valign="top">
+ant,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6,<br>
+ldapjdk,<br>
+osutil,<br>
+pki-symkey,<br>
+pki-util,<br>
+velocity,<br>
+xalan-j2
+</td>
+<td valign="top">
+java >= 1:1.6.0,<br>
+jss >= 4.2.6,<br>
+osutil,<br>
+pki-common-ui,<br>
+pki-java-tools,<br>
+pki-setup,<br>
+pki-symkey,<br>
+tomcatjss,<br>
+%{_javadir}/ldapjdk.jar,<br>
+%{_javadir}/velocity.jar,<br>
+%{_javadir}/xalan-j2.jar,<br>
+%{_javadir}/xerces-j2.jar,<br>
+velocity
+</td>
+</tr>
+<tr>
+<th valign="top">
+pki-common-javadoc
+</th>
+<td valign="top">
+'pki-common' Javadocs.
+</td>
+<td valign="top">&nbsp;</td>
+<td valign="top">pki-common = %{version}-%{release}</td>
+</tr>
+<tr>
+<th valign="top">
+{flavor}-pki-console-ui
+</th>
+<td valign="top">
+User interface "flavor" for pki-console component<br>Provides:  pki-console-ui
+</td>
+<td valign="top">
+ant,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6,<br>
+ldapjdk
+</td>
+<td valign="top">
+java >= 1:1.6.0,<br>
+jss >= 4.2.6,<br>
+ldapjdk
+</td>
+</tr>
+<tr>
+<th valign="top">
+pki-console
+</th>
+<td valign="top">
+PKI console for management of the CA, DRM, OCSP, and TKS subsystems
+</td>
+<td valign="top">
+ant,<br>
+idm-console-framework,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6,<br>
+ldapjdk,<br>
+pki-util
+</td>
+<td valign="top">
+idm-console-framework,<br>
+java >= 1:1.6.0,<br>
+jss >= 4.2.6,<br>
+ldapjdk,<br>
+pki-console-ui
+</td>
+</tr>
+<tr>
+<th valign="top">
+pki-selinux
+</th>
+<td valign="top">
+Selinux policies used by the PKI components.
+</td>
+<td valign="top">
+ant,<br>
+m4,<br>
+make,<br>
+policycoreutils,<br>
+selinux-policy-devel
+</td>
+<td valign="top">
+policycoreutils,<br>
+selinux-policy-targeted
+</td>
+</tr>
+<tr>
+<th valign="top">
+pki-silent
+</th>
+<td valign="top">
+Java utility used for batch configuration of CA, DRM, OCSP, TKS, RA, and TPS subsystem instances
+</td>
+<td valign="top">
+ant,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6,<br>
+pki-common,<br>
+pki-util
+</td>
+<td valign="top">
+java >= 1:1.6.0,<br>
+pki-common
+</td>
+</tr>
+<tr>
+<th valign="top">
+{flavor}-pki-ca-ui
+</th>
+<td valign="top">
+User interface "flavor" for pki-ca component<br>Provides:  pki-ca-ui
+</td>
+<td valign="top">
+ant
+</td>
+<td valign="top">&nbsp;</td>
+</tr>
+<tr>
+<th valign="top">
+pki-ca
+</th>
+<td valign="top">
+Certificate Authority
+</td>
+<td valign="top">
+ant,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6,<br>
+pki-common,<br>
+pki-util,<br>
+tomcatjss
+</td>
+<td valign="top">
+java >= 1:1.6.0,<br>
+pki-ca-ui,<br>
+pki-common,<br>
+pki-console,<br>
+pki-selinux,<br>
+pki-silent,<br>
+(post):chkconfig,<br>
+(preun):chkconfig,<br>
+(preun):initscripts,<br>
+(postun):initscripts
+</td>
+</tr>
+<tr>
+<th valign="top">
+{flavor}-pki-kra-ui
+</th>
+<td valign="top">
+User interface "flavor" for pki-kra component<br>Provides:  pki-kra-ui
+</td>
+<td valign="top">
+ant
+</td>
+<td valign="top">&nbsp;</td>
+</tr>
+<tr>
+<th valign="top">
+pki-kra
+</th>
+<td valign="top">
+Data Recovery Manager
+</td>
+<td valign="top">
+ant,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6,<br>
+pki-common,<br>
+pki-util,<br>
+tomcatjss
+</td>
+<td valign="top">
+java >= 1:1.6.0,<br>
+pki-common,<br>
+pki-console,<br>
+pki-kra-ui,<br>
+pki-selinux,<br>
+pki-silent,<br>
+(post):chkconfig,<br>
+(preun):chkconfig,<br>
+(preun):initscripts,<br>
+(postun):initscripts
+</td>
+</tr>
+
+
+
+<tr>
+<th valign="top">
+{flavor}-pki-ocsp-ui
+</th>
+<td valign="top">
+User interface "flavor" for pki-ocsp component<br>Provides:  pki-ocsp-ui
+</td>
+<td valign="top">
+ant
+</td>
+<td valign="top">&nbsp;</td>
+</tr>
+<tr>
+<th valign="top">
+pki-ocsp
+</th>
+<td valign="top">
+Online Certificate Status Protocol Manager
+</td>
+<td valign="top">
+ant,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6,<br>
+pki-common,<br>
+pki-util,<br>
+tomcatjss
+</td>
+<td valign="top">
+java >= 1:1.6.0,<br>
+pki-common,<br>
+pki-console,<br>
+pki-ocsp-ui,<br>
+pki-selinux,<br>
+pki-silent,<br>
+(post):chkconfig,<br>
+(preun):chkconfig,<br>
+(preun):initscripts,<br>
+(postun):initscripts
+</td>
+</tr>
+<tr>
+<th valign="top">
+{flavor}-pki-tks-ui
+</th>
+<td valign="top">
+User interface "flavor" for pki-tks component<br>Provides:  pki-tks-ui
+</td>
+<td valign="top">
+ant
+</td>
+<td valign="top">&nbsp;</td>
+</tr>
+<tr>
+<th valign="top">
+pki-tks
+</th>
+<td valign="top">
+Token Key Service for Smartcards
+</td>
+<td valign="top">
+ant,<br>
+java-devel >= 1:1.6.0,<br>
+jpackage-utils,<br>
+jss >= 4.2.6,<br>
+pki-common,<br>
+pki-util,<br>
+tomcatjss
+</td>
+<td valign="top">
+java >= 1:1.6.0,<br>
+pki-tks-ui,<br>
+pki-common,<br>
+pki-console,<br>
+pki-selinux,<br>
+pki-silent,<br>
+(post):chkconfig,<br>
+(preun):chkconfig,<br>
+(preun):initscripts,<br>
+(postun):initscripts
+</td>
+</tr>
+<tr>
+<th valign="top">
+{flavor}-pki-ra-ui
+</th>
+<td valign="top">
+User interface "flavor" for ra component<br>Provides:  pki-ra-ui
+</td>
+<td valign="top">
+ant
+</td>
+<td valign="top">&nbsp;</td>
+</tr>
+<tr>
+<th valign="top">
+pki-ra
+</th>
+<td valign="top">
+Registration Authority
+</td>
+<td valign="top">
+ant
+</td>
+<td valign="top">
+mod_nss >= 1.0.7,<br>
+mod_perl >= 1.99_16,<br>
+mozldap >= 6.0.2,<br>
+pki-native-tools,<br>
+pki-ra-ui,<br>
+pki-selinux,<br>
+pki-setup,<br>
+pki-silent,<br>
+perl-DBD-SQLite,<br>
+sendmail,<br>
+sqlite,<br>
+(post):chkconfig,<br>
+(preun):chkconfig,<br>
+(preun):initscripts,<br>
+(postun):initscripts
+</td>
+</tr>
+<tr>
+<th valign="top">
+{flavor}-pki-tps-ui
+</th>
+<td valign="top">
+User interface "flavor" for tps component<br>Provides:  pki-tps-ui
+</td>
+<td valign="top">
+ant
+</td>
+<td valign="top">&nbsp;</td>
+</tr>
+<tr>
+<th valign="top">
+pki-tps
+</th>
+<td valign="top">
+Token Processing System for Smartcards
+</td>
+<td valign="top">
+apr-devel,<br>
+apr-util-devel,<br>
+cyrus-sasl-devel,<br>
+httpd-devel >= 2.2.3,<br>
+mozldap-devel,<br>
+nspr-devel >= 4.6.99,<br>
+nss-devel >= 3.12.3.99,<br>
+pcre-devel,<br>
+svrcore-devel,<br>
+zlib,<br>
+zlib-devel
+</td>
+<td valign="top">
+mod_nss >= 1.0.7,<br>
+mod_perl,<br>
+mozldap,<br>
+pki-native-tools,<br>
+pki-selinux,<br>
+pki-setup,<br>
+pki-silent,<br>
+pki-tps-ui,<br>
+(post):chkconfig,<br>
+(preun):chkconfig,<br>
+(preun):initscripts,<br>
+(postun):initscripts
+</td>
+</tr>
+<tr>
+<th valign="top">
+pki-tps-debuginfo
+</th>
+<td valign="top">
+'pki-tps' subpackage for debugging.
+</td>
+<td valign="top">&nbsp;</td>
+<td valign="top">&nbsp;</td>
+</tr>
+<tr>
+<th valign="top">
+pki-tps-devel
+</th>
+<td valign="top">
+Symlinks to the {flavor} Certificate System Token Processing System library files required to link executables.
+</td>
+<td valign="top">&nbsp;</td>
+<td valign="top">%{name} = %{version}-%{release}</td>
+</tr>
+<tr>
+<th valign="top">
+{flavor}-pki
+</th>
+<td valign="top">
+Meta package used for convenient installation of all '{flavor}-pki' services.
+</td>
+<td valign="top">&nbsp;</td>
+<td valign="top">
+{flavor}-pki-common-ui,<br>
+{flavor}-pki-console-ui,<br>
+{flavor}-pki-ca-ui,<br>
+{flavor}-pki-kra-ui,<br>
+{flavor}-pki-ocsp-ui,<br>
+{flavor}-pki-ra-ui,<br>
+{flavor}-pki-tks-ui,<br>
+{flavor}-pki-tps-ui,<br>
+pki-ca,<br>
+pki-kra,<br>
+pki-ocsp,<br>
+pki-ra,<br>
+pki-tks,<br>
+pki-tps,<br>
+esc,<br>
+pki-common-javadoc,<br>
+pki-java-tools-javadoc,<br>
+pki-util-javadoc
+</td>
+</tr>
+<tr>
+<th valign="top">
+<strike>
+pki-manage
+</strike>
+</th>
+<td valign="top">
+<strike>
+Perl scripts intended for management of CA, DRM, OCSP, RA, TKS, and TPS subsystems
+</strike>
+
+<table>
+<tr>
+<td valign="top">'''<font color="RED">NOTE:&nbsp;&nbsp;</font>'''</td>
+<td>'''<font color="RED">As of Dogtag 1.3, the 'pki-manage' RPM has been 'discontinued' on Fedora/EPEL platforms in favor of 'yum' and 'yum-utils'!</font>'''</td>
+</tr>
+</table>
+</td>
+<td valign="top">
+<strike>
+ant
+</strike>
+</td>
+<td valign="top">
+<strike>
+perl >= 5.8.0
+</strike>
+</td>
+</tr>
+<tr>
+<th valign="top">
+<strike>
+pki-migrate
+</strike>
+</th>
+<td valign="top">
+<strike>
+Pre-built applications created to migrate data between various versions of Certificate System
+</strike>
+
+<table>
+<tr>
+<td valign="top">'''<font color="RED">NOTE:&nbsp;&nbsp;</font>'''</td>
+<td>'''<font color="RED">As of Dogtag 1.3, the 'pki-migrate' RPM has been 'discontinued'!</font>'''</td>
+</tr>
+</table>
+</td>
+<td valign="top">
+<strike>
+ant<br>
+java-devel >= 1:1.6.0<br>
+jpackage-utils
+</strike>
+</td>
+<td valign="top">
+<strike>
+java >= 1:1.6.0
+</strike>
+</td>
+</tr>
+</table>
+
+
+[[Category:Tech Notes]]

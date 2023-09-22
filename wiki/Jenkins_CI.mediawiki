@@ -1,0 +1,35 @@
+= Overview =
+
+PKI uses Jenkins CI to run the tests on all patches submitted via [[Gerrit]].
+
+See [[Jenkins CI Design]] and [[Verification bot]].
+
+= Jenkins CI Setup =
+
+See [[Jenkins CI Setup]].
+
+= Troubleshooting =
+
+If Jenkins CI failed, follow this procedure to troubleshoot the problem:
+
+* Open Jenkins job that failed, e.g. http://pki-jenkins-fedora.usersys.redhat.com:8080/job/Gerrit-Travis-Integration-Job/7/
+* Click Console Output.
+
+If one of the Travis jobs failed:
+
+'''To check the logs:'''
+* Click on the transfer.sh URLs posted in the comment
+* The last part of the URL provides the log name e.g. https://transfer.sh/vsHte/pkitravis_compose_pki_core_packages.txt -> provides results of compose_pki_core_packages
+
+'''To check the build console output:'''
+* Open the Travis Job URL posted e.g. https://travis-ci.org/dogtagpki/pki-verification-ci/jobs/365697976
+* Inspect the console output
+* See [[Travis CI#Troubleshooting|Travis CI Troubleshooting]] to determine the cause of the problem.
+
+If there is a problem with the patch, submit a new patch in [[Gerrit]] and CI will rerun automatically.
+
+If there is a problem with the network or with Jenkins itself, add a "recheck" comment in Gerrit to rerun CI.
+
+= References =
+
+* [[Continuous Integration]]

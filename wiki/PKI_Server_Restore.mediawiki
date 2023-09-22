@@ -1,0 +1,108 @@
+= Overview =
+
+This page describes the process to restore a PKI server instance from a [[PKI Server Backup|backup]].
+
+== Current Limitations ==
+
+Currently this procedure has some limitations:
+
+* The backup should be restored on a machine with the same hostname since the hostname of the original server is stored in various server files and database entries.
+* The backup should be restored on a machine with the same PKI version since the server files and database might have changed in different versions.
+
+In the future it might be possible to restore the instance on a machine with a different hostname and also migrate it to a newer version.
+
+= Restoring LDAP Database =
+
+First, create a DS instance:
+
+<pre>
+$ setup-ds.pl --silent -- \
+    General.FullMachineName=$HOSTNAME \
+    General.SuiteSpotUserID=nobody \
+    General.SuiteSpotGroup=nobody \
+    slapd.ServerPort=389 \
+    slapd.ServerIdentifier=localhost \
+    slapd.Suffix=dc=example,dc=com \
+    "slapd.RootDN=cn=Directory Manager" \
+    slapd.RootDNPwd=Secret.123
+</pre>
+
+Create a backend database for each subsystem:
+
+<pre>
+$ ldapadd -x -D "cn=Directory Manager" -w Secret.123 << EOF
+dn: cn=ca,cn=ldbm database,cn=plugins,cn=config
+objectClass: top
+objectClass: nsBackendInstance
+objectClass: extensibleObject
+cn: ca
+nsslapd-suffix: dc=ca,dc=pki,dc=example,dc=com
+EOF
+</pre>
+
+Also create a mapping entry for each backend database:
+
+<pre>
+$ ldapadd -x -D "cn=Directory Manager" -w Secret.123 << EOF
+dn: cn="dc=ca,dc=pki,dc=example,dc=com",cn=mapping tree,cn=config
+objectClass: top
+objectClass: extensibleObject
+objectClass: nsMappingTree
+cn: dc=ca,dc=pki,dc=example,dc=com
+nsslapd-backend: ca
+nsslapd-state: backend
+EOF
+</pre>
+
+Import PKI schema:
+
+<pre>
+$ ldapmodify -x -D "cn=Directory Manager" -w Secret.123 -f /usr/share/pki/server/conf/schema.ldif
+</pre>
+
+Update database configuration:
+
+<pre>
+$ ldapmodify -x -D "cn=Directory Manager" -w Secret.123 -f /usr/share/pki/server/conf/database.ldif
+</pre>
+
+Stop the instance:
+
+<pre>
+$ systemctl stop dirsrv@localhost.service
+</pre>
+
+Import the main database with the following command:
+
+<pre>
+$ ldif2db -V -Z localhost -n userRoot -i $PWD/userRoot.ldif
+</pre>
+
+Import each subsystem database with the following command:
+
+<pre>
+$ ldif2db -V -Z localhost -n ca -i $PWD/ca.ldif
+</pre>
+
+Restart the instance:
+
+<pre>
+$ systemctl start dirsrv@localhost.service
+</pre>
+
+Verify with the following commands:
+
+<pre>
+$ ldapsearch -x -D "cn=Directory Manager" -w Secret.123 -b "dc=pki,dc=example,dc=com"
+$ ldapsearch -x -D "cn=Directory Manager" -w Secret.123 -b "dc=ca,dc=pki,dc=example,dc=com"
+</pre>
+
+= Restoring Server Files =
+
+See [https://github.com/dogtagpki/pki/wiki/Restoring-PKI-Server Restoring PKI Server].
+
+= See Also =
+
+* [[PKI Server]]
+* [[PKI Server Backup]]
+* [[DS Restore]]

@@ -1,0 +1,88 @@
+= Overview =
+
+This is a proposal for improving how the subsystem certificates should be handled.
+
+Subsystem certificate is a certificate owned by each subsystem and used to communicate with other subsystems. The certificate will be mapped into a user on the target subsystem such that it can be used as identification and authorization.
+
+= Deployment Scenarios =
+
+There are 2 deployment scenarios that should be considered:
+* separate instances
+* shared instance
+
+In separate instances each subsystem will have unique certificates. However, in a shared instance all subsystems will share the same certificate, so it's not possible to distinguish one subsystem from another.
+
+= Subsystem Registration =
+
+If a subsystem needs to communicate to another subsystem, the initiator will need to register its subsystem certificate in the target subsystem. This is done using RegisterUser servlet. For each unique certificate it receives, the target subsystem will create a unique subsystem user with the appropriate authorization. If a certificate is already registered (by another subsystem in a shared instance), it will reuse the same user.
+
+= Certificate Mapping =
+
+The subsystem certificate will be mapped into a subsystem user in the target subsystem using the certificate ID stored in the description attribute. Certificate ID consists of version number, serial number, issuer DN, and subject DN, for example:
+
+ 2;4;CN=CA Signing Certificate,O=EXAMPLE;CN=Subsystem Certificate,O=EXAMPLE
+
+With shared instance the certificate will be mapped into the following subsystem user:
+
+ PKI-<hostname>-<port>
+
+With separate instances the certificate will be mapped into the following subsystem user:
+
+ <subsystem>-<hostname>-<port>
+
+For example, in a shared instance CA and TPS certificates will be mapped into the following KRA users:
+
+ PKI-server.example.com-8443
+
+But if they are in separate instances they will be mapped into:
+
+ CA-server1.example.com-8443
+ TPS-server2.example.com-8443
+
+= Authorization =
+
+The subsystem users should be added into the agents group of each subsystem in order to work with connectors.
+
+= Required Changes =
+
+There are some changes required to implement this proposal.
+
+== Subsystem username mismatch ==
+
+[https://fedorahosted.org/pki/ticket/1011 Ticket #1011]: Currently the subsystem user is named based on the first subsystem that registers the certificate. On shared instance the second subsystem registering the same certificate will get the same user as the first subsystem. While the mapping works fine, it could be confusing.
+
+For example, when KRA receives CA certificate registration it will create a CA-<hostname>-<port> user.
+Later when KRA receives TPS certificate registration it will reuse the same user instead of TPS-<hostname>-<port>.
+
+Proposed changes: on shared instance the CA and TPS certificate should be mapped to a generic PKI-<hostname>-<port> user. A manual database upgrade procedure may be needed to change the user name in existing database.
+
+Related issue: The pki_shared_db flag is used inconsistently across subsystems. By default, the flag is set to False in CA, and true in other subsystems, although they are all using the same database.
+
+== Mapping conflict ==
+
+[https://fedorahosted.org/pki/ticket/1012 Ticket #1012]: Currently the subsystem certificate may be mapped any of these users:
+ <subsystem>-<hostname>-<port> (subsystem user)
+ pkidbuser                     (LDAP user)
+This is because both users have a description attribute pointing to the same certificate. There is no guarantee which user the certificate will actually be mapped to.
+
+Proposed changes: the description attribute should be removed from pkidbuser so the subsystem certificate will always be mapped to the subsystem user only. The pkidbuser is only used to access the LDAP server and the certificate mapping is done using seeAlso attribute, so this change should not affect LDAP authentication.
+
+In the future the pkidbuser might be moved into a separate tree ([https://fedorahosted.org/pki/ticket/1009 Ticket #1009]). This will require a manual database upgrade procedure to update existing instances.
+
+== Unnecessary subsystem user in CA ==
+
+[https://fedorahosted.org/pki/ticket/1013 Ticket #1013]: The CA creates a CA-<hostname>-<port> subsystem user during installation. The user is added by CertUtil.addUserCertificate(). There's a possibility this user is not actually needed, so some investigations need to be done. If it's not needed, the user should not be created in the first place.
+
+== Incorrect authorization ==
+
+[https://fedorahosted.org/pki/ticket/990 Ticket #990]: Currently the subsystem user is added to the Agents group. The connector framework requires that the user is added Trusted Managers. It's unclear whether the subsystem user still needs to remain in Agents group too.
+
+Proposed changes: assuming the user doesn't need to be in Agents group anymore, the RegisterUser servlet in all subsystems can be modified to add the user into Trusted Managers instead. This will require a new upgrade script to update the servlet configuration in the existing instances, and a manual database upgrade procedure to fix the group membership in the existing database.
+
+This ticket is invalid.
+
+== Description attribute not indexed in TPS ==
+
+[https://fedorahosted.org/pki/ticket/979 Ticket #979]: Currently the description attribute is not indexed in TPS. This will affect the authentication performance.
+
+Proposed changes: new index should be added for the description attribute. No upgrade script is needed because there is no backward compatibility support.

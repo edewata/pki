@@ -1,0 +1,67 @@
+= Installation =
+
+To install Cockpit:
+
+<pre>
+$ dnf install cockpit
+</pre>
+
+To enable Cockpit:
+
+<pre>
+$ systemctl enable --now cockpit.socket
+</pre>
+
+= SSL Certificate =
+
+SSL certificate should be stored in /etc/cockpit/ws-certs.d with a .cert extension.
+The file should contain the certificate and its private key.
+
+To check which certificate cockpit-ws will use:
+
+<pre>
+$ remotectl certificate
+</pre>
+
+See [https://cockpit-project.org/guide/133/https.html#https-certificates Cockpit Certificates].
+
+= SSL Ciphers =
+
+SSL ciphers are defined in /etc/systemd/system/cockpit.service.d/ssl.conf, for example:
+
+<pre>
+[Service]
+Environment=G_TLS_GNUTLS_PRIORITY=NORMAL:%COMPAT
+</pre>
+
+= Authentication =
+
+When running as a container cockpit will establish SSH to the underlying host.
+
+Cockpit can use TLS client certificates for authenticating users.
+This requires the host to be in an Identity Management domain like FreeIPA or Active Directory, which can associate certificates to users.
+
+See also:
+* [https://cockpit-project.org/guide/latest/authentication Cockpit Authentication]
+* [https://cockpit-project.org/guide/latest/cert-authentication Certificate/smart card authentication]
+
+= Cockpit API =
+
+Cockpit has API available for writing packages. There is no API available for external callers to invoke via HTTP, REST or otherwise.
+
+See also:
+* [https://cockpit-project.org/guide/latest/packages.html#package-api Using Cockpit API]
+* [https://cockpit-project.org/guide/latest/development.html Developer Guide]
+* [https://cockpit-project.org/blog/creating-plugins-for-the-cockpit-user-interface.html Creating Plugins for the Cockpit User Interface]
+
+= Containerization =
+
+See also:
+* [https://cockpit-project.org/guide/133/feature-kubernetes.html Cockpit Kubernetes]
+* [https://cockpit-project.org/guide/latest/feature-systemd Cockpit Systemd]
+* [https://developers.redhat.com/blog/2019/04/24/how-to-run-systemd-in-a-container/ How to run systemd in a container]
+
+= See Also =
+
+* [https://cockpit-project.org Cockpit Project]
+* [https://github.com/cockpit-project/cockpit GitHub Cockpit]

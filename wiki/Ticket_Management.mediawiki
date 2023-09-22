@@ -1,0 +1,117 @@
+= Overview =
+
+This is a proposal to improve the ticket management process by utilizing the ticket milestone and priority more effectively and using offline triage.
+
+= Definitions =
+
+== Release Cycle ==
+
+The PKI release cycles are based on minor versions (e.g. 10.3, 10.4). Generally each cycle consists of the following phases:
+* planning
+* development
+* maintenance
+
+== Milestone ==
+
+Project milestone defines the state of the development. In the issue tracking tool (e.g. Trac), milestones can be defined to determine when a ticket should be addressed and to see what behavior can be expected from a particular milestone.
+
+Generally there are several types of milestones:
+* backlog (e.g. 10.3, 10.4, future): The backlog defines the scope of a particular cycle. This milestone should contain all the tickets that are planned to be addressed eventually in the cycle. This milestone should remain open as long as this minor version is still maintained.
+* release milestones:
+** alpha (e.g. 10.4.0a1, 10.4.0a2): The alpha milestone can be used to provide a preview/proof of concept of some features to be delivered in this cycle. Multiple alpha milestones can be used to deliver the code in stages. Initial testing can begin after the first alpha milestone is completed.
+** beta (e.g. 10.4.0b1, 10.4.0b2): The beta milestones can be used to deliver completed features. Full testing can begin for the completed features. At the final beta milestone all of the features should already be completed (i.e. feature complete).
+** release candidate (RC) (e.g. 10.4.0rc1, 10.4.0rc2): This milestone should provide well-tested product which could potentially be released as GA. All major development (including blocker/critical issues) should be completed before creating the fist RC (i.e. development freeze). Another RC can be created if there is a blocker issue found during testing.
+** initial release (GA) (e.g. 10.4.0): This milestone should provide the official production-ready release. The GA should be identical to the last RC except for the version number.
+** update (e.g. 10.4.1, 10.4.2): This milestone provides bug fixes or minor enhancements after GA. An update can be released any time there are sufficient issues that have been released.
+
+== Priority ==
+
+Ticket priority determines the order in which the tickets should be addressed in the milestone. The priority represents the severity of the problem, not the complexity of the solution. It should be possible to determine a ticket priority by assessing the impact on users based on the ticket description without investigating the actual code.
+
+There are several priorities:
+* blocker: must be addressed as soon as possible
+* critical: must be addressed sometime in the current cycle
+* major: highly desired, but not required
+* minor: nice to have
+* trivial: relatively small/isolated changes that should not significantly affect the behavior
+
+= Ticket Triage =
+
+== Existing tickets ==
+
+In the planing phase, all unresolved tickets in the current and future backlogs need to be reviewed as follows (starting from the highest priority):
+* Tickets that represent the primary goals for the current cycle should be marked as critical/blocker and moved into the current backlog (e.g. 10.4).
+* Tickets that represent optional goals for the current cycle should be marked major/minor and moved into the current backlog as well.
+* Trivial tickets and other tickets that aren't likely to be addressed in the current release should be moved to the future backlog and assigned a priority for future consideration.
+
+== New tickets ==
+
+New tickets may appear at any time in the release cycle, and some tickets might be urgent. To ensure urgent issues are addressed in timely manner, there should be a bug council meeting every week to review all new tickets.
+
+Questions that need to be answered for each new ticket:
+# Which milestone should the ticket go to? How bad does this issue affect current users?
+#* If the issue significantly affects the users of currently released product, the issue needs should be addressed in the next minor version (e.g. 10.4) and backported to the previous minor version (e.g. 10.3). In this case the ticket should be moved into the previous cycle's backlog (e.g. 10.3 backlog).
+#* If the issue does not significantly affect current users, or cannot be fixed without breaking compatibility, it may be fixed in the next minor version, so the ticket should be moved into the current  backlog (e.g. 10.4 backlog).
+#* If the issue is not urgent, or the current cycle is already full, the ticket should be moved into the future backlog.
+# What is the ticket priority compared to other tickets in that milestone?
+#* blocker, critical, major, minor, trivial
+# Which platforms should the issue be fixed on?
+#* all platforms (default)
+#* specific platforms: Fedora, RHEL, CentOS, Debian, Ubuntu
+
+== Offline Triage ==
+
+To improve ticket response time and reduce bug council meeting time, most tickets probably can be triaged offline, so the bug council meeting is only used to review the remaining tickets.
+
+Ideally when filing a new ticket, the reporter should propose a milestone and a priority for ticket by specifying the '''Proposed Milestone''' and '''Proposed Priority''' fields. In case the fields are not set, anybody familiar enough with the component or affected by the issue may propose a milestone and priority by setting these fields. This can also be done on existing tickets.
+
+If a ticket has a proposed milestone/priority, somebody else familiar enough with the component or are affected by the issue should review the proposed milestone and priority based on the description. If the proposed milestone and priority is acceptable, vote by adding a "+1" comment in the ticket. Otherwise, vote a "-1" and suggest an alternate milestone/priority (don't change the '''Proposed Milestone''' and '''Proposed Priority''' itself). If more time is needed for investigation, mention that in the ticket to delay the decision, or bring it up during the next bug council meeting.
+
+The ticket is considered accepted if the total sum of votes is at least +1 (meaning there are at least two people agreeing on the milestone/priority) and there is no alternate milestone/priority suggested and no delay is requested. At that point the the actual '''Milestone''' and '''Priority''' fields should be set based on the proposed milestone/priority, then the '''Proposed Milestone''' and '''Proposed Priority''' fields should be set to blank.
+
+Tickets that still have proposed milestone/priority should be reviewed in the next bug council meeting.
+
+From one person's perspective the process may look like the following:
+* Check your emails as usual. You may already have email filter to move ticket notifications into a specific folder.
+* Go through new ticket notification emails one-by-one. Most emails probably can be skipped quickly.
+* If there's anything interesting, open the ticket in a browser.
+* If the ticket is in NEEDS_TRIAGE, and there is no proposed milestone/priority, feel free to propose a new milestone/priority by setting the '''Proposed Milestone/Priority''' fields.
+* Continue with the emails. If a ticket has a proposed milestone/priority, vote a +1 if you agree, or suggest an alternative, or mention that you need more info or time to consider.
+* Continue with the emails. If a ticket has received enough votes and there is no controversy or request for delay, set the actual milestone/priority, and unset the proposed milestone/priority. This completes the triage for that ticket.
+* If you disagree with a ticket that's already triaged, propose a new milestone/priority by setting the fields, or bring up the ticket in the next bug council for further discussion.
+
+= Fixing a Ticket =
+
+Patch writer is responsible for:
+* writing a clean patch
+* testing the patch sufficiently (including build and runtime)
+* providing steps to verify the fix
+* updating the documentation as needed
+
+Patch reviewer is responsible for:
+* making sure the patch addresses the issue
+* making sure the patch does not cause negative side effect
+* making sure the changes are documented sufficiently
+* making sure the test coverage is sufficient 
+
+A patch for a blocker, critical, or major ticket should be peer-reviewed unless:
+* the patch is very simple (e.g. a few lines)
+* the patch does not significantly change the behavior
+
+A patch for a minor or ticket generally does not require review. When in doubt, it won't hurt to ask somebody to review the patch.
+
+If the patch does not require review, it can be committed immediately. If the patch requires a review, wait until the patch is ACKed before committing the patch. If the patch is NACKed after commit, the patch should be reverted from the source repository.
+
+The person fixing a ticket on the master branch (e.g. 10.4) is also responsible to backport (i.e. merge/cherry-pick) the changes to the appropriate upstream branch (e.g. 10.3). Merging/cherry-picking a patch to another upstream branch does not require additional review. Merging/cherry-picking a patch to downstream branch (e.g. for specific platforms) should be done by the platform's maintainer.
+
+List the commit IDs for all related changes in the ticket. When the changes are complete, the ticket can be closed.
+
+When a ticket in backlog is closed, it should be moved into the next release milestone for the corresponding minor version (e.g. from 10.3 to 10.3.8, or from 10.4 backlog to 10.4.0a1).
+
+If the milestone is still open, additional changes can still be added into the same ticket. If the milestone is already closed (i.e. released), file a new ticket for additional changes.
+
+= References =
+
+* [https://www.mediawiki.org/wiki/Bug_management/Triage Bug management - Triage]
+* [https://www.mediawiki.org/wiki/Bug_management/How_to_triage Bug management - How to triage]
+* [https://en.wikipedia.org/wiki/Software_release_life_cycle Software release life cycle]

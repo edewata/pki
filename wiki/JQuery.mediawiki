@@ -1,0 +1,24 @@
+= Prerequisite =
+
+Initialize [[NPM]].
+
+= Installation =
+
+To download jQuery:
+
+<pre>
+$ npm install jquery
+</pre>
+
+It will store the files into node_modules/jquery folder and also update package.json and package-lock.json.
+
+Copy the required files into the webapp, for example:
+
+<pre>
+$ cp node_modules/jquery/dist/jquery.min.js base/acme/webapps/acme/js/jquery-3.5.1.js
+</pre>
+
+= See Also =
+
+* [[NPM]]
+* [[PatternFly]]

@@ -1,0 +1,87 @@
+=CoolKey Applet Information=
+
+The following is a collection of information about the CoolKey applet. This document includes general information that would assist in compiling a document to Gemalto that would describe to them how to create a card at the factory on behalf of the customer.
+
+We are working on code that allows the applet to accept a "Phone Home URL" upon initialization at the factory. The following information takes that into account.
+
+*Applet Package AID: 627601FF0000
+*Application Instance AID: 627601FF000000
+*Applet Instance size: 18000 bytes
+*Example Recommended applet file: 1.3.44724DDE.ijc, note this will change with subsequent builds of the  applet.  
+**Here is a build of the latest applet: [http://directory.fedora.redhat.com/download/CardEdge.1.3.473df442.ijc Latest Applet]
+**This applet has support for the including a "Phone Home URL" which is discussed below.
+The new builds numbers will be appended at the end of the file name as new builds are done.
+ 
+*Applet Install Parameters Data
+
+   The following is a pseudo code fragment that represents how the server instantiates the applet
+   during a "Format" operation.
+   Here we will add the data needed for the phone home url:
+
+
+A APDU is being constructed with a buffer of data.
+
+ <b>//Install Command APDU</b>
+    SetCLA(0x84);
+    SetINS(0xE6);
+    SetP1(0x0C);
+    SetP2(0x00);
+
+    Buffer data;
+    data.reserve(32); // pre-allocate
+ 2-bytes   data += packageAID.size();
+ n-bytes   data += packageAID;
+ 2-bytes   data += appletAID.size();
+ n-bytes   data += appletAID;
+ 2-bytes   data += appletAID.size();
+ n-bytes   data += appletAID;
+
+ 1-byte   data += 0x01; // length of application privileges byte
+ 1-byte   data += appPrivileges;
+    <b>//Next block will be application specific initialization data
+    //This will include an example phone home url
+    // Phone home url will be different for each deployment</b>
+
+    Buffer phone_home_url="abcd";
+    Buffer installParams; 
+ 1-byte  installParams += 0xEF;
+ 1-byte   installParams += 0x04;
+ 1-byte   installParams += 0xC8;
+ 1-byte   installParams += 0x02;
+    Short instanceSize = 18000; Example applet instance size
+ <b>//Next 2 bytes represent the instance size</b>
+ 1-byte   installParams += (instanceSize>>8) & 0xff;
+ 1-byte   installParams += instanceSize & 0xff;
+
+ 1-byte   installParams += 0xC9;  //Constant app specific data tag
+    Byte appDataSize=0x07; //Example size of application data
+ 1-byte   installParams += appDataSize;
+    Byte phoneHomeUrlSize = 0x4 //example phone home URL size from above
+ 1-byte   installParams += phoneHomeUrlSize;
+ n-bytes  installParams +=  phone_home_url;
+ 1-byte   installParams += 0x0; //Optional memory size, default to 0
+ 1-byte   installParams += 0x0; //Optional bit mask size, default to 0
+
+ <b>//Append app specific data to the install data</b>
+ 2-bytes   data += installParams.size();
+ n-bytes   data += installParams;
+ 1-byte    data += (BYTE) 0x00; // size of token return data
+
+    <b>//Example data string of install command
+    // Phone Home URL "abc"</b>
+
+  <b>//Install APDU</b>
+    //84 E6 0C 00 32 [INSTALL]
+
+  <b>//Install Header Data</b>
+    //06 62 76 01 FF 00 00 07 62 76 01 FF 00 00 00 
+    //07 62 76 01 FF 00 00 00 01 00 0F EF 04 C8 02 20 00 C9
+
+ <b>//What follows is the entire app specific initialization data including the phone home url</b>
+ App specific data length  0x7
+ Phone Home URL length     0x4
+ Phone Home URL            4 bytes
+ Custom memory data size   0x0
+ Custom bitflags data size 0x0
+
+    // 07 04 61 62 63 64 00 00 00

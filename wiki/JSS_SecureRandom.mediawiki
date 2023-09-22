@@ -1,0 +1,11 @@
+Supported algorithms:
+
+* pkcs11prng
+
+Notes:
+
+* This invokes the NSS internal pseudorandom number generator.
+
+= References =
+
+* [[JSS Provider]]

@@ -1,0 +1,114 @@
+== Latest News ==
+=== February 22, 2017 - coolkey repository moves to github ===
+
+The coolkey repository has now moved to github. The project is available at:
+
+https://github.com/dogtagpki/coolkey
+
+Please use Fedora / Red Hat Bugzilla to write new upstream bugs. Fedora and RHEL bugs will continue to be tracked.
+
+=== April 28, 2011 - coolkey repository moves to svn ===
+
+The coolkey repository has now moved to fedora hosted. The project is available at:
+
+https://fedorahosted.org/coolkey/browser
+
+Please use the bug to write new upstream bugs. Fedora and RHEL bugs will continue to be tracked.
+
+=== February 16, 2007 - CoolKey 1.1.0 is now available. ===
+
+Major changes between 1.1.0 and 1.0.1 include:
+* CAC Fixes including
+** support for CAC cards which have only one cert.
+** coolkey no longer resets the CAC on init so other applications no longer lose their login state.
+* Build improvements
+** Mac is now supported.
+** make install is supported for windows.
+** make install no longer installs unused static libraries.
+** pk11install build is now controlled with a switch.
+** pk11install builds on Mac and Windows.
+* Other improvements
+** Card caches are now per user.
+** Hardware race conditions fixed.
+
+== Download the latest version ==
+
+The latest version of Coolkey is 1.1.0 available [http://directory.fedora.redhat.com/download/coolkey/coolkey-1.1.0.tar.gz here], or you can check it out from CVS using the tag COOLKEY_1_1_0.
+
+Older versions of Coolkey are available in the [[CoolKeyRelease|archives]].
+
+== The Vision ==
+
+CoolKeys are part of complete PKI solution that provides smart card login, single sign-on, secure messaging, and secure email access. In the complete solution, users are issued CoolKeys by their employer, ISP, bank, or other agency. When the user plugs in the keys for the first time, the keys are automatically provisioned with certificates, keys, and a PIN unique to that user by the Red Hat Certificate System. Once the CoolKey is provisioned, the user can take the key to any system and use it to login (authenticate), send and receive signed and encrypted email, or participate in secure messaging or IRC communication. Using a CoolKey should be as easy as starting a car.
+
+To accomplish that vision we are focusing on building complete support for CoolKey on exactly one token. As the system is built out, we can add token support. CoolKeys are based on JavaCard 1.2. We are testing with Axalto Egate Cyberflex cards, which are available in both smart card and USB Fob form factors.
+
+Other components that make up this vision include pcsc-lite [http://pcsclite.alioth.debian.org], pam-pkcs11 [http://www.opensc-project.org/pam_pkcs11], nss [http://www.mozilla.org/projects/security/pki/nss], and nspr [xxxxx].
+
+This page includes those pieces needed to integrate with existing operating systems, included Fedora, RHEL, Windows, and MAC.
+
+=== Contributing ===
+
+To access the bug system sign up [https://bugzilla.redhat.com/bugzilla/createaccount.cgi here]
+To contribute, please follow the instructions in [[Contributing]] under '''No CVS Account'''. Once you faxed the appropriate form, submit a bug below and attach your patch.
+
+=== Mailing List ===
+
+You can sign up for the mailing list [http://www.redhat.com/mailman/listinfo/coolkey-devel here]. The mailing list is for announcements, changes, and questions about any of the CoolKey components.
+
+== CoolKey components ==
+
+=== CoolKey PKCS #11 module ===
+
+The CoolKey PKCS #11 module provides the basic driver for CoolKey tokens. Applications which use PKCS #11 (which includes all NSS applications such as Firefox, Evolution, Thunderbird, and pam_pkcs11) are able to use the CoolKey PKCS #11 module to access CoolKey Tokens. In addition CoolKey PKCS #11 provides access to CAC cards, and in the future PIV compliant cards.
+
+To get the source through svn:
+
+ svn checkout http://svn.fedorahosted.org/svn/coolkey/trunk
+
+To get the source through git:
+
+ git svn clone -s http://svn.fedorahosted.org/svn/coolkey
+
+To build CoolKey, see [[BuildCoolKey]].
+
+To open a bug against coolkey click [https://fedorahosted.org/coolkey/newticket here].
+
+To open a ticket against the fedora package of coolkey, click
+[https://bugzilla.redhat.com/bugzilla/enter_bug.cgi?product=Fedora&version=devel&component=coolkey here]. The component and version fields will automatically be set, simply write a summary and description.
+
+=== ESC desktop smart card manager ===
+For more information about the ESC desktop smart card manager click [http://directory.fedoraproject.org/wiki/ESC_Guide here].
+
+=== CoolKey Java Applet ===
+
+The CoolKey Java Applet is the Java code that runs on the card itself. This code has been tested on the GEMAlto Cyberflex E-gate device. Building this requires the "Cyberflex Access SDK" from Gemalto as well as the java card toolkit from Sun.
+
+To get the latest applet source type:
+
+ svn checkout http://svn.fedorahosted.org/svn/coolkey/trunk/applet
+
+
+To build Coolkey Java Applet see [[BuildCoolKeyApplet]].
+
+To see more information on how an applet would be created at the factory see [[AppletInformation]].
+
+=== Windows CSP ===
+
+To get the latest windows CSP source type:
+
+ svn checkout http://svn.fedorahosted.org/svn/coolkey/trunk/src/windows
+
+To build the CSP see [[BuildWindowsCSP]].
+
+
+''Windows Login''.
+
+To make the Axalto developer tokens work with the Coolkey CSP for Windows Login, you need to register the drivers with the windows smartcard GINA. Do this by adding the following entries to the windows registry. The easiest way to do this is to save the entire contents into a file called 'axalto.reg', then double-click it.
+
+ REGEDIT4
+ 
+ [HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Cryptography\Calais\SmartCards\Axalto Developer]
+ "ATRMask"=hex:ff,ff,ff,ff,ff,ff,ff,ff,00,00
+ "Crypto Provider"="Identity Alliance CSP"
+ "ATR"=hex:3b,75,94,00,00,62,02,02,00,00

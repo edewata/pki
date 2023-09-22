@@ -1,0 +1,194 @@
+= Installation =
+
+To install Maven with DNF:
+
+<pre>
+$ dnf install maven
+</pre>
+
+To install Maven manually:
+
+<pre>
+$ wget http://mirror.metrocast.net/apache/maven/maven-3/3.6.1/binaries/apache-maven-3.6.1-bin.tar.gz
+$ tar xzvf apache-maven-3.6.1-bin.tar.gz
+$ cd apache-maven-3.6.1/bin
+</pre>
+
+See https://maven.apache.org/download.cgi.
+
+= Creating a Maven Project =
+
+To create a Maven project:
+
+ $ mvn archetype:generate \
+  -DarchetypeArtifactId=maven-archetype-quickstart \
+  -DinteractiveMode=false \
+  -DgroupId=<font color="red">com.example</font> \
+  -DartifactId=<font color="red">app</font>
+
+It will create an <font color="red">app</font> subfolder containing the following files:
+
+* pom.xml
+* src
+** main/java/com/example/app/App.java
+** test/java/com/example/app/AppTest.java
+
+= Compiler =
+
+<pre>
+<project>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>(whatever version is current)</version>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+</pre>
+
+= Native Library =
+
+<pre>
+<project>
+  ...
+  <packaging>so</packaging>
+  ...
+  <build>   
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>native-maven-plugin</artifactId>
+        <extensions>true</extensions>
+        <configuration>
+           ...
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+</pre>
+
+See also [https://www.mojohaus.org/maven-native/native-maven-plugin/usage.html Native Maven Plugin: Usage].
+
+= Eclipse =
+
+To setup Eclipse project:
+
+<pre>
+$ mvn eclipse:clean
+$ mvn eclipse:eclipse
+$ mvn -Declipse.workspace=<path-to-eclipse-workspace> eclipse:add-maven-repo
+</pre>
+
+See also:
+
+* [https://stackoverflow.com/questions/8620127/maven-in-eclipse-step-by-step-installation Maven in Eclipse: step by step installation]
+
+= Dependencies =
+
+To install a JAR file into the local Maven repo:
+
+<pre>
+$ mvn install:install-file \
+   -Dfile=<path-to-file> \
+   -DgroupId=<group-id> \
+   -DartifactId=<artifact-id> \
+   -Dversion=<version> \
+   -Dpackaging=<packaging> \
+   -DgeneratePom=true
+</pre>
+
+For example:
+
+<pre>
+$ mvn install:install-file \
+   -Dfile=/usr/lib/java/jss4.jar \
+   -DgroupId=org.mozilla \
+   -DartifactId=jss \
+   -Dversion=4.8.0-SNAPSHOT \
+   -Dpackaging=jar \
+   -DgeneratePom=true
+</pre>
+
+To download dependencies:
+
+<pre>
+$ mvn dependency:resolve
+</pre>
+
+To display dependency tree:
+
+<pre>
+$ mvn dependency:tree
+</pre>
+
+To construct classpath:
+
+<pre>
+$ mvn dependency:build-classpath
+</pre>
+
+= Building a Maven Project =
+
+To build the classes:
+
+<pre>
+$ mvn compile
+</pre>
+
+The classes will be stored in target/classes folder.
+
+To build the package:
+
+<pre>
+$ mvn package
+</pre>
+
+The package will be stored in target/<name>-<version>-SNAPSHOT.jar.
+
+To build the package without running tests:
+
+<pre>
+$ mvn package -Dmaven.test.skip=true
+</pre>
+
+To clean a Maven project:
+
+<pre>
+$ mvn clean
+</pre>
+
+= Tomcat Plugin =
+
+To install [https://mvnrepository.com/artifact/org.apache.tomcat.maven/tomcat8-maven-plugin tomcat8-maven-plugin]:
+
+<pre>
+<dependency>
+    <groupId>org.apache.tomcat.maven</groupId>
+    <artifactId>tomcat8-maven-plugin</artifactId>
+    <version>3.0-r1756463</version>
+</dependency>
+</pre>
+
+See also [http://tomcat.apache.org/maven-plugin-trunk/tomcat7-maven-plugin tomcat7-maven-plugin].
+
+= References =
+
+* [http://maven.apache.org/guides/getting-started/maven-in-five-minutes.html Maven in 5 Minutes]
+* [https://maven.apache.org/plugins/ Maven Plugins]
+* [http://search.maven.org/ Maven Central Repository]
+* [https://github.com/dogtagpki/pki/wiki/Setting-Up-Maven-Project-in-Eclipse Setting Up Maven Project in Eclipse]
+* [[Tomcat]]
+* [[PKI Maven]]
+* [[Mead]]
+* [https://github.com/huangxuwei/jni-maven-example/blob/master/jni/pom.xml huangxuwei/jni-maven-example - jni/pom.xml]
+* [https://github.com/huangxuwei/jni-maven-example/blob/master/native/pom.xml huangxuwei/jni-maven-example - native/pom.xml]
+* [https://stackoverflow.com/questions/14013644/hosting-a-maven-repository-on-github Hosting a Maven repository on github]
+* [[Gradle]]

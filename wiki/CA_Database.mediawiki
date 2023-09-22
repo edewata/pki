@@ -1,0 +1,333 @@
+= Database Initialization =
+
+The following entries are added during installation.
+
+== Creating Base Entry ==
+
+<pre>
+dc=pki,dc=example,dc=com
+</pre>
+
+== Creating LDBM Backend ==
+
+<pre>
+cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=dc\3Dca\2Cdc\3Dpki\2Cdc\3Dexample\2Cdc\3Dcom,cn=mapping tree,cn=config
+dc=ca,dc=pki,dc=example,dc=com
+</pre>
+
+== Creating Users Subtree ==
+
+<pre>
+ou=people,dc=ca,dc=pki,dc=example,dc=com
+</pre>
+
+== Creating Groups Subtree ==
+
+<pre>
+ou=groups,dc=ca,dc=pki,dc=example,dc=com
+cn=Certificate Manager Agents,ou=groups,dc=ca,dc=pki,dc=example,dc=com
+cn=Registration Manager Agents,ou=groups,dc=ca,dc=pki,dc=example,dc=com
+cn=Subsystem Group,ou=groups,dc=ca,dc=pki,dc=example,dc=com
+cn=Trusted Managers,ou=groups,dc=ca,dc=pki,dc=example,dc=com
+cn=Administrators,ou=groups,dc=ca,dc=pki,dc=example,dc=com
+cn=Auditors,ou=groups,dc=ca,dc=pki,dc=example,dc=com
+cn=ClonedSubsystems,ou=groups,dc=ca,dc=pki,dc=example,dc=com
+cn=Security Domain Administrators,ou=groups,dc=ca,dc=pki,dc=example,dc=com
+cn=Enterprise CA Administrators,ou=groups,dc=ca,dc=pki,dc=example,dc=com
+cn=Enterprise KRA Administrators,ou=groups,dc=ca,dc=pki,dc=example,dc=com
+cn=Enterprise OCSP Administrators,ou=groups,dc=ca,dc=pki,dc=example,dc=com
+cn=Enterprise TKS Administrators,ou=groups,dc=ca,dc=pki,dc=example,dc=com
+cn=Enterprise RA Administrators,ou=groups,dc=ca,dc=pki,dc=example,dc=com
+cn=Enterprise TPS Administrators,ou=groups,dc=ca,dc=pki,dc=example,dc=com
+</pre>
+
+== Creating Containers ==
+
+<pre>
+ou=requests,dc=ca,dc=pki,dc=example,dc=com
+cn=crossCerts,dc=ca,dc=pki,dc=example,dc=com
+ou=ca,dc=ca,dc=pki,dc=example,dc=com
+ou=certificateRepository,ou=ca,dc=ca,dc=pki,dc=example,dc=com
+ou=crlIssuingPoints,ou=ca,dc=ca,dc=pki,dc=example,dc=com
+ou=ca,ou=requests,dc=ca,dc=pki,dc=example,dc=com
+ou=replica,dc=ca,dc=pki,dc=example,dc=com
+ou=ranges,dc=ca,dc=pki,dc=example,dc=com
+ou=replica,ou=ranges,dc=ca,dc=pki,dc=example,dc=com
+ou=requests,ou=ranges,dc=ca,dc=pki,dc=example,dc=com
+ou=certificateRepository,ou=ranges,dc=ca,dc=pki,dc=example,dc=com
+ou=certificateProfiles,ou=ca,dc=ca,dc=pki,dc=example,dc=com
+ou=authorities,ou=ca,dc=ca,dc=pki,dc=example,dc=com
+cn=aclResources,dc=ca,dc=pki,dc=example,dc=com
+</pre>
+
+== Creating Indexes ==
+
+<pre>
+cn=revokedby,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=issuedby,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=publicKeyData,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=clientId,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=dataType,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=status,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=description,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=serialno,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=metaInfo,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=certstatus,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=requestid,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=requesttype,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=requeststate,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=requestowner,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=notbefore,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=notafter,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=duration,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=dateOfCreate,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=revokedOn,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=archivedBy,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=ownername,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=issuername,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=subjectname,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=requestsourceid,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=revInfo,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=extension,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+ou=csusers,cn=config
+cn=allCerts-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allExpiredCerts-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allInvalidCerts-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allInValidCertsNotBefore-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allNonRevokedCerts-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allRevokedCaCerts-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allRevokedCerts-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allRevokedCertsNotAfter-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allRevokedExpiredCerts-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allRevokedOrRevokedExpiredCaCerts-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allRevokedOrRevokedExpiredCerts-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allValidCerts-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allValidCertsNotAfter-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allValidOrRevokedCerts-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caAll-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caCanceled-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caCanceledEnrollment-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caCanceledRenewal-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caCanceledRevocation-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caComplete-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caCompleteEnrollment-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caCompleteRenewal-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caCompleteRevocation-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caEnrollment-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caPending-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caPendingEnrollment-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caPendingRenewal-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caPendingRevocation-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caRejected-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caRejectedEnrollment-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caRejectedRenewal-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caRejectedRevocation-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caRenewal-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caRevocation-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allCerts-pki-tomcatIndex,cn=allCerts-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allExpiredCerts-pki-tomcatIndex,cn=allExpiredCerts-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allInvalidCerts-pki-tomcatIndex,cn=allInvalidCerts-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allInValidCertsNotBefore-pki-tomcatIndex,cn=allInValidCertsNotBefore-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allNonRevokedCerts-pki-tomcatIndex,cn=allNonRevokedCerts-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allRevokedCaCerts-pki-tomcatIndex,cn=allRevokedCaCerts-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allRevokedCerts-pki-tomcatIndex,cn=allRevokedCerts-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allRevokedCertsNotAfter-pki-tomcatIndex,cn=allRevokedCertsNotAfter-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allRevokedExpiredCerts-pki-tomcatIndex,cn=allRevokedExpiredCerts-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allRevokedOrRevokedExpiredCaCerts-pki-tomcatIndex,cn=allRevokedOrRevokedExpiredCaCerts-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allRevokedOrRevokedExpiredCerts-pki-tomcatIndex,cn=allRevokedOrRevokedExpiredCerts-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allValidCerts-pki-tomcatIndex,cn=allValidCerts-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allValidCertsNotAfter-pki-tomcatIndex,cn=allValidCertsNotAfter-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=allValidOrRevokedCerts-pki-tomcatIndex,cn=allValidOrRevokedCerts-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caAll-pki-tomcatIndex,cn=caAll-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caCanceled-pki-tomcatIndex,cn=caCanceled-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caCanceledEnrollment-pki-tomcatIndex,cn=caCanceledEnrollment-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caCanceledRenewal-pki-tomcatIndex,cn=caCanceledRenewal-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caCanceledRevocation-pki-tomcatIndex,cn=caCanceledRevocation-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caComplete-pki-tomcatIndex,cn=caComplete-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caCompleteEnrollment-pki-tomcatIndex,cn=caCompleteEnrollment-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caCompleteRenewal-pki-tomcatIndex,cn=caCompleteRenewal-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caCompleteRevocation-pki-tomcatIndex,cn=caCompleteRevocation-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caEnrollment-pki-tomcatIndex,cn=caEnrollment-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caPending-pki-tomcatIndex,cn=caPending-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caPendingEnrollment-pki-tomcatIndex,cn=caPendingEnrollment-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caPendingRenewal-pki-tomcatIndex,cn=caPendingRenewal-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caPendingRevocation-pki-tomcatIndex,cn=caPendingRevocation-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caRejected-pki-tomcatIndex,cn=caRejected-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caRejectedEnrollment-pki-tomcatIndex,cn=caRejectedEnrollment-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caRejectedRenewal-pki-tomcatIndex,cn=caRejectedRenewal-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caRejectedRevocation-pki-tomcatIndex,cn=caRejectedRevocation-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caRenewal-pki-tomcatIndex,cn=caRenewal-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=caRevocation-pki-tomcatIndex,cn=caRevocation-pki-tomcat,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=index1160589769,cn=index,cn=tasks,cn=config
+</pre>
+
+== Creating Certificate Records ==
+
+<pre>
+cn=1,ou=certificateRepository,ou=ca,dc=ca,dc=pki,dc=example,dc=com
+cn=1,ou=ca,ou=requests,dc=ca,dc=pki,dc=example,dc=com
+cn=2,ou=certificateRepository,ou=ca,dc=ca,dc=pki,dc=example,dc=com
+cn=2,ou=ca,ou=requests,dc=ca,dc=pki,dc=example,dc=com
+cn=3,ou=certificateRepository,ou=ca,dc=ca,dc=pki,dc=example,dc=com
+cn=3,ou=ca,ou=requests,dc=ca,dc=pki,dc=example,dc=com
+cn=4,ou=certificateRepository,ou=ca,dc=ca,dc=pki,dc=example,dc=com
+cn=4,ou=ca,ou=requests,dc=ca,dc=pki,dc=example,dc=com
+</pre>
+
+== Creating Subsystem User ==
+
+<pre>
+uid=CA-server.example.com-8443,ou=People,dc=ca,dc=pki,dc=example,dc=com
+cn=5,ou=certificateRepository,ou=ca,dc=ca,dc=pki,dc=example,dc=com
+cn=5,ou=ca,ou=requests,dc=ca,dc=pki,dc=example,dc=com
+</pre>
+
+== Creating Admin User ==
+
+<pre>
+uid=caadmin,ou=People,dc=ca,dc=pki,dc=example,dc=com
+cn=6,ou=certificateRepository,ou=ca,dc=ca,dc=pki,dc=example,dc=com
+cn=6,ou=ca,ou=requests,dc=ca,dc=pki,dc=example,dc=com
+</pre>
+
+== Creating Security Domain Subtree ==
+
+<pre>
+ou=Security Domain,dc=ca,dc=pki,dc=example,dc=com
+cn=CAList,ou=Security Domain,dc=ca,dc=pki,dc=example,dc=com
+cn=OCSPList,ou=Security Domain,dc=ca,dc=pki,dc=example,dc=com
+cn=KRAList,ou=Security Domain,dc=ca,dc=pki,dc=example,dc=com
+cn=RAList,ou=Security Domain,dc=ca,dc=pki,dc=example,dc=com
+cn=TKSList,ou=Security Domain,dc=ca,dc=pki,dc=example,dc=com
+cn=TPSList,ou=Security Domain,dc=ca,dc=pki,dc=example,dc=com
+cn=server.example.com:8443,cn=CAList,ou=Security Domain,dc=ca,dc=pki,dc=example,dc=com
+</pre>
+
+== Creating Database User ==
+
+<pre>
+uid=pkidbuser,ou=People,dc=ca,dc=pki,dc=example,dc=com
+</pre>
+
+== Creating Lightweight Sub CA ==
+
+<pre>
+cn=06340cde-9b99-4b5e-a1f7-022db851ab79,ou=authorities,ou=ca,dc=ca,dc=pki,dc=example,dc=com
+</pre>
+
+== Creating CRL Issuing Points ==
+
+<pre>
+cn=MasterCRL,ou=crlIssuingPoints,ou=ca,dc=ca,dc=pki,dc=example,dc=com
+</pre>
+
+= Master Initialization =
+
+The following entries are added on master during cloning.
+
+== Creating Install Token ==
+
+<pre>
+ou=sessions,ou=Security Domain,dc=ca,dc=pki,dc=example,dc=com
+cn=8913011840038821724,ou=sessions,ou=Security Domain,dc=ca,dc=pki,dc=example,dc=com
+</pre>
+
+== Creating Replication Agreements ==
+
+<pre>
+ou=csusers,cn=config
+cn=Replication Manager masterAgreement1-replica.example.com-pki-tomcat,ou=csusers,cn=config
+cn=changelog5,cn=config
+cn=replica,cn=dc\3Dca\2Cdc\3Dpki\2Cdc\3Dexample\2Cdc\3Dcom,cn=mapping tree,cn=config
+cn=masterAgreement1-replica.example.com-pki-tomcat,cn=replica,cn=dc\3Dca\2Cdc\3Dpki\2Cdc\3Dexample\2Cdc\3Dcom,cn=mapping tree,cn=config
+</pre>
+
+== Creating SSL Certificate for Replica ==
+
+<pre>
+cn=7,ou=ca,ou=requests,dc=ca,dc=pki,dc=example,dc=com
+cn=7,ou=certificateRepository,ou=ca,dc=ca,dc=pki,dc=example,dc=com
+</pre>
+
+== Registering Replica in Security Domain ==
+
+<pre>
+cn=replica.example.com:8443,cn=CAList,ou=Security Domain,dc=ca,dc=pki,dc=example,dc=com
+</pre>
+
+== Creating Serial Number Range for Replica ==
+
+<pre>
+cn=10000001,ou=requests,ou=ranges,dc=ca,dc=pki,dc=example,dc=com
+cn=10000001,ou=certificateRepository,ou=ranges,dc=ca,dc=pki,dc=example,dc=com
+</pre>
+
+= Replica Initialization =
+
+The following entries are added on replica during cloning.
+
+== Creating LDBM Backend ==
+
+<pre>
+cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=dc\3Dca\2Cdc\3Dpki\2Cdc\3Dexample\2Cdc\3Dcom,cn=mapping tree,cn=config
+dc=ca,dc=pki,dc=example,dc=com
+</pre>
+
+== Creating Indexes ==
+
+<pre>
+cn=revokedby,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=issuedby,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=publicKeyData,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=clientId,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=dataType,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=status,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=description,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=serialno,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=metaInfo,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=certstatus,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=requestid,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=requesttype,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=requeststate,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=requestowner,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=notbefore,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=notafter,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=duration,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=dateOfCreate,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=revokedOn,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=archivedBy,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=ownername,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=issuername,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=subjectname,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=requestsourceid,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=revInfo,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+cn=extension,cn=index,cn=ca,cn=ldbm database,cn=plugins,cn=config
+</pre>
+
+== Creating Replication Agreements ==
+
+<pre>
+ou=csusers,cn=config
+cn=Replication Manager cloneAgreement1-replica.example.com-pki-tomcat,ou=csusers,cn=config
+cn=changelog5,cn=config
+cn=replica,cn=dc\3Dca\2Cdc\3Dpki\2Cdc\3Dexample\2Cdc\3Dcom,cn=mapping tree,cn=config
+cn=cloneAgreement1-replica.example.com-pki-tomcat,cn=replica,cn=dc\3Dca\2Cdc\3Dpki\2Cdc\3Dexample\2Cdc\3Dcom,cn=mapping tree,cn=config
+cn=repl keep alive 96,dc=ca,dc=pki,dc=example,dc=com
+</pre>
+
+== Replicating Entries ==
+
+= Request Repository =
+
+See [https://github.com/dogtagpki/pki/wiki/CA-Request-Database CA Request Database].
+
+= Certificate Repository =
+
+See [https://github.com/dogtagpki/pki/wiki/CA-Certificate-Database CA Certificate Database].
+
+= References =
+
+* [[DS Database Initialization]]
+* [[DS Replication Setup]]

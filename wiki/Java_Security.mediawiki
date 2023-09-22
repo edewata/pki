@@ -1,0 +1,30 @@
+= Security Providers =
+
+The default Security Provider is configured in $JAVA_HOME/lib/security/java.security:
+
+<pre>
+security.provider.1=sun.security.provider.Sun
+security.provider.2=sun.security.rsa.SunRsaSign
+security.provider.3=sun.security.ec.SunEC
+security.provider.4=com.sun.net.ssl.internal.ssl.Provider
+security.provider.5=com.sun.crypto.provider.SunJCE
+security.provider.6=sun.security.jgss.SunProvider
+security.provider.7=com.sun.security.sasl.Provider
+security.provider.8=org.jcp.xml.dsig.internal.dom.XMLDSigRI
+security.provider.9=sun.security.smartcardio.SunPCSC
+#security.provider.10=sun.security.pkcs11.SunPKCS11 ${java.home}/lib/security/nss.cfg
+</pre>
+
+= Security Manager =
+
+See also:
+
+* https://github.com/dogtagpki/pki/blob/master/base/server/share/conf/pki.policy
+* https://github.com/dogtagpki/pki/blob/master/base/server/share/conf/custom.policy
+* https://github.com/dogtagpki/pki/blob/master/base/server/share/conf/catalina.policy
+* https://docs.oracle.com/javase/8/docs/technotes/guides/security/permissions.html
+
+= References =
+
+* [[Java]]
+* [https://github.com/dogtagpki/jss/wiki JSS]

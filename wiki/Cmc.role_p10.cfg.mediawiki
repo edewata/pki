@@ -1,0 +1,30 @@
+<pre>
+#numRequests: Total number of PKCS10 requests or CRMF requests.
+numRequests=1
+
+#input: full path for the PKCS10 request or CRMF request,
+#the content must be in Base-64 encoded format
+#Multiple files are supported. They must be separated by space.
+input=p10-ec.req
+
+#output: full path for the CMC request in binary format
+output=/root/cfu/test/cmc/cmc.role_p10-ec.req
+
+#tokenname: name of token where agent signing cert can be found (default is internal)
+tokenname=internal
+
+#nickname: nickname for agent certificate which will be used
+#to sign the CMC full request.
+#nickname=PKI Administrator for sjc.redhat.com
+nickname=cfuAgent2 cert
+
+#dbdir: directory for cert8.db, key3.db and secmod.db
+dbdir=/root/cfu/test/cmc/
+
+#password: password for cert8.db which stores the agent
+#certificate
+password=myPassWord
+
+#format: request format, either pkcs10 or crmf
+format=pkcs10
+</pre>

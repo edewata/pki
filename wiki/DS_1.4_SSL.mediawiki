@@ -1,0 +1,1 @@
+This page has been moved to https://github.com/dogtagpki/389-ds-base/wiki/Configuring-SSL-Connection-in-DS-1.4.

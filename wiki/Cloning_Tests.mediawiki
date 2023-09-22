@@ -1,0 +1,156 @@
+= Compatibility Tests =
+
+The following tests verify the compatibility between Dogtag 10.0.x on F19 and Dogtag 10.1.x on F20 for IPA replication. Due to an existing bug (https://fedorahosted.org/pki/ticket/816), a workaround has to be added in the setup process. Otherwise the replica installation will fail.
+
+== Setup ==
+
+* On an F19 machine, install IPA server (ipa-server-install).
+* Prepare an IPA replica (ipa-replica-prepare).
+
+* WORKAROUND: On an F20 machine, edit the CS.cfg template (/usr/share/pki/ca/conf/CS.cfg) and add the following line:
+<pre>
+X500Name.directoryStringEncodingOrder=PrintableString,UTF8String,T61String,BMPString,UniversalString
+</pre>
+* Install IPA replica (ipa-replica-install).
+
+== Test 1: Verify the replica can issue valid certificate using the workaround ==
+
+=== Request a certificate on the replica ===
+
+On the replica, create a client security database:
+
+<pre>
+$ pki -c Secret.123 client-init
+</pre>
+
+Get profile template for a server certificate:
+<pre>
+$ pki cert-request-profile-show caServerCert --output test1.xml
+</pre>
+
+Generate a CSR:
+<pre>
+$ certutil -R -d ~/.dogtag/nssdb -s "cn=test1.example.com" -a
+</pre>
+
+Copy the CSR into test1.xml:
+
+<pre>
+<CertEnrollmentRequest>
+    ...
+    <Input id="i1">
+        <Attribute name="cert_request_type">
+            <Value>pkcs10</Value>
+        </Attribute>
+        <Attribute name="cert_request">
+            <Value>... CSR ...</Value>
+        </Attribute>
+    </Input>
+    ...
+</CertEnrollmentRequest>
+</pre>
+
+Submit request:
+<pre>
+$ pki cert-request-submit test1.xml
+</pre>
+
+Make a note of the request ID.
+
+=== Approve the certificate request ===
+
+On the master, export the agent certificate and key from the IPA security database:
+<pre>
+$ pk12util -o agent.p12 -n ipaCert -d /etc/httpd/alias -k /etc/httpd/alias/pwdfile.txt -W Secret.123
+</pre>
+
+On the replica, import the agent certificate and key into the client security database:
+<pre>
+$ pk12util -i agent.p12 -d ~/.dogtag/nssdb -K Secret.123 -W Secret.123
+</pre>
+
+Approve the certificate request:
+<pre>
+$ pki -c Secret.123 -n ipaCert cert-request-review <request ID> --action approve
+</pre>
+
+Retrieve the certificate ID:
+<pre>
+$ pki cert-request-show <request ID>
+</pre>
+
+Retrieve the certificate:
+<pre>
+$ pki cert-show <certificate ID> --output test1.pem
+$ AtoB test1.pem test1.crt
+</pre>
+
+Import the certificate into the client security database:
+<pre>
+$ pki -n test1 client-cert-import --cert test1.crt
+</pre>
+
+=== Validate the new certificate ===
+
+Export CA certificate:
+<pre>
+$ certutil -L -d ~/.dogtag/nssdb -n "<realm> IPA CA" -a > ca.pem
+$ AtoB ca.pem ca.crt
+</pre>
+
+View the content of the certificates:
+<pre>
+$ dumpasn1 test1.crt
+$ dumpasn1 ca.crt
+</pre>
+
+Verify the certificate's issuer DN matches the CA certificate's subject DN (including the encoding).
+
+<pre>
+SEQUENCE {
+  SET {
+    SEQUENCE {
+      OBJECT IDENTIFIER organizationName (2 5 4 10)
+      PrintableString '<realm>'
+      }
+    }
+  SET {
+    SEQUENCE {
+      OBJECT IDENTIFIER commonName (2 5 4 3)
+      PrintableString 'Certificate Authority'
+      }
+    }
+  }
+</pre>
+
+Verify the certificate is valid:
+<pre>
+$ certutil -V -d ~/.dogtag/nssdb -n test1 -u V
+</pre>
+
+== Test 2: Verify the replica can issue valid certificate after removing the workaround ==
+
+Shut down the replica:
+<pre>
+$ systemctl stop pki-tomcatd@pki-tomcat.service
+</pre>
+
+Remove the workaround from the replica's CS.cfg (/var/lib/pki/pki-tomcat/ca/conf/CS.cfg), not from the template.
+
+Restart replica.
+<pre>
+$ systemctl start pki-tomcatd@pki-tomcat.service
+</pre>
+
+Issue another certificate (i.e. test2) using similar steps.
+
+Verify the certificate's issuer DN matches the CA certificate's subject DN (including the encoding).
+<pre>
+$ dumpasn1 test2.crt
+$ dumpasn1 ca.crt
+</pre>
+
+Verify the certificate is valid:
+<pre>
+$ certutil -V -d ~/.dogtag/nssdb -n test2 -u V
+</pre>

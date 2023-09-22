@@ -1,0 +1,697 @@
+= Open Source History (2014) =
+
+== Dogtag Certificate Server 10.0.7 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[04/01/2014] ==
+
+Dogtag Certificate System 10.0.7 represents the seventh errata build for Dogtag 10.0.0.
+
+<font size="+1"><b>Project Name:</b></font>
+* '''''Dogtag Certificate System 10.0.7'''''
+
+<font size="+1"><b>Releases:</b></font>
+* [04/01/2014] Dogtag Certificate Server 10.0.7 [32-bit & 64-bit Fedora 19]
+
+<font><b>Packages (Revised)</b></font>
+* dogtag-pki-10.0.7-1
+* dogtag-pki-theme-10.0.7-1
+* pki-console-10.0.7-1
+* pki-core-10.0.7-1
+* pki-ra-10.0.7-1
+* pki-tps-10.0.7-1
+
+<font size="+1"><b>Upgrade Notes:</b></font>
+
+Simply use yum to update existing packages.
+
+<font size="+1"><b>Highlights since Dogtag 10.0.6</b></font>
+* This errata fixes three bugs found in Dogtag 10.0.6:
+** PKI TRAC Ticket #803 - avc generated for useradd in pkispawn scripts
+*** Fixed so that useradd does not generate an AVC by closing file descriptors prior to invoking useradd.
+** PKI TRAC Ticket #868 - REST API get certs links missing segment
+*** Fixed links to generate proper URLs (attempted to future-proof this to avoid any issues that might be caused by future re-factoring).
+** PKI TRAC Ticket #869 - f19 ipa-server-install fails at step 6/22 of cert sys install - systemctl start pki-tomcatd.target fails
+*** Fixed problem by adding a 'daemon-reload' method and calling it prior to starting the 'pki-tomcatd' target.
+
+<font size="+1"><b>Notes on Fedora 19:</b></font>
+
+Fedora 19 does not provide tomcat 6.  Dogtag 9 style instances will therefore no longer work on Fedora 19.  These instances need to be migrated to Dogtag 10.
+
+To prevent inadvertently disabling Dogtag instances, code has been added to prevent upgrades to Fedora 19 if Dogtag 9 instances exist.  Details on how to upgrade Dogtag 9 instances and workarounds can be found at:  [https://github.com/dogtagpki/pki/wiki/Migrating-PKI-9-to-PKI-10 Migrating PKI 9 to PKI 10]
+
+<font size="+1"><b>Detailed Changes since Dogtag 10.0.6</b></font>
+* alee (2):
+** 743    Fixed useradd in pkispawn to not generate AVC
+** 868    REST API get certs links missing segment
+* mharmsen(1):
+** 869    Added 'daemon-reload' method
+
+<font size="+1"><b>Server Platforms:</b></font>
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.0.7</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 19 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 19 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Dogtag Certificate Server 10.1.1 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[04/01/2014] ==
+
+Dogtag Certificate System 10.1.1 represents the first errata build for Dogtag 10.1.0.
+
+<table>
+<tr>
+<td valign="top">'''NOTE:&nbsp;&nbsp;''' </td>
+<td valign="top">Due to changes in the way tomcat is started in Fedora 20, and the corresponding changes in the Dogtag init scripts,  Dogtag 10.1 will only be delivered from Fedora 20 upwards.  Dogtag 10.0 will continue to be delivered and supported for Fedora 19.</td>
+</tr>
+</table>
+
+<font size="+1"><b>Project Name:</b></font>
+* '''''Dogtag Certificate System 10.1.1'''''
+
+<font size="+1"><b>Releases:</b></font>
+* [04/01/2014] Dogtag Certificate Server 10.1.1 [32-bit & 64-bit Fedora 20]
+
+<font><b>Packages (Revised)</b></font>
+* dogtag-pki-10.1.1-1
+* dogtag-pki-theme-10.1.1-1
+* pki-console-10.1.1-1
+* pki-core-10.1.1-1
+* pki-ra-10.1.1-1
+* pki-tps-10.1.1-1
+
+<font size="+1"><b>Upgrade Notes:</b></font>
+
+Simply use yum to update existing packages.
+
+<font size="+1"><b>Highlights since Dogtag 10.1.0</b></font>
+* This errata fixes four bugs found in Dogtag 10.1.0:
+** PKI TRAC Ticket #840 - pkispawn requires policycoreutils-python<br>Bugzilla Bug #1057959 - pkispawn requires policycoreutils-python
+*** Added this runtime dependency to the pki-core package.
+** PKI TRAC Ticket #868 - REST API get certs links missing segment
+*** Fixed links to generate proper URLs (attempted to future-proof this to avoid any issues that might be caused by future re-factoring).
+** PKI TRAC Ticket #869 - f19 ipa-server-install fails at step 6/22 of cert sys install - systemctl start pki-tomcatd.target fails
+*** Fixed problem by adding a 'daemon-reload' method and calling it prior to starting the 'pki-tomcatd' target.
+** PKI TRAC Ticket #816 - pki-tomcat cannot be started after installation of ipa replica with ca
+*** IPA replica installation was failing due to encoding errors when generating the SSL server certificate.  To avoid these errors, Dogtag CA clones were fixed by requiring that their SSL server certificates mustalways be signed by the associated Dogtag CA master.
+
+<font size="+1"><b>Detailed Changes since Dogtag 10.1.0</b></font>
+* alee(1):
+** 868    REST API get certs links missing segment
+* cfu(1):
+** 816    Sign CA clone sslserver certificate using CA master
+* mharmsen(2):
+** 840    pkispawn requires policycoreutils-python
+** 869    Added 'daemon-reload' method
+
+<font size="+1"><b>Server Platforms:</b></font>
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.1.1</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 20 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 20 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Dogtag Certificate Server 10.2.0 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[09/06/2014] ==
+Dogtag Certificate System 10.2.0 represents the first phase of Dogtag 10.2, and is associated with Fedora 21.
+
+<table>
+<tr>
+<td valign="top"><b>NOTE:&nbsp;&nbsp;</b></td>
+<td valign="top">Due to the size, scope, and complexity of Dogtag 10.2, separate revisions of Dogtag 10.2 which incorporate a portion of the features will be released in phases over time.  Each phase will likely correspond to a specific version of Fedora.</td>
+</tr>
+</table>
+
+<font size="+1"><b>Project Name:</b></font>
+* '''''Dogtag Certificate System 10.2.0'''''
+
+<font size="+1"><b>Releases:</b></font>
+* [12/06/2014] Dogtag Certificate Server 10.2.0 [32-bit & 64-bit Fedora 21] (Release 5)
+* [10/07/2014] Dogtag Certificate Server 10.2.0 [32-bit & 64-bit Fedora 21] (Release 3)
+* [09/08/2014] Dogtag Certificate Server 10.2.0 [32-bit & 64-bit Fedora 21] (Release 2)
+* [09/06/2014] Dogtag Certificate Server 10.2.0 [32-bit & 64-bit Fedora 21] (Release 1)
+
+<font><b>Packages (Revised)</b></font>
+* Release 5:
+** pki-core-10.2.0-5.fc21         [2014-12-03]
+** dogtag-pki-10.2.0-5.fc21       [2014-12-04]
+** dogtag-pki-theme-10.2.0-5.fc21 [2014-12-06]
+** pki-console-10.2.0-5.fc21      [2014-12-04]
+* Release 3:
+** pki-core-10.2.0-3.fc21         [2014-10-07
+* Release 2
+** dogtag-pki-10.2.0-2.fc21       [2014-09-08]
+* Release 1:
+** pki-core-10.2.0-1.fc21         [2014-09-06]
+** dogtag-pki-10.2.0-1.fc21       [2014-09-06]
+** dogtag-pki-theme-10.2.0-1.fc21 [2014-09-05]
+** pki-console-10.2.0-1.fc21      [2014-09-06]
+
+<font size="+1"><b>Upgrade Notes:</b></font>
+
+After running fedup, simply use yum (as necessary) to update existing packages.
+
+<font size="+1"><b>Highlights since Dogtag 10.1.1</b></font>
+
+The primary purpose of Dogtag 10.2 was to perform a re-write of the TPS system from a native Apache-based plug-in process to a java Tomcat-based process which utilizes the same framework utilized by the other Dogtag java-based Tomcat processes. 
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the [https://fedorahosted.org/pki/report/6 PKI TRAC Ticket Instance]:
+* 10.2 - 11/13 (November) - page 9 (1 ticket)
+* 10.2 - 12/13 (December) - page 9 (4 tickets)
+* 10.2 - 01/14 (January) - page 10 (2 tickets)
+* 10.2 - 03/14 (March) - page 10 (7 tickets)
+* 10.2 - 04/14 (April) - pages 9-10 (26 tickets)
+* 10.2 - 05/14 (May) - page 9 (16 tickets)
+* 10.2 - 06/14 (June) - page 9 (16 tickets)
+* 10.2 - 07/14 (July) - page 9 (17 tickets)
+* 10.2 - 08/14 (August)  - page 9 (36 tickets)
+* 10.2 Backlog - pages 8-9 (17 tickets)
+
+Additionally, specific releases addressed the following issues:
+
+* Release 5:
+** Ticket 1198 Bugzilla 1158410 add TLS range support to server.xml by default and upgrade
+** Bugzilla Bug #1165351 - Errata TPS test fails due to dependent packages not found
+** PKI Trac Ticket #1211 - New release overwrites old source tarball
+** Bugzilla Bug #1151147 - issuerDN encoding correction
+** Make dependencies comply with TLS changes
+* Release 3:
+** PKI TRAC Ticket #1130 - Add RHEL/CentOS conditionals to spec
+** Disable pylint dependency for RHEL builds
+** Added jakarta-commons-httpclient requirements
+** Added tomcat version for RHEL build
+** Added resteasy-base-client for RHEL build
+* Release 2:
+** Revised dependencies
+** Removed RA references
+** Changed Apache TPS references to Tomcat TPS references
+* Release 1:
+** Added option to build without server packages.
+** Replaced Jettison with Jackson.
+** Added python-nss build requirement
+** Bugzilla Bug #1057959 - pkispawn requires policycoreutils-python
+** TRAC Ticket #840 - pkispawn requires policycoreutils-python
+** Updated requirements for resteasy
+** Added template files for archive, retrieve and generate key requests to the client package.
+** PKI TRAC Ticket #832 - Remove legacy 'systemctl' files . . .
+** Bugzilla Bug #1120045 - pki-core: Switch to java-headless (build)requires
+** drop dependency on java-atk-wrapper
+** Removed 'java-atk-wrapper' dependency from 'pki-server'
+** Respin to include the applet files with the rpm install. No change to spec file needed.
+** PKI TRAC Ticket #1127 - Remove 'pki-ra', 'pki-setup', and 'pki-silent' packages . . .
+** Merged jmagne@redhat.com's spec file changes from the stand-alone 'pki-tps-client' package needed to build/run the native 'tpsclient' command line utility into this 'pki-core' spec file under the 'tps' package.
+** Original tps libararies must be built to support this native utility.
+** Modified tps package from 'noarch' into 'architecture-specific' package
+** PKI TRAC Ticket #1017 - Rename pki-tps-tomcat to pki-tps
+
+<font size="+1"><b>Detailed Changes since Dogtag 10.1.1</b></font>
+
+The following list of dependencies was gleaned from the following procedure:
+
+    Dogtag 10.1.0-1:  [11/22/2013] (master --> DOGTAG_10_1_BRANCH)
+    Dogtag 10.2.0-1:  [09/06/2014] (master --> DOGTAG_10_2_0_BRANCH)
+    Dogtag 10.2.0-5:  [12/06/2014] (Release 5)
+    
+    Run the following command on the "DOGTAG_10_2_0_BRANCH"
+    
+        # git --no-pager log --since "11/22/2013" --until "12/06/2014" > ../history_10.2.0
+    
+    and compose the following list.
+
+* abhishek (30)
+** 479 - Adds a new CLI command pki ca-kraconnector-show.
+** 811 - Cannot connect to ds when anon. access is off
+** 945 - Updated man page for pki key commands
+** 1023 - Generate asymmetric keys in the DRM.
+** 1037 - Incorrect status change in key-request-review.
+** 1040 - Perform null checks on JSON attributes.
+** 1041 - Rename module kraclient to kra.
+** 1087 - Addresses upstream issues in the pki key-* CLI commands; update man page
+** 1089 - Addresses upstream issues in the pki key-* CLI commands; update man page
+** 1090 - Addresses upstream issues in the pki key-* CLI commands; update man page
+** 1091 - Addresses upstream issues in the pki key-* CLI commands; update man page
+** Cannot unmarshall *Request objects to ResourceMessage object.
+** Modify return object for retrieve_key(key_id, twsk)
+** Minor fix to a comment added in the previous patch.
+** Changes to KeyClient on the java side.
+** Refactoring KeyClient class and crypto classes.
+** New CLI commands for Key and KeyRequest resources - KeyShowCLI, KeyRequestShowCLI, KeyModifyCLI
+** Added new CLI commands for Key resource - key-archive, key-retrieve, key-recover, key-generate, key-request-review, key-template-show, key-template-find
+** Fixes for comments on patches 87 and 89
+** Added help option for all Key CLIs
+** Removed requestID parameter usage in [un]revoke request.
+** Implemented CertResource methods in CertClient on the python side.
+** Added methods in CertClient for CertRequestResource
+** Initial patch for ProfileClient implementation
+** Addressed comments given for patches 92-2, 93, 94.
+** Implemented remaining of the ProfileClient API.
+** Added methods for providing file input for profile request.
+** Refactoring ProfileClient to remove the property fields.
+** Fix public key print format in KeyCLI.
+** Make output of secrets consistent for all clients.
+* alee (59)
+** 781 - Fix typo in CS.cfg for ca.profiles.defaultSigningAlgsAllowed
+** 893 - Share subsystem cert in shared tomcat instances
+** 1051 - Add ability to create database as subtree of existing tree
+** 1095 - Fix pkidestroy for proxy ports
+** 1109 - Fix enroll_cert in cert.py to account for rejected requests
+** 1113 - Fix kra-connector-remove
+** 1132 - Fix sub-CA installation with own security domain
+** 1142 - Check for null values in GetConfigEntries
+** Debian - replace arch specification
+** Debian: add init script functionality
+** Debian - replace source with dot
+** Use a generic request object
+** Add new POST endpoint for creating requests
+** Remove old recovery and archival methods
+** Added SymKeyGen service
+** Fix some errors flagged by eclipse
+** Rename KeyDataInfos and KeyrequestInfos
+** Added more client code for DRM tests
+** Rename KeyRequest to ResourceMessage
+** Address review comments
+** Fix DRM archival, recovery and generation for non-DES3 keys.
+** Add strength and algorithm to KeyData and KeyInfo classes
+** Change the return type for KeyRequest creation operations
+** Fix minor issues from review.
+** Fix eclipse warnings.
+** Initial work on python API
+** Additional changes as per review.
+** Added decorator to handle exceptions
+** Add methods to getKeyInfo and change key status
+** Added python-nss build requirement
+** Fix minor issues from review.
+** Add methods to create nss certdb and import cert
+** Add getActiveKey() to the python client
+** rename client_id to client_key_id
+** Moved key functions out of kraclient.py
+** Added error checking in python client calls
+** Make generate_symmetric_key more generic.
+** Add ability to archive without sending pkiArchiveOptions object.
+** Fixes for coments from review
+** Get archival working for python key client
+** Fix crash when key size not set for key archival
+** Fix formatting issues identified by pycharm in key.py
+** fix issues identified by pycharm for system.py
+** Added security domain functionality to python API
+** Fix minor user creation issue
+** latest changes for code review
+** formatting fixes in python client code for pycharm
+** Modify master_dict to mdict to improve readability
+** Reformat scriptlets to be in line with PEP8
+** Fix pycharm warnings for server python classes
+** More PEP 8 formatting changes
+** Fix identities for security data storage, retrieval and generation
+** Changes to fix rawhide build
+** Adjust spec files to align with koji builds
+** Fix issues found by pycharm
+** Fixes to spec file for RHEL build
+** Remove pylint from rhel build
+** Added missing audit event ASYMKEY_GENERATION_REQUEST to KRA CS.cfg
+** Added idempotent 01-MoveWebApplicationContextFile migration script
+* awnuk (2)
+** 348 - authentication plugin avoiding anonymous access: https://wiki.idm.lab.bos.redhat.com/export/idmwiki/New_Directory_Authentication_Plugin
+** BZ 861467 - authentication plugin avoiding anonymous access: https://wiki.idm.lab.bos.redhat.com/export/idmwiki/New_Directory_Authentication_Plugin
+* benjamin.drung@profitbricks.com (2)
+** Fix manpage errors (using lintian tool on Debian)
+** fix typo succesfully -> successfully
+* cfu (28)
+** 447 - Mapping tokens to tokentype
+** 862 - TPS rewrite: provide connector service for JAVA-based TPS subsystem
+** 862 - HTTP connection factory multi-uri addendum
+** 879 - TPS Rewrite: User Authentication Framework
+** 882 - tokendb management, policy, and activities, 1st cut
+** 882 - tokendb policy handling, revocation and re-enroll
+** 882 - unique certID for certificate records
+** 882 - delete certs associated to a token when token is removed
+** 882 - remove all certs belong to a token in tokendb before add
+** 884 - TPS Rewrite: Audit and other Logging: http://pki.fedoraproject.org/wiki/TPS_Rewrite#Audit_Messages
+** 888 - (part 1: TKS) TPS rewrite: provide remote authority functions
+** 888 - part2 CA/KRA functions - TPS rewrite: provide remote authority functions
+** 941 - Part1 TPS Rewrite: Enrollment, Recovery, KeyRecovery, revoke/unrevoke processor
+** 941 - Renewal/Reenroll/Recovery/Renew policy 3rd cut; Renewal code; RetrieveCert code
+** 941 - Rest interface triggered revoke/unrevoke and cert status update; recovery
+** 1110 - pkispawn (configuration) does not provide CA extensions in subordinate certificate signing requests (CSR)
+** 1146 - Tomcat TPS: missing "keyType" for renewed certs in the cert records
+** 1158 - CMCRequest does not support internal token
+** 1198 - upgrade - file name fix from .ignore to .gitignore
+** 1206 - (java console) TLS range support: code change needed for cs when acting as client
+** BZ 871171 - (client-side code) Provide Tomcat support for TLS v1.1 and TLS v1.2
+** BZ 1151147 - issuerDN encoding correction
+** BZ 1158410 - TLS support: provide proper TLS default values and ciphers in server.xml and upgrade
+** External Registration feature merge (excluding TPS portion due to current TPS-rewrite effort): http://pki.fedoraproject.org/wiki/TPS_-_New_Recovery_Option:_External_Registration_DS
+** missed profile file
+** TPS Token Profile Resolver Plugin Framework
+** TPS Token Profile Resolver Framework - part2
+** authentication fix for the differences between "loginRequest" and "extendedLoginRequeest".
+* edewata (167)
+** 114 - Reorganized REST service classes.
+** 499 - Moved web application context file.
+** 499 - Direct deployment for TPS.
+** 499 - Removed config path from web.xml.
+** 519 - Split pki manual page.
+** 519 - Added CLI help command.
+** 554 - Removed hard-coded response type.
+** 554 - Updated REST interface for users.
+** 554 - Updated REST interface for certificates.
+** 554 - Updated REST interface for certificate requests.
+** 554 - Updated REST interface for groups.
+** 554 - Updated REST interface for account.
+** 554 - Updated REST interface for audit.
+** 554 - Updated REST interface for self tests.
+** 554 - Updated REST interface for TPS connectors.
+** 554 - Updated REST interface for TPS activities.
+** 554 - Updated REST interface for TPS authenticators.
+** 554 - Updated REST interface for TPS certificates.
+** 554 - Updated REST interface for TPS configuration.
+** 554 - Updated REST interface for TPS connections.
+** 554 - Updated REST interface for TPS profiles.
+** 554 - Updated REST interface for TPS profile mappings.
+** 554 - Updated REST interface for TPS tokens.
+** 554 - Updated REST interface for CA profiles.
+** 554 - Added REST client for system certificates.
+** 554 - Updated REST interface for keys.
+** 554 - Updated REST interface for key requests.
+** 554 - Refactored GroupMemberProcessor.
+** 554 - Upgraded RESTEasy client library.
+** 554 - Added CLI parameter to select message format.
+** 554 - Removed @Consumes and @Provides.
+** 554 - Updated required RESTEasy version.
+** 554 - Updated REST interface for security domain.
+** 554 - Fixed message format for PKIException.
+** 652 - Added ACL for selftests.
+** 654 - Updated jQuery library.
+** 654 - Added Backbone library.
+** 654 - Added TPS UI skeleton.
+** 654 - Added RCUE sample files.
+** 654 - Added paging links.
+** 654 - Using PATCH method for modify operations.
+** 654 - Added edit dialog boxes.
+** 654 - Fixed table style.
+** 654 - Added dialog for adding TPS users.
+** 654 - Added dialog for adding TPS groups.
+** 654 - Added dialog for adding TPS tokens.
+** 654 - Fixed TPS resource statuses.
+** 654 - Fixed edit dialog to enable/disable TPS resources.
+** 654 - Added checkboxes for selecting table rows.
+** 654 - Added RCUE files.
+** 654 - Added TPS UI navigation.
+** 654 - Improved TPS UI page loading.
+** 654 - Fixed pagination in TPS UI.
+** 654 - Fixed problem refreshing table after add.
+** 654 - Added remove button handler for TPS UI.
+** 654 - Refactored UI framework.
+** 654 - Added details page for TPS profiles.
+** 654 - Added details page for TPS connections.
+** 654 - Added details page for TPS authenticators.
+** 654 - Added buttons and dialogs to manage TPS properties.
+** 654 - Refactored TPS profiles.
+** 654 - Refactored TPS connections.
+** 654 - Refactored TPS authenticators.
+** 654 - Added save functionality for some TPS resources.
+** 654 - Fixed top level links to TPS UI.
+** 654 - Added add functionality for some TPS resources.
+** 654 - Added profile mapping page.
+** 654 - Rearranged TPS UI menu items.
+** 654 - Refactored UI framework.
+** 654 - Added audit page.
+** 654 - Added general configuration page.
+** 654 - Refactored UI framework.
+** 654 - Added change token status dialog.
+** 654 - Removed unused menu item in TPS UI.
+** 654 - Replaced token dialog with token page.
+** 654 - Replaced user dialog with user page.
+** 654 - Replaced group dialog with group page.
+** 654 - Replaced self test dialog with self test page.
+** 654 - Replaced certificate dialog with certificate page.
+** 654 - Replaced activity dialog with activity page.
+** 654 - Fixed user's name in TPS UI.
+** 654 - Added group members table in TPS UI.
+** 748 - Direct deployment for TPS.
+** 748 - Removed config path from web.xml.
+** 752 - Direct deployment for TPS.
+** 817 - Replaced Jettison with Jackson.
+** 817 - Added upgrade script to replace Jettison with Jackson.
+** 818 - Fixed problems in group operations.
+** 821 - Fixed CLI exceptions.
+** 839 - Cleaned up CLI command list.
+** 846 - Added login page for TPS UI.
+** 847 - Added search filter for TPS resources.
+** 847 - Added search filter for TPS UI.
+** 848 - Pagination improvement for TPS UI.
+** 848 - Table refresh improvement for TPS UI.
+** 848 - Fixed pagination controls.
+** 890 - Reorganized TPS installer classes.
+** 890 - Converted TPS connector docs into man page.
+** 890 - Refactored SystemConfigService (part 1).
+** 890 - Refactored SystemConfigService (part 2).
+** 890 - Refactored SystemConfigService (part 3).
+** 890 - Refactored SystemConfigService (part 4).
+** 890 - Refactored SystemConfigService (part 5).
+** 890 - Refactored SystemConfigService (part 6).
+** 890 - Refactored SystemConfigService (part 7).
+** 890 - Refactored SystemConfigService (part 8).
+** 890 - Refactored SystemConfigService (part 9).
+** 890 - Refactored SystemConfigService (part 10).
+** 890 - Refactored SystemConfigService (part 11).
+** 890 - Fixed TPS connector configuration.
+** 896 - Removed redundant GenericServlet.destroy() invocation.
+** 903 - Added logout support for IE.
+** 920 - Updated TPS search filters.
+** 920 - Fixed ConfigurationUtils.setupDBUser().
+** 920 - Fixed UGSubsystem.getUser().
+** 920 - Replaced filter in UGSubsystem.findUsers().
+** 920 - Replace filter in UGSubsystem.listGroups().
+** 920 - Added filter to GroupService.findGroupMembers().
+** 920 - Added filter to UserService.findUserMemberships().
+** 920 - Added minimum search keyword length requirement.
+** 948 - Fixed problem adding enabled TPS profile.
+** 949 - Added error dialog for TPS UI.
+** 950 - Converted TPS connector docs into man page.
+** 950 - Converted TPS profile doc into man page.
+** 955 - Added enable/disable functionality for TPS audit.
+** 958 - Replaced RCUE with PatternFly (part 1).
+** 958 - Replaced RCUE with PatternFly (part 2).
+** 958 - Replaced RCUE with PatternFly (part 3).
+** 958 - Replaced RCUE with PatternFly (part 4).
+** 959 - Added breadcrumb to TPS UI.
+** 963 - Renamed TPS groups.
+** 977 - Renamed TPS connection to TPS connector (part 1).
+** 977 - Renamed TPS connection to TPS connector (part 2).
+** 977 - Renamed TPS connection to TPS connector (part 3).
+** 977 - Renamed TPS connection to TPS connector (part 4).
+** 977 - Renamed TPS connection to TPS connector (part 5).
+** 979 - Fixed TPS database indexes.
+** 998 - Added README for pki-server.
+** 999 - Fixed internal errors in RenewalProcessor.
+** 1042 - Renamed CryptoUtil to CryptoProvider.
+** 1043 - Fixed NumberFormatException in key-request-find.
+** 1049 - Added ActivityDatabase.log().
+** 1062 - Refactored SystemCertClient.get_transport_cert().
+** 1063 - Fixed transport certificate delimiters.
+** 1065 - Added transport cert attributes.
+** 1085 - Fixed missing TPS token attributes.
+** 1085 - Fixed problem emptying a field in TPS UI.
+** 1117 - Enabled certificate revocation checking by default.
+** 1125 - Fixed problems with CLI authentication parameters.
+** 1126 - Fixed NPE in client-cert-import.
+** 1134 - Enabled certificate revocation checking by default.
+** 1148 - Added client-cert-request CLI.
+** 1149 - Displaying request status in ca-cert-request-review.
+** 1050 - Fixed missing TPS activity attributes.
+** 1151 - Added option to import user cert from CA.
+** 1152 - Added option to import client cert from CA.
+** Moved cmsbundle into server folder.
+** Added option to build without server packages.
+** Fixed template deployment.
+** Replaced deprecated ClientResponse class.
+** Replaced CLI wrapper with Python.
+** Fixed javadoc issues.
+** Fixed missing links in TPS UI.
+** Fixed new group page in TPS UI.
+** Added missing upgrade folders.
+** Fixed pylint failure on F21.
+** Revert "Enabled certificate revocation checking by default."
+* ftweedal (2)
+** 937 - Correct debug message in 'pkiconfig.py'
+** 1035 - Fix BasicConstraints min/max path length check
+* jmagne (19)
+** 878 - Implement Symmetric Key Changeover Feature
+** 890 - Secure Channel final steps.
+** 1016 - TpsClient support for extensions.
+** First cut at Java TPS Buffer class and APDU class.
+** TPS Rewrite Requested Review Changes:
+** Further TPS Rewrite Requested Review Changes:
+** Change to CMakeLists.txt to fix error found with adding the new TPS classes.
+** Further work on TPS Processor, format operation.
+** Further progress Format operation.
+** PhoneHome feature
+** Support for Applet Upgrade and Format.
+** Initial enrollment progress.
+** Fix rebase conflict.
+** First cut of end to end enrollment feature.
+** Remove stray file that found its way in.
+** Implement enrollment with server side keygen.
+** Misc TPS packaging tasks:
+** Recovery and Renewal feature:
+** Provide standalone Pin Reset Processor.
+* mharmsen (42)
+** 555 - Other ways to specify CLI password
+** 567 - ui needs to be scrubbed for missing images
+** 585 - 'pki cert-request-review' --output creates a file only when --action attribute is not present
+** 816 - pki-tomcat cannot be started after installation of ipa replica with ca
+** 832 - Remove legacy 'systemctl' files . . .
+** 840 - pkispawn requires policycoreutils-python
+** 843 - Incorrect CLI argument parsing
+** 843 - Incorrect CLI argument parsing
+** 868 - REST API get certs links missing segment
+** 869 - f19 ipa-server-install fails at step 6/22 of cert sys install - systemctl start pki-tomcatd.target fails
+** 898 - Giant /var/log/pki-ca/debug
+** 899 - RFE - ipa-server should keep backup of CS.cfg
+** 905 - 2 Step Configuration of CA instance using pkispawn fails
+** 918 - CLI commands does not return code '1' for the failures
+** 935 - patch to BtoA and AtoB to get ARM working
+** 946 - Installation of IPA hangs up when LANG is set to tr_TR.UTF8
+** 965 - Improve error message - remove ACL mapping to the user
+** 992 - pki cert-request-profile-find doesn't display list of profiles by default
+** 1017 - Integrate 'tpsclient' back into primary TPS package
+** 1017 - Rename pki-tps-tomcat to pki-tps
+** 1077 - Consider removing [Apache] section from 'default.cfg', pkispawn, and pkidestroy
+** 1120 - Remove Firefox PKI GUI Configuration Panel Interface
+** 1127 - Remove 'pki-ra', 'pki-setup', and 'pki-silent' packages . . .
+** 1130 - Add RHEL/CentOS conditionals to spec
+** 1136 - Remove ipa-pki-theme component and old unused 'ca-ui', 'kra-ui', 'ocsp-ui', 'ra-ui', 'tks-ui', and 'tps-ui' directories
+** 1138 - Remove 'migrate' source code from master branch
+** 1139 - Remove 'selinux' code from 'master' branch
+** 1198 - upgrade - remove .ignore file
+** 1211 - New release overwrites old source tarball
+** BZ 1037248 - pki-core FTBFS if "-Werror=format-security" flag is used
+** BZ 1037249 - pki-tps FTBFS if "-Werror=format-security" flag is used
+** BZ 1057959 - pkispawn requires policycoreutils-python
+** BZ 1081916 - freeipa does not install on arm architecture
+** BZ 1120045 - pki-core: Switch to java-headless (build)requires -- drop dependency on java-atk-wrapper
+** BZ 1165351 - Errata TPS test fails due to dependent packages not found
+** Cleaned up Pylint errors on Python Systemd class
+** Added 'daemon-reload' method
+** ExcludeArch:      ppc ppc64 ppcle ppc64le s390 s390x
+** Revised dependencies
+** Removed RA references
+** Changed Apache TPS references to Tomcat TPS references
+** Remove legacy multilib JNI_JAR_DIR logic
+* tjaalton@debian.org (1)
+** Fix Debian specific paths to jackson jars
+<font size="+1"><b>Server Platforms:</b></font>
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.2.0</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 21 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 21 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Dogtag Certificate Server 10.1.2 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[09/22/2014] ==
+Dogtag Certificate System 10.1.2 represents the second errata build for Dogtag 10.1.0.
+
+<font size="+1"><b>Project Name:</b></font>
+* '''''Dogtag Certificate System 10.1.2'''''
+
+<font size="+1"><b>Releases:</b></font>
+* [12/04/2014] Dogtag Certificate Server 10.1.2 [32-bit & 64-bit Fedora 20] (Release 7)
+* [12/02/2014] Dogtag Certificate Server 10.1.2 [32-bit & 64-bit Fedora 20] (Release 5)
+* [11/18/2014] Dogtag Certificate Server 10.1.2 [32-bit & 64-bit Fedora 20] (Release 4)
+* [09/22/2014] Dogtag Certificate Server 10.1.2 [32-bit & 64-bit Fedora 20] (Release 2)
+
+<font><b>Packages (Revised)</b></font>
+* Release 7:
+** pki-core-10.1.2-7.fc20         [2014-12-01]
+** dogtag-pki-10.1.2-7.fc20       [2014-12-04]
+** pki-console-10.1.2-7.fc20      [2014-12-04]
+* Release 5:
+** pki-core-10.1.2-5.fc20         [2014-11-26]
+** dogtag-pki-10.1.2-5.fc20       [2014-12-02]
+** pki-console-10.1.2-5.fc20      [2014-12-02]
+* Release 4:
+** pki-core-10.1.2-4.fc20         [2014-11-18]
+* Release 2:
+** pki-core-10.1.2-2.fc20         [2014-09-22]
+
+<font size="+1"><b>Upgrade Notes:</b></font>
+
+Simply use yum to update existing packages.
+
+<font size="+1"><b>Highlights since Dogtag 10.1.1</b></font>
+
+This release addressed the following issues:
+* Release 7:
+** Bugzilla Bug #1165351 - Errata TPS test fails due to dependent packages not found
+** Make dependencies comply with TLS changes
+* Release 5:
+** Ticket 1198 Bugzilla 1158410 add TLS range support to server.xml by default and upgrade
+** PKI Trac Ticket #1211 - New release overwrites old source tarball
+** updated various version dependencies
+* Release 4:
+** Bugzilla Bug #1151147 - issuerDN encoding correction
+* Release 2:
+**  addressed numerous issues in RHEL
+
+<font size="+1"><b>Detailed Changes since Dogtag 10.1.1</b></font>
+* alee (3)
+** 781 - Fix typo in CS.cfg for ca.profiles.defaultSigningAlgsAllowed
+** 1142 - Check for null values in GetConfigEntries
+** Fix migration script for 10.1.1
+* cfu (6)
+** 1110 - pkispawn (configuration) does not provide CA extensions in subordinate certificate signing requests (CSR)
+** 1198 - TLS support: provide proper TLS default values and ciphers in server.xml and upgrade
+** 1206 - (java console) TLS range support: code change needed for cs when acting as client
+** BZ 1158410 - add TLS range support to server.xml
+** BZ 871171 - (client-side code) Provide Tomcat support for TLS v1.1 and TLS v1.2
+** BZ 1151147 - issuerDN encoding correction
+* edewata (2)
+** 499 - Moved web application context file.
+** Fixed template deployment.
+* mharmsen (9)
+** 1211 - New release overwrites old source tarball
+** BZ 1165351 - Errata TPS test fails due to dependent packages not found
+** BZ 1108303 - Rebase pki-core to 10.1 (RHEL)
+** BZ 1117073 - pki-core ppc64le is missing from ExcludeArch line of spec file (RHEL)
+** Changed buildtime requirement from 'resteasy-base-jackson-provider >= 3.0.6-1 to 'resteasy-base-jettison-provider >= 3.0.6-1' (RHEL)
+** Add missing 'jakarta-commons-httpclient' build and runtime requirement
+** Exclude the 'ppcle' and 'ppc64le' platforms from being built (RHEL)
+** Update 'resteasy-base' requirements on RHEL platforms
+** Suppress pylint on RHEL platforms
+
+<font size="+1"><b>Server Platforms:</b></font>
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.1.2</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 20 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 20 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>

@@ -1,0 +1,95 @@
+= Overview =
+
+Tomcat 8.5 source code is available at https://github.com/apache/tomcat85.
+
+= Prerequisites =
+
+To install build dependencies:
+
+<pre>
+$ dnf builddep tomcat
+</pre>
+
+= Building Upstream Tomcat =
+
+To get upstream Tomcat 8.5 source code:
+
+<pre>
+$ git clone https://github.com/apache/tomcat85.git
+$ cd tomcat85
+</pre>
+
+To build binaries:
+
+<pre>
+$ ant
+</pre>
+
+To create source tarball:
+
+<pre>
+$ ant package-src-tgz
+</pre>
+
+= Fedora Development =
+
+== csutherl's Repository ==
+
+To create a COPR build:
+
+* Source Type: Build from an SCM repository
+* SCM type: git
+* Clone URL: https://github.com/csutherl/tomcat-dev-rpm
+* Committish: tomcat-8.5.x
+* Build SRPM with: tito_test
+
+To create a local build:
+
+<pre>
+$ git clone https://github.com/csutherl/tomcat-dev-rpm.git
+$ cd tomcat-dev-rpm
+$ fedpkg --release f25 local
+</pre>
+
+== Getting Source Package ==
+
+To get the source package:
+
+<pre>
+$ fedpkg clone tomcat
+$ cd tomcat
+$ git checkout -b f28 origin/f28
+</pre>
+
+To update source tarball:
+
+<pre>
+$ sha512sum --tag apache-tomcat-8.5.32-src.tar.gz > sources
+</pre>
+
+== Creating Local Build ==
+
+To create a local build:
+
+<pre>
+$ fedpkg local
+</pre>
+
+To install the local build:
+
+<pre>
+$ dnf install noarch/*
+</pre>
+
+== Creating COPR Build ==
+
+To create a COPR build:
+
+<pre>
+$ fedpkg copr-build pki-10.6
+</pre>
+
+= References =
+
+* [[Tomcat 8.5]]
+* [https://github.com/apache/tomcat85 Tomcat 8.5 Repository]

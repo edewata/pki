@@ -1,0 +1,97 @@
+= Overview =
+
+In PKI 10.6 the debug log is implemented using java.util.logging (JUL) framework,
+but the debug level can still be configured using the <code>debug.level</code> parameter in <code>CS.cfg</code>.
+
+= Configuration =
+
+The JUL configuration is stored in /usr/share/pki/<subsystem>/webapps/<subsystem>/WEB-INF/classes/logging.properties:
+
+* https://github.com/dogtagpki/pki/blob/DOGTAG_10_6_BRANCH/base/ca/shared/webapps/ca/WEB-INF/classes/logging.properties
+* https://github.com/dogtagpki/pki/blob/DOGTAG_10_6_BRANCH/base/kra/shared/webapps/kra/WEB-INF/classes/logging.properties
+* https://github.com/dogtagpki/pki/blob/DOGTAG_10_6_BRANCH/base/ocsp/shared/webapps/ocsp/WEB-INF/classes/logging.properties
+* https://github.com/dogtagpki/pki/blob/DOGTAG_10_6_BRANCH/base/tks/shared/webapps/tks/WEB-INF/classes/logging.properties
+* https://github.com/dogtagpki/pki/blob/DOGTAG_10_6_BRANCH/base/tps/shared/webapps/tps/WEB-INF/classes/logging.properties
+
+By default they are configured as follows:
+
+<pre>
+handlers = org.apache.juli.FileHandler
+
+org.apache.juli.FileHandler.directory = ${catalina.base}/logs/${classloader.webappName}
+org.apache.juli.FileHandler.prefix = debug.
+org.apache.juli.FileHandler.maxDays = 7
+org.apache.juli.FileHandler.formatter = org.dogtagpki.util.logging.PKIFormatter
+
+.level = WARNING
+.handler = org.apache.juli.FileHandler
+
+org.dogtagpki.level = WARNING
+com.netscape.level = WARNING
+netscape.level = WARNING
+</pre>
+
+The legacy configuration is stored in /var/lib/pki/<font color="red">pki-tomcat</font>/<subsystem>/conf/CS.cfg:
+
+* https://github.com/dogtagpki/pki/blob/DOGTAG_10_6_BRANCH/base/ca/shared/conf/CS.cfg
+* https://github.com/dogtagpki/pki/blob/DOGTAG_10_6_BRANCH/base/kra/shared/conf/CS.cfg
+* https://github.com/dogtagpki/pki/blob/DOGTAG_10_6_BRANCH/base/ocsp/shared/conf/CS.cfg
+* https://github.com/dogtagpki/pki/blob/DOGTAG_10_6_BRANCH/base/tks/shared/conf/CS.cfg
+* https://github.com/dogtagpki/pki/blob/DOGTAG_10_6_BRANCH/base/tps/shared/conf/CS.cfg
+
+By default they are configured as follows:
+
+ debug.append=true
+ debug.enabled=true
+ debug.filename=/var/lib/pki/<font color="red">pki-tomcat</font>/logs/<subsystem>/debug
+ debug.hashkeytypes=
+ debug.level=0
+ debug.showcaller=false
+
+== Log Files ==
+
+By default log messages will be stored in /var/log/pki/<font color="red">pki-tomcat</font>/<subsystem>/debug.YYYY-MM-DD.log which will be rotated daily.
+
+By default it will only keep log messages from the last 7 days.
+
+== Log Format ==
+
+The messages will be formatted by [https://github.com/dogtagpki/pki/blob/master/base/util/src/org/dogtagpki/util/logging/PKIFormatter.java org.dogtagpki.util.logging.PKIFormatter].
+
+== Log Level ==
+
+The legacy log levels are mapped into JUL log levels as follows:
+
+{| border="1" style="border-collapse: collapse;"
+! width="200" | PKI Log Level
+! width="200" | SLF4J Log Level
+! width="200" | JUL Log Level
+|-
+| 0-1 (OBNOXIOUS)
+| TRACE
+| FINEST
+|-
+| 2-5 (VERBOSE)
+| DEBUG
+| FINE
+|-
+| 6-10 (INFORM)
+| INFO
+| INFO
+|-
+| >10
+| WARN
+| WARNING
+|-
+|
+| ERROR
+| SEVERE
+|}
+
+= Pre-Installation =
+
+To change the debug level prior to running the installation, change the CS.cfg template in /usr/share/pki/<subsystem>/conf.
+
+= Post-Installation =
+
+To change the debug level after the installation is complete, change the CS.cfg in /var/lib/pki/<font color="red">pki-tomcat</font>/<subsystem>/conf.

@@ -1,0 +1,36 @@
+= Overview =
+
+This page describes the process to configure CRL.
+
+= Pre-Install Configuration =
+
+== Enabling/Disabling CRL ==
+
+CRL is enabled by default. To disable CRL specify the following parameter in pkispawn configuration file:
+
+ [CA]
+ pki_master_crl_enable=False
+
+== Configuring CRL number ==
+
+The following parameter can be added into pkispawn config file:
+
+ [CA]
+ pki_ca_starting_crl_number=4000
+
+Here 4000 is just an example. If this is set, after CA installation, the value of "crlNumber" in the db will be
+set to "4000" as selected instead of 1.
+
+If there is no setting made, the current default behavior will happen. In this case the "crlNumber" will end up being set to "1" as normal.
+
+= Post-Install Configuration =
+
+See [https://github.com/dogtagpki/pki/wiki/Configuring-CRL Configuring CRL].
+
+= References =
+
+* [[CRL]]
+* [https://github.com/dogtagpki/pki/wiki/CA-Audit-Events CA Audit Events]
+* [https://fedorahosted.org/pki/ticket/2406 Ticket #2406: Make starting CRL Number configurable]
+* [https://access.redhat.com/documentation/en-US/Red_Hat_Certificate_System/9/html/Administration_Guide/Issuing_CRLs.html RHCS 9 Administration Guide - Issuing CRLs]
+* [https://www.freeipa.org/page/Howto/Promote_CA_to_Renewal_and_CRL_Master IPA - Howto/Promote CA to Renewal and CRL Master]

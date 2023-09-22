@@ -1,0 +1,73 @@
+= Firewall Configuration =
+
+The configuration is located at /etc/sysconfig/firewalld.
+
+To enable debugging:
+
+<pre>
+FIREWALLD_ARGS=--debug=10
+</pre>
+
+To display firewall status:
+
+<pre>
+$ firewall-cmd --state
+</pre>
+
+To display active zones:
+
+<pre>
+$ firewall-cmd --get-active-zones
+FedoraWorkstation
+  interfaces: enp0s25 tun0
+</pre>
+
+To display services:
+
+<pre>
+$ firewall-cmd --list-services
+</pre>
+
+To display ports:
+
+<pre>
+$ firewall-cmd --zone=FedoraWorkstation --list-ports
+1025-65535/udp 1025-65535/tcp
+</pre>
+
+To display sources:
+
+<pre>
+$ firewall-cmd --zone=FedoraWorkstation --list-sources
+</pre>
+
+= Enabling Firewall =
+
+<pre>
+$ systemctl start firewalld
+</pre>
+
+= Disabling Firewall =
+
+<pre>
+$ systemctl stop firewalld
+</pre>
+
+= Opening a Port =
+
+To open a port:
+
+<pre>
+$ firewall-cmd --add-port=8080/tcp
+$ firewall-cmd --reload
+</pre>
+
+To configure port forwarding:
+
+<pre>
+$ firewall-cmd --zone=external --add-forward-port=port=<source port>:proto=tcp:toport=<dest port>:toaddr=<dest IP>
+</pre>
+
+= See Also =
+
+* [[Fedora Setup]]

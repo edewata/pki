@@ -1,0 +1,285 @@
+= Overview =
+
+This page describes the process for a package maintainer to release PKI Fedora packages.
+
+This page assumes that the PKI source code has been checked out into <font color="red">pki</font> folder as described in [[PKI 10.6 Development|this document]].
+
+See also:
+
+* [[PKI Core Release Procedure]]
+* [[Dogtag PKI Release Procedure]]
+
+= Authentication =
+
+Obtain a Kerberos ticket for FEDORAPROJECT.ORG account and [[COPR]] authentication token.
+
+= Getting Source Packages =
+
+<font color="red"> NOTE:</font> '''dogtag-pki''' package needs to be built '''only''' if there is a change in ${version} of pki (ie) individual ${release} can be skipped unless there is a theme level/"Requires" level changes.
+
+
+To get the source packages:
+
+ $ fedpkg clone pki-core <font color="red">Fedora/pki-core</font>
+ $ fedpkg clone dogtag-pki <font color="red">Fedora/dogtag-pki</font>
+
+The above command will create a new <font color="red">Fedora/pki-core</font> and <font color="red">Fedora/dogtag-pki</font> folders.
+
+If necessary, a forked repository can be added as a remote repository:
+
+ $ cd <font color="red">Fedora/pki-core</font>
+ $ git remote add <username> ssh://<username>@pkgs.fedoraproject.org/forks/<username>/rpms/pki-core.git
+ $ git fetch <username>
+ $ cd <font color="red">Fedora/dogtag-pki</font>
+ $ git remote add <username> ssh://<username>@pkgs.fedoraproject.org/forks/<username>/rpms/dogtag-pki.git
+ $ git fetch <username>
+
+= Updating Version and Release Numbers =
+
+In <font color="red">pki</font>, update the version numbers and release numbers in the spec templates.
+
+Pre-release (i.e. alpha, beta) where x is major version and y is minor version:
+* x.y.0-0.n
+
+Initial release:
+* x.y.0-1
+
+Updates (i.e. upstream bug fixes) where z is 1, 2, and so on:
+* x.y.z-1
+
+Downstream patch (e.g. Fedora-specific patches) where r is 2, 3, and so on:
+* x.y.z-r
+
+See also:
+* [[Versioning Scheme]]
+* [https://fedoraproject.org/wiki/Packaging:Versioning Guidelines for Versioning Fedora Packages]
+
+= Merging Spec Changes =
+
+In <font color="red">pki</font>, generate a spec file for the pki-core package, then merge it with actual spec file:
+
+ $ ./build.sh \
+     --name=pki-core \
+     --with-pkgs=base,server,ca,kra,ocsp,tks,tps,javadoc,console,debug \
+     spec
+ $ meld ~/build/pki-core/SPECS/pki-core.spec <font color="red">Fedora/pki-core</font>/pki-core.spec 
+
+Generate a spec file for the dogtag-pki package, then merge it with actual spec file:
+
+ $ ./build.sh \
+     --name=dogtag-pki \
+     --with-pkgs=theme,meta,debug \
+     spec
+ $ meld ~/build/dogtag-pki/SPECS/dogtag-pki.spec <font color="red">Fedora/dogtag-pki</font>/dogtag-pki.spec
+
+'''Note:''' Do not override changes that were done downstream unless they were done improperly.
+
+In the actual spec files, add a change log entry for the new release in downstream spec file (unless there is one already that has not been released):
+
+ * Mon Mar 29 2018 Dogtag PKI Team <pki-devel@redhat.com> - 10.6.0-1
+ - Rebased to PKI 10.6.0
+
+'''Note:''' Do not add a change log entry in the upstream spec template.
+
+= Committing Upstream Changes =
+
+In <font color="red">pki</font>, commit all changes to upstream:
+
+ $ git commit -a -m "Updated version number to x.y.z-r"
+
+Create a local tag with the following commands:
+
+ $ git tag v10.6.0
+
+For pre-releases, append the phase name to the version number, e.g. v10.6.0-a1.
+
+= Updating Source Tarball =
+
+In <font color="red">pki</font>, generate a source tarball. To generate a tarball from the latest commit:
+
+ $ ./build.sh --source-tag=HEAD src
+
+To generate a tarball from a tag:
+
+ $ ./build.sh --source-tag=v10.6.1 src
+
+Do not use the following command without --source-tag since it may generate a tarball with inconsistent checksum:
+
+ $ ./build.sh src
+
+Import the same source tarball into each package with the following commands:
+
+ $ cd <font color="red">Fedora/pki-core</font>
+ $ fedpkg new-sources pki-10.6.1.tar.gz
+
+ $ cd <font color="red">Fedora/dogtag-pki</font>
+ $ fedpkg new-sources pki-10.6.1.tar.gz
+
+If the release uses patch files, update the list of patch files in the spec file:
+
+ Patch1: patch1.patch
+ Patch2: patch2.patch
+ ...
+
+Add new patch files with this command:
+
+ $ git add <patch file>
+
+Remove unused patch files with this command:
+
+ $ git rm <patch file>
+
+Then verify with the following commands:
+
+ $ fedpkg local
+ $ fedpkg lint
+
+= Creating Test Build =
+
+For each package, create a [[COPR]] build with the following commands:
+
+ $ cd <font color="red">Fedora/pki-core</font>
+ $ fedpkg copr-build @pki/10.6 --nowait
+ $ cd <font color="red">Fedora/dogtag-pki</font>
+ $ fedpkg copr-build @pki/10.6 --nowait
+
+Once the test builds are complete, push the tag upstream:
+
+ $ cd <font color="red">pki</font>
+ $ git push origin v10.6.0
+
+= Committing Source Package Changes =
+
+For each package, commit package changes to master (i.e. rawhide):
+
+ $ cd <font color="red">Fedora/pki-core</font>
+ $ git commit -m "Rebased to PKI 10.6.0"
+ $ git push origin master
+ $ cd <font color="red">Fedora/dogtag-pki</font>
+ $ git commit -m "Rebased to PKI 10.6.0"
+ $ git push origin master
+
+= Creating Koji Build for Rawhide =
+
+For each package, create a Koji build:
+
+ $ cd <font color="red">Fedora/pki-core</font>
+ $ fedpkg build --nowait
+ $ cd <font color="red">Fedora/dogtag-pki</font>
+ $ fedpkg build --nowait
+
+If necessary, the task can be monitored with the following command:
+
+ $ koji watch-task <task ID>
+
+Once the build is complete, tag package repository:
+
+ $ cd <font color="red">Fedora/pki-core</font>
+ $ git tag pki-core-10.6.0-1.fc29
+ $ git push origin pki-core-10.6.0-1.fc29
+ $ cd <font color="red">Fedora/dogtag-pki</font>
+ $ git tag dogtag-pki-10.6.0-1.fc29
+ $ git push origin dogtag-pki-10.6.0-1.fc29
+
+= Creating Koji Build for Current Branch =
+
+For each package, cherry pick the changes from master into the current branch (e.g. f28):
+
+ $ cd <font color="red">Fedora/pki-core</font>
+ $ git checkout <branch>
+ $ git cherry-pick <prev tag>..<current tag>
+ $ git push origin <branch>
+ $ cd <font color="red">Fedora/dogtag-pki</font>
+ $ git checkout <branch>
+ $ git cherry-pick <prev tag>..<current tag>
+ $ git push origin <branch>
+
+If necessary, create BuildRoot overrides for unpublished dependencies, for example:
+
+<pre>
+$ bodhi overrides save jss-4.4.4-1.fc28
+$ koji wait-repo f28-build --build=jss-4.4.4-1.fc28
+</pre>
+
+<pre>
+$ bodhi overrides save tomcat-8.5.29-1.fc28
+$ koji wait-repo f28-build --build=tomcat-8.5.29-1.fc28
+</pre>
+
+<pre>
+$ bodhi overrides save tomcatjss-7.3.0-1.fc28
+$ koji wait-repo f28-build --build=tomcatjss-7.3.0-1.fc28
+</pre>
+
+Then create a Koji build:
+
+ $ fedpkg build --nowait
+
+If necessary, the task can be monitored with the following command:
+
+ $ koji watch-task <task ID>
+
+Tag package repository:
+
+ $ cd <font color="red">Fedora/pki-core</font>
+ $ git tag pki-core-10.6.0-1.fc28
+ $ git push origin pki-core-10.6.0-1.fc28
+ $ cd <font color="red">Fedora/dogtag-pki</font>
+ $ git tag dogtag-pki-10.6.0-1.fc28
+ $ git push origin dogtag-pki-10.6.0-1.fc28
+
+= Creating Bodhi Update for Current Branch =
+
+'''If updating multiple packages at the same time (e.g., tomcatjss), wait to push all of them together'''
+
+To submit package update:
+
+ $ bodhi updates new \
+  --request=testing \
+  --type=enhancement \
+  --notes="Update to PKI 10.6.0-1" \
+ pki-core-10.6.0-1.fc28,\
+ dogtag-pki-10.6.0-1.fc28
+
+To submit module update:
+
+ $ bodhi updates new \
+  --request=testing \
+  --type=enhancement \
+  --notes="Update to PKI 10.6.0-1" \
+ pki-10.6-20180711014825.9c690d0e
+
+= Creating GitHub Release =
+
+Go to https://github.com/dogtagpki/pki/releases/tag/v10.6.1 and edit the release.
+
+Include links to the new releases:
+
+* https://src.fedoraproject.org/rpms/pki-core/releases
+* https://src.fedoraproject.org/rpms/pki-console/releases
+* https://src.fedoraproject.org/rpms/dogtag-pki/releases
+* https://src.fedoraproject.org/rpms/dogtag-pki-theme/releases
+
+= Sending Announcements =
+
+Send an email similar to the following to pki-devel, pki-users, and pki-announce:
+
+<pre>
+PKI 10.6.0 is now available upstream:
+https://github.com/dogtagpki/pki/releases/tag/v10.6.0
+
+Fedora 28 builds are available via the following update:
+https://bodhi.fedoraproject.org/updates/FEDORA-2018-xxxxxx
+
+Fedora Rawhide builds are available in Koji.
+
+Fedora 27 builds are available in this COPR repository:
+https://copr.fedorainfracloud.org/coprs/g/pki/10.6/
+</pre>
+
+= References =
+
+* [[Releases]]
+* [[PKI Fedora Development]]
+* [[PKI 10.6 Development]]
+* [[JSS Release Procedure]]

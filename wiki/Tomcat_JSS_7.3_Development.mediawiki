@@ -1,0 +1,142 @@
+= Overview =
+
+This page describes the development process for Tomcat JSS 7.3 or later. For other versions see [[Tomcat JSS Development]].
+
+= Source Code =
+
+To clone the source repository:
+
+<pre>
+$ git clone git@github.com:dogtagpki/tomcatjss.git
+$ cd tomcatjss
+</pre>
+
+By default it will checkout the master branch.
+
+To list available branches:
+
+<pre>
+$ git branch -r
+</pre>
+
+To switch to a different branch:
+
+<pre>
+$ git checkout <branch>
+</pre>
+
+= Dependencies =
+
+During development Tomcat JSS may require dependencies that are only available in [https://github.com/dogtagpki/pki/wiki/COPR-Repositories COPR Repositories].
+
+To enable PKI COPR repository:
+
+<pre>
+$ dnf copr -y enable @pki/10.6
+</pre>
+
+To install Tomcat JSS dependencies:
+
+<pre>
+$ dnf builddep -y --spec tomcatjss.spec
+</pre>
+
+= Building Tomcat JSS Packages =
+
+To build Tomcat JSS packages:
+
+<pre>
+$ ./build.sh [OPTIONS] [target]
+</pre>
+
+Available targets:
+* src: build RPM sources (tarball and patch)
+* spec: build RPM spec and everything above
+* srpm: build SRPM package and everything above
+* rpm: build RPM packages and everything above (default)
+
+The default working directory is $HOME/build/jss. During the build process the following subfolders will be created:
+* BUILD: contains unpacked source code
+* BUILDROOT: contains installed binaries
+* RPMS: contains the binary packages
+* SOURCES: contains the tarball and patch files
+* SPECS: contains the spec file
+* SRPMS: contains the source package
+
+To start the build process:
+
+<pre>
+$ ./build.sh
+</pre>
+
+It will build Tomcat JSS packages with the files in the local source directory.
+
+The package version number and release number will be determined by the Version and Release attributes in the tomcatjss.spec.in.
+
+== Changing Working Directory ==
+
+To change the working directory:
+
+<pre>
+$ ./build.sh --work-dir=/tmp/tomcatjss
+</pre>
+
+== Adding Timestamp and Commit ID ==
+
+To add the current timestamp and the latest commit ID of the current branch into the release number:
+
+<pre>
+$ ./build.sh --with-timestamp --with-commit-id
+</pre>
+
+== Changing Distribution Name ==
+
+The default distribution name can be obtained with the following command:
+
+ $ rpm --eval '%{dist}' | cut -c 2-
+
+To change the distribution name:
+
+ $ ./build.sh --dist=<name>
+
+'''Note:''' The distribution name should not be prefixed with a dot (e.g. fc28).
+
+== Building with Current Branch ==
+
+To build with the code already checked into the current branch:
+
+<pre>
+$ ./build.sh --source-tag=HEAD
+</pre>
+
+This will produce the following source:
+* tomcatjss-<version>.tar.gz: tarball containing the source code up to the HEAD of the branch
+
+== Building with Patched Tarball ==
+
+To build with a tarball and a patch file:
+
+<pre>
+$ ./build.sh --source-tag=v7.3.0
+</pre>
+
+This will produce the following sources:
+* tomcatjss-<version>.tar.gz: a tarball containing the source code tagged with v7.3.0
+* tomcatjss-<version>-<release>.patch: a combined patch containing all changes after v7.3.0 up to HEAD
+
+'''Notes:'''
+* Do not specify a tag that does not exist in the current branch.
+* The patch can be split into smaller patches if necessary.
+* It may be possible to add another option to generate separate patch for each commit instead of a combined one.
+
+= Installing Tomcat JSS Packages =
+
+To install Tomcat JSS packages:
+
+<pre>
+$ dnf install $HOME/build/tomcatjss/RPMS/*
+</pre>
+
+= References =
+
+* [[Tomcat JSS Development]]

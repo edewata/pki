@@ -1,0 +1,392 @@
+= High-level Design =
+KRATool is a stand-alone Java-based command-line utility
+
+== KRATool Parameters ==
+
+Mandatory parameters:
+
+ -kratool_config_file <complete path to the kratool config file>
+ -source_ldif_file <complete path to the source LDIF input file>
+ -target_ldif_file <complete path to the target LDIF output file>
+ -log_file <complete path to the log file to be generated>
+
+Rewrap parameters:
+
+ -source_pki_security_database_path <complete path to the source security database used by data in the source LDIF file>
+ -source_storage_token_name <name of the token containing the source storage token>
+ -source_storage_certificate_nickname <nickname of the source storage certificate>
+ -target_storage_certificate_file <complete path to the target storage certificate file; the target storage certificate is stored in an ASCII format between a header and footer>
+
+ID offset parameters:
+ -append_id_offset <ID offset that is appended to each record's source ID>
+ -remove_id_offset <ID offset that is removed from each record's source ID>
+
+<font color=red>Note that either '''all rewrap parameters OR all ID offset parameters''' is mandatory.</font>
+
+
+Optional parameters:
+ -source_pki_security_database_pwdfile <complete path to the password file which ONLY contains the password used to access the source security databases; used only during rewrapping>
+ -source_kra_naming_context <original source KRA naming context>
+ -target_kra_naming_context <renamed target KRA naming context>
+ -process_requests_and_key_records_only
+
+== KRATool Config file ==
+
+# The LDIF record fields specified by this file are the ONLY fields that can be changed in the LDIF file.
+# No fields can be added without changes to the KRATool source code, and several fields are commented on within this configuration file.
+# Additionally, internal LDAP fields such as 'modifyTimestamp' cannot, and will not, be changed by KRATool.
+# By default, all supported fields are processed by KRATool and the default config file resides at <font color="blue">/usr/share/pki/java-tools/KRATool.cfg</font>
+
+For example, to process or leave out a field from CA enrollment requests, the KRATool looks at the following lines from the configuration file provided
+
+ kratool.ldif.caEnrollmentRequest.cn=true
+ kratool.ldif.caEnrollmentRequest.dateOfModify=true
+ kratool.ldif.caEnrollmentRequest.dn=true
+ kratool.ldif.caEnrollmentRequest.extdata.keyRecord=true
+ kratool.ldif.caEnrollmentRequest.extdata.requestNotes=true
+ kratool.ldif.caEnrollmentRequest.requestId=true
+
+If set to '''true''', the field ''will be processed'' in the generated LDIF file.
+If set to '''false''', the field will be ''untouched'' in the generated LDIF file.
+
+= Low-level Design =
+
+The KRA records, that are processed by KRATool, are classified into 2 types:
+
+# Requests
+# Key Records
+
+There are seven different types of KRA LDIF records that are processed, in total. 
+
+== KRA LDIF Record Fields to be Processed ==
+
+{| class="wikitable"
+|-
+! scope="col"| Attribute
+! scope="col"| Attribute Description
+! scope="col"| Source Value
+! scope="col"| Target Value
+|-
+| cn
+| Common Name of the entry
+| source cn
+| (source cn + target_uid_offset) OR (source cn - target_uid_offset)
+|-
+| dateOfModify
+| Date the entry was last modified
+| original date
+| date modified
+|-
+| extdata-keyrecord
+|
+| source extdata-keyrecord
+| (source extdata-keyrecord + target_uid_offset)
+|-
+| extdata-requestid
+| Request ID
+| source extdata-requestid
+| (source extdata-requestid + target_uid_offset)
+|-
+| extdata-requestnotes
+| Comments (usually empty)
+| comments (generally empty)
+| comments + [REWRAPPED] + [APPENDED OFFSET OF xxx...xxx] OR [REMOVED OFFSET OF xxx...xxx]
+|-
+| extdata-serialnumber
+| Serial number of the cert whose key was retrieved
+| source extdata-serialnumber
+|(source extdata-serialnumber + target_uid_offset)
+|-
+|privateKeyData
+|payload key wrapped with KRA’s storage cert + Payload encrypted/wrapped with payload key
+|private user key wrapped with source storage key
+|private user key wrapped with target storage key
+|-
+|requestId
+|Request ID
+|[source length in digits][source requestId]
+|[target length in digits][(source requestId + target_uid_offset)]
+|-
+|serialno
+|Serial number of the key
+|[source length in digits][source serialno]
+|[target length in digits][(source serialno + target_uid_offset)]
+|}
+
+
+=== Key Requests ===
+* CA enrollment request:
+<ul>
+<table border=1>
+<tr>
+<th bgcolor="lightgrey">Attribute</th>
+<th bgcolor="lightgrey">Source Value</th>
+<th bgcolor="lightgrey">Target Value</th>
+</tr>
+<tr>
+<td align="middle">cn</td>
+<td align="middle">source cn</td>
+<td align="middle">(source cn + target_uid_offset)</td>
+</tr>
+<tr>
+<td align="middle">dateOfModify</td>
+<td align="middle">original date</td>
+<td align="middle">date modified</td>
+</tr>
+<tr>
+<td align="middle">extdata-keyrecord</td>
+<td align="middle">source extdata-keyrecord</td>
+<td align="middle">(source extdata-keyrecord + target_uid_offset)</td>
+</tr>
+<tr>
+<td align="middle">extdata-requestid</td>
+<td align="middle">source extdata-requestid</td>
+<td align="middle">(source extdata-requestid + target_uid_offset)</td>
+</tr>
+<tr>
+<td align="middle">extdata-requestnotes</td>
+<td align="middle">comments (generally empty)</td>
+<td align="middle">comments + [REWRAPPED] + [APPENDED OFFSET OF ''xxx...xxx'']</td>
+</tr>
+<tr>
+<td align="middle">requestId</td>
+<td align="middle">[source length in digits][source requestId]</td>
+<td align="middle">[target length in digits][(source requestId + target_uid_offset)]</td>
+</tr>
+</table>
+<br>
+</ul>
+
+* CA recovery request:
+<ul>
+<table border=1>
+<tr>
+<th bgcolor="lightgrey">Attribute</th>
+<th bgcolor="lightgrey">Source Value</th>
+<th bgcolor="lightgrey">Target Value</th>
+</tr>
+<tr>
+<td align="middle">cn</td>
+<td align="middle">source cn</td>
+<td align="middle">(source cn + target_uid_offset)</td>
+</tr>
+<tr>
+<td align="middle">dateOfModify</td>
+<td align="middle">original date</td>
+<td align="middle">date modified</td>
+</tr>
+<tr>
+<td align="middle">extdata-requestid</td>
+<td align="middle">source extdata-requestid</td>
+<td align="middle">(source extdata-requestid + target_uid_offset)</td>
+</tr>
+<tr>
+<td align="middle">extdata-requestnotes</td>
+<td align="middle">ATTRIBUTE DOES NOT EXIST</td>
+<td align="middle">[REWRAPPED] + [APPENDED OFFSET OF xxx...xxx]</td>
+</tr>
+<tr>
+<td align="middle">extdata-serialno</td>
+<td align="middle">source extdata-serialnumber</td>
+<td align="middle">(source extdata-serialnumber + target_uid_offset)</td>
+</tr>
+<tr>
+<td align="middle">requestId</td>
+<td align="middle">[source length in digits][source requestId]</td>
+<td align="middle">[target length in digits][(source requestId + target_uid_offset)]</td>
+</tr>
+</table>
+<br>
+</ul>
+
+* TPS netkeyKeygen request:
+<ul>
+<table border=1>
+<tr>
+<th bgcolor="lightgrey">Attribute</th>
+<th bgcolor="lightgrey">Source Value</th>
+<th bgcolor="lightgrey">Target Value</th>
+</tr>
+<tr>
+<td align="middle">cn</td>
+<td align="middle">source cn</td>
+<td align="middle">(source cn + target_uid_offset)</td>
+</tr>
+<tr>
+<td align="middle">dateOfModify</td>
+<td align="middle">original date</td>
+<td align="middle">date modified</td>
+</tr>
+<tr>
+<td align="middle">extdata-keyrecord</td>
+<td align="middle">source keyrecord</td>
+<td align="middle">(source keyrecord + target_uid_offset)</td>
+</tr>
+<tr>
+<td align="middle">extdata-requestid</td>
+<td align="middle">source requestid</td>
+<td align="middle">(source requestid + target_uid_offset)</td>
+</tr>
+<tr>
+<td align="middle">extdata-requestnotes</td>
+<td align="middle">ATTRIBUTE DOES NOT EXIST</td>
+<td align="middle">[REWRAPPED] + [APPENDED OFFSET OF xxx...xxx]</td>
+</tr>
+<tr>
+<td align="middle">requestId</td>
+<td align="middle">[source length in digits][source requestId]</td>
+<td align="middle">[target length in digits][(source requestId + target_uid_offset)]</td>
+</tr>
+</table>
+<br>
+</ul>
+
+* TPS recovery request:
+<ul>
+<table border=1>
+<tr>
+<th bgcolor="lightgrey">Attribute</th>
+<th bgcolor="lightgrey">Source Value</th>
+<th bgcolor="lightgrey">Target Value</th>
+</tr>
+<tr>
+<td align="middle">cn</td>
+<td align="middle">source cn</td>
+<td align="middle">(source cn + target_uid_offset)</td>
+</tr>
+<tr>
+<td align="middle">dateOfModify</td>
+<td align="middle">original date</td>
+<td align="middle">date modified</td>
+</tr>
+<tr>
+<td align="middle">extdata-requestid</td>
+<td align="middle">source extdata-requestid</td>
+<td align="middle">(source extdata-requestid + target_uid_offset)</td>
+</tr>
+<tr>
+<td align="middle">extdata-requestnotes</td>
+<td align="middle">ATTRIBUTE DOES NOT EXIST</td>
+<td align="middle">[REWRAPPED] + [APPENDED OFFSET OF xxx...xxx]</td>
+</tr>
+<tr>
+<td align="middle">extdata-serialno</td>
+<td align="middle">source extdata-serialnumber</td>
+<td align="middle">(source extdata-serialnumber + target_uid_offset)</td>
+</tr>
+<tr>
+<td align="middle">requestId</td>
+<td align="middle">[source length in digits][source requestId]</td>
+<td align="middle">[target length in digits][(source requestId + target_uid_offset)]</td>
+</tr>
+</table>
+<br>
+</ul>
+
+* TPS netkeyKeyRecovery request:
+<ul>
+<table border=1>
+<tr>
+<th bgcolor="lightgrey">Attribute</th>
+<th bgcolor="lightgrey">Source Value</th>
+<th bgcolor="lightgrey">Target Value</th>
+</tr>
+<tr>
+<td align="middle">cn</td>
+<td align="middle">source cn</td>
+<td align="middle">(source cn + target_uid_offset)</td>
+</tr>
+<tr>
+<td align="middle">dateOfModify</td>
+<td align="middle">original date</td>
+<td align="middle">date modified</td>
+</tr>
+<tr>
+<td align="middle">extdata-requestid</td>
+<td align="middle">source extdata-requestid</td>
+<td align="middle">(source extdata-requestid + target_uid_offset)</td>
+</tr>
+<tr>
+<td align="middle">extdata-requestnotes</td>
+<td align="middle">ATTRIBUTE DOES NOT EXIST</td>
+<td align="middle">[REWRAPPED] + [APPENDED OFFSET OF xxx...xxx]</td>
+</tr>
+<tr>
+<td align="middle">requestId</td>
+<td align="middle">[source length in digits][source requestId]</td>
+<td align="middle">[target length in digits][(source requestId + target_uid_offset)]</td>
+</tr>
+</table>
+<br>
+</ul>
+
+
+=== Key Record ===
+
+* CA keyrecord:
+<ul>
+<table border=1>
+<tr>
+<th bgcolor="lightgrey">Attribute</th>
+<th bgcolor="lightgrey">Source Value</th>
+<th bgcolor="lightgrey">Target Value</th>
+</tr>
+<tr>
+<td align="middle">cn</td>
+<td align="middle">source cn</td>
+<td align="middle">(source cn + target_uid_offset)</td>
+</tr>
+<tr>
+<td align="middle">dateOfModify</td>
+<td align="middle">original date</td>
+<td align="middle">date modified</td>
+</tr>
+<tr>
+<td align="middle">privateKeyData</td>
+<td align="middle">private user key wrapped with source storage key</td>
+<td align="middle">private user key wrapped with target storage key</td>
+</tr>
+<tr>
+<td align="middle">serialno</td>
+<td align="middle">[source length in digits][source serialno]</td>
+<td align="middle">[target length in digits][(source serialno + target_uid_offset)]</td>
+</tr>
+</table>
+<br>
+</ul>
+
+* TPS keyrecord:
+<ul>
+<table border=1>
+<tr>
+<th bgcolor="lightgrey">Attribute</th>
+<th bgcolor="lightgrey">Source Value</th>
+<th bgcolor="lightgrey">Target Value</th>
+</tr>
+<tr>
+<td align="middle">cn</td>
+<td align="middle">source cn</td>
+<td align="middle">(source cn + target_uid_offset)</td>
+</tr>
+<tr>
+<td align="middle">dateOfModify</td>
+<td align="middle">original date</td>
+<td align="middle">date modified</td>
+</tr>
+<tr>
+<td align="middle">privateKeyData</td>
+<td align="middle">private user key wrapped with source storage key</td>
+<td align="middle">private user key wrapped with target storage key</td>
+</tr>
+<tr>
+<td align="middle">serialno</td>
+<td align="middle">[source length in digits][source serialno]</td>
+<td align="middle">[target length in digits][(source serialno + target_uid_offset)]</td>
+</tr>
+</table>
+<br>
+</ul>
+
+= References =
+
+* [[KRATool]]

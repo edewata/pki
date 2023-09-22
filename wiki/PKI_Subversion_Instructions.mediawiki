@@ -1,0 +1,95 @@
+= Checking out PKI Source Code via Subversion =
+
+== Subversion ==
+
+You will need to have the Subversion tools available if you want to check out the source and build by hand:
+
+ yum install subversion
+
+== PKI Subversion Source Code ==
+
+=== Read-Only ===
+
+Check out a read-only copy of the PKI source tree by issuing the following commands:
+
+ mkdir src
+ cd src
+ svn co <nowiki>http://svn.fedorahosted.org/svn/pki/trunk/pki</nowiki> pki
+
+<table>
+<tr>
+<td valign="TOP">'''NOTE:&nbsp;&nbsp;'''</td>
+<td valign="TOP">Users which have a tree which was originally checked out from the "https://pki.fedoraproject.org/svn/pki" repository should issue the following commands to sync with the newly relocated repository on "http://svn.fedorahosted.org/svn/pki":
+<ul>
+<pre>
+# cd pki
+# svn switch --relocate https://pki.fedoraproject.org/svn/pki http://svn.fedorahosted.org/svn/pki
+# svn update
+
+Correct any conflicts!
+</pre>
+</ul>
+</td>
+</tr>
+</table>
+
+<!--
+When attempting to check out the source code for the first time, something similar to the following message may be displayed (using the certificate replacement of March 26, 2009):
+
+   Error validating server certificate for 'https://pki.fedoraproject.org:443':
+   - The certificate is not issued by a trusted authority. Use the fingerprint to validate the certificate manually!
+   Certificate information:
+   - Hostname: pki.fedoraproject.org
+   - Valid: from Mon, 29 Mar 2010 18:14:16 GMT until Sat, 29 Mar 2014 18:14:16 GMT
+   - Issuer: dogtag, US
+   - Fingerprint: dd:d2:bd:8a:ba:69:e3:c3:d0:c0:ad:4d:d3:37:cd:b5:d3:81:4d:e6
+  (R)eject, accept (t)emporarily or accept (p)ermanently?
+
+Pay special attention to the '''Fingerprint''', as it much MATCH the following SHA1 Fingerprint '''''EXACTLY''''':
+
+  dd:d2:bd:8a:ba:69:e3:c3:d0:c0:ad:4d:d3:37:cd:b5:d3:81:4d:e6
+
+<table>
+<tr>
+<td valign="top">'''IMPORTANT:&nbsp;&nbsp;'''</td>
+<td>If the fingerprints do NOT match exactly, the user is NOT downloading the Dogtag source code from the official Dogtag repository, and the (R)eject option should be selected.  Please report any such incident by cutting and pasting the erroneous message into an email, and send it to [mailto:pki-devel@redhat.com pki-devel@redhat.com].</td>
+</tr>
+</table>
+-->
+
+=== Read-Write ===
+
+Check out a read-write copy of the PKI source tree by issuing the following commands:
+
+ mkdir src
+ cd src
+ svn co <nowiki>svn+ssh://svn.fedorahosted.org/svn/pki/trunk/pki</nowiki> pki
+
+<table>
+<tr>
+<td rowspan=2 valign="TOP">'''NOTE:&nbsp;&nbsp;'''</td>
+<td valign="TOP">Users who have published their public SSH key to a valid '''[https://admin.fedoraproject.org/accounts Fedora account]''' may also use this method of checkout.  This method '''must''' be used in order to check-in changes to the subversion repository (although you must be one of the few privileged users allowed to check-in changes).  In the event that you do not have a valid '''[https://admin.fedoraproject.org/accounts Fedora account]''', or you have not yet published your public SSH key to this account, you may receive something similar to the following message:<br>
+<ul>
+<pre>
+The authenticity of host 'svn.fedorahosted.org (66.135.52.17)' can't be established.
+RSA key fingerprint is e6:b3:68:51:98:2d:4c:dc:63:27:46:65:51:d5:f0:7a.
+Are you sure you want to continue connecting (yes/no)? yes
+svn: Network connection closed unexpectedly
+</pre>
+</ul>
+</td>
+</tr>
+<tr>
+<td valign="TOP">Additionally, users which have a tree which was originally checked out from the "https://pki.fedoraproject.org/svn/pki" repository should issue the following commands to sync with the newly relocated repository on "svn+ssh://svn.fedorahosted.org/svn/pki":
+<ul>
+<pre>
+# cd pki
+# svn switch --relocate https://pki.fedoraproject.org/svn/pki svn+ssh://svn.fedorahosted.org/svn/pki
+# svn update
+
+Correct any conflicts!
+</pre>
+</ul>
+</td>
+</tr>
+</table>

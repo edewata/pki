@@ -1,0 +1,19 @@
+= Overview =
+
+This page describes the process to restore a DS instance from a [[DS Backup|backup]].
+
+= Current Limitations =
+
+* Currently the backup can only be restored on the same machine
+* It may not work without SELinux
+
+= Restoring DS Instance =
+
+See [https://github.com/dogtagpki/389-ds-base/wiki/Restoring-DS-Instance Restoring DS Instance].
+
+= See Also =
+
+* [[DS]]
+* [[DS Backup]]
+* [[DS OpenShift]]
+* [https://access.redhat.com/documentation/en-us/red_hat_directory_server/9.0/html-single/configuration_command_and_file_reference/index RHDS - Configuration, Command, and File Reference]

@@ -1,0 +1,7 @@
+= CRL Migration =
+
+CRL migration is done by importing the cn=MasterCRL LDAP entry from the existing server. See [https://github.com/dogtagpki/pki/wiki/Migrating-CA-using-Existing-CA-Mechanism Migrating a CA using existing CA mechanism].
+
+= References =
+
+* [[CRL]]

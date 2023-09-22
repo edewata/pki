@@ -1,0 +1,108 @@
+== Building PKI Common Components (Dogtag 1.3 and Earlier ONLY) ==
+
+'''IMPORTANT:'''&nbsp;&nbsp; For ALL of the following components, "{flavor}" equals "dogtag"!
+
+=== OS Util (osutil) ===
+
+To build osutil, do the following:
+
+    cd src/pki/{flavor}/osutil
+    ./build_{flavor}
+
+The RPMs will be created in src/release/pki/base/osutil/dist/rpmpkg/RPMS/{arch}.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/base/osutil/dist/rpmpkg/RPMS/{arch}
+    rpm -Uvh *.rpm
+
+=== Sym Key (pki-symkey) ===
+
+To build pki-symkey, do the following:
+
+    cd src/pki/{flavor}/symkey
+    ./build_{flavor}
+
+The RPMs will be created in src/release/pki/base/symkey/dist/rpmpkg/RPMS/{arch}.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/base/symkey/dist/rpmpkg/RPMS/{arch}
+    rpm -Uvh *.rpm
+
+=== PKI Util (pki-util) ===
+
+To build pki-util, do the following:
+
+    cd src/pki/{flavor}/util
+   ./build_{flavor}
+
+The RPMs will be created in src/release/pki/base/util/dist/rpmpkg/RPMS/noarch.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/base/util/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+=== Native Tools (pki-native-tools) ===
+
+To build pki-native-tools, do the following:
+
+    cd src/pki/{flavor}/native-tools
+    ./build_{flavor}
+
+The RPMs will be created in src/release/pki/base/native-tools/dist/rpmpkg/RPMS/{arch}.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/base/native-tools/dist/rpmpkg/RPMS/{arch}
+    rpm -Uvh *.rpm
+
+=== PKI Setup (pki-setup) ===
+
+To build pki-setup, do the following:
+
+    cd src/pki/{flavor}/setup
+    ./build_{flavor}
+
+The RPMs will be created in src/release/pki/base/setup/dist/rpmpkg/RPMS/noarch.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/base/setup/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+=== Java Tools (pki-java-tools) ===
+
+To build pki-java-tools, do the following:
+
+    cd src/pki/{flavor}/java-tools
+    ./build_{flavor}
+
+The RPMs will be created in src/release/pki/base/java-tools/dist/rpmpkg/RPMS/noarch.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/base/java-tools/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+=== PKI Selinux (pki-selinux) ===
+
+To build pki-selinux, do the following:
+    cd src/pki/{flavor}/selinux
+    ./build_{flavor}
+
+The RPMs will be created in src/release/pki/{flavor}/selinux/dist/rpmpkg/RPMS/noarch.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/{flavor}/selinux/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+=== PKI Common (pki-common) ===
+
+To build pki-common-ui, do the following:
+
+    cd src/pki/{flavor}/common-ui
+    ./build_{flavor}
+
+The RPMs will be created in src/release/pki/{flavor}/common-ui/dist/rpmpkg/RPMS/noarch.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/{flavor}/common-ui/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+To build pki-common, do the following:
+
+    cd src/pki/{flavor}/common
+    ./build_{flavor}
+
+The RPMs will be created in src/release/pki/base/common/dist/rpmpkg/RPMS/noarch.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/base/common/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm

@@ -1,0 +1,74 @@
+= Creating CA =
+
+<pre>
+$ pkicreate \
+ -pki_instance_root=/var/lib \
+ -pki_instance_name=pki-ca \
+ -subsystem_type=ca \
+ -secure_port=9443 \
+ -unsecure_port=9180 \
+ -tomcat_server_port=9701 \
+ -user=pkiuser \
+ -group=pkiuser \
+ -redirect conf=/etc/pki-ca \
+ -redirect logs=/var/log/pki-ca
+</pre>
+
+= Configuring CA =
+
+<pre>
+$ pkisilent ConfigureCA \
+ -cs_hostname $HOSTNAME \
+ -cs_port 9443 \
+ -preop_pin `grep preop.pin= /var/lib/pki-ca/conf/CS.cfg | awk -F= '{ print $2; }'` \
+ -client_certdb_dir /var/lib/pki-ca/certs \
+ -client_certdb_pwd Secret.123 \
+ -token_name internal \
+ -domain_name EXAMPLE-COM \
+ -subsystem_name 'Certificate Authority' \
+ -ldap_host $HOSTNAME \
+ -ldap_port 389 \
+ -base_dn ou=ca,dc=example,dc=com \
+ -db_name example.com-pki-ca \
+ -bind_dn 'cn=Directory Manager' \
+ -bind_password Secret.123 \
+ -remove_data true \
+ -key_type rsa \
+ -key_size 2048 \
+ -key_algorithm SHA256withRSA \
+ -signing_signingalgorithm SHA256withRSA \
+ -save_p12 true \
+ -backup_fname /var/lib/pki-ca/certs/ca-server-certs.p12 \
+ -backup_pwd Secret.123 \
+ -ca_sign_cert_subject_name 'CN=Certificate Authority,O=EXAMPLE-COM' \
+ -ca_ocsp_cert_subject_name 'CN=OCSP Signing Certificate,O=EXAMPLE-COM' \
+ -ca_server_cert_subject_name CN=$HOSTNAME,O=EXAMPLE-COM \
+ -ca_subsystem_cert_subject_name 'CN=CA Subsystem Certificate,O=EXAMPLE-COM' \
+ -ca_audit_signing_cert_subject_name 'CN=CA Audit Signing Certificate,O=EXAMPLE-COM' \
+ -admin_user caadmin \
+ -agent_name caadmin \
+ -admin_email caadmin@example.com \
+ -admin_password Secret.123 \
+ -agent_key_size 2048 \
+ -agent_key_type rsa \
+ -agent_cert_subject CN=caadmin,UID=caadmin,E=caadmin@example.com,O=EXAMPLE-COM
+</pre>
+
+For external CA step 1:
+
+<pre>
+$ pkisilent ConfigureCA \
+ ... \
+ -external true \
+ -ext_csr_file ipa.csr
+</pre>
+
+For external CA step 2:
+
+<pre>
+$ pkisilent ConfigureCA \
+ ... \
+ -external true \
+ -ext_ca_cert_file ipa.crt \
+ -ext_ca_cert_chain_file external.crt
+</pre>

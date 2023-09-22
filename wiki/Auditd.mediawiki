@@ -1,0 +1,58 @@
+= Viewing Audit Logs =
+
+<pre>
+$ tail -f /var/log/audit/audit.log
+</pre>
+
+= Listing Audit Rules =
+
+<pre>
+$ auditctl -l
+</pre>
+
+= Adding Audit Rules =
+
+== Adding File System Rules ==
+
+<pre>
+$ auditctl -w /etc/pki/pki-tomcat/server.xml -p wa
+</pre>
+
+== Adding System Call Rules ==
+
+<pre>
+$ auditctl -a always,exit -S all -F auid=pkiuser
+</pre>
+
+= Removing Audit Rules =
+
+== Removing File System Rules ==
+
+<pre>
+$ auditctl -W /etc/pki/pki-tomcat/server.xml -p wa
+</pre>
+
+== Removing System Call Rules ==
+
+<pre>
+$ auditctl -d always,exit -S all -F auid=pkiuser
+</pre>
+
+= Searching Audit Logs =
+
+<pre>
+$ ausearch --uid pkiuser
+</pre>
+
+<pre>
+$ ausearch -k <keyword>
+</pre>
+
+<pre>
+$ ausearch --interpret -k <keyword>
+</pre>
+
+= See Also =
+
+* [https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/security_guide/sec-defining_audit_rules_and_controls Defining Audit Rules]
+* [https://wiki.mozilla.org/FIPS_Operational_Environment FIPS Operational Environment]

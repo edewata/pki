@@ -1,0 +1,17 @@
+Export OCSP CSRs with the following command:
+
+ $ echo "-----BEGIN CERTIFICATE REQUEST-----" > ocsp_signing.csr
+ $ sed -n "/^ocsp.signing.certreq=/ s/^[^=]*=// p" < /var/lib/pki/<font color="red">pki-tomcat</font>/ca/conf/CS.cfg >> ocsp_signing.csr
+ $ echo "-----END CERTIFICATE REQUEST-----" >> ocsp_signing.csr
+ 
+ $ echo "-----BEGIN CERTIFICATE REQUEST-----" > ocsp_audit_signing.csr
+ $ sed -n "/^ocsp.audit_signing.certreq=/ s/^[^=]*=// p" < /var/lib/pki/<font color="red">pki-tomcat</font>/ca/conf/CS.cfg >> ocsp_audit_signing.csr
+ $ echo "-----END CERTIFICATE REQUEST-----" >> ocsp_audit_signing.csr
+ 
+ $ echo "-----BEGIN CERTIFICATE REQUEST-----" > sslserver.csr
+ $ sed -n "/^ocsp.sslserver.certreq=/ s/^[^=]*=// p" < /var/lib/pki/<font color="red">pki-tomcat</font>/ca/conf/CS.cfg >> sslserver.csr
+ $ echo "-----END CERTIFICATE REQUEST-----" >> sslserver.csr
+ 
+ $ echo "-----BEGIN CERTIFICATE REQUEST-----" > subsystem.csr
+ $ sed -n "/^ocsp.subsystem.certreq=/ s/^[^=]*=// p" < /var/lib/pki/<font color="red">pki-tomcat</font>/ca/conf/CS.cfg >> subsystem.csr
+ $ echo "-----END CERTIFICATE REQUEST-----" >> subsystem.csr

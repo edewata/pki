@@ -1,0 +1,251 @@
+= Overview (NOT IMPLEMENTED YET) =
+
+Fine-grained installation is a mechanism to run PKI installation in incremental steps. This mechanism can be used to address the following issues:
+
+* [https://fedorahosted.org/pki/ticket/1349 Ticket #1349 - changing debug level]
+* [https://fedorahosted.org/pki/ticket/2224 Ticket #2224 - customizing certificate profile]
+* [https://fedorahosted.org/pki/ticket/2278 Ticket #2278 - customizing serial number ranges]
+* [https://fedorahosted.org/pki/ticket/2279 Ticket #2279 - migrating existing data]
+* [https://fedorahosted.org/pki/ticket/1644 Ticket #1644 - customizing cipher list]
+* [https://fedorahosted.org/pki/ticket/769 Ticket #769 - customizing access log]
+
+== Installation scriptlets ==
+
+* initialization
+* infrastructure_layout
+* instance_layout
+* subsystem_layout
+* selinux_setup
+* webapp_deployment
+* slot_substitution
+* security_databases
+* client_database (to be added)
+* csr_generation (to be added)
+* configuration
+* create_database (to be added)
+* populate_database (to be added)
+* create_admin_user (to be added)
+* finalization
+
+== Existing mechanisms ==
+
+There are existing mechanisms to stop/resume the installation using parameters in the deployment configuration file. However, they are not as flexible since they provide limited locations to stop. Also, they require editing the deployment configuration or using multiple deployment configurations so they are not as easy to use manually or in automations.
+
+Installation/configuration-only mode:
+
+<pre>
+pki_skip_installation=True/False
+pki_skip_configuration=True/False
+</pre>
+
+The above options work on all installations, but it only stops at a single point.
+
+External CA and standalone installations:
+
+<pre>
+pki_external_step_two=True/False
+</pre>
+
+This option only works on external CA and standalone KRA/OCSP installations.
+
+The proposed fine-grained installation will replace the above deployment parameters with CLI parameters, so it's no longer necessary to edit the deployment configuration. The new mechanism will offer more locations to stop/resume the installation without requiring new deployment parameters.
+
+== Alternate solutions ==
+
+It's possible to add new deployment parameters for each configurable items, but that would not be scalable due to the large number of customizable items in PKI which are spread out in various configuration files. Also, since the parameters have to be added in the code, it's not possible to support unplanned customization requirements.
+
+It's also possible to run pkispawn in a debugger, but stepping through the code or setting up breakpoints will not be very user-friendly. Also if something fails, the execution has to be restarted from the beginning.
+
+= Using Fine-Grained Installation =
+
+To stop before a particular scriptlet:
+
+<pre>
+$ pkispawn -f <configuration> -s <subsystem> --stop-before <scriptlet>
+</pre>
+
+To stop after a particular scriptlet:
+
+<pre>
+$ pkispawn -f <configuration> -s <subsystem> --stop-after <scriptlet>
+</pre>
+
+To resume the installation from a particular scriptlet:
+
+<pre>
+$ pkispawn -f <configuration> -s <subsystem> --start-from <scriptlet>
+</pre>
+
+To resume the installation after a particular scriptlet:
+
+<pre>
+$ pkispawn -f <configuration> -s <subsystem> --start-after <scriptlet>
+</pre>
+
+To run a particular scriptlet:
+
+<pre>
+$ pkispawn -f <configuration> -s <subsystem> --scriptlet <scriptlet>
+</pre>
+
+To skip a particular scriptlets:
+
+<pre>
+$ pkispawn -f <configuration> -s <subsystem> --stop-before <scriptlet>
+$ pkispawn -f <configuration> -s <subsystem> --start-after <scriptlet>
+</pre>
+
+To run a range of scriptlet:
+
+<pre>
+$ pkispawn -f <configuration> -s <subsystem> --start-from <scriptlet1> --stop-at <scriptlet2>
+</pre>
+
+= Use Cases =
+
+== Changing debug level ==
+
+Start the installation:
+
+<pre>
+$ pkispawn -f ca.cfg -s CA --stop-at configuration
+</pre>
+
+Edit /var/lib/pki/pki-tomcat/ca/conf/CS.cfg and change the debug level (see [[PKI Server Logging]]):
+
+<pre>
+debug.level=0
+</pre>
+
+Resume the installation:
+
+<pre>
+$ pkispawn -f ca.cfg -s CA --start-from configuration
+</pre>
+
+== Customizing system certificate profile ==
+
+Start the installation:
+
+<pre>
+$ pkispawn -f ca.cfg -s CA --stop-at configuration
+</pre>
+
+Edit the CA certificate profile configuration in /var/lib/pki/pki-tomcat/ca/conf/caCert.profile as needed (see [https://github.com/dogtagpki/pki/wiki/Certificate-Profiles Certificate Profiles]):
+
+<pre>
+5.default.params.basicConstraintsPathLen=-1
+</pre>
+
+Resume the installation:
+
+<pre>
+$ pkispawn -f ca.cfg -s CA --start-from configuration
+</pre>
+
+== Customizing certificate serial number range ==
+
+Start the installation:
+
+<pre>
+$ pkispawn -f ca.cfg -s CA --stop-at configuration
+</pre>
+
+Edit the serial number configuration in /var/lib/pki/pki-tomcat/ca/conf/CS.cfg as needed (see [[CA Configuration]]):
+
+<pre>
+dbs.beginSerialNumber=1
+</pre>
+
+Resume the installation:
+
+<pre>
+$ pkispawn -f ca.cfg -s CA --start-from configuration
+</pre>
+
+== Customizing TLS cipher list ==
+
+Start the installation:
+
+<pre>
+$ pkispawn -f ca.cfg -s CA --stop-at configuration
+</pre>
+
+Edit the cipher list in /var/lib/pki/pki-tomcat/conf/server.xml as needed (see [https://github.com/dogtagpki/tomcatjss/wiki/Configuring-Tomcat-JSS Configuring Tomcat JSS]):
+
+<pre>
+<Server>
+    ...
+    <Connector
+           ...
+           tlsCiphers="-TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA,-TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA,+T
+LS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA,+TLS_ECDH_RSA_WITH_AES_128_CBC_SHA,+TLS_ECDH_RSA_WITH_AES_256_CBC_
+SHA,-TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA,+TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,+TLS_RSA_WITH_3DES_ED
+E_CBC_SHA,+TLS_RSA_WITH_AES_128_CBC_SHA,+TLS_RSA_WITH_AES_256_CBC_SHA,+TLS_ECDHE_ECDSA_WITH_3DES_EDE
+_CBC_SHA,+TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,-TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,-TLS_ECDHE_RSA_W
+ITH_AES_128_CBC_SHA,-TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,+TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA,+TLS_DHE_
+DSS_WITH_AES_128_CBC_SHA,+TLS_DHE_DSS_WITH_AES_256_CBC_SHA,+TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA,+TLS_D
+HE_RSA_WITH_AES_128_CBC_SHA,+TLS_DHE_RSA_WITH_AES_256_CBC_SHA"
+            ...
+            />
+    ...
+</Server>
+</pre>
+
+Resume the installation:
+
+<pre>
+$ pkispawn -f ca.cfg -s CA --start-from configuration
+</pre>
+
+== Customizing Tomcat access log ==
+
+Start the installation:
+
+<pre>
+$ pkispawn -f ca.cfg -s CA --stop-at configuration
+</pre>
+
+Edit the cipher list in /var/lib/pki/pki-tomcat/conf/server.xml as needed (see [https://tomcat.apache.org/tomcat-7.0-doc/config/valve.html#Access_Log_Valve Access Log Valve]):
+
+<pre>
+<Server>
+    ...
+    <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
+           prefix="localhost_access_log" suffix=".txt"
+           pattern="common" resolveHosts="false"/>
+
+    ...
+</Server>
+</pre>
+
+Resume the installation:
+
+<pre>
+$ pkispawn -f ca.cfg -s CA --start-from configuration
+</pre>
+
+== Importing existing LDIF file ==
+
+Start the installation:
+
+<pre>
+$ pkispawn -f ca.cfg -s CA --stop-at populate_database
+</pre>
+
+Import existing LDIF file into the database:
+
+<pre>
+$ ldapadd -x -D "cn=Directory Manager" -w Secret.123 -f ca.ldif
+</pre>
+
+Resume the installation:
+
+<pre>
+$ pkispawn -f ca.cfg -s CA --start-from populate_database
+</pre>
+
+= References =
+
+* [https://fedorahosted.org/pki/ticket/2244  Ticket #2244 - Fine-grained installation steps]
+* [[PKI 10 Installation]]

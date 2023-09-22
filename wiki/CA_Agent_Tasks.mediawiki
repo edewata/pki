@@ -1,0 +1,83 @@
+= Working with Certificate Profiles =
+
+== Enabling and Disabling Certificate Profiles ==
+
+=== Viewing Certificate Profile Information ===
+=== Enabling or Disabling a Certificate Profile ===
+
+= Handling Certificate Requests =
+
+== Listing Certificate Requests ==
+
+Current procedure:
+* Go to the Certificate Manager agent services page.
+* Click List Requests.
+* View certificate requests request type by selecting one of the options from the Request type menu.
+* View requests by request status by selecting one of the options in the Request status menu.
+* Enter the starting request identifier in decimal or hexadecimal form.
+* Choose the number of matching requests to be returned.
+* Click Find.
+
+Proposed procedure:
+* pki ca-cert-request-find --type <type> --status <status> --start-id <id> --page-size <size>
+
+== Approving Requests ==
+
+Current procedure:
+* Open the agent services page.
+* Click Find.
+* Select the certificate request from the list.
+* Choose an action and optionally add comments.
+* Clicks Submit.
+
+Proposed procedure:
+* pki ca-cert-request-find
+* pki ca-cert-request-review <request ID>
+
+== Sending an Issued Certificate to the Requester ==
+
+Current procedure:
+* Create a new email addressed to the requester.
+* Insert in a URL that the requester can use to access the issued certificate.
+
+Proposed procedure:
+* pki ca-cert-send <serial number> --recipient <email> --template <name>
+
+= Signing Files with Certificates =
+
+Current procedure:
+
+* Open the Certificate Manager's end-entities page.
+* Select the Agent-Authenticated File Signing profile.
+* Enter URL Of File Being Signed.
+* Click Submit.
+* Click the Retrieval tab.
+* Fill in the request ID, and click Submit.
+* Click the Issued certificate link.
+* Click Import your certificate.
+
+Proposed procedure:
+* pki client-cert-request --profile <profile> --file-url <URL>
+* pki client-cert-import <nickname> --serial <serial>
+
+= Finding and Revoking Certificates =
+
+== Listing Certificates ==
+
+== Revoking Certificates ==
+
+=== Revoking Certificates ===
+=== Taking Ceritificates Off Hold ===
+
+== Managing the Certificate Revocation List ==
+
+=== Viewing or Examining CRLs ===
+=== Updating the CRL ===
+
+= Publishing to a Directory =
+
+== Manually Updating the Directory ==
+
+= References =
+
+* [[Agent Tasks]]

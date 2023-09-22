@@ -1,0 +1,121 @@
+This is an initial design for the Barbican back-end work to allow it to integrate with IPA.
+
+Background:
+
+We want to be able to integrate Barbican and IPA in such a way that we can use either Barbican or IPA to retrieve secrets.
+At the very least, we want to be able to retrieve barbican secrets from IPA, which means that we need to be able to store
+the Barbican metadata in IPA.
+
+One approach would be to generate an event each time a barbican secret/metadata is created.  This event could then be consumed
+by IPA and the relevant data updated accordingly.  This may actually be less invasive on the Barbican side.
+
+Another approach is to generalize the database store in Barbican and have it call an adapter that talks to IPA instead.
+Lets see how this adapter approach would work.
+
+Changes in Barbican:
+
+Barbican has the following tables, which it accesses through the Repository object:
+
+            self._set_repo('tenant_repo', TenantRepo, kwargs)
+            self._set_repo('tenant_secret_repo', TenantSecretRepo, kwargs)
+            self._set_repo('secret_repo', SecretRepo, kwargs)
+            self._set_repo('datum_repo', EncryptedDatumRepo, kwargs)
+            self._set_repo('kek_repo', KEKDatumRepo, kwargs)
+            self._set_repo('secret_meta_repo', SecretStoreMetadatumRepo,
+                           kwargs)
+            self._set_repo('order_repo', OrderRepo, kwargs)
+            self._set_repo('order_plugin_meta_repo', OrderPluginMetadatumRepo,
+                           kwargs)
+            self._set_repo('transport_key_repo', TransportKeyRepo, kwargs)
+            self._set_repo('container_repo', ContainerRepo, kwargs)
+            self._set_repo('container_secret_repo', ContainerSecretRepo,
+                           kwargs)
+
+Each repo inherits from BaseRepo, which contains the following methods:
+
+    def get_session(self, session=None): 
+    def get(self, entity_id, keystone_id=None,
+            force_show_deleted=False,
+            suppress_exception=False, session=None):
+    def create_from(self, entity, session=None):
+    def save(self, entity):
+    def update(self, entity_id, values, purge_props=False):
+    def delete_entity_by_id(self, entity_id, keystone_id):
+
+    (plus a bunch of internal specific methods which could be overridden by the repos)
+
+    def _do_entity_name(self):
+    def _do_create_instance(self):
+    def _do_build_get_query(self, entity_id, keystone_id, session):
+    def _do_validate(self, values):
+
+    (these are internal only - so far):
+    def _update(self, entity_id, values, purge_props=False):
+    def _update_values(self, entity_ref, values):
+    def _do_convert_values(self, values):
+         
+In addition, the different repos have some dependencies and methods:
+    
+    TenantRepo:
+    def find_by_keystone_id(self, keystone_id, suppress_exception=False,
+                            session=None):
+    
+    SecretRepo:
+    def get_by_create_date(self, keystone_id, offset_arg=None, limit_arg=None,
+                           name=None, alg=None, mode=None, bits=0,
+                           suppress_exception=False, session=None):
+
+    EncryptedDatumRepo: (none)
+    SecretStoreMetadatumRepo: (none)
+
+    KekDatumRepo:
+    def find_or_create_kek_datum(self, tenant,
+                                 plugin_name,
+                                 suppress_exception=False,
+                                 session=None):
+
+    TenantSecretRepo: (none)
+
+    OrderRepo:
+    def get_by_create_date(self, keystone_id, offset_arg=None, limit_arg=None,
+                           suppress_exception=False, session=None):
+
+    ContainerRepo:
+    def get_by_create_date(self, keystone_id, offset_arg=None, limit_arg=None,
+                           suppress_exception=False, session=None):
+
+    ContainerSecretRepo: (none)
+
+    ContainerConsumerRepo:
+    def get_by_container_id(self, container_id,
+                            offset_arg=None, limit_arg=None,
+                            suppress_exception=False, session=None):
+
+    def get_by_values(self, container_id, name, URL, suppress_exception=False,
+                      show_deleted=False, session=None):
+
+    def create_from(self, new_consumer, container):
+
+    TransportKeyRepo:
+    def get_by_create_date(self, plugin_name=None,
+                           offset_arg=None, limit_arg=None,
+                           suppress_exception=False, session=None):
+
+    def get_latest_transport_key(self, plugin_name, suppress_exception=False,
+                                 session=None)
+
+    So the rough idea would be:
+
+    SecretRepo <= GeneralRepo <-- (IPARepo or BasicRepo)
+
+    SecretRepo etc. does a lot with sessions which are alchemy objects.
+    They dont have to be though -- we can define a special "IPASession" object that has the same methods in it. (save, flush etc)
+
+All of this is pretty heavyweight though -- do we really need it?  We need to examine if there really is a use case for this.
+All this going back and forth - from barbican to IPA to KRA sounds pretty awful.  And I'm not sure anyone would want to do it.
+Its easy to store/retrieve secrets from Barbican in IPA - we just need to make sure that the keystone_id is passed down when the secret
+is stored.  Still have to consider how to deal with two step process (if we do).
+
+We need to consider how to handle secret generation -- do that through IPA?
+What about containers?
+Lets look at the current and future use cases of Barbican and decide what kinds of secrets we want to store/retrieve.

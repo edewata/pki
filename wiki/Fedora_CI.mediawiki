@@ -1,0 +1,13 @@
+= Fedora CI =
+
+https://ci.freeipa.org
+
+= Creating GitHub Token =
+
+* Open https://github.com/settings/tokens
+* Select '''repo:status''' and '''public_repo'''
+* Click '''Generate new token'''
+
+= See Also =
+
+* [[Fedora]]

@@ -1,0 +1,117 @@
+= Overview =
+
+PKI server installation can be done in two ways:
+* '''Interactive:''' This is a simple way to install PKI server. The tool will prompt for the most commonly used parameters. This is best used to get familiar with PKI.
+* '''Silent:''' This is an advanced way to install PKI server. The installation parameters will need to be supplied in a file. This is best used for automation or custom installation.
+
+This document will describe how to use the interactive installation.
+
+= Installing PKI Server =
+
+To install PKI server interactively, execute '''pkispawn''' without any arguments. It will prompt you several configuration parameters with the default values shown in square brackets.
+
+<pre>
+% pkispawn
+Subsystem (CA/KRA/OCSP/TKS) [CA]:
+
+Tomcat:
+  Instance [pki-tomcat]:
+  HTTP port [8080]: 
+  Secure HTTP port [8443]: 
+  AJP port [8009]: 
+  Management port [8005]:
+
+Administrator:
+  Username [caadmin]:
+  Password:
+  Verify password:
+  Import certificate (Yes/No) [N]?
+  Export certificate to [/root/.pki/pki-tomcat/ca_admin.cert]:
+
+Directory Server:
+  Hostname [server.example.com]:
+  Port [389]:
+  Base DN [o=pki-tomcat-CA]:
+  Bind DN [cn=Directory Manager]:
+  Password:
+  Verify password:
+
+Security Domain:
+  Name [server.example.com Security Domain]:
+
+Begin installation (Yes/No/Quit)? Y
+
+... installation messages ...
+
+Installation complete.
+</pre>
+
+== Subsystem and Instance ==
+
+First, specify the subsystem type to be installed. Currently pkispawn supports 4 subsystem types:
+* '''CA:''' Certificate Authority
+* '''KRA:''' Key Recovery Authority
+* '''OCSP:''' Online Certificate Status Protocol Manager
+* '''TKS:''' Token Key Service
+
+Then, specify the name of the server instance where the subsystem will run. Depending on the type, the subsystem will run in either Tomcat or Apache instance. Multiple subsystems may run in the same instance. Each instance will have a name. The default instance name is pki-tomcat for Tomcat and pki-apache for Apache. Currently pkispawn only supports Tomcat subsystems: CA, KRA, OCSP, TKS.
+
+== Tomcat ==
+
+Each Tomcat instance uses 4 ports:
+* '''HTTP port:''' This is port is used to accept Web requests. See [http://tomcat.apache.org/tomcat-7.0-doc/config/http.html The HTTP Connector].
+* '''Secure HTTP port:''' This is port is used to accept Web requests. See [http://tomcat.apache.org/tomcat-7.0-doc/config/http.html The HTTP Connector].
+* '''AJP port:''' This port is used for integration with Apache. See [http://tomcat.apache.org/tomcat-7.0-doc/config/ajp.html The AJP Connector].
+* '''Management port:''' This port is used to shutdown Tomcat instance. See [http://tomcat.apache.org/tomcat-7.0-doc/config/server.html Tomcat Server Component].
+
+== Administrator ==
+Specify the subsystem administrator's profile:
+* '''Username:''' Subsystem admin's username. By default it will be caadmin for CA, kraadmin for KRA, etc.
+* '''Password:''' Subsystem admin's password.
+* '''Verify Password:''' Retype the subsystem admin's password.
+* '''Import certificate:''' If you have an existing admin certificate, enter Y, then you will be prompted for the certificate location to import from. Otherwise enter N, it will generate a new certificate.
+* '''Import certificate from:''' Location of the admin certificate to be imported.
+* '''Export certificate to:''' Location to export the admin certificate.
+
+== Directory Server ==
+
+The Directory Server is used to store the PKI data. It must be up and running already.
+
+* '''Hostname:''' The hostname of the Directory Server.
+* '''Port:''' The port number used by the Directory Server.
+* '''Base DN:''' The base DN of the LDAP tree used by this PKI server. If the base DN already exists on the Directory Server, it will be removed and recreated.
+* '''Bind DN:''' The DN of the user used to access the Directory Server.
+* '''Password:''' The password to bind to the Directory Server.
+* '''Verify password:''' Reenter the password to bind to the Directory Server.
+
+== Security Domain ==
+
+The initial CA subsystem will become the security domain. Any additional subsystem (e.g. KRA, OCSP, TKS) will need to join the security domain by entering the following parameters:
+* '''Hostname:''' Hostname of the security domain server (i.e. CA hostname).
+* '''Secure HTTP port:''' Secure port number of the security domain server (i.e. CA secure HTTP port).
+* '''Username:''' Username of the security domain admin (i.e. CA admin username).
+* '''Password:''' Password of the security domain admin (i.e. CA admin password).
+* '''Verify password:''' Reenter password of the security domain admin.
+
+== Installation Process ==
+
+After entering all parameters, you will be prompted to confirm the installation. Enter Yes to begin the installation. Enter No to revise the parameters. Enter Quit to cancel the installation.
+
+= Uninstalling PKI Server =
+
+To uninstall PKI server interactively execute '''pkidestroy''' without any arguments.
+
+<pre>
+% pkidestroy
+Subsystem (CA/KRA/OCSP/TKS) [CA]: 
+Instance [pki-tomcat]: 
+
+Begin uninstallation (Yes/No/Quit)? Y
+
+... uninstallation messages ...
+
+Uninstallation complete.
+</pre>
+
+= References =
+* [https://fedorahosted.org/pki/ticket/380 PKI Ticket #380: Default install: part 2].

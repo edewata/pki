@@ -1,0 +1,135 @@
+== Building PKI Subsystem Components (Dogtag 1.3 and Earlier ONLY) ==
+
+'''IMPORTANT:'''&nbsp;&nbsp; For ALL of the following components, "{flavor}" equals "dogtag"!
+
+=== CA Subsystem (pki-ca) ===
+
+To build the CA-UI, do the following:
+
+    cd src/pki/{flavor}/ca-ui
+    ./build_{flavor}
+
+The RPMs will be created in src/release/pki/{flavor}/ca-ui/dist/rpmpkg/RPMS/noarch.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/{flavor}/ca-ui/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+  
+To build the CA, do the following:
+
+    cd src/pki/{flavor}/ca
+    ./build_{flavor}
+
+The RPMs will be created in src/release/pki/base/ca/dist/rpmpkg/RPMS/noarch.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/base/ca/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+=== DRM Subsystem (pki-kra) ===
+
+To build the DRM-UI, do the following:
+
+    cd src/pki/{flavor}/kra-ui
+    ./build_{flavor}
+
+The RPMs will be created in src/release/pki/{flavor}/kra-ui/dist/rpmpkg/RPMS/noarch.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/{flavor}/kra-ui/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+To build the DRM, do the following:
+
+    cd src/pki/{flavor}/kra
+    ./build_{flavor}
+
+The RPMs will be created in src/release/pki/base/kra/dist/rpmpkg/RPMS/noarch.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/base/kra/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+=== OCSP Subsystem (pki-ocsp) ===
+
+To build the OCSP-UI, do the following:
+
+    cd src/pki/{flavor}/ocsp-ui
+    ./build_{flavor}
+
+The RPMs will be created in src/release/pki/{flavor}/ocsp-ui/dist/rpmpkg/RPMS/noarch.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/{flavor}/ocsp-ui/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+To build the OCSP, do the following:
+
+    cd src/pki/{flavor}/ocsp
+    ./build_{flavor}
+
+The RPMs will be created in src/release/pki/base/ocsp/dist/rpmpkg/RPMS/noarch.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/base/ocsp/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+=== TKS Subsystem (pki-tks) ===
+
+To build the TKS-UI, do the following:
+
+    cd src/pki/{flavor}/tks-ui
+    ./build_{flavor}
+
+The RPMs will be created in src/release/pki/{flavor}/tks-ui/dist/rpmpkg/RPMS/noarch.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/{flavor}/tks-ui/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+To build the TKS, do the following:
+
+    cd src/pki/{flavor}/tks
+    ./build_{flavor}
+
+The RPMs will be created in src/release/pki/base/tks/dist/rpmpkg/RPMS/noarch.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/base/tks/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+=== RA Subsystem (pki-ra) ===
+
+To build the RA-UI, do the following:
+
+    cd src/pki/{flavor}/ra-ui
+    ./build_{flavor}
+
+The RPMs will be created in src/release/pki/{flavor}/ra-ui/dist/rpmpkg/RPMS/noarch.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/{flavor}/ra-ui/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+To build the RA, do the following:
+
+    cd src/pki/{flavor}/ra
+    ./build_{flavor}
+
+The RPMs will be created in src/release/pki/base/ra/dist/rpmpkg/RPMS/noarch.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/base/ra/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+=== TPS Subsystem (pki-tps) ===
+
+To build the TPS-UI, do the following:
+
+    cd src/pki/{flavor}/tps-ui
+    ./build_{flavor}
+
+The RPMs will be created in src/release/pki/{flavor}/tps-ui/dist/rpmpkg/RPMS/noarch.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/{flavor}/tps-ui/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+To build the TPS, do the following:
+
+    cd src/pki/{flavor}/tps
+    ./build_{flavor}
+
+The RPMs will be created in src/release/pki/base/tps/dist/rpmpkg/RPMS/{arch}.  Become the '''root''' user, and execute the following commands:
+
+    cd src/release/pki/base/tps/dist/rpmpkg/RPMS/{arch}
+    rpm -Uvh *.rpm

@@ -1,0 +1,75 @@
+__NOTOC__
+<div id="mainLinks" style="text-align:center;font-size:large;font-style:italic">[[PKI_Download|Download]] | [https://github.com/dogtagpki/pki/wiki/FAQ FAQ] | [https://github.com/dogtagpki/pki/wiki Documentation] | [https://github.com/dogtagpki/pki/wiki/Architecture Architecture] | [https://github.com/dogtagpki/pki/wiki/Development-Guide Developers] |  [https://github.com/dogtagpki/pki/wiki/Mailing-Lists Mailing Lists]</div>
+
+__NOTOC__
+
+
+== Overview ==
+Welcome to the home page for the Dogtag Certificate System! 
+
+The Dogtag Certificate System is an enterprise-class open source [https://github.com/dogtagpki/pki/wiki/Certificate-Authority Certificate Authority] (CA). It is a full-featured system, and has been hardened by real-world deployments. It supports all aspects of certificate lifecycle management, including key archival, [https://github.com/dogtagpki/pki/wiki/OCSP-Responder OCSP] and smartcard management, and much more. The Dogtag Certificate System can be downloaded for free and set up in less than an hour.
+
+This site has everything you need to join the Dogtag community. Whether you are just looking for help and advice deploying and using Dogtag components, or you want to take a more active role and help shape the future of PKI, there are documentation references, mailing lists, and discussion channels for you to read or join:
+
+* [https://github.com/dogtagpki/pki/wiki Online Documentation]
+* [https://access.redhat.com/site/documentation/Red_Hat_Certificate_System/ Additional Documentation Reference]
+* [https://github.com/dogtagpki/pki/wiki/Mailing-Lists Mailing lists]
+* [https://github.com/dogtagpki/pki/wiki/IRC Online chat sites via IRC channels]
+
+== Key Features ==
+Dogtag is a collection of technologies that allow enterprises to deploy PKI on a large scale. It has features such as:
+* [https://github.com/dogtagpki/pki/wiki/Certificate Certificate] issuance, revocation, and retrieval
+* [https://github.com/dogtagpki/pki/wiki/Certificate-Revocation-List Certificate Revocation List] (CRL) generation and publishing
+* [https://github.com/dogtagpki/pki/wiki/Certificate-Profiles Certificate Profiles]
+* [https://github.com/dogtagpki/pki/wiki/SCEP-Responder Simple Certificate Enrollment Protocol] (SCEP)
+* Local [https://github.com/dogtagpki/pki/wiki/Registration-Authority Registration Authority] (LRA) for organizational authentication and policies
+* Encryption key archival and recovery
+* Smartcard lifecycle management
+** Token profiles
+** Token enrollment, on-hold, key recovery, and format
+** Face-to-face enrollment with the security officer workstation interface
+* Extensive [http://www.redhat.com/docs/manuals/cert-system/ documentation]
+
+For more, see the [https://github.com/dogtagpki/pki/wiki/Features Features] page.
+
+== Releases ==
+
+Releases are published in the following pages:
+
+* [https://github.com/dogtagpki/pki/releases PKI Releases]
+* [https://github.com/dogtagpki/jss/releases/ JSS Releases]
+* [https://github.com/dogtagpki/tomcatjss/releases/ Tomcat JSS Releases]
+
+See also [[News Archive]].
+
+== What Can You Do? ==
+
+If you're a new user, check out the [https://github.com/dogtagpki/pki/wiki/User-Guide User Guide].  To run or deploy a Certificate System using pre-built components, see the [https://github.com/dogtagpki/pki/wiki/Installation-Guide Installation Guide].
+<br>
+If you are interested in development, view the [https://github.com/dogtagpki/pki/wiki/Development-Guide Development Guide].
+<br>
+For information regarding exciting new directions for Dogtag (such as simplifying its ability to have many of its features embedded in other projects), see the following:
+* [[Dogtag]]
+<br>
+Developers who are writing clients against the new REST interface in Dogtag can find useful information here:
+* [https://github.com/dogtagpki/pki/wiki/Programming-Guide Programming Guide]
+<br>
+Additional ideas for using Dogtag and participating in our community are in the following sections:
+
+* [[PKI How to contribute|How to contribute]]
+* [[PKI Roadmap|Roadmap]]
+* [https://github.com/dogtagpki/pki/wiki/Design-Documents Design Documents]
+* [[PKI_Known_Issues|Known Issues]]
+* [[PKI Wishlist|Wishlist]]
+
+== Community ==
+Join our community and help shape the future of Dogtag!  Here are some links to get you started:
+* [[Ways_To_Contribute|Ways to contribute]]
+* [https://github.com/dogtagpki/pki/wiki Online documentation]
+* [https://github.com/dogtagpki/pki/wiki/Mailing-Lists Mailing lists]
+* [https://github.com/dogtagpki/pki/wiki/IRC Online chat sites via IRC channels]
+* [https://github.com/dogtagpki/pki/wiki/Related-Projects Related Projects]
+
+== Team, History, and Contributors ==
+The Dogtag technology has roots that go back over 15 years. Here is some background:
+* [[PKI_Credit|PKI Team, History, and Contributors]]

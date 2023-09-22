@@ -1,0 +1,42 @@
+HI All,
+ I am  doing integration activity with RHEL4.0 certificate System7.3 
+ and PSG card. RedHat Certificate System 7.3 supports two hardware modules by default.
+ First one is Safenet LunaSA and other one is Ncipher Nfast.
+ It also provides support for other Hardware modules.But for this we 
+ have to add hardware module in subsystem database manually with 
+ modutil utility. But in Key Store panel of CA subsystem it does not show the manually 
+ added h/w module.
+ We have followed the same steps given in Redhat Certificate system 
+ administration guide.
+Below links helps you more to understand what steps we have followed:-
+
+ http://www.redhat.com/docs/manuals/cert-system/7.3/html/Administration
+ _G 
+ uide/Administration_Guide-Managing_Tokens-Using_Hardware_Security_Modu
+ le
+ s_with_Subsystems.html
+
+ http://www.redhat.com/docs/manuals/cert-system/7.3/html/Administration
+ _G 
+ uide/Administration_Guide-Using_Hardware_Security_Modules_with_Subsyst
+ em s-Installing_External_Tokens_and_Unsupported_HSM.html
+ http://www.redhat.com/docs/manuals/cert-system/7.3/html/Administration
+ _G 
+ uide/Administration_Guide-Managing_Tokens-Managing_Tokens_Used_by_the_
+ Su
+ bsystems.html
+
+
+ For LunaSA HSM works with Red Hat Certificate System, We have to add 
+ this configuration parameter to /etc/Chrystoki.conf:
+ Misc { NetscapeCustomize=1023; }
+
+ But In case of PSG we don't have any Chrystoki.conf.
+
+ So first Issue is what is significance of Misc { 
+ NetscapeCustomize=1023; } parameter.
+
+Any help will be appriciated.....
+
+Thanks 
+Yateendra

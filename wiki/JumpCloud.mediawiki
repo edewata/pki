@@ -1,0 +1,34 @@
+= Displaying Root DSE =
+
+<pre>
+$ ldapsearch -h ldap.jumpcloud.com -x \
+    -D "uid=<username>,ou=Users,o=<org>,dc=jumpcloud,dc=com" \
+    -w <password> \
+    -b "" -s base +
+</pre>
+
+= Displaying Schema =
+
+<pre>
+$ ldapsearch -h ldap.jumpcloud.com -x \
+    -D "uid=<username>,ou=Users,o=<org>,dc=jumpcloud,dc=com" \
+    -w <password> \
+    -b "cn=Subschema" -s base \
+    -o ldif-wrap=no \
+    +
+</pre>
+
+= Listing Entries =
+
+<pre>
+$ ldapsearch -h ldap.jumpcloud.com -x \
+    -D "uid=<username>,ou=Users,o=<org>,dc=jumpcloud,dc=com" \
+    -w <password> \
+    -b "o=<org>,dc=jumpcloud,dc=com"
+</pre>
+
+= See Also =
+
+* [[LDAP]]
+* [https://support.jumpcloud.com/support/s/topic/0TO1M000000EUx3WAG/ldapasaservice LDAP-as-a-Service]
+* [https://support.jumpcloud.com/support/s/article/using-jumpclouds-ldap-as-a-service1 Using JumpCloud's LDAP-as-a-Service]

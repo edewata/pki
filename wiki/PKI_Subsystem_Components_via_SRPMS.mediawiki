@@ -1,0 +1,276 @@
+== Building PKI Subsystem Components (Dogtag 1.3 and Earlier ONLY) ==
+
+'''IMPORTANT:'''   For ALL of the following components, "{flavor}" equals "dogtag"!
+
+=== CA Subsystem (pki-ca) ===
+
+Obtain the latest {flavor}-pki-ca-ui and pki-ca SRPMs:
+
+    yumdownloader --source {flavor}-pki-ca-ui pki-ca
+
+To create binary RPMs from these SRPMs, become '''root''', and execute the following commands:
+
+    rpm -Uvh {flavor}-pki-ca-ui-{version}-{release}.src.rpm
+    rpm -Uvh pki-ca-{version}-{release}.src.rpm
+    cd /usr/src/redhat
+    rpmbuild -bb SPECS/{flavor}-pki-ca-ui.spec
+    rpmbuild -bb SPECS/pki-ca.spec
+
+The RPMs will be created in RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd RPMS/noarch
+    rpm -Uvh *.rpm
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio {flavor}-pki-ca-ui-{version}-{release}.src.rpm | cpio -idumv
+    gtar -zxvf {flavor}-pki-ca-ui-{version}.tar.gz
+    cd {flavor}-pki-ca-ui-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in {flavor}-pki-ca-ui-{version}/dist/rpmpkg/RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd {flavor}-pki-ca-ui-{version}/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio pki-ca-{version}-{release}.src.rpm | cpio -idumv
+    gtar -zxvf pki-ca-{version}.tar.gz
+    cd pki-ca-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in pki-ca-{version}/dist/rpmpkg/RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd pki-ca-{version}/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+=== DRM Subsystem (pki-kra) ===
+
+Obtain the latest {flavor}-pki-kra-ui and pki-kra SRPMs:
+
+    yumdownloader --source {flavor}-pki-kra-ui pki-kra
+
+To create binary RPMs from these SRPMs, become '''root''', and execute the following commands:
+
+    rpm -Uvh {flavor}-pki-kra-ui-{version}-{release}.src.rpm
+    rpm -Uvh pki-kra-{version}-{release}.src.rpm
+    cd /usr/src/redhat
+    rpmbuild -bb SPECS/{flavor}-pki-kra-ui.spec
+    rpmbuild -bb SPECS/pki-kra.spec
+
+The RPMs will be created in RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd RPMS/noarch
+    rpm -Uvh *.rpm
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio {flavor}-pki-kra-ui-{version}-{release}.src.rpm | cpio -idumv
+    gtar -zxvf {flavor}-pki-kra-ui-{version}.tar.gz
+    cd {flavor}-pki-kra-ui-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in {flavor}-pki-kra-ui-{version}/dist/rpmpkg/RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd {flavor}-pki-kra-ui-{version}/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio pki-kra-{version}-{release}.src.rpm | cpio -idumv
+    gtar -zxvf pki-kra-{version}.tar.gz
+    cd pki-kra-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in pki-kra-{version}/dist/rpmpkg/RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd pki-kra-{version}/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+=== OCSP Subsystem (pki-ocsp) ===
+
+Obtain the latest {flavor}-pki-ocsp-ui and pki-ocsp SRPMs:
+
+    yumdownloader --source {flavor}-pki-ocsp-ui pki-ocsp
+
+To create binary RPMs from these SRPMs, become '''root''', and execute the following commands:
+
+    rpm -Uvh {flavor}-pki-ocsp-ui-{version}-{release}.src.rpm
+    rpm -Uvh pki-ocsp-{version}-{release}.src.rpm
+    cd /usr/src/redhat
+    rpmbuild -bb SPECS/{flavor}-pki-ocsp-ui.spec
+    rpmbuild -bb SPECS/pki-ocsp.spec
+
+The RPMs will be created in RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd RPMS/noarch
+    rpm -Uvh *.rpm
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio {flavor}-pki-ocsp-ui-{version}-{release}.src.rpm | cpio -idumv
+    gtar -zxvf {flavor}-pki-ocsp-ui-{version}.tar.gz
+    cd {flavor}-pki-ocsp-ui-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in {flavor}-pki-ocsp-ui-{version}/dist/rpmpkg/RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd {flavor}-pki-ocsp-ui-{version}/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio pki-ocsp-{version}-{release}.src.rpm | cpio -idumv
+    gtar -zxvf pki-ocsp-{version}.tar.gz
+    cd pki-ocsp-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in pki-ocsp-{version}/dist/rpmpkg/RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd pki-ocsp-{version}/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+=== TKS Subsystem (pki-tks) ===
+
+Obtain the latest {flavor}-pki-tks-ui and pki-tks SRPMs:
+
+    yumdownloader --source {flavor}-pki-tks-ui pki-tks
+
+To create binary RPMs from these SRPMs, become '''root''', and execute the following commands:
+
+    rpm -Uvh {flavor}-pki-tks-ui-{version}-{release}.src.rpm
+    rpm -Uvh pki-tks-{version}-{release}.src.rpm
+    cd /usr/src/redhat
+    rpmbuild -bb SPECS/{flavor}-pki-tks-ui.spec
+    rpmbuild -bb SPECS/pki-tks.spec
+
+The RPMs will be created in RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd RPMS/noarch
+    rpm -Uvh *.rpm
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio {flavor}-pki-tks-ui-{version}-{release}.src.rpm | cpio -idumv
+    gtar -zxvf {flavor}-pki-tks-ui-{version}.tar.gz
+    cd {flavor}-pki-tks-ui-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in {flavor}-pki-tks-ui-{version}/dist/rpmpkg/RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd {flavor}-pki-tks-ui-{version}/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio pki-tks-{version}-{release}.src.rpm | cpio -idumv
+    gtar -zxvf pki-tks-{version}.tar.gz
+    cd pki-tks-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in pki-tks-{version}/dist/rpmpkg/RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd pki-tks-{version}/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+=== RA Subsystem (pki-ra) ===
+
+Obtain the latest {flavor}-pki-ra-ui and pki-ra SRPMs:
+
+    yumdownloader --source {flavor}-pki-ra-ui pki-ra
+
+To create binary RPMs from these SRPMs, become '''root''', and execute the following commands:
+
+    rpm -Uvh {flavor}-pki-ra-ui-{version}-{release}.src.rpm
+    rpm -Uvh pki-ra-{version}-{release}.src.rpm
+    cd /usr/src/redhat
+    rpmbuild -bb SPECS/{flavor}-pki-ra-ui.spec
+    rpmbuild -bb SPECS/pki-ra.spec
+
+The RPMs will be created in RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd RPMS/noarch
+    rpm -Uvh *.rpm
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio {flavor}-pki-ra-ui-{version}-{release}.src.rpm | cpio -idumv
+    gtar -zxvf {flavor}-pki-ra-ui-{version}.tar.gz
+    cd {flavor}-pki-ra-ui-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in {flavor}-pki-ra-ui-{version}/dist/rpmpkg/RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd {flavor}-pki-ra-ui-{version}/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio pki-ra-{version}-{release}.src.rpm | cpio -idumv
+    gtar -zxvf pki-ra-{version}.tar.gz
+    cd pki-ra-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in pki-ra-{version}/dist/rpmpkg/RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd pki-ra-{version}/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+=== TPS Subsystem (pki-tps) ===
+
+Obtain the latest {flavor}-pki-tps-ui and pki-tps SRPMs:
+
+    yumdownloader --source {flavor}-pki-tps-ui pki-tps
+
+To create binary RPMs from these SRPMs, become '''root''', and execute the following commands:
+
+    rpm -Uvh {flavor}-pki-tps-ui-{version}-{release}.src.rpm
+    rpm -Uvh pki-tps-{version}-{release}.src.rpm
+    cd /usr/src/redhat
+    rpmbuild -bb SPECS/{flavor}-pki-tps-ui.spec
+    rpmbuild -bb SPECS/pki-tps.spec
+
+The RPMs will be created in RPMS/noarch and RPMS/{arch} respectively.  Become '''root''', and execute the following commands:
+
+    cd RPMS/noarch
+    rpm -Uvh *.rpm
+    
+    cd RPMS/{arch}
+    rpm -Uvh *.rpm
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio {flavor}-pki-tps-ui-{version}-{release}.src.rpm | cpio -idumv
+    gtar -zxvf {flavor}-pki-tps-ui-{version}.tar.gz
+    cd {flavor}-pki-tps-ui-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in {flavor}-pki-tps-ui-{version}/dist/rpmpkg/RPMS/noarch.  Become '''root''', and execute the following commands:
+
+   cd {flavor}-pki-tps-ui-{version}/dist/rpmpkg/RPMS/noarch
+   rpm -Uvh *.rpm
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio pki-tps-{version}-{release}.src.rpm | cpio -idumv
+    gtar -zxvf pki-tps-{version}.tar.gz
+    cd pki-tps-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in pki-tps-{version}/dist/rpmpkg/RPMS/{arch}.  Become '''root''', and execute the following commands:
+
+    cd pki-tps-{version}/dist/rpmpkg/RPMS/{arch}
+    rpm -Uvh *.rpm

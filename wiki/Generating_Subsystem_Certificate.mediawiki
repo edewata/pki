@@ -1,0 +1,1 @@
+This page has bee moved to https://github.com/dogtagpki/pki/wiki/Generating-Subsystem-Certificate.

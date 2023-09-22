@@ -1,0 +1,141 @@
+= Overview =
+
+To install CA, IPA calls pkispawn with a configuration file.
+
+See https://github.com/freeipa/freeipa/blob/master/ipaserver/install/cainstance.py#L469:
+
+* Create and configure a new CA instance using pkispawn.
+* Create the config file with IPA specific parameters and passes it to the base class to call pkispawn.
+
+= General =
+
+In all cases the configuration file contains the following parameters:
+
+<pre>
+[CA]
+
+# Server
+pki_security_domain_name=<security domain name>
+pki_enable_proxy=True
+pki_restart_configured_instance=False
+pki_backup_keys=True
+pki_backup_password=<admin password>
+pki_profiles_in_ldap=True
+pki_default_ocsp_uri=http://ipa-ca.<domain>/ca/ocsp
+
+# Client security database
+# pki_client_database_dir=<agent_db>
+# pki_client_database_password=<admin password>
+# pki_client_database_purge=False
+pki_client_pkcs12_password=<admin password>
+
+# Administrator
+pki_admin_name=admin
+pki_admin_uid=admin
+pki_admin_email=root@localhost
+pki_admin_password=<admin password>
+pki_admin_nickname=ipa-ca-agent
+pki_admin_subject_dn=cn=ipa-ca-agent,<subject base>
+pki_client_admin_cert_p12=/root/ca-agent.p12
+
+# Directory server
+pki_ds_ldap_port=389
+pki_ds_password=<dm password>
+pki_ds_base_dn=<basedn>
+pki_ds_database=ipaca
+pki_ds_ldaps_port=636
+pki_ds_secure_connection=True
+pki_ds_secure_connection_ca_pem_file=<DS CA cert>
+
+# Certificate subject DN's
+pki_subsystem_subject_dn=cn=CA Subsystem,<subject base>
+pki_ocsp_signing_subject_dn=cn=OCSP Subsystem,<subject base>
+pki_ssl_server_subject_dn=cn=<FQDN>,<subject base>
+pki_audit_signing_subject_dn=cn=CA Audit,<subject base>
+pki_ca_signing_subject_dn=cn=Certificate Authority,<subject base>
+
+# Certificate nicknames
+pki_subsystem_nickname=subsystemCert cert-pki-ca
+pki_ocsp_signing_nickname=ocspSigningCert cert-pki-ca
+pki_ssl_server_nickname=Server-Cert cert-pki-ca
+pki_audit_signing_nickname=auditSigningCert cert-pki-ca
+pki_ca_signing_nickname=caSigningCert cert-pki-ca
+
+# CA key algorithm
+pki_ca_signing_key_algorithm=<ca signing algorithm>
+pki_pin=<PIN>
+</pre>
+
+= Clone =
+
+For CA clone, IPA adds the following parameters:
+<pre>
+# Security domain registration
+pki_security_domain_hostname=<master host>
+pki_security_domain_https_port=443
+pki_security_domain_user=admin
+pki_security_domain_password=<admin password>
+
+# Clone
+pki_clone=True
+pki_clone_pkcs12_path=<TMP_CA_P12>
+pki_clone_pkcs12_password=<dm password>
+pki_clone_replication_security=TLS
+pki_clone_replication_master_port=<master replication port>
+pki_clone_replication_clone_port=<DS_PORT>
+pki_clone_replicate_schema=False
+pki_clone_uri=https://<master host>:443
+</pre>
+
+= External CA: Step 1 =
+
+For external CA step 1, IPA adds the following parameters:
+<pre>
+pki_external=True
+pki_external_csr_path=<csr file>
+</pre>
+
+If it's a Microsoft CA, IPA adds the following parameters:
+<pre>
+# Include MS template name extension in the CSR
+pki_req_ext_add=True
+pki_req_ext_oid=1.3.6.1.4.1.311.20.2
+pki_req_ext_critical=False
+pki_req_ext_data=1E0A00530075006200430041
+</pre>
+
+= External CA: Step 2 =
+
+For external CA step 2, IPA adds the following parameters:
+<pre>
+pki_external=True
+pki_external_ca_cert_path=<cert filename>
+pki_external_ca_cert_chain_path=<cert chain filename>
+pki_external_step_two=True
+</pre>
+
+= HTTP Proxy =
+
+See also:
+
+* https://github.com/freeipa/freeipa/blob/master/install/share/ipa-pki-proxy.conf.template
+* [[PKI Server Proxy Configuration]]
+
+= Enabling Secure LDAP connection =
+
+After CA installation IPA enables secure LDAP connection with client certificate authenticaton in CS.cfg (see ipaserver/install/dogtaginstance.py):
+
+<pre>
+authz.instance.DirAclAuthz.ldap.ldapauth.authtype=SslClientAuth
+authz.instance.DirAclAuthz.ldap.ldapauth.bindDN=uid=pkidbuser,ou=people,o=ipaca
+authz.instance.DirAclAuthz.ldap.ldapauth.clientCertNickname=subsystemCert cert-pki-ca
+authz.instance.DirAclAuthz.ldap.ldapconn.port=<DS_SECURE_PORT>
+authz.instance.DirAclAuthz.ldap.ldapconn.secureConn=true
+internaldb.ldapauth.authtype=SslClientAuth
+internaldb.ldapauth.bindDN=uid=pkidbuser,ou=people,o=ipaca
+internaldb.ldapauth.clientCertNickname=subsystemCert cert-pki-ca
+internaldb.ldapconn.port=<DS_SECURE_PORT>
+internaldb.ldapconn.secureConn=true
+</pre>
+
+Also IPA removes the internaldb from password.conf.

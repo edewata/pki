@@ -1,0 +1,507 @@
+    /* SSNAuth */
+    
+    /*************************************************************************/
+    /* Red Hat Certificate System                                            */
+    /*                                                                       */
+    /* (C) 2005 by Red Hat, Inc. All rights reserved. This material may be   */
+    /* distributed only subject to the terms and conditions set forth in the */
+    /* Open Publication License, V1.0 or later (the latest version is        */
+    /* presently available at http://www.opencontent.org/openpub/).        */
+    /*                                                                       */
+    /* Distribution of substantively modified versions of this document is   */
+    /* prohibited without the explicit permission of the copyright holder.   */
+    /*                                                                       */
+    /* Distribution of the work or derivative of the work in any standard    */
+    /* (paper) book form for commercial purposes is prohibited unless        */
+    /* prior permission is obtained from the copyright holder.               */
+    /*************************************************************************/
+    
+    ///////////////////////
+    // package statement //
+    ///////////////////////
+    
+    
+    
+    ///////////////////////
+    // import statements //
+    ///////////////////////
+    
+    /* cert server imports */
+    import com.netscape.certsrv.apps.*;
+    import com.netscape.certsrv.authentication.*;
+    import com.netscape.certsrv.base.IConfigStore;
+    import com.netscape.certsrv.base.EBaseException;
+    import com.netscape.certsrv.base.IExtendedPluginInfo;
+    import com.netscape.certsrv.logging.ILogger;
+    import com.netscape.cmsutil.util.Utils;
+    
+    /* cert server imports */
+    /* (ONLY required if interaction with the profile framework is desired) */
+    import com.netscape.certsrv.profile.*;
+    import com.netscape.certsrv.property.*;
+    import com.netscape.certsrv.request.*;
+    
+    /* java sdk imports */
+    import java.io.*;
+    import java.util.Enumeration;
+    import java.util.Locale;
+    import java.util.Properties;
+    import java.util.Vector;
+    
+    
+    //////////////////////
+    // class definition //
+    //////////////////////
+    
+    /**
+     * UID/SSN authentication plug-in
+     * &lt;P&gt;
+     * @version $Revision: 1.3 $, $Date: 2005/05/20 18:05:25 $
+     */
+    public class SSNAuth
+    implements IAuthManager, IExtendedPluginInfo, IProfileAuthenticator
+    {
+        ////////////////////////
+        // default parameters //
+        ////////////////////////
+        
+        
+        
+        /////////////////////////////
+        // IAuthManager parameters //
+        /////////////////////////////
+        
+        /* authentication plug-in configuration store */
+        private IConfigStore mConfig;
+        
+        
+        /* authentication plug-in name */
+        private String mImplName = null;
+        
+        
+        /* authentication plug-in instance name */
+        private String mName = null;
+        
+        
+        /* authentication plug-in fields */
+        protected static final String PROP_BASE_SUBJECT_DN = "baseSubjectDN";
+        protected static final String PROP_SSN_FILE = "ssnfile";
+        
+        
+        /* Holds authentication plug-in fields accepted by this implementation.
+         * This list is passed to the configuration console so configuration
+         * for instances of this implementation can be configured through the
+         * console.
+         */
+        protected static String[] mConfigParams =
+            new String[]  { PROP_BASE_SUBJECT_DN,
+                            PROP_SSN_FILE };
+        
+        
+        /* authentication plug-in values */
+        private String mSubjectDN = null;
+        private String mSSNFileName = null;
+        
+        
+        /* authentication plug-in properties */
+        private Properties mSSNDB = null;
+        
+        
+        /* required credentials to authenticate. UID and SSN are strings. */
+        public static final String CRED_UID = "uid";
+        public static final String CRED_SSN = "ssn";
+        
+        protected static String[] mRequiredCreds = { CRED_UID,
+                                                     CRED_SSN };
+        
+        
+        
+        ////////////////////////////////////
+        // IExtendedPluginInfo parameters //
+        ////////////////////////////////////
+        
+        /* Vector of extendedPluginInfo strings */
+        protected static Vector mExtendedPluginInfo = null;
+        
+        /* actual help messages */
+        static {
+                 mExtendedPluginInfo = new Vector();
+                 mExtendedPluginInfo.add(PROP_BASE_SUBJECT_DN+
+                                         ";string,required;A string representing "+
+                                         "the suffix of the base subject DN that "+
+                                         "will be appended to the UID in each "+
+                                         "certificate issued.\n"+
+                                         "Example:  uid={UID}, {suffix}");
+                 mExtendedPluginInfo.add(PROP_SSN_FILE+
+                                         ";string,required;A flat file database "+
+                                         "containing UIDs and their associated "+
+                                         "SSNs.");
+                 mExtendedPluginInfo.add(IExtendedPluginInfo.HELP_TEXT+
+                                         ";Authenticate the UID and SSN provided "+
+                                         "by the user against a flat file "+
+                                         "database containing this information.  "+
+                                         "Works with the SSN Enrollment Profile.");
+                 mExtendedPluginInfo.add(IExtendedPluginInfo.HELP_TOKEN+
+                                         ";configuration-authrules-ssnauth");
+        }
+        
+        
+        
+        //////////////////////////////////////
+        // IProfileAuthenticator parameters //
+        //////////////////////////////////////
+        
+        
+        
+        ///////////////////////
+        // Logger parameters //
+        ///////////////////////
+        
+        /* the system's logger */
+        private ILogger mLogger = CMS.getLogger();
+        
+        
+        
+        /////////////////////
+        // default methods //
+        /////////////////////
+        
+        /**
+         * Default constructor, initialization must follow.
+         */
+        public SSNAuth()
+        {
+        }
+        
+        
+        
+        //////////////////////////
+        // IAuthManager methods //
+        //////////////////////////
+        
+        /**
+         * Initializes the SSNAuth authentication plug-in.
+         * &lt;p&gt;
+         * @param name The name for this authentication plug-in instance.
+         * @param implNamel The name of the authentication plug-in.
+         * @param config - The configuration store for this instance.
+         * @exception EBaseException If an error occurs during initialization.
+         */
+        public void init(String name, String implName, IConfigStore config)
+            throws EBaseException
+        {
+            mName = name;
+            mImplName = implName;
+            mConfig = config;
+            
+            try {
+                mSubjectDN = mConfig.getString(PROP_BASE_SUBJECT_DN);
+                mSSNFileName = mConfig.getString(PROP_SSN_FILE);
+                File ssnfile = new File(mSSNFileName);
+                mSSNDB = new Properties();
+                mSSNDB.load(new FileInputStream(ssnfile));
+                log(ILogger.LL_INFO, "Initialization complete!");
+            } catch (IOException e) {
+                throw new EAuthException(
+                    CMS.getUserMessage("CMS_AUTHENTICATION_INTERNAL_ERROR",
+                                       e.getMessage()));
+            }
+        }
+        
+        
+        /**
+         * Authenticates user by their SSN
+         * Resulting AuthToken sets a TOKEN_SUBJECT for the subject name.
+         * &lt;p&gt;
+         * @param authCred Authentication credentials, CRED_UID and CRED_SSN.
+         * @return an AuthToken
+         * @exception com.netscape.certsrv.authentication.EMissingCredential
+         *            If a required authentication credential is missing.
+         * @exception com.netscape.certsrv.authentication.EInvalidCredentials
+         *            If credentials failed authentication.
+         * @exception com.netscape.certsrv.base.EBaseException
+         *            If an internal error occurred.
+         * @see com.netscape.certsrv.authentication.AuthToken
+         */
+        public IAuthToken authenticate(IAuthCredentials authCred)
+            throws EMissingCredential, EInvalidCredentials, EBaseException
+        {
+            // get the UID.
+            String uid = (String)authCred.get(CRED_UID);
+            if (uid == null) {
+                throw new EMissingCredential(CRED_UID);
+            }
+            
+            // get the SSN.
+            String ssn = (String) authCred.get(CRED_SSN);
+            if (ssn == null) {
+                throw new EMissingCredential(CRED_SSN);
+            }
+            
+            if (ssn.equals("")) {
+                log(ILogger.LL_FAILURE,
+                    "UID "+ uid + " attempted login with empty SSN.");
+                throw new EInvalidCredentials(
+                    CMS.getUserMessage("CMS_AUTHENTICATION_INVALID_CREDENTIAL"));
+            }
+            
+            // authenticate by checking SSN.
+            String ssnval = (String)mSSNDB.get(uid);
+            if (ssnval == null) {
+                log(ILogger.LL_FAILURE,
+                    "UID " + uid + " unknown.");
+                throw new EInvalidCredentials(
+                    CMS.getUserMessage("CMS_AUTHENTICATION_INVALID_CREDENTIAL"));
+            }
+            
+            if (!ssn.equals(ssnval)) {
+                log(ILogger.LL_FAILURE,
+                    "UID " + uid + " attempted login with a bad SSN.");
+                throw new EInvalidCredentials(
+                    CMS.getUserMessage("CMS_AUTHENTICATION_INVALID_CREDENTIAL"));
+            }
+            
+            // everything OK.
+            // now formulate the certificate info.
+            // set the subject name at a minimum.
+            // set anything else like version, extensions, etc.
+            // if nothing except subject name is set the rest of
+            // cert info will be filled in by policies and CA defaults.
+            String subjectdn = "uid =" + uid + "," + mSubjectDN;
+            
+            // set and return the auth token.
+            AuthToken authToken = new AuthToken(this);
+            authToken.set(AuthToken.TOKEN_CERT_SUBJECT, subjectdn);
+            authToken.set(CRED_UID, uid);
+            
+            log(ILogger.LL_INFO, "UID " + uid + " authenticated!");
+            
+            return authToken;
+        }
+        
+        
+        /**
+         * Returns a list of configuration parameter names.
+         * The list is passed to the configuration console so instances of
+         * this implementation can be configured through the console.
+         * &lt;p&gt;
+         * @return String array of configuration parameter names.
+         */
+        public String[] getConfigParams()
+        {
+            return(mConfigParams);
+        }
+        
+        
+        /**
+         * gets the configuration substore used by this authentication
+         *  plug-in
+         * &lt;p&gt;
+         * @return configuration store
+         */
+        public IConfigStore getConfigStore()
+        {
+            return mConfig;
+        }
+        
+        
+        /**
+         * gets the plug-in name of this authentication plug-in.
+         * &lt;p&gt;
+         * @return plug-in name
+         */
+        public String getImplName()
+        {
+            return mImplName;
+        }
+        
+        
+        /**
+         * gets the name of this authentication plug-in instance
+         * &lt;p&gt;
+         * @return instance name
+         */
+        public String getName()
+        {
+            return mName;
+        }
+        
+        
+        /**
+         * get the list of required credentials.
+         * &lt;p&gt;
+         * @return list of required credentials as strings.
+         */
+        public String[] getRequiredCreds()
+        {
+            return(mRequiredCreds);
+        }
+        
+        
+        /**
+         * prepares for shutdown.
+         */
+        public void shutdown()
+        {
+        }
+        
+        
+        /////////////////////////////////
+        // IExtendedPluginInfo methods //
+        /////////////////////////////////
+        
+        /**
+         * Activate the help system.
+         * &lt;p&gt;
+         * @param locale end user locale
+         * @return help messages
+         */
+        public String[] getExtendedPluginInfo(Locale locale)
+        {
+            CMS.debug("SSNAuth: getExtendedPluginInfo()");
+            String [] s = Utils.getStringArrayFromVector(mExtendedPluginInfo);
+            CMS.debug("SSNAuth: s.length = "+s.length);
+            for(int i=0;i<s.length;i++) {
+                CMS.debug(""+i+" "+s[i]);
+            }
+            return s;
+        }
+        
+        
+        
+        ///////////////////////////////////////////
+        // IProfileAuthenticator-related methods //
+        ///////////////////////////////////////////
+        
+        /**
+         * Initializes this default policy.
+         * &lt;p&gt;
+         * @param profile owner of this authenticator
+         * @param config configuration store
+         * @exception EProfileException failed to initialize
+         */
+        public void init(IProfile profile, IConfigStore config)
+            throws EProfileException
+        {
+        }
+        
+        
+        /**
+         * Populates authentication specific information into the
+         * request for auditing purposes.
+         * &lt;p&gt;
+         * @param token authentication token
+         * @param request request
+         * @exception EProfileException failed to populate
+         */
+        public void populate(IAuthToken token, IRequest request)
+            throws EProfileException
+        {
+            request.setExtData(IProfileAuthenticator.AUTHENTICATED_NAME,
+                               token.getInString(AuthToken.TOKEN_CERT_SUBJECT));
+        }
+        
+        
+        /**
+         * Retrieves the localizable name of this policy.
+         * &lt;p&gt;
+         * @param locale end user locale
+         * @return localized authenticator name
+         */
+        public String getName(Locale locale)
+        {
+            return "SSN Authentication";
+        }
+        
+        
+        /**
+         * Retrieves the localizable description of this policy.
+         * &lt;p&gt;
+         * @param locale end user locale
+         * @return localized authenticator description
+         */
+        public String getText(Locale locale)
+        {
+            return "SSN Authentication";
+        }
+        
+        
+        /**
+         * Retrieves a list of names of the value parameter.
+         * &lt;p&gt;
+         * @return a list of property names
+         */
+        public Enumeration getValueNames()
+        {
+            Vector v = new Vector();
+            v.addElement("uid");
+            v.addElement("ssn");
+            return v.elements();
+        }
+        
+        
+        /**
+         * Checks if the value of the given property should be
+         * serializable into the request. Passsword or other
+         * security-related value may not be desirable for
+         * storage.
+         * &lt;p&gt;
+         * @param name property name
+         * @return true if the property is not security related
+         */
+        public boolean isValueWriteable(String name)
+        {
+            return false;
+        }
+        
+        
+        /**
+         * Retrieves the descriptor of the given value
+         * property by name.
+         * &lt;p&gt;
+         * @param locale user locale
+         * @param name property name
+         * @return descriptor of the requested property
+         */
+        public IDescriptor getValueDescriptor(Locale locale, String name)
+        {
+            if (name.equals("uid")) {
+                return new Descriptor(IDescriptor.STRING, null, null, "User ID");
+            } else if (name.equals("ssn")) {
+                return new Descriptor(IDescriptor.STRING, null, null, "SSN");
+            }
+            return null;
+        }
+        
+        
+        /**
+         * Checks if this authenticator requires SSL client authentication.
+         * &lt;p&gt;
+         * @return client authentication required or not
+         */
+        public boolean isSSLClientRequired()
+        {
+            return false;
+        }
+        
+        
+        
+        ////////////////////
+        // Logger methods //
+        ////////////////////
+        
+        /**
+         * Logs a message for this class in the system log file.
+         * &lt;p&gt;
+         * @param level The log level.
+         * @param msg The message to log.
+         * @see com.netscape.certsrv.logging.ILogger
+         */
+        protected void log(int level, String msg)
+        {
+            if (mLogger == null)
+                return;
+            mLogger.log(ILogger.EV_SYSTEM, null, ILogger.S_AUTHENTICATION,
+                        level, "SSN Authentication: "+msg);
+        }
+    }

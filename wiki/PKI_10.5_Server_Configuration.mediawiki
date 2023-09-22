@@ -1,0 +1,43 @@
+= Server Configuration =
+
+<pre>
+$ ls -la /etc/pki/pki-tomcat
+total 260
+drwxrwx---.  5 pkiuser pkiuser   4096 Mar 13 17:37 .
+drwxr-xr-x. 17 root    root       285 Mar 13 17:36 ..
+drwxrwx---.  2 pkiuser pkiuser     54 Mar 13 17:36 alias
+drwxrwx---.  3 pkiuser pkiuser   4096 Mar 13 17:37 ca
+drwxrwx---.  3 pkiuser pkiuser     23 Feb 22 06:51 Catalina
+-rw-rw----.  1 pkiuser pkiuser  20572 Mar 13 17:37 catalina.policy
+-rw-rw----.  1 pkiuser pkiuser   5668 Mar 13 17:36 catalina.properties
+-rw-rw----.  1 pkiuser pkiuser   7663 Feb 22 06:48 ciphers.info
+-rw-rw----.  1 pkiuser pkiuser   1561 Mar 13 17:36 context.xml
+-rw-rw----.  1 pkiuser pkiuser    292 Nov  2 22:26 custom.policy
+lrwxrwxrwx.  1 pkiuser pkiuser     45 Mar 13 17:36 logging.properties -> /usr/share/pki/server/conf/logging.properties
+-rw-rw----.  1 pkiuser pkiuser     67 Mar 13 17:36 password.conf
+-rw-rw----.  1 pkiuser pkiuser   6540 Mar 13 17:37 pki.policy
+-rw-rw----.  1 pkiuser pkiuser   1622 Nov  2 22:26 schema-authority.ldif
+-rw-rw----.  1 pkiuser pkiuser    495 Nov  2 22:26 schema-certProfile.ldif
+-rw-rw----.  1 pkiuser pkiuser     10 Mar 13 17:36 serverCertNick.conf
+-rw-rw----.  1 pkiuser pkiuser  15598 Mar 13 17:36 server.xml
+-rw-rw----.  1 pkiuser pkiuser   1962 Mar 13 17:36 tomcat.conf
+-rw-rw----.  1 pkiuser pkiuser   2473 Nov  2 22:26 tomcat-users.xml
+-rw-rw----.  1 pkiuser pkiuser    108 Nov  2 22:26 usn.ldif
+-rw-rw----.  1 pkiuser pkiuser 152716 Nov  2 22:26 web.xml
+</pre>
+
+= Web Application Contexts =
+
+<pre>
+$ ls -la /etc/pki/pki-tomcat/Catalina/localhost
+total 12
+drwxrwx---. 2 pkiuser pkiuser   51 Mar 13 17:36 .
+drwxrwx---. 3 pkiuser pkiuser   23 Feb 22 06:51 ..
+-rw-rw----. 1 pkiuser pkiuser 1364 Mar 13 17:36 ca.xml
+-rw-rw----. 1 pkiuser pkiuser 1141 Mar 13 17:36 pki.xml
+-rw-rw----. 1 pkiuser pkiuser 1142 Mar 13 17:36 ROOT.xml
+</pre>
+
+= See Also =
+
+* [[PKI 10.6 Server Configuration]]

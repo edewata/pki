@@ -1,0 +1,90 @@
+= Installation =
+
+To install an RA subsystem instance, become the '''root''' user, and execute the following commands:
+
+ $ pkicreate -pki_instance_root=/var/lib        \
+             -pki_instance_name=pki-ra          \
+             -subsystem_type=ra                 \
+             -secure_port=12889                 \
+             -non_clientauth_secure_port=12890  \
+             -unsecure_port=12888               \
+             -user=pkiuser                      \
+             -group=pkiuser                     \
+             -redirect conf=/etc/pki-ra         \
+             -redirect logs=/var/log/pki-ra     \
+             -verbose
+
+= Configuration =
+
+Configuration of this PKI subsystem can be accomplished in one of three ways:
+
+'''(1)''' The configuration URL is present on the screen.  When this occurs, something similar to the following should appear on the screen (e. g. - Dogtag 1.3):
+
+    PKI instance creation Utility ...
+    
+    
+    PKI instance creation completed ...
+    
+    Starting pki-ra:                                        [  OK  ]
+    
+    PKI service(s) are available at https://&lt;fully qualified domain name&gt;:&lt;secure ra port&gt;
+    
+    Server can be operated with /etc/init.d/pki-ra start | stop | restart
+    
+    Please start the configuration by accessing:
+    http://&lt;fully qualified domain name&gt;:&lt;ra port&gt;/ra/admin/console/config/login?pin=ZvgA642EXN9R8NX2JqDK
+
+<table>
+<tr>
+<td>'''NOTE:&nbsp;&nbsp;'''</td>
+<td>Default secure ra port:&nbsp;&nbsp;</td>
+<td>12889</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+<td>Default ra port:</td>
+<td>12888</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td valign="top">'''NOTE:&nbsp;&nbsp;'''</td>
+<td valign="top">Dogtag 9.0 uses a master daemon, 'pki-rad', with an optional specific instance<br>(e. g. - '/sbin/service pki-rad start | stop | restart [RA instance])!</td>
+</tr>
+</table>
+
+Invoke a browser, insert the configuration URL, and follow the step-by-step instructions displayed in each panel.
+
+    '''IMPORTANT:&nbsp;&nbsp;''' When finished, don't forget to restart this PKI instance before attempting to use it!
+
+'''(2)''' If the user no longer has access to the configuration URL displayed on the screen, one can find the configuration URL at the end of the '''/var/log/&lt;instance name&gt;-install.log'''.  For example:
+
+    .
+    .
+    .
+    [2008-02-22 18:23:49] [log] Configuration Wizard listening on
+    http://&lt;fully qualified domain name&gt;:&lt;ra port&gt;/ra/admin/console/config/login?pin=ZvgA642EXN9R8NX2JqDK
+
+<table>
+<tr>
+<td>'''NOTE:&nbsp;&nbsp;'''</td>
+<td>The pin is also stored in the '''/etc/&lt;instance name&gt;/CS.cfg''' file as the '''preop.pin''' parameter.</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+<td>The ra port is also stored in the '''/etc/&lt;instance name&gt;/server.xml''' file as the first uncommented "non-SSL HTTP/1.1 Connector" '''Connector port''' parameter.</td>
+</tr>
+</table>
+
+Invoke a browser, insert the configuration URL, and follow the step-by-step instructions displayed in each panel.
+
+    '''IMPORTANT:&nbsp;&nbsp;''' When finished, don't forget to restart this PKI instance before attempting to use it!
+
+'''(3)''' PKI subsystems can also be configured "automatically" by creating and using the pkisilent component with a predefined profile.
+
+    '''IMPORTANT:&nbsp;&nbsp;''' When finished, don't forget to restart this PKI instance before attempting to use it!
+
+= See Also =
+
+* [[PKI 9 Installation]]

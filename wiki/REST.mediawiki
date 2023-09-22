@@ -1,0 +1,15 @@
+= Frameworks =
+
+* [[RESTEasy]]
+* [[Jersey]]
+* [[CXF]]
+
+= PKI REST API =
+
+See [https://github.com/dogtagpki/pki/wiki/REST-API PKI REST API].
+
+= References =
+
+* [https://www.gajotres.net/best-available-java-restful-micro-frameworks/ Top 8 Java RESTful Micro Frameworks – Pros/Cons]
+* [https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html RFC 2616: Header Field Definitions]
+* [[Java EE]]

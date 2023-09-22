@@ -1,0 +1,21 @@
+= Overview =
+
+'''Note:''' This page is being moved to https://github.com/dogtagpki/resteasy/wiki.
+
+REST is a way to expose Web services as simple HTTP resources such as certificates, users, and groups. With REST any HTTP client will be able to manage the resources using regular HTTP operations such as GET, POST, PUT, DELETE. PKI uses RESTEasy framework to implement the REST services. The REST services for PKI are defined in [https://github.com/dogtagpki/pki/wiki/PKI-REST-API-Design this page].
+
+= Configuration =
+
+See [https://github.com/dogtagpki/pki/wiki/PKI-REST-Configuration RESTEasy Configuration].
+
+= Data Model =
+
+See [https://github.com/dogtagpki/pki/wiki/PKI-REST-Data-Model RESTEasy Data Model].
+
+= Resource =
+
+See [https://github.com/dogtagpki/pki/wiki/PKI-REST-Resource RESTEasy Resource].
+
+= Client =
+
+See [https://github.com/dogtagpki/pki/wiki/PKI-REST-Client RESTEasy Client].

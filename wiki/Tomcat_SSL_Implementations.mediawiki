@@ -1,0 +1,58 @@
+= Overview =
+
+* JSSE implementation
+* JSSE implementation with OpenSSL
+* APR implementation with OpenSSL
+* JSS implementation
+
+= JSSE Implementation =
+
+<pre>
+<Connector sslImplementationName="org.apache.tomcat.util.net.jsse.JSSEImplementation"/>
+</pre>
+
+= JSSE Implementation with OpenSSL =
+
+<pre>
+<Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on" SSLRandomSeed="builtin"/>
+
+<Connector sslImplementationName="org.apache.tomcat.util.net.openssl.OpenSSLImplementation"/>
+</pre>
+
+= APR Implementation =
+
+Notes:
+* requires tomcat-native
+* supports FIPS mode
+* requires certificate and key exported into PEM files
+
+To install Tomcat native library:
+
+<pre>
+$ dnf install tomcat-native
+</pre>
+
+To enable APR connector:
+
+<pre>
+<Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on" SSLRandomSeed="builtin"
+    useAprConnector="true" FIPSMode="on"/>
+
+<Connector protocol="org.apache.coyote.http11.Http11AprProtocol">
+    <SSLHostConfig ciphers="TLSv1.2+FIPS:kRSA+FIPS:!eNULL:!aNULL" protocols="TLSv1.2">
+        <Certificate certificateFile="/usr/share/tomcat/conf/sslserver.crt" certificateKeyFile="/usr/share/tomcat/conf/sslserver.key"/>
+    </SSLHostConfig>
+</Connector>
+</pre>
+
+= JSS Implementation =
+
+<pre>
+<Listener className="org.dogtagpki.tomcat.TomcatJSSListener"/>
+</pre>
+
+= References =
+
+* [https://github.com/dogtagpki/tomcat/wiki/User-Guide User Guide]
+* [http://tomcat.apache.org/native-doc/ Apache Tomcat Native Library]
+* [https://github.com/apache/tomcat85/blob/trunk/java/org/apache/catalina/core/AprLifecycleListener.java AprLifecycleListener.java]

@@ -1,0 +1,270 @@
+= Open Source History (2009) =
+
+== Dogtag Certificate Server 1.1.0 &nbsp;&nbsp;&nbsp;[04/06/2009] ==
+
+The Dogtag Certificate System 1.1.0 was used as the base development platform for the commercial open source product, Red Hat Certificate System 8.0.  Since certificate system development had moved to an open source development model, the project was made available to the community through the use of a [http://pki.fedoraproject.org/wiki/PKI_Main_Page Dogtag Wiki].  Feature development was reflected through the use of bugs located in the [http://pki.fedoraproject.org/wiki/PKI_Bugs Red Hat Bugzilla] bug system, and communication was established with the community via the use of '''#dogtag-pki''' IRC, as well as numerous mailing lists.  This release continued to support the Dogtag 1.0.0 platforms as well as adding the 32-bit and 64-bit versions of Fedora 10.
+
+'''Project Name:'''
+* '''''Dogtag Certificate System 1.1.0'''''
+'''Releases:'''
+* [04/06/2009] Dogtag Certificate Server 1.1.0
+'''Major Features:'''
+* Enhanced integration with FreeIPA
+* Supports UUID issuance natively
+* Provides data storage by the latest Fedora Directory Server
+* Support for IPv6
+* SELinux policy integration
+* Support for 3rd party ECC plugin modules
+* Numerous smart card enhancements including support for additional hardware tokens and 2048-bit keys
+* Certificate Renewal
+* TPS Roles
+* Support for using HTTP 1.1 for CRL distribution
+* Port Separation of End Entity (EE), Agent, and Admin users
+* Numerous bug fixes and security enhancements
+'''Server Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>1.1.0</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 8 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 8 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 9 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 9 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 10 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 10 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+
+    </table>
+'''Client Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>1.1.0</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 8 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 8 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 9 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 9 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 10 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 10 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Red Hat Certificate Server 8.0 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[07/22/2009] ==
+
+The Red Hat Certificate System 8.0 was the first commercial open source product to use the Dogtag open source project for its base development.
+
+'''Project Name:'''
+* '''''Red Hat Certificate System 8.0'''''
+'''Releases:'''
+* [03/02/2009] Red Hat Certificate Server 8.0 (alpha)
+* [04/01/2009] Red Hat Certificate Server 8.0 (beta)
+* [05/05/2009] Red Hat Certificate Server 8.0 (beta 2)
+* [07/22/2009] Red Hat Certificate Server 8.0
+'''Major Features:'''
+* Enhanced integration with FreeIPA
+* Supports UUID issuance natively
+* Provides data storage by the latest Red Hat Directory Server
+* Support for IPv6
+* SELinux policy integration
+* Support for 3rd party ECC plugin modules
+* Numerous smart card enhancements including support for additional hardware tokens and 2048-bit keys
+* Certificate Renewal
+* TPS Roles
+* Support for using HTTP 1.1 for CRL distribution
+* Port Separation of End Entity (EE), Agent, and Admin users
+* Supports PKI Subsystem Migration from RHCS 7.1, 7.2, or 7.3
+* Numerous bug fixes and security enhancements
+'''Server Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>8.0 (alpha)</th>
+    <th>8.0 (beta)</th>
+    <th>8.0 (beta 2)</th>
+    <th>8.0</th>
+    </tr>
+    <tr>
+    <td>32-bit RHEL 5 (i386)</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit RHEL 5 (x86_64)</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+'''Client Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>1.1.0 (alpha)</th>
+    <th>1.1.0 (beta)</th>
+    <th>1.1.0 (beta 2)</th>
+    <th>1.1.0</th>
+    </tr>
+    <tr>
+    <td>32-bit RHEL 5 (i386)</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit RHEL 5 (x86_64)</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Windows XP (i386)</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Windows Vista (i386)</td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Dogtag Certificate Server 1.2.0 &nbsp;&nbsp;&nbsp;[07/31/2009] ==
+
+Dogtag Certificate System 1.2.0 was primarily a bug fix release, with approximately 300 bugs fixed. Improvements were made to virtually every subsystem.
+
+'''Project Name:'''
+* '''''Dogtag Certificate System 1.2.0'''''
+'''Releases:'''
+* [07/31/2009] Dogtag Certificate Server 1.2.0 [32-bit & 64-bit Fedora 8, Fedora 9, and Fedora 10]
+* [08/26/2009] Dogtag Certificate Server 1.2.0 [32-bit & 64-bit Fedora 11]
+'''Major Features:'''
+* Fixes to installation scripts and the configuration wizard
+* Improvements for the handling of UTF8 Characters
+* Migration script and tool improvements
+* Fixes numerous problems related to HSM configurations
+* Smartcard Middleware and TPS server improvements
+* Fixes the way ECC signature requests are handled
+* New platform support for 32-bit and 64-bit versions of Fedora 11
+'''Server Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>1.2.0</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 8 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 8 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 9 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 9 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 10 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 10 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 11 (i586)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 11 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+'''Client Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>1.2.0</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 8 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 8 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 9 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 9 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 10 (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 10 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 11 (i586)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 11 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>

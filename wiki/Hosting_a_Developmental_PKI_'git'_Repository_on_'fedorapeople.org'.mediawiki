@@ -1,0 +1,304 @@
+= Purpose =
+A "READ-ONLY" copy of the official "pki.git" repo can be obtained using the following command:
+
+* git clone git://git.fedorahosted.org/git/pki.git
+
+However, this official "pki.git" repo will not contain any "patches" that may currently exist on a developer's local copy of this "pki.git" repo.
+
+Therefore, to promote the open development of Dogtag and encourage better developer collaboration and transparency, developers are urged to create "shared" git repositories of their local development "pki.git" repos hosted off of their "fedorapeople.org" account.
+
+The following instructions for accomplishing this are based upon [http://fedoraproject.org/wiki/Infrastructure/fedorapeople.org#BETA_git_hosting_support http://fedoraproject.org/wiki/Infrastructure/fedorapeople.org#BETA_git_hosting_support].
+
+<font color="red" size="+1">
+<table>
+<tr>
+<td valign="top">'''IMPORTANT:&nbsp;&nbsp;'''</td>
+<td valign="top">ALL of the steps described in this document should be redone by each developer if their "shared" repository was created prior to the closing of https://fedorahosted.org/fedora-infrastructure/ticket/3123 which addressed the removal of certain official "pki.git" branches/tags!</td>
+</tr>
+</table>
+</font>
+
+= DOGTAG DEVELOPERS:  Setting Up a Shared "pki.git" Development Repository on "fedorapeople.org" =
+
+== Create a "~/public_git directory" on "fedorapeople.org" ==
+
+After [http://fedoraproject.org/wiki/Infrastructure/fedorapeople.org obtaining an account on "fedorapeople.org"], create a "~/public_git" directory on "fedorapeople.org" by executing the following command from your local machine:
+
+    % ssh <your_fedora_username>@fedorapeople.org "mkdir ~/public_git; /sbin/restorecon -Rv ~/public_git"
+    /sbin/restorecon reset /home/fedora/<your_fedora_username>/public_git context unconfined_u:object_r:user_home_t:s0->unconfined_u:object_r:git_session_content_t:s0
+
+== Publishing your local "pki.git" development repository to "~/public_git" on "fedorapeople.org" ==
+
+From your local machine, create a temporary directory:
+
+    % mkdir staging
+    
+    % cd staging
+
+From your local machine, create a "pki.git" repo from your existing local "pki.git" repo:
+
+    % git clone --bare /path/to/local/pki_repo pki.git
+    Cloning into bare repository pki.git...
+    done.
+
+From your local machine, copy the entire contents of this "pki.git" repo into "~/public_git" on "fedorapeople.org":
+
+    % scp -r pki.git/ <your_fedora_username>@fedorapeople.org:public_git/
+    description                                   100%   73     0.1KB/s   00:00    
+    exclude                                       100%  240     0.2KB/s   00:00    
+    prepare-commit-msg.sample                     100% 1239     1.2KB/s   00:00    
+    post-update.sample                            100%  189     0.2KB/s   00:00    
+    applypatch-msg.sample                         100%  452     0.4KB/s   00:00    
+    pre-commit.sample                             100% 1578     1.5KB/s   00:00    
+    update.sample                                 100% 3611     3.5KB/s   00:00    
+    pre-applypatch.sample                         100%  398     0.4KB/s   00:00    
+    pre-rebase.sample                             100% 4951     4.8KB/s   00:00    
+    commit-msg.sample                             100%  896     0.9KB/s   00:00    
+    pack-a95f6626d3436579ec7d008fa81dde52cf4edbac 100%   13MB 491.1KB/s   00:28    
+    pack-a95f6626d3436579ec7d008fa81dde52cf4edbac 100% 1039KB   1.0MB/s   00:00    
+    HEAD                                          100%   23     0.0KB/s   00:00    
+    config                                        100%  120     0.1KB/s   00:00    
+    packed-refs                                   100%  248     0.2KB/s   00:00    
+
+From your local machine, clean up your staging directory:
+
+    % cd ..
+    
+    % rm -rf staging
+
+== Pushing content from your local "pki.git" development repository to the shared "pki.git" repository inside "~/public_git" on "fedorapeople.org" ==
+
+From your local machine, change directory into your existing local "pki.git" repo:
+
+    % cd /path/to/local/pki_repo
+
+To create a mirror of your local "pki.git" repository, execute the following commands to push all of the branches and tags in the local repository to the "~/public_git/pki.git" repository on "fedorapeople.org":
+
+    % git remote add fedorapeople <your_fedora_username>@fedorapeople.org:public_git/pki.git
+    
+    % git push --mirror fedorapeople
+    Counting objects: 17318, done.
+    Delta compression using up to 4 threads.
+    Compressing objects: 100% (4408/4408), done.
+    Writing objects: 100% (14659/14659), 5.99 MiB | 237 KiB/s, done.
+    Total 14659 (delta 9925), reused 13032 (delta 8500)
+    To mharmsen@fedorapeople.org:public_git/pki.git
+     * [new branch]      origin/DOGTAG_9_BRANCH -> origin/DOGTAG_9_BRANCH
+     * [new branch]      origin/HEAD -> origin/HEAD
+     * [new branch]      origin/IPA_v2_RHEL_6_ERRATA_BRANCH -> origin/IPA_v2_RHEL_6_ERRATA_BRANCH<strike>
+     * [new branch]      origin/PKI_8_0_ERRATA_BRANCH -> origin/PKI_8_0_ERRATA_BRANCH
+     * [new branch]      origin/PKI_8_1_ERRATA_BRANCH -> origin/PKI_8_1_ERRATA_BRANCH
+     * [new branch]      origin/PKI_8_BRANCH -> origin/PKI_8_BRANCH</strike>
+     * [new branch]      origin/autoformat -> origin/autoformat
+     * [new branch]      origin/autoformat2 -> origin/autoformat2
+     * [new branch]      origin/master -> origin/master
+
+== Enabling a Dogtag developer's shared "~/public_git/pki.git" repository on "fedorapeople.org" to be accessed via the "http" protocol ==
+
+To allow your "pki.git" repo to be cloned via the "http://" protocol, you must arrange to have '''git-update-server-info''' run whenever you update your local "pki.git" development repository. Typically, this is done with a post-update hook script. However, since the user home directories on "fedorapeople.org" are mounted with the "noexec" option which prevents the script from running, you will need to create a symbolic link to '''git-update-server-info''' in the hooks directory of your repository:
+
+    % ssh <your_fedora_username>@fedorapeople.org
+    
+    % cd ~/public_git/pki.git/hooks
+    
+    % ln -svbf $(git --exec-path)/git-update-server-info post-update
+    `post-update' -> `/usr/libexec/git-core/git-update-server-info'
+    
+    % git update-server-info
+
+You will also need to create a link from "~/public_html/git" to "~/public_git":
+
+    % cd ~/public_html
+    
+    % ln -svbf ../public_git git
+    `git' -> `../public_git'
+
+== Enabling access to a Dogtag developer's shared "pki.git" development repository on "fedorapeople.org" via "gitweb" ==
+
+Update the '''description''' in your shared "pki.git" development repository on "fedorapeople.org" by executing the following commands:
+
+    % ssh <your_fedora_username>@fedorapeople.org
+    
+    % cd ~/public_git/pki.git
+    
+    % vi description
+    Change "Unnamed repository; edit this file 'description' to name the repository." to "<your_fedora_username>'s PKI Development Repository".
+
+<strike>
+By default, the URLs [http://fedorapeople.org/gitweb gitweb] shows for your repository are incorrect (since the introduction of the service in mid-2008, last checked 2010-08-11). You can work around that by adding a file '''cloneurl''' to your repository which contains working URLs.
+
+'''Default broken URLs:'''
+
+    git://fedorapeople.org/home/fedora/your_fedora_username/public_git/pki.git
+    ssh://fedorapeople.org/home/fedora/your_fedora_username/public_git/pki.git
+
+'''Write these URLs into the '''cloneurl''' file to work around that:'''
+
+    % ssh <your_fedora_username>@fedorapeople.org
+    
+    % cd ~/public_git/pki.git
+    
+    % vi cloneurl
+    git://fedorapeople.org/~your_fedora_username/pki.git
+    ssh://fedorapeople.org/~your_fedora_username/public_git/pki.git
+</strike>
+
+== Granting additional access to a Dogtag developer's shared "pki.git" development repository on "fedorapeople.org" (AS DESIRED) ==
+
+To give unfettered access to other Dogtag developers, apply ACLs to your shared "pki.git" development repository:
+
+    % ssh <your_fedora_username>@fedorapeople.org
+    
+    % cd ~/public_git
+    
+    % setfacl -R -m u:<fedora_developer>:rwX pki.git
+    
+    % find pki.git -type d | xargs setfacl -R -m d:u:<fedora_developer>:rwX
+
+= DOGTAG USERS:  Obtaining and Using a Shared "pki.git" Development Repository on "fedorapeople.org" =
+
+<font color="red">
+<table>
+<tr>
+<td valign="top">'''IMPORTANT:&nbsp;&nbsp;'''</td>
+<td valign="top">'''git://''' versus '''http://'''<br>Only clone via '''http://''' if you are behind a firewall that prevents '''git://''' from working. The '''git://''' protocol is faster and more efficient than the '''http://''' protocol for git usage.</td>
+</tr>
+</table>
+</font>
+
+== Accessing a Dogtag developer's shared "pki.git" development repository on "fedorapeople.org" via "gitweb" ==
+
+You can see A Dogtag developer's shared "pki.git" repository listed in [http://fedorapeople.org/gitweb gitweb] once the project list updates. This happens hourly.
+
+For example:
+* http://fedorapeople.org/gitweb/<name_of_fedora_user>/public_git/pki.git
+
+<table>
+<tr>
+<td valign="top">'''Note:&nbsp;&nbsp;'''</td>
+<td>The gitweb URL may change.</td>
+</tr>
+</table>
+
+== Obtaining a clone of a Dogtag developer's "~/public_git/pki.git" repository on "fedorapeople.org" using the "git" protocol (PREFERRED) ==
+
+On your local machine, create a directory:
+
+    % mkdir -p fedorapeople/<name_of_fedora_user>
+    
+    % cd fedorapeople/<name_of_fedora_user>
+
+To obtain a clone of this user's "pki.git" repository, use the following command:
+
+    % git clone git://fedorapeople.org/~<name_of_fedora_user>/pki.git pki
+    Cloning into pki...
+    remote: Counting objects: 37953, done.
+    remote: Compressing objects: 100% (12466/12466), done.
+    remote: Total 37953 (delta 26393), reused 32744 (delta 21518)
+    Receiving objects: 100% (37953/37953), 13.46 MiB | 159 KiB/s, done.
+    Resolving deltas: 100% (26393/26393), done.
+
+== Obtaining a clone of a Dogtag developer's "~/public_git/pki.git" repository on "fedorapeople.org" using the "http" protocol (ALLOWED) ==
+
+On your local machine, create a directory:
+
+    % mkdir -p fedorapeople/<name_of_fedora_user>
+    
+    % cd fedorapeople/<name_of_fedora_user>
+
+To obtain a clone of this user's "pki.git" repository, use the following command:
+
+    % git clone http://fedorapeople.org/home/fedora/<name_of_fedora_user>/public_git/pki.git pki.git
+
+== Differences between an official "pki.git" repository and a Dogtag developer's shared "pki.git" development repository that has been checked out from "fedorapeople.org" ==
+
+'''Official "pki.git" repository'''
+
+Remote and local branches (showing Python_Installer as a local development branch of this Dogtag developer):
+
+    % git branch -a
+      Python_Installer
+    * master
+      remotes/fedorapeople/Python_Installer
+      remotes/fedorapeople/master
+      remotes/origin/DOGTAG_9_BRANCH
+      remotes/origin/HEAD -> origin/master
+      remotes/origin/IPA_v2_RHEL_6_ERRATA_BRANCH<strike>
+      remotes/origin/PKI_8_0_ERRATA_BRANCH
+      remotes/origin/PKI_8_1_ERRATA_BRANCH
+      remotes/origin/PKI_8_BRANCH</strike>
+      remotes/origin/autoformat
+      remotes/origin/autoformat2
+      remotes/origin/master
+
+Remote branches:
+
+    % git branch -r
+      fedorapeople/Python_Installer
+      fedorapeople/master
+      origin/DOGTAG_9_BRANCH
+      origin/HEAD -> origin/master
+      origin/IPA_v2_RHEL_6_ERRATA_BRANCH<strike>
+      origin/PKI_8_0_ERRATA_BRANCH
+      origin/PKI_8_1_ERRATA_BRANCH
+      origin/PKI_8_BRANCH</strike>
+      origin/autoformat
+      origin/autoformat2
+      origin/master
+
+'''Dogtag developers shared "pki.git" development repository checked out from "fedorapeople.org"'''
+
+Remote and local branches:
+
+    % git branch -a (showing Developer's "local" Python_Installer branch as a "remote" branch)
+    * master
+      remotes/origin/HEAD -> origin/master
+      remotes/origin/Python_Installer
+      remotes/origin/master
+
+Remote branches:
+
+    % git branch -r
+      origin/HEAD -> origin/master
+      origin/Python_Installer
+      origin/master
+
+== Publishing changes from a local Dogtag developer's "pki.git" repository branch to the Dogtag developer's shared "pki.git" development repository on "fedorapeople.org" ==
+
+Remote branches on fedorapeople:
+
+  % git branch -a
+    Python_Installer
+  * master
+    remotes/origin/DOGTAG_9_BRANCH
+    remotes/origin/HEAD
+    remotes/origin/IPA_v2_RHEL_6_ERRATA_BRANCH
+    remotes/origin/autoformat
+    remotes/origin/autoformat2
+    remotes/origin/master
+
+Local branches in developer's local repository:
+
+  % git branch -a
+  * Python_Installer
+    master
+    remotes/fedorapeople/Python_Installer
+    remotes/fedorapeople/master
+    remotes/origin/DOGTAG_9_BRANCH
+    remotes/origin/HEAD -> origin/master
+    remotes/origin/IPA_v2_RHEL_6_ERRATA_BRANCH
+    remotes/origin/autoformat
+    remotes/origin/autoformat2
+    remotes/origin/master
+  
+  % git diff
+  
+  % git add ...
+  
+  % git commit ...
+  
+  % git push fedorapeople Python_Installer:Python_Installer
+    Total 0 (delta 0), reused 0 (delta 0)
+    remote: git: 'refs/heads/Python_Installer' is not a git command. See 'git --help'.
+    To <name_of_fedora_user>@fedorapeople.org:public_git/pki.git
+       a0d72d9..a93d837  Python_Installer -> Python_Installer

@@ -1,0 +1,24 @@
+= Installation =
+
+<pre>
+$ dnf install buildah
+</pre>
+
+= Listing Images =
+
+<pre>
+$ buildah images
+</pre>
+
+= Building an Image =
+
+<pre>
+$ buildah build-using-dockerfile -t <name> <dir>
+</pre>
+
+= See Also =
+
+* [[Container]]
+* [https://buildah.io/ buildah.io]
+* [https://github.com/projectatomic/buildah buildah]
+* [[Podman]]

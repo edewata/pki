@@ -1,0 +1,6 @@
+This page keeps track of things that we need to keep in mind in supporting migration in Dogtag 10.2.  We also keep a list of things that would cause incompatibility among subsystems, if any.
+== Migration List ==
+
+== Incompatibility List ==
+* As part of TPS rewrite task, on CA, DoRevokeTPS and DoUnrevokeTPS (both are for TPS -> CA) now uses "&" for name-value pair separator instead of carriage returns to conform to the other servlets.
+* As part of TPS rewrite task, on KRA, GenerateKeyPairServlet (for TPS -> KRA) input param name changed from CUID to tokencuid, again, to conform to the other servlets.

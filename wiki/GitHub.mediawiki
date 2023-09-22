@@ -1,0 +1,110 @@
+= Installation =
+
+<pre>
+$ dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
+$ dnf install gh
+</pre>
+
+= Authentication =
+
+To authenticate, get a [https://github.com/settings/tokens personal access token], then execute:
+
+<pre>
+$ echo <token> | gh auth login --with-token
+</pre>
+
+To verify the authentication:
+
+<pre>
+$ gh auth status
+github.com
+  ✓ Logged in to github.com as <username> (<home>/.config/gh/hosts.yml)
+  ✓ Git operations for github.com configured to use https protocol.
+  ✓ Token: *******************
+</pre>
+
+= Workflows =
+
+To list workflows and their IDs:
+
+<pre>
+$ gh api -X GET /repos/<owner>/<repo>/actions/workflows | jq '.workflows[] | .name,.id'
+</pre>
+
+To list workflow runs:
+
+<pre>
+$ gh api -X GET /repos/<owner>/<repo>/actions/workflows/<id>/runs | jq '.workflow_runs[] | .id'
+</pre>
+
+To delete workflow runs:
+
+<pre>
+$ gh api -X GET /repos/<owner>/<repo>/actions/workflows/<id>/runs | jq '.workflow_runs[] | .id' | xargs -I{} gh api -X DELETE /repos/<owner>/<repo>/actions/runs/{}
+</pre>
+
+= REST API =
+
+== Creating a release ==
+
+<pre>
+POST /repos/:owner/:repo/releases
+</pre>
+
+== Uploading an asset ==
+
+<pre>
+POST https://<upload_url>/repos/:owner/:repo/releases/:id/assets?name=foo.zip
+</pre>
+
+== Deleting an asset ==
+
+<pre>
+DELETE /repos/:owner/:repo/releases/assets/:id
+</pre>
+
+= Java API =
+
+See:
+* [http://github.jcabi.com/ com.jcabi.github]
+* [https://github.com/eclipse/egit-github/tree/master/org.eclipse.egit.github.core org.eclipse.egit.github.core]
+* [http://github-api.kohsuke.org/ org.kohsuke.github]
+
+== Installation ==
+
+<pre>
+$ dnf install eclipse-egit-github
+</pre>
+
+= CLI =
+
+== Installation ==
+
+<pre>
+$ dnf install rubygems rubygem-json
+$ gem install github_cli
+</pre>
+
+== Authentication ==
+
+<pre>
+$ gcli init
+$ gcli config user.login '...'
+$ gcli config user.password '...'
+</pre>
+
+= See Also =
+
+* [https://github.com/cli/cli/blob/trunk/docs/install_linux.md Installing gh on Linux and FreeBSD]
+* [[GitHub Pull Request]]
+* [[GitHub Actions]]
+* [https://developer.github.com/v3/ GitHub REST API v3]
+* [https://developer.github.com/v3/libraries/ GitHub REST API v3 Libraries]
+* [https://developer.github.com/v3/repos/releases/ GitHub REST API v3 Releases]
+* [https://github.com/PyGithub/PyGithub PyGitHub]
+* [https://github.com/piotrmurach/github_cli GitHub CLI]
+* [[Git]]
+* [[Ruby]]
+* [[Maven]]
+* [[Travis CI]]
+* [[Gerrit vs GitHub Pull Request]]

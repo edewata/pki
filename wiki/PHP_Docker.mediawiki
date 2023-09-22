@@ -1,0 +1,40 @@
+= Pulling PHP Docker Image =
+
+To pulling RHEL PHP Docker image from repository:
+
+<pre>
+$ docker pull rhscl/php-56-rhel7
+</pre>
+
+To pulling CentOS PHP Docker image from repository:
+
+<pre>
+$ docker pull centos/php-56-centos7
+</pre>
+
+= Building PHP Docker Image =
+
+To build RHEL PHO Docker image with [[S2I]]:
+
+<pre>
+$ s2i build https://github.com/sclorg/s2i-php-container.git --context-dir=5.6/test/test-app rhscl/php-56-rhel7 php-test-app
+</pre>
+
+To build CentOS PHO Docker image with [[S2I]]:
+
+<pre>
+$ s2i build https://github.com/sclorg/s2i-php-container.git --context-dir=5.6/test/test-app centos/php-56-centos7 php-test-app
+</pre>
+
+To run the application:
+
+<pre>
+$ docker run -p 8080:8080 php-test-app
+</pre>
+
+To verify, open http://localhost:8080.
+
+= References =
+
+* [[Docker]]
+* [[S2I]]

@@ -1,0 +1,358 @@
+= Procedure used to Release Dogtag 10.2.1-1 on Fedora 22 =
+== Source Code Branch and Tag Management ==
+==== After all changes have been committed and pushed, checkout a fresh 'master' branch: ====
+<pre>
+# git clone ssh://git.fedorahosted.org/git/pki.git
+</pre>
+==== Edit the spec files and check the changes into the 'master' branch: ====
+<pre>
+# cd pki
+
+# vi specs/dogtag-pki-theme.spec
+
+  -Release:          0.2%{?dist}
+  +Release:          1%{?dist}
+
+   %changelog
+  +* Thu Jan  8 2015 Dogtag Team <pki-devel@redhat.com> 10.2.1-1
+  +- Update release number for release build
+  +
+
+# vi specs/dogtag-pki.spec
+
+  -Release:          0.4%{?dist}
+  +Release:          1%{?dist}
+
+   %changelog
+  +* Thu Jan  8 2015 Dogtag Team <pki-devel@redhat.com> 10.2.1-1
+  +- Update release number for release build
+  +
+
+# vi specs/pki-console.spec
+
+  -Release:          0.2%{?dist}
+  +Release:          1%{?dist}
+
+   %changelog
+  +* Thu Jan  8 2015 Dogtag Team <pki-devel@redhat.com> 10.2.1-1
+  +- Update release number for release build
+  +
+
+# vi specs/pki-core.spec
+
+  -Release:          0.4%{?dist}
+  +Release:          1%{?dist}
+
+   %changelog
+  +* Thu Jan  8 2015 Dogtag Team <pki-devel@redhat.com> 10.2.1-1
+  +- Update release number for release build
+  +
+
+# git add .
+
+# git commit -m "Update release number for release build (10.2.1-1)"
+
+# git push
+</pre>
+==== Create a new static tag from the 'master' branch: ====
+<pre>
+# git tag -a "DOGTAG_10_2_1_FEDORA_22_20150108" -m "Build of 10.2.1-1 for f22"
+
+# git push origin DOGTAG_10_2_1_FEDORA_22_20150108
+</pre>
+==== Create a new release branch from this static tag for maintenance purposes: ====
+<pre>
+# git fetch --tags
+
+# git checkout -b DOGTAG_10_2_1_BRANCH DOGTAG_10_2_1_FEDORA_22_20150108
+
+# git push -u origin DOGTAG_10_2_1_BRANCH
+</pre>
+==== Update 'master' so that it is correct for the next release: ====
+<pre>
+# git clone ssh://git.fedorahosted.org/git/pki.git
+
+# cd pki
+
+# vi scripts/compose_dogtag_pki_theme_packages
+
+  -DOGTAG_PKI_THEME_VERSION="10.2.1"
+  +DOGTAG_PKI_THEME_VERSION="10.2.2"
+
+# vi scripts/compose_pki_console_packages
+
+  -PKI_CONSOLE_VERSION="10.2.1"
+  +PKI_CONSOLE_VERSION="10.2.2"
+
+# vi scripts/compose_pki_core_packages
+
+  -PKI_CORE_VERSION="10.2.1"
+  +PKI_CORE_VERSION="10.2.2"
+
+# vi specs/dogtag-pki-theme.spec
+
+  -Version:          10.2.1
+  -Release:          1%{?dist}
+  +Version:          10.2.2
+  +Release:          0.1%{?dist}
+
+   %changelog
+  +* Thu Jan  8 2015 Dogtag Team <pki-devel@redhat.com> 10.2.2-0.1
+  +- Updated version number to 10.2.2-0.1
+  +
+
+# vi specs/dogtag-pki.spec
+
+  -Version:          10.2.1
+  -Release:          1%{?dist}
+  +Version:          10.2.2
+  +Release:          0.1%{?dist}
+
+   %changelog
+  +* Thu Jan  8 2015 Dogtag Team <pki-devel@redhat.com> 10.2.2-0.1
+  +- Updated version number to 10.2.2-0.1
+  +
+
+# vi specs/pki-console.spec
+
+  -Version:          10.2.1
+  -Release:          1%{?dist}
+  +Version:          10.2.2
+  +Release:          0.1%{?dist}
+
+   %changelog
+  +* Thu Jan  8 2015 Dogtag Team <pki-devel@redhat.com> 10.2.2-0.1
+  +- Updated version number to 10.2.2-0.1
+  +
+
+# vi specs/pki-core.spec
+
+  -Version:          10.2.1
+  -Release:          1%{?dist}
+  +Version:          10.2.2
+  +Release:          0.1%{?dist}
+
+   %changelog
+  +* Thu Jan  8 2015 Dogtag Team <pki-devel@redhat.com> 10.2.2-0.1
+  +- Updated version number to 10.2.2-0.1
+  +
+
+# git add .
+
+# git commit -m "Updated version number to 10.2.2-0.1"
+
+# git push
+</pre>
+
+==== Update the [http://pki.fedoraproject.org/index.php?title=Dogtag&action=edit&section=2 Source Code section of the Dogtag] wiki page: ====
+Replace:
+<pre>
+* [https://git.fedorahosted.org/cgit/pki.git/log/ Dogtag 10.2.1 (master)]
+</pre>
+with:
+<pre>
+* [https://git.fedorahosted.org/cgit/pki.git/log/ Dogtag 10.2.2 (master)]
+* [https://git.fedorahosted.org/cgit/pki.git/log/?h=DOGTAG_10_2_1_BRANCH Dogtag 10.2.1 (maintenance branch)]
+</pre>
+
+==== Update the [[Dogtag branches and releases]] wiki page: ====
+Replace:
+<pre>
+<tr><td>f22</td><td>Dogtag 10.2.1-0.x</td><td>master</td></tr>
+</pre>
+with:
+<pre>
+<tr><td>&amp;nbsp;</td><td>Dogtag 10.2.2-0.x</td><td>master</td></tr>
+<tr><td>f22</td><td>Dogtag 10.2.1-X</td><td>DOGTAG_10_2_1_BRANCH</td></tr>
+</pre>
+
+== Using 'compose' Scripts to Create SRPMS for use with Koji ==
+==== Edit the ~/.rpmmacros file in order to utilize the appropriate %{dist} value: ====
+<pre>
+# vi ~/.rpmmacros
+
+%dist .fc22
+</pre>
+==== Checkout a fresh 'DOGTAG_10_2_1_BRANCH' branch: ====
+<pre>
+# git clone -b DOGTAG_10_2_1_BRANCH ssh://git.fedorahosted.org/git/pki.git
+</pre>
+==== Build SRPMS using the 'compose' scripts: ====
+<pre>
+# pki/scripts/compose_dogtag_pki_theme_packages srpm
+
+# mv packages packages.theme
+
+# pki/scripts/compose_pki_core_packages srpm
+
+# mv packages packages.core
+
+# pki/scripts/compose_pki_console_packages srpm
+
+# mv packages packages.console
+
+# pki/scripts/compose_dogtag_pki_meta_packages srpm
+
+# mv packages packages.meta
+</pre>
+== Unpack the SRPMS and publish the tarballs to 'pki.fedoraproject.org' ==
+==== Unpack the source tarballs from the SRPMS: ====
+<table>
+<tr>
+<td valign="top"><b>NOTE:&nbsp;&nbsp;</b></td>
+<td valign="top">The 'packages.meta/SRPMS/dogtag-pki-10.2.1-1.fc22.src.rpm' SRPM does not need to be unpackaged since this 'meta' package contains no tarball.</td>
+</tr>
+</table>
+<pre>
+# cd packages.theme/SRPMS
+
+# rpm2cpio dogtag-pki-theme-10.2.1-1.fc22.src.rpm | cpio -idumv
+
+# cd packages.core/SRPMS
+
+# rpm2cpio pki-core-10.2.1-1.fc22.src.rpm | cpio -idumv
+
+# cd packages.console/SRPMS
+
+# rpm2cpio pki-console-10.2.1-1.fc22.src.rpm | cpio -idumv
+</pre>
+
+==== Launch a second terminal and login to 'pki.fedoraproject.org' ====
+<table>
+<tr>
+<td valign="top"><b>NOTE:&nbsp;&nbsp;</b></td>
+<td valign="top">Only PKI developers which have the appropriate permissions to publish tarballs may accomplish this step.</td>
+</tr>
+</table>
+<pre>
+Login to 'pki.fedoraproject.org' and create the appropriate directories:
+
+  # mkdir -p http://pki.fedoraproject.org/pki/sources/dogtag-pki-theme/10.2.1/1/
+
+  # mkdir -p http://pki.fedoraproject.org/pki/sources/pki-core/10.2.1/1/
+
+  # mkdir -p http://pki.fedoraproject.org/pki/sources/pki-console/10.2.1/1/  
+</pre>
+==== In the first terminal, upload the tarballs to 'pki.fedoraproject.org' ====
+<table>
+<tr>
+<td valign="top"><b>NOTE:&nbsp;&nbsp;</b></td>
+<td valign="top">Only PKI developers which have the appropriate permissions to publish tarballs may accomplish this step.</td>
+</tr>
+</table>
+<pre>
+# cd packages.theme/SRPMS
+
+# sftp dogtag-pki-theme-10.2.1.tar.gz http://pki.fedoraproject.org/pki/sources/dogtag-pki-theme/10.2.1/1/
+
+# cd packages.core/SRPMS
+
+# sftp pki-core-10.2.1.tar.gz http://pki.fedoraproject.org/pki/sources/pki-core/10.2.1/1/
+
+# cd packages.console/SRPMS
+
+# sftp pki-console-10.2.1.tar.gz http://pki.fedoraproject.org/pki/sources/pki-console/10.2.1/1/
+</pre>
+==== Optionally, use cksum, md5sum, or sha256sum to verify that the transferred packages arrived intact: ====
+<table>
+<tr>
+<td valign="top"><b>NOTE:&nbsp;&nbsp;</b></td>
+<td valign="top">Only PKI developers which have the appropriate permissions to publish tarballs may accomplish this step in the second terminal.</td>
+</tr>
+</table>
+<pre>
+In the source terminal:
+
+# cksum packages.theme/SRPMS/dogtag-pki-theme-10.2.1.tar.gz
+800949510 185415 dogtag-pki-theme-10.2.1.tar.gz
+
+# cksum packages.core/SRPMS/pki-core-10.2.1.tar.gz
+2594938899 4523070 pki-core-10.2.1.tar.gz
+
+# cksum packages.console/SRPMS/pki-console-10.2.1.tar.gz
+3096236583 530614 pki-console-10.2.1.tar.gz
+
+In the second terminal:
+
+# cksum http://pki.fedoraproject.org/pki/sources/dogtag-pki-theme/10.2.1/1/dogtag-pki-theme-10.2.1.tar.gz 
+800949510 185415 dogtag-pki-theme/10.2.1/1/dogtag-pki-theme-10.2.1.tar.gz
+
+# cksum http://pki.fedoraproject.org/pki/sources/pki-core/10.2.1/1/pki-core-10.2.1.tar.gz 
+2594938899 4523070 pki-core/10.2.1/1/pki-core-10.2.1.tar.gz
+
+# cksum http://pki.fedoraproject.org/pki/sources/pki-console/10.2.1/1/pki-console-10.2.1.tar.gz 
+3096236583 530614 pki-console/10.2.1/1/pki-console-10.2.1.tar.gz
+</pre>
+== Build official packages for Fedora 22 in Koji ==
+==== Checkout a fresh Koji tree for 'dogtag-pki-theme': ====
+<table>
+<tr>
+<td valign="top"><b>NOTE:&nbsp;&nbsp;</b></td>
+<td valign="top">At the time of this build, Fedora 22 had not yet been formally released, thus all Koji trees referenced below will utilize the 'master' (i. e. - 'rawhide') directories.  Additionally, since Fedora 22 was 'rawhide' at the time, no [https://admin.fedoraproject.org/updates Bodhi] process (like the following example) was necessary:<br><br><ul>bodhi --new --type bugfix -R testing --stablekarma=3 --unstablekarma=-3 --bugs 802396 -N 'Bugzilla Bug #802396 - Change location of TOMCAT_LOG to match tomcat6 changes' $(fedpkg verrel)</ul></td>
+</tr>
+</table>
+<pre>
+# fedpkg clone -B dogtag-pki-theme
+
+# cd dogtag-pki-theme/master
+
+# fedpkg import <path to SRPM/dogtag-pki-theme-10.2.1-1.fc22.src.rpm
+
+# fedpkg commit -p
+
+  PKI TRAC Ticket #983: Release Dogtag 10.2.1
+
+# fedpkg build
+</pre>
+
+Which yields [http://koji.fedoraproject.org/koji/buildinfo?buildID=603068 dogtag-pki-theme-10.2.1-1.fc22].
+
+<pre>
+# fedpkg clone -B pki-core
+
+# cd pki-core/master
+
+# fedpkg import <path to SRPM/pki-core-10.2.1-1.fc22.src.rpm
+
+# fedpkg commit -p
+
+  PKI TRAC Ticket #983: Release Dogtag 10.2.1
+
+# fedpkg build
+</pre>
+
+Which yields [http://koji.fedoraproject.org/koji/buildinfo?buildID=603070 pki-core-10.2.1-1.fc22].
+
+<pre>
+# fedpkg clone -B pki-console
+
+# cd pki-console/master
+
+# fedpkg import <path to SRPM/pki-console-10.2.1-1.fc22.src.rpm
+
+# fedpkg commit -p
+
+  PKI TRAC Ticket #983: Release Dogtag 10.2.1
+
+# fedpkg build
+</pre>
+
+Which yields [http://koji.fedoraproject.org/koji/buildinfo?buildID=603083 pki-console-10.2.1-1.fc22].
+
+<pre>
+# fedpkg clone -B dogtag-pki
+
+# cd dogtag-pki/master
+
+# fedpkg import <path to SRPM/dogtag-pki-10.2.1-1.fc22.src.rpm
+
+# fedpkg commit -p
+
+  PKI TRAC Ticket #983: Release Dogtag 10.2.1
+
+# fedpkg build
+</pre>
+
+Which yields [http://koji.fedoraproject.org/koji/buildinfo?buildID=603085 dogtag-pki-10.2.1-1.fc22].
+== Publish official packages for Fedora 22 to PyPI ==
+[[PyPI | Publish packages to PyPI]]

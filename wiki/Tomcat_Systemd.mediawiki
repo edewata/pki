@@ -1,0 +1,116 @@
+= Systemd Unit File =
+
+The Systemd unit file for default Tomcat instance is located at /lib/systemd/system/tomcat.service:
+
+<pre>
+[Unit]
+Description=Apache Tomcat Web Application Container
+After=syslog.target network.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/tomcat/tomcat.conf
+Environment="NAME="
+EnvironmentFile=-/etc/sysconfig/tomcat
+ExecStart=/usr/libexec/tomcat/server start
+SuccessExitStatus=143
+User=tomcat
+Group=tomcat
+
+[Install]
+WantedBy=multi-user.target
+</pre>
+
+The Systemd unit file for non-default Tomcat is located at /lib/systemd/system/tomcat@.service:
+
+<pre>
+[Unit]
+Description=Apache Tomcat Web Application Container
+After=syslog.target network.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/tomcat/tomcat.conf
+Environment="NAME=%I"
+EnvironmentFile=-/etc/sysconfig/tomcat@%I
+ExecStart=/usr/libexec/tomcat/server start
+ExecStop=/usr/libexec/tomcat/server stop
+SuccessExitStatus=143
+User=tomcat
+Group=tomcat
+
+[Install]
+WantedBy=multi-user.target
+</pre>
+
+See also:
+
+* [https://src.fedoraproject.org/rpms/tomcat/blob/master/f/tomcat-9.0.service tomcat-9.0.service]
+
+= Creating Non-Default Instance =
+
+To create a non-default instance:
+
+* create Tomcat directory structure in /var/lib/tomcats/<instance>
+* systemctl enable tomcat@<instance>.service
+
+= Configuration =
+
+* /etc/sysconfig/tomcat
+* /etc/tomcat/tomcat.conf
+* /etc/tomcat/conf.d
+
+= Starting Service =
+
+To start Tomcat service:
+
+<pre>
+$ systemctl start tomcat
+</pre>
+
+= Stopping Service =
+
+To stop Tomcat service:
+
+<pre>
+$ systemctl stop tomcat
+</pre>
+
+= Checking Status =
+
+To check Tomcat status:
+
+<pre>
+$ systemctl status tomcat
+</pre>
+
+To list ports used by Tomcat:
+
+<pre>
+$ lsof -Pan -p <Tomcat PID> -i
+lsof: WARNING: can't stat() fuse.gvfsd-fuse file system /run/user/13079/gvfs
+      Output information may be incomplete.
+COMMAND   PID   USER   FD   TYPE    DEVICE SIZE/OFF NODE NAME
+java    24364 tomcat   51u  IPv6 377096101      0t0  TCP *:8080 (LISTEN)
+java    24364 tomcat   56u  IPv6 377096105      0t0  TCP *:8009 (LISTEN)
+java    24364 tomcat   75u  IPv6 377096117      0t0  TCP 127.0.0.1:8005 (LISTEN)
+</pre>
+
+To list ports used by all processes:
+
+<pre>
+$ netstat -tulpn
+</pre>
+
+To run Tomcat in foreground:
+
+<pre>
+$ /usr/libexec/tomcat/server start
+</pre>
+
+= See Also =
+
+* [[Tomcat]]
+* [https://github.com/dogtagpki/pki/wiki/PKI-Systemd-Service PKI Systemd Service]
+* [http://fedoraproject.org/wiki/Packaging:Systemd Systemd]
+* [http://fedoraproject.org/wiki/FCNewInit/Initscripts Systemd Init Scripts]

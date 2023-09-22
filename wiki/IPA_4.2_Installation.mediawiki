@@ -1,0 +1,152 @@
+= Overview =
+
+This page provides instructions to set up IPA for PKI development and testing. To set up IPA for production please refer to the official [http://www.freeipa.org/page/Documentation IPA documentation].
+
+= Installing IPA Packages =
+
+== Fedora packages ==
+
+To install the packages:
+<pre>
+$ dnf install freeipa-server
+</pre>
+
+Sometimes it's necessary to add --allowerasing.
+
+To upgrade the packages:
+<pre>
+$ dnf update freeipa-server
+</pre>
+
+== RHEL packages ==
+
+To install the packages:
+
+<pre>
+$ yum install ipa-server
+</pre>
+
+= Installing IPA Server =
+
+== Basic IPA server ==
+
+<pre>
+$ ipa-server-install -a Secret.123 -p Secret.123 -r EXAMPLE.COM -U
+</pre>
+
+== IPA server with externally-signed CA ==
+
+Run IPA installation step 1 to generate a CSR:
+
+<pre>
+$ ipa-server-install -a Secret.123 -p Secret.123 -r EXAMPLE.COM --external-ca -U
+</pre>
+
+Create an NSS database:
+
+<pre>
+$ mkdir nssdb
+$ echo Secret.123 > nssdb/password.txt
+$ certutil -N -d nssdb -f nssdb/password.txt
+</pre>
+
+Create an external CA certificate:
+
+<pre>
+$ openssl rand -out nssdb/noise.bin 2048
+$ echo -e "y\n\ny\n" | \
+ certutil -S \
+ -d nssdb \
+ -f nssdb/password.txt \
+ -z nssdb/noise.bin \
+ -n "External CA" \
+ -s "CN=External CA,O=EXTERNAL" \
+ -x \
+ -t "CTu,CTu,CTu" \
+ -m $RANDOM\
+ -2 \
+ --keyUsage certSigning \
+ --nsCertType sslCA,smimeCA,objectSigningCA
+$ certutil -L -d nssdb -n "External CA" -a > /root/external.crt
+</pre>
+
+Sign the CSR:
+
+<pre>
+$ echo -e "0\n1\n5\n6\n9\ny\ny\n\ny\n" | \
+ certutil -C \
+ -d nssdb \
+ -f nssdb/password.txt \
+ -m $RANDOM \
+ -a -i /root/ipa.csr \
+ -o /root/ipa.crt \
+ -c "External CA" \
+ -1 -2
+</pre>
+
+Run IPA installation step 2 to complete the installation:
+
+<pre>
+$ ipa-server-install -p Secret.123 --external_cert_file /root/ipa.crt --external_ca_file /root/external.crt
+</pre>
+
+= Cloning IPA Server =
+
+== Fedora 23 replica ==
+
+On master:
+<pre>
+$ ipa-replica-prepare <replica hostname> -p Secret.123
+</pre>
+
+It will generate /var/lib/ipa/replica-info-<replica hostname>.gpg. To verify the content, see [[GPG]].
+Transfer this file to the replica.
+
+On replica:
+<pre>
+$ ipa-replica-install --setup-ca --setup-kra --setup-dns --no-forwarders replica-info-<replica hostname>.gpg
+</pre>
+
+If installation fails, the replication agreement may need to be cleaned up manually on master:
+<pre>
+$ ipa-replica-manage del <replica hostname> --force
+</pre>
+
+== Fedora 24 replica ==
+
+On replica, install IPA client:
+
+<pre>
+$ ipa-client-install
+</pre>
+
+Promote the client to become replica:
+
+<pre>
+$ ipa-replica-install
+</pre>
+
+== RHEL 7 replica ==
+
+On RHEL 6 master:
+<pre>
+$ python copy-schema-to-ca.py
+$ ipa-replica-prepare <replica hostname> -p Secret.123
+</pre>
+
+It will generate /var/lib/ipa/replica-info-<replica hostname>.gpg. Transfer this file to the replica.
+
+On RHEL 7 replica:
+<pre>
+$ ipa-replica-install --setup-ca --setup-dns --no-forwarders replica-info-<replica hostname>.gpg
+</pre>
+
+= Uninstalling IPA Server =
+
+<pre>
+$ ipa-server-install --uninstall -U
+</pre>
+
+= References =
+
+* [https://github.com/dogtagpki/freeipa/wiki/Installation-Guide Installation Guide]

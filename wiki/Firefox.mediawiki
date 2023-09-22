@@ -1,0 +1,62 @@
+= Overview =
+
+Firefox is the primary browser to access PKI services.
+
+= Supported Versions =
+
+== Firefox 33 and 35+ ==
+
+In version 33 and 35+ Firefox no longer provide some of the crypto functionalities required by the PKI UI, so some functionalities are no longer working.
+
+=== Certificate enrollment with key archival ===
+
+Certificate enrollment with key archival is no longer working (https://fedorahosted.org/pki/ticket/1285). Workaround: use CLI (see [https://github.com/dogtagpki/pki/wiki/Adding-System-User Adding System User]).
+
+=== TPS UI logout button ===
+
+The TPS UI logout button is no longer working. Workaround: clear active logins manually (Options -> Privacy -> clear your recent history -> Active Logins).
+
+== Firefox 34 ==
+
+The latest version that still provides the full PKI UI functionality is Firefox 34. If necessary, Firefox 34 can be downloaded from [https://ftp.mozilla.org/pub/mozilla.org/firefox/releases/34.0/].
+
+<pre>
+$ wget https://ftp.mozilla.org/pub/mozilla.org/firefox/releases/34.0/linux-x86_64/en-US/firefox-34.0.tar.bz2
+$ tar xvf firefox-34.0.tar.bz2
+$ cd firefox
+$ ./firefox
+</pre>
+
+= Profiles =
+
+To find Firefox profile name:
+
+ $ FIREFOX_DIR=$HOME/.mozilla/firefox
+ $ PROFILE=`cat $FIREFOX_DIR/profiles.ini | \
+    awk '/\[Profile0\]/{flag=1;next}/^$/{flag=0}flag' | \
+    grep Path= | \
+    awk -F= '{print $2}'`
+
+= SSL =
+
+== Ciphers ==
+
+Open about:config, search for security.ssl3.* properties. The chipersuites can be enabled or disabled by setting the properties to true or false.
+
+== Certificates ==
+
+To import a CA signing certificate into Firefox'sNSS database:
+
+ $ pki-server cert-export ca_signing --cert-file ca_signing.crt
+ $ certutil -A -d sql:$FIREFOX_DIR/$PROFILE -n ca_signing -i ca_signing.crt -t CT,C,C
+
+To import a PKCS #12 file Firefox's NSS database:
+
+ $ pki -d $FIREFOX_DIR/$PROFILE pkcs12-import \
+     --pkcs12-file ~/.dogtag/pki-tomcat/ca_admin_cert.p12 \
+     --pkcs12-password-file ~/.dogtag/pki-tomcat/ca/pkcs12_password.conf
+
+= References =
+
+* [https://github.com/dogtagpki/pki/wiki/SSL SSL]
+* [[PKI Client]]

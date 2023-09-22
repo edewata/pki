@@ -1,0 +1,141 @@
+= Build Infrastructure =
+
+== PKI Subversion Repository ==
+
+Each PKI component within the PKI subversion repository build infrastructure consists of two bash scripts, one dynamically generated bash script, and three Ant XML files.  Additionally, autoconf files are required for the osutil, pki-native-tools, pki-symkey, and pki-tps components.
+
+When invoked from the PKI subversion repository, each PKI component contains the following files related to its build infrastructure:
+
+    build_{flavor} --> config/build_{flavor}_pki --> release --> config/release.xml --> build.xml
+
+where:
+
+<table border=1>
+<tr>
+<th>File</th>
+<th>Type</th>
+<th>Purpose</th>
+</tr>
+<tr>
+<td>build_{flavor}</td>
+<td>bash script</td>
+<td>user-invoked script used to build, verify, document, distribute, and create RPMs and SRPMs specific to this PKI component</td>
+</tr>
+<tr>
+<td>config/build_{flavor}_pki</td>
+<td>bash script</td>
+<td>contains common shared script code used to generate the release script for this PKI component</td>
+</tr>
+<tr>
+<td>release</td>
+<td>bash script</td>
+<td>a generated script containing the commands needed to build and release this PKI component; this file only exists in the SRPM</td>
+</tr>
+<tr>
+<td>config/release.xml</td>
+<td>XML file</td>
+<td>contains the Ant commands used to create RPM and SRPM releases of this PKI component</td>
+</tr>
+<tr>
+<td>build.xml</td>
+<td>XML file</td>
+<td>contains the Ant commands used to build, verify, document, and distribute this PKI component</td>
+</tr>
+<tr>
+<td>config/product.xml</td>
+<td>XML file</td>
+<td>contains shared properties common to all PKI components; included in both build.xml and config/release.xml</td>
+</tr>
+</table>
+
+'''IMPORTANT:'''&nbsp;&nbsp; Currently, "{flavor}" equals "dogtag"!
+
+PKI subversion repository build infrastructure options include the following:
+
+    ./build_{flavor} help 
+    Usage:  build_{flavor} [target]
+    
+            where [target] is one of the optional values:
+    
+                    help --> display '&lt;PKI Component&gt;' usage statement
+                   clean --> remove component directories
+                download --> download dependent components
+            compile_java --> compile java source code into classes
+              build_jars --> generate jar files
+       build_jni_headers --> generate jni header files
+                   build --> build classes, jars, and jni headers
+     compile_junit_tests --> compile junit test source code
+         run_junit_tests --> execute junit tests
+                  verify --> build and execute junit tests
+          clean_javadocs --> remove javadocs directory
+        compose_javadocs --> generate javadocs
+                document --> remove old javadocs and compose new javadocs
+     distribute_binaries --> create the zip and gzipped tar binary distributions
+       distribute_source --> create the zip and gzipped tar source distributions
+              distribute --> create binary and source component distributions
+                    main --> clean, build, verify, document, distribute [default]
+
+== PKI Component SRPM ==
+
+Each PKI component within the PKI component SRPM build infrastructure consists of a single bash script, and three Ant XML files.  Additionally, autoconf files are required for the osutil, pki-native-tools, pki-symkey, and pki-tps components.
+
+When invoked from its PKI component SRPM, each PKI component contains the following build infrastructure:
+
+    release --> config/release.xml --> build.xml
+
+where:
+
+<table border=1>
+<tr>
+<th>File</th>
+<th>Type</th>
+<th>Purpose</th>
+</tr>
+<tr>
+<td>release</td>
+<td>bash script</td>
+<td>user-invoked script used to build, verify, document, distribute, and create RPMs and SRPMs specific to this PKI component</td>
+</tr>
+<tr>
+<td>config/release.xml</td>
+<td>XML file</td>
+<td>contains the Ant commands used to create RPM and SRPM releases of this PKI component</td>
+</tr>
+<tr>
+<td>build.xml</td>
+<td>XML file</td>
+<td>contains the Ant commands used to build, verify, document, and distribute this PKI component</td>
+</tr>
+<tr>
+<td>config/product.xml</td>
+<td>XML file</td>
+<td>contains shared properties common to all PKI components; included in both build.xml and config/release.xml</td>
+</tr>
+</table>
+
+PKI component SRPM build infrastructure options include the following:
+
+    ./release help 
+    Usage:  release [target]
+    
+            where [target] is one of the optional values:
+    
+                    help --> display '&lt;PKI Component&gt;' usage statement
+                   clean --> remove component directories
+                download --> download dependent components
+            compile_java --> compile java source code into classes
+              build_jars --> generate jar files
+       build_jni_headers --> generate jni header files
+                   build --> build classes, jars, and jni headers
+     compile_junit_tests --> compile junit test source code
+         run_junit_tests --> execute junit tests
+                  verify --> build and execute junit tests
+          clean_javadocs --> remove javadocs directory
+        compose_javadocs --> generate javadocs
+                document --> remove old javadocs and compose new javadocs
+     distribute_binaries --> create the zip and gzipped tar binary distributions
+       distribute_source --> create the zip and gzipped tar source distributions
+              distribute --> create binary and source component distributions
+                    main --> clean, build, verify, document, distribute [default]
+
+[[Category:Tech Notes]]

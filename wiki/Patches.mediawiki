@@ -1,0 +1,58 @@
+= Overview =
+
+This is a proposed guideline on how to prepare and review a patch.
+
+= Patch Content =
+
+A patch should contain all the changes required to implement a feature. A feature here doesn't necessarily mean a big feature. A big feature can be broken up into smaller features. For example, the server functionality can be added first in one patch, then the client enhancement that uses the new server functionality can be added in another patch. The smaller the feature/patch, the easier it is to review or rebase the patch.
+
+If a particular feature requires modifying multiple files at once, these changes should be included in the same patch, otherwise the build might not work. The goal is to make sure that if someone checks out any random revision from the repository the code should still work.
+
+= Patch Name =
+
+To prevent conflicts/confusions when reviewing patches from different people, it's recommended that the patches are named as follows:
+<code>
+<project>-<username>-<patch number>-<description>.patch
+</code>
+
+The patch file can be generated using the following tools:
+* [http://adam.younglogic.com/2011/10/patchprep/ patchprep]
+* [http://adam.younglogic.com/2014/04/amending-a-patch-in-git/ Amending a patch in git]
+* [http://admiyo.fedorapeople.org/patches/ patchprep source code]
+
+= Patch Number =
+
+It's recommended that each submitter keeps track a number that will be used to label the patches. For example:
+* pki-someone-0001-Feature-A.patch
+* pki-someone-0002-Feature-B.patch
+* pki-someone-0003-Feature-C.patch
+
+This way it's easier to refer to the patch, search for the patch in the email, purge old patches, etc.
+
+The patch number is not the same as the ticket number since a ticket may be implemented in several features/patches. If a patch addresses a specific ticket the ticket number should be mentioned in the patch description.
+
+= Patch Revision =
+
+If a patch needs to be revised, it should use the same patch number with a revision suffix. For example:
+* pki-someone-0002-1-Feature-B.patch
+* pki-someone-0002-2-Feature-B.patch
+
+The revision could contain the fully revised patch or just the fixes for the original patch, but please let others know how to apply these revisions. It's also possible to use different numbering systems.
+
+A revision that contains the fully revised patch obsoletes the older patch:
+* pki-someone-0002-v1-Feature-B.patch -> obsoletes the original patch #2
+* pki-someone-0002-v2-Feature-B.patch -> obsoletes patch #2-v1
+With this type of revisions, only the last patch needs to be ACKed.
+
+A revision that contains only the fixes must be used together with the older patch:
+* pki-someone-0002-r1-Feature-B.patch -> fixes for patch #2
+* pki-someone-0002-r2-Feature-B.patch -> additional fixes for patch #2
+With this type of revisions, the patch is considered unfinished until it receives an ACK for the last revision. Also, the patches should be squashed into a single patch before pushing to prevent someone from accidentally check out an unfinished patch
+
+These above methods are essentially the same since patch #2 + r1 + r2 = v2.
+
+= Patch Review =
+
+The reviewer should itemize issues found in the patch. If an issue must be fixed before it can be pushed, please note it clearly (e.g. add MUSTFIX). Other issues are considered important, so it should be addressed if possible. If the issue already exists in the current code or low priority please mark it clearly.
+
+Other than the MUSTFIX issues, the submitter can decide whether to fix the issue in the next revision, defer it as a separate feature, or document the issue in the patch if it's not going to be fixed for now.

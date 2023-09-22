@@ -1,0 +1,22 @@
+= Displaying Certificate Info =
+
+See [https://github.com/dogtagpki/pki/wiki/Displaying-Certificate-Info Displaying Certificate Info].
+
+= Decoding Certificate =
+
+To decode the entire certificate:
+
+<pre>
+$ AtoB example.pem example.der
+$ dumpasn1 example.der
+</pre>
+
+To display subject DN encoding:
+
+<pre>
+$ openssl x509 -in example.crt -subject -nameopt multiline,show_type -noout
+</pre>
+
+= See Also =
+
+* [[OpenSSL]]

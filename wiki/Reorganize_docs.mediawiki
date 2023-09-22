@@ -1,0 +1,32 @@
+= Overview =
+This is an effort to provide support for version specific docs and maintain a cleaner wiki
+
+= Current scenario of our wiki =
+
+* We have version specific docs in '''''dogtagpki.org''''' wiki with the prefix attached to title <PKI 10.x>. 
+* Some of these wiki pages are extremely difficult to maintain and become outdated easily.
+* Static pages (eg: instructions to submit patches) become outdated very easily
+* No way to view all the pages that exist in our wiki
+::- Some of the current wiki pages are outdated and useless
+
+= Proposed scenario =
+
+* Move version specific docs to '''''docs/''''' in the GitHub repo under the corresponding version branch (Eg: 10.6 docs to master and 10.5 docs to DOGTAG_10_5_BRANCH)
+::- This provisions an option to create GH pages
+* '''General knowledge docs''' (eg. Git, Travis, openssl, nss, etc) which are not specific to a PKI version can be moved to Github wiki or stay in mediawiki
+* '''Product docs''' need to be versioned and added to the upstream repo's corresponding branch (as explained in #1)
+* The wiki and docs will be written in Markdown (.md) file, allowing us to keep a uniformity across all docs
+
+= Steps to implement =
+
+Following are steps to implemented (in prioritized order):
+
+# Write new ''product docs'' in upstream repo
+# Move old ''product docs'' into upstream repo
+# Move ''Knowledge Base'' docs into GH wiki
+
+= Advantages of proposed scenario =
+
+# Easier to maintain docs
+# Uniformity of docs (in .md) provides an option for docs team to convert them into the desired format using tools (if exist)
+# Option to view all docs and prune unwanted pages

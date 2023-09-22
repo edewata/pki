@@ -1,0 +1,125 @@
+== Installing Pre-Built PKI Support Components ==
+
+The PKI subsystems also require the following pre-built libraries and components which can easily be installed via either Fedora's development yum server or the PKI development yum server. Become '''root''', and execute the following commands:
+
+===  Third-party Native Libraries ===
+==== Dogtag 9.0 ====
+* nspr 4.8.8 or later
+  yum install nspr
+  yum install nspr-devel
+* nss 3.12.10 or later
+  yum install nss
+  yum install nss-devel
+  yum install nss-tools
+* openldap-devel 2.4.24 or later
+  yum install openldap
+  yum install openldap-devel
+  yum install openldap-clients
+* cyrus-sasl-devel 2.1.23 or later
+  yum install cyrus-sasl-devel
+* svrcore-devel 4.0.4 or later
+  yum install svrcore-devel
+* httpd-devel 2.2.17 or later. 
+  yum install httpd-devel
+* zlib-devel-1.2.5 or later.
+  yum install zlib-devel
+
+==== Dogtag 1.3 and Earlier ====
+* nspr 4.6.6 or later
+  yum install nspr
+  yum install nspr-devel
+* nss 3.11.5 or later
+  yum install nss
+  yum install nss-devel
+  yum install nss-tools
+* mozldap-devel 6.0.3 or later
+  yum install mozldap
+  yum install mozldap-devel
+  yum install mozldap-tools
+* cyrus-sasl-devel 2.1.19 or later
+  yum install cyrus-sasl-devel
+* svrcore-devel 4.0.3.01 or later
+  yum install svrcore-devel
+* httpd-devel 2.2.4 or later. 
+  yum install httpd-devel
+* zlib-devel-1.2.3 or later.
+  yum install zlib-devel
+
+=== Third-party Java Libraries ===
+==== Dogtag 9.0 ====
+* jss 4.2.6-17 or later
+  yum install jss
+* ldapjdk 4.18 or later
+  yum install ldapjdk
+* tomcat6 6.0.30 or later
+  yum install tomcat5
+* velocity 1.6.4 or later
+  yum install velocity
+* junit 3.8.2 or later
+  yum install junit
+==== Dogtag 1.3 or Earlier ====
+* jss 4.2.5 or later
+  yum install jss
+* ldapjdk 4.17 or later
+  yum install ldapjdk
+* tomcat5 5.5.23 or later
+  yum install tomcat5
+* velocity 1.4-6jpp1 or later
+  yum install velocity
+* junit 3.8.2-3jpp.1 or later
+  yum install junit
+* ant-junit 1.6.5-2jpp.2 or later
+  yum install ant-junit
+
+=== IdM Console Framework ===
+
+The IdM console framework component is required by the PKI console.  Details about the idm-console-framework can be found [http://directory.fedoraproject.org/wiki/BuildingConsole here].
+
+A user can decide to either install the existing idm-console-framework component in the PKI Yum repository, or build a new idm-console-framework from the source.
+
+==== Installing IdM Console Framework ====
+
+To install this component, become the '''root''' user, and execute the following command:
+
+* idm-console-framework 1.1.0-2 (Dogtag 1.3 and Earlier) or 1.1.7 (Dogtag 9.0) or later
+
+  yum install idm-console-framework
+
+==== Building IdM Console Framework ====
+
+To build the IdM console framework, perform the following procedures:
+
+    yum install ant
+
+Pull source for 'idm-console-framework' following the instructions located [http://directory.fedoraproject.org/wiki/Source here].
+
+To build the framework RPM, become the '''root''' user, and execute the commands documented [http://directory.fedoraproject.org/wiki/BuildingConsole#Building_the_Console_Framework_.28idm-console-framework.29 here].
+
+Install the RPM.
+
+=== Tomcat JSS (tomcatjss) ===
+
+The tomcatjss component is used by all Java subsystems (i.e. - CA, DRM, OCSP, and TKS). Details of tomcatjss can be found in the [[PKI 1 Architecture]].
+
+A user can decide to either install the existing tomcatjss component in the PKI Yum repository, or build a new tomcatjss from the source.
+
+==== Installing Tomcat JSS ====
+
+To install this component, become the '''root''' user, and execute the following command:
+
+    yum install tomcatjss
+
+==== Building Tomcat JSS ====
+
+To build tomcatjss, do the following:
+
+    yum install ant
+
+    svn co <nowiki>http://svn.fedorahosted.org/svn/tomcatjss/trunk/tomcatjss</nowiki>
+    cd tomcatjss
+    ./build_tomcatjss
+
+The RPM will be created in ./dist/rpmpkg/RPMS/noarch.  Become the '''root''' user, and execute the following commands:
+
+    cd ./dist/rpmpkg/RPMS/noarch
+    rpm -Uvh tomcatjss

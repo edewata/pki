@@ -1,0 +1,256 @@
+= Creating RPM Spec File =
+
+== Listing Build Requires ==
+
+To list build dependencies:
+
+<pre>
+$ rpmspec -q --buildrequires specs/pki-core.spec
+apache-commons-cli
+apache-commons-codec
+apache-commons-io
+apache-commons-lang
+apr-devel
+apr-util-devel
+cmake >= 2.8.9-1
+...
+</pre>
+
+To list what packages provide a build dependency:
+
+<pre>
+$ dnf repoquery --whatrequires <package>
+</pre>
+
+To list what packages depend on <package> recursively:
+
+<pre>
+$ dnf --enablerepo=fedora-source \
+  --enablerepo=updates \
+  --enablerepo=updates-testing-source \
+  repoquery --recursive --whatrequires <package>
+</pre>
+
+== Listing Requires ==
+
+To list runtime dependencies:
+
+<pre>
+$ rpm -q --requires pki-server
+/bin/sh
+/bin/sh
+/bin/sh
+/usr/bin/python
+hostname
+java-1.8.0-openjdk-headless
+libselinux-python
+net-tools
+nuxwdog-client-java >= 1.0.1-11
+openldap-clients
+openssl
+pki-base = 10.4.1-7.el7
+pki-base-java = 10.4.1-7.el7
+pki-tools = 10.4.1-7.el7
+policycoreutils
+policycoreutils-python
+procps-ng
+python(abi) = 2.7
+python-ldap
+python-lxml
+rpmlib(CompressedFileNames) <= 3.0.4-1
+rpmlib(FileDigests) <= 4.6.0-1
+rpmlib(PartialHardlinkSets) <= 4.0.4-1
+rpmlib(PayloadFilesHavePrefix) <= 4.0-1
+selinux-policy-targeted >= 3.13.1-152
+shadow-utils
+systemd-units
+systemd-units
+systemd-units
+tomcat >= 7.0.69
+tomcatjss >= 7.2.1-3
+velocity
+rpmlib(PayloadIsXz) <= 5.2-1
+</pre>
+
+To list package usages:
+
+<pre>
+$ rpm -q --whatrequires pki-server
+dogtag-pki-10.6.1-3.fc27.noarch
+pki-ca-10.6.1-3.fc27.noarch
+pki-kra-10.6.1-3.fc27.noarch
+pki-ocsp-10.6.1-3.fc27.noarch
+pki-tks-10.6.1-3.fc27.noarch
+pki-tps-10.6.1-3.fc27.x86_64
+</pre>
+
+To list packages recommending another package:
+
+<pre>
+$ dnf repoquery --whatrecommends <package>
+</pre>
+
+== Listing Provides ==
+
+To list capabilities provided by a package:
+
+<pre>
+$ rpm -q --provides pki-server
+pki-deploy = 10.4.1-7.el7
+pki-server = 10.4.1-7.el7
+pki-setup = 10.4.1-7.el7
+pki-silent = 10.4.1-7.el7
+</pre>
+
+To list what packages provide a dependency:
+
+<pre>
+$ rpm -q --whatprovides <dependency>
+</pre>
+
+= Building RPM =
+
+To download the sources:
+
+<pre>
+$ spectool -g -S <spec file>
+</pre>
+
+To build the RPM package:
+
+<pre>
+$ rpmbuild -bb [--define "<name> <value>"] [--with <cond>] [--without <cond>] <spec file>
+</pre>
+
+To rebuild a source RPM package:
+
+<pre>
+$ rpmbuild --rebuild <source RPM>
+</pre>
+
+== Macro ==
+
+To use the macro value defined in the command line:
+
+ %{?name}
+
+To use a different value if the macro is defined:
+
+ %{?name:<new value>}
+
+To use a default value if the macro is not defined:
+
+ %{!?name:<default value>}
+
+== Conditionals ==
+
+To add --with <name> condition:
+
+<pre>
+%bcond_with <name>
+</pre>
+
+To add --without <name> condition:
+
+<pre>
+%bcond_without <name>
+</pre>
+
+To test the condition:
+
+<pre>
+%if %{with <name>}
+...
+%endif
+</pre>
+
+From /usr/lib/rpm/macros:
+
+<pre>
+# Shorthand for %{defined with_...}
+%with()         %{expand:%%{?with_%{1}:1}%%{!?with_%{1}:0}}
+%without()      %{expand:%%{?with_%{1}:0}%%{!?with_%{1}:1}}
+
+# Handle conditional builds. %bcond_with is for case when feature is
+# default off and needs to be activated with --with ... command line
+# switch. %bcond_without is for the dual case.
+#
+# %bcond_with foo defines symbol with_foo if --with foo was specified on
+# command line.
+# %bcond_without foo defines symbol with_foo if --without foo was *not*
+# specified on command line.
+
+# The bottom line: never use without_foo, _with_foo nor _without_foo, only
+# with_foo. This way changing default set of bconds for given spec is just
+# a matter of changing single line in it and syntax is more readable.
+%bcond_with()           %{expand:%%{?_with_%{1}:%%global with_%{1} 1}}
+%bcond_without()        %{expand:%%{!?_without_%{1}:%%global with_%{1} 1}}
+</pre>
+
+See also:
+
+* [http://rpm.org/user_doc/conditional_builds.html Conditional Builds]
+* /usr/lib/rpm/macros
+
+= Displaying Expanded Macros =
+
+To display available macros:
+
+ $ rpm --showrc
+
+To display the value of a macro:
+
+ $ rpm --eval '%{dist}'
+ .fc28
+
+To display the spec file with expanded macros:
+
+ $ rpmspec -P <spec file>
+
+= RPM Spec Validation =
+
+To validate a spec file:
+
+ $ rpmlint <spec file>
+
+See also:
+
+* [https://fedoraproject.org/wiki/Common_Rpmlint_issues Common Rpmlint issues]
+
+= Extracting RPM File =
+
+ $ rpm2cpio <file> | cpio -idmv
+
+= Creating RPM Repository =
+
+<pre>
+$ dnf install createrepo
+$ createrepo <path>
+</pre>
+
+<pre>
+$ cat /etc/yum.repos.d/local.repo << EOF
+[local]
+name=Local Repository
+baseurl=file://<path>
+enabled=1
+gpgcheck=0
+EOF
+</pre>
+
+= References =
+
+* [[CMake]]
+* [http://rpm.org/documentation.html RPM Documentation]
+* [http://rpm.org/user_doc/macros.html Macro syntax]
+* [http://ftp.rpm.org/max-rpm/s1-rpm-specref-macros.html Macros]
+* [http://fedoraproject.org/wiki/Packaging:RPMMacros Packaging:RPMMacros]
+* [http://rpm.org/user_doc/autosetup.html Automating patch application in specs]
+* [http://backreference.org/2011/09/17/some-tips-on-rpm-conditional-macros/ Some tips on RPM conditional macros]
+* [http://ftp.rpm.org/api/4.4.2.2/conditionalbuilds.html Passing conditional parameters into a rpm build]
+* [https://docs.fedoraproject.org/quick-docs/en-US/creating-rpm-packages.html Fedora: Creating RPM packages]
+* [https://fedoraproject.org/wiki/Rpmdevtools rpmdevtools]
+* [https://linux.die.net/man/1/rpmdev-bumpspec rpmdev-bumpspec]
+* [[Mock]]
+* [https://pagure.io/spectool spectool]
+* [[DNF]]

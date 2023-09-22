@@ -1,0 +1,14 @@
+= How Tos =
+
+This section contains short tips and tricks on how to do various things related to Dogtag Certificate System.
+
+* [[Apache_Cert_Enrollment | Enroll a server Certificate for Apache Webserver ]]
+* [[PKI_TechNote_X509_Certificates|Differences between NSS and OpenSSL X509 Certificates]]
+* [[PKI_TechNote_CRLS|Differences between NSS and OpenSSL CRLs]]
+* [[Reuse_Existing_CA_Keypair | Re-use an existing CA keypair to create a new certificate request]]
+* [[Debugging | How to debug the Dogtag Server and its sub components]]
+* [[Instructions for Setting Up TomcatJSS and NSS on JBoss/Solaris]]
+* [[Migrate CA from individual /etc/init.d/pki-instance files to using pki-cad]]
+* [https://github.com/dogtagpki/pki/wiki/Deploying-Fully-Redundant-TPS Deploying Fully Redundant TPS]
+* [[ECC Setup Instructions]]
+* [[Requiring authentication to get to the EE pages]]

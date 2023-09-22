@@ -1,0 +1,70 @@
+= Design =
+
+See [[JSS Design]].
+
+= Variables =
+
+arch.mk:
+
+<pre>
+OBJDIR_NAME = $(OS_TARGET)$(OS_RELEASE)$(CPU_TAG)$(COMPILER_TAG)$(LIBC_TAG)$(IMPL_STRATEGY)$(OBJDIR_TAG).OBJ
+
+ifeq (,$(filter-out WIN%,$(OS_TARGET)))
+ifndef BUILD_OPT
+#
+# Define USE_DEBUG_RTL if you want to use the debug runtime library
+# (RTL) in the debug build
+#
+ifdef USE_DEBUG_RTL
+    OBJDIR_NAME = $(OS_TARGET)$(OS_RELEASE)$(CPU_TAG)$(COMPILER_TAG)$(IMPL_STRATEGY)$(OBJDIR_TAG).OBJD
+endif
+endif
+endif
+</pre>
+
+= Upstream Development =
+
+Upstream JSS repository is located at https://github.com/dogtagpki/jss.
+
+To clone the repository:
+
+<pre>
+$ git clone git@github.com:dogtagpki/jss.git
+$ cd jss
+</pre>
+
+By default it will checkout the master branch.
+
+To list available branches:
+
+<pre>
+$ git branch -r
+</pre>
+
+To switch to a different branch:
+
+<pre>
+$ git checkout <branch>
+</pre>
+
+See also:
+
+* [[JSS 4.5 Development]]
+* [[JSS 4.4 Development]]
+
+= Downstream Development =
+
+* [[JSS Fedora Packaging]]
+* [[JSS Debian Development]]
+
+= References =
+
+* [https://github.com/dogtagpki/jss/wiki JSS]
+* [https://pagure.io/jss/issues JSS Tickets on Pagure]
+* [https://bugzilla.mozilla.org/buglist.cgi?product=JSS JSS Tickets on Mozilla]
+* [https://hg.mozilla.org/projects/jss JSS Source Repository on Mozilla]
+* [https://www.redhat.com/archives/mod_nss-list/2015-August/msg00013.html NSSBadCertHandler for mod_nss]
+* [https://pagure.io/mod_nss/blob/master/f/mod_nss.c mod_nss.c]
+* [https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS/SSL_functions/sslfnc.html#SSL_GetSessionID SSL_GetSessionID]
+* [https://github.com/dogtagpki/nss/wiki/Development-Guide NSS Development Guide]
+* [[Tomcat JSS Development]]

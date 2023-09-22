@@ -1,0 +1,55 @@
+= Overview =
+
+Tomcat provides built-in support for SSL using JSSE.
+
+= Using PKCS #12 Key Store =
+
+== Generating self-signed SSL certificate ==
+
+To generate a self-signed SSL server certificate in a PKCS #12 file:
+
+ $ cd /etc/tomcat
+ $ keytool -genkey \
+     -alias "sslserver" \
+     -dname "CN=$HOSTNAME,O=EXAMPLE" \
+     -keyalg RSA \
+     -storetype pkcs12 \
+     -keystore sslserver.p12 \
+     -storepass Secret.123 \
+     -keypass Secret.123
+
+== Configuring SSL connector ==
+
+Uncomment the SSL connector in $CATALINA_BASE/conf/server.xml and add the keystore parameters as follows:
+
+Tomcat 8.0 or older:
+
+<pre>
+<Connector port="8443" protocol="org.apache.coyote.http11.Http11NioProtocol"
+           maxThreads="150" SSLEnabled="true" scheme="https" secure="true"
+           clientAuth="false" sslProtocol="TLS"
+           keystoreType="pkcs12"
+           keystoreFile="${catalina.base}/conf/sslserver.p12"
+           keystorePass="Secret.123"
+           keyAlias="sslserver"
+/>
+</pre>
+
+Tomcat 8.5 or newer:
+
+<pre>
+<Connector port="8443"
+           protocol="org.apache.coyote.http11.Http11NioProtocol"
+           SSLEnabled="true">
+
+        <SSLHostConfig>
+
+             <Certificate certificateKeystoreType="pkcs12"
+                         certificateKeystoreFile="${catalina.base}/conf/sslserver.p12"
+                         certificateKeystorePassword="Secret.123"
+                         certificateKeyAlias="sslserver"/>
+
+         </SSLHostConfig>
+
+</Connector>
+</pre>

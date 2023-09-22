@@ -1,0 +1,23 @@
+Some simple steps are listed here on how to proceed to enroll a server certificate for an apache webserver with Dogtag.
+
+* Generate a Key/CSR:
+** openssl genrsa -des3 -out www.mydomain.com.key 1024
+** openssl req -new -key www.mydomain.com.key -out www.mydomain.com.csr
+*** Fill out all the prompts here including CountryName,State,Locality,Organization Name, Organizational Unit Name, Common Name. 
+
+* Sample CSR from the above commands:
+
+ -----BEGIN CERTIFICATE REQUEST-----
+ MIIBqDCCARECAQAwaDELMAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWEx
+ FTATBgNVBAcTDE1vdW50YWluVmlldzEPMA0GA1UEChMGUmVkSGF0MQwwCgYDVQQL
+ EwNJRE0xDjAMBgNVBAMTBWEuY29tMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKB
+ gQDMbwtFUZNzlfWRI19nuxKsbhJ1/5A/rrXQkH7+K1uqxmzytm6b57lkGK9YUC7B
+ qSKpJ4zzOnVqwRZsE9oJ5CSv+eQUie1NTz4KEL9ZOsN4p2zn0JFaKqze/vxZ3Rux
+ BKnAz34KxOKZxGTiychOTytWS6V4lDzKBvgTgf0EZfOcfwIDAQABoAAwDQYJKoZI
+ hvcNAQEEBQADgYEAxRGViyX5MxedhfSOja3XmvCcTOZL+btT7u4zztGBz71qSGhz
+ yLcFCHCOMngsfiHxySBUIjZdGAOjrwcwT04ig/C2TE8mTamDp7d8/zQ6k9De/9Dp
+ Q+C7PZuTYQkDf417IxbalEWhhNQ2AE6pMxfWwWAhjP1jAFLdKQZtEVNG9AQ=
+ -----END CERTIFICATE REQUEST-----
+
+* Submit this CSR to the "Server Certificate Enrollment" profile of the Dogtag CA and get it approved. 
+* Download the Cert and the CA and get them installed in apache.

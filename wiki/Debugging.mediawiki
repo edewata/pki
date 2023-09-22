@@ -1,0 +1,74 @@
+= Overview =
+
+Dogtag Certificate System and its underlying components can often benefit from the use of various diagnostic and debugging techniques. A few of the most valuable methods are discussed below. Feel free to add other suggestions in the future.
+
+= Debugging NSS =
+
+* [https://github.com/dogtagpki/nss/wiki/Debugging-NSS Debugging NSS]
+
+= Debugging JSS =
+
+* [[Debugging JSS]]
+
+= Debugging Tomcat JSS =
+
+Tomcat JSS acts as a bridge between the tomcat webserver and our JSS security component. See [https://github.com/dogtagpki/tomcatjss/wiki/Configuring-Tomcat-JSS-Logging Configuring Tomcat JSS Logging].
+
+= Debugging Dogtag CS servers with strace =
+
+This section shows how to run strace with Dogtag servers.
+
+* If you are debugging with the CA, then look for the file /usr/bin/dtomcat5-<instance-nme>: e.g. /usr/bin/dtomcat5-pki-ca. Edit it, and search for the line that looks like the following:
+
+       elif [ "$1" = "start" ] ; then
+
+and within that elif block, find the "else" block of "if [ "$1" = "-security" ] ; then" strace -o /tmp/strace.log "$_RUNJAVA" $JAVA_OPTS $CATALINA_OPTS \
+
+Start/restart the server.
+
+   /etc/init.d/pki-cad restart
+
+This will write the  strace generated log in the file /tmp/strace.log
+
+This can be used with the NSS(PKCS11) debugging method above.
+
+= Debugging CS Using Tomcat with a Security Manager =
+
+Out-of-the-box, Dogtag 1.1 will '''not''' run Tomcat using the Security Manager.
+The means used to debug and create a valid "security policy" follows:
+
+(1) Prepare the "/etc/init.d/&lt;pki_instance&gt;" to start using the Security Manager by adding the '''-security''' option to the start section of this script:
+
+    # daemon --user $TOMCAT_USER $TOMCAT_SCRIPT start
+    if [ ${OS} = "SunOS" ] ; then
+        su  $TOMCAT_USER -c "$TOMCAT_SCRIPT start '''-security'''" > /dev/null
+    else
+        runuser -s /bin/bash $TOMCAT_USER -c "$TOMCAT_SCRIPT start '''-security'''" > /dev/null
+    fi
+
+(2) Set the following in "/usr/bin/dtomcat5-&lt;pki_instance&gt;":
+
+    export CATALINA_OPTS=-Djava.security.debug=all
+
+<ul>or, for less, but far more relevant info, use:</ul>
+
+    export CATALINA_OPTS=-Djava.security.debug=access,failure
+
+(3) In both cases, perform the following command sequences:
+
+    (a) cat /dev/null > /var/log/&lt;pki_instance&gt;/catalina.out
+    (b) /sbin/service &lt;pki_instance&gt; start
+    (c) grep failed /var/log/&lt;pki_instance&gt;/catalina.out
+
+<ul>Execute "/sbin/service &lt;pki_instance&gt; stop", place a new policy rule for each failure into the "/var/lib/&lt;pki_instance&gt;/conf/catalina.out", and re-run commands (a), (b), and (c) until all failures have been accounted for.</ul>
+
+= Debugging Dogtag server Java Code over Tomcat with JDB or JSWat =
+
+* [[Debugging PKI in Tomcat]]
+
+= References =
+
+* [[Troubleshooting]]
+* [[JDB]]
+* [[GDB]]
+* [[Valgrind]]

@@ -1,0 +1,1025 @@
+= Open Source History (2013) =
+
+== Dogtag Certificate Server 10.0 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[01/15/2013] ==
+
+Dogtag Certificate System 10.0 represents the release being bundled with the GA release of Fedora 18, and marks the culmination of over a year of development by the Dogtag team.
+
+<font size="+1"><b>Project Name:</b></font>
+* '''''Dogtag Certificate System 10.0'''''
+<font size="+1"><b>Releases:</b></font>
+* [01/15/2013] Dogtag Certificate Server 10.0 [32-bit & 64-bit Fedora 18]
+'''Packages'''
+* pki-core-10.0.0-2.fc18
+* pki-ra-10.0.0-1.fc18
+* pki-tps-10.0.0-1.fc18
+* dogtag-pki-10.0.0-1.fc18
+* dogtag-pki-theme-10.0.0-1.fc18
+* pki-console-10.0.0-1.fc18
+
+<font size="+1"><b>Upgrade Notes:</b></font>
+
+It is possible to upgrade from a Dogtag 9 instance by first upgrading your server to Fedora 18 and then updating the Dogtag software. Existing Dogtag instances will continue to work correctly using existing instances, with the Java-based instances running on Tomcat 6.
+
+However, because the new functionality and interfaces depend on instance configuration, these will not be available to existing Dogtag 9-style instances.  To take advantage of these new features, new Dogtag 10 instances should be created.
+
+Documentation will soon be provided on how to migrate a Dogtag 9 - style instance to a new Dogtag 10 instance.
+
+<font size="+1"><b>Highlights since Dogtag 9.0</b></font>
+
+'''Infrastructure and Development Changes:'''
+* The Dogtag code base was moved to git from svn.
+* Java development is now done under Eclipse.
+* Dogtag 10 uses its own public-facing TRAC project management system.
+* Improvements were made to CMake modules for Java development.
+* Java development uses OpenJDK 7.
+* Python development uses Python 2.7 and Jython 2.2.
+* Dogtag 10 Java-based instances run on Tomcat 7.
+* Dogtag 10 RA and TPS instances run on Apache 2.4.
+'''Refactoring and Cleanup:'''
+* Code has been reformatted to uniform formatting and coding standards.
+* Based on feedback provided by Eclipse and Coverity, the following types of cleanup occurred:
+** Removal of dead code and unnecessary code blocks.
+** Removal of generic containers and implementation of type safety.
+** Removal/ replacement of deprecated code, with the addition of JUnit tests to confirm correctness.
+** Address various memory leaks and corruption issues, coding style issues etc.
+* The Dogtag code pre-dates many of the modern Java utilities to do encoding, HTTP and XML parsing etc.  As a result, custom code was written to do these functions.  This code has been replaced with standard code, and a whole package (osutil) was eliminated.
+'''REST Interface:'''
+* To allow easier and more intuitive interaction with the Dogtag servers, a new REST interface has been added.  This interface is based on RESTEasy framework, a fully certified implementation of the JAX-RS specification.  Clients interact with this framework using intuitive REST URLs, and using standard XML or JSON inputs.
+* Included is a Java client proxy framework which can be used by client applications to build HTTP requests on the Dogtag servers, simply by invoking methods on the client objects.  This client framework is used in the new command line interface "pki" as described below.
+* The plan is to continue over time to extend the REST interface to cover all of the essential Dogtag functionality.  In this release, the following functionality has been implemented:
+** With a CA:
+*** Create, review and approve certificate requests.
+*** List, view, revoke, hold and release certificates.
+*** Get installation token from security domain
+*** Add/remove KRA connector configuration
+*** Retrieve and list certificate profiles
+** With KRA:
+*** Retrieve transport certificate
+*** List/ archive and recover symmetric keys
+** With all Java systems:
+*** Add/Remove/Modify/View users, groups and group members
+*** Start system installation service
+'''Third-party Components:'''
+* Dogtag 10 includes JQuery and the Jquery.i18n.properties plug-in.
+'''CLI:'''
+* A new intuitive command line interface has been created, based on the RESTEasy client framework.  This allows administrators and agents to perform all of the operations exposed by the REST interface from the command line, or from scripts.
+'''Storage of symmetric keys in the DRM:'''
+* The DRM provides secure encrypted storage for asymmetric keys.  The KRA has been extended to provide a mechanism to securely archive and recover symmetric keys.  This would be useful for storing disk encryption keys for instance. 
+'''SELinux changes:'''
+* In Dogtag 9, we maintained a custom SELinux policy to provide mandatory access controls for interactions with the Dogtag server.  In Dogtag 10, this policy has been cleaned up, simplified and integrated into the system base policy. As a result, the pki-selinux package has been retired.
+'''ECC:'''
+* In earlier releases, Dogtag only supported ECC certificate issuance when the CA was connected to an ECC-capable external crypto token.  In Dogtag 10, all CS servers (CA, OCSP, DRM, TKS, TPS) can now be issued ECC certificates and run in such environment that:
+** CS servers can communicate securely with ECC SSL certificates.
+** Administrators and agents can access their administration ports via SSL using ECC certificates
+** ECC encryption certificates can now have their private keys archived (and recovered) by the DRM.  For this feature, we used an ECC-capable HSM in our development and QE environment on the client side for development and testing. Certicom software tokens could not be used because of an issue with malformed private keys.
+** The TMS testing client tool, tpsclient, can now be used to test token-based enrollment and key archival in the TMS environment (the actual smart card support will follow in a later release)
+'''New Installer:'''
+* New installer tools (pkispawn, pkidestroy) has been written in Python to create Dogtag Java-based instances (CA, KRA, OCSP, TKS).  Over time, this installer will be extended to handle the remaining Apache-based instances (TPS and RA), and pkicreate/pkiremove/pkisilent will be retired and removed.
+* pkispawn performs the same operations that pkicreate and the pkisilent used to do, meaning that a Dogtag Java-based instance can be installed and configured in a single non-interactive step.  With the right options, though, it is still possible to configure an instance by going through the web-based installation UI panels.
+'''New Directory Layout/ Architecture/ Standard Ports'''
+* It is now possible (though not required) to install multiple Java subsystems (CA, KRA, TKS, OCSP) within a single tomcat instance.  This is useful for small deployments where, for example, you might want leverage the capabilities of a CA and KRA on a single server.  In keeping with this change, the directory structure of a Dogtag instance has changed.
+* By default, Dogtag will install on the default tomcat ports (8443 and 8080).  There will no longer be any separation of EE, admin and agent interfaces on different ports. 
+'''Package Restructuring:'''
+* The Dogtag RPM packages have been restructured to reduce the number of packages and more accurately separate client and server components.  The current packages are:
+** pki-base: code common to clients and server
+** pki-tools: Java and native tools used by client and server.
+** pki-server: code used by Java servers, only on the server.
+** pki-ca, pki-kra, pki-ocsp, pki-tks, pki-ra, pki-tps: subsystem specific code
+** pki-javadoc: consolidation of the pki-common-javadoc, pki-java-tools-javadoc, and pki-util-javadoc packages
+** pki-symkey: provides native symmetric key operations
+** pki-console: administrative tool for CA, KRA, OCSP, and TKS
+* The UI packages have been rearranged and consolidated to make customizing an instance's user interfaces more straightforward, and to ensure a more consistent look and feel across subsystems.  All of the subsystem-specific UI packages have been eliminated, and there is now a single UI package (dogtag-pki-server-theme) which contains all the CSS style sheets, image files and properties files for all subsystems.  A customer wanting to customize the UI could simply replace the components in this package.  Additionally, the pki-console requires its own UI package, dogtag-pki-console-theme.
+* A meta-package (dogtag-pki) has been created to conveniently install all existing Dogtag 10 PKI packages.
+
+<font size="+1"><b>Server Platforms</b></font>
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.0</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 18 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 18 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Dogtag Certificate Server 10.0.1 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[01/23/2013] ==
+
+Dogtag Certificate System 10.0.1 represents the first errata build for Dogtag 10.0.0.
+
+<font size="+1"><b>Project Name:</b></font>
+* '''''Dogtag Certificate System 10.0.1'''''
+<font size="+1"><b>Releases:</b></font>
+* [01/23/2013] Dogtag Certificate Server 10.0.1 [32-bit & 64-bit Fedora 18]
+'''Packages (Revised)'''
+* pki-core-10.0.1-1.fc18
+* dogtag-pki-10.0.1-1.fc18
+'''Packages (Existing)'''
+* pki-ra-10.0.0-1.fc18
+* pki-tps-10.0.0-1.fc18
+* dogtag-pki-theme-10.0.0-1.fc18
+* pki-console-10.0.0-1.fc18
+
+<font size="+1"><b>Highlights since Dogtag 10.0:</b></font>
+* Nonces have been added to the RESTful interface for certificate revocation to preventing cross site scripting attacks on that interface.
+* A new servlet has been added to the RESTful interface to add and remove KRA connector configuration from a CA.  This is used to clean up a CA when a KRA is destroyed.
+* The default validity of the CA signing cert has been lengthened from 8 to 20 years.
+* pkispawn has been modified to allow the user to specify the location of the generated admin cert PKCS#12 file.
+* OCSP now supports ECC CRLs.
+* A more robust use of interpolation has been added to pkispawn.
+* pkidaemon has been repaired to display the runtime status of PKI Java-based instances
+* A third-party license file has been added for Dogtag 10's use of JQuery and the JQuery.i18n.properties plug-in
+<font size="+1"><b>Detailed Changes since Dogtag 10.0:</b></font>
+* alee (12):
+** TRAC Ticket 367 - pkidestroy does not remove connector
+** Fix spec file to allow f17 to work with latest tomcatjss
+** TRAC Ticket 466 - Increase root CA validity to 20 years
+** TRAC Ticket 437 - Make admin cert p12 file location configurable
+** TRAC Ticket 393 - pkispawn fails when selinux is disabled
+** Punctuation and formatting changes in man pages
+** TRAC Ticket 436 - Interpolation for pki_subsystem
+** TRAC Ticket 433 - Interpolation for paths
+** TRAC Ticket 435 - Identical instance id and instance name
+** TRAC Ticket 406 - Replace file dependencies with package dependencies
+** Revert to using default config file for pkidestroy
+** Hardcode setting of resteasy-lib for instance
+* cfu (1):
+** Bugzilla Bug 839426 - [RFE] ECC CRL support for OCSP
+* edewata (3):
+** TRAC Ticket 214 - Missing error description for duplicate user
+** TRAC Ticket 213 - Add nonces for cert revocation
+** TRAC Ticket 191 - Mapping HTTP Exceptions to HTTP error codes
+* mharmsen (4):
+** TRAC Ticket #430 - License for 3rd party code
+** TRAC Ticket 469 - Fix tomcatjss issue in spec files
+** TRAC Ticket 468 - pkispawn throws exception
+** TRAC Ticket 271 - Dogtag 10: Fix 'status' command in 'pkidaemon'
+<font size="+1"><b>Server Platforms:</b></font>
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.0.1</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 18 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 18 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Dogtag Certificate Server 10.0.2 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[05/02/2013] ==
+
+Dogtag Certificate System 10.0.2 represents the second errata build for Dogtag 10.0.0.
+
+<font size="+1"><b>Project Name:</b></font>
+* '''''Dogtag Certificate System 10.0.2'''''
+<font size="+1"><b>Releases:</b></font>
+* [05/02/2013] Dogtag Certificate Server 10.0.2 [32-bit & 64-bit Fedora 18 and Fedora 19 (alpha)]
+'''Packages (Revised)'''
+* dogtag-pki-10.0.2-1
+* dogtag-pki-theme-10.0.2-1
+* pki-console-10.0.2-2
+* pki-core-10.0.2-2
+* pki-ra-10.0.2-2
+* pki-tps-10.0.2-2
+<font size="+1"><b>Highlights since Dogtag 10.0.1:</b></font>
+* A new Python client framework has been written to connect to the restful interface on the java subsystems.  This interface was used for some installation functionality and will continue to be expanded.
+* pkispawn and pkidestroy were modified to use the new Python client framework and the dependency on jython was eliminated.
+* The installation interfaces were changed so that most of the installation interactions take place over the admin interface.
+* New command line parameters have been added to pkidestroy to provide the username and password of the security domain administrator to update the security domain.  Formerly, no credentials were required because we used the subsystem certificate of the subsystem for authentication.  The new method provides better auditing as to exactly who is de-registering and removing a subsystem.  As such, use of the new options is recommended, and will be made mandatory in a future release.
+* Although it is possible to run Dogtag 9 style instances on Dogtag 10, these instances do not have the required configuration to expose the RESTful interface.  A new servlet has been added to return 501 (Not implemented) on these instances when the REST URLs are accessed.  This is only applicable on Fedora 18 (See Fedora 19 note below).
+* A new interactive mode has been added to pkispawn and pkidestroy.  In this mode, users are prompted for details in order to set up the most basic servers.  Any customizations would still need to be done through configuration files.  Interactive mode is an excellent way for users to set up a server and become familiar with Dogtag.
+* Support has been added for the random generation of serial numbers for certificates issued.  More details about this feature and how to enable it can be found here: [https://github.com/dogtagpki/pki/wiki/Random-Certificate-Serial-Numbers Random Certificate Serial Numbers]
+* Nonces are used in Dogtag to prevent cross-site request forgery and replay attack, but they were stored in a global list.  To prevent possible collisions with other user's nonces, they are now stored in each user's session.
+* Previously, session IDs were generated using /dev/random, which may block under certain circumstances, making server startup slow. To avoid this, the server configuration has been changed to use PKCS11PRNG provided by JSS.
+* A new upgrade framework has been added to allow instances to be automatically upgraded when new packages are installed.  This framework will be used to eventually remove the need for migrations between releases.  The upgrade scripts are invoked by postinstall scriptlets in the pki-base and pki-server packages.  On completing an upgrade, users should check the upgrade logs in /var/log/pki/pki-upgrade-*.log and /var/log/pki/pki-server-upgrade-*.log for any errors.  The upgrade scripts (pki-upgrade and pki-server-upgrade) can also be run manually.  Additional troubleshooting information can be found at:  [https://github.com/dogtagpki/pki/wiki/Upgrading-PKI-Server Upgrading PKI Server]
+* New CLI has been added to simplify client certificate management including importing and trusting CA certificates.
+* Previously, the pki CLI tool used the same parameter (-w) to specify both user and client certificate database passwords.  The CLI has been modified to use a new parameter (-c) for the database password, and -w for the user password.
+* Multiple additional fixes to pkispawn, pkidestroy, pki and their man pages.
+<font size="+1"><b>Notes on Fedora 19:</b></font>
+
+Fedora 19 does not provide tomcat 6.  Dogtag 9 style instances will therefore no longer work on Fedora 19.  These instances need to be migrated to Dogtag 10.
+
+To prevent inadvertently disabling Dogtag instances, code has been added to prevent upgrades to Fedora 19 if Dogtag 9 instances exist.  Details on how to upgrade Dogtag 9 instances and workarounds can be found at:  [https://github.com/dogtagpki/pki/wiki/Migrating-PKI-9-to-PKI-10 Migrating PKI 9 to PKI 10]
+
+<font size="+1"><b>Detailed Changes since Dogtag 10.0.1:</b></font>
+* akoneru (23):
+** 191 Map REST exceptions to HTTP status codes
+** 217 CLI should display message on operations that complete with error
+** 290 Add hints to option descriptions for cert-find cli command
+** 383 Extend coverity tests to scan other subsystems (TPS, etc.)
+** 452 Dogtag 10: Fix minor RA and TPS Configuration Wizard Panel issues
+** 465 Verify 'pki_backup_keys=True' if 'pki_backup_password'is set
+** 470 Prevent concurrent execution of pkispawn/pkidestroy
+** 471 Update man pages for interactive pkispawn/pkidestroy
+** 493 interpolation in pkispawn scripts should not apply to passwords
+** 502 Change pkidestroy "-w" option to require a password file
+** 507 Mark pki.conf as configuration file in RPM spec
+** 509 man page for pkispawn should be modified to specify pki_ca_signing_subject_dn when setting up subordinate CA
+** 514 Clean up pkispawn output
+** 521 Separate python deployment engine from python deployment scriptlets source code
+** 525 Incorrect info in pkispawn man page
+** 536 Catch keyboard interrupt
+** 542 Remove all "respawn()" logic from "pkispawn"
+** 543 Incorrect user-show usage.
+** 549 PKCS10Client tool throws java exception NoClassDefFoundError
+** 563 Use timeout in configuration script
+** 566 Mask sensitive parameters in archived config
+** 592 pkispawn not reporting the error message when exceptions are thrown
+** 593 Error caused by JSON Configuration result decoding when installing CA clone
+* alee (9):
+** 232 add python binding for pkispawn/ pkidestroy
+** 419 REST interface for cert requests
+** 532 refactor pkispawn to use new python client
+** 546 Upgrade script for clone installation
+** 564 Rename base/deploy to base/server
+** 589 dependency needed for java-atk-wrapper in f19
+** 578 Rest API does not work on d9 -> d10 upgrade instances
+** 590 pki-base needs to deliver /var/log/pki
+** 597 Create 10.0.2 builds
+* awnuk (7):
+** 569 Port support for random certificate serial numbers to Dogtag 10
+** 570 Port patch allowing to support random certificate serial numbers for system certificates to Dogtag 10
+** 579 Port patch allowing to clone CA with random serial number enabled.
+** 580 Port patch allowing to restart CA clone during configuration change to random serial numbers.
+** 584 Port patch including system certificates with random serial numbers in the certificate counter.
+** BZ 955784 - Correct Javascript inability to handle big numbers
+** BZ 951501 - Coorects key IDs miscalculated by Javascript
+* cfu (6):
+** BZ 929043 - serverCert.profile with SAN results in SubjectAltNameException
+** BZ 927545 - Transport Cert signing Algorithm doesn't show ECC Signing Algorithm
+** BZ 904289 - Add ECC Support to Certificate Profiles
+** BZ 902952 - RFE: Revocation routing with TPS and multiple non-cloned CAs
+** BZ 903401 - TMS: RSA token enrollment failed : public key decode error
+** 362 CMC ECC 
+* edewata (24)
+** 190 REST interface for user-group membership.
+** 291 Fix forma of validityUnit option in cert-find command
+** 380 default install: part 2
+** 472 pkispawn should test DS info
+** 473 pkispawn should test security domain info
+** 474 Session-based nonces
+** 476 Limit username & password authentication
+** 477 Annotation for authentication methods
+** 491 Prompt CLI user on certificate warnings.
+** 497 Date format for cert-find
+** 498 [RFE] Add dates to cert-find output
+** 500 validityCount option returns 500 error
+** 501 Add cert status option to cert-find
+** 503 Dogtag 10: Security Domain Issues
+** 511 Add cert-request-show command.
+** 520 CLI returns 0 on error
+** 523 Add CLI option to capture HTTP data
+** 524 Tomcat blocks during startup
+** 535 python-requests compatibility problem
+** 541 Use FQDN instead of localhost in CLI
+** 544 Implement upgrade framework
+** 545 Upgrade script for random number generator
+** 553 pki.conf needs to be delivered by pki-base
+** 598 Upgrade script for JNI_JAR_DIR
+* jmagne (1):
+** 587 ipa-server-install crashes due to sslget error
+* mharmsen (7):
+** 409 Add pkispawn option to not copy the UI pieces (gifs, templates).
+** 488 Dogtag 10: Fix cli 'cert-find' clientAuth issue
+** 517 Clean up theme dependencies
+** 518 Remove UI dependencies from pkispawn
+** 602 pkiconsole cannot find 'jss4.jar' on Fedora 19
+** BZ 947524 - Clone installation does not work over NAT
+** BZ 919476 - pkispawn crashes due to dangling symlink to jss4.jar
+<font size="+1"><b>Server Platforms:</b></font>
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.0.2</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 18 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 18 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 19 (alpha) (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 19 (alpha) (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Dogtag Certificate Server 10.0.3 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[06/07/2013] ==
+
+Dogtag Certificate System 10.0.3 represents the third errata build for Dogtag 10.0.0.
+
+<font size="+1"><b>Project Name:</b></font>
+* '''''Dogtag Certificate System 10.0.3'''''
+<font size="+1"><b>Releases:</b></font>
+* [06/07/2013] Dogtag Certificate Server 10.0.3 [32-bit & 64-bit Fedora 18 and Fedora 19 (alpha)]
+'''Packages (Revised)'''
+* pki-core-10.0.3-1
+* pki-ra-10.0.3-1
+* pki-tps-10.0.3-1
+* dogtag-pki-10.0.3-1
+* dogtag-pki-theme-10.0.3-1
+* pki-console-10.0.3-1
+<font size="+1"><b>Highlights since Dogtag 10.0.2:</b></font>
+* Fixes for security flaws in the TPS as described in CVE-2013-1885 and CVE-2013-1886
+* Added checking for sane lengths of the fields in subject DNs in the TPS, to prevent a TPS crash.
+* Previously the server certificate name was partially hard-coded.  Now in Tomcat-based subsystems, it can be fully configured using pki_ssl_server_nickname parameter.
+* Corrections and additions to man pages and other documentation.
+<font size="+1"><b>Notes on Fedora 19:</b></font>
+
+Fedora 19 does not provide tomcat 6.  Dogtag 9 style instances will therefore no longer work on Fedora 19.  These instances need to be migrated to Dogtag 10.
+
+To prevent inadvertently disabling Dogtag instances, code has been added to prevent upgrades to Fedora 19 if Dogtag 9 instances exist.  Details on how to upgrade Dogtag 9 instances and workarounds can be found at:  [https://github.com/dogtagpki/pki/wiki/Migrating-PKI-9-to-PKI-10 Migrating PKI 9 to PKI 10]
+
+<font size="+1"><b>Detailed Changes since Dogtag 10.0.2:</b></font>
+* akoneru (1):
+** 599 Improve pkispawn "Installation Summary" block
+* alee (1):
+** 486 Document migration steps for dogtag 9 -> dogtag 10 instances
+* awnuk (4):
+** 607 Port plug-in randomizing validity
+** 571 Port patch allowing to include in CRLs NextUpdate calculated base on ThisUpdate
+** BZ 951501 - correcting JavaScript inability to handle big numbers
+** BZ 966189 - fix various TPS flaws
+* cfu (1):
+** BZ 952500 - small patch to remove eclipse warning in fix to BZ 952500
+* edewata (1)
+** 631 Hard-coded server certificate nickname.
+* jmagne (1):
+** BZ 963073 - rhcs81 tps crash for CN over than 64 bytes
+* mharmsen (3):
+** 606 add restart/start at boot info to pkispawn man page
+** 610 Document limitation in using GUI install
+** 629 Package ownership of '/usr/share/pki/etc/' directory 
+<font size="+1"><b>Server Platforms:</b></font>
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.0.3</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 18 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 18 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 19 (alpha) (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 19 (alpha) (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+== Dogtag Certificate Server 10.0.4 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[07/26/2013] ==
+
+Dogtag Certificate System 10.0.4 represents the fourth errata build for Dogtag 10.0.0.
+
+<font size="+1"><b>Project Name:</b></font>
+* '''''Dogtag Certificate System 10.0.4'''''
+<font size="+1"><b>Releases:</b></font>
+* [07/26/2013] Dogtag Certificate Server 10.0.4 [32-bit & 64-bit Fedora 18 and Fedora 19]
+'''Packages (Revised)'''
+* pki-core-10.0.4-1
+* pki-ra-10.0.4-1
+* pki-tps-10.0.4-1
+* dogtag-pki-10.0.4-1
+* dogtag-pki-theme-10.0.4-1
+* pki-console-10.0.4-1
+<font size="+1"><b>Highlights since Dogtag 10.0.3:</b></font>
+*  Enhanced pkispawn to provide automatic backup and restore mechanism for files modified during the upgrade process.
+* Improved the summary information at the end of pkispawn to include, among other things, the location of the agent PKCS #12 file.
+* Fixes to pkispawn and the installation servlets to fix cloning.
+* Fix to pkispawn to correctly overwrite the pki_issuing_ca when configuring with an external CA.  This resolves an issue reported by IPA in BZ #986901.
+* Numerous fixes to resolve build issues on F19 and RHEL.
+
+<font size="+1"><b>Notes on Fedora 19:</b></font>
+
+Fedora 19 does not provide tomcat 6.  Dogtag 9 style instances will therefore no longer work on Fedora 19.  These instances need to be migrated to Dogtag 10.
+
+To prevent inadvertently disabling Dogtag instances, code has been added to prevent upgrades to Fedora 19 if Dogtag 9 instances exist.  Details on how to upgrade Dogtag 9 instances and workarounds can be found at:  [https://github.com/dogtagpki/pki/wiki/Migrating-PKI-9-to-PKI-10 Migrating PKI 9 to PKI 10]
+
+<font size="+1"><b>Detailed Changes since Dogtag 10.0.3:</b></font>
+* akoneru (1):
+** 645    Display the admin p12 file location in the installation summary
+* alee (6):
+** 680    Missing apache-commons-cli dependency
+** 665    cloning is broken for second instance in shared subsystems
+** BZ #973224 -  resteasy-base must be split into subpackages
+** --     Add build dependency on systemd to fix build failures on f19.
+** --     Modify pkispawn to handle case where no subsystem certs are generated
+** --     Modify java-tools startup scripts to use correct JNI path
+* awnuk (1):
+** BZ #961522 - Allow key to be exported.
+* cfu (1):
+** BZ #971561 - server-side key generation causes NullPointerException if a parameter is not supplied by the caller (TPS)
+* edewata (6)
+** 582    Man page for pki-upgrade
+** 583    Automatic backup and rollback on upgrade
+** BZ #986901 - Fix confguration issues with external CA.
+** BZ #985111 - token authentication problem on rhel
+** --     Removing JNI_JAR_DIR from /etc/pki/pki.conf.
+** --     Fixed library paths for RHEL.
+* mharmsen (2):
+** BZ #986506 - exclude pki-kra, pki-ocsp and pki-tks from rhel
+** BZ #975939 - RHCS 8.1: "END CERTIFICATE" tag is not on it's own line
+<font size="+1"><b>Server Platforms:</b></font>
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.0.4</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 18 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 18 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 19 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 19 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Dogtag Certificate Server 10.0.5 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[09/09/2013] ==
+
+Dogtag Certificate System 10.0.5 represents the fifth errata build for Dogtag 10.0.0.
+
+<font size="+1"><b>Project Name:</b></font>
+* '''''Dogtag Certificate System 10.0.5'''''
+<font size="+1"><b>Releases:</b></font>
+* [09/09/2013] Dogtag Certificate Server 10.0.5 [32-bit & 64-bit Fedora 18 and Fedora 19]
+'''Packages (Revised)'''
+* pki-core-10.0.5-1
+* pki-ra-10.0.5-1
+* pki-tps-10.0.5-1
+* dogtag-pki-10.0.5-1
+* dogtag-pki-theme-10.0.5-1
+* pki-console-10.0.5-1
+<font size="+1"><b>Highlights since Dogtag 10.0.4:</b></font>
+*  Due to changes in systemd, restarting Dogtag 10 instances using systemctl restart pki-tomcatd.target failed.  Changes have been made to the systemd startup configuration to ensure that this works correctly.  In addition, configuration has been added to require systemd to accept an exit status of 143 (a correct exit status for the JVM) as valid, so this exit value will no longer be reported in the system logs.
+* Due to changes in the python-requests, a new exception (ProxyError) was returned when attempting to connect to a server that is not yet available.  This affected pkispawn installation code when we wait for a server to restart.  The code has been modified to handle this (and other) exceptions.
+* In a case following a bad restart, the CS.cfg for an instance appeared to be cleared or truncated.  The code has been changed to not write server status to the CS.cfg on startup, but rather to use an in-memory variable.
+* Fixed LDAP search filter code to no longer return certificates expired for both reason 1 and reason 10 when searching only for reason 1. 
+
+<font size="+1"><b>Notes on Fedora 19:</b></font>
+
+Fedora 19 does not provide tomcat 6.  Dogtag 9 style instances will therefore no longer work on Fedora 19.  These instances need to be migrated to Dogtag 10.
+
+To prevent inadvertently disabling Dogtag instances, code has been added to prevent upgrades to Fedora 19 if Dogtag 9 instances exist.  Details on how to upgrade Dogtag 9 instances and workarounds can be found at:  [https://github.com/dogtagpki/pki/wiki/Migrating-PKI-9-to-PKI-10 Migrating PKI 9 to PKI 10]
+
+<font size="+1"><b>Detailed Changes since Dogtag 10.0.4:</b></font>
+* alee (5):
+** 712    pki cert-find --revocationReason 1 finds certs expired for reason 1 and reason 10
+** 714    CS.cfg cleared
+** 716    pki-tomcatd@pki-tomcat.service does not start when pki-tomcatd.target is started
+** 717    Proxy error while getting status when spawning CA
+** 719    Incorrect value in CS,cfg for manager.ldif location
+
+<font size="+1"><b>Server Platforms:</b></font>
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.0.5</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 18 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 18 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 19 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 19 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+
+== Dogtag Certificate Server 10.0.6 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[11/03/2013] ==
+
+Dogtag Certificate System 10.0.6 represents the sixth errata build for Dogtag 10.0.0.
+
+<font size="+1"><b>Project Name:</b></font>
+* '''''Dogtag Certificate System 10.0.6'''''
+<font size="+1"><b>Releases:</b></font>
+* [11/03/2013] Dogtag Certificate Server 10.0.6 [32-bit & 64-bit Fedora 18 and Fedora 19]
+'''Packages (Revised)'''
+* pki-core-10.0.6-1
+* pki-ra-10.0.6-1
+* pki-tps-10.0.6-1
+* dogtag-pki-10.0.6-1
+* dogtag-pki-theme-10.0.6-1
+* pki-console-10.0.6-1
+<font size="+1"><b>Highlights since Dogtag 10.0.5:</b></font>
+* Some commands in the pki CLI have been renamed for better consistency.  The old commands will continue to work, but they have not been deprecated, and will be displayed accordingly in the usage and man pages.
+  The commands that have been renamed are:
+    * old command            -> new command
+    * client-find-cert       -> client-cert-find
+    * client-import-cert     -> client-cert-import
+    * client-remove-cert     -> client-cert-del
+    * group-add-member       -> group-member-add
+    * group-find-member      -> group-member-find
+    * group-show-member      -> group-member-show
+    * group-remove-member    -> group-member-remove
+    * user-add-cert          -> user-cert-add
+    * user-find-cert         -> user-cert-find
+    * user-show-cert         -> user-cert-show
+    * user-remove-cert       -> user-cert-del
+    * user-add-membership    -> user-membership-add
+    * user-find-membership   -> user-membership-find
+    * user-show-membership   -> user-membership-show
+    * user-remove-membership -> user-membership-del
+* The upgrade scripts have been modified to backup the files used to track the upgrade process.  For instance specific upgrade scripts, this is CS.cfg.
+* A missing jar link to apache-commons-io prevented IPA replica installs from completing successfully on RHEL 7.  The required link has been added.  (BZ 1024679)
+* Due to a bug in the configuration code, when installing a non-cloned CA, the certificate for the admin user configured during the install was signed with SHA1 by default.  With the fix, the admin cert is signed with SHA256 by default.  It is possible to override this setting by changing values in the caAdminCert.cfg profile prior to configuration. (BZ 1024445)
+* ipa-cert-remove-hold <non_existent_cert_id> used to return a server error.  The error handling code for this servlet has been modified to return the correct error message (BZ 999722)
+* java-abrt crashes were being generated during IPA server installs due to exceptions being thrown during tomcat shutdown.  This was due to the shutdown code being called multiple times internally.  This code has been fixed. (BZ 1018268)
+
+<font size="+1"><b>Notes on Fedora 19:</b></font>
+
+Fedora 19 does not provide tomcat 6.  Dogtag 9 style instances will therefore no longer work on Fedora 19.  These instances need to be migrated to Dogtag 10.
+
+To prevent inadvertently disabling Dogtag instances, code has been added to prevent upgrades to Fedora 19 if Dogtag 9 instances exist.  Details on how to upgrade Dogtag 9 instances and workarounds can be found at:  [https://github.com/dogtagpki/pki/wiki/Migrating-PKI-9-to-PKI-10 Migrating PKI 9 to PKI 10]
+
+<font size="+1"><b>Detailed Changes since Dogtag 10.0.5:</b></font>
+* alee (3):
+** 743    fix tmpfiles.d references in spec files to reference /run/lock instead of /var/lock
+** 776    IPA CA replica installation crashes on pkispawn (bz 1024679)
+** 781    Admin cert signed with SHA1, should be SHA256 (bz 1024445)
+* edewata (5):
+** 779    Renaming Dogtag 10.0 pki commands
+** 763    Backup tracker files during upgrade 
+** 775    Fix errors during tomcat shutdown (BZ 1018628)
+** 739    ipa-cert-remove-hold <non_existent_cert_id> returns server error (BZ 999722)
+** 780    Unable to get user principal in servlet
+
+<font size="+1"><b>Server Platforms:</b></font>
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.0.6</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 18 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 18 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 19 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 19 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+== Dogtag Certificate Server 10.1 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[11/22/2013] ==
+
+Dogtag Certificate System 10.1 represents the release being bundled with the GA release of Fedora 20, and marks the culmination of nearly a year's worth of developments by the Dogtag team.
+
+<table>
+<tr>
+<td valign="top">'''NOTE:&nbsp;&nbsp;''' </td>
+<td valign="top">Due to changes in the way tomcat is started in Fedora 20, and the corresponding changes in the Dogtag init scripts,  Dogtag 10.1 will only be delivered from Fedora 20 upwards.  Dogtag 10.0 will continue to be delivered and supported for Fedora 18 and 19.</td>
+</tr>
+</table>
+
+<font size="+1"><b>Project Name:</b></font>
+* '''''Dogtag Certificate System 10.1'''''
+<font size="+1"><b>Releases:</b></font>
+* [11/22/2013] Dogtag Certificate Server 10.1 [32-bit & 64-bit Fedora 20]
+'''Packages'''
+* pki-core-10.1.0-1.fc20
+* pki-ra-10.1.0-1.fc20
+* pki-tps-10.1.0-1.fc20
+* dogtag-pki-10.1.0-1.fc20
+* dogtag-pki-theme-10.1.0-1.fc20
+* pki-console-10.1.0-1.fc20
+
+<font size="+1"><b>Upgrade Notes:</b></font>
+
+Upgrade from Dogtag 10.0 to Dogtag 10.1 should be seamless, with all relevant migration steps performed by upgrade scripts when the packages are installed.  Simply follow the standard procedure for upgrading from Fedora 19 to Fedora 20. [http://fedoraproject.org/wiki/Upgrading Upgrading]
+
+<font size="+1"><b>Highlights since Dogtag 10.0</b></font>
+
+This release contains the following changes since Dogtag 10.0:
+
+'''Infrastructure/ Version Changes:'''
+* pylint was added to the build scripts, and any pylint errors and warnings in the python code were fixed.  The build now fails if any new errors or warnings are generated.
+* RESTEasy was updated from version 2.3.2 to 3.0.1.  As part of this transition, some server code (the interceptors) was modified to implement JAX-RS 2.0.
+* In Fedora 20, tomcat has changed to more properly use systemd unit files to start up, rather than system V init scripts. ([https://bugzilla.redhat.com/show_bug.cgi?id=842346 Bugzilla Bug #842346 - Properly migrate tomcat to systemd])<br>As a result, new Dogtag systemd unit files (based on the tomcat unit files) were required.  This change is the primary reason Dogtag 10.1 cannot be deployed in Fedora versions < 20.
+'''New Testing Framework:'''
+A new test framework was added to the upstream git source tree.  This framework can be used to do standalone tests or as part of a continuous integration testing framework.  This framework includes:
+* QE tests are added to upstream git as part of this release. These tests use the beaker libraries to generate results and are run in a beaker test bed.
+* A mechanism for writing JUnit tests, with some sample tests.  These tests can be run through eclipse on a local test environment or run along with the QE tests on a beaker machine. Customized Suite and RunNotifier classes are provided to generate the results using beaker libraries in place of the actual JUnit result.
+* The README file in tests/dogtag provides information on how to run the tests.
+'''REST interface enhancements:'''
+* The interface has been updated to use standard HTTP return codes under various operations. Paging support has been added to most search operations. 
+* New REST interfaces have been added for managing certificate profiles on the CA.  This includes:
+** Methods to list, add, remove, edit, enable/disable profiles.  These methods are protected by ACLs that limit authorization to agents or administrators as appropriate.
+** Extensions to the pki CLI tool to perform all the above operations.
+** A new method to provide enrollment templates to end-entity users for specific profiles.  An enrollment template is a certificate request representation that contains all the required inputs for a given profile.  End entity users can list available profiles by calling GET /certrequests/profiles, and fetch an enrollment template by navigating to GET /certrequests/profiles/{id}.
+'''DRM Enhancements:'''
+* Audit logging has been added to the REST interfaces for key archival and recovery.
+* REST interface for asymmetric key retrieval provides ability to submit key recovery requests, approve them, and retrieve keys approved for recovery.
+* Transport Key rotation provides ability to gradually migrate DRM and connected CAs from a current to a new transport key.  It also provides support for simultaneous use of both transport keys.
+'''New Stand-alone DRM:'''
+* It is now possible to deploy a stand-alone DRM through pkispawn.
+* Dogtag subsystems such as a DRMs have always required the presence of a Dogtag Certificate Authority (CA) to be part of a PKI deployment. A stand-alone DRM uses an external CA to obtain its system certificates, such that the DRM can be set up without a Dogtag CA in its PKI deployment.  The DRM is not expected to communicate with any other PKI subsystems (with the exception of its clones, which will be implemented in a future release).<br>Potential users of this feature include CA-less IPA installation and storage of secrets, and possible integration with CloudKeep.
+'''New Java-Based TPS:'''
+* We have begun an effort to re-implement the TPS subsystem (which is currently written as C/C++ Apache modules) in Java.  The new tomcat-tps will run in a Tomcat server like the other Java subsystems, either within the same or in a separate Tomcat instance.<br>There are many steps in this effort, detailed below.  As of this release, steps 1,2 and the design phase of step 3 are complete.  The remaining steps are slated to be delivered in the next major release.
+*# Creation of installation/configuration code through pkispawn (either interactive or non-interactive).  In particular, a new interface has been created to automate the generation and distribution of the symmetric key that acts as a shared secret between the TKS and TPS.  Currently, this secret is generated and distributed using tkstool - which is a manual, error-prone process.
+*# Creation of new REST interface and CLI for various TPS resources and services including tokens, certificates, profiles, users, groups, self tests, configurations, and logs.
+*# Design and implementation of new TPS Web UI for administrators, operators and agents.
+*# Porting of lower level code that interacts with tokens and other subsystems.
+'''CLI improvements:'''
+*  The "pki" CLI commands have been organized according to the target of the operations: the client, the subsystems, and the security domain. The client commands provide an interface to manage client certificates. The subsystem commands provide an interface to access various services in each subsystem. The security domain commands provide an interface for managing subsystems. The old-style commands are still available for backward compatibility.
+
+<font size="+1"><b>Detailed Changes since Dogtag 10.0</b></font>
+* akoneru (31):
+** [https://fedorahosted.org/pki/ticket/316 PKI TRAC Ticket #316 Fixes for issues reported by pylint]
+*** 23cce97 Adding pylint scan to the build.
+*** 109b9b6 Fixes for issues reported by pylint.
+*** 11e7d68 Fix issues reported by pylint.
+*** 73be9e5 Fixes for issues reported by pylint.
+*** edca1ee Fixes for issues reported by pylint.
+*** 219ec9c Fixes for issues reported by pylint.
+*** 8f08b83 Fixes for issues reported by pylint.
+*** c1d4741 Applied PEP8 formatting to python files.
+*** 66c34cf Code refactored for global variables and utility classes.
+** [https://fedorahosted.org/pki/ticket/560 PKI TRAC Ticket #560 Use 'with' construct for file operations.]
+*** e21bed6 Use 'with' construct for file operations.
+** [https://fedorahosted.org/pki/ticket/562 PKI TRAC Ticket #562 Do not use sys.exit() after an error.]
+*** 3cad342 Do not use sys.exit() after an error.
+** [https://fedorahosted.org/pki/ticket/599 PKI TRAC Ticket #599 Improve pkispawn "Installation Summary" block]
+*** d81c8e9 Changes to the displayed installation summary.
+** [https://fedorahosted.org/pki/ticket/645 PKI TRAC Ticket #645 Display the admin p12 file location in the installation summary]
+*** 7e1a8b7 Minor changes in Installation Summary.
+** [https://fedorahosted.org/pki/ticket/657 PKI TRAC Ticket #657 Setup a test framework which does integration testing automatically]
+*** c75ce3c Fixes for review comments
+*** 8025dfe README file for setting up and running the tests.
+*** 224be61 Added JUnit tests upstream.
+*** b9d125a Provide compose scripts for tests.
+*** bb20c9f Add the QE tests to upstream git.
+** [https://fedorahosted.org/pki/ticket/674 PKI TRAC Ticket #674 Incorrect cert-request-review parameter name]
+*** aa52cb6 Modify output file option for cert-request-review command.
+** [https://fedorahosted.org/pki/ticket/722 PKI TRAC Ticket #722 Test framework:  Write beaker-java plugin]
+*** c75ce3c Fixes for review comments
+*** 8025dfe README file for setting up and running the tests.
+*** 224be61 Added JUnit tests upstream.
+*** b9d125a Provide compose scripts for tests.
+*** bb20c9f Add the QE tests to upstream git.
+** [https://fedorahosted.org/pki/ticket/723 PKI TRAC Ticket #723 Test framework: Write sample java tests to execute the plugin]
+*** c75ce3c Fixes for review comments
+*** 8025dfe README file for setting up and running the tests.
+*** 224be61 Added JUnit tests upstream.
+*** b9d125a Provide compose scripts for tests.
+*** bb20c9f Add the QE tests to upstream git.
+** [https://fedorahosted.org/pki/ticket/724 PKI TRAC Ticket #724 Test framework:  Move test scripts/ infrastructure to upstream git]
+*** c75ce3c Fixes for review comments
+*** 8025dfe README file for setting up and running the tests.
+*** 224be61 Added JUnit tests upstream.
+*** b9d125a Provide compose scripts for tests.
+*** bb20c9f Add the QE tests to upstream git.
+** [https://fedorahosted.org/pki/ticket/725 PKI TRAC Ticket #725Test framework:  Demonstrate and enable  end -to end testing execution from jenkins server]
+*** c75ce3c Fixes for review comments
+*** abd6142 Provide build scripts for the Java test classes.
+** [https://fedorahosted.org/pki/ticket/726 PKI TRAC Ticket #726 Updated the tests README with the CI server setup info.]
+*** 406712a Updated the tests README with the CI server setup info.
+** [https://fedorahosted.org/pki/ticket/785 PKI TRAC Ticket #785 JUnit tests should not depend on eclipse for build]
+*** c75ce3c Fixes for review comments
+*** abd6142 Provide build scripts for the Java test classes.
+** '''Additional Check-ins:'''
+*** 9c2f772 Maintain seperate scripts for task and jobxml creation.
+*** f93635b Update the runtest.sh file with the latest code.
+*** 2442de7 Minor changes to the test scripts.
+*** 6e700e5 Wrong date in %changelog in pki-core.spec
+*** f630689 Added new packages required for build in pki.core.spec.
+*** 25fded8 Minor issue - redundant import in pkispawn
+*** c1bdf93 Fixes for issues reported by pylint.
+*** 9b83091 Fix a defect in upgrade scripts.
+*** bdec940 Fixed pylint warning W0212.
+*** 0f3cc75 Minor reference fix in selinux-setup.py
+
+* alee (53):
+** [https://bugzilla.redhat.com/show_bug.cgi?id=973224 Bugzilla Bug #973224 -  resteasy-base must be split into subpackages]
+*** 5374817 Bugzilla Bug 973224 -  resteasy-base must be split into subpackages
+** [https://bugzilla.redhat.com/show_bug.cgi?id=1024445 Bugzilla Bug #1024445 - IPA admin cert is created with SHA1 signing algorithm, should be SHA256]
+*** 2e54c85 Fixed logic for setting admin cert signing algorithm
+** [https://fedorahosted.org/pki/ticket/97 PKI TRAC Ticket #97 add logging and audit logging to DRM interface]
+*** 99def30 Add audit logging for new security data operations in kra
+** [https://fedorahosted.org/pki/ticket/646 PKI TRAC Ticket #646 PKCS12Export fails on Fedora 19]
+*** 7cf2a47 Modify java-tools startup scripts to use correct JNI path
+** [https://fedorahosted.org/pki/ticket/699 PKI TRAC Ticket #699 after upgrade to f19, ca fails to start]
+*** 6841782 Fix link parsing code to remove broken symbolic links before replacing
+** [https://fedorahosted.org/pki/ticket/712 PKI TRAC Ticket #712 pki cert-find --revocationReason 1 finds certs expired for reason 1 and reason 10]
+*** a90518e Fixed filter code for revocationReason
+** [https://fedorahosted.org/pki/ticket/716 PKI TRAC Ticket #716 pki-tomcatd@pki-tomcat.service does not start when pki-tomcatd.target is started]
+*** 27ed263 Changed systemd service file so that target starts up correctly
+** [https://fedorahosted.org/pki/ticket/717 PKI TRAC Ticket #717 Proxy error while getting status when spawning CA]
+*** 04b71d1 Catch all exceptions when checking for status.
+** [https://fedorahosted.org/pki/ticket/719 PKI TRAC Ticket #719 incorrect value in CS,cfg for manager.ldif location]
+*** 8f0218b manager.ldif referenced incorrectly in CS.cfg
+** [https://fedorahosted.org/pki/ticket/727 PKI TRAC Ticket #727 Fix authentication for profile management REST API]
+*** dfbc59a fix auth and authz for Profiles REST API
+** [https://fedorahosted.org/pki/ticket/749 PKI TRAC Ticket #749 audit REST resources to confirm that they all follow the rules of the road]
+*** 89eebe6 Added checks for CertRequest and Cert Resources
+*** cbb907a Fix return values in ProfileResource
+*** 5e748a5 Modify profile resource to return correct response for create or modify 
+** [https://fedorahosted.org/pki/ticket/774 PKI TRAC Ticket #774 disable security manager or patch tomcat startup file]
+*** 252848b Revert to allowing security manager
+** [https://fedorahosted.org/pki/ticket/788 PKI TRAC Ticket #788 Spec files cleanup]
+*** 03944af Cleaned up spec files and update release number for release build
+** [https://fedorahosted.org/pki/ticket/803 PKI TRAC Ticket #803 avc generated for useradd in pkispawn scripts.]
+*** 3ce7191 Fix useradd command in pkispawn to not create avc
+** [https://fedorahosted.org/pki/ticket/805 PKI TRAC Ticket #805 migration scripts needed for 10.0-10.1 to fix perms, registry file]
+*** 24727d1 Add migration scripts to fix registry file and ownership
+** '''Additional Check-ins:'''
+*** 029bf78 fix spec typo
+*** 02dcc3b Update spec files for beta build
+*** 48fb4f1 Fix KeyRequest and Key Resources to return correct exit codes
+*** a42e510 Fixed references to /var/run and /var/lock in spec files for RA and TPS.
+*** 21da33a Fix correct ACL for profile REST interface
+*** cdbfab4 Add upgrade file for auth.properties
+*** 1b3f3bd typo in spec file
+*** 878a51a Additional fix to remove /var/run and /var/lock
+*** b568daf Remove run and lock files from pki-core for f20
+*** d042f57 Added method to modify connector
+*** 3c933d1 Changes to  TPSConnectorService based on review
+*** e9c373e Modify TKS self tests and execution to use new shared secret names
+*** 6eaf2c0 Add service to generate and retrieve a shared secret
+*** 4c17e82 Added interactive install for tomcat TPS
+*** fb32217 Upgrade script to fix JAVA_OPTS
+*** f37ae8f Workaround for resteasy context problem
+*** acee138 Added new link for resteasy dependency
+*** 6ba0908 fixing for new tomcat systemd files
+*** 8c437a7 Change interceptors to use jaxrs 2.0
+*** 4afa12c Provide enrollment template per profile
+*** 9c7e89d Add audit logging to profile interface
+*** 05ff18e Move status marker from CS.cfg to a variable.
+*** 27f602d Added TPS installation to the web based install panels for Java
+*** 7f829d6 Add TPS profile ID auxilliary object to tps users
+*** 5ecf890 Add TPS self tests
+*** 4ab7fdc Added ldif files to add VLV indexes to TPS installation
+*** 1be39b1 Move security domain session classes to correct package
+*** e6b7428 Initial code to configure a TPS in tomcat
+*** 5d5b40f Fixes for profile REST interface from code review.
+*** d4b0d0c Add exceptions to Profile REST service.
+*** ea1d7a7 Fix various issues with Profile Interface
+*** 9eb2c35 Add interfaces for managing profiles
+*** b5fd84a Add systemd build requirement to fix build failures in f19
+*** 3e1d74f Modify pkispawn to handle case where no subsystemCerts are generated
+*** e02ee21 Make sure only the master keys and certs are imported.
+*** ad7cb8e Change spec versions to 10.1.0-0.1 for 10.1 development
+
+* awnuk (16):
+** [https://bugzilla.redhat.com/show_bug.cgi?id=951501 Bugzilla Bug #951501 -  Incorrect Key Identifier displayed at Search results at DRM Agent after enabling bigIntegers for serial and request Numbers]
+*** f0f6597 correcting JavaScript inability to handle big numbers
+** [https://bugzilla.redhat.com/show_bug.cgi?id=961522 Bugzilla Bug #961522  - enrollment on Windows/IE does not set an option to allow private key export]
+*** 27ea2f4 directory and pin profile
+*** e4656ce exportable key
+** [https://bugzilla.redhat.com/show_bug.cgi?id=966189 Bugzilla Bug #966189 -  CVE-2013-1885 CVE-2013-1886 pki-tps various flaws]
+*** b3316c8 pki-tps various flaws
+** [https://fedorahosted.org/pki/ticket/439 PKI TRAC Ticket #439 RFE: REST interface for archival/recovery of asymmetric keys]
+*** 3e41320 REST interface extension
+** [https://fedorahosted.org/pki/ticket/448 PKI TRAC Ticket #448 RFE: DN consistent encoding in CSR  subject DN, cert subject DN , Issuer DN,  DirectoryString and  PrintableString or UTF8String encoding support]
+*** a80cb95 Added UTF8 to default encoding order.
+** [https://fedorahosted.org/pki/ticket/558 PKI TRAC Ticket #558 Enable Tomcat access log.]
+*** 618be8b enable tomcat access log
+** [https://fedorahosted.org/pki/ticket/571 PKI TRAC Ticket #571 Port patch allowing to include in CRLs NextUpdate calculated base on ThisUpdate]
+*** c90155c Option to include nextUpdate as an offset to thisUpdate
+** [https://fedorahosted.org/pki/ticket/607 PKI TRAC Ticket #607 Port plug-in randomizing validity]
+*** a6ae98f Randomized validity
+** [https://fedorahosted.org/pki/ticket/676 PKI TRAC Ticket #676 Update CRMFPopClient by including ability to control encoding of some subject name components.]
+*** 8c635c6 CRMFPopClient update
+** [https://fedorahosted.org/pki/ticket/677 PKI TRAC Ticket #677 Update PKCS10Client by including ability to control encoding of some subject name components.]
+*** b60f640 PKCS10Client update
+** [https://fedorahosted.org/pki/ticket/681 PKI TRAC Ticket #681 Add new profile to support CA cross signing enrollment]
+*** bc2df10 Pre-registration of CA cross signing profile
+*** 2a58ffc CA cross signing profile
+** [https://fedorahosted.org/pki/ticket/682 PKI TRAC Ticket #682 Add new profile plug-in preserving subject name with its encoding included in certificate request]
+*** b76fddf Pre-registration of UserSubjectNameConstraint plug-in
+*** 0ae2e90 UserSubjectNameConstraint plug-in
+** [https://fedorahosted.org/pki/ticket/729 PKI TRAC Ticket #729 Ability for CA to include transport certificate when submitting archival request to DRM]
+*** 2b9fcda DRM Transport Key Rotation
+** [https://fedorahosted.org/pki/ticket/730 PKI TRAC Ticket #730 Ability for DRM to detect presence of  transport certificate attribute in submitted archival request and  validate transport certificate against DRM's transport key list]
+*** 2b9fcda DRM Transport Key Rotation
+** [https://fedorahosted.org/pki/ticket/731 PKI TRAC Ticket #731 Ability for DRM to provide handling for  alternative transport key based on detected and validated transport  certificate arriving as a part of extended archival request]
+*** 2b9fcda DRM Transport Key Rotation
+
+* cfu (3):
+** [https://bugzilla.redhat.com/show_bug.cgi?id=952500 Bugzilla Bug #952500 - CMCAuth fails with error "CMCAuth: java.security.NoSuchAlgorithm]
+*** d6e987b Bug 952500 - CMCAuth fails with error "CMCAuth: java.security.NoSuchAlgorithm
+** [https://bugzilla.redhat.com/show_bug.cgi?id=986831 Bugzilla Bug #986831 - Some tools are broken for ECC with NSS token alone]
+*** 9d70b93 Bug 986831 - Some tools are broken for ECC with NSS token alone
+** [https://bugzilla.redhat.com/show_bug.cgi?id=1005025 Bugzilla Bug #1005025 - Unable to view Curve details of ECC Cert request from Agent]
+*** 4db22ab Bug 1005025 - Unable to view Curve details of ECC Cert request from Agen
+
+* edewata (106):
+** [https://bugzilla.redhat.com/show_bug.cgi?id=985111 Bugzilla Bug #985111 - Token authentication failure on RHEL]
+*** d5a63e2 Fixed token authentication problem on RHEL.
+** [https://bugzilla.redhat.com/show_bug.cgi?id=986901 Bugzilla Bug #986901 - pkispawn NullPointerException]
+*** 23ce40f Fixed NullPointerException with external CA.
+** [https://bugzilla.redhat.com/show_bug.cgi?id=1018628 Bugzilla Bug #1018628 - RHEL7 ipa-server-install abrt on java in tomcat]
+*** 3b2b7ea Fixed errors during Tomcat shutdown.
+** [https://fedorahosted.org/pki/ticket/526 PKI TRAC Ticket #526 Investigate using Tomcat for TPS subsystem]
+*** 0812c8d Added Tomcat-based TPS instance.
+** [https://fedorahosted.org/pki/ticket/582 PKI TRAC Ticket #582 Man page for pki-upgrade]
+*** f038cf0 Added man pages for upgrade tools.
+*** 4aa89a9 Cleaned up code to install man pages.
+** [https://fedorahosted.org/pki/ticket/583 PKI TRAC Ticket #583 Automatic backup and rollback on upgrade]
+*** ed2b774 Added support to backup folders during upgrade.
+*** aaf6e89 Added support for backup/restore on upgrade.
+** [https://fedorahosted.org/pki/ticket/631 PKI TRAC Ticket #631 Hard-coded server certificate nickname.]
+*** 2b1efa0 Fixed hard-coded server certificate nickname.
+** [https://fedorahosted.org/pki/ticket/652 PKI TRAC Ticket #652 Implement REST interface for TPS]
+*** f223501 Added ACL for TPS profile mapping.
+*** f02987b Added ACL for TPS selftests.
+*** 815cdd9 Added ACL for TPS connections.
+*** c694fde Added ACL for TPS configuration.
+*** b7716af Added ACL for TPS authenticators.
+*** 89d8716 Added TPS profile resource.
+*** 53ef3a1 Added audit resource.
+*** 634d615 Added selftest resource.
+*** 7c0fb95 Added TPS profile mapping resource.
+*** bcf463c Added TPS connection service implementation.
+*** 565741c Added TPS authenticator service implementation.
+*** e339952 Refactored TPS configuration resource.
+*** 5874cad Added TPS config resource.
+*** 4cc8327 Connected TPS certificate database to LDAP.
+*** 036ab19 Connected TPS activity database to LDAP.
+*** 848887d Connected token database to LDAP.
+*** 3be4905 Added TPS authenticator resource.
+*** 15e029e Added TPS connection resource.
+*** 510ace9 Added TPS certificate resource.
+*** 99c3fc9 Added subsystem group commands.
+*** d2e98fe Added TPS user CLI.
+*** ffb49f1 Added TPS activities resource.
+*** 6d99354 Added generic database.
+*** 74f60e9 Added skeleton for token services.
+** [https://fedorahosted.org/pki/ticket/669 PKI TRAC Ticket #669 Improper error message when deleting a non existing user]
+*** 66eabd9 Fixed return code for user and group services.
+** [https://fedorahosted.org/pki/ticket/701 PKI TRAC Ticket #701 Renaming CLI commands]
+*** 68897c7 Renamed CLI commands.
+*** c587da4 Reorganized CLI user commands.
+*** ccb8d71 Refactored CLI framework.
+*** 7521662 Refactored client framework.
+** [https://fedorahosted.org/pki/ticket/702 PKI TRAC Ticket #702 Split old and new TPS]
+*** 17d6be4 Moved Tomcat-based TPS to separate folder.
+** [https://fedorahosted.org/pki/ticket/739 PKI TRAC Ticket #739 ipa cert-remove-hold <non-existent cert id> returns server error]
+*** 6cadca3 Fixed error handling in DoUnrevoke servlet.
+** [https://fedorahosted.org/pki/ticket/749 PKI TRAC Ticket #749 audit REST resources to confirm that they all follow the rules of the road]
+*** 10ceea1 Fixed return code on non-existent and duplicate entries.
+*** 17a52b6 Added more null parameter checking.
+*** 014fdc8 Added null parameter checking.
+*** f74c644 Fixed find commands.
+*** 66eabd9 Fixed return code for user and group services.
+** [https://fedorahosted.org/pki/ticket/763 PKI TRAC Ticket #763 Backup tracker files during upgrade]
+*** 86ef9b6 Backup upgrade tracker.
+** [https://fedorahosted.org/pki/ticket/787 PKI TRAC Ticket #787 pki command-line tool should return 'invalid command message']
+*** 0aab0a6 Fixed CLI command parsing.
+** '''Additional Check-ins:'''
+*** b5d353f Replaced auth.properties with acl.properties.
+*** b1a187e Updated requirements for RESTEasy.
+*** 23c1fa5 Updated pki CLI man page.
+*** 94a964a Fixed client-cert-import command.
+*** 7893dac Fixed problem with key-find.
+*** 88b5bfe Added client-init command.
+*** c73890c Updated ACL and auth method mapping names.
+*** 4d1ec71 Added paging on all find commands.
+*** 9d30903 Fixed database cleanup issues.
+*** 481ee45 Removed duplicate ACL classes.
+*** f2f7f50 Renamed CLI commands.
+*** 1cbd519 Fixed problem running GroupMemberProcessor on non-CA.
+*** 812ecab Renamed Processor to CAProcessor.
+*** 5d8c611 Added mechanism to deprecate CLI commands.
+*** 64a4b12 Fixed tests dependencies.
+*** bdcfb92 Added access control for TPS token.
+*** 533029c Cleaned up CertEnrollmentRequest.
+*** 2119f1b Reorganized server packages.
+*** 7ca5adf Fixed problems finding user and group sub-resources.
+*** 0042318 Renamed client commands.
+*** 4566ce7 Reorganized PKIPrincipal.
+*** 6dc062e Refactored authentication managers.
+*** dcc0f11 Reorganized PKIRealm class.
+*** 0e625c6 Moved EnableSessionInAuthenticator script to 10.0.5.
+*** ae753b2 Fixed problem getting client object.
+*** 26f0ac0 Added CA certificate CLI.
+*** f9a4be1 Fixed user and group commands.
+*** f2a85c0 Fixed pylint issue in pkiparser.py.
+*** a4a492e Fixed CLI authentication issue.
+*** a3ac3ef Refactored CLI framework.
+*** 3567f55 Added LDAPDatabase.
+*** b5796df Fixed dependency issue on RenewableCertificateCollection.
+*** 3446e2f Fixed dependency issue on ProfilePolicy.
+*** 13de812 Fixed duplicate TPSSubsystem instance.
+*** a847bcb Reorganized TPS classes.
+*** 8c101dc Fixed pkispawn blocking during TPS deployment.
+*** 4a2880f Reorganized interceptors.
+*** eb8fa13 Fixed TPS installation problem.
+*** 0b8e4d2 Fixed pylint false positive.
+*** f999249 Enabled debug log for Tomcat-based TPS.
+*** a532695 Storing authentication info in session.
+*** dbf97df Fixed dependency issue on CMSRequest.
+*** 6f76531 Reorganized deployment tools.
+*** 4d49d7e Added option to override compose work directory.
+*** b3fad92 Reorganized server files.
+*** 55e4a3d Moved script to remove JNI_JAR_DIR to 10.0.3 folder.
+*** f5db517 Updated Java dependencies to version 1.7.
+*** 4798e98 Fixed RA and TPS dependencies on other PKI packages.
+*** 34fe36d Fixed library paths for RHEL 7.
+*** 99e5dc7 Added TPS servlet.
+*** f9277f5 Renamed CA_PORT into PKI_CA_PORT.
+*** 1bbcc9f Renamed CA_HOST into PKI_CA_HOSTNAME.
+*** f461a86 Replaced PKI_SUBSYSTEM_DIR with PKI_SUBSYSTEM_TYPE.
+*** 90d3f20 Renamed PKI_INSTANCE_ID into PKI_INSTANCE_NAME.
+*** d78d744 Renamed SERVER_NAME and PKI_MACHINE_NAME into PKI_HOSTNAME.
+*** 1d53a9d Renamed SERVER_ROOT into PKI_INSTANCE_PATH.
+*** 3e1b7bd Renamed PORT and UNSECURE_PORT into PKI_UNSECURE_PORT.
+*** 8c4d4ae Renamed SECURE_PORT into PKI_SECURE_PORT.
+*** 1e25d6e Reorganized CS.cfg.in in RA and TPS.
+*** ae94543 Removing JNI_JAR_DIR from /etc/pki/pki.conf.
+
+* jmagne (2):
+** [https://bugzilla.redhat.com/show_bug.cgi?id=963073 Bugzilla Bug #963073 - rhcs81 tps crash for CN over than 64 bytes]
+*** 0f7fb5d Fix Bug #963073 - rhcs81 tps crash for CN over than 64 bytes
+** '''Additional Check-ins:'''
+*** 9c3cc5e Patch to get rid of introduced warnings.
+
+* mharmsen (10):
+** [https://bugzilla.redhat.com/show_bug.cgi?id=971561 Bugzilla Bug #971561 - DRM - server-side key generation causes NullPointerException if a parameter is not supplied by the caller (TPS)]
+*** 596808f Bugzilla Bug #971561 - DRM - server-side key generation causes NullPointer
+** [https://bugzilla.redhat.com/show_bug.cgi?id=975939 Bugzilla Bug #975939 - RHCS 8.1: "END CERTIFICATE" tag is not on it's own line]
+*** bb911f6 Bugzilla Bug #975939 - RHCS 8.1: "END CERTIFICATE" tag is not on it's ow
+** [https://fedorahosted.org/pki/ticket/561 PKI TRAC Ticket #561 Replace subprocess.call() with subprocess.check_call()]
+*** f4d5278 converted strings to lists and applied subprocess.check_call():
+** [https://fedorahosted.org/pki/ticket/606 PKI TRAC Ticket #606 add restart / start at boot info to pkispawn man page]
+*** 5ae8e72 Updated man pages:
+** [https://fedorahosted.org/pki/ticket/610 PKI TRAC Ticket #610 Document limitation in using GUI install]
+*** 5ae8e72 Updated man pages:
+** [https://fedorahosted.org/pki/ticket/629 PKI TRAC Ticket #629 Package ownership of '/usr/share/pki/etc/' directory]
+*** 5ae8e72 Updated man pages:
+** [https://fedorahosted.org/pki/ticket/641 PKI TRAC Ticket #641 Incorrect interface labels in pkidaemon output]
+*** 1094949 TRAC Ticket #641 - Incorrect interface labels in pkidaemon output
+** [https://fedorahosted.org/pki/ticket/667 PKI TRAC Ticket #667 provide option for ca-less drm install]
+*** 47c77a6 Stand-alone DRM
+** [https://fedorahosted.org/pki/ticket/706 PKI TRAC Ticket #706 Disable SSL3_RSA_WITH_DES_CBC_SHA]
+*** 443bffb By default, disable SSL3_RSA_WITH_DES_CBC_SHA.
+** [https://fedorahosted.org/pki/ticket/707 PKI TRAC Ticket #707 Do not "require" the following pkispawn parameters for GUI-based configuration]
+*** 51920f9 TRAC Ticket #707 - Do not "require" the following pkispawn parameters fo
+** [https://fedorahosted.org/pki/ticket/760 PKI TRAC Ticket #760 Tpsclient Failure on F20 and TPS]
+*** e54785c Fix tpsclient failure
+** [https://fedorahosted.org/pki/ticket/762 PKI TRAC Ticket #762 Stand-alone DRM (cleanup tasks)]
+*** babc511 Stand-alone DRM
+
+* nkinder (2):
+** [https://fedorahosted.org/pki/ticket/755 PKI TRAC Ticket #755 Detect unescaped percent characters in deployment files]
+*** 443159f Ticket 755 - Detect unescaped percent characters in deployment files
+** [https://fedorahosted.org/pki/ticket/757 PKI TRAC Ticket #757 Allow unescaped '%' characters in deployment file password]
+*** deb3dfb Ticket 757 - Allow unescaped '%' characters in deployment file password 
+
+<font size="+1"><b>Server Platforms</b></font>
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>10.1</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 20 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 20 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>

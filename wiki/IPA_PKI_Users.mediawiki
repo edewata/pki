@@ -1,0 +1,190 @@
+= Overview =
+
+This page describes the PKI users that are used by IPA.
+
+= CA Users =
+
+== CA admin ==
+
+DN:
+* uid=admin,ou=people,o=ipaca
+
+Certificate:
+* CN=ipa-ca-agent
+
+Groups:
+* Certificate Manager Agents
+* Administrators
+* Security Domain Administrators
+* Enterprise CA Administrators
+* Enterprise KRA Administrators
+* Enterprise OCSP Administrators
+* Enterprise TKS Administrators
+* Enterprise RA Administrators
+* Enterprise TPS Administrators
+
+LDAP entry:
+
+<pre>
+dn: uid=admin,ou=people,o=ipaca
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: cmsuser
+uid: admin
+sn: admin
+cn: admin
+mail: root@localhost
+usertype: adminType
+userstate: 1
+userPassword:: e1NTSEF9eG8wRFdWVHVCbEp2RnA0ZnZGVEpJQjFYbTBiNVJnYmVNM1paV1E9PQ=
+ =
+description: 2;6;CN=Certificate Authority,O=EXAMPLE.COM;CN=ipa-ca-agent,O=EXAM
+ PLE.COM
+userCertificate:: MIIDrTCCApWgAwIBAgIBBjANBgkqhkiG9w0BAQsFADBJMScwJQYDVQQKEx5B
+ QkMuSURNLkxBQi5FTkcuQlJRLlJFREhBVC5DT00xHjAcBgNVBAMTFUNlcnRpZmljYXRlIEF1dGhvc
+ ml0eTAeFw0xNjA5MDkxNTU3MzlaFw0xODA4MzAxNTU3MzlaMEAxJzAlBgNVBAoTHkFCQy5JRE0uTE
+ FCLkVORy5CUlEuUkVESEFULkNPTTEVMBMGA1UEAxMMaXBhLWNhLWFnZW50MIIBIjANBgkqhkiG9w0
+ BAQEFAAOCAQ8AMIIBCgKCAQEA5SxaYKXOnf/4A42gffIH6G5JQvXsMAVvZUj8h7RmHks58NJaO6bC
+ I+vQjHsY6NfpxzwcabBH8l2d0trJQ6pGOgu27uBrK4top/RUUM8HTcL6lK5rEWUYDlVcaUUtHHjm2
+ 1M9zXEltH3o8/e6B5xRm3olNOnxMsWP29Efy9XBRaUa5wLAjbm+E+VlX04cn6IkDFy3M7M25H6uL9
+ jltbPZVVuP/pMMrfAUvn8YbyB8PxPo8ZjnmArvLSJOkHHE+RIU65C+l8/WLqt06f0z3MNN4Loz+mD
+ HOPIt1tge/wHk5wV03p3v0qJKhN4XPupgt7qy29XM/+gBRbkOu5YyLCiBhwIDAQABo4GoMIGlMB8G
+ A1UdIwQYMBaAFPQdAPkRQC//vZHVQxIf9KAQdzHlMFMGCCsGAQUFBwEBBEcwRTBDBggrBgEFBQcwA
+ YY3aHR0cDovL3ZtLTAxNi5hYmMuaWRtLmxhYi5lbmcuYnJxLnJlZGhhdC5jb206ODAvY2Evb2NzcD
+ AOBgNVHQ8BAf8EBAMCBPAwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMA0GCSqGSIb3DQE
+ BCwUAA4IBAQB403wT12PJwpUdeBu1vJbi2oqDt3eygMfm5g0I/yzFzHKHczLKvuhq1e3SW6rfv48a
+ PLeB4C0jYVufIkv+WlFdR+xogk7POGzus2fuDOR9ZtuD/syWGKHyfXb9Cko5BYY2ltKSCkt4iCkut
+ ylyd2dtt24cxQz/gEJkD3VRtpquNB0uzkz5RjqOzOLhMsz2IvJ1nVYZONGHa79EmtjqvLzT13DwlX
+ 8yLj781JgxgFGPly+45yGDdTfKwLNj2HHYQFh9zlSI/JHH3l9csUTA7TEAtBUJgW6psUw4/+Di1o5
+ QRu/Vb1/jVVKRrDGYK0vmgN/dNyRxKEtokp2ektZVUIYC
+</pre>
+
+== CA agent ==
+
+DN:
+* uid=ipara,ou=people,o=ipaca
+
+Certificate:
+* CN=IPA RA
+
+Groups:
+* Certificate Manager Agents
+* Registration Manager Agents
+
+LDAP entry:
+
+<pre>
+dn: uid=ipara,ou=people,o=ipaca
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: cmsuser
+uid: ipara
+sn: ipara
+cn: ipara
+usertype: agentType
+userstate: 1
+userCertificate:: MIIDpzCCAo+gAwIBAgIBBzANBgkqhkiG9w0BAQsFADBJMScwJQYDVQQKEx5B
+ QkMuSURNLkxBQi5FTkcuQlJRLlJFREhBVC5DT00xHjAcBgNVBAMTFUNlcnRpZmljYXRlIEF1dGhvc
+ ml0eTAeFw0xNjA5MDkxNTU4MjVaFw0xODA4MzAxNTU4MjVaMDoxJzAlBgNVBAoTHkFCQy5JRE0uTE
+ FCLkVORy5CUlEuUkVESEFULkNPTTEPMA0GA1UEAxMGSVBBIFJBMIIBIjANBgkqhkiG9w0BAQEFAAO
+ CAQ8AMIIBCgKCAQEAyEhU23E8CdRXxkSQ7DE5wiZimILCVN8/L6iKvyTAaiiF8qqpCHhVhFPKJUx1
+ Gomi8H43M1mavjnzKRW6oWvFH7fBoQs6x3HUvv/WvGQC2d3rbgA/wbdyl8XZDmB32BhZsBz1Vx2W6
+ LHMeDIhjYMmFjS7KqPXtGmV4tFX44wPmZrKHbwtqqgc8ljnVGH2wlezJAH+i+ze4CTM0UprNVN1iw
+ egDnv/booW8T2RGVmcOj2SF/m2h06kEMgqe6NDLjVPugE1JF2qOX5NrAq7TxwF3BDrr7tFIv65IJb
+ jyqRisPb0L+pSx3mgZIp3RYl3u4g2i861ZVZJovtZtnxLVURBGwIDAQABo4GoMIGlMB8GA1UdIwQY
+ MBaAFPQdAPkRQC//vZHVQxIf9KAQdzHlMFMGCCsGAQUFBwEBBEcwRTBDBggrBgEFBQcwAYY3aHR0c
+ DovL3ZtLTAxNi5hYmMuaWRtLmxhYi5lbmcuYnJxLnJlZGhhdC5jb206ODAvY2Evb2NzcDAOBgNVHQ
+ 8BAf8EBAMCBPAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMA0GCSqGSIb3DQEBCwUAA4I
+ BAQA+0vOcId5nLexb0WK8lVim0mfmy173w+2/hxG8OJc9s76FntkOkJgjJgjonpyXQWhJcXhvDUKR
+ 7gIlMxtQvwFERLI+tAZqAAbrDwRS72cVNZpv+Vl65MUfz6wIVfPXZmSBsfTe7udBxQWGFlVatqyyK
+ 52NBTEMjtYGMZRNiXXQoYxvy256iBkbdPcOMRbv34RKddmmJSxApm/ExYlJtQbB30i45f2housCLP
+ j/MoItjAAEM+xfavPD5T/3Q27FqX44Yg66F8Vc0AMUnvkZp6qXoyFSsY2LGf9zusk4xEtREOAvPGA
+ cljOiLAHy86a9rYx9yQ1ONOuEykK94JTrWaki
+description: 2;7;CN=Certificate Authority,O=EXAMPLE.COM;CN=IPA RA,O=EXAMPLE.CO
+ M
+</pre>
+
+== CA database user (pkidbuser) ==
+Certificate:
+* CN=CA Subsystem
+
+== CA subsystem user ==
+
+DN:
+* uid=CA-<hostname>-<port>,ou=people,o=ipaca
+
+Certificate:
+* CN=CA Subsystem
+
+Groups:
+* Subsystem Group
+
+LDAP entry:
+
+<pre>
+dn: uid=CA-server.example.com-9443,ou=people,o=ipaca
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+objectClass: cmsuser
+uid: CA-server.example.com-9443
+sn: CA-server.example.com-9443
+cn: CA-server.example.com-9443
+mail:
+usertype: agentType
+userstate: 1
+userPassword:: e1NTSEF9VFNicEJlSkFHUHY4T2gxRDNZQ2FkOHBCdG5zbXF6Zmw2T1pUa1E9PQ=
+ =
+description: 2;4;CN=Certificate Authority,O=EXAMPLE.COM;CN=CA Subsystem,O=EXAM
+ PLE.COM
+userCertificate:: MIIDrTCCApWgAwIBAgIBBDANBgkqhkiG9w0BAQsFADBJMScwJQYDVQQKEx5B
+ QkMuSURNLkxBQi5FTkcuQlJRLlJFREhBVC5DT00xHjAcBgNVBAMTFUNlcnRpZmljYXRlIEF1dGhvc
+ ml0eTAeFw0xNjA5MDkxNTU3MzZaFw0xODA4MzAxNTU3MzZaMEAxJzAlBgNVBAoTHkFCQy5JRE0uTE
+ FCLkVORy5CUlEuUkVESEFULkNPTTEVMBMGA1UEAxMMQ0EgU3Vic3lzdGVtMIIBIjANBgkqhkiG9w0
+ BAQEFAAOCAQ8AMIIBCgKCAQEA7Kn4nctR2j7nOg/p1tJGBPa1eVx9CL24/ZOhVdVOvNBw+mgiVCET
+ Y1e9EYnapkKLC6LrhHnBMKCBImAarollZtFAESGvc27Ac7vwQubbRb6Zunbe8F6yi45yA5kyyAkkD
+ cSLddZfKIw+1BxL/+ld2YtYNR6KlSBp9j26PZqXln3KBdqMVMkTpn77sCEtbjeqZsTkfaO3AvKcQd
+ 8uiQkbWf7m3tnotCmWza/RrV9yvkxdLzR+M4qiACTVFsOBpgdSeSfsL5o6ynL6k+8svDgRfUk/8fe
+ N3o/0w4phg5qFgJjtIUhNOg7avR995+B6r1ax3up4K/x0ltYKiwt4UWB1rwIDAQABo4GoMIGlMB8G
+ A1UdIwQYMBaAFPQdAPkRQC//vZHVQxIf9KAQdzHlMFMGCCsGAQUFBwEBBEcwRTBDBggrBgEFBQcwA
+ YY3aHR0cDovL3ZtLTAxNi5hYmMuaWRtLmxhYi5lbmcuYnJxLnJlZGhhdC5jb206ODAvY2Evb2NzcD
+ AOBgNVHQ8BAf8EBAMCBPAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMA0GCSqGSIb3DQE
+ BCwUAA4IBAQAMWTXVH3Q+R4VT/QGAjRckK9GQ0Fx2nWsROqzGoPbiOATNu2CVXX1kJ+T2lcTT38tl
+ DA4oehKUTHs4/dY8Ge6Cv2wUjM+NzRTjW07EgK6gQ3HnQ/r93dC8j/cI+uL4hntpZqIfQWvRId3UO
+ DrZDFMVx+NwfdkMThoDYMAUkLvd6QMW39P7k1+sGePVBG/umxHNWHEwzRGFXdqXPj+s74zi96f2bE
+ nYMd7YjtfoZzKBssbQlNpVOgfLzHXYGVchK+q9+pev5o1y2UcDj+bRVCgpG0RqUYL1ZV85rgOfvP6
+ 1xdhPJE73L6NDcurfb45MLcYxQM2KsylRrwppKCmIOMCk
+</pre>
+
+= KRA Users =
+
+== KRA admin (admin) ==
+Certificate:
+* CN=ipa-ca-agent
+
+Groups:
+* Data Recovery Manager Agents
+* Administrators
+
+== KRA agent (ipakra) ==
+Certificate:
+* CN=IPA RA
+
+Groups:
+* Data Recovery Manager Agents
+
+== CA subsystem user (CA-<hostname>-<port>) ==
+Certificate:
+* CN=CA Subsystem 
+
+Groups:
+* Trusted Managers
+
+= References =
+* [[IPA]]
+* [[IPA PKI Admin Setup]]

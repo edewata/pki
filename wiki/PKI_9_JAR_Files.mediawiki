@@ -1,0 +1,153 @@
+= Server Jar Files =
+
+The Java server owns the following jar files, in addition to a set of 3rd party jars:
+
+* Public Classes
+** /usr/lib/java/osutil.jar (from osutil rpm)
+** /usr/lib/java/symkey.jar (from symkey rpm)
+** /usr/share/java/pki/nsutil.jar (from pki-util rpm)
+** /usr/share/java/pki/cmsutil.jar (from pki-util rpm)
+** /usr/share/java/pki/certsrv.jar (from pki-common rpm)
+** /usr/share/java/pki/cms.jar (from pki-common rpm)
+
+* Private Classes
+** /usr/share/java/pki/cmscore.jar (from pki-common rpm)
+** /usr/share/java/ca.jar (from pki-ca rpm) - [/usr/share/java/pki/ca.jar for Dogtag 9.0]
+** /usr/share/java/kra.jar (from pki-kra rpm) - [/usr/share/java/pki/kra.jar for Dogtag 9.0]
+** /usr/share/java/ocsp.jar (from pki-ocsp rpm) - [/usr/share/java/pki/ocsp.jar for Dogtag 9.0]
+** /usr/share/java/tks.jar (from pki-tks rpm) - [/usr/share/java/pki/tks.jar for Dogtag 9.0]
+
+The following diagram shows how the classes are being accessed.
+
+[[Image:jars.png]]
+
+Note that cmscore is internal and it can only be accessed via the public interface certsrv.
+
+== Public Classes ==
+
+Public classes are useful to plugin developers who may want to build a new subsystem, a new authentication or other types of plugins.
+
+=== osutil.jar ===
+
+This is a low level, non server-specific java library that provides a portable API that hides the operation system specific functions. It currently only provides minior functionality to get the process id of the running server. It is a JNI library so it has a jar file and a shared object file.
+
+The following package is available in this jar file:
+
+* com.netscape.osutil.*
+
+=== symkey.jar ===
+
+This is a low level, non server-specific java library that provides functions to manage symmetric keys. TKS subsystem, which generates symmetric keys from master keys, is the only consumer of this library. 
+
+This library is built on top of JSS. It is a JNI library so it has a jar file and a shared object file. In the long run, we would like to roll this library into JSS.
+
+The following package is available in this jar file:
+
+* com.netscape.symkey.*
+
+=== nsutil.jar ===
+
+This jar file provides the basic ASN.1/DER encoding and decoding functions for all X.509 objects such as keys, certificates, certificate extensions. It is one of the two ASN.1 implementation in the PKI server. The other one is JSS. The server currently is using a both implementation. The long term plan is to migrate everything to [http://www.mozilla.org/projects/security/pki/jss/ JSS].
+
+The following package is available in this jar file:
+
+* netscape.security.*
+
+=== cmsutil.jar ===
+
+This library provides various utility functions for the PKI server in the area of crypto, http, ldap, xml, ocsp, scep.
+
+The javadoc of this component is available [http://pki.fedoraproject.org/pki/javadocs/dogtag_9/pki-util here].
+
+The following package is available in this jar file:
+
+* com.netscape.cmsutil.*
+
+=== certsrv.jar ===
+
+This jar contains the public interfaces of the server. [http://pki.fedoraproject.org/pki/javadocs/dogtag_9/pki-common/com/netscape/certsrv/apps/CMS.html CMS] is the main interface that you can access to the internal subsystems, and other facilities.
+
+The javadoc of this component is available [http://pki.fedoraproject.org/pki/javadocs/dogtag_9/pki-common here].
+
+The following package is available in this jar file:
+
+* com.netscape.certsrv.*
+
+=== cms.jar ===
+
+This jar file contains all the default plugins. A plugin is a small java class that you can register to the server via the configuration file. The server then will call your java class for specific events. By using plugins, you can integrate your business processes or logics into the server. The server supports the following plugin points:
+
+* Authentication for enrollment ([http://pki.fedoraproject.org/pki/javadocs/dogtag_9/pki-common/com/netscape/certsrv/profile/IProfileAuthenticator.html IProfileAuthenticator])
+* Access control evaluators ([http://pki.fedoraproject.org/pki/javadocs/dogtag_9/pki-common/com/netscape/certsrv/evaluators/IAccessEvaluator.html IAccessEvaluator])
+* Certificate profile ([http://pki.fedoraproject.org/pki/javadocs/dogtag_9/pki-common/com/netscape/certsrv/profile/IProfile.html IProfile])
+* Certificate/CRL Publishing ([http://pki.fedoraproject.org/pki/javadocs/dogtag_9/pki-common/com/netscape/certsrv/publish/ILdapPublisher.html IPublisher])
+* Logging ([http://pki.fedoraproject.org/pki/javadocs/dogtag_9/pki-common/com/netscape/certsrv/logging/ILogger.html ILogger])
+* Password qualifiers ([http://pki.fedoraproject.org/pki/javadocs/dogtag_9/pki-common/com/netscape/certsrv/password/IPasswordCheck.html IPasswordCheck])
+* Jobs ([http://pki.fedoraproject.org/pki/javadocs/dogtag_9/pki-common/com/netscape/certsrv/jobs/IJob.html IJob])
+* Request Listeners ([http://pki.fedoraproject.org/pki/javadocs/dogtag_9/pki-common/com/netscape/certsrv/request/IRequestListener.html IRequestListener])
+* Self Tests ([http://pki.fedoraproject.org/pki/javadocs/dogtag_9/pki-common/com/netscape/certsrv/selftests/ISelfTest.html ISelfTest])
+
+A plugin should only call into the public classes.
+
+The following package is available in this jar file:
+
+* com.netscape.cms.*
+
+== Private Classes ==
+
+The internal classes are private to the implementation and should not be used for any plugins. 
+
+=== cmscore.jar ===
+
+This jar file contain classes that builds up the internal engine of the PKI server. It has common facilities in logging, database, job management, self tests, authentication, authorization, subsystem management...etc
+
+The following package is available in this jar file:
+
+* com.netscape.cmscore.*
+
+=== ca.jar ===
+
+This jar contains the Certificate Authority subsystem specific classes.
+
+The following package is available in this jar file:
+
+* com.netscape.ca.*
+
+=== kra.jar ===
+
+This jar contains the Data Recovery Manager (or sometimes referred as Key Recovery Authority) subsystem specific classes.
+
+The following package is available in this jar file:
+
+* com.netscape.kra.*
+
+=== ocsp.jar ===
+
+This jar contains the Online Certificate Status Protocol (OCSP) subsystem specific classes.
+
+The following package is available in this jar file:
+
+* com.netscape.ocsp.*
+
+=== tks.jar ===
+
+This jar contains the Token Key Service specific classes.
+
+The following package is available in this jar file:
+
+* com.netscape.tks.*
+
+= Tool Jar Files =
+
+== cmstools.jar ==
+
+This jar file contains the classes for the Java utilities.
+
+The javadoc of this component is available [http://pki.fedoraproject.org/pki/javadocs/dogtag_9/pki-java-tools here].
+
+The following package is available in this jar file:
+
+* com.netscape.cmstools.*
+
+
+[[Category:Tech Notes]]

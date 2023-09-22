@@ -1,0 +1,128 @@
+= Configuration =
+
+* [[Tomcat JSSE Ciphers]]
+* [[Tomcat JSS Ciphers]]
+
+= Verification =
+
+Only the ciphers that are supported by the SSL implementation will actually be used. To check the ciphers actually used, use [[sslscan]].
+
+== Tomcat 8.0 ==
+
+<pre>
+$ sslscan $HOSTNAME:8443
+Version: 1.11.11
+OpenSSL 1.0.2o-fips  27 Mar 2018
+
+OpenSSL version does not support SSLv2
+SSLv2 ciphers will not be detected
+
+Connected to 127.0.0.1
+
+Testing SSL server server.example.com on port 8443 using SNI name server.example.com
+
+  TLS Fallback SCSV:
+Server supports TLS Fallback SCSV
+
+  TLS renegotiation:
+Session renegotiation not supported
+
+  TLS Compression:
+Compression disabled
+
+  Heartbleed:
+TLS 1.2 not vulnerable to heartbleed
+TLS 1.1 not vulnerable to heartbleed
+TLS 1.0 not vulnerable to heartbleed
+
+  Supported Server Cipher(s):
+Preferred TLSv1.2  128 bits  ECDHE-RSA-AES128-GCM-SHA256   Curve P-256 DHE 256
+Accepted  TLSv1.2  256 bits  ECDHE-RSA-AES256-GCM-SHA384   Curve P-256 DHE 256
+Accepted  TLSv1.2  128 bits  ECDHE-RSA-AES128-SHA          Curve P-256 DHE 256
+Accepted  TLSv1.2  128 bits  ECDHE-RSA-AES128-SHA256       Curve P-256 DHE 256
+Accepted  TLSv1.2  256 bits  ECDHE-RSA-AES256-SHA          Curve P-256 DHE 256
+Accepted  TLSv1.2  256 bits  ECDHE-RSA-AES256-SHA384       Curve P-256 DHE 256
+Accepted  TLSv1.2  128 bits  DHE-RSA-AES128-GCM-SHA256     DHE 2048 bits
+Accepted  TLSv1.2  256 bits  DHE-RSA-AES256-GCM-SHA384     DHE 2048 bits
+Accepted  TLSv1.2  128 bits  DHE-RSA-AES128-SHA            DHE 2048 bits
+Accepted  TLSv1.2  128 bits  DHE-RSA-AES128-SHA256         DHE 2048 bits
+Accepted  TLSv1.2  256 bits  DHE-RSA-AES256-SHA            DHE 2048 bits
+Accepted  TLSv1.2  256 bits  DHE-RSA-AES256-SHA256         DHE 2048 bits
+Preferred TLSv1.1  128 bits  ECDHE-RSA-AES128-SHA          Curve P-256 DHE 256
+Accepted  TLSv1.1  256 bits  ECDHE-RSA-AES256-SHA          Curve P-256 DHE 256
+Accepted  TLSv1.1  128 bits  DHE-RSA-AES128-SHA            DHE 2048 bits
+Accepted  TLSv1.1  256 bits  DHE-RSA-AES256-SHA            DHE 2048 bits
+
+  SSL Certificate:
+Signature Algorithm: sha256WithRSAEncryption
+RSA Key Strength:    2048
+
+Subject:  server.example.com
+Altnames: DNS:server.example.com
+Issuer:   CA Signing Certificate
+
+Not valid before: Jan 17 20:25:47 2019 GMT
+Not valid after:  Jan  6 20:25:47 2021 GMT
+</pre>
+
+== Tomcat 8.5 ==
+
+<pre>
+$ sslscan $HOSTNAME:8443
+Version: 1.11.11
+OpenSSL 1.0.2o-fips  27 Mar 2018
+
+OpenSSL version does not support SSLv2
+SSLv2 ciphers will not be detected
+
+Connected to 127.0.0.1
+
+Testing SSL server server.example.com on port 8443 using SNI name server.example.com
+
+  TLS Fallback SCSV:
+Server supports TLS Fallback SCSV
+
+  TLS renegotiation:
+Session renegotiation not supported
+
+  TLS Compression:
+Compression disabled
+
+  Heartbleed:
+TLS 1.2 not vulnerable to heartbleed
+TLS 1.1 not vulnerable to heartbleed
+TLS 1.0 not vulnerable to heartbleed
+
+  Supported Server Cipher(s):
+Preferred TLSv1.2  256 bits  ECDHE-RSA-AES256-GCM-SHA384   Curve P-256 DHE 256
+Accepted  TLSv1.2  256 bits  ECDHE-RSA-AES256-SHA384       Curve P-256 DHE 256
+Accepted  TLSv1.2  256 bits  ECDHE-RSA-AES256-SHA          Curve P-256 DHE 256
+Accepted  TLSv1.2  256 bits  DHE-RSA-AES256-GCM-SHA384     DHE 1024 bits
+Accepted  TLSv1.2  256 bits  DHE-RSA-AES256-SHA256         DHE 1024 bits
+Accepted  TLSv1.2  256 bits  DHE-RSA-AES256-SHA            DHE 1024 bits
+Accepted  TLSv1.2  128 bits  ECDHE-RSA-AES128-GCM-SHA256   Curve P-256 DHE 256
+Accepted  TLSv1.2  128 bits  ECDHE-RSA-AES128-SHA256       Curve P-256 DHE 256
+Accepted  TLSv1.2  128 bits  ECDHE-RSA-AES128-SHA          Curve P-256 DHE 256
+Accepted  TLSv1.2  128 bits  DHE-RSA-AES128-GCM-SHA256     DHE 1024 bits
+Accepted  TLSv1.2  128 bits  DHE-RSA-AES128-SHA256         DHE 1024 bits
+Accepted  TLSv1.2  128 bits  DHE-RSA-AES128-SHA            DHE 1024 bits
+
+  SSL Certificate:
+Signature Algorithm: sha256WithRSAEncryption
+RSA Key Strength:    2048
+
+Subject:  server.example.com
+Altnames: DNS:server.example.com
+Issuer:   CA Signing Certificate
+
+Not valid before: Jan 18 01:04:06 2019 GMT
+Not valid after:  Jan  7 01:04:06 2021 GMT
+</pre>
+
+= References =
+
+* [[Tomcat]]
+* [[OpenSSL]]
+* [https://tomcat.apache.org/tomcat-8.0-doc/config/http.html Tomcat 8.0 HTTP Connector]
+* [https://tomcat.apache.org/tomcat-8.5-doc/config/http.html Tomcat 8.5 HTTP Connector]
+* [https://superuser.com/questions/109213/how-do-i-list-the-ssl-tls-cipher-suites-a-particular-website-offers How do I list the SSL/TLS cipher suites a particular website offers?]

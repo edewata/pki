@@ -1,0 +1,71 @@
+= Installation =
+
+<pre>
+$ dnf install -y npm
+</pre>
+
+= Initialization =
+
+To create package.json interactively:
+
+<pre>
+$ npm init
+</pre>
+
+To create package.json manually:
+
+<pre>
+{
+  "name": "pki",
+  "version": "10.10.0",
+  "description": "Dogtag PKI",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dogtagpki/pki.git"
+  },
+  "author": "Dogtag PKI Team <pki-devel@redhat.com>",
+  "license": "GPLv2 and LGPLv2",
+  "bugs": {
+    "url": "https://pagure.io/dogtagpki/issues"
+  },
+  "homepage": "https://www.dogtagpki.org",
+  "dependencies": {
+    "@patternfly/patternfly": "^4.35.2"
+  }
+}
+</pre>
+
+= Installing NPM Package =
+
+<pre>
+$ npm install @patternfly/patternfly
+</pre>
+
+<pre>
+$ npm install jquery
+</pre>
+
+<pre>
+$ npm install webpack
+</pre>
+
+<pre>
+$ npm install -D webpack-cli
+</pre>
+
+= See Also =
+
+* [https://nodesource.com/blog/an-absolute-beginners-guide-to-using-npm/ An Absolute Beginner's Guide to Using npm]
+* [https://docs.npmjs.com/creating-a-package-json-file Creating a package.json file]
+* [https://flaviocopes.com/should-commit-node-modules-git/ Should you commit the node_modules folder to Git?]
+* [[PatternFly]]
+* [[JQuery]]
+* [[React]]

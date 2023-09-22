@@ -1,0 +1,187 @@
+= Using Modules =
+
+== Prerequisites ==
+
+ $ dnf install fedora-repos-modular
+
+== Listing Modules ==
+
+To list available modules:
+
+<pre>
+$ dnf module list
+</pre>
+
+== Displaying Module Info ==
+
+<pre>
+$ dnf module info <name>
+</pre>
+
+== Installing a Module ==
+
+To enable a module:
+
+ $ dnf module enable <module>:<stream>
+
+To install a module:
+
+ $ dnf module install <module>:<stream>
+
+= Development =
+
+== Prerequisites ==
+
+ $ dnf install python-qpid module-build-service
+
+== Authentication ==
+
+Make sure the browser is [https://fedoraproject.org/wiki/Infrastructure/Kerberos configured] for Kerberos.
+
+Get Kerberos ticket:
+
+<pre>
+$ kinit <username>@FEDORAPROJECT.ORG
+</pre>
+
+Become a member of mock group:
+
+<pre>
+$ sudo usermod -a -G mock <username>
+$ newgrp
+</pre>
+
+See also:
+
+* [https://docs.fedoraproject.org/fedora-project/subprojects/fesco/en-US/making-modules/building-modules-locally.html Building Fedora modules locally]
+
+== Getting Module Source ==
+
+<pre>
+$ fedpkg clone modules/<module> modules/<module>
+$ cd modules/<module>
+</pre>
+
+== Defining a Module ==
+
+See also:
+* [https://docs.fedoraproject.org/fedora-project/subprojects/fesco/en-US/making-modules/Making_Modules.html Making Modules for Fedora]
+* [https://docs.fedoraproject.org/fedora-project/subprojects/fesco/en-US/making-modules/Defining_Modules_in_Modulemd.html Defining modules in modulemd]
+* [https://fedoraproject.org/wiki/Modularity/Adding_New_Modules_and_Managing_Defaults Modularity/Adding New Modules and Managing Defaults]
+* [https://fedoraproject.org/wiki/Module:Guidelines Fedora Packaging Guidelines for Modules]
+* [https://github.com/fedora-modularity/libmodulemd/blob/master/spec.v2.yaml spec.v2.yaml]
+
+== Creating Local Build ==
+
+To create a local build:
+
+ $ fedpkg module-build-local -s platform:f28
+
+or:
+
+ $ mbs-manager build_module_locally --file <module definition> -s platform:f28
+
+To install the local module, create /etc/yum.repos.d/local.repo:
+
+<pre>
+[local]
+name=Local Repository
+baseurl=file:///home/<username>/modulebuild/builds/module-<name>-<stream>-<timestamp>/results/
+gpgcheck=0
+enabled=1
+</pre>
+
+Then execute the following:
+
+<pre>
+$ dnf module list
+$ dnf module install <name>:<stream>
+</pre>
+
+See also:
+
+* [https://docs.fedoraproject.org/fedora-project/subprojects/fesco/en-US/making-modules/building-modules-locally.html Building Fedora modules locally]
+
+== Creaeting COPR Build ==
+
+To create a COPR build:
+
+<pre>
+$ copr build-module --yaml <module definition> <repo>
+</pre>
+
+To install the module:
+
+<pre>
+$ dnf copr enable <repo>
+$ dnf module install <module>:<stream>
+</pre>
+
+See also [https://frostyx.cz/posts/how-to-build-modules-in-copr How to build modules in Copr].
+
+== Creating Official Build ==
+
+To create an official build:
+
+ $ fedpkg module-build
+
+The build taks will appear in [https://mbs.fedoraproject.org/module-build-service/1/module-builds/ Fedora's MBS] at https://mbs.fedoraproject.org/module-build-service/1/module-builds/<build ID>.
+
+To check build status:
+
+ $ fedpkg module-build-info <build ID>
+
+Wait until all components are in COMPLETE state.
+
+To cancel a build:
+
+<pre>
+$ fedpkg module-build-cancel &lt;build ID&gt;
+</pre>
+
+== Testing ==
+
+=== Option #1 ===
+
+* create a Bodhi update
+* disable auto-push to stable
+* enable updates-testing-modular
+* wait until the module is pushed to testing (~24 hr)
+
+=== Option #2 ===
+
+* submit request to sysadmin-mbs group to run a compose
+
+=== Option #3 ===
+
+To download a module from Koji:
+
+<pre>
+$ dnf install perl-ExtUtils-MakeMaker
+$ git clone https://pagure.io/moduleprovides.git
+$ cd moduleprovides
+$ perl Makefile.PL
+$ make
+$ bin/moduleprovides --name <module>
+$ bin/moduledownload --arch x86_64 '<module>:<stream>:<timestamp>:<hash>'
+</pre>
+
+Then configure dnf repo pointing to the local module.
+
+See also:
+
+* [https://pagure.io/moduleprovides moduleprovides]
+
+= References =
+
+* [[Fedora]]
+* [https://docs.pagure.org/modularity/ Fedora Modularity]
+* [https://communityblog.fedoraproject.org/modularity-dead-long-live-modularity/ Modularity is Dead, Long Live Modularity!]
+* [https://blog.samalik.com/early-module-development-with-fedora-modularity/ Early module development with Fedora Modularity]
+* [https://blog.samalik.com/package-rebuilds-in-modularity/ Package rebuilds in Modularity]
+* [https://pagure.io/modulemd modulemd]
+* [https://github.com/fedora-modularity/libmodulemd libmodulemd]
+* [https://pagure.io/fm-orchestrator The Module Build Service (MBS) for Modularity]
+* [https://lists.fedoraproject.org/archives/list/devel@lists.fedoraproject.org/thread/FPRKTPKND7DZY6JYLRQFMLULVXPA7W4G/ Ursa Major (modules in buildroot) enablement]
+* [[Fedora Packages]]
+* [[ODCS]]

@@ -1,0 +1,39 @@
+= Displaying Default Subnet =
+
+<pre>
+$ ip -4 a show dev virbr0
+4: virbr0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default qlen 1000
+    inet 192.168.124.1/24 brd 192.168.124.255 scope global virbr0
+       valid_lft forever preferred_lft forever
+</pre>
+
+or
+
+<pre>
+$ virsh --connect qemu:///system net-dumpxml default
+<network>
+  <name>default</name>
+  <uuid>c687f9f6-9302-4ca8-91b0-6c8cf9034216</uuid>
+  <forward mode='nat'>
+    <nat>
+      <port start='1024' end='65535'/>
+    </nat>
+  </forward>
+  <bridge name='virbr0' stp='on' delay='0'/>
+  <mac address='52:54:00:c1:ee:f7'/>
+  <ip address='192.168.124.1' netmask='255.255.255.0'>
+    <dhcp>
+      <range start='192.168.124.2' end='192.168.124.254'/>
+    </dhcp>
+  </ip>
+</network>
+</pre>
+
+= Displaying Storage Pool =
+
+<pre>
+$ virsh --connect qemu:///system pool-list
+ Name                 State      Autostart 
+-------------------------------------------
+ default              active     yes       
+</pre>

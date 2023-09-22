@@ -1,0 +1,17 @@
+= Overview =
+
+Supported algorithms:
+
+* MD5
+* MD2
+* SHA-1 (SHA1, SHA)
+
+= Creating Message Digest =
+
+<pre>
+MessageDigest md = MessageDigest.getInstance("SHA1");
+</pre>
+
+= References =
+
+* [[JSS Provider]]

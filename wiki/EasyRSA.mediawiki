@@ -1,0 +1,42 @@
+= Installation =
+
+ $ dnf install easy-rsa
+
+= Initialization =
+
+ $ cp /usr/share/easy-rsa/3.0.1/openssl-1.0.cnf .
+ $ /usr/share/easy-rsa/3.0.1/easyrsa init-pki
+
+= Creating CA =
+
+ $ /usr/share/easy-rsa/3.0.1/easyrsa build-ca
+
+= Generating a Certificate Request =
+
+ $ /usr/share/easy-rsa/3.0.1/easyrsa gen-req <nickname>
+
+= Displaying a Certificate Request =
+
+ $ /usr/share/easy-rsa/3.0.1/easyrsa show-req <nickname>
+
+= Issuing a Certificate =
+
+ $ /usr/share/easy-rsa/3.0.1/easyrsa sign-req server <nickname>
+
+= Displaying a Certificate =
+
+ $ /usr/share/easy-rsa/3.0.1/easyrsa show-cert <nickname>
+
+= Revoking a Certificate =
+
+ $ /usr/share/easy-rsa/3.0.1/easyrsa revoke <nickname>
+
+= Generating a CRL =
+
+ $ /usr/share/easy-rsa/3.0.1/easyrsa gen-crl
+
+= References =
+
+* [https://github.com/OpenVPN/easy-rsa easy-rsa]
+* [https://github.com/kubernetes/kubernetes/blob/master/cluster/centos/make-ca-cert.sh Kubernetes - make-ca-cert.sh]
+* [https://kubernetes.io/docs/concepts/cluster-administration/certificates/ Kubernetes - Certificates]

@@ -1,0 +1,63 @@
+= Starting a JDB Session =
+
+To start a program in JDB:
+
+<pre>
+$ jdb MyClass
+</pre>
+
+To start a program with remote debugging enabled:
+
+<pre>
+$ java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n MyClass
+</pre>
+
+To start a program with remote debugging enabled via a specific port:
+
+<pre>
+$ java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000 MyClass
+</pre>
+
+To enable remote debugging in Tomcat, edit <catalina.base>/conf/tomcat.conf as follows:
+
+<pre>
+JAVA_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000"
+</pre>
+
+To connect JDB to the program:
+
+<pre>
+$ jdb -attach 8000
+</pre>
+
+= Threads =
+
+To list threads:
+
+<pre>
+> threads
+</pre>
+
+To switch to a thread:
+
+<pre>
+> thread <ID>
+</pre>
+
+To suspend a thread:
+
+<pre>
+> suspend <ID>
+</pre>
+
+To display thread's stack:
+
+<pre>
+> where <ID>
+</pre>
+
+= See Also =
+
+* [[Debugging]]
+* [[Java]]
+* [https://docs.oracle.com/javase/8/docs/technotes/tools/unix/jdb.html jdb]

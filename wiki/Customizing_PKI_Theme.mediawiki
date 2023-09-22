@@ -1,0 +1,47 @@
+= Overview =
+
+PKI theme contains the following:
+
+* CSS files which determine the global appearance
+* image files including logo, icons, etc.
+* branding properties which determine the page title, logo link, title color, etc.
+
+The subsystem web applications in the same instance share the same theme.
+
+= Deployment =
+
+The theme is deployed in Tomcat by creating /etc/pki/<font color="red">pki-tomcat</font>/Catalina/localhost/pki.xml:
+
+<pre>
+<Context docBase="/usr/share/pki/common-ui" crossContext="true" allowLinking="true">
+    ...
+</Context>
+</pre>
+
+The '''docBase''' points to the location of the default theme folder in /usr/share/pki.
+
+= Customization =
+
+To customize the theme, copy the default theme folder into a pki folder in the instance's webapps folder:
+
+ $ cp -r /usr/share/pki/common-ui /var/lib/pki/<font color="red">pki-tomcat</font>/webapps/pki
+ $ chown -R pkiuser.pkiuser /var/lib/pki/<font color="red">pki-tomcat</font>/webapps/pki
+
+Then change the '''docBase''' to point to the custom theme folder relative from the webapps folder:
+
+ <Context docBase="pki" crossContext="true" allowLinking="true">
+     ...
+ </Context>
+
+The change will be effective immediately. There is no need to restart the server. Simply reload the browser to see the changes.
+
+= Removing Custom Theme =
+
+To remove the custom theme simply revert the docBase and delete the custom theme folder:
+
+ $ rm -rf /var/lib/pki/<font color="red">pki-tomcat</font>/webapps/pki
+
+= See Also =
+
+* [[Theme]]
+* [[Customization]]

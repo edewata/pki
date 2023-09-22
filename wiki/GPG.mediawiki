@@ -1,0 +1,5 @@
+= Decrypting GPG File =
+
+<pre>
+$ gpg -d <input> -o <output>
+</pre>

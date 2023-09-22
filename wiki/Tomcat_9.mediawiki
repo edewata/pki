@@ -1,0 +1,29 @@
+= Getting the Source Code =
+
+<pre>
+$ git clone https://github.com/apache/tomcat.git
+</pre>
+
+= Installation =
+
+Tomcat 9 is available from [https://copr.fedorainfracloud.org/coprs/csutherl/tomcat/ csutherl/tomcat] COPR repository.
+
+<pre>
+$ dnf copr enable csutherl/tomcat
+$ dnf install tomcat
+</pre>
+
+= Creating COPR Build =
+
+== Building from Source Repository ==
+
+* Source Type: Build from an SCM repository
+* SCM type: git
+* Clone URL: https://github.com/csutherl/tomcat-dev-rpm
+* Committish: tomcat-9.0.x
+* Build SRPM with: tito_test
+
+= See Also =
+
+* [[Tomcat]]
+* [https://github.com/apache/tomcat/ Tomcat GitHub Repository]

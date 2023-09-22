@@ -1,0 +1,56 @@
+= Roles =
+
+OS administrator:
+* allowed to access the server machine locally
+* belongs to super-user group
+
+PKI administrator:
+* allowed to access the server machine locally
+* belongs to pkiuser group
+* not allowed to access audit logs
+
+PKI auditors:
+* not allowed to access the server machine locally
+* allowed to access audit logs remotely via CLI/UI
+
+= Configuration Files =
+
+<pre>
+drwxrwx--- pkiuser pkiuser /etc/pki/pki-tomcat
+-rw-rw---- pkiuser.pkiuser /etc/pki/pki-tomcat/*
+</pre>
+
+Notes:
+* accessible by pkiuser user and group
+* not accessible by others
+
+= NSS Database =
+
+<pre>
+drwxrwx--- pkiuser pkiuser /etc/pki/pki-tomcat/alias
+-rw------- pkiuser pkiuser /etc/pki/pki-tomcat/alias/*
+</pre>
+
+Notes:
+* the folder is accessible by pkiuser user and group, but not others
+* the files are only accessible by pkuser user, but not the group or others
+
+= Audit Logs =
+
+<pre>
+drwx------ pkiuser.pkiuser /var/log/pki/pki-tomcat/ca/signedAudit
+-rw------- pkiuser.pkiuser /var/log/pki/pki-tomcat/ca/signedAudit/*
+drwx------ pkiuser.pkiuser /var/log/pki/pki-tomcat/kra/signedAudit
+-rw------- pkiuser.pkiuser /var/log/pki/pki-tomcat/kra/signedAudit/*
+drwx------ pkiuser.pkiuser /var/log/pki/pki-tomcat/ocsp/signedAudit
+-rw------- pkiuser.pkiuser /var/log/pki/pki-tomcat/ocsp/signedAudit/*
+drwx------ pkiuser.pkiuser /var/log/pki/pki-tomcat/tks/signedAudit
+-rw------- pkiuser.pkiuser /var/log/pki/pki-tomcat/tks/signedAudit/*
+drwx------ pkiuser.pkiuser /var/log/pki/pki-tomcat/tps/signedAudit
+-rw------- pkiuser.pkiuser /var/log/pki/pki-tomcat/tps/signedAudit/*
+</pre>
+
+Notes:
+* accessible by pkiuser user
+* not accessible pkiuser group and others
+* PKI auditors can accesss via CLI/UI since the server is running as pkiuser user

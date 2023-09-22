@@ -1,0 +1,295 @@
+== Why Have A Coding Style? ==
+
+=== For easier maintenance ===
+
+If you're merging changes from a patch it's much easier if everyone is using the same coding style.  This isn't the reality for a lot of our code, but we're trying to get to the point where most of it uses the same style.
+
+=== Improved readability ===
+
+Remember, code isn't just for compilers, it's for people, too.  If it wasn't for people, we would all be programming in assembly.  Coding style and consistency mean that if you go from one part of the code to another you don't spend time having to re-adjust from one style to another.  Blocks are consistent and readable and the flow of the code is apparent.  Coding style adds value for people who have to read your code after you've been hit by a bus.  Remember that.
+
+== General Rules ==
+
+* All source files should include a copy of the license.
+* Space after keywords
+* Curly braces on new line following a class.
+* Curly braces on new line following a method.
+* Curly braces on same line as if/while/switch.
+* All code should be peer reviewed before being checked in.
+
+=== Naming Conventions ===
+
+'''Package Names'''
+
+* Package names should be single lowercase words.
+* Dogtag Certificate System-specific packages should be sub-packages of "com.netscape.certsrv".
+
+'''Interface Names'''
+
+* Interface names should begin with "I". For example, IConfigStore.
+
+'''Exception Names'''
+
+* Exceptions should have their own hierarchy in each certificate server subsystem. (This implies that each subsystem should define a new exception that extends the base exception ECSException).
+
+'''Class Names'''
+
+* Concrete classes should use natural descriptive names, begin with a capital, and have mixed case. For example, FooBarReader.
+
+'''Member Function Names'''
+
+* Method ("member function") names should begin with a lowercase letter with each subsequent new word in uppercase, and subsequent letters in each word in lower case.
+* Methods for debug-only implementations should begin with "debug".
+* Static methods should begin with a capital letter with each subsequent new word in uppercase, and subsequent letters in each word in lower case.
+
+    public class MyClass
+    {
+        void doSomethingNeat(int aValue);
+        void debugDumpToScreen();
+        static void SomeClassMethod(int aValue);
+    }
+
+'''Component Factory Names'''
+
+A component factory is a public class that implements only static methods.  These static methods are "Factory functions" or "component constructors".  Factory class names should include the word "Factory".  Factory method names should start with the word "Make." For example:
+
+    public class WidgetFactory
+    {
+        static Button MakeButton(int aButtonType);
+        static ListBox MakeListBox();
+    }
+
+'''Function Naming Patterns'''
+
+* Get and set methods should begin with "get" / "set" and return the appropriate object type.
+* Boolean get methods should use "is" or "can" as a prefix, such as "isUndoable()" rather than "getUndoable()".
+
+'''Constants'''
+
+* Constants will use all uppercase and will have words separated by underscores.
+
+'''General Varibles and Paramters Names'''
+
+* Variables and parameters will begin with a lower case, and have mixed case. For example, fooBarReader.
+* Member variables should begin with "m". For example, mMemberVariable.
+
+=== Constants ===
+
+Constants should be used when the same values needs to used in several places, and the actual values is either arbitrary or subject to possible
+change.  For example, if in a number of places you are using buffers, and you expect to try tuning the buffer size for best performance, then
+use a constant because you expect to change the value.  Another example is exception ids where the value itself does not matter, and the constant identifier is far more mnemonic and readable.  Constants should not be used for values that you know will be referenced only once (e.g. ID_FOR_EXCEPTION_THIS_METHOD_THROWS) or for values that are not (reasonably) expected to change (e.g. NUMBER_OF_SUPREME_COURT_JUSTICES,
+or NUMBER_OF_DAYS_IN_WEEK).  If you think the calculation needs clarification, include this information in comments, but adding constant identifies in some cases simply slows the compiler and makes the code harder to read.  This is a really tough judgement call, so think carefully.
+
+=== Java Grammar ===
+
+* Wherever appropriate, avoid code that embeds many operations in a single line.  For example, avoid:
+
+    someObject.doThis( i++, otherObject.someField.doThat(), x?y:z );
+
+This kind of code is error prone, difficult to decipher, and hard to maintain.
+
+== Classes ==
+
+* classes should have the following form:
+
+    public class MyClass
+    {
+        ...
+    }
+
+'''NOT''' like this:
+
+    public class MyClass {
+        ...
+    }
+
+== Methods ==
+
+'''Method Orderings'''
+
+The methods in a class should be grouped, and ordered in the following format:
+
+* Constructor
+* finalizer (Destructor)
+* public methods
+* protected methods
+* private methods
+* debugging methods
+
+
+Each group of methods can be optionally attached with a comment block in addition to individual method comments.  For example:
+
+    /* =======================================================
+     * CONSTRUCTOR METHODS (OPTIONAL)
+     * =======================================================
+     */
+    
+    /*
+     * Constructs a certificate server
+     */
+    
+    public CertificateServer()
+    {
+        ...
+    }
+
+== Statements ==
+
+* '''If / Else'''
+
+Place the IF keyword and conditional expression on the same line. Always use the braces around the statement block, even if it is only one line.  Put the starting brace after the expression on the same line. If you have an else, put the closing brace, the else, and the opening brace on the same line.
+
+    if (expression) {
+        statement;
+    } else {
+        statement;
+    }
+
+* '''WHILE'''
+
+The WHILE construct uses the same layout format as the IF construct.  The WHILE keyword should appear on its own line, immediately followed by the conditional expression, and finally by the opening brace. Always use braces, even if the body is only a single line.  Indent the body 4 spaces.
+
+    while (expression) {
+        statement;
+    }
+
+    do (expression) {
+        statement;
+    } while (expression);
+
+* '''SWITCH'''
+
+The SWITCH construct uses the same layout format as the IF construct.  The SWITCH keyword should appear on its own line, immediately followed by its test expression and then the opening brace. The case expressions may be indented, but need not be.  The lines between the case expression should be indented 4 spaces.  If possible, SWITCH constructs should always contain a "default" condition.
+
+    switch (expression) {
+    case n:
+        statement;
+        break;
+    default:&nbsp; //always add the default case
+        statement;
+        break;
+    }
+
+* '''Try/Catch/Finally'''
+
+The try/catch construct is similar to the others.  The TRY keyword should appear on its own line; followed by the open brace on the same line; followed by the statement body; the close brace should be on the same line with the CATCH keyword.  Any number of CATCH phrases are next consisting of the closing brace, the CATCH keyword and the exception expression, the opening brace; followed by the CATCH body; followed by the close brace.  The FINALLY clause is the same as a CATCH.
+
+    try {
+        statement;
+    } catch (expression1) {
+        statement;
+    } catch (expression2) {
+        statement;
+    } finally {
+        statement;
+    }
+
+== Comments and Documentation ==
+
+'''Commenting Code'''
+
+* Either C-style comments (/* */), or C++-style comments (//) may be used within Java programs.  If a change is being made to an existing class which uses one particular style exclusively, please continue to use this comment style for consistency.
+* All interfaces and public classes should have JavaDoc comments. Here are some guidelines:
+** Describe the class and what it is expected to do.  This is the most important doc.
+** Link in any notable subclasses.
+** Write javadoc descriptions of the methods.  Include a short description of each parameter.
+** Document the instance and static variables.</LI>
+** DO NOT write "content free help", (e.g. - a comment that simply reiterates the name of the function, or the return type, is worse than no comment at all).  Leave the comment empty if you can not add anything more than the method name and/or return type.
+** See the [http://java.sun.com/j2se/1.5.0/docs/tooldocs/solaris/javadoc.html "Javadoc API"] page for more information.
+
+'''Method Documentation'''
+
+The following standard has been established for the documentation of methods and functions.  Optional items are to be included only where applicable.  A complete description of each section in the routine documentation follows.
+
+The header is designed to be easy to use.  Many items are optional, and may be omitted where they are not applicable.  Each line item begins with an asterisk, and ends with blank space.  You do not place an asterisk next to each line in a multi-line component, only the topmost, next to the title.  All subsequent lines in multi-line component are to be indented so that they line up vertically with the previous line.
+
+    /**
+     * &lt;Detailed description of method.&gt;
+     *
+     * @param      &lt;Description of each parameter&gt;
+     * @return     &lt;explain each return type&gt;
+     * @exception  &lt;explain each exception&gt;
+     * @author     &lt;your name&gt;   &lt;06-13-07  3:57pm&gt;
+     **/
+
+Here are a list of points that you may want to cover when writing the description of the method:
+
+* intent of method
+* pre and post conditions
+* side effects
+* dependencies
+* implementation notes
+* who should be calling this method
+* whether the method should or should not be overridden
+* where to invoke super when overriding control flow or state dependencies that need to exist before calling this method.
+
+== Indentation, Braces, and Parentheses ==
+
+'''Line Spacing'''
+
+* Try to keep lines 80 characters or less.
+* Indentation is 4 spaces.
+* No tabs, use spaces. Your editor should take care of most of this but in patches tabs stick out like sore thumbs. 
+
+'''Braces'''
+
+For classes, the starting brace should be placed on the next line aligned with the class.  The ending brace must be on a separate line and aligned with starting brace of the class.
+
+For methods within classes, the starting brace should be placed on the next line aligned with the method.  The ending brace must be on a separate line and aligned with starting brace of the method.
+
+For conditionals, loops, and similar constructs, the starting brace should be placed at the end of the conditional, loop, etc.  The ending brace must be on a separate line and aligned with the conditional, loop, etc.
+
+Braces should always be used, even when they encapsulate a single line of code.
+
+We give some options below to accommodate the vast majority of programmer's styles.  HOWEVER, be consistent!  When you pick a style, stick to it.  When editing another person's code, use your own judgement.  As a default position, mimic the style of the coder if you are just changing a small amount of code within some existing function.  Use whatever style you feel appropriate when writing new methods.
+
+'''Parentheses'''
+
+Parentheses are recommend for Boolean expressions to ensure proper evaluation:
+
+    if((( someValue &lt; foo( theParm )) &amp;&amp; anotherValue ) || todayIsMyBirthday );
+
+TIP: Place constants on the left side of your expressions; assignment, boolean, and otherwise. This technique can catch assignment (versus equality) errors, as well as promote constant factoring for poor quality compilers.
+
+This is the preferred way to write expressions, though (especially in Java where mistakes are generally caught by the compiler) the "traditional" method where constants are on the right side is acceptable.
+
+== Debugging ==
+
+# Read about the precedence order of operators in Java.  For example, see this  [http://java.sun.com/docs/books/tutorial/java/nutsandbolts/operators.html "Operators"] document.
+# Read about abnormal exception handling in Java.  For example, see this [http://java.sun.com/docs/books/jls/second_edition/html/exceptions.doc.html "Exceptions"] document.
+# Make sure ''every'' path of execution through your code has been thoroughly tested.  Try actually stepping through each line!  While you're hard at work testing your code, be sure to throw invalid inputs at every public interface you provide. The last thing we want to do is crash because ''your'' routine didn't handle invalid inputs from ''ours''.
+# Calculate comparison values once; reuse them often.
+# Avoid global variables since they can wreak havoc with the pre-fetch instruction queue.
+
+
+It is our policy to produce code that can test itself to the greatest extent possible.  To that end, we encourage the use of three debugging techniques:
+
+* asserts,
+* pre/post conditions, and
+* self testing methods.
+
+''1. Asserts''
+
+It is highly recommended that assert methods (warnings/errors) be used to aid in debugging, especially to verify assumptions made in code. This
+will be the technique used for reporting run-time errors and warnings. See [http://java.sun.com/j2se/1.4.2/docs/guide/lang/assert.html "Programming with Assertions"] for details.
+
+''2. Pre and Post Conditions''
+
+In order to bulletproof your code, you should use asserts to test all boundary conditions. You aren't doing anyone any favors by "defensive" programming practices that allow clients of your code to make improper calls.  In other words, it is better to blow up (in debug builds) if you are given bad data than to try to "fix" the data and therefore hide bugs.
+
+    String copyString(String aNewString)
+    {
+        Assert.PreCondition( NULL != aNewString, "Null string given" );
+        ...
+        Assert.PostCondition( fSelfString.length() >= aNewString.length(), "lengths don't match after copy." );
+    }
+
+We do not want debug code to be included in release builds. Therefore, all assertions are removed by the compiler (the java equivalent of #defines) by flipping the debug flag in the Assert class.
+
+''3. SelfTest Methods''
+
+Each package will include a SelfTest class.  This class should have routines to thoroughly unit test every class in the package.  If appropriate, the SelfTest class may also contain methods for integration testing between the classes in this package, and between the classes in this package and their dependancies in other packages.
+
+Here is the rule.  When you design your class, you should design its unit test.  When you design your package, you should design your
+integration test.  You are NOT done with the implementation of a class until its unit test is implemented and can be run successfully.  You
+are NOT done with your package implementation until all unit test are coded and run successfully, and the integration tests (if appropriate) are coded and run successfully.

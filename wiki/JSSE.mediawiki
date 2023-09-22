@@ -1,0 +1,87 @@
+= Generating Client Certificate =
+
+To generate client certificate:
+
+<pre>
+$ keytool -genkey \
+    -keystore client-cert.jks \
+    -storepass Secret.123 \
+    -keyalg RSA \
+    -keypass Secret.123 \
+    -alias client \
+    -dname "UID=testuser,O=EXAMPLE"
+</pre>
+
+To export client certificate:
+
+<pre>
+$ keytool -export \
+    -keystore client-cert.jks \
+    -storepass Secret.123 \
+    -alias client \
+    -rfc \
+    -file client.crt
+</pre>
+
+To trust client certificate:
+
+<pre>
+$ keytool -import \
+    -keystore server-trust.jks \
+    -storepass Secret.123 \
+    -alias client \
+    -file client.crt
+</pre>
+
+= Generating Server Certificate =
+
+<pre>
+$ keytool -genkey \
+    -keystore server-cert.jks \
+    -storepass Secret.123 \
+    -keyalg RSA \
+    -keypass Secret.123 \
+    -alias server \
+    -dname "CN=$HOSTNAME,O=EXAMPLE"
+</pre>
+
+To export server certificate:
+
+<pre>
+$ keytool -export \
+    -keystore server-cert.jks \
+    -storepass Secret.123 \
+    -alias server \
+    -rfc \
+    -file server.crt
+</pre>
+
+To trust server certificate:
+
+<pre>
+$ keytool -import \
+    -keystore client-trust.jks \
+    -storepass Secret.123 \
+    -alias server \
+    -file server.crt
+</pre>
+
+= Debugging =
+
+To debug JSSE, set the following Java system property:
+
+* javax.net.debug: all
+
+To debug JSSE in Tomcat, set the following variable in /etc/sysconfig/<service>:
+
+<pre>
+JAVA_OPTS="-Djavax.net.debug=all"
+</pre>
+
+= References =
+
+* [http://openjdk.java.net/jeps/332 JEP 332: Transport Layer Security (TLS) 1.3]
+* [https://bugs.java.com/view_bug.do?bug_id=8202625 JDK-8202625 : TLS 1.3 Implementation]
+* [https://github.com/dogtagpki/jss/wiki JSS]
+* [https://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide.html Java Secure Socket Extension (JSSE) Reference Guide]
+* [[keytool]]

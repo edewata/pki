@@ -1,0 +1,49 @@
+= Overview =
+
+Based on a meeting on 11/6/2012, we will reduce the number of packages from 16 to 3, and centralized what needs to be done
+to customize the UI.  We will provide an option for a UI-less server - and we will remove the
+rather noisome ipa-theme package.
+
+== Packaging ==
+
+The dogtag-pki-theme will consist of two packages:
+* dogtag-pki-server-theme : which will consist of all image files, css files and properties files which contain wording for the templates for all the subsystems.
+* dogtag-pki-console-theme: which contains whatever console currently contains (images etc.)
+
+The redhat-pki-theme will consist of two similar packages:
+* redhat-pki-server-theme 
+* redhat-pki-console-theme
+
+The *-pki-common-theme is being replaced by *-pki-server-theme.
+
+== Templates ==
+
+The template files for each subsystem will be cleaned up such that all product references, colors etc. will 
+be replaced by references in the properties files and css files delivered in one of the *-pki-server-theme packages.
+They will be placed in the relevant pki-ca, pki-kra .. rpms.  Once this happens, the packages *-pki-ca-ui, *-pki-ra-ui,
+etc. can be obsoleted. That eliminates 12 packages.
+
+== CSS and Images ==
+
+pkispawn will be modified to copy the images and css files from *-pki-common-theme to <instance>/webapps/pki.
+It will deliver the template files to <instance>/webapps/{ca-ui|kra-ui|...}  There will also be a config
+option for pkispawn pki_install_ui, which will default to true, which determines whether the above copied take
+place.
+
+== Tools ==
+
+A command line tool will be provided to copy the relevant UI files/ or remove them as needed for
+debugging purposes.
+
+== IPA ==
+
+The ipa-theme rpm will no longer be needed and can be obsoleted.
+
+= To Do =
+
+* Move CSS files to dogtag-pki-server-theme, and update references and pkispawn accordingly.
+* Clean up template files to include text in properties files in dogtag-pki-server-theme.
+* Convert colors settings into CSS classes.
+* Modify pkispawn to deliver UI pieces to webapps/ui and webapps/ca-ui etc. 
+* Add pkispawn option to not copy the UI pieces (gifs, templates etc). Test this with IPA and confirm that nothing breaks.
+* Create command line tool to add/ remove UI files.

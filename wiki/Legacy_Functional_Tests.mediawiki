@@ -1,0 +1,73 @@
+= Overview =
+
+Current functional tests are stored in [https://github.com/dogtagpki/pki/tree/master/tests/dogtag tests/dogtag] folder.
+
+= Shell Tests =
+
+The shell-based tests are available [https://github.com/dogtagpki/pki/tree/master/tests/dogtag/acceptance here].
+
+= Java Tests =
+
+Java-based tests are available [https://github.com/dogtagpki/pki/tree/master/tests/dogtag/dev_java_tests here].
+
+== Setting up the test environment ==
+
+A new DS instance, to be used by the CA instance for
+which the tests are run, can be created by running the following
+command:
+
+ $ setup-ds.pl --silent --\
+     General.FullMachineName=$HOSTNAME\
+     General.SuiteSpotUserID=dirsrv\
+     General.SuiteSpotGroup=dirsrv\
+     slapd.ServerPort=389\
+     slapd.ServerIdentifier=pki-tomcat\
+     slapd.Suffix=dc=example,dc=com\
+     slapd.RootDN="cn=Directory Manager"\
+     slapd.RootDNPwd=Secret.123
+
+Then a CA instance can be created using the deploment configuration
+file tests/dogtag/conf/deploy.cfg with the command:
+
+ $ pkispawn -s CA -f deploy.cfg
+
+The ca_admin_cert.p12 file has to be imported into an NSS DB to be used
+for authentication in the tests.
+
+Since pkispawn can only be run as root user, the ca_admin_cert.p12
+file is created in /root/.dogtag/pki-tomcat/. The root user can run
+the following commands to make it available to a non-root user.
+
+ $ cp ~/.dogtag/pki-tomcat/ca_admin_cert.p12 /tmp
+ $ chmod 777 /tmp/ca_admin_cert.p12
+
+Now the following commands can be executed by non-root user to import the cert PKCS12 file into a local NSS DB.
+
+ $ pki -d /tmp/nssdb -c Secret.123 client-init
+ $ pki -d /tmp/nssdb -c Secret.123 pkcs12-import --pkcs12-file /tmp/ca_admin_cert.p12 --pkcs12-password Secret.123
+
+Any the changes during the initial setup have to be updated in the
+tests/dogtag/conf/test.cfg. (Used by the tests)
+With all the setting above mentioned the tests will run successfully.
+
+== Running the tests ==
+
+The tests can be either run individually or as as part of a suite in Eclipse.
+To run the tests as a suite, Open BeakerTestSuite and run as JUnit
+test.
+A suite is a test runner which executes all the tests added to it
+using the @SuiteClasses tag.
+
+A customized suite, PKITestSuite, is used to provide additional
+functionality when the tests are run on a beaker test machine.
+
+To run the tests individually(a class like CATestJunit),
+just run the class as a JUnitTest.
+
+= Python Test =
+
+Python-based tests are available [https://github.com/dogtagpki/pki/tree/master/tests/dogtag/pytest here] and [https://github.com/dogtagpki/pki/tree/master/tests/python here].
+
+= References =
+
+* [[Functional Tests]]

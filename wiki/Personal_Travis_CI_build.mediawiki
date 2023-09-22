@@ -1,0 +1,57 @@
+= Overview =
+
+PKI project uses [https://travis-ci.org/dogtagpki/pki Travis CI] for continuous integration service. When a patch is pushed to the [https://github.com/dogtagpki/pki main repository], the CI service will automatically generate a new build and run a set of basic tests. The process normally takes approximately 25 minutes to complete.
+
+It is advised that each contributor sets up a personal Travis CI account to run the build and test before pushing a patch to the main PKI repository. To create a personal Travis CI account go to https://travis-ci.org.
+
+'''Note:''' https://travis-ci.com is a paid-service for private projects while https://travis-ci.org is free for open source projects.
+
+= Setting Up Personal Travis CI =
+
+1. Fork [https://github.com/dogtagpki/pki PKI project] (i.e. dogtagpki/pki) into your GitHub account (e.g. <username>/pki) by clicking the Fork button on the top right of the page.
+
+2. Add the forked repository by clicking the '''+''' sign next to '''My Repositories'''.
+
+[[File:travis_2.png]]
+
+3. Select the forked repository.
+
+[[File:travis_4.png]]
+
+If necessary, click on '''Sync projects from GitHub''' or '''Sync account''' on the top right of the page to refresh the list of repositories.
+
+4. In your forked project, go to '''Settings''' -> '''Integration & services''', verify that '''Travis CI''' appears under '''Services'''.
+
+[[File:travis_5.png|500px]]
+
+= Configuring Local Repository =
+
+Add the forked repository into your local Git repository:
+
+ $ git remote add personal https://github.com/<username>/pki.git
+
+Verify that the repository is added properly:
+
+<pre class="cli-demo">
+$ <span class="cli-demo-input">git remote -v</span> 
+gerrit	ssh://SilleBille@review.gerrithub.io:29418/dogtagpki/pki (fetch)
+gerrit	ssh://SilleBille@review.gerrithub.io:29418/dogtagpki/pki (push)
+origin	https://github.com/dogtagpki/pki.git (fetch)
+origin	https://github.com/dogtagpki/pki.git (push)
+personal	https://github.com/SilleBille/pki.git (fetch)
+personal	https://github.com/SilleBille/pki.git (push)
+$ </pre>
+
+= Running Personal Travis CI =
+
+To run the personal Travis CI, commit your changes in the local Git repository.
+
+Then push your changes to your personal GitHub repository:
+
+ $ git push personal master
+
+Verify the result in your [https://travis-ci.org/ Travis CI account].
+
+= References =
+
+* [[Travis CI]]

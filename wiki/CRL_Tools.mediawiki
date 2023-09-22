@@ -1,0 +1,50 @@
+= Displaying CRL Data =
+
+<pre>
+$ openssl crl -inform DER -text -in MasterCRL-YYMMDD-HHMMSS.der
+Certificate Revocation List (CRL):
+        Version 2 (0x1)
+    Signature Algorithm: sha256WithRSAEncryption
+        Issuer: /O=EXAMPLE/CN=CA Signing Certificate
+        Last Update: Jul 20 15:04:57 2016 GMT
+        Next Update: Jul 20 19:00:00 2016 GMT
+        CRL extensions:
+            X509v3 Authority Key Identifier:
+                keyid:D0:3A:3B:35:14:8D:5D:DF:DD:4F:17:18:B0:13:F5:FD:39:D5:2C:15
+
+            X509v3 CRL Number:
+                101
+No Revoked Certificates.
+    Signature Algorithm: sha256WithRSAEncryption
+         53:2b:b0:a1:94:32:6a:b9:45:24:b2:b5:03:27:0a:fe:9c:37:
+         fc:62:18:80:18:a8:20:62:62:d6:65:7b:88:3d:90:d3:2c:b7:
+         c1:e9:33:96:28:79:ce:9a:1b:98:1a:36:d3:ea:b6:ed:57:91:
+         92:e2:4b:68:d5:84:f1:a0:16:df:2e:8f:b0:37:de:fa:0f:a7:
+         24:ea:c5:d6:39:3e:8e:18:b4:c3:fb:2d:3c:99:04:06:a3:87:
+         0c:be:72:35:bd:73:ef:d7:9e:55:6a:8a:5a:d0:06:dc:f5:ab:
+         dd:ec:76:71:9f:09:3a:65:4c:49:4d:4e:4e:35:dc:74:20:3e:
+         15:df:ed:c7:df:9e:59:f3:3b:8d:ae:d7:b6:82:90:3b:01:14:
+         40:32:79:79:17:ab:58:fb:63:34:6a:6e:17:f9:15:26:fe:3f:
+         f2:83:66:bc:6e:4f:18:eb:de:a8:69:0f:d9:83:28:85:c5:0a:
+         c0:23:5a:1b:74:4f:69:e4:cd:29:03:4c:b9:66:a9:24:40:d5:
+         c3:70:8f:bc:0f:5d:b4:c8:36:a0:92:48:90:8c:19:3d:76:05:
+         46:cb:06:54:2c:46:83:82:51:87:28:eb:20:75:71:27:ee:37:
+         36:d0:b2:54:24:ec:b2:57:e0:79:ed:0e:54:4e:62:03:9a:a2:
+         31:6a:fc:19
+-----BEGIN X509 CRL-----
+MIIBrTCBlgIBATANBgkqhkiG9w0BAQsFADAzMRAwDgYDVQQKDAdFWEFNUExFMR8w
+HQYDVQQDDBZDQSBTaWduaW5nIENlcnRpZmljYXRlFw0xNjA3MjAxNTA0NTdaFw0x
+NjA3MjAxOTAwMDBaoC8wLTAfBgNVHSMEGDAWgBTQOjs1FI1d391PFxiwE/X9OdUs
+FTAKBgNVHRQEAwIBZTANBgkqhkiG9w0BAQsFAAOCAQEAUyuwoZQyarlFJLK1AycK
+/pw3/GIYgBioIGJi1mV7iD2Q0yy3wekzlih5zpobmBo20+q27VeRkuJLaNWE8aAW
+3y6PsDfe+g+nJOrF1jk+jhi0w/stPJkEBqOHDL5yNb1z79eeVWqKWtAG3PWr3ex2
+cZ8JOmVMSU1OTjXcdCA+Fd/tx9+eWfM7ja7XtoKQOwEUQDJ5eRerWPtjNGpuF/kV
+Jv4/8oNmvG5PGOveqGkP2YMohcUKwCNaG3RPaeTNKQNMuWapJEDVw3CPvA9dtMg2
+oJJIkIwZPXYFRssGVCxGg4JRhyjrIHVxJ+43NtCyVCTsslfgee0OVE5iA5qiMWr8
+GQ==
+-----END X509 CRL-----
+</pre>
+
+= References =
+
+*[[CRL]]

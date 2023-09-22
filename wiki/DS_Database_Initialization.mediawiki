@@ -1,0 +1,68 @@
+= Overview =
+
+This page describes the process to import the initial data into DS database.
+
+= Automated Procedure =
+
+The pkispawn will automatically import the initial data during deployment.
+
+By default the schema is not replicated, so it will be imported manually:
+<pre>
+pki_clone_replicate_schema=False
+</pre>
+
+= Manual Procedure =
+
+== Importing schema ==
+
+<pre>
+$ ldapmodify -x -D "cn=Directory Manager" -w Secret.123 -f /usr/share/pki/server/conf/schema.ldif
+</pre>
+
+== Applying configuration changes ==
+
+<pre>
+$ ldapmodify -x -D "cn=Directory Manager" -w Secret.123 -f /usr/share/pki/server/conf/database.ldif
+</pre>
+
+== Add base entry ==
+
+<pre>
+$ ldapadd -x -D "cn=Directory Manager" -w Secret.123 << EOF
+dn: dc=ca,dc=pki,dc=example,dc=com
+objectClass: top
+objectClass: domain
+dc: ca
+EOF
+</pre>
+
+== Import container entries ==
+
+<pre>
+$ /bin/cp /usr/share/pki/ca/conf/db.ldif .
+$ sed -i "s/{rootSuffix}/dc=ca,dc=pki,dc=example,dc=com/" db.ldif
+$ ldapadd -x -D "cn=Directory Manager" -w Secret.123 -f db.ldif
+</pre>
+
+== Import ACL entries ==
+
+<pre>
+$ /bin/cp /usr/share/pki/ca/conf/acl.ldif .
+$ sed -i "s/{rootSuffix}/dc=ca,dc=pki,dc=example,dc=com/" acl.ldif
+$ ldapadd -x -D "cn=Directory Manager" -w Secret.123 -f acl.ldif
+</pre>
+
+== Import database manager entries ==
+
+<pre>
+$ /bin/cp /usr/share/pki/server/conf/manager.ldif .
+$ sed -i "s/{rootSuffix}/dc=ca,dc=pki,dc=example,dc=com/" manager.ldif
+$ sed -i "s/{dbuser}/uid=pkidbuser,ou=people,dc=ca,dc=pki,dc=example,dc=com/" manager.ldif
+$ ldapadd -x -D "cn=Directory Manager" -w Secret.123 -f manager.ldif
+</pre>
+
+= References =
+
+* [[PKI LDAP]]
+* [[DS Database Indexes]]
+* [[CA Database]]

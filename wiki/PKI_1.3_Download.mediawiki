@@ -1,0 +1,62 @@
+Dogtag Certificate System is available on the latest Fedora and EPEL platforms.
+* For information on how to use EPEL - see https://fedoraproject.org/wiki/EPEL/FAQ#howtouse.
+* For additional information about EPEL - see https://fedoraproject.org/wiki/EPEL.
+* use 'pkicreate' to create new instances of CA, DRM, OCSP, RA, TKS, and TPS.
+* use 'pkiremove' to delete instances of CA, DRM, OCSP, RA, TKS, and TPS.
+* use either a 'Firefox 3.x' browser or 'pkisilent' to configure instances of CA, DRM, OCSP, RA, TKS, and TPS.
+
+See the [[Release Notes]] for the current list of packages.
+
+<table>
+<tr>
+<td valign="TOP">'''IMPORTANT:&nbsp;&nbsp;'''</td>
+<td>For '''EPEL''', version '''1.0.7''' or later of the '''mod_nss''' component is required to execute the '''RA''' and '''TPS''' subsystems.</td>
+</tr>
+</table>
+
+== Binary Packages ==
+
+Snapshots of various Binary components (that are NOT currently available in Fedora/RHEL) are included below for the user's convenience:
+
+<table border=1>
+<tr>
+<th>Platform</th>
+</tr>
+<tr>
+<td>32-bit Fedora 12 (i386)</td>
+</tr>
+<tr>
+<td>64-bit Fedora 12 (x86_64)</td>
+</tr>
+<tr>
+<td>32-bit Fedora 11 (i386)</td>
+</tr>
+<tr>
+<td>64-bit Fedora 11 (x86_64)</td>
+</tr>
+<tr>
+<td>32-bit RHEL 5.5 (EPEL) (i586)</td>
+</tr>
+<tr>
+<td>64-bit RHEL 5.5 (EPEL) (x86_64)</td>
+</tr>
+</table>
+
+== Source Packages ==
+
+Snapshots of various Source components (that are NOT currently available in Fedora/RHEL) are included below for the user's convenience:
+
+<table border=1>
+<tr>
+<th>Platform</th>
+</tr>
+<tr>
+<td>Fedora 12</td>
+</tr>
+<tr>
+<td>Fedora 11</td>
+</tr>
+<tr>
+<td>RHEL 5.5 (EPEL)</td>
+</tr>
+</table>

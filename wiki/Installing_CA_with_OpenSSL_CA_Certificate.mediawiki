@@ -1,0 +1,1 @@
+This page has been moved to https://github.com/dogtagpki/pki/wiki/Installing-CA-with-OpenSSL-CA-Certificate.

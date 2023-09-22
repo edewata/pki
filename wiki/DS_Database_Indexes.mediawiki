@@ -1,0 +1,152 @@
+= Listing Indexes =
+
+== Listing standard indexes ==
+
+ $ ldapsearch -x -D "cn=Directory Manager" -w <font color="red">Secret.123</font> -b "cn=<font color="red">ca</font>,cn=ldbm database,cn=plugins,cn=config" "(objectClass=nsIndex)"
+ dn: cn=issuedby,cn=index,cn=<font color="red">ca</font>,cn=ldbm database,cn=plugins,cn=config
+ nsIndexType: eq
+ nsSystemIndex: false
+ objectClass: top
+ objectClass: nsIndex
+ cn: issuedby
+ 
+ ...
+
+== Listing VLV indexes ==
+
+ $ ldapsearch -x -D "cn=Directory Manager" -w <font color="red">Secret.123</font> -b "cn=<font color="red">ca</font>,cn=ldbm database,cn=plugins,cn=config" "(objectClass=vlvSearch)"
+ dn: cn=allCerts-<font color="red">pki-tomcat</font>,cn=<font color="red">ca</font>,cn=ldbm database,cn=plugins,cn=config
+ objectClass: top
+ objectClass: vlvSearch
+ vlvFilter: (certstatus=*)
+ vlvScope: 1
+ vlvBase: ou=certificateRepository,ou=ca,<font color="red">dc=ca,dc=example,dc=com</font>
+ cn: allCerts-<font color="red">pki-tomcat</font>
+ 
+ ...
+
+ $ ldapsearch -x -D "cn=Directory Manager" -w <font color="red">Secret.123</font> -b "cn=<font color="red">ca</font>,cn=ldbm database,cn=plugins,cn=config" "(objectClass=vlvIndex)"
+ dn: cn=allCerts-<font color="red">pki-tomcat</font>Index,cn=allCerts-<font color="red">pki-tomcat</font>,cn=<font color="red">ca</font>,cn=ldbm database,cn=plugins,cn=config
+ vlvSort: serialno
+ objectClass: top
+ objectClass: vlvIndex
+ cn: allCerts-<font color="red">pki-tomcat</font>Index
+ vlvEnabled: 1
+ vlvUses: 0
+ 
+ ...
+
+= Creating Indexes =
+
+== Creating standard indexes ==
+
+Prepare the standard indexes in a file:
+
+ $ /bin/cp /usr/share/pki/ca/conf/index.ldif .
+ $ sed -i "s/{database}/<font color="red">ca</font>/" index.ldif
+
+For example:
+
+ dn: cn=issuedby,cn=index,cn=<font color="red">ca</font>,cn=ldbm database, cn=plugins, cn=config
+ objectClass: top
+ objectClass: nsIndex
+ nsindexType: eq
+ nsSystemindex: false
+ cn: issuedby
+
+Then add the indexes:
+
+ $ ldapadd -x -D "cn=Directory Manager" -w <font color="red">Secret.123</font> -f index.ldif
+
+== Creating VLV indexes ==
+
+Prepare the VLV indexes in a file:
+
+ $ /bin/cp /usr/share/pki/ca/conf/vlv.ldif .
+ $ sed -i "s/{instanceId}/<font color="red">pki-tomcat</font>/g" vlv.ldif
+ $ sed -i "s/{database}/<font color="red">ca</font>/g" vlv.ldif
+ $ sed -i "s/{rootSuffix}/<font color="red">dc=ca,dc=example,dc=com</font>/" vlv.ldif
+
+For example:
+
+ dn: cn=allCerts-<font color="red">pki-tomcat</font>, cn=<font color="red">ca</font>, cn=ldbm database, cn=plugins, cn=config
+ objectClass: top
+ objectClass: vlvSearch
+ cn: allCerts-<font color="red">pki-tomcat</font>
+ vlvBase: ou=certificateRepository,ou=ca,<font color="red">dc=ca,dc=example,dc=com</font>
+ vlvScope: 1
+ vlvFilter: (certstatus=*)
+
+ dn: cn=allCerts-<font color="red">pki-tomcat</font>Index, cn=allCerts-<font color="red">pki-tomcat</font>, cn=<font color="red">ca</font>, cn=ldbm database, cn=plugins, cn=config
+ objectClass: top
+ objectClass: vlvIndex
+ cn: allCerts-<font color="red">pki-tomcat</font>Index
+ vlvSort: serialno
+
+Then add the indexes:
+
+ $ ldapadd -x -D "cn=Directory Manager" -w <font color="red">Secret.123</font> -f vlv.ldif
+
+= Reindexing Database =
+
+If any of the indexes in a database is changed, the database needs to be reindexed:
+
+== Rebuild standard indexes ==
+
+=== Using db2index.pl ===
+
+To reindex the database offline:
+
+ $ systemctl stop dirsrv@<font color="red">pki-tomcat</font>.service
+ $ db2index.pl -Z <font color="red">pki-tomcat</font> -D "cn=Directory Manager" -w <font color="red">Secret.123</font> -n <font color="red">ca</font>
+ $ systemctl start dirsrv@<font color="red">pki-tomcat</font>.service
+
+=== Using reindex task ===
+
+To reindex the database while running, execute the following command:
+
+ $ /bin/cp /usr/share/pki/ca/conf/indextasks.ldif .
+ $ sed -i "s/{database}/<font color="red">ca</font>/" indextasks.ldif
+ $ ldapadd -x -D "cn=Directory Manager" -w <font color="red">Secret.123</font> -f indextasks.ldif
+
+Wait until the reindex task is done:
+
+ $ ldapsearch -x -D "cn=Directory Manager" -w <font color="red">Secret.123</font> -b "cn=index1160589770,cn=index,cn=tasks,cn=config" -s base
+ dn: cn=index1160589770,cn=index,cn=tasks,cn=config
+ nsTaskExitCode: 0
+
+== Rebuilding VLV indexes ==
+
+=== Using vlvindex ===
+
+To reindex the database offline:
+
+ $ systemctl stop dirsrv@<font color="red">pki-tomcat</font>.service
+ $ vlvindex -Z <font color="red">pki-tomcat</font> -n <font color="red">ca</font> -T allCerts-<font color="red">pki-tomcat</font>
+ ...
+ $ systemctl start dirsrv@<font color="red">pki-tomcat</font>.service
+
+=== Using reindex task ===
+
+To reindex the database while running, execute the following command:
+
+ $ /bin/cp /usr/share/pki/ca/conf/vlvtasks.ldif .
+ $ sed -i "s/{instanceId}/<font color="red">pki-tomcat</font>/g" vlvtasks.ldif
+ $ sed -i "s/{database}/<font color="red">ca</font>/g" vlvtasks.ldif
+ $ ldapadd -x -D "cn=Directory Manager" -w <font color="red">Secret.123</font> -f vlvtasks.ldif
+
+Wait until the reindex task is done:
+
+ $ ldapsearch -x -D "cn=Directory Manager" -w <font color="red">Secret.123</font> -b "cn=index1160589769,cn=index,cn=tasks,cn=config" -s base
+ dn: cn=index1160589769,cn=index,cn=tasks,cn=config
+ nsTaskExitCode: 0
+
+= References =
+
+* [[PKI LDAP]]
+* [https://access.redhat.com/documentation/en-US/Red_Hat_Directory_Server/10/html/Administration_Guide/applying-indexes.html RHDS 10 - Applying New Indexes to Existing Databases]
+* [https://access.redhat.com/documentation/en-US/Red_Hat_Directory_Server/10/html/Administration_Guide/Creating_Indexes-Creating_VLV_Indexes.html RHDS 10 - Creating Browsing (VLV) Indexes]
+* [https://access.redhat.com/documentation/en-US/Red_Hat_Directory_Server/10/html/Configuration_Command_and_File_Reference/Database_Plug_in_Attributes.html RHDS 10 - Database Plug-in Attributes]
+* [https://access.redhat.com/documentation/en-US/Red_Hat_Directory_Server/10/html/Configuration_Command_and_File_Reference/Shell_Scripts.html#Shell_Scripts-db2index_Reindex_database_index_files RHDS 10 - db2index (Reindexes Database Index Files)]
+* [https://access.redhat.com/documentation/en-US/Red_Hat_Directory_Server/10/html/Configuration_Command_and_File_Reference/Perl_Scripts.html#Perl_Scripts-db2index.pl_Create_and_generate_indexes RHDS 10 - db2index (Reindexes Database Index Files)]
+* [https://access.redhat.com/documentation/en-US/Red_Hat_Directory_Server/10/html/Configuration_Command_and_File_Reference/Shell_Scripts.html#Shell_Scripts-vlvindex_Create_virtual_list_view_indexes RHDS 10 - vlvindex (Creates Virtual List View Indexes)]

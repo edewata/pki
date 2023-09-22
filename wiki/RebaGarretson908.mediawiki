@@ -1,0 +1,24 @@
+Is really a Telephone Engineer Required When Diagnosing a Line Fault
+
+
+
+Once the phone line goes dead lots of people panic and call their company immediately but this might turn out to be a costly mistake. Some faults could be caused by equipment and extensions within the home that aren't covered by the company.
+
+Most houses in the UK use a master socket referred to as an NTE5 which has a detachable front plate that can be removed if you take out 2 short screws. By removing this front plate, assuming the house continues to be wired to plain, you'll be disconnecting all internal telephone extensions. The remaining part of the master socket or NTE5 presently has a test socket towards the bottom right hand corner for use to check the incoming line.
+
+Are you currently Obtaining a Dialling Tone?
+
+The next thing is to take a telephone that you know is working, preferably one that does not require mains electricity, and plug it in to the test socket and listen for any dialling tone. If there is no dialling tone at this test socket then your fault is very likely to be within the external network and all try to repair the fault can be carried out by the service provider free of charge.
+
+If there is a dialling tone at the test socket and also the tone disappears when the front plate is reinstated then there's a fault around the internal wiring or equipment. The next step is to unplug from telephone sockets any equipment/modems/telephones in the home. When there is still no dialling tone then there has to be a fault on the internal wiring within the house.
+
+
+[http://www.telephoneengineers.org/ bt engineer]
+
+Telephone Engineer Callout:
+
+To repair this type of fault, our advice is to get an experienced telephone engineer towards the property. You can do this through your company and can be costly with any focus on the interior wiring starting around £200. Another option is to contact a reputable engineer from our press or online, preferably an ex BT engineer who are able to provide the skills necessary for a lot less cost.
+
+So many people are still underneath the premise that only BT Telephone Engineers are allowed to focus on internal/external telephone faults and will only call them out. Though this is true about the external (any telephone wires outside of the property), it is not the case with the wires inside the home.
+
+It might be wise to remember that there are plenty of Ex BT Engineers that work for themselves and calling them out is actually over 50% cheaper than BT themselves and also the work is carried out to the same standards.

@@ -1,0 +1,31 @@
+= Overview =
+
+This page describes the development process for PKI 10.
+
+= Upstream Development =
+
+Upstream development happens in the upstream repository. The product of upstream development is a tagged source repository which then can be exported as source tarball.
+
+RPM package is a product of downstream development, which usually is platform specific.
+
+Depending on the branch, here are more detailed instructions for upstream development:
+
+* [https://github.com/dogtagpki/pki/wiki/Development-Guide Development Guide]
+* [[PKI 10.6 Development]]
+* [[PKI 10.5 Development]]
+
+= Downstream Development =
+
+Downstream development happens in a separate repository which was based on the upstream repository. Additional changes may be added to the base code to customize the code for the target platform. The product of downstream development are packages that will work properly for the target platform.
+
+See also:
+
+* [[PKI Fedora Development]]
+* [[PKI Debian Development]]
+* [https://salsa.debian.org/freeipa-team/dogtag-pki PKI Debian Packaging]
+
+= References =
+
+* [[PKI Release Procedure]]
+* [[RPM]]
+* [[Tomcat Development]]

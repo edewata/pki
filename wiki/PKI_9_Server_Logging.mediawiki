@@ -1,0 +1,35 @@
+= Debug Log =
+
+In PKI 9 Server the debug logs are stored in /var/log/pki-<subsystem>/debug.
+
+The logging configuration is stored in /var/lib/pki-<subsystem>/conf/CS.cfg:
+
+<pre>
+debug.append=true
+debug.enabled=true
+debug.filename=/var/lib/pki-<subsystem>/logs/ca/debug
+debug.hashkeytypes=
+debug.level=10
+debug.showcaller=false
+</pre>
+
+Log levels:
+* most detailed: 0
+* least detailed: 10
+
+On Fedora the default level is 0. On RHEL the default level is 10.
+
+The server must be restarted for the changes to become effective.
+
+== Pre-Installation ==
+
+To change the debug level prior to running the installation, change the CS.cfg template in /usr/share/pki/<subsystem>/conf.
+
+== Post-Installation ==
+
+To change the debug level after the installation is complete, change the CS.cfg in /var/lib/pki-<subsystem>/conf.
+
+= References =
+
+* [[PKI Server Logging]]
+* [https://access.redhat.com/documentation/en-US/Red_Hat_Certificate_System/8.1/html/Admin_Guide/java-logs.html#Configuring_Logs_in_the_CS.cfg_File RHCS 8.1: Configuring Logs in the CS.cfg File]

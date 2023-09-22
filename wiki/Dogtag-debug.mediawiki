@@ -1,0 +1,30 @@
+= Dogtag Debugging with SOS report =
+
+*  Install 'sos' pkg -- $ yum install sos
+*  Copy the contents of dogtag.py file to /usr/lib/python2.6/site-packages/sos/plugins/ directory.
+*  Run $ sosreport -o certsys
+*  Provide the /tmp/sosreport*.tar.xz file that's generated.
+
+'''File -- dogtag.py'''
+
+<pre>
+
+ import sos.plugintools
+ import os
+ class certsys(sos.plugintools.PluginBase):
+    """Certificate System diagnostic information
+    """
+    # This is for dogtag Certificate System
+    def checkenabled(self):
+       if self.isInstalled("pki-ca") or os.path.exists("/var/lib/pki-*"):
+          return True
+       return False
+    def setup(self):
+        self.addCopySpec("/var/lib/pki-*/logs/*")
+	self.addCopySpec("/var/lib/pki-*/conf/*cfg*")
+	self.addCopySpec("/var/log/dirsrv/*")
+        self.addCopySpec("/var/log/messages")
+	return
+</pre>
+
+* NOTE: This will provide all the relevant logs of Dogtag Certificate System for debugging purposes.

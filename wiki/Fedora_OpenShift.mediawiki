@@ -1,0 +1,141 @@
+= Dockerfile =
+
+<pre>
+FROM fedora:30
+
+RUN dnf -y update && dnf clean all
+
+RUN dnf -y install systemd && dnf clean all && \
+(cd /lib/systemd/system/sysinit.target.wants/; for i in *; do [ $i == systemd-tmpfiles-setup.service ] || rm -f $i; done); \
+rm -f /lib/systemd/system/multi-user.target.wants/*;\
+rm -f /etc/systemd/system/*.wants/*;\
+rm -f /lib/systemd/system/local-fs.target.wants/*; \
+rm -f /lib/systemd/system/sockets.target.wants/*udev*; \
+rm -f /lib/systemd/system/sockets.target.wants/*initctl*; \
+rm -f /lib/systemd/system/basic.target.wants/*;\
+rm -f /lib/systemd/system/anaconda.target.wants/*;
+
+VOLUME [ "/sys/fs/cgroup", "/tmp", "/run" ]
+
+CMD ["/usr/sbin/init"]
+</pre>
+
+= Building Fedora Container Image =
+
+<pre>
+$ docker build -t fedora .
+</pre>
+
+= Pushing Fedora Container Image =
+
+<pre>
+$ docker tag fedora:latest <username>/fedora:latest
+$ docker push <username>/fedora:latest
+</pre>
+
+= Available Images =
+
+* [https://cloud.docker.com/repository/docker/edewata/fedora edewata/fedora]
+
+= Creating Fedora Image Stream =
+
+Prepare a configuration file (e.g. fedora-is.yaml):
+
+<pre>
+apiVersion: v1
+kind: ImageStream
+metadata:
+  labels:
+    app: fedora
+  name: fedora
+spec:
+  tags:
+    - from:
+        kind: DockerImage
+        name: edewata/fedora
+      name: latest
+</pre>
+
+Then execute the following command:
+
+<pre>
+$ oc create -f fedora-is.yaml
+</pre>
+
+= Creating Fedora Application =
+
+Prepare a configuration file (e.g. fedora-dc.yaml):
+
+<pre>
+apiVersion: v1
+kind: DeploymentConfig
+metadata:
+  labels:
+    app: fedora
+  name: fedora
+spec:
+  selector:
+    app: fedora
+    deploymentconfig: fedora
+  template:
+    metadata:
+      labels:
+        app: fedora
+        deploymentconfig: fedora
+    spec:
+      containers:
+        - image: edewata/fedora
+          name: fedora
+          volumeMounts:
+            - mountPath: /run
+              name: fedora-volume-1
+            - mountPath: /sys/fs/cgroup
+              name: fedora-volume-2
+            - mountPath: /tmp
+              name: fedora-volume-3
+      volumes:
+        - emptyDir: {}
+          name: fedora-volume-1
+        - emptyDir: {}
+          name: fedora-volume-2
+        - emptyDir: {}
+          name: fedora-volume-3
+  test: false
+  triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+          - fedora
+        from:
+          kind: ImageStreamTag
+          name: 'fedora:latest'
+      type: ImageChange
+</pre>
+
+Then execute the following command:
+
+<pre>
+$ oc create -f fedora-dc.yaml
+</pre>
+
+= Starting Fedora Application =
+
+<pre>
+$ oc scale dc fedora --replicas=1
+</pre>
+
+= Updating Container Image =
+
+If newer container image is available, it can be deployed with the following command:
+
+<pre>
+$ oc import-image <username>/fedora:latest
+</pre>
+
+= See Also =
+
+* [[Fedora Container]]
+* [https://github.com/dogtagpki/kubernetes/wiki/OpenShift-3 OpenShift 3]
+* [[DS OpenShift]]
+* [[PKI CA OpenShift]]

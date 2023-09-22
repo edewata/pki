@@ -1,0 +1,25 @@
+= Choice of Java Compilers =
+
+It was the original intention to use the GNU java compiler (gcj) to compile everying in this project.  However, there is some code with a long history, specifically the netscape.security packages, which have a dependency on the Sun classes (sun.io*) which deal with low-level data conversion.
+
+== Fedora 8, Fedora 9, Fedora 10, Fedora 11, etc. ==
+
+Since Open JDK provides sun.io on Fedora 8 and later, this has now become the compiler of choice for all future releases of this product.
+
+== Fedora Core 6 and Fedora 7 ==
+
+Since gcj only provides java.* and gnu.* classes, and not sun.io*, only the Sun and IBM java compilers (javac) can be used to compile those specific packages on Fedora Core 6 and Fedora 7, although use of the Sun compiler may require a change to the spec file in certain PKI components.
+
+For example, the following classes must be ported:
+
+* sun.io.ByteToCharConverter
+* sun.io.CharToByteISO8859_1
+* sun.io.ConversionBufferFullException
+* sun.io.UnknownCharacterException
+* sun.io.ConversionBufferFullException
+* sun.io.UnknownCharacterException
+* sun.io.MalformedInputException
+* sun.io.ConversionBufferFullException
+
+
+[[Category:Tech Notes]]

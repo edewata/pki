@@ -1,0 +1,44 @@
+= Overview =
+
+This page is being migrated to https://github.com/dogtagpki/pki/wiki/Git.
+
+= Submodules =
+
+== Retrieving files in a submodule ==
+
+<pre>
+$ git submodule update --init -- <submodule path>
+</pre>
+
+== Merging submodule ==
+
+<pre>
+$ mv <submodule path> <submodule path>.tmp
+$ git submodule deinit -f -- <submodule path>
+$ rm -rf .git/modules/<submodule path>
+$ rm -rf <submodule path>
+$ rm -rf skins/.gitignore
+$ mv <submodule path>.tmp <submodule path>
+</pre>
+
+= Subtrees =
+
+<pre>
+$ git subtree add --prefix=lib/commons-lang-3.11 https://github.com/apache/commons-lang.git rel/commons-lang-3.11 --squash
+</pre>
+
+<pre>
+$ git subtree add --prefix=lib/jaxb-api-2.3.3 https://github.com/eclipse-ee4j/jaxb-api.git 2.3.3 --squash
+</pre>
+
+<pre>
+$ git subtree add --prefix=lib/jaxb-ri-2.3.3-RI https://github.com/eclipse-ee4j/jaxb-ri.git 2.3.3-RI --squash
+</pre>
+
+<pre>
+$ git subtree add --prefix=lib/commons-io-2.8.0 https://github.com/apache/commons-io.git rel/commons-io-2.8.0 --squash
+</pre>
+
+<pre>
+$ git subtree add --prefix=lib/Resteasy-3.0.26.Final https://github.com/resteasy/Resteasy.git 3.0.26.Final --squash
+</pre>

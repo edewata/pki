@@ -1,0 +1,10 @@
+Supported algorithms:
+
+* DSA
+* RSA
+
+The SecureRandom argument passed to initialize() is ignored, because NSS does not support specifying an external source of randomness.
+
+= References =
+
+* [[JSS Provider]]

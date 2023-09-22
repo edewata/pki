@@ -1,0 +1,32 @@
+= Getting Source Code =
+
+<pre>
+$ git clone https://pagure.io/idm-console-framework.git
+</pre>
+
+= Building Upstream Binaries =
+
+To build upstream binaries:
+
+<pre>
+$ cd <idm-console-framework source>
+$ ant
+</pre>
+
+To install upstream binaries:
+
+<pre>
+$ /bin/cp ../built/release/jars/* /usr/share/java/
+</pre>
+
+The above command will update the following files:
+* /usr/share/java/idm-console-base.jar
+* /usr/share/java/idm-console-mcc.jar
+* /usr/share/java/idm-console-mcc_en.jar
+* /usr/share/java/idm-console-nmclf.jar
+* /usr/share/java/idm-console-nmclf_en.jar
+
+= References =
+
+* [https://github.com/dogtagpki/pki/wiki/PKI-Console PKI Console]
+* [https://pagure.io/idm-console-framework idm-console-framework]

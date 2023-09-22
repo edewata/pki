@@ -1,0 +1,875 @@
+= Overview =
+
+This is a proposal for a reorganization of the PKI packages to accommodate the new REST functionality and address existing issues as described in [https://fedorahosted.org/pki/ticket/114 Ticket #114: Reorganize packages].
+
+The following tickets depend on this:
+* [https://fedorahosted.org/pki/ticket/215 Ticket #215: Create client package]
+* [https://fedorahosted.org/pki/ticket/170 Ticket #170: Create common package]
+* [https://fedorahosted.org/pki/ticket/113 Ticket #113: Remove duplicate com.netscape.certsrv.common package]
+* [https://fedorahosted.org/pki/ticket/120 Ticket #120: Fix missing console source in Eclipse]
+* [https://fedorahosted.org/pki/ticket/121 Ticket #121: Reformat console source code]
+
+Note, depending on the context the term "package" may refer to different things:
+* Java package which contains Java classes,
+* JAR file which may contain multiple Java packages,
+* RPM package which may contain multiple JAR files.
+
+== Background ==
+In [[PKI 9 Interface Design]] the PKI binaries are organized into several packages, mainly:
+* Utilities (pki-nsutil.jar & pki-cmsutil.jar)
+* Tools (pki-tools.jar)
+* Server interfaces (pki-certserv.jar)
+* Server public implementation (pki-cms.jar)
+* Server private implementation (pki-cmscore.jar)
+* Server resource bundle (pki-cmsbundle.jar)
+* Console (pki-console.jar)
+
+With the introduction of REST services the packaging layout is no longer adequate because the REST services consist of 3 components that need to be packaged separately:
+* Common code. This component will be shared between server and client. It contains the REST interface definitions and REST data models.
+* Server code. It contains the REST service implementations.
+* Client code. It contains the REST client library and REST CLI.
+
+== Problems ==
+The current packaging layout has several problems.
+
+=== No Common Package ===
+There is no common package. The closest ones are the utilities and the server interfaces (certserv). However, the certserv contains classes that are only used by the server. If the certserv is used as a common package, the client may be required to install packages that aren't needed by the client.
+
+The need for common package is not new. Right now the console package uses some common code (i.e. com.netscape.certsrv.common which is part of certsrv), but since there is no common JAR file these classes are duplicated in the source tree, creating maintenance problem.
+
+=== No Client Package ===
+There is no client package. The closest one is the tools package, but it cannot accommodate REST client because the tools are built first whereas the REST client depends on the REST common code.
+
+=== Outdated Class/Package Names ===
+The class names, Java package names, JAR file names are still using the legacy Netscape/CMS names. Ideally they should match the current project name, i.e. PKI.
+
+=== Unnecessary Package Separations ===
+Since the entire code is public, it's not necessary to have separate JAR files for the server implementations.
+
+The pki-certserv.jar contains mostly interfaces. The base implementations are stored in pki-cmscore.jar. While it's possible to develop custom code from scratch using the interfaces only, extending the base implementation will simplify the development a lot. So it's not necessary to separate the server interfaces and the base implementations.
+
+The server code would not be usable without the resource bundle, so they should be combined as well.
+
+== Solutions ==
+There are several possible solutions.
+
+=== Quick & Dirty ===
+The simplest solution is to repurpose the existing JAR files as follows:
+* Common package (pki-nsutil.jar, pki-cmsutil.jar, pki-certserv.jar) containing the server interfaces plus REST interfaces and shared data models.
+* Server package (pki-cms.jar and pki-cmscore.jar) containing the server implementations plus REST services.
+* Client package (pki-tools.jar) containing the REST clients. The build dependency will have to be changed.
+
+This solution is not ideal because:
+* The common package will contain server interfaces which are irrelevant to the client and may add unnecessary dependencies.
+* The REST interfaces and shared data models will have to be put under the 'certserv' package name which is supposed to contain the server interfaces only.
+* Some of the issues above are still not addressed.
+
+=== Comprehensive ===
+Another solution is to do a more significant reorganization which include:
+* Creating new packages for common and client libraries.
+* Combining server interfaces and implementations into a server library.
+* Rearranged the classes and packages based on distribution.
+* Removing legacy names from the class/package/JAR file names.
+* Providing backward compatible API.
+
+This document will describe the proposed changes and the migration strategy for the comprehensive solution.
+
+= RPM Package Reorganization =
+
+PKI will be distributed in several RPM packages:
+
+{| border="1" style="border-collapse: collapse;" width="100%"
+|-
+! width="100" | RPM Package
+! width="120" | Dependencies
+! width="300" | Contents
+! Description
+|-
+| pki-symkey
+|
+| symkey.jar
+| Symkey will be merged into JSS package.
+|-
+| pki-base
+| pki-symkey
+| pki-certsrv.jar, pki-nsutil.jar, pki-cmsutil.jar
+| PKI framework. This includes common and client libraries.
+|-
+| pki-tools
+| pki-base
+| pki-tools.jar, pki, AtoB/BtoA, PKCS12Export, p7tool, tkstool, etc.
+| This package contains Java & native command-line tools including REST clients.
+|-
+| pki-console
+| pki-base
+| pki-console.jar
+| Console package.
+|-
+| pki-selinux
+|
+| pki.pp
+| SELinux package. This package is going to be subsumed into the system SELinux policies.
+|-
+| pki-server
+| pki-base, pki-tools, pki-selinux
+| pki-cms.jar, pki-cmscore.jar, pki-cmsbundle.jar, pkispawn, pkidestroy, systemd files, etc.
+| PKI server framework. This includes server libraries and the deployment tools.
+|-
+| pki-setup
+|
+| pkicreate, pkiremove
+| Legacy deployment tools. This package will be deprecated.
+|-
+| pki-silent
+| pki-server
+| pkisilent
+| Legacy configuration tools. This package will be deprecated.
+|-
+| pki-ca
+| pki-server
+| pki-ca.jar
+| CA server package.
+|-
+| pki-kra
+| pki-server
+| pki-kra.jar
+| KRA server package.
+|-
+| pki-ocsp
+| pki-server
+| pki-ocsp.jar
+| OCSP server package.
+|-
+| pki-tks
+| pki-server
+| pki-tks.jar
+| TKS server package.
+|-
+| pki-tps
+| pki-server, pki-setup
+| pki-tps.jar
+| TPS server package.
+|-
+| pki-ra
+| pki-server, pki-setup
+| pki-ra.jar
+| RA server package.
+|}
+
+The following packages will be required for client:
+* pki-symkey
+* pki-base
+* CLI (pki-tools), Console (pki-console), or both
+
+The following packages will be required for Tomcat-based subsystems:
+* pki-symkey
+* pki-base
+* pki-tools
+* pki-selinux
+* pki-server
+* Tomcat-based subsystem: pki-ca, pki-kra, pki-ocsp, pki-tks, or any combination
+
+The following packages will be required for Apache-based subsystems:
+* pki-symkey
+* pki-base
+* pki-tools
+* pki-selinux
+* pki-server
+* pki-setup
+* Apache-based subsystem: pki-tps, pki-ra, or both
+
+= JAR Package Reorganization =
+
+Java binaries will be distributed in several JAR files:
+
+{| border="1" style="border-collapse: collapse;" width="100%"
+|-
+! width="100" | New JAR File
+! width="100" | Dependencies
+! width="300" | Old JAR Files
+! Description
+|-
+| pki.jar
+|
+| pki-certsrv.jar, pki-nsutil.jar, pki-cmsutil.jar
+| PKI framework (e.g. REST interfaces and client, data models, utilities).
+|-
+| pki-tools.jar
+| pki.jar
+| pki-tools.jar
+| Command-line tools (e.g. AtoB/BtoA, PKCS12Export, REST CLI, OCSP client).
+|-
+| pki-console.jar
+| pki.jar
+| pki-console.jar
+| Console classes.
+|-
+| pki-server.jar
+| pki.jar
+| pki-cms.jar, pki-cmscore.jar
+| PKI server framework (e.g. plugin interfaces, subsystems, servlets, REST services).
+|-
+| pki-silent.jar
+| pki-server.jar
+| pki-silent.jar
+| Server configuration tool.
+|-
+| pki-ca.jar
+| pki-server.jar
+| pki-ca.jar
+| CA server-specific classes.
+|-
+| pki-kra.jar
+| pki-server.jar
+| pki-kra.jar
+| KRA server-specific classes.
+|-
+| pki-ocsp.jar
+| pki-server.jar
+| pki-ocsp.jar
+| OCSP server-specific classes.
+|-
+| pki-tks.jar
+| pki-server.jar
+| pki-tks.jar
+| TKS server-specific classes.
+|}
+
+= Java Package Reorganization =
+
+== Common Library ==
+
+* JAR file: pki-common.jar
+
+The Common Library contains classes that will be shared by both server and client.
+
+{| border="1" style="border-collapse: collapse;" width="100%"
+|-
+! width="300" | New Package
+! width="300" | Old Packages
+! Description
+|-
+| org.dogtagpki
+| com.netscape.certsrv.common
+| Common classes/interfaces (e.g. Constants, ScopeDef).
+|-
+| org.dogtagpki.cert
+| com.netscape.certsrv.cert, com.netscape.certsrv.dbs.certdb, com.netscape.cms.servlet.cert, com.netscape.cms.servlet.cert.model
+| Certificate REST interfaces and data models (e.g. CertId, CertResource, CertificateData).
+|-
+| org.dogtagpki.config
+| com.netscape.cms.servlet.csadmin, com.netscape.cms.servlet.csadmin.model
+| Configuration REST interfaces and data models (e.g. SystemConfigurationResource, ConfigurationData).
+|-
+| org.dogtagpki.group
+| com.netscape.certsrv.group
+| Group REST interfaces and data models (e.g. GroupResource, GroupData).
+|-
+| org.dogtagpki.key
+| com.netscape.certsrv.dbs.keydb, com.netscape.cms.servlet.key.model
+| Key REST interfaces and data models (e.g. KeyResource, KeyData).
+|-
+| org.dogtagpki.profile
+| com.netscape.cms.servlet.profile, com.netscape.cms.servlet.profile.model
+| Profile REST interfaces and data models (e.g. ProfileResource, ProfileData).
+|-
+| org.dogtagpki.request
+| com.netscape.certsrv.request, com.netscape.cms.servlet.request.model
+| Certificate request REST interfaces and data models (e.g. KeyRequestResource, KeyRequestInfo).
+|-
+| org.dogtagpki.user
+| com.netscape.certsrv.user
+| User REST interfaces and data models (e.g. UserResource, UserData).
+|}
+
+Some of the following packages may be moved into the Server Library if they turn out to be used by the server only.
+
+{| border="1" style="border-collapse: collapse;" width="100%"
+|-
+! width="300" | New Package
+! width="300" | Old Packages
+! Description
+|-
+| org.dogtagpki.http
+| com.netscape.cmsutil.http
+| HTTP client library.
+|-
+| org.dogtagpki.net
+| com.netscape.cmsutil.net, netscape.net
+| Networking library.
+|-
+| org.dogtagpki.ocsp
+| com.netscape.cmsutil.ocsp
+| Online Certificate Status Protocol (OCSP) library.
+|-
+| org.dogtagpki.radius
+| com.netscape.cmsutil.radius
+| Remote Authentication Dial In User Service (RADIUS) library.
+|-
+| org.dogtagpki.smtp
+| netscape.net, netscape.net.smtp
+| Simple Mail Transfer Protocol (SMTP) library.
+|-
+| org.dogtagpki.security.acl
+| netscape.security.acl
+| Access Control List (ACL) library.
+|-
+| org.dogtagpki.security.ext
+| netscape.security.extensions
+| Public-Key Infrastructure X.509 (PKIX) extensions library.
+|-
+| org.dogtagpki.security.pkcs
+| netscape.security.pkcs
+| PKCS library.
+|-
+| org.dogtagpki.security.provider
+| netscape.security.provider
+| PKI security provider.
+|-
+| org.dogtagpki.security.asn1
+| netscape.security.util
+| Distinguished Encoding Rules (DER) encoding library.
+|-
+| org.dogtagpki.security.x509
+| netscape.security.x509
+| X.509 certificate library.
+|}
+
+== Common Tools ==
+
+* JAR file: pki-tools.jar
+
+The Common Tools contains command-line tools that might be used on server or client.
+
+{| border="1" style="border-collapse: collapse;" width="100%"
+|-
+! width="300" | New Package
+! width="300" | Old Packages
+! Description
+|-
+| org.dogtagpki.tools
+| com.netscape.cmstools
+| Common tools (e.g. AtoB/BtoA, PrettyPrint, PKCS12Export).
+|}
+
+== Server Library ==
+
+* JAR file: pki-server.jar
+* Requires: pki-common.jar
+
+The Server Library contains classes/interfaces that can be used to run various services in the PKI server. It consists of service classes (servlets and REST services), plugin interfaces, base/default implementation classes, and other supporting classes. The server can be customized by overriding or extending the default implementation.
+
+{| border="1" style="border-collapse: collapse;" width="100%"
+|-
+! width="300" | New Package
+! width="300" | Old Packages
+! Description
+|-
+| org.dogtagpki.server
+| com.netscape.certsrv.apps, com.netscape.certsrv.base, com.netscape.cmscore.apps, com.netscape.cmscore.base
+| Server framework (e.g. engine, subsystems, exceptions).
+|-
+| org.dogtagpki.server.acl
+| com.netscape.certsrv.acls
+| ACL plug-ins.
+|-
+| org.dogtagpki.server.admin
+| com.netscape.cms.servlet.admin
+| Admin servlets.
+|-
+| org.dogtagpki.server.authentication
+| com.netscape.certsrv.authentication, com.netscape.cms.authentication, com.netscape.cmscore.authentication
+| Authentication services.
+|-
+| org.dogtagpki.server.authority
+| com.netscape.certsrv.authority
+| Authority services.
+|-
+| org.dogtagpki.server.authorization
+| com.netscape.certsrv.authorization, com.netscape.cms.authorization, com.netscape.cmscore.authorization
+| Authorization services.
+|-
+| org.dogtagpki.server.cert
+| com.netscape.cms.servlet.cert, com.netscape.cmscore.cert
+| Certificate services.
+|-
+| org.dogtagpki.server.config
+| com.netscape.cms.servlet.csadmin
+| Configuration wizard.
+|-
+| org.dogtagpki.server.connector
+| com.netscape.cms.servlet.connector, com.netscape.cmscore.connector
+| Inter-server communication.
+|-
+| org.dogtagpki.server.db
+| com.netscape.certsrv.dbs
+| Database services.
+|-
+| org.dogtagpki.server.evaluator
+| com.netscape.certsrv.evaluators, com.netscape.cms.evaluators
+| ACL evaluator.
+|-
+| org.dogtagpki.server.ext
+| com.netscape.certsrv.extensions, com.netscape.cmscore.extensions
+| Certificate extensions.
+|-
+| org.dogtagpki.server.job
+| com.netscape.certsrv.jobs, com.netscape.cmscore.jobs
+| Job services.
+|-
+| org.dogtagpki.server.key
+| com.netscape.cms.servlet.key
+| Key services.
+|-
+| org.dogtagpki.server.ldap
+| com.netscape.certsrv.ldap, com.netscape.cmscore.ldap, com.netscape.cmscore.ldapconn
+| LDAP services.
+|-
+| org.dogtagpki.server.listener
+| com.netscape.cmscore.listeners
+| Listener services.
+|-
+| org.dogtagpki.server.logging
+| com.netscape.certsrv.logging, com.netscape.cmscore.logging
+| Logging services.
+|-
+| org.dogtagpki.server.notification
+| com.netscape.certsrv.notification, com.netscape.cms.notification, com.netscape.cmscore.notification
+| Notification services.
+|-
+| org.dogtagpki.server.policy
+| com.netscape.certsrv.policy, com.netscape.cms.policy, com.netscape.cmscore.policy
+| Policy services.
+|-
+| org.dogtagpki.server.publish
+| com.netscape.certsrv.publish, com.netscape.cms.publish
+| Publishing services.
+|-
+| org.dogtagpki.server.request
+| com.netscape.certsrv.request, com.netscape.cms.request, com.netscape.cms.servlet.request, com.netscape.cmscore.request
+| Request services.
+|-
+| org.dogtagpki.server.scep
+| com.netscape.cmsutil.scep, com.netscape.cms.servlet.cert.scep
+| SCEP services.
+|-
+| org.dogtagpki.server.security
+| com.netscape.certsrv.security, com.netscape.cmscore.security
+| Cryptographic operations.
+|-
+| org.dogtagpki.server.selftest
+| com.netscape.certsrv.selftests, com.netscape.cms.selftests, com.netscape.cms.selftests.common
+| Server self-test.
+|-
+| org.dogtagpki.server.time
+| com.netscape.certsrv.base, com.netscape.cmscore.time
+| Time services.
+|-
+| org.dogtagpki.server.usrgrp
+| com.netscape.certsrv.usrgrp, com.netscape.cmscore.usrgrp, com.netscape.cms.servlet.admin
+| User and group services.
+|-
+| org.dogtagpki.server.util
+| com.netscape.cmscore.util
+| Server utilities.
+|}
+
+Some of the following packages might be moved into the Common Library if they are usable by both server and client. 
+
+{| border="1" style="border-collapse: collapse;" width="100%"
+|-
+! width="300" | New Package
+! width="300" | Old Packages
+! Description
+|-
+| org.dogtagpki.server.crmf
+| com.netscape.cmscore.crmf
+| CRMF utilities.
+|}
+
+== Server Tools ==
+
+* JAR file: pki-server-tools.jar
+
+The Server Tools contains command-line tools that are needed by the server only. The tools can only be run locally on the server.
+
+{| border="1" style="border-collapse: collapse;" width="100%"
+|-
+! width="300" | New Package
+! width="300" | Old Packages
+! Description
+|-
+| org.dogtagpki.server.tools
+| com.netscape.pkisilent
+| Server tools (e.g. pkisilent).
+|}
+
+== CA Server Library ==
+
+* JAR file: pki-server-ca.jar
+* Requires: pki-server.jar
+
+The CA Server Library contains classes that are needed to run CA server.
+
+{| border="1" style="border-collapse: collapse;" width="100%"
+|-
+! width="300" | New Package
+! width="300" | Old Packages
+! Description
+|-
+| org.dogtagpki.server.ca
+| com.netscape.ca, com.netscape.certsrv.ca, com.netscape.certsrv.authority
+| CA services.
+|-
+| org.dogtagpki.server.ca.selftest
+| com.netscape.cms.selftests.ca
+| Self-test for CA server.
+|}
+
+== KRA Server Library ==
+
+* JAR file: pki-server-kra.jar
+* Requires: pki-server.jar
+
+The KRA Server Library contains classes that are needed to run KRA server.
+
+{| border="1" style="border-collapse: collapse;" width="100%"
+|-
+! width="300" | New Package
+! width="300" | Old Packages
+! Description
+|-
+| org.dogtagpki.server.kra
+| com.netscape.kra, com.netscape.certsrv.kra
+| KRA services.
+|-
+| org.dogtagpki.server.kra.selftest
+| com.netscape.cms.selftests.kra
+| Self-test for KRA server.
+|}
+
+== OCSP Server Library ==
+
+* JAR file: pki-server-ocsp.jar
+* Requires: pki-server.jar
+
+The OCSP Server Library contains classes that are needed to run OCSP server.
+
+{| border="1" style="border-collapse: collapse;" width="100%"
+|-
+! width="300" | New Package
+! width="300" | Old Packages
+! Description
+|-
+| org.dogtagpki.server.ocsp
+| com.netscape.ocsp, com.netscape.certsrv.ocsp, com.netscape.cms.servlet.ocsp
+| OCSP services. 
+|-
+| org.dogtagpki.server.ocsp.selftest
+| com.netscape.cms.selftests.ocsp
+| Self-test for OCSP server.
+|}
+
+== TKS Server Library ==
+
+* JAR file: pki-server-tks.jar
+* Requires: pki-server.jar
+
+The TKS Server Library contains classes that are needed to run TKS server.
+
+{| border="1" style="border-collapse: collapse;" width="100%"
+|-
+! width="300" | New Package
+! width="300" | Old Packages
+! Description
+|-
+| org.dogtagpki.server.tks
+| com.netscape.tks, com.netscape.certsrv.tks, com.netscape.cms.servlet.tks
+| TKS services. 
+|-
+| org.dogtagpki.server.tks.selftest
+| com.netscape.cms.selftests.tks
+| Self-test for TKS server.
+|}
+
+== Client Library ==
+
+* JAR file: pki-client.jar
+* Requires: pki-common.jar
+
+The Client Library contains classes that can be used by the client to access services running on the server.
+
+{| border="1" style="border-collapse: collapse;" width="100%"
+|-
+! width="300" | New Package
+! width="300" | Old Packages
+! Description
+|-
+| org.dogtagpki.client
+| com.netscape.certsrv.client
+| Client framework (e.g. base REST client).
+|-
+| org.dogtagpki.client.cert
+| com.netscape.cms.client.cert
+| Client for certificate REST services.
+|-
+| org.dogtagpki.client.group
+| com.netscape.cms.client.group
+| Client for group REST services.
+|-
+| org.dogtagpki.client.user
+| com.netscape.cms.client.user
+| Client for user REST services.
+|}
+
+== Client Tools ==
+
+* JAR file: pki-client-tools.jar
+* Requires: pki-client.jar
+
+The Client Tools provides command-line interface for the client to access services running on the server remotely. The tools will use the Client Library to communicate with the server.
+
+{| border="1" style="border-collapse: collapse;" width="100%"
+|-
+! width="300" | New Package
+! width="300" | Old Packages
+! Description
+|-
+| org.dogtagpki.client.tools
+| com.netscape.cms.client.cli
+| Framework for client tools (e.g. CLI base class).
+|-
+| org.dogtagpki.client.tools.cert
+| com.netscape.cms.client.cert
+| CLI for certificate services.
+|-
+| org.dogtagpki.client.tools.group
+| com.netscape.cms.client.group
+| CLI for group services.
+|-
+| org.dogtagpki.client.tools.user
+| com.netscape.cms.client.user
+| CLI for users services.
+|}
+
+== Console ==
+
+* JAR file: pki-console.jar
+* Requires: pki-client.jar
+
+{| border="1" style="border-collapse: collapse;" width="100%"
+|-
+! width="300" | New Package
+! width="300" | Old Packages
+! Description
+|-
+| org.dogtagpki.console
+| com.netscape.admin.certsrv
+|
+|-
+| org.dogtagpki.console.config
+| com.netscape.admin.certsrv.config
+|
+|-
+| org.dogtagpki.console.config.install
+| com.netscape.admin.certsrv.config.install
+|
+|-
+| org.dogtagpki.console.connection
+| com.netscape.admin.certsrv.connection
+|
+|-
+| org.dogtagpki.console.images
+| com.netscape.admin.certsrv.images
+|
+|-
+| org.dogtagpki.console.keycert
+| com.netscape.admin.certsrv.keycert
+|
+|-
+| org.dogtagpki.console.managecert
+| com.netscape.admin.certsrv.managecert
+|
+|-
+| org.dogtagpki.console.menu
+| com.netscape.admin.certsrv.menu
+|
+|-
+| org.dogtagpki.console.misc
+| com.netscape.admin.certsrv.misc
+|
+|-
+| org.dogtagpki.console.notification
+| com.netscape.admin.certsrv.notification
+|
+|-
+| org.dogtagpki.console.security
+| com.netscape.admin.certsrv.security
+|
+|-
+| org.dogtagpki.console.status
+| com.netscape.admin.certsrv.status
+|
+|-
+| org.dogtagpki.console.task
+| com.netscape.admin.certsrv.task
+|
+|-
+| org.dogtagpki.console.usrgrp
+| com.netscape.admin.certsrv.ug
+|
+|-
+| org.dogtagpki.console.wizard
+| com.netscape.admin.certsrv.wizard
+|
+|}
+
+= Code Migration =
+
+== PKI Code ==
+
+The packaging change can be implemented relatively quickly because it only involves renaming the packages and class names. The method and field names will remain the same. The build scripts will need to be fixed.
+
+Suppose this is the old code:
+
+<pre>
+package com.netscape.certsrv.usrgrp;
+
+public interface IUser {
+    public String getName();
+}
+</pre>
+
+<pre>
+package com.netscape.cmscore.usrgrp;
+
+public class User implements IUser {
+    String name;
+    public User(String name) { this.name = name; }
+    public String getName() { return name; }
+}
+</pre>
+
+The code will be moved into the new package as follows:
+
+<pre>
+package org.dogtagpki.server.usrgrp;
+
+public interface IUser {
+    public String getName();
+}
+
+public class User implements IUser {
+    String name;
+    public User(String name) { this.name = name; }
+    public String getName() { return name; }
+}
+</pre>
+
+== Custom Code ==
+
+Regardless of the packaging change, there have been some API changes since the last release so custom code would have to be migrated anyway:
+* Java generics: The PKI code was updated to use Java generics on the collection objects to ensure type safety. Some method signatures have changed because of this.
+* New Auditor service: A new Auditor service was added to centralize the auditing operations. Custom code implementing ICMSEngine will have to implement the new service (or use the default implementation).
+* New symmetric key methods: Some new methods were added to handle symmetric key. Custom code implementing IEncryptionUnit or ITransportKeyUnit will have to implement the new methods (or use the default implementation).
+* New user management methods: Some new methods were added to handle user management. Custom code implementing IUGSubsystem will have to implement the new methods (or use the default implementation).
+* Removal of unused fields: Some unused constants or attributes were removed. Custom code that depends on it would have to use something else.
+* Implementation changes: The behavior of some default implementation classes may have changed. Custom code that depends on it will need to be tested to ensure compatibility.
+
+There are several ways to handle custom code migration in relation to the packaging change.
+
+=== Search & Replace ===
+
+Custom code can be migrated relatively quickly by searching the source code and replacing the occurrences of old package and class names with the new ones. This can be done manually using an IDE or a text editor. A tool can also be developed to search and replace the source code automatically.
+
+Some old packages may be split into multiple new packages, so in the custom code if an import statement uses a wildcard as follows:
+<pre>
+import com.netscape.cms.servlet.admin.*;
+</pre>
+it might need to be replaced with multiple import statements depending on the classes being used:
+<pre>
+import org.dogtagpki.cert.*;
+import org.dogtagpki.user.*;
+</pre>
+
+The advantage of this is that there is no need to provide a backward compatible API since the custom code will be converted and recompiled using the new API. The downside is that existing binaries that use the old API will not work.
+
+=== Backward Compatibility API ===
+
+Another way is to provide a backward compatible API so old custom code might continue to work without major modification. Existing binaries also might continue to work, but it depends on whether it's affected by other migration changes above or backward compatibility issues described below.
+
+To develop a backward compatible API, the old code will be replaced with a code that wraps the new API. This old API will be deprecated, so developers will be encouraged to migrate to the new API.
+
+In some cases it might be possible to extend the new code directly:
+
+<pre>
+package com.netscape.certsrv.usrgrp;
+
+/**
+ * @deprecated
+ */
+public interface IUser extends org.dogtagpki.server.usrgrp.IUser {
+}
+</pre>
+
+<pre>
+package com.netscape.cmscore.usrgrp;
+
+/**
+ * @deprecated
+ */
+public class User extends org.dogtagpki.server.usrgrp.User implements IUser {
+
+    public User(String name) {
+        super(name);
+    }
+}
+</pre>
+
+However, in some other cases it might be necessary to create separate class hierarchy and wrap the new code using the old API:
+
+<pre>
+package com.netscape.certsrv.usrgrp;
+
+/**
+ * @deprecated
+ */
+public interface IUser {
+    public String getName();
+}
+</pre>
+
+<pre>
+package com.netscape.cmscore.usrgrp;
+
+/**
+ * @deprecated
+ */
+public class User implements IUser {
+
+    org.dogtagpki.server.usrgrp.User user;
+
+    public User(org.dogtagpki.server.usrgrp.User user) {
+        this.user = user;
+    }
+
+    public User(String name) {
+        user = new org.dogtagpki.server.usrgrp.User(name);
+    }
+
+    public String getName() {
+        return user.getName();
+    }
+}
+</pre>
+
+The amount of work depends on how much of the code is actually used by the custom code. It might not be necessary to create wrappers for all classes in the new API.
+
+There might be some possible issues using the old API which may require additional changes in the custom code:
+* If the custom code accesses the fields in the old classes directly, it will not work anymore since the fields are moved into the new classes.
+* If the custom code relies on pointer comparison, it might not work anymore because it will be comparing the pointers of the wrappers, not pointers of the actual objects.
+
+= References =
+
+* [[PKI 9 Interface Design]]
+* [[PKI 9 JAR Files]]

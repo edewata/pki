@@ -1,0 +1,26 @@
+= CPU =
+
+<pre>
+$ grep -w aes /proc/cpuinfo
+</pre>
+
+= Boot Loader =
+
+<pre>
+$ grubby --default-kernel
+/boot/vmlinuz-4.15.14-300.fc27.x86_64
+</pre>
+
+<pre>
+$ findmnt -no uuid /boot
+cbda8633-2041-44f3-9d83-bdf48c05da35
+</pre>
+
+<pre>
+$ grubby --update-kernel=<kernel> --args=<args>
+</pre>
+
+= References =
+
+* [[FIPS]]
+* [https://linux.die.net/man/8/grubby grubby]

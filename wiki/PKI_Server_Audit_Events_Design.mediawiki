@@ -1,0 +1,355 @@
+== CERT_REQUEST_PROCESSED ==
+
+=== CertProcessor ===
+
+{| border="1" style="border-collapse: collapse;" width="800"
+! Scenario
+! width="100" | Outcome
+|-
+| Cert request processing completed successfully and produced a certificate.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/cert/CertProcessor.java#L252 SUCCESS]
+|-
+| Cert request rejected.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/cert/CertProcessor.java#L283 FAILURE]
+|-
+| Cert request processing failed due to exception (not including rejection or deferral).
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/cert/CertProcessor.java#L298 FAILURE]
+|}
+
+=== EnrollServlet ===
+
+{| border="1" style="border-collapse: collapse;" width="800"
+! Scenario
+! width="100" | Outcome
+|-
+| Cert enrollment completed successfully. Generate one SUCCESS event for each issued cert.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/cert/EnrollServlet.java#L1371 SUCCESS]
+|-
+| Cert enrollment failed.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/cert/EnrollServlet.java#L1381 FAILURE]
+|-
+| Cert enrollment not completed (i.e. rejected?).
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/cert/EnrollServlet.java#L1397 FAILURE]
+|-
+| Cert enrollment completed successfully. Generate one SUCCESS event for each issued cert.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/cert/EnrollServlet.java#L1449 SUCCESS]
+|-
+| Template rendering completed successfully. Generate one SUCCESS event for each issued cert.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/cert/EnrollServlet.java#L1468 SUCCESS]
+|-
+| Template rendering failed.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/cert/EnrollServlet.java#L1481 FAILURE]
+|-
+| Cert enrollment failed (i.e. rejected?).
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/cert/EnrollServlet.java#L1493 FAILURE]
+|}
+
+=== RequestProcessor ===
+
+{| border="1" style="border-collapse: collapse;" width="800"
+! Scenario
+! width="100" | Outcome
+|-
+| Cert request canceled.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/cert/RequestProcessor.java#L282 FAILURE]
+|-
+| Cert request rejected
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/cert/RequestProcessor.java#L311 FAILURE]
+|-
+| Cert request approved.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/cert/RequestProcessor.java#L385 SUCCESS]
+|-
+| Cert request approval failed.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/cert/RequestProcessor.java#L393 FAILURE]
+|}
+
+=== ConnectorServlet ===
+
+{| border="1" style="border-collapse: collapse;" width="800"
+! Scenario
+! width="100" | Outcome
+|-
+| Profile request generated a certificate.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/connector/ConnectorServlet.java#L627 SUCCESS]
+|-
+| Profile request did not generate a certificate.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/connector/ConnectorServlet.java#L635 FAILURE]
+|}
+
+=== ProfileSubmitCMCServlet ===
+
+{| border="1" style="border-collapse: collapse;" width="800"
+! Scenario
+! width="100" | Outcome
+|-
+| CMC request generated a certificate.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/profile/ProfileSubmitCMCServlet.java#L815 SUCCESS]
+|-
+| CMC request failed due to internal error.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/profile/ProfileSubmitCMCServlet.java#L882 FAILURE]
+|-
+| CMC request rejected.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/profile/ProfileSubmitCMCServlet.java#L894 FAILURE]
+|-
+| CMC request generated a certificate.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/profile/ProfileSubmitCMCServlet.java#L922 SUCCESS]
+|}
+
+=== ProcessCertReq ===
+
+{| border="1" style="border-collapse: collapse;" width="800"
+! Scenario
+! width="100" | Outcome
+|-
+| Cert request accepted.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/request/ProcessCertReq.java#L467 FAILURE]
+|-
+| Cert request cancelled.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/request/ProcessCertReq.java#L475 FAILURE]
+|-
+| Cert request rejected.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/request/ProcessCertReq.java#L483 FAILURE]
+|-
+| Cert request completed. It generates one SUCCESS event for each issued certificate.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/request/ProcessCertReq.java#L929 SUCCESS]
+|-
+| Cert request completed without issuing a certificate. 
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/request/ProcessCertReq.java#L969 SUCCESS]
+|-
+| Cert request rejected.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/request/ProcessCertReq.java#L1090 SUCCESS]
+|-
+| Cert request cancelled.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/request/ProcessCertReq.java#L1148 SUCCESS]
+|-
+| Cert request failed during acceptance.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/request/ProcessCertReq.java#L1255 FAILURE]
+|-
+| Cert request failed during cancellation.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/request/ProcessCertReq.java#L1263 FAILURE]
+|-
+| Cert request failed during rejection.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/request/ProcessCertReq.java#L1271 FAILURE]
+|-
+| Cert request failed during acceptance.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/request/ProcessCertReq.java#L1298 FAILURE]
+|-
+| Cert request failed during cancellation.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/request/ProcessCertReq.java#L1306 FAILURE]
+|-
+| Cert request failed during rejection.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/request/ProcessCertReq.java#L1314 FAILURE]
+|-
+| Cert request failed during acceptance.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/request/ProcessCertReq.java#L1342 FAILURE]
+|-
+| Cert request failed during cancellation.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/request/ProcessCertReq.java#L1350 FAILURE]
+|-
+| Cert request failed during rejection.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/request/ProcessCertReq.java#L1358 FAILURE]
+|-
+| Cert request failed during acceptance.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/request/ProcessCertReq.java#L1386 FAILURE]
+|-
+| Cert request failed during cancellation.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/request/ProcessCertReq.java#L1394 FAILURE]
+|-
+| Cert request failed during rejection.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/servlet/request/ProcessCertReq.java#L1402 FAILURE]
+|}
+
+= SECURITY_DATA_ARCHIVAL_REQUEST =
+
+=== CAService ===
+
+{| border="1" style="border-collapse: collapse;" width="800"
+! Scenario
+! width="100" | Outcome
+|-
+| About to send enrollment request to KRA (regardless of outcome later).
+| [https://github.com/dogtagpki/pki/blob/master/base/ca/src/com/netscape/ca/CAService.java#L424 SUCCESS]
+|-
+| Failed to send enrollment request sent to KRA (in addition to SUCCESS event earlier).
+| [https://github.com/dogtagpki/pki/blob/master/base/ca/src/com/netscape/ca/CAService.java#L439 FAILURE]
+|-
+| Received an error message from KRA (in addition to SUCCESS event earlier).
+| [https://github.com/dogtagpki/pki/blob/master/base/ca/src/com/netscape/ca/CAService.java#L457 FAILURE]
+|-
+| Error occurred while processing non-revocation/unrevocation request (in addition to SUCCESS event earlier).
+| [https://github.com/dogtagpki/pki/blob/master/base/ca/src/com/netscape/ca/CAService.java#L482 FAILURE]
+|-
+| Completed processing non-revocation/unrevocation request (in addition to SUCCESS event earlier).
+| [https://github.com/dogtagpki/pki/blob/master/base/ca/src/com/netscape/ca/CAService.java#L500 SUCCESS]
+|}
+
+=== EnrollmentService ===
+
+{| border="1" style="border-collapse: collapse;" width="800"
+! Scenario
+! width="100" | Outcome
+|-
+| Unable to parse CRMF request.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/EnrollmentService.java#L206 FAILURE]
+|-
+| Unable to decrypt private key.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/EnrollmentService.java#L253 FAILURE]
+|-
+| Unable to retrieve public key.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/EnrollmentService.java#L291 FAILURE]
+|-
+| Unable to unwrap private key.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/EnrollmentService.java#L332 FAILURE]
+|-
+| Unable to verify key pair.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/EnrollmentService.java#L360 FAILURE]
+|-
+| Missing owner name.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/EnrollmentService.java#L386 FAILURE]
+|-
+| Unable to encrypt/wrap with storage key.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/EnrollmentService.java#L422 FAILURE]
+|-
+| Unable to create RSA public key.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/EnrollmentService.java#L453 FAILURE]
+|-
+| New key record already has a serial number.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/EnrollmentService.java#L502 FAILURE]
+|-
+| Unable to store wrapping parameters.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/EnrollmentService.java#L524 FAILURE]
+|-
+| Unable to get serial number for new key record.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/EnrollmentService.java#L542 FAILURE]
+|-
+| Key archived successfully (together with SECURITY_DATA_ARCHIVAL_REQUEST_PROCESSED event).
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/EnrollmentService.java#L597 SUCCESS]
+|}
+
+=== KeyRecoveryAuthority ===
+
+{| border="1" style="border-collapse: collapse;" width="800"
+! Scenario
+! width="100" | Outcome
+|-
+| Archival request created.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/KeyRecoveryAuthority.java#L762 SUCCESS]
+|-
+| Failed to create archival request.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/KeyRecoveryAuthority.java#L769 FAILURE]
+|}
+
+=== NetkeyKeygenService ===
+
+{| border="1" style="border-collapse: collapse;" width="800"
+! Scenario
+! width="100" | Outcome
+|-
+| Archival requested for server-side key generation.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/NetkeyKeygenService.java#L401 SUCCESS]
+|}
+
+=== KeyRequestService ===
+
+{| border="1" style="border-collapse: collapse;" width="800"
+! Scenario
+! width="100" | Outcome
+|-
+| Archival request submitted.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/org/dogtagpki/server/kra/rest/KeyRequestService.java#L155 SUCCESS]
+|-
+| Unauthorized to submit archival request.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/org/dogtagpki/server/kra/rest/KeyRequestService.java#L165 FAILURE]
+|-
+| Unknown authorization realm while submitting archival request.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/org/dogtagpki/server/kra/rest/KeyRequestService.java#L176 FAILURE]
+|-
+| Other error while submitting archival request.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/org/dogtagpki/server/kra/rest/KeyRequestService.java#L186 FAILURE]
+|}
+
+=== CAEnrollProfile ===
+
+{| border="1" style="border-collapse: collapse;" width="800"
+! Scenario
+! width="100" | Outcome
+|-
+| KRA connector not configured.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/profile/common/CAEnrollProfile.java#L120 FAILURE]
+|-
+| Request rejected by KRA.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/profile/common/CAEnrollProfile.java#L138 FAILURE]
+|-
+| Request accepted by KRA.
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/profile/common/CAEnrollProfile.java#L160 SUCCESS]
+|-
+| Any failure during archival process (may generate duplicate FAILURE events).
+| [https://github.com/dogtagpki/pki/blob/master/base/server/cms/src/com/netscape/cms/profile/common/CAEnrollProfile.java#L170 FAILURE]
+|}
+
+= SECURITY_DATA_ARCHIVAL_REQUEST_PROCESSED =
+
+=== EnrollmentService ===
+
+{| border="1" style="border-collapse: collapse;" width="800"
+! Scenario
+! width="100" | Outcome
+|-
+| Cert enrollment completed successfully.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/EnrollmentService.java#L605 SUCCESS]
+|}
+
+=== KeyRecoveryAuthority ===
+
+{| border="1" style="border-collapse: collapse;" width="800"
+! Scenario
+! width="100" | Outcome
+|-
+| Key archival request added into queue successfully.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/KeyRecoveryAuthority.java#L786 SUCCESS]
+|-
+| Key archival request failed to be submitted into queue.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/KeyRecoveryAuthority.java#L796 FAILURE]
+|}
+
+=== NetkeyKeygenService ===
+
+{| border="1" style="border-collapse: collapse;" width="800"
+! Scenario
+! width="100" | Outcome
+|-
+| Netkey archival completed successfully.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/NetkeyKeygenService.java#L498 SUCCESS]
+|}
+
+=== SecurityDataProcessor ===
+
+{| border="1" style="border-collapse: collapse;" width="800"
+! Scenario
+! width="100" | Outcome
+|-
+| Key archival failed due to missing client key ID or data type.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/SecurityDataProcessor.java#L124 FAILURE]
+|-
+| Key archival failed due to missing data.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/SecurityDataProcessor.java#L240 FAILURE]
+|-
+| Key archival failed due to encryption/wrapping failure.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/SecurityDataProcessor.java#L246 FAILURE]
+|-
+| Key archival failed if key record's serial number is not null.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/SecurityDataProcessor.java#L272 FAILURE]
+|-
+| Key archival failed if key repository's next serial number is null.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/SecurityDataProcessor.java#L282 FAILURE]
+|-
+| Key archival failed due to failure storing wrapping parameters.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/SecurityDataProcessor.java#L305 FAILURE]
+|-
+| Key archival completed successfully.
+| [https://github.com/dogtagpki/pki/blob/master/base/kra/src/com/netscape/kra/SecurityDataProcessor.java#L314 SUCCESS]
+|}
+
+= See Also =
+
+* [https://github.com/dogtagpki/pki/wiki/Signed-Audit-Events Signed Audit Events]

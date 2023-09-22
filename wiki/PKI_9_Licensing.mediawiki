@@ -1,0 +1,59 @@
+= Overview =
+
+PKI consists of several components. Each component is licensed under different license.
+
+= PKI Core =
+
+This is the bulk of the code.  They are licensed under the [http://www.gnu.org/licenses/gpl2.txt GPL].
+
+= Token Processing System =
+
+There are Apache modules used by the Token Processing System.  They are licensed under the [http://www.gnu.org/licenses/lgpl2.txt LGPL].
+
+= Smartcard Manager Client =
+
+There is a client associated with the Token Processing System that is licensed under the [http://www.gnu.org/licenses/gpl2.txt GPL].
+
+= NSPR / NSS / LDAPSDK =
+
+Since these come from mozilla.org, this code is licensed under an MPL/LGPL/GPL tri-license.  See the mozilla.org [http://www.mozilla.org/MPL/ MPL pages] for more information on the MPL.
+
+= Packages =
+
+To determine what licenses are attached to what packages, cd to an RPM repository, and execute the following command:
+
+ $ find . -name "*.rpm" | xargs rpm -qp --queryformat '%{NAME} --> %{LICENSE}\n' | sort | uniq
+ dogtag-pki-ca-ui --> GPLv2 with exceptions
+ dogtag-pki-common-ui --> GPLv2 with exceptions
+ dogtag-pki-console-ui --> GPLv2 with exceptions
+ dogtag-pki-kra-ui --> GPLv2 with exceptions
+ dogtag-pki-ocsp-ui --> GPLv2 with exceptions
+ dogtag-pki-ra-ui --> GPLv2 with exceptions
+ dogtag-pki-tks-ui --> GPLv2 with exceptions
+ dogtag-pki-tps-ui --> GPLv2 with exceptions
+ osutil --> GPLv2 with exceptions
+ pki-ca --> GPLv2 with exceptions
+ pki-common --> GPLv2 with exceptions
+ pki-common-javadoc --> GPLv2 with exceptions
+ pki-console --> GPLv2 with exceptions
+ pki-java-tools --> GPLv2 with exceptions
+ pki-java-tools-javadoc --> GPLv2 with exceptions
+ pki-kra --> GPLv2 with exceptions
+ pki-manage --> GPLv2 with exceptions  '''<font color="RED">(NOTE:  The 'pki-manage' RPM has been 'deprecated' on Fedora platforms in favor of 'yum' and 'yum-utils'!)</font>'''
+ pki-migrate --> GPLv2 with exceptions
+ pki-native-tools --> GPLv2 with exceptions
+ pki-ocsp --> GPLv2 with exceptions
+ pki-ra --> GPLv2 with exceptions
+ pki-selinux --> GPLv2 with exceptions
+ pki-setup --> GPLv2 with exceptions
+ pki-silent --> GPLv2 with exceptions
+ pki-symkey --> GPLv2 with exceptions
+ pki-tks --> GPLv2 with exceptions
+ pki-tps --> LGPLv2 with exceptions
+ pki-util --> GPLv2 with exceptions
+ pki-util-javadoc --> GPLv2 with exceptions
+ tomcatjss --> LGPL
+
+= References =
+
+* [[PKI Licensing]]

@@ -1,0 +1,103 @@
+= Releases =
+
+* stable: Debian 9 (stretch)
+* testing: buster
+* unstable: sid
+
+See also:
+
+* https://wiki.debian.org/DebianReleases
+
+= Installation =
+
+== Installing Debian Stable ==
+
+To install Debian Stable, download [https://www.debian.org/distrib/ Debian ISO], then create a VM with [[KVM]].
+
+ $ cd /var/lib/libvirt/images
+ $ wget https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-9.5.0-amd64-netinst.iso
+ $ virt-install --name debian --memory 1024 --disk size=10 --cdrom /var/lib/libvirt/images/debian-9.5.0-amd64-netinst.iso
+
+Verify with the following command:
+
+ $ cat /etc/debian_version
+ 9.5
+
+== Upgrading to Debian Unstable ==
+
+To upgrade to Debian Unstable, edit /etc/apt/sources.list, replace '''stable''' (e.g. '''stretch''') to '''unstable''':
+
+ deb http://ftp.us.debian.org/debian/ unstable main
+ deb-src http://ftp.us.debian.org/debian/ unstable main
+ 
+ deb http://security.debian.org/debian-security unstable/updates main
+ deb-src http://security.debian.org/debian-security unstable/updates main
+ 
+ deb http://ftp.us.debian.org/debian/ unstable-updates main
+ deb-src http://ftp.us.debian.org/debian/ unstable-updates main
+
+Then execute:
+
+ $ apt update
+ $ apt upgrade
+ $ apt autoremove
+
+Verify with the following command:
+
+ $ cat /etc/debian_version 
+ buster/sid
+
+== Running Debian Container ==
+
+To run Debian container:
+
+<pre>
+$ docker run --name=debian --detach -i debian
+$ docker exec debian cat /etc/issue
+</pre>
+
+= Setup =
+
+== Giving Sudo Permission ==
+
+To give sudo permission:
+
+ $ adduser <username> sudo
+
+The user must log out and log back in.
+
+=  Package Management =
+
+To list available packages:
+
+ $ apt list
+
+To list installed packages:
+
+ $ apt list --installed
+
+To list installed files:
+
+ $ dpkg -L <package>
+
+To install a package file:
+
+ $ dpkg -i <file>
+
+= Development =
+
+See also:
+
+* [[JSS Debian Development]]
+* [[PKI Debian Development]]
+
+= References =
+
+* [[Releases]]
+* [https://wiki.debian.org/Apt Apt]
+* [https://www.debian.org/doc/manuals/maint-guide/ Debian New Maintainers' Guide]
+* [https://www.novell.com/coolsolutions/feature/11251.html Detecting Underlying Linux Distro]
+* [[Fedora]]
+* [[CentOS]]
+* [[Porting PKI to Debian]]
+* [https://assafmo.github.io/2019/05/02/ppa-repo-hosted-on-github.html Hosting your own PPA repository on GitHub]

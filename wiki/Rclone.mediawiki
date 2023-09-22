@@ -1,0 +1,85 @@
+= Installation =
+
+[https://rclone.org/downloads/ Download] and install rclone:
+
+<pre>
+$ wget https://downloads.rclone.org/v1.51.0/rclone-v1.51.0-linux-amd64.rpm
+$ rpm -i rclone-v1.51.0-linux-amd64.rpm
+</pre>
+
+= Configuration =
+
+<pre>
+$ rclone config
+...
+n/r/c/s/q> n
+name> remote
+...
+Storage> drive
+...
+client_id>
+...
+client_secret>
+...
+scope> 1
+...
+root_folder_id>
+...
+service_account_file>
+...
+y/n>
+..
+y/n>
+...
+y/n>
+...
+y/e/d>
+...
+e/n/d/r/c/s/q> q
+</pre>
+
+= Listing Directories =
+
+To list top-level directories:
+
+<pre>
+$ rclone lsd remote:
+</pre>
+
+To list subdirectories in a directory:
+
+<pre>
+$ rclone lsd remote:<path>
+</pre>
+
+= Listing Files =
+
+To list files in a directory:
+
+<pre>
+$ rclone ls remote:<path> --max-depth 1
+</pre>
+
+= Creating a Directory =
+
+To create a remote directory:
+
+<pre>
+$ rclone mkdir remote:<path>
+</pre>
+
+= Uploading Files =
+
+To upload all files from a local directory to a remote directory:
+
+<pre>
+$ rclone copy <path> remote:<path>
+</pre>
+
+= See Also =
+
+* [[Google Drive]]
+* [https://rclone.org/ rclone.org]
+* [https://rclone.org/drive/ rclone: Google Drive]
+* [https://github.com/rclone/rclone rclone]
+* [[gdrive]]

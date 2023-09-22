@@ -1,0 +1,205 @@
+= Overview =
+
+{| class="wikitable"
+! SECG
+! ANSI X9.62
+! NIST
+|-
+| sect163k1
+|
+| NIST K-163
+|-
+| sect163r1
+|
+|
+|-
+| sect163r2
+|
+| NIST B-163
+|-
+| sect193r1
+|
+|
+|-
+| sect193r2
+|
+|
+|-
+| sect233k1
+|
+| NIST K-233
+|-
+| sect233r1
+|
+| NIST B-233
+|-
+| sect239k1
+|
+|
+|-
+| sect283k1
+|
+| NIST K-283
+|-
+| sect283r1
+|
+| NIST B-283
+|-
+| sect409k1
+|
+| NIST K-409
+|-
+| sect409r1
+|
+| NIST B-409
+|-
+| sect571k1
+|
+| NIST K-571
+|-
+| sect571r1
+|
+| NIST B-571
+|-
+| secp160k1
+|
+|
+|-
+| secp160r1
+|
+|
+|-
+| secp160r2
+|
+|
+|-
+| secp192k1
+|
+|
+|-
+| secp192r1
+| prime192v1
+| NIST P-192
+|-
+| secp224k1
+|
+|
+|-
+| secp224r1
+|
+| NIST P-224
+|-
+| secp256k1
+|
+|
+|-
+| secp256r1
+| prime256v1
+| NIST P-256
+|-
+| secp384r1
+|
+| NIST P-384
+|-
+| secp521r1
+|
+| NIST P-521
+|}
+
+= Displaying Available Curves =
+
+In OpenSSL:
+
+<pre>
+$ openssl ecparam -list_curves
+  secp224r1 : NIST/SECG curve over a 224 bit prime field
+  secp256k1 : SECG curve over a 256 bit prime field
+  secp384r1 : NIST/SECG curve over a 384 bit prime field
+  secp521r1 : NIST/SECG curve over a 521 bit prime field
+  prime256v1: X9.62/SECG curve over a 256 bit prime field
+</pre>
+
+In NSS:
+
+<pre>
+$ certutil -H -G
+...
+   -q curve-name     Elliptic curve name (ec only)
+                     One of nistp256, nistp384, nistp521, curve25519.
+                     If a custom token is present, the following curves are also supported:
+                     sect163k1, nistk163, sect163r1, sect163r2,
+                     nistb163, sect193r1, sect193r2, sect233k1, nistk233,
+                     sect233r1, nistb233, sect239k1, sect283k1, nistk283,
+                     sect283r1, nistb283, sect409k1, nistk409, sect409r1,
+                     nistb409, sect571k1, nistk571, sect571r1, nistb571,
+                     secp160k1, secp160r1, secp160r2, secp192k1, secp192r1,
+                     nistp192, secp224k1, secp224r1, nistp224, secp256k1,
+                     secp256r1, secp384r1, secp521r1,
+                     prime192v1, prime192v2, prime192v3, 
+                     prime239v1, prime239v2, prime239v3, c2pnb163v1, 
+                     c2pnb163v2, c2pnb163v3, c2pnb176v1, c2tnb191v1, 
+                     c2tnb191v2, c2tnb191v3,  
+                     c2pnb208w1, c2tnb239v1, c2tnb239v2, c2tnb239v3, 
+                     c2pnb272w1, c2pnb304w1, 
+                     c2tnb359w1, c2pnb368w1, c2tnb431r1, secp112r1, 
+                     secp112r2, secp128r1, secp128r2, sect113r1, sect113r2
+                     sect131r1, sect131r2
+</pre>
+
+= Generating Self-Signed Certificate =
+
+To generate a certificate with NSS:
+
+<pre>
+$ certutil -S \
+    -x \
+    -d /var/lib/tomcats/pki/alias \
+    -f password.txt \
+    -z noise.bin \
+    -n sslserver \
+    -s "CN=$HOSTNAME" \
+    -t "CT,C,C" \
+    -m $RANDOM \
+    -k ec \
+    -q secp256r1 \
+    --keyUsage certSigning,keyEncipherment
+</pre>
+
+To generate a certificate with OpenSSL:
+
+<pre>
+$ openssl ecparam \
+    -genkey \
+    -name prime256v1 \
+    -out sslserver.key
+$ openssl req \
+    -new \
+    -x509 \
+    -nodes \
+    -days 365 \
+    -subj "/CN=$HOSTNAME" \
+    -key sslserver.key \
+    -out sslserver.crt
+</pre>
+
+To generate a certificate with keytool:
+
+<pre>
+$ keytool -genkeypair \
+    -keystore keystore.p12 \
+    -storetype pkcs12 \
+    -storepass Secret.123 \
+    -alias sslserver \
+    -keyalg EC \
+    -keysize 256 \
+    -dname "CN=$HOSTNAME" \
+    -keypass Secret.123
+</pre>
+
+= See Also =
+
+* [[ECC Setup Instructions]]
+* [https://msol.io/blog/tech/create-a-self-signed-ecc-certificate/ Create a self-signed ECC certificate]
+* [https://wiki.openssl.org/index.php/Command_Line_Elliptic_Curve_Operations OpenSSL - Command Line Elliptic Curve Operations]
+* [https://www.informationsecuritybuzz.com/articles/encryption-curveballs-top-10-things-know-enabling-ecc-ciphers/ Encryption Curveballs: Top 10 Things to Know Before Enabling ECC Ciphers]
+* [https://tools.ietf.org/search/rfc4492 RFC 4492 - Elliptic Curve Cryptography (ECC) Cipher Suites for Transport Layer Security (TLS)]

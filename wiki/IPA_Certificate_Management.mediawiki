@@ -1,0 +1,81 @@
+= Initializing Client Certificate Database =
+
+Prepare a client certificate database:
+
+<pre>
+$ pki -c Secret.123 client-init
+</pre>
+
+= Submitting User Certificate Request =
+
+Generate a client certificate request and send it to the server:
+
+<pre>
+$ pki -c Secret.123 client-cert-request uid=testuser
+</pre>
+
+= Submitting Server Certificate Request =
+
+This command requires CA agent authentication. To generate a server certificate request:
+
+<pre>
+$ pki -U https://`hostname`:8443 -d /etc/httpd/alias/ -n ipaCert -C /etc/httpd/alias/pwdfile.txt \
+ client-cert-request --profile caIPAserviceCert cn=`hostname`
+</pre>
+
+= Listing Certificate Requests =
+
+This command requires CA agent authentication. To list certificate requests:
+ 
+<pre>
+$ pki -U https://`hostname`:8443 -d /etc/httpd/alias/ -n ipaCert -C /etc/httpd/alias/pwdfile.txt \
+ ca-cert-request-find
+</pre>
+
+= Approving Certificate Requests =
+
+This command requires CA agent authentication. To approve a certificate request:
+
+<pre>
+$ pki -U https://`hostname`:8443 -d /etc/httpd/alias/ -n ipaCert -C /etc/httpd/alias/pwdfile.txt \
+ ca-cert-request-review <request ID> --action approve
+</pre>
+
+= Tracking =
+
+<pre>
+$ getcert start-tracking
+</pre>
+
+= Renewal =
+
+== Renewing CA Certificate ==
+
+<pre>
+$ ipa-cacert-manage renew
+Renewing CA certificate, please wait
+CA certificate successfully renewed
+The ipa-cacert-manage command was successful
+</pre>
+
+== Renewing IPA Certificate ==
+
+<pre>
+$ getcert resubmit -d /etc/httpd/alias -n ipaCert
+</pre>
+
+== Renewing Web Server Certificate ==
+
+<pre>
+$ getcert resubmit -d /etc/httpd/alias -n Server-Cert
+</pre>
+
+= References =
+
+* [[IPA]]
+* [[IPA Certificates]]
+* [https://github.com/dogtagpki/pki/wiki/Certificate-Profiles Certificate Profiles]
+* [https://github.com/dogtagpki/pki/wiki/PKI-CA-Certificate-CLI PKI CA Certificate CLI]
+* [http://www.freeipa.org/page/V4/CA_certificate_renewal IPA 4 CA certificate renewal]
+* [https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/Linux_Domain_Identity_Authentication_and_Policy_Guide/cert-renewal.html RHEL 7 Renewing Certificates]
+* [https://git.fedorahosted.org/cgit/certmonger.git/tree/doc/dogtag-notes-2.txt Certmonger Notes]

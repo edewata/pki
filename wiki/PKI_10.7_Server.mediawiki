@@ -1,0 +1,7 @@
+= Overview =
+
+This page has been migrated to https://github.com/dogtagpki/pki/blob/master/docs/installation/Installing_Basic_PKI_Server.md.
+
+= See Also =
+
+* [[PKI Server]]

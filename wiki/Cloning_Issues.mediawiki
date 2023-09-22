@@ -1,0 +1,71 @@
+Fix clone*.privkey.id_entries in CS.cfg to reenable cloning.
+
+If your cloning of a CA fails at generating the SSL certificate with
+(in logs/debug):
+<pre>CertUtil::createSelfSignedCert() - CA private key is null!</pre>
+it is probable that the private key id in your masters CS.cfg got mixed up.
+
+For example in my case
+<pre>
+# grep privkey.id conf/CS.cfg
+cloning.signing.privkey.id     =-4d798441aa7230910d4e1c39fa132ea228d5d1bc
+cloning.ocsp_signing.privkey.id =-3e23e743e0ddd88f2a7c6f69fa9f9bcebef1a60
+cloning.subsystem.privkey.id     =-c3c1b3b4e8f5dd6d2bdefd07581c0b15529536
+cloning.sslserver.privkey.id    =3023d30245804a4fab42be209ebb0dc683423a8f
+cloning.audit_signing.privkey.id=2fe35d9d46b373efabe9ef01b8436667a70df096
+</pre>
+did not fit to the keys in the certificate store (this will happen if you replace the CA key or do a rekeying of one of the other keys):
+<pre>
+# certutil -K -d alias
+certutil: Checking token "NSS Certificate DB" in slot "NSS User Private Key and Certificate Services"
+Enter Password or Pin for "NSS Certificate DB":
+< 0> rsa      a7b0944b7b8397729a4c8c9af3a9c2b96f49c6f3   caSigningCert cert-ca4-test-master
+< 1> rsa      6006094af3e5d02aaa91426594ca66cb53e73ac0   ocspSigningCert cert-ca4-test-master
+< 2> rsa      d684da39bf4f2789a3fc9d42204596f4578ad2d9   subsystemCert cert-ca4-test-master
+< 3> rsa      a8edd7c2b5c94f13144cacd99624578ae30b7e43   sslserverCert cert-ca4-test1
+< 4> rsa      2fe35d9d46b373efabe9ef01b8436667a70df096   auditSigningCert cert-ca4-test1
+</pre>
+as you can see, only the privkey entry for the audit_signing key does fit.
+
+My first try to fix this by simply editing the values fom certutil into the CS.cfg failed, because dogtags code  uses those numbers internaly as java BigIntegers -- and those are signed values, not unsigned as certutils output (some debugging was involved here).
+
+So you need a calulator with big integers capability (if nothing else, wolfram alpha comes to help) to calculate the signed values to certutil's unsigned values. This gives
+<pre>
+]# grep privkey.id CS.cfg
+cloning.signing.privkey.id     =-584f6bb4847c688d65b373650c563d4690b6390d
+cloning.ocsp_signing.privkey.id =6006094af3e5d02aaa91426594ca66cb53e73ac0
+cloning.subsystem.privkey.id   =-297b25c640b0d8765c0362bddfba690ba8752d27
+cloning.sslserver.privkey.id   =-5712283d4a36b0ecebb3532669dba8751cf481bd
+cloning.audit_signing.privkey.id=2fe35d9d46b373efabe9ef01b8436667a70df096
+</pre>
+
+With those changes cloning completed successfully.
+
+As a follow-up to this.  You can use the following simple program to convert the output of certutil  to the format needed in CS.cfg
+
+<pre>
+import java.math.BigInteger;
+
+public class Test
+{
+
+  public static byte[] hexStringToByteArray(String s) {
+      int len = s.length();
+      byte[] data = new byte[len / 2];
+      for (int i = 0; i < len; i += 2) {
+          data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+                               + Character.digit(s.charAt(i+1), 16));
+      }
+      return data;
+  }
+
+  public static void main(String[] args)
+  {
+      byte[] bytes = hexStringToByteArray(args[0]);
+      BigInteger big = new BigInteger (bytes);
+      System.out.println("Result is  ==> " + big.toString(16));
+  }
+}
+</pre>
+
+Call the file Test.java, and compile as -- javac Test.java

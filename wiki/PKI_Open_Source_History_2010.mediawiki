@@ -1,0 +1,88 @@
+= Open Source History (2010) =
+
+== Dogtag Certificate Server 1.3 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[05/03/2010] ==
+
+Dogtag Certificate System 1.3 was primarily created for integration into the Fedora 13 release.
+
+'''Project Name:'''
+* '''''Dogtag Certificate System 1.3'''''
+'''Releases:'''
+* [05/03/2010] Dogtag Certificate Server 1.3 [32-bit & 64-bit Fedora 11, Fedora 12, Fedora 13, and RHEL 5.5 (EPEL)]
+'''Major Features:'''
+* Spec File changes required for integration into the Fedora 13 release
+* [[PKI_Registry|Separation of default PKI instance creation from PKI subsystem packaging via means of an integrated 'registry']]
+* Numerous Bug Fixes (see [[PKI_Bugs#Bugzilla_Bug_Database|Bugzilla Bug Database]])
+* An additional port is now required on the CA for EE client auth interactions.  This is required so that the CA can work seamlessly with the latest NSS patches that address the TLS renegotiation MITM vulnerability (CVE-2009-3555).  Refer to http://kbase.redhat.com/faq/docs/DOC-23543 for more details.
+* Numerous improvements to cloning, including the ability to clone a clone without referring to the original master as the master of the security domain.
+* Support for asynchronous key recovery.
+* New platform support for the following 32-bit and 64-bit versions of Fedora and EPEL:
+'''Server Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>1.3</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 11 (i586)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 11 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 12 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 12 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 13 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 13 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit RHEL 5.5 'EPEL' (i386)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit RHEL 5.5 'EPEL' (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>
+'''Client Platforms:'''
+    <table border=1>
+    <tr>
+    <th>Platform</th>
+    <th>1.3</th>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 11 (i586)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 11 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 12 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 12 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>32-bit Fedora 13 (i686)</td>
+    <td><center>X</center></td>
+    </tr>
+    <tr>
+    <td>64-bit Fedora 13 (x86_64)</td>
+    <td><center>X</center></td>
+    </tr>
+    </table>

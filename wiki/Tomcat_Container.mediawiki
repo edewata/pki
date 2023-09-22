@@ -1,0 +1,19 @@
+= Building Tomcat Container =
+
+See [https://github.com/dogtagpki/tomcat/wiki/Building-Tomcat-Container Building Tomcat Container].
+
+= Deploying Tomcat on Podman =
+
+See [https://github.com/dogtagpki/tomcat/wiki/Deploying-Tomcat-on-Podman Deploying Tomcat on Podman].
+
+= Deploying Tomcat on OpenShift =
+
+See [https://github.com/dogtagpki/tomcat/wiki/Deploying-Tomcat-on-OpenShift Deploying Tomcat on OpenShift].
+
+= See Also =
+
+* [[Tomcat]]
+* [[Docker]]
+* [https://hub.docker.com/_/tomcat/ Tomcat Docker Repository]
+* [https://github.com/docker-library/tomcat Tomcat Docker Source Repository]
+* [https://github.com/docker-library/tomcat/blob/9ecc2f5cbaaedbe74c91cc3ecf1bab5192e741a6/8.5/jre8/Dockerfile Tomcat Latest Dockerfile]

@@ -1,0 +1,1 @@
+This page has been moved into https://github.com/dogtagpki/pki/wiki/PKI-CA-CLI.

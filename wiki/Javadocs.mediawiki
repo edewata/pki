@@ -1,0 +1,34 @@
+= On-line Dogtag Javadocs =
+Javadocs (for the documented versions) are available on-line at the following locations:
+* '''Dogtag 10.2.6''' (e. g. - Fedora 22)
+** [http://pki.fedoraproject.org/pki/javadocs/dogtag_10_2_6/jss jss 4.2.6-35]
+** [http://pki.fedoraproject.org/pki/javadocs/dogtag_10_2_6/pki pki 10.2.6-1]
+* '''Dogtag 10.2.5''' (e. g. - Fedora 22)
+** [http://pki.fedoraproject.org/pki/javadocs/dogtag_10_2_5/jss jss 4.2.6-35]
+** [http://pki.fedoraproject.org/pki/javadocs/dogtag_10_2_5/pki pki 10.2.5-1]
+* '''Dogtag 10.2.4''' (e. g. - Fedora 22)
+** [http://pki.fedoraproject.org/pki/javadocs/dogtag_10_2_4/jss jss 4.2.6-35]
+** [http://pki.fedoraproject.org/pki/javadocs/dogtag_10_2_4/pki pki 10.2.4-1]
+* '''Dogtag 10.2.3''' (e. g. - Fedora 22)
+** [http://pki.fedoraproject.org/pki/javadocs/dogtag_10_2_3/jss jss 4.2.6-35]
+** [http://pki.fedoraproject.org/pki/javadocs/dogtag_10_2_3/pki pki 10.2.3-2]
+* '''Dogtag 10.2.2''' (e. g. - Fedora 22)
+** [http://pki.fedoraproject.org/pki/javadocs/dogtag_10_2_2/jss jss 4.2.6-35]
+** [http://pki.fedoraproject.org/pki/javadocs/dogtag_10_2_2/pki pki 10.2.2-1]
+* '''Dogtag 10.2.1''' (e. g. - Fedora 22)
+** [http://pki.fedoraproject.org/pki/javadocs/dogtag_10_2_1/jss jss 4.2.6-35]
+** [http://pki.fedoraproject.org/pki/javadocs/dogtag_10_2_1/pki pki 10.2.1-1]
+* '''Dogtag 10.2.0''' (e. g. - Fedora 21)
+** [http://pki.fedoraproject.org/pki/javadocs/dogtag_10_2_0/jss jss 4.2.6-35]
+** [http://pki.fedoraproject.org/pki/javadocs/dogtag_10_2_0/pki pki 10.2.0-5]
+* '''Dogtag 10.1''' (e. g. - Fedora 20)
+** [http://pki.fedoraproject.org/pki/javadocs/dogtag_10_1/jss jss 4.2.6-35]
+** [http://pki.fedoraproject.org/pki/javadocs/dogtag_10_1/pki pki 10.1.2-7]
+* '''Dogtag 10.0'''
+** [http://pki.fedoraproject.org/pki/javadocs/dogtag_10_0/jss jss 4.2.6-26]
+** [http://pki.fedoraproject.org/pki/javadocs/dogtag_10_0/pki pki 10.0.3-2]
+* '''Dogtag 9.0'''
+** [http://pki.fedoraproject.org/pki/javadocs/dogtag_9/jss jss 4.2.6-24]
+** [http://pki.fedoraproject.org/pki/javadocs/dogtag_9/pki-common pki-common 9.0.27-1]
+** [http://pki.fedoraproject.org/pki/javadocs/dogtag_9/pki-java-tools pki-java-tools 9.0.27-1]
+** [http://pki.fedoraproject.org/pki/javadocs/dogtag_9/pki-util pki-util 9.0.27-1]

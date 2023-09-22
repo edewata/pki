@@ -1,0 +1,289 @@
+= Differences between NSS and OpenSSL X.509v3 Certificates =
+
+NSS and OpenSSL X509 Certificates can be stored in the Base-64 encoded format.  The only difference is between the accepted header and footer required by OpenSSL versus NSS X509 Certificates<sup>&dagger;</sup>.
+
+<sup>&dagger;</sup> - The Dogtag tool called '''PrettyPrintCert''' is located in the '''pki-java-tools''' package.  The '''PrettyPrintCert''' tool, as well as some versions of '''openssl''', read both formats without the need for any conversion.  Additionally, the NSS tool called '''pp''' can be used to read either format.
+
+== NSS X509 Certificates ==
+
+The following is an example of an NSS Certificate:
+
+    '''-----BEGIN CERTIFICATE-----'''
+    MIIDKDCCAhCgAwIBAgIBDjANBgkqhkiG9w0BAQUFADA/MR0wGwYDVQQKExRVc2Vy
+    c3lzUmVkaGF0IERvbWFpbjEeMBwGA1UEAxMVQ2VydGlmaWNhdGUgQXV0aG9yaXR5
+    MB4XDTA4MDMwNzIzNDc0NloXDTA4MDkwMzIzNDc0NlowVzETMBEGCgmSJomT8ixk
+    ARkTA2NvbTEWMBQGCgmSJomT8ixkARkTBnJlZGhhdDEoMCYGA1UEAxMfaXBhLXBr
+    aS1kZW1vLnVzZXJzeXMucmVkaGF0LmNvbTCBnzANBgkqhkiG9w0BAQEFAAOBjQAw
+    gYkCgYEA2k8S1YM/mqOYA7DEv/jLR1hkBkccScexR/uPmB17oClJD8kvC4RJYsFT
+    bqzhQox9pZO+83iAHtwetH3R6SeK1TrhHnA9iMrqjBi3dLG+AmY0WVKFwI72fmIm
+    y3APyDpexuVOAMsqVrxcacZc5Ud2CnyqIV3AxxVSkDjBxfZ83mkCAwEAAaOBmjCB
+    lzAfBgNVHSMEGDAWgBQdD1lBEqDxVr481x1xR/KWve1hLTBPBggrBgEFBQcBAQRD
+    MEEwPwYIKwYBBQUHMAGGM2h0dHA6Ly9pcGEtcGtpLWRlbW8udXNlcnN5cy5yZWRo
+    YXQuY29tOjkwODAvY2Evb2NzcDAOBgNVHQ8BAf8EBAMCBPAwEwYDVR0lBAwwCgYI
+    KwYBBQUHAwEwDQYJKoZIhvcNAQEFBQADggEBAC/UT6jgQyao9jERzHvUZFmEZABE
+    0la7gU9RPcZsJ6kylz8O27bqbXLlEqrlni8Er0NSgLL9BNcA8ohgQk3SMRvbMgii
+    Ofn2mJ7HSTSxwZEctIDOZMp9GAIn3snHBIOhGWQGxPuWQYH+WbcxY/PdGbqh4uX0
+    1tVRUMWOLl81yiWxn7HNVVxUretN1uWvqUX4VIn9BYwzV6Tal/0X76lZ5Cna7HAc
+    ddEsrtAZ74WGFoZDAYquvWHGZI2QAyqUH4zNWua/TXnRvMwrauPpYWzWMd2PTPKl
+    IY+93HV/dqqgzjlnNBsDPTz3yvbyfedfIU4Lx2WkeiI56ytAib/dyWBGMbg=
+    '''-----END CERTIFICATE-----'''
+
+Store this certificate in a file called '''cert.txt'''.
+
+== OpenSSL X509 Certificates ==
+
+The following is an example of an OpenSSL Certificate:
+
+    '''-----BEGIN X509 CERTIFICATE-----'''
+    MIIDKDCCAhCgAwIBAgIBDjANBgkqhkiG9w0BAQUFADA/MR0wGwYDVQQKExRVc2Vy
+    c3lzUmVkaGF0IERvbWFpbjEeMBwGA1UEAxMVQ2VydGlmaWNhdGUgQXV0aG9yaXR5
+    MB4XDTA4MDMwNzIzNDc0NloXDTA4MDkwMzIzNDc0NlowVzETMBEGCgmSJomT8ixk
+    ARkTA2NvbTEWMBQGCgmSJomT8ixkARkTBnJlZGhhdDEoMCYGA1UEAxMfaXBhLXBr
+    aS1kZW1vLnVzZXJzeXMucmVkaGF0LmNvbTCBnzANBgkqhkiG9w0BAQEFAAOBjQAw
+    gYkCgYEA2k8S1YM/mqOYA7DEv/jLR1hkBkccScexR/uPmB17oClJD8kvC4RJYsFT
+    bqzhQox9pZO+83iAHtwetH3R6SeK1TrhHnA9iMrqjBi3dLG+AmY0WVKFwI72fmIm
+    y3APyDpexuVOAMsqVrxcacZc5Ud2CnyqIV3AxxVSkDjBxfZ83mkCAwEAAaOBmjCB
+    lzAfBgNVHSMEGDAWgBQdD1lBEqDxVr481x1xR/KWve1hLTBPBggrBgEFBQcBAQRD
+    MEEwPwYIKwYBBQUHMAGGM2h0dHA6Ly9pcGEtcGtpLWRlbW8udXNlcnN5cy5yZWRo
+    YXQuY29tOjkwODAvY2Evb2NzcDAOBgNVHQ8BAf8EBAMCBPAwEwYDVR0lBAwwCgYI
+    KwYBBQUHAwEwDQYJKoZIhvcNAQEFBQADggEBAC/UT6jgQyao9jERzHvUZFmEZABE
+    0la7gU9RPcZsJ6kylz8O27bqbXLlEqrlni8Er0NSgLL9BNcA8ohgQk3SMRvbMgii
+    Ofn2mJ7HSTSxwZEctIDOZMp9GAIn3snHBIOhGWQGxPuWQYH+WbcxY/PdGbqh4uX0
+    1tVRUMWOLl81yiWxn7HNVVxUretN1uWvqUX4VIn9BYwzV6Tal/0X76lZ5Cna7HAc
+    ddEsrtAZ74WGFoZDAYquvWHGZI2QAyqUH4zNWua/TXnRvMwrauPpYWzWMd2PTPKl
+    IY+93HV/dqqgzjlnNBsDPTz3yvbyfedfIU4Lx2WkeiI56ytAib/dyWBGMbg=
+    '''-----END X509 CERTIFICATE-----'''
+
+Store this certificate in a file called '''cert.pem'''.
+
+== Using Dogtag to Read X509 Certificates ==
+
+Most Dogtag Certificate System installations include the following tool to read an NSS Certificate:
+
+    '''PrettyPrintCert cert.txt'''
+
+Alternatively, a user can execute the following to read an OpenSSL Certificate:
+
+    '''PrettyPrintCert cert.pem'''
+
+In either case, this tool outputs something similar to the following:
+
+    Certificate:
+        Data:
+            Version:  v3
+            Serial Number: 0xE
+            Signature Algorithm: SHA1withRSA - 1.2.840.113549.1.1.5             Issuer: CN=Certificate Authority,O=UsersysRedhat Domain
+            Validity:                 Not Before: Friday, March 7, 2008 3:47:46 PM PST America/Los_Angeles
+                Not  After: Wednesday, September 3, 2008 4:47:46 PM PDT America/Los_Angeles
+            Subject: CN=ipa-pki-demo.usersys.redhat.com,DC=redhat,DC=com
+            Subject Public Key Info:
+                Algorithm: RSA - 1.2.840.113549.1.1.1
+                Public Key:
+                    Exponent: 65537
+                    Public Key Modulus: (1024 bits) :
+                        DA:4F:12:D5:83:3F:9A:A3:98:03:B0:C4:BF:F8:CB:47:
+                        58:64:06:47:1C:49:C7:B1:47:FB:8F:98:1D:7B:A0:29:
+                        49:0F:C9:2F:0B:84:49:62:C1:53:6E:AC:E1:42:8C:7D:
+                        A5:93:BE:F3:78:80:1E:DC:1E:B4:7D:D1:E9:27:8A:D5:
+                        3A:E1:1E:70:3D:88:CA:EA:8C:18:B7:74:B1:BE:02:66:
+                        34:59:52:85:C0:8E:F6:7E:62:26:CB:70:0F:C8:3A:5E:
+                        C6:E5:4E:00:CB:2A:56:BC:5C:69:C6:5C:E5:47:76:0A:
+                        7C:AA:21:5D:C0:C7:15:52:90:38:C1:C5:F6:7C:DE:69
+            Extensions:
+                Identifier: Authority Key Identifier - 2.5.29.35
+                    Critical: no
+                    Key Identifier:
+                        1D:0F:59:41:12:A0:F1:56:BE:3C:D7:1D:71:47:F2:96:
+                        BD:ED:61:2D
+                Identifier: 1.3.6.1.5.5.7.1.1
+                    Critical: no
+                    Value:
+                        30:41:30:3F:06:08:2B:06:01:05:05:07:30:01:86:33:
+                        68:74:74:70:3A:2F:2F:69:70:61:2D:70:6B:69:2D:64:
+                        65:6D:6F:2E:75:73:65:72:73:79:73:2E:72:65:64:68:
+                        61:74:2E:63:6F:6D:3A:39:30:38:30:2F:63:61:2F:6F:
+                        63:73:70
+                Identifier: Key Usage: - 2.5.29.15
+                    Critical: yes
+                    Key Usage:
+                        Digital Signature
+                        Non Repudiation
+                        Key Encipherment
+                        Data Encipherment
+                Identifier: Extended Key Usage: - 2.5.29.37
+                    Critical: no
+                    Extended Key Usage:
+                        1.3.6.1.5.5.7.3.1
+        Signature:
+            Algorithm: SHA1withRSA - 1.2.840.113549.1.1.5
+            Signature:
+                2F:D4:4F:A8:E0:43:26:A8:F6:31:11:CC:7B:D4:64:59:
+                84:64:00:44:D2:56:BB:81:4F:51:3D:C6:6C:27:A9:32:
+                97:3F:0E:DB:B6:EA:6D:72:E5:12:AA:E5:9E:2F:04:AF:
+                43:52:80:B2:FD:04:D7:00:F2:88:60:42:4D:D2:31:1B:
+                DB:32:08:A2:39:F9:F6:98:9E:C7:49:34:B1:C1:91:1C:
+                B4:80:CE:64:CA:7D:18:02:27:DE:C9:C7:04:83:A1:19:
+                64:06:C4:FB:96:41:81:FE:59:B7:31:63:F3:DD:19:BA:
+                A1:E2:E5:F4:D6:D5:51:50:C5:8E:2E:5F:35:CA:25:B1:
+                9F:B1:CD:55:5C:54:AD:EB:4D:D6:E5:AF:A9:45:F8:54:
+                89:FD:05:8C:33:57:A4:DA:97:FD:17:EF:A9:59:E4:29:
+                DA:EC:70:1C:75:D1:2C:AE:D0:19:EF:85:86:16:86:43:
+                01:8A:AE:BD:61:C6:64:8D:90:03:2A:94:1F:8C:CD:5A:
+                E6:BF:4D:79:D1:BC:CC:2B:6A:E3:E9:61:6C:D6:31:DD:
+                8F:4C:F2:A5:21:8F:BD:DC:75:7F:76:AA:A0:CE:39:67:
+                34:1B:03:3D:3C:F7:CA:F6:F2:7D:E7:5F:21:4E:0B:C7:
+                65:A4:7A:22:39:EB:2B:40:89:BF:DD:C9:60:46:31:B8
+        FingerPrint
+
+== Using NSS to Read X509 Certificates ==
+
+The following NSS command can also be executed to read an NSS certificate:
+ '''/usr/&lt;lib&gt;/nss/unsupported-tools/pp -t certificate -i cert.txt -a'''
+where '''&lt;lib&gt;''' is either '''lib''' on 32-bit architectures, or '''lib64''' on 64-bit architectures.
+
+Alternatively, a user can execute the following to read an OpenSSL certificate:
+ '''/usr/&lt;lib&gt;/nss/unsupported-tools/pp -t certificate -i cert.pem -a'''
+where '''&lt;lib&gt;''' is either '''lib''' on 32-bit architectures, or '''lib64''' on 64-bit architectures.
+
+In either case, this tool outputs something similar to the following:
+
+    Certificate:
+        Data:
+            Version: 3 (0x2)
+            Serial Number: 14 (0xe)
+            Signature Algorithm: PKCS #1 SHA-1 With RSA Encryption
+            Issuer: "CN=Certificate Authority,O=UsersysRedhat Domain"
+            Validity:
+                Not Before: Fri Mar 07 23:47:46 2008
+                Not After : Wed Sep 03 23:47:46 2008
+            Subject: "CN=ipa-pki-demo.usersys.redhat.com,DC=redhat,DC=com"
+            Subject Public Key Info:
+                Public Key Algorithm: PKCS #1 RSA Encryption
+                RSA Public Key:
+                    Modulus:
+                        da:4f:12:d5:83:3f:9a:a3:98:03:b0:c4:bf:f8:cb:47:
+                        58:64:06:47:1c:49:c7:b1:47:fb:8f:98:1d:7b:a0:29:
+                        49:0f:c9:2f:0b:84:49:62:c1:53:6e:ac:e1:42:8c:7d:
+                        a5:93:be:f3:78:80:1e:dc:1e:b4:7d:d1:e9:27:8a:d5:
+                        3a:e1:1e:70:3d:88:ca:ea:8c:18:b7:74:b1:be:02:66:
+                        34:59:52:85:c0:8e:f6:7e:62:26:cb:70:0f:c8:3a:5e:
+                        c6:e5:4e:00:cb:2a:56:bc:5c:69:c6:5c:e5:47:76:0a:
+                        7c:aa:21:5d:c0:c7:15:52:90:38:c1:c5:f6:7c:de:69
+                    Exponent: 65537 (0x10001)
+            Signed Extensions:
+                Name: Certificate Authority Key Identifier
+                Key ID:
+                    1d:0f:59:41:12:a0:f1:56:be:3c:d7:1d:71:47:f2:96:
+                    bd:ed:61:2d
+    
+                Name: Authority Information Access
+                Method: PKIX Online Certificate Status Protocol
+                Location:
+                    URI: "http://ipa-pki-demo.usersys.redhat.com:9080/ca/ocsp"
+    
+                Name: Certificate Key Usage
+                Critical: True
+                Usages: Digital Signature
+                        Non-Repudiation
+                        Key Encipherment
+                        Data Encipherment
+    
+                Name: Extended Key Usage
+                    TLS Web Server Authentication Certificate
+    
+        Signature Algorithm: PKCS #1 SHA-1 With RSA Encryption
+        Signature:
+            2f:d4:4f:a8:e0:43:26:a8:f6:31:11:cc:7b:d4:64:59:
+            84:64:00:44:d2:56:bb:81:4f:51:3d:c6:6c:27:a9:32:
+            97:3f:0e:db:b6:ea:6d:72:e5:12:aa:e5:9e:2f:04:af:
+            43:52:80:b2:fd:04:d7:00:f2:88:60:42:4d:d2:31:1b:
+            db:32:08:a2:39:f9:f6:98:9e:c7:49:34:b1:c1:91:1c:
+            b4:80:ce:64:ca:7d:18:02:27:de:c9:c7:04:83:a1:19:
+            64:06:c4:fb:96:41:81:fe:59:b7:31:63:f3:dd:19:ba:
+            a1:e2:e5:f4:d6:d5:51:50:c5:8e:2e:5f:35:ca:25:b1:
+            9f:b1:cd:55:5c:54:ad:eb:4d:d6:e5:af:a9:45:f8:54:
+            89:fd:05:8c:33:57:a4:da:97:fd:17:ef:a9:59:e4:29:
+            da:ec:70:1c:75:d1:2c:ae:d0:19:ef:85:86:16:86:43:
+            01:8a:ae:bd:61:c6:64:8d:90:03:2a:94:1f:8c:cd:5a:
+            e6:bf:4d:79:d1:bc:cc:2b:6a:e3:e9:61:6c:d6:31:dd:
+            8f:4c:f2:a5:21:8f:bd:dc:75:7f:76:aa:a0:ce:39:67:
+            34:1b:03:3d:3c:f7:ca:f6:f2:7d:e7:5f:21:4e:0b:c7:
+            65:a4:7a:22:39:eb:2b:40:89:bf:dd:c9:60:46:31:b8
+        Fingerprint (MD5):
+            E8:BB:81:05:EB:26:8A:6C:75:E6:3C:D5:63:96:55:6E
+        Fingerprint (SHA1):
+            A6:79:AF:63:ED:94:AD:0C:F2:0A:FE:8A:82:FB:F1:C4:8E:B5:2F:E8
+
+== Using OpenSSL to Read and Convert X509 Certificates ==
+
+Similarly, running the following OpenSSL command:
+
+    '''openssl x509 -in cert.pem -noout -text'''
+
+Produces the following:
+
+    Certificate:
+        Data:
+            Version: 3 (0x2)
+            Serial Number: 14 (0xe)
+            Signature Algorithm: sha1WithRSAEncryption
+            Issuer: O=UsersysRedhat Domain, CN=Certificate Authority
+            Validity
+                Not Before: Mar  7 23:47:46 2008 GMT
+                Not After : Sep  3 23:47:46 2008 GMT
+            Subject: DC=com, DC=redhat, CN=ipa-pki-demo.usersys.redhat.com
+            Subject Public Key Info:
+                Public Key Algorithm: rsaEncryption
+                RSA Public Key: (1024 bit)
+                    Modulus (1024 bit):
+                        00:da:4f:12:d5:83:3f:9a:a3:98:03:b0:c4:bf:f8:
+                        cb:47:58:64:06:47:1c:49:c7:b1:47:fb:8f:98:1d:
+                        7b:a0:29:49:0f:c9:2f:0b:84:49:62:c1:53:6e:ac:
+                        e1:42:8c:7d:a5:93:be:f3:78:80:1e:dc:1e:b4:7d:
+                        d1:e9:27:8a:d5:3a:e1:1e:70:3d:88:ca:ea:8c:18:
+                        b7:74:b1:be:02:66:34:59:52:85:c0:8e:f6:7e:62:
+                        26:cb:70:0f:c8:3a:5e:c6:e5:4e:00:cb:2a:56:bc:
+                        5c:69:c6:5c:e5:47:76:0a:7c:aa:21:5d:c0:c7:15:
+                        52:90:38:c1:c5:f6:7c:de:69
+                    Exponent: 65537 (0x10001)
+            X509v3 extensions:
+                X509v3 Authority Key Identifier:
+                    keyid:1D:0F:59:41:12:A0:F1:56:BE:3C:D7:1D:71:47:F2:96:BD:ED:61:2D
+    
+                Authority Information Access:
+                    OCSP - URI:http://ipa-pki-demo.usersys.redhat.com:9080/ca/ocsp
+    
+                X509v3 Key Usage: critical
+                    Digital Signature, Non Repudiation, Key Encipherment, Data Encipherment
+                X509v3 Extended Key Usage:
+                    TLS Web Server Authentication
+        Signature Algorithm: sha1WithRSAEncryption
+            2f:d4:4f:a8:e0:43:26:a8:f6:31:11:cc:7b:d4:64:59:84:64:
+            00:44:d2:56:bb:81:4f:51:3d:c6:6c:27:a9:32:97:3f:0e:db:
+            b6:ea:6d:72:e5:12:aa:e5:9e:2f:04:af:43:52:80:b2:fd:04:
+            d7:00:f2:88:60:42:4d:d2:31:1b:db:32:08:a2:39:f9:f6:98:
+            9e:c7:49:34:b1:c1:91:1c:b4:80:ce:64:ca:7d:18:02:27:de:
+            c9:c7:04:83:a1:19:64:06:c4:fb:96:41:81:fe:59:b7:31:63:
+            f3:dd:19:ba:a1:e2:e5:f4:d6:d5:51:50:c5:8e:2e:5f:35:ca:
+            25:b1:9f:b1:cd:55:5c:54:ad:eb:4d:d6:e5:af:a9:45:f8:54:
+            89:fd:05:8c:33:57:a4:da:97:fd:17:ef:a9:59:e4:29:da:ec:
+            70:1c:75:d1:2c:ae:d0:19:ef:85:86:16:86:43:01:8a:ae:bd:
+            61:c6:64:8d:90:03:2a:94:1f:8c:cd:5a:e6:bf:4d:79:d1:bc:
+            cc:2b:6a:e3:e9:61:6c:d6:31:dd:8f:4c:f2:a5:21:8f:bd:dc:
+            75:7f:76:aa:a0:ce:39:67:34:1b:03:3d:3c:f7:ca:f6:f2:7d:
+            e7:5f:21:4e:0b:c7:65:a4:7a:22:39:eb:2b:40:89:bf:dd:c9:
+            60:46:31:b8
+
+Convert a PEM certificate to binary (DER encoded) format:
+
+    '''openssl x509 -in cert.pem -out cert.der -outform DER'''
+
+Print out the textual version of a binary (DER encoded) certificate.  This command yields the same output as above:
+
+    '''openssl x509 -in cert.der -inform DER -noout -text'''
+
+Convert a binary (DER encoded) certificate to PEM format:
+
+    '''openssl x509 -in cert.der -inform DER -out cert.pem'''
+
+[[Category:Tech Notes]]

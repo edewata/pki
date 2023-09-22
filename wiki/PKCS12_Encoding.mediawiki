@@ -1,0 +1,422 @@
+=  Overview =
+
+PKCS #12 file encoding can be inspected with the following tool:
+
+<pre>
+$ dumpasn1 <file>
+</pre>
+
+= Key Encoding =
+
+== PBE/SHA1/DES3/CBC ==
+
+<pre>
+  28 NDEF:             SEQUENCE {
+  30    9:               OBJECT IDENTIFIER data (1 2 840 113549 1 7 1)
+  41 NDEF:               [0] {
+  43 NDEF:                 OCTET STRING {
+  45 1447:                   OCTET STRING, encapsulates {
+  49 1443:                     SEQUENCE {
+  53 1439:                       SEQUENCE {
+  57   11:                         OBJECT IDENTIFIER
+         :                           pkcs-12-pkcs-8ShroudedKeyBag (1 2 840 113549 1 12 10 1 2)
+  70 1271:                         [0] {
+  74 1267:                           SEQUENCE {
+  78   37:                             SEQUENCE {
+  80   10:                               OBJECT IDENTIFIER
+         :                                 pbeWithSHAAnd3-KeyTripleDES-CBC (1 2 840 113549 1 12 1 3)
+  92   23:                               SEQUENCE {
+  94   16:                                 OCTET STRING
+         :                     F7 F3 E3 EC 77 AC 91 77 6B B0 A5 BC 5D C3 78 5B
+ 112    3:                                 INTEGER 100000
+         :                                 }
+         :                               }
+ 117 1224:                             OCTET STRING
+         :                     A2 B8 CB 1C 34 4B 19 86 57 33 25 80 CA 13 DE 9B
+         :                     47 2E E5 A8 8C DC 73 16 CB BF 23 78 2E A5 E3 04
+         :                     F1 FB 35 3E AD 61 61 A2 E4 52 73 70 7D 46 9B D3
+         :                     FB 5C 8C F4 7A 29 FB A1 0E 0D BF 4C 77 80 27 44
+         :                     73 D6 41 AD 7D E0 6C C5 B5 A6 31 DD 4B 50 E8 7C
+         :                     DA 94 8A 3F 34 B2 BF 9A 5B 9F 1B 8D 31 FD 27 F0
+         :                     EF AA 62 14 B6 2D 66 8F 31 B9 EF CF C4 29 70 9D
+         :                     5B BD DB BD 1D 78 AA 52 08 22 2A 0C 2C 0B 84 F1
+         :                             [ Another 1096 bytes skipped ]
+         :                             }
+         :                           }
+1345  148:                         SET {
+1348  109:                           SEQUENCE {
+1350    9:                             OBJECT IDENTIFIER
+         :                               friendlyName (for PKCS #12) (1 2 840 113549 1 9 20)
+1361   96:                             SET {
+1363   94:                               BMPString
+         :                   's.s.l.s.e.r.v.e.r./.v.m.-.2.1.8...a.b.c...i.d.m.'
+         :                   '.l.a.b...e.n.g...b.r.q...r.e.d.h.a.t...c.o.m'
+         :                               }
+         :                             }
+1459   35:                           SEQUENCE {
+1461    9:                             OBJECT IDENTIFIER
+         :                               localKeyID (for PKCS #12) (1 2 840 113549 1 9 21)
+1472   22:                             SET {
+1474   20:                               OCTET STRING
+         :                     9C 0F DB E4 E0 F4 5E 8F AD 9B A1 CB 7B 6A 50 CF
+         :                     18 9B 4F B4
+         :                               }
+         :                             }
+         :                           }
+         :                         }
+         :                       }
+         :                     }
+         :                   }
+         :                 }
+         :               }
+</pre>
+
+== PBES2 ==
+
+<pre>
+2374 1570:           SEQUENCE {
+2378    9:             OBJECT IDENTIFIER data (1 2 840 113549 1 7 1)
+2389 1555:             [0] {
+2393 1551:               OCTET STRING, encapsulates {
+2397 1547:                 SEQUENCE {
+2401 1543:                   SEQUENCE {
+2405   11:                     OBJECT IDENTIFIER
+         :                       pkcs-12-pkcs-8ShroudedKeyBag (1 2 840 113549 1 12 10 1 2)
+2418 1338:                     [0] {
+2422 1334:                       SEQUENCE {
+2426   96:                         SEQUENCE {
+2428    9:                           OBJECT IDENTIFIER
+         :                             pkcs5PBES2 (1 2 840 113549 1 5 13)
+2439   83:                           SEQUENCE {
+2441   50:                             SEQUENCE {
+2443    9:                               OBJECT IDENTIFIER
+         :                                 pkcs5PBKDF2 (1 2 840 113549 1 5 12)
+2454   37:                               SEQUENCE {
+2456   16:                                 OCTET STRING
+         :                     22 E7 B6 7F 3F 8E EB 3F 5A B8 EB A7 23 F5 5D 82
+2474    2:                                 INTEGER 2000
+2478    1:                                 INTEGER 32
+2481   10:                                 SEQUENCE {
+2483    8:                                   OBJECT IDENTIFIER
+         :                                     hmacWithSHA1 (1 2 840 113549 2 7)
+         :                                   }
+         :                                 }
+         :                               }
+2493   29:                             SEQUENCE {
+2495    9:                               OBJECT IDENTIFIER
+         :                                 aes256-CBC (2 16 840 1 101 3 4 1 42)
+2506   16:                               OCTET STRING
+         :                     76 8F DE 63 14 57 58 AF 5E BB 1B 1C EF 34 92 0A
+         :                               }
+         :                             }
+         :                           }
+2524 1232:                         OCTET STRING
+         :                     B0 C3 18 B7 55 C6 5A 2D 15 66 A3 D2 2F 7D 88 FC
+         :                     E1 1E 10 03 A7 2F 83 07 DB 02 2D 46 2B 25 F1 44
+         :                     AC D8 C5 BC F0 BA 6E 54 C6 8E A6 87 3D CA 94 96
+         :                     30 AE DB D9 DE 33 FE F1 18 D2 6C B2 D4 C2 31 A5
+         :                     0B 75 4E F4 F1 41 59 9E B4 A4 86 B4 E6 B8 CE 65
+         :                     E4 29 C2 46 FD 1A 5A E1 87 9F 37 A7 95 1A C7 FE
+         :                     D1 91 CB 14 C1 E5 E2 CF 37 12 0F 9E 6B AA 92 B0
+         :                     3A C4 00 C0 4E EA 0E 2A F8 6E 51 C7 8D 6B 1B B0
+         :                             [ Another 1104 bytes skipped ]
+         :                         }
+         :                       }
+3760  185:                     SET {
+3763   35:                       SEQUENCE {
+3765    9:                         OBJECT IDENTIFIER
+         :                           localKeyID (for PKCS #12) (1 2 840 113549 1 9 21)
+3776   22:                         SET {
+3778   20:                           OCTET STRING
+         :                     9C 0F DB E4 E0 F4 5E 8F AD 9B A1 CB 7B 6A 50 CF
+         :                     18 9B 4F B4
+         :                           }
+         :                         }
+3800  145:                       SEQUENCE {
+3803    9:                         OBJECT IDENTIFIER
+         :                           friendlyName (for PKCS #12) (1 2 840 113549 1 9 20)
+3814  131:                         SET {
+3817  128:                           BMPString
+         :                   'C.N.=.v.m.-.2.1.8...a.b.c...i.d.m...l.a.b...e.n.'
+         :                   'g..b.r.q...r.e.d.h.a.t...c.o.m.,.O.U.=.p.k.i.-.t.o'
+         :                   'm'
+         :                   'c'
+         :                   'a'
+         :                   't'
+         :                   ','
+         :                   'O'
+         :                   '='
+         :                   'E'
+         :                   'X'
+         :                   'A'
+         :                   'M'
+         :                   'P'
+         :                   'L'
+         :                   'E'
+         :                           }
+         :                         }
+         :                       }
+         :                     }
+         :                   }
+         :                 }
+         :               }
+         :             }
+</pre>
+
+= Certificate Encoding =
+
+== No Encryption ==
+
+All certificates are encoded under this elements:
+
+<pre>
+1490 2320:           SEQUENCE {
+1494    9:             OBJECT IDENTIFIER data (1 2 840 113549 1 7 1)
+1505 2305:             [0] {
+1509 2301:               OCTET STRING, encapsulates {
+1513 2297:                 SEQUENCE {
+</pre>
+
+Each certificate is encoded as follows:
+
+<pre>
+1517 1125:                   SEQUENCE {
+1521   11:                     OBJECT IDENTIFIER
+         :                       pkcs-12-certBag (1 2 840 113549 1 12 10 1 3)
+1534 1009:                     [0] {
+1538 1005:                       SEQUENCE {
+1542   10:                         OBJECT IDENTIFIER
+         :                           x509Certificate (for PKCS #12) (1 2 840 113549 1 9 22 1)
+1554  989:                         [0] {
+1558  985:                           OCTET STRING, encapsulates {
+1562  981:                             SEQUENCE {
+1566  701:                               SEQUENCE {
+1570    3:                                 [0] {
+1572    1:                                   INTEGER 2
+         :                                   }
+1575    1:                                 INTEGER 6
+1578   13:                                 SEQUENCE {
+1580    9:                                   OBJECT IDENTIFIER
+         :                                     sha256WithRSAEncryption (1 2 840 113549 1 1 11)
+1591    0:                                   NULL
+         :                                   }
+1593   72:                                 SEQUENCE {
+1595   16:                                   SET {
+1597   14:                                     SEQUENCE {
+1599    3:                                       OBJECT IDENTIFIER
+         :                                         organizationName (2 5 4 10)
+1604    7:                                       UTF8String 'EXAMPLE'
+         :                                       }
+         :                                     }
+1613   19:                                   SET {
+1615   17:                                     SEQUENCE {
+1617    3:                                       OBJECT IDENTIFIER
+         :                                         organizationalUnitName (2 5 4 11)
+1622   10:                                       UTF8String 'pki-tomcat'
+         :                                       }
+         :                                     }
+1634   31:                                   SET {
+1636   29:                                     SEQUENCE {
+1638    3:                                       OBJECT IDENTIFIER
+         :                                         commonName (2 5 4 3)
+1643   22:                                       UTF8String 'CA Signing Certificate'
+         :                                       }
+         :                                     }
+         :                                   }
+1667   30:                                 SEQUENCE {
+1669   13:                                   UTCTime 20/02/2018 20:27:56 GMT
+1684   13:                                   UTCTime 10/02/2020 20:27:56 GMT
+         :                                   }
+1699  103:                                 SEQUENCE {
+1701   16:                                   SET {
+1703   14:                                     SEQUENCE {
+1705    3:                                       OBJECT IDENTIFIER
+         :                                         organizationName (2 5 4 10)
+1710    7:                                       UTF8String 'EXAMPLE'
+         :                                       }
+         :                                     }
+1719   19:                                   SET {
+1721   17:                                     SEQUENCE {
+1723    3:                                       OBJECT IDENTIFIER
+         :                                         organizationalUnitName (2 5 4 11)
+1728   10:                                       UTF8String 'pki-tomcat'
+         :                                       }
+         :                                     }
+1740   34:                                   SET {
+1742   32:                                     SEQUENCE {
+1744    9:                                       OBJECT IDENTIFIER
+         :                                         emailAddress (1 2 840 113549 1 9 1)
+1755   19:                                       IA5String 'caadmin@example.com'
+         :                                       }
+         :                                     }
+1776   26:                                   SET {
+1778   24:                                     SEQUENCE {
+1780    3:                                       OBJECT IDENTIFIER
+         :                                         commonName (2 5 4 3)
+1785   17:                                       UTF8String 'PKI Administrator'
+         :                                       }
+         :                                     }
+         :                                   }
+1804  290:                                 SEQUENCE {
+1808   13:                                   SEQUENCE {
+1810    9:                                     OBJECT IDENTIFIER
+         :                                       rsaEncryption (1 2 840 113549 1 1 1)
+1821    0:                                     NULL
+         :                                     }
+1823  271:                                   BIT STRING, encapsulates {
+1828  266:                                     SEQUENCE {
+1832  257:                                       INTEGER
+         :                     00 A5 7A 4C F5 A0 B8 DC 2D 62 B2 B9 DD ED AC 9B
+         :                     59 71 02 08 B5 B3 F9 C1 9F 81 47 81 76 3F 28 70
+         :                     F7 0A 95 4E 7E 31 EC 40 28 72 FB 80 2F FA 7A 38
+         :                     99 2F CB 29 CB 0D A8 B2 0D DF 52 A6 F2 31 D1 9F
+         :                     9A 40 C1 7B 3A 4C B5 8A 5D 81 2A D0 1B AA 73 78
+         :                     28 6B 06 2B 7D 6D 64 BC 30 30 39 C6 DA 47 34 84
+         :                     4E 62 77 9F C9 AA E7 6D E9 D6 07 47 D1 2E 7E C3
+         :                     64 33 EF 9D 49 74 80 8C 48 26 1E 86 C0 FE CE 07
+         :                             [ Another 129 bytes skipped ]
+2093    3:                                       INTEGER 65537
+         :                                       }
+         :                                     }
+         :                                   }
+2098  170:                                 [3] {
+2101  167:                                   SEQUENCE {
+2104   31:                                     SEQUENCE {
+2106    3:                                       OBJECT IDENTIFIER
+         :                                         authorityKeyIdentifier (2 5 29 35)
+2111   24:                                       OCTET STRING, encapsulates {
+2113   22:                                         SEQUENCE {
+2115   20:                                           [0]
+         :                     D1 9E 83 09 C3 6D 29 20 BE 87 87 CD 4E FB BF 6B
+         :                     5E 86 1B 73
+         :                                           }
+         :                                         }
+         :                                       }
+2137   85:                                     SEQUENCE {
+2139    8:                                       OBJECT IDENTIFIER
+         :                                         authorityInfoAccess (1 3 6 1 5 5 7 1 1)
+2149   73:                                       OCTET STRING, encapsulates {
+2151   71:                                         SEQUENCE {
+2153   69:                                           SEQUENCE {
+2155    8:                                             OBJECT IDENTIFIER
+         :                                               ocsp (1 3 6 1 5 5 7 48 1)
+2165   57:                                             [6]
+         :                   'http://vm-218.abc.idm.lab.eng.brq.redhat.com:808'
+         :                   '0/ca/ocsp'
+         :                                             }
+         :                                           }
+         :                                         }
+         :                                       }
+2224   14:                                     SEQUENCE {
+2226    3:                                       OBJECT IDENTIFIER
+         :                                         keyUsage (2 5 29 15)
+2231    1:                                       BOOLEAN TRUE
+2234    4:                                       OCTET STRING, encapsulates {
+2236    2:                                         BIT STRING 4 unused bits
+         :                                           '1111'B
+         :                                         }
+         :                                       }
+2240   29:                                     SEQUENCE {
+2242    3:                                       OBJECT IDENTIFIER
+         :                                         extKeyUsage (2 5 29 37)
+2247   22:                                       OCTET STRING, encapsulates {
+2249   20:                                         SEQUENCE {
+2251    8:                                           OBJECT IDENTIFIER
+         :                                             clientAuth (1 3 6 1 5 5 7 3 2)
+2261    8:                                           OBJECT IDENTIFIER
+         :                                             emailProtection (1 3 6 1 5 5 7 3 4)
+         :                                           }
+         :                                         }
+         :                                       }
+         :                                     }
+         :                                   }
+         :                                 }
+2271   13:                               SEQUENCE {
+2273    9:                                 OBJECT IDENTIFIER
+         :                                   sha256WithRSAEncryption (1 2 840 113549 1 1 11)
+2284    0:                                 NULL
+         :                                 }
+2286  257:                               BIT STRING
+         :                     40 A0 EA A7 FA 50 0F 74 1B B5 E3 68 01 CF A9 76
+         :                     B7 34 A8 B1 39 03 B1 7B 4D BA 7C F4 99 96 0B EF
+         :                     7E 83 85 F4 ED 7C 10 33 82 18 EC 1A 20 18 59 1A
+         :                     CA 55 FF 03 E4 E1 31 14 16 92 05 7F 77 EF 96 A9
+         :                     07 6B C7 2F 10 3F 16 6F 4C C4 F1 6E F2 A3 C5 8C
+         :                     ED EF CA 26 1F 9F 57 05 01 BF FC F9 D0 ED 33 DB
+         :                     67 FF 86 F4 CD 01 9D E7 26 9B 12 80 5B 8C CD F7
+         :                     06 41 EB 4A A6 B4 B4 B6 18 99 1C B0 52 7B 4E 58
+         :                             [ Another 128 bytes skipped ]
+         :                               }
+         :                             }
+         :                           }
+         :                         }
+         :                       }
+2547   97:                     SET {
+2549   27:                       SEQUENCE {
+2551   11:                         OBJECT IDENTIFIER '2 16 840 1 113730 5 1 1 1'
+2564   12:                         SET {
+2566   10:                           BMPString '.u.,.u.,.u'
+         :                           }
+         :                         }
+2578   29:                       SEQUENCE {
+2580    9:                         OBJECT IDENTIFIER
+         :                           friendlyName (for PKCS #12) (1 2 840 113549 1 9 20)
+2591   16:                         SET {
+2593   14:                           BMPString '.c.a.a.d.m.i.n'
+         :                           }
+         :                         }
+2609   35:                       SEQUENCE {
+2611    9:                         OBJECT IDENTIFIER
+         :                           localKeyID (for PKCS #12) (1 2 840 113549 1 9 21)
+2622   22:                         SET {
+2624   20:                           OCTET STRING
+         :                     89 B0 2D BE 36 88 11 4D 3B AE 1C 9F F0 A6 7E 19
+         :                     CC D1 79 59
+         :                           }
+         :                         }
+         :                       }
+         :                     }
+</pre>
+
+== PBE/SHA1/RC2-40 ==
+
+<pre>
+1502 NDEF:             SEQUENCE {
+1504    9:               OBJECT IDENTIFIER encryptedData (1 2 840 113549 1 7 6)
+1515 NDEF:               [0] {
+1517 NDEF:                 SEQUENCE {
+1519    1:                   INTEGER 0
+1522 NDEF:                   SEQUENCE {
+1524    9:                     OBJECT IDENTIFIER data (1 2 840 113549 1 7 1)
+1535   37:                     SEQUENCE {
+1537   10:                       OBJECT IDENTIFIER
+         :                         pbeWithSHAAnd40BitRC2-CBC (1 2 840 113549 1 12 1 6)
+1549   23:                       SEQUENCE {
+1551   16:                         OCTET STRING
+         :                     5B 1D 6B CD 72 3F E8 1B CD 89 B3 C3 79 90 0C 22
+1569    3:                         INTEGER 100000
+         :                         }
+         :                       }
+1574 NDEF:                     [0] {
+1576 2208:                       OCTET STRING
+         :                     A0 D9 5B 30 C2 25 7D 41 B9 0B 59 40 8C AC CA 53
+         :                     4C 4B 6E 65 40 74 E0 EC 8D 41 A3 45 05 AC 78 AA
+         :                     58 A2 80 D3 F4 C2 6C C9 E5 FF 75 96 FF 3D CA 26
+         :                     69 28 77 47 FF 05 CC B1 D0 65 BB 24 07 8B 59 E8
+         :                     AE 58 81 26 7C 20 29 39 61 0F 9B 14 90 FA 5B 03
+         :                     CA 7E CB 12 86 04 B2 E0 79 9D 49 3A C7 B7 BB C8
+         :                     63 CE 6D 22 92 A3 48 20 05 1D FE 0F 3B EA 18 AD
+         :                     85 4A E0 C8 E2 D7 AE F4 14 7B 88 94 49 8E 9E BB
+         :                             [ Another 2080 bytes skipped ]
+3788    8:                       OCTET STRING E8 19 FA 42 69 83 0B 0A
+         :                       }
+         :                     }
+         :                   }
+         :                 }
+         :               }
+</pre>
+
+= References =
+
+* [[PKCS12]]
+* [https://tools.ietf.org/html/rfc7292 RFC 7292]

@@ -1,0 +1,506 @@
+= Overview =
+
+PKI provides a framework to automatically handle configuration file changes between release. The framework consists of two parts:
+* System upgrade: system-wide configuration (e.g. pki.conf)
+* Server upgrade:
+** instance configuration (e.g. server.xml) 
+** subsystem configuration (e.g. web.xml, CS.cfg)
+
+The actual upgrade operations will be done incrementally by upgrade scriptlets. Each scriptlet is only responsible for modifying a certain aspect of the configuration files. Also each scriptlet is only responsible to upgrade from one specific version to the next one; it is not responsible for any upgrades before or after that.
+
+= Automatic Upgrade =
+
+== Upgrade scripts ==
+
+The system upgrade scriptlets are stored in /usr/share/pki/upgrade:
+
+<pre>
+/usr/share/pki/upgrade:
++ 10.0.0
++ 10.0.1
+  + 01-AddJniJarDir
++ 10.0.2
+  + ...
+</pre>
+
+The server upgrade scriptlets are stored in /usr/share/pki/server/upgrade:
+
+<pre>
+/usr/share/pki/server/upgrade:
++ 10.0.0
++ 10.0.1
+  + 01-ReplaceRandomNumberGenerator
+  + 02-CloningIterfaceChanges
+  + 03-AddRestServlet
++ 10.0.2
+  + ...
+</pre>
+
+== RPM Upgrade ==
+
+The system upgrade will run automatically when the pki-base package is upgraded. The server upgrade will run automatically when the pki-server package is upgraded.
+
+== Interactive mode ==
+
+If necessary, the upgrade can be done interactively by calling the '''pki-upgrade''' or '''pki-server-upgrade''':
+
+<pre>
+% pki-server-upgrade
+Upgrading from version 10.0.1:
+1. Replace random number generator (Yes/No) [Y]:
+2. Use new interfaces for clone installation (Yes/No) [Y]:
+
+Upgrading from version 10.0.2:
+...
+
+Upgrade complete.
+</pre>
+
+== Silent mode ==
+
+The upgrade can also be done silently, for example:
+<pre>
+% pki-upgrade --silent
+
+... log messages ...
+
+Upgrade complete.
+</pre>
+
+== Upgrading specific server components ==
+
+By default pki-server-upgrade will upgrade all instances and subsystems. To upgrade a specific instance including all subsystems in it:
+
+<pre>
+% pki-server-upgrade --instance pki-tomcat
+</pre>
+
+To upgrade a specific subsystem only:
+
+<pre>
+% pki-server-upgrade --instance pki-tomcat --subsystem ca
+</pre>
+
+== Running specific scriptlets ==
+
+By default pki-upgrade and pki-server-upgrade will run all scriptlets from the current configuration version up to the target RPM version.
+
+To upgrade one version at a time:
+
+<pre>
+% pki-upgrade --scriptlet-version 10.0.1
+</pre>
+
+To run the scriptlets one-by-one:
+
+<pre>
+% pki-upgrade --scriptlet-version 10.0.1 --scriptlet-index 1
+</pre>
+
+== Viewing upgrade status ==
+
+To view the upgrade status of each component:
+
+<pre>
+% pki-upgrade --status
+</pre>
+
+== Upgrade tracker ==
+
+The upgrade process will be done one scriptlet at a time. In each scriptlet all components will be updated in parallel before continuing to the next scriptlet. However, if there's a failure when upgrading one component, the component will be skipped for the remainder of the upgrade process.
+
+The upgrade process will be tracked using some properties stored in the following files:
+* system: /etc/pki/pki.version
+* instance: /etc/pki/<instance>/tomcat.conf
+* subsystem: /etc/pki/<instance>/<subsystem>/CS.cfg
+
+System tracker uses the following properties:
+* version: Configuration-Version
+* index: Scriptlet-Index
+
+Instance tracker uses the following properties:
+* version: PKI_VERSION
+* index: PKI_UPGRADE_INDEX
+
+Subsystem tracker uses the following properties:
+* version: cms.product.version
+* index: cms.upgrade.index
+
+For example, suppose the current system is 10.0.1 and the packages have been upgraded to 10.0.2. Initially the tracker does not exist.
+
+When the upgrade runs, it will execute all upgrade scriptlets for 10.0.1. When the first scriptlet is complete it will be tracked as follows in the tracker for each component:
+<pre>
+<index>: 1
+</pre>
+
+When the second scriptlet is complete the tracker will be updated:
+<pre>
+<index>: 2
+</pre>
+
+When the last scriptlet for one version is complete, the version number will be stored in the tracker:
+<pre>
+<version>: 10.0.2
+</pre>
+
+Suppose the system is upgraded to 10.0.3, it will track the execution of each scriptlet again:
+
+<pre>
+<version>: 10.0.2
+<index>: ...
+</pre>
+
+Once all scriptlets are completed the version number will be updated:
+
+<pre>
+<index>: 10.0.3
+</pre>
+
+'''Note: this should be used for testing only.''' To remove the trackers:
+
+<pre>
+% pki-upgrade --remove-tracker
+</pre>
+
+== Troubleshooting ==
+
+In case there is a failure when upgrading a component, the pki-upgrade will stop processing the upgrade for that particular component, but will continue upgrading the other components:
+
+<pre>
+% pki-upgrade 
+Upgrading from 10.0.1:
+1. Replace random number generator (Yes/No) [Y]:
+ERROR: Unable to upgrade CA in pki-tomcat: Missing Context element
+2. Use new interfaces for clone installation (Yes/No) [Y]:
+
+Upgrading from 10.0.2:
+  ...
+
+Upgrade incomplete.
+</pre>
+
+The failing script can be rerun individually, for example:
+
+<pre>
+% pki-upgrade --instance pki-tomcat --subsystem ca --version 10.0.1 --scriptlet 1
+</pre>
+
+After fixing the problem, the pki-upgrade can be run again and it will skip the scripts that are already completed and then continue until all scripts are completed.
+
+== Backup and Revert ==
+
+Each scriptlet will backup all files that it modified/deleted and record the new files that it added. In case it's needed, the upgrade operation can be reverted using the following command:
+
+<pre>
+% pki-upgrade --revert
+</pre>
+
+This will restore the original file that was modified/deleted and delete the new files that was added.
+
+= Manual Upgrade =
+
+Sometimes it may be necessary to run some of the upgrade steps manually if the automatic upgrade does not work. The upgrade script might fail if there is a bug, or if there is a case that is not covered by the script, especially if the component has been customized.
+
+== From 10.0.0 to 10.0.1 ==
+
+There is no modification required.
+
+== From 10.0.1 to 10.0.2 ==
+
+=== Replace random number generator ===
+
+Apply the following changes to /var/lib/pki/<instance>/webapps/<subsystem>/META-INF/context.xml:
+
+<pre>
+ <Context crossContext="true" allowLinking="true">
+
+-    <Valve className="com.netscape.cms.tomcat.SSLAuthenticatorWithFallback" />
++    <Manager
++        secureRandomProvider="Mozilla-JSS" secureRandomAlgorithm="pkcs11prng"/>
++
++    <Valve className="com.netscape.cms.tomcat.SSLAuthenticatorWithFallback"
++        secureRandomProvider="Mozilla-JSS" secureRandomAlgorithm="pkcs11prng"/>
+
+     <Realm className="com.netscape.cms.tomcat.ProxyRealm" />
+</pre>
+
+Apply the following changes to /var/lib/pki/<instance>/webapps/ROOT/META-INF/context.xml:
+
+<pre>
+ <Context crossContext="true" allowLinking="true">
+
++    <Manager
++        secureRandomProvider="Mozilla-JSS" secureRandomAlgorithm="pkcs11prng"/>
++
+ </Context>
+</pre>
+
+Create /var/lib/pki/<instance>/webapps/pki/META-INF/context.xml:
+
+<pre>
+<Context crossContext="true" allowLinking="true">
+    <Manager
+        secureRandomProvider="Mozilla-JSS" secureRandomAlgorithm="pkcs11prng"/>
+</Context>
+</pre>
+
+=== Use new interfaces for clone installation ===
+
+See the steps in http://pki.fedoraproject.org/wiki/8.1_installer_work_for_cloning.
+
+= Writing Upgrade Scripts =
+
+== Scope ==
+
+Each upgrade script should represent a complete change for one aspect of the system. This will minimize the risk of having a partially upgraded system that will not work.
+
+If possible, complex script should be broken down into smaller scripts. Scripts that are too complex will be difficult to troubleshoot.
+
+The script should be written for a particular version and it is only responsible to upgrade from that version to the next immediate version (e.g. from 10.0.1 to 10.0.2 but not to 10.0.3).
+
+== File name and location ==
+
+The upgrade scriptlets should be organized as follows:
+
+<pre>
+/usr/share/pki/server/upgrade
++ <version>
+  + <index>-<class name>
+</pre>
+
+The '''version''' indicates the version of the system before upgrade.
+
+The '''index''' is used to indicate the execution order of the scriptlet. The index can be of any length, but all scriptlets in the same version should use the same length (e.g. 01, 02, ...).
+
+The '''class name''' should match the scriptlet class definition also briefly describe what the scriptlet does.
+
+== Framework ==
+
+The framework provides a base class for all upgrade scriptlets:
+
+<pre>
+class PKIUpgradeScriptlet(object):
+
+    # tracking methods
+    def can_upgrade(self, instance=None, subsystem=None):
+        ... check tracker ...
+
+    def update_tracker(self, instance=None, subsystem=None):
+        ... update tracker ...
+
+    # upgrade methods to be overriden by subclass
+    def upgrade_subsystem(self, instance, subsystem):
+        return
+
+    def upgrade_instance(self, instance):
+        return
+
+    def upgrade_system(self):
+        return
+
+    # main program
+    def upgrade():
+        ...
+
+</pre>
+
+The '''can_upgrade()''' will check whether the scriptlet can upgrade the specified component. It will return True if the scriptlet version matches the tracker version, and the scripltlet is the next to execute based on the index stored in the tracker.
+
+The '''upgrade_subsystem()''', '''upgrade_instance()''', and '''upgrade_system()''' will perform the upgrade for the specified component. This method should be overridden in the scriptlet implementation.
+
+Once the upgrade is complete, the '''update_tracker()''' will update the tracker for the specified component.
+
+The '''upgrade()''' provides a default implementation for the upgrade process:
+
+<pre>
+for each instance in /var/lib/pki:
+
+    for each subsystem in instance:
+        if not scriptlet.can_upgrade(instance, subsystem):
+            scriptlet.upgrade_subsystem(instance, subsystem)
+            scriptlet.update_tracker(instance, subsystem)
+
+    if not scriptlet.can_upgrade(instance):
+        scriptlet.upgrade_instance(instance)
+        scriptlet.update_tracker(instance)
+
+if not scriptlet.can_upgrade():
+    scriptlet.upgrade_system()
+    scriptlet.update_tracker()
+</pre>
+
+Initially it will upgrade the subsystems within an instance first, then the instance itself. Once all instances are upgraded then the system will be upgraded.
+
+pki-upgrade will call the scripts as follows:
+
+<pre>
+for each version in /usr/share/pki/server/upgrade:
+    for each scriptlet in version:
+        scriptlet.upgrade()
+</pre>
+
+== Implementation ==
+
+The upgrade script should implement a subclass of PKIUpgradeScriptlet. The script will only need to override the upgrade methods related to the changes.
+
+Each upgrade method should be idempotent. It should performs the upgrade in a way that always produces identical result regardless how many times it's executed. If there is a problem the method should raise an Error.
+
+<pre>
+import pki.upgrade
+
+
+class ReplaceRandomNumberGenerator(PKIUpgradeScriptlet):
+
+    def __init__(self):
+        self.name = 'Replace random number generator'
+
+    def upgrade_subsystem(self, instance, subsystem):
+
+        if ... upgrade already done ...:
+            return
+
+        ... perform upgrade ...
+
+        if ... error ...:
+            raise Error('Upgrade failed')
+
+        ... save changes ...
+</pre>
+
+== Example ==
+
+Consider the following modifications to context.xml:
+
+<pre>
+ <Context crossContext="true" allowLinking="true">
+
+-    <Valve className="com.netscape.cms.tomcat.SSLAuthenticatorWithFallback" />
++    <Manager
++        secureRandomProvider="Mozilla-JSS" secureRandomAlgorithm="pkcs11prng"/>
++
++    <Valve className="com.netscape.cms.tomcat.SSLAuthenticatorWithFallback"
++        secureRandomProvider="Mozilla-JSS" secureRandomAlgorithm="pkcs11prng"/>
+
+     <Realm className="com.netscape.cms.tomcat.ProxyRealm" />
+</pre>
+
+The upgrade consists of two modifications:
+* Adding a Manager element with the secure random attributes.
+* Updating the Authenticator valve with the secure random attributes.
+
+The script may look like the following:
+
+<pre>
+    def upgrade_subsystem(self, instance, subsystem):
+
+        filename = '/var/lib/pki/'+instance+'/webapps/'+subsystem+'/META-INF/context.xml'
+        doc = self.parse_xml(filename)
+
+        context = doc.get_root()
+        if context is None:
+            raise Error('Missing Context element')
+
+        self.add_manager(context)
+        self.update_authenticator(context)
+
+        self.write_xml(filename, doc)
+
+    def add_manager(self, context):
+
+        // find existing manager
+        managers = context.find_elements('Manager')
+        if len(managers) > 1:
+            raise Error('Found multiple Manager elements')
+
+        // if not found, create a new one
+        if len(managers) == 0:
+            manager = context.create_element('Manager')
+        else:
+            manager = managers[0]
+
+        // update the attributes
+        manager.set_attribute('secureRandomProvider', 'Mozilla-JSS')
+        manager.set_attribute('secureRandomAlgorithm', 'pkcs11prng')
+
+
+    def update_authenticator(self, context):
+
+        // find existing authenticator
+        valves = context.find_elements('Valve')
+        authenticator = None
+
+        for valve in valves:
+            if valve.get_attribute('className') != \
+                'com.netscape.cms.tomcat.SSLAuthenticatorWithFallback':
+                continue
+
+            // authenticator found
+            authenticator = valve
+            break
+
+        // authenticator not found, create a new one
+        if authenticator is None:
+            valve = context.create_element('Valve')
+            valve.set_attribute('className',
+                'com.netscape.cms.tomcat.SSLAuthenticatorWithFallback')
+
+        // update the attributes
+        valve.set_attribute('secureRandomProvider', 'Mozilla-JSS')
+        valve.set_attribute('secureRandomAlgorithm', 'pkcs11prng')
+</pre>
+
+In this example the script checks if the context.xml already has the elements it's trying to create/update. If the elements are missing, the script will create them. Then the script updates the attributes, overwriting any old values. If the script fails anywhere during the execution, it can be re-run and still produces the same results.
+
+= Discussion Topics =
+
+== Fine-grained tracking ==
+
+There are different ways to keep track the upgrade process, for example:
+* No tracking. Upgrade process is based on actual changes.
+* Tracking the whole system only (as shown above).
+* Tracking the system and the instances.
+* Tracking the system, the instances, and the subsystems.
+* Tracking individual files.
+
+The more trackers used, the more precise the upgrade process can work. However, it also means more maintenance.
+
+Suppose the upgrade fails, if a component has a tracking number the script can quickly determine whether the script needs to run again on that component. If it doesn't have a tracking number, the script will need to run again, but since the script is supposed to be idempotent this should not be a problem.
+
+There is also a risk that the tracking numbers could become outdated due to a bug, but since the script is supposed to be idempotent this should not be a problem either.
+
+Without a tracker, pki-upgrade could mistakenly execute an older script that is no longer valid for the current version. For example, the first script adds a new XML element with a certain ID. Then the second script looks for that element and changes the ID. If for some reason the second script doesn't finish completely, without a tracker the first script may run again and it will add the element again. Then the second script will run again and create a duplicate element. With a tracker the first script will not be executed anymore, so the second script will not create a duplicate element.
+
+If the tracker for some reason is wrong, pki-upgrade can be rerun with some parameters to start from a specific script.
+
+The can_upgrade() and update_tracker() can also be overridden to use custom tracking.
+
+== Complexity ==
+
+Some file types might be more difficult to update than the other. Files such as property files, XML files, LDAP ACI, LDIF might be easier to parse, but JS files and HTML files might be more difficult.
+
+One option is to replace the file completely with the new one. If the original file has been customized it will be saved, but the admin will be responsible to merge the customization into the new file manually.
+
+Another option is to use [[Customization|direct deployment]]. Files that are not supposed to be user-modifiable should not be duplicated during deployment.
+
+== Robustness ==
+
+In the above example the script does not handle the case where there is already another authenticator with a different class name, so the script will add a new authenticator anyway. If this happens, the upgrade will complete but the result may be invalid. In this case the result will need to be fixed manually.
+
+It is possible to make the script more robust, but it will also increase the complexity. However, if the scenario is unlikely to happen it may not be necessary to add additional checking since the error can still be fixed manually. The script only needs to be robust enough to handle common cases.
+
+== Transaction ==
+
+Transaction might be needed to avoid leaving partially upgraded instance, but it might not be necessary if the script is simple enough.
+
+The write_xml() in the above example could be made to automatically back up the file.
+
+== Availability ==
+
+On a stand-alone system the configuration and data can be upgraded at the same time. However, on a clustered environment the data could be shared by multiple instances. There could be a problem if the instances are not upgraded at the same time. However, if they are upgraded at the same time the whole system may not be available.
+
+A possible solution is to switch the system to a read-only mode.
+
+= References =
+
+* [https://github.com/dogtagpki/pki/wiki/Upgrading-PKI-Server Upgrading PKI Server]
+* [[PKI Version Number]]

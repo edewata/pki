@@ -1,0 +1,204 @@
+= Syntax =
+
+== General syntax ==
+
+<pre>
+   ContentInfo ::= SEQUENCE {
+     contentType ContentType,
+     content
+       [0] EXPLICIT ANY DEFINED BY contentType OPTIONAL }
+
+   ContentType ::= OBJECT IDENTIFIER
+</pre>
+
+== Data content type ==
+
+<pre>
+Data ::= OCTET STRING
+</pre>
+
+== Signed-data content type ==
+
+<pre>
+   SignedData ::= SEQUENCE {
+     version Version,
+     digestAlgorithms DigestAlgorithmIdentifiers,
+     contentInfo ContentInfo,
+     certificates
+        [0] IMPLICIT ExtendedCertificatesAndCertificates
+          OPTIONAL,
+     crls
+       [1] IMPLICIT CertificateRevocationLists OPTIONAL,
+     signerInfos SignerInfos }
+
+   DigestAlgorithmIdentifiers ::=
+
+     SET OF DigestAlgorithmIdentifier
+
+   SignerInfos ::= SET OF SignerInfo
+
+   SignerInfo ::= SEQUENCE {
+     version Version,
+     issuerAndSerialNumber IssuerAndSerialNumber,
+     digestAlgorithm DigestAlgorithmIdentifier,
+     authenticatedAttributes
+       [0] IMPLICIT Attributes OPTIONAL,
+     digestEncryptionAlgorithm
+       DigestEncryptionAlgorithmIdentifier,
+     encryptedDigest EncryptedDigest,
+     unauthenticatedAttributes
+       [1] IMPLICIT Attributes OPTIONAL }
+
+   EncryptedDigest ::= OCTET STRING
+
+   DigestInfo ::= SEQUENCE {
+     digestAlgorithm DigestAlgorithmIdentifier,
+     digest Digest }
+
+   Digest ::= OCTET STRING
+</pre>
+
+== Enveloped-data content type ==
+
+<pre>
+   EnvelopedData ::= SEQUENCE {
+     version Version,
+     recipientInfos RecipientInfos,
+     encryptedContentInfo EncryptedContentInfo }
+
+   RecipientInfos ::= SET OF RecipientInfo
+
+   EncryptedContentInfo ::= SEQUENCE {
+     contentType ContentType,
+     contentEncryptionAlgorithm
+       ContentEncryptionAlgorithmIdentifier,
+     encryptedContent
+       [0] IMPLICIT EncryptedContent OPTIONAL }
+
+   EncryptedContent ::= OCTET STRING
+
+   RecipientInfo ::= SEQUENCE {
+     version Version,
+     issuerAndSerialNumber IssuerAndSerialNumber,
+     keyEncryptionAlgorithm
+
+       KeyEncryptionAlgorithmIdentifier,
+     encryptedKey EncryptedKey }
+
+   EncryptedKey ::= OCTET STRING
+</pre>
+
+== Signed-and-enveloped-data content type ==
+
+<pre>
+   SignedAndEnvelopedData ::= SEQUENCE {
+     version Version,
+     recipientInfos RecipientInfos,
+     digestAlgorithms DigestAlgorithmIdentifiers,
+     encryptedContentInfo EncryptedContentInfo,
+     certificates
+        [0] IMPLICIT ExtendedCertificatesAndCertificates
+          OPTIONAL,
+     crls
+       [1] IMPLICIT CertificateRevocationLists OPTIONAL,
+     signerInfos SignerInfos }
+</pre>
+
+== Digested-data content type ==
+
+<pre>
+   DigestedData ::= SEQUENCE {
+     version Version,
+     digestAlgorithm DigestAlgorithmIdentifier,
+     contentInfo ContentInfo,
+     digest Digest }
+
+   Digest ::= OCTET STRING
+</pre>
+
+== Encrypted-data content type ==
+
+<pre>
+   EncryptedData ::= SEQUENCE {
+     version Version,
+     encryptedContentInfo EncryptedContentInfo }
+</pre>
+
+= PEM Format =
+
+<pre>
+-----BEGIN PKCS7-----
+...
+-----END PKCS7-----
+</pre>
+
+= Displaying Certificates in PKCS #7 =
+
+<pre>
+$ openssl pkcs7 -print_certs -in cert_chain.p7b
+subject=/O=EXTERNAL/CN=External CA
+issuer=/O=EXTERNAL/CN=External CA
+-----BEGIN CERTIFICATE-----
+MIIDATCCAemgAwIBAgICciwwDQYJKoZIhvcNAQELBQAwKTERMA8GA1UEChMIRVhU
+RVJOQUwxFDASBgNVBAMTC0V4dGVybmFsIENBMB4XDTE2MDcwNTE5MjM0NloXDTE2
+MTAwNTE5MjM0NlowKTERMA8GA1UEChMIRVhURVJOQUwxFDASBgNVBAMTC0V4dGVy
+bmFsIENBMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5MKJKWw5oVQl
+tWt4BKhS04fmGR249+qcZr1HVt8Heo0Sukes6kZgIXA53457JVD1VFqzgkVlZIRZ
+8vwnIoDw0t8oMzg72l0WslHtChx3WSHf4dL4UO+l885fDygN8QbJMDSLY51qEtS8
+EPZ0gEQQ2KoOL9Alu3lKnHHl9CNLJxD9wclN6YT2vyH044YqjFY0YEKnBk5OC8E1
+RNu8NP60ittFQ0Y0NMYsqOfXlKnYBFBb06P5fGgMWfri3Q7VbLCxqX4YYb8w4mQf
+7a4RPPhnnSuepmYBgTMzUgSvCSd6v1Zz5qTrK0xugF52WF+MCphBBupm/issdTmM
+DNt0eG7zBQIDAQABozMwMTARBglghkgBhvhCAQEEBAMCAAcwDwYDVR0TAQH/BAUw
+AwEB/zALBgNVHQ8EBAMCAgQwDQYJKoZIhvcNAQELBQADggEBAEWrG9rIQ9mXVVAf
+cezHZcDWZGJwYmM9/A45MwevkLo5mibzs1zadUwdTbD9jJHBDC+UcBgVf/IqtfER
+0euntJ/7yN/iVElXjHvjUXTBjOLBhUo6s6Ky+IZot8n+LHe/LuJg4NNyDQsDwfns
+ZsCNFri/cx0iy11QZ1fMXyMhK+kIGOdLrVJvLD8nDFgjhWbWqX6WiJVPVec1szHm
+BgUJrTR7XSuIUsY/8pIOe3AlAYs8dshYkU/AcasIz8sYr/NHtkIiBVbl/MkU+KnN
+Im1GAuc7MqiKfLMtrwEgZzfPG1eFTmNA/wuip1DlwAc3lDDatK3e79AOsuivgLjn
+jqW1LYQ=
+-----END CERTIFICATE-----
+
+subject=/O=EXAMPLE/CN=CA Signing Certificate
+issuer=/O=EXTERNAL/CN=External CA
+-----BEGIN CERTIFICATE-----
+MIIDFjCCAf6gAwIBAgICNiowDQYJKoZIhvcNAQELBQAwKTERMA8GA1UEChMIRVhU
+RVJOQUwxFDASBgNVBAMTC0V4dGVybmFsIENBMB4XDTE2MDcwNTE5MjM0N1oXDTE2
+MTAwNTE5MjM0N1owMzEQMA4GA1UEChMHRVhBTVBMRTEfMB0GA1UEAxMWQ0EgU2ln
+bmluZyBDZXJ0aWZpY2F0ZTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB
+AKKLxskVmDkJlDfAjr2yztnzU06SKhCq+zGGvoza7fLAbqxsyrKC5kL+yavw9J1L
++0E2HopfwvJuateRS3ZuhtgRS9r+S1bBi/amOGW7ihSWJx8kxSsAMw52qE1YLjV4
+IuqL9cGSyqrRGvKkUOG8e1W935NiFFlx52hH9Jo8b+Qt4qY6BCYT3tykhPrmCF3l
++kRJPZE95weUkgKuCxe/JRWkryixMi3wEm8fcWWxzbuRhWEJYCPN0bap95XQXhZv
+a4Mw6DQDu7V27cmRjBu1ICsOzUKTMUJKzywcZcNRk/pJN5EZRjq3HLfhW98IvaGt
+RWOEUmgZjE9Dn/tI59ilS/ECAwEAAaM+MDwwGQYJKwYBBAGCNxQCBAweCgBTAHUA
+YgBDAEEwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMCAcYwDQYJKoZIhvcN
+AQELBQADggEBAFwi2fCWQ0UQIe9LRkx6TiRzNJdqIz3Gmt2FtSpqkIQONLfeo0Z6
+qqEWWImEf/2roGerwgZxt4ipYdDANn8So/jt3dbdCfJMj67TJ5Mj6YEsr/W+BgNc
+c0WIZXKUJ6k6G6qgEfTEBHD3f+3ZOy8rbtFKNTs6DbJ9jzQk52dZzVKwgksrH4fM
+AGPd2oyLNp9vjRV8odSoikaJFcEpMc/ExYRqSMCw2ilkrghoNyAjmE1rwSFlBaMW
+db0ecnTUw53blojXmZEZkXlSikMlSasyAg5AQ1T2sai02TRFvRKLM3LaXzod3IGI
+p4K6OlKDH3JogBc5kEP9ElOnG/7E0rsQjTM=
+-----END CERTIFICATE-----
+</pre>
+
+= Converting PEM Certificates into PKCS #7 =
+
+<pre>
+$ openssl crl2pkcs7 -nocrl -certfile cert1.crt -certfile cert2.crt ... -out cert_chain.p7b
+</pre>
+
+= Converting PKCS #7 into PEM Certificates =
+
+<pre>
+$ openssl pkcs7 -print_certs -in cert_chain.p7b | awk '
+  end_found == 1 {n++; begin_found=0; end_found=0}
+  /-----BEGIN CERTIFICATE-----/ {begin_found=1}
+  /-----END CERTIFICATE-----/ {end_found=1}
+  {if (begin_found && length($0) > 0) print > "cert" (n+1) ".crt"}' 
+</pre>
+
+= References =
+
+* [https://github.com/dogtagpki/pki/wiki/PKI-PKCS7-CLI PKI PKCS7 CLI]
+* [[OpenSSL]]
+* [https://tools.ietf.org/html/rfc2315 RFC2315]

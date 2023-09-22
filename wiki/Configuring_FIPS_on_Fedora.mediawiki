@@ -1,0 +1,74 @@
+= Overview =
+
+This page describes the process to enable FIPS mode on Fedora 28.
+
+<font color="red">'''WARNING:''' Make sure the system is backed up. This procedure may render the system unusable.</font>
+
+= Prerequisites =
+
+Install FIPS packages:
+
+<pre>
+$ dnf install dracut-fips
+</pre>
+
+= Enabling FIPS Mode =
+
+Recreate initramfs file:
+
+<pre>
+$ dracut -f
+</pre>
+
+<pre>
+$ dracut --print-cmdline
+rd.lvm.lv=vg_root/lv_swap 
+rd.lvm.lv=vg_root/lv_root 
+resume=/dev/mapper/vg_root-lv_swap root=/dev/mapper/vg_root-lv_root rootfstype=ext4 rootflags=rw,relatime,seclabel,data=ordered
+</pre>
+
+<pre>
+$ egrep -R . /{etc,lib}/dracut.conf*
+/etc/dracut.conf:# PUT YOUR CONFIG IN separate files
+/etc/dracut.conf:# in /etc/dracut.conf.d named "<name>.conf"
+/etc/dracut.conf:# SEE man dracut.conf(5) for options
+</pre>
+
+Enable FIPS in /etc/default/grub:
+
+ GRUB_CMDLINE_LINUX="... <font color="red">fips=1</font>"
+
+If /boot reside on separate partition, find the partition UUID:
+
+ $ df /boot
+ Filesystem     1K-blocks   Used Available Use% Mounted on
+ /dev/vda1         243823 137045     93978  60% /boot
+ $ blkid <font color="red">/dev/vda1</font>
+ /dev/vda1: UUID="<font color="red">ac6e6fb6-7336-49fe-a76a-01db03186919</font>" TYPE="ext3" PARTUUID="c2dbf6db-01"
+
+Specify the UUID in /etc/default/grub:
+
+ GRUB_CMDLINE_LINUX="... fips=1 boot=UUID=<font color="red">ac6e6fb6-7336-49fe-a76a-01db03186919</font>"
+
+Regenerate grub.cfg:
+
+<pre>
+$ grub2-mkconfig -o /boot/grub2/grub.cfg
+</pre>
+
+Reboot the system:
+
+ $ reboot
+
+= Verification =
+
+Verify that the system is running in FIPS mode with the following command:
+
+<pre>
+$ sysctl crypto.fips_enabled
+crypto.fips_enabled = 1
+</pre>
+
+= References =
+
+* [[FIPS]]

@@ -1,0 +1,216 @@
+= Installation =
+
+<pre>
+$ dnf install -y podman podman-plugins
+</pre>
+
+= Authentication =
+
+<pre>
+$ podman login quay.io
+</pre>
+
+= Images =
+
+To list images:
+
+<pre>
+$ podman images
+</pre>
+
+To pull an image:
+
+<pre>
+$ podman pull <repo>/<name>:<tag>
+</pre>
+
+For example, to pull Fedora image:
+
+<pre>
+$ podman pull fedora:<version>
+</pre>
+
+To pull PostgreSQL image:
+
+<pre>
+$ podman pull postgres
+</pre>
+
+To pull PKI ACME image:
+
+<pre>
+$ podman pull quay.io/dogtagpki/pki-acme:latest
+</pre>
+
+To remove all unused images:
+
+<pre>
+$ podman image prune --all -f
+</pre>
+
+To remove all images:
+
+<pre>
+$ podman rmi -a -f
+</pre>
+
+= Containers =
+
+To list containers:
+
+<pre>
+$ podman ps
+</pre>
+
+To run a new container:
+
+<pre>
+$ podman run --name <container> --rm -it <image>
+</pre>
+
+To run a command in a new container:
+
+<pre>
+$ podman run --rm -it <image> <command>
+</pre>
+
+To run a shell in a new container:
+
+<pre>
+$ podman run --rm -it <image> /bin/bash
+</pre>
+
+To access an existing container:
+
+<pre>
+$ podman exec -it <container> <command>
+</pre>
+
+To run a shell in an existing container:
+
+<pre>
+$ podman exec -it <container> sh
+</pre>
+
+To remove a container:
+
+<pre>
+$ podman rm -f <container>
+</pre>
+
+To remove all stopped containers: 
+
+<pre>
+$ podman container prune -f
+</pre>
+
+= Networking =
+
+To list networks:
+
+<pre>
+$ podman network ls
+</pre>
+
+To create a network:
+
+<pre>
+$ podman network create example
+/etc/cni/net.d/example.conflist
+</pre>
+
+Edit /etc/cni/net.d/example.conflist as follows:
+
+<pre>
+{
+   "cniVersion": "0.4.0",
+   "name": "example",
+   "plugins": [
+      ...
+      {
+         "type": "dnsname",
+         "domainName": "example.com"
+      }
+   ]
+}
+</pre>
+
+To attach containers:
+
+<pre>
+$ podman network connect <network> <container>
+</pre>
+
+To get container's IP address:
+
+<pre>
+$ podman inspect -f '{{ .NetworkSettings.Networks.<network>.IPAddress }}' <container>
+</pre>
+
+= Building an Image =
+
+<pre>
+$ podman build \
+    -t <name> \
+    --build-arg <arg>=<value> \
+    <dir>
+</pre>
+
+= Tagging an Image =
+
+To tag an image:
+
+<pre>
+$ podman tag <name>:<tag> <new name>:<new tag>
+</pre>
+
+For example:
+
+<pre>
+$ podman tag pki-acme:latest quay.io/dogtagpki/pki-acme:latest
+</pre>
+
+= Pushing an Image =
+
+To push an image:
+
+<pre>
+$ podman push <repo>/<name>:<tag>
+</pre>
+
+For example:
+
+<pre>
+$ podman push quay.io/dogtagpki/pki-acme:latest
+</pre>
+
+= Pods =
+
+To list pods:
+
+<pre>
+$ podman pod list
+</pre>
+
+To create a pod:
+
+<pre>
+$ podman pod create --name acme
+</pre>
+
+To remove a pod: 
+
+<pre>
+$ podman pod rm -f <pod>
+</pre>
+
+= See Also =
+
+* [[Container]]
+* [[Docker]]
+* [https://podman.io/ podman.io]
+* [https://docs.quay.io/solution/getting-started.html quay.io]
+* [[Buildah]]
+* [https://github.com/containers/dnsname/blob/master/README_PODMAN.md Using the dnsname plugin with Podman]
+* [https://developers.redhat.com/blog/2019/01/15/podman-managing-containers-pods/ Podman: Managing pods and containers in a local container runtime]
+* [https://www.redhat.com/sysadmin/podman-run-pods-systemd-services How to run pods as systemd services with Podman]

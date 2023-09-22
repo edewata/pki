@@ -1,0 +1,107 @@
+= Building PKI Components Individually via Subversion =
+
+== Installing Pre-Built PKI Support Components ==
+
+Follow the instructions to install pre-built PKI support components:
+* [[PKI_Pre-Built_Support_Components|Pre-built PKI Support Components]]
+
+== Checking out PKI Source Code via Subversion ==
+
+Follow the instructions to checkout a read-only copy of the PKI source code using subversion:
+* [[PKI_Subversion_Instructions|PKI Source Code Subversion Repository]].
+
+== Building PKI Components ==
+
+=== Dogtag 9.0 ===
+
+A new [http://www.cmake.org/ CMake] build system was implemented for Dogtag 9.0 to replace the [http://ant.apache.org/ ant] / [http://www.gnu.org/software/autoconf/ autoconf] build system used to build previous versions of Dogtag.
+
+Additionally, packages were reorganized (see [[PKI 9 Packages]]) and a series of standalone 'compose' scripts were created to build the newly organized components as either an SRPM (suitable to be used by [http://fedoraproject.org/wiki/Projects/Mock 'mock']), RPMS, patched SRPM, or patched RPMS.  For example:
+
+    # pki/scripts/compose_pki_core_packages 
+    
+    Usage:  pki/scripts/compose_pki_core_packages <target>
+    
+           where <target> is one of the following:
+    
+                srpm         - produces tarball, spec, and SRPM
+                               [suitable for use by 'mock']
+    
+                rpms         - produces tarball, spec, SRPM, and
+                               RPMS(S)
+                               [built for 32-bit Fedora 15]
+    
+                patched_srpm - copies tarball, patches, and spec
+                               to produce an SRPM
+                               [suitable for use by 'mock']
+    
+                patched_rpms - copies tarball, patches, and spec
+                               to produce an SRPM and RPM(s)
+                               [built for 32-bit Fedora 15]
+
+The 'osutil' component is no longer considered a Dogtag component, and is now managed as a separate standalone component. However, it still contains its own 'compose' script:
+
+    # ./osutil/compose_osutil_packages rpms
+    # rpm -Uvh packages/RPMS/{i686} | {x86_64}/osutil*.rpm
+    # mv packages packages.osutil
+
+The DOGTAG PKI 'compose' scripts should be executed in the following order:
+
+    # ./pki/scripts/compose_dogtag_pki_theme_packages rpms
+    # rpm -Uvh packages/RPMS/noarch/*.rpm
+    # mv packages packages.theme
+
+    # ./pki/scripts/compose_pki_core_packages rpms
+    # mkdir packages/RPMS/combined
+    # cp -p packages/RPMS/*/*.rpm packages/RPMS/combined
+    # rpm -Uvh packages/RPMS/combined/*.rpm
+    # mv packages packages.core
+
+    # ./pki/scripts/compose_pki_kra_packages rpms
+    # rpm -Uvh packages/RPMS/noarch/*.rpm
+    # mv packages packages.kra
+
+    # ./pki/scripts/compose_pki_ocsp_packages rpms
+    # rpm -Uvh packages/RPMS/noarch/*.rpm
+    # mv packages packages.ocsp
+
+    # ./pki/scripts/compose_pki_ra_packages rpms
+    # rpm -Uvh packages/RPMS/noarch/*.rpm
+    # mv packages packages.ra
+
+    # ./pki/scripts/compose_pki_tks_packages rpms
+    # rpm -Uvh packages/RPMS/noarch/*.rpm
+    # mv packages packages.tks
+
+    # ./pki/scripts/compose_pki_tps_packages rpms
+    # rpm -Uvh packages/RPMS/{i686} | {x86_64}/*.rpm
+    # mv packages packages.tps
+
+    # ./pki/scripts/compose_pki_console_packages rpms
+    # rpm -Uvh packages/RPMS/noarch/*.rpm
+    # mv packages packages.console
+
+Additionally, for convenience, a 'meta' package may be built:
+ 
+    # ./pki/scripts/compose_dogtag_pki_meta_packages
+    # rpm -Uvh packages/RPMS/noarch/*.rpm
+    # mv packages packages.meta
+
+=== Dogtag 1.3 and Earlier ===
+
+Instructions on building PKI components individually are contained in the following sections (which must be followed in order):
+
+=== Building PKI Common Components ===
+
+For details, see:
+* [[PKI_Common_Components_via_Subversion|Building PKI Common Components]]
+
+=== Building PKI Subsystem Components ===
+
+For details, see:
+* [[PKI_Subsystem_Components_via_Subversion|Building PKI Subsystem Components]]
+
+=== Building Optional PKI Components ===
+
+For details, see:
+* [[PKI_Optional_Components_via_Subversion|Building Optional PKI Components]]

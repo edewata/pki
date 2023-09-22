@@ -1,0 +1,25 @@
+= PKCS #12 Attributes =
+
+* OID: 2.16.840.1.113730.5.1.1
+
+== Trust Flags Attribute ==
+
+The Trust Flags Attribute stores NSS certificate trust attributes with the same encoding used in certutil.
+
+* OID: 2.16.840.1.113730.5.1.1.1
+* Data Type: BMPString
+* Example: CTu,Cu,Cu
+
+= ASN.1 Encoding =
+
+See [[PKCS12 Encoding]].
+
+= References =
+
+* [https://github.com/dogtagpki/pki/wiki/PKI-PKCS12-CLI PKI PKCS12 CLI]
+* [[OpenSSL]]
+* [https://github.com/dogtagpki/pki/wiki/NSS-Database NSS Database]
+* [https://tools.ietf.org/html/rfc7292 RFC 7292]
+* [http://www.alvestrand.no/objectid/2.16.840.1.113730.5.html 2.16.840.1.113730.5 - Netscape Certificate Server]
+* [https://github.com/redhat-qe-security/keyfile-corpus keyfile-corpus]
+* [[PKI OID Registry]]

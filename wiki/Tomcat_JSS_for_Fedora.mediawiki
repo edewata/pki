@@ -1,0 +1,24 @@
+= Building Tomcat JSS for Fedora =
+
+<pre>
+$ dnf install fedpkg fedora-packager
+$ fedora-packager-setup
+Setting up Fedora packager environment
+You need a client certificate from the Fedora Account System, lets get one now
+FAS Username: <username>
+FAS Password: ********
+</pre>
+
+<pre>
+$ cd $FEDORA_HOME
+$ fedpkg co tomcatjss
+$ cd tomcatjss
+$ cp $SRC_DIR/tomcatjss/dist/source/tomcatjss-7.1.3.tar.gz .
+</pre>
+
+= References =
+
+* [https://github.com/dogtagpki/tomcatjss Tomcat JSS]
+* [http://koji.fedoraproject.org/koji/packageinfo?packageID=9200 Koji Builds]
+* [https://bugzilla.redhat.com/page.cgi?id=browse.html&product=Fedora&bug_status=open&tab=components&component=tomcatjss Fedora Tickets]
+* [https://fedoraproject.org/wiki/Package_maintenance_guide Package maintenance guide]

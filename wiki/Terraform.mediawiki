@@ -1,0 +1,24 @@
+= Installing Terraform =
+
+<pre>
+$ wget https://releases.hashicorp.com/terraform/0.11.13/terraform_0.11.13_linux_amd64.zip
+$ unzip terraform_0.11.13_linux_amd64.zip -d terraform
+$ export PATH=$PWD/terraform:$PATH
+</pre>
+
+= Initializing Terraform =
+
+<pre>
+$ terraform init
+</pre>
+
+= Running Terraform =
+
+<pre>
+$ terraform apply
+</pre>
+
+= See Also =
+
+* [https://learn.hashicorp.com/terraform/getting-started/install.html Installing Terraform]
+* [https://github.com/hashicorp/terraform hashicorp/terraform]

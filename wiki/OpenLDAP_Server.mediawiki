@@ -1,0 +1,192 @@
+= Installation =
+
+<pre>
+$ dnf install openldap-servers
+</pre>
+
+= Configuring Database =
+
+To create OpenLDAP database:
+
+<pre>
+$ cp /usr/share/openldap-servers/DB_CONFIG.example /var/lib/ldap/DB_CONFIG
+$ chown ldap.ldap /var/lib/ldap/DB_CONFIG
+</pre>
+
+= Systemd Service =
+
+Create /etc/systemd/system/slapd.service:
+
+<pre>
+$ cp /usr/lib/systemd/system/slapd.service /etc/systemd/system
+</pre>
+
+To change the port numbers, edit /etc/systemd/system/slapd.service, for example:
+
+<pre>
+ExecStart=/usr/sbin/slapd -u ldap -h "ldap://:10389/ ldaps://:10636/ ldapi:///"
+</pre>
+
+or use the following commnand:
+
+<pre>
+$ sed -i 's/ExecStart=.*/ExecStart=\/usr\/sbin\/slapd -u ldap -h "ldap:\/\/:10389\/ ldaps:\/\/:10636\/ ldapi:\/\/\/"/' /etc/systemd/system/slapd.service
+</pre>
+
+If SELinux is enabled, enable the new ports:
+
+<pre>
+$ semanage port -a -t ldap_port_t -p tcp 10389
+$ semanage port -a -t ldap_port_t -p tcp 10636
+</pre>
+
+To start the systemd service:
+
+<pre>
+$ systemctl start slapd
+</pre>
+
+To run the server in the foreground:
+
+<pre>
+$ /usr/sbin/slapd -d any -u ldap -h "ldap://:10389/ ldaps://:10636/ ldapi:///"
+</pre>
+
+To monitor the systemd logs:
+
+<pre>
+$ journalctl -fu slapd
+</pre>
+
+= Importing Schema =
+
+To import schema:
+
+<pre>
+$ ldapadd -H ldapi:/// -Y EXTERNAL -f /etc/openldap/schema/cosine.ldif
+$ ldapadd -H ldapi:/// -Y EXTERNAL -f /etc/openldap/schema/nis.ldif
+$ ldapadd -H ldapi:/// -Y EXTERNAL -f /etc/openldap/schema/inetorgperson.ldif
+</pre>
+
+To verify schema:
+
+<pre>
+$ ldapsearch -H ldapi:/// -Y EXTERNAL -b "cn=Subschema" -s base +
+</pre>
+
+Alternatively:
+
+<pre>
+$ ldapsearch -H ldapi:/// -Y EXTERNAL -b "cn={4}acme,cn=schema,cn=config"
+</pre>
+
+= Configuring Root User =
+
+To create OpenLDAP admin password:
+
+<pre>
+$ slappasswd
+xxxxxxxxxxxxxxxxxxxxxxxx
+</pre>
+
+Prepare an LDAP file (e.g. root.ldif):
+
+<pre>
+dn: olcDatabase={0}config,cn=config
+changetype: modify
+replace: olcRootPW
+olcRootPW: xxxxxxxxxxxxxxxxxxxxxxxx
+</pre>
+
+Execute the following command:
+
+<pre>
+$ ldapmodify -H ldapi:/// -Y EXTERNAL -f root.ldif
+</pre>
+
+= Creating New Domain =
+
+Prepare an LDIF file (e.g. domain.ldif):
+
+<pre>
+dn: olcDatabase={1}monitor,cn=config
+changetype: modify
+replace: olcAccess
+olcAccess: {0}to * by dn.base="gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth"
+  read by dn.base="cn=Manager,dc=example,dc=com" read by * none
+
+dn: olcDatabase={2}mdb,cn=config
+changetype: modify
+replace: olcSuffix
+olcSuffix: dc=example,dc=com
+
+dn: olcDatabase={2}mdb,cn=config
+changetype: modify
+replace: olcRootDN
+olcRootDN: cn=Manager,dc=example,dc=com
+
+dn: olcDatabase={2}mdb,cn=config
+changetype: modify
+add: olcRootPW
+olcRootPW: xxxxxxxxxxxxxxxxxxxxxxxx
+
+dn: olcDatabase={2}mdb,cn=config
+changetype: modify
+add: olcAccess
+olcAccess: {0}to attrs=userPassword,shadowLastChange by
+  dn="cn=Manager,dc=example,dc=com" write by anonymous auth by self write by * none
+olcAccess: {1}to dn.base="" by * read
+olcAccess: {2}to * by dn="cn=Manager,dc=example,dc=com" write by * read
+</pre>
+
+Then execute the following command:
+
+<pre>
+$ ldapmodify -H ldapi:/// -Y EXTERNAL -f domain.ldif
+</pre>
+
+= Adding Base Entries =
+
+Prepare an LDIF file (e.g. base.ldif):
+
+<pre>
+dn: dc=example,dc=com
+objectClass: top
+objectClass: dcObject
+objectclass: organization
+o: Example
+dc: example
+
+dn: cn=Manager,dc=example,dc=com
+objectClass: organizationalRole
+cn: Manager
+description: Directory Manager
+
+dn: ou=People,dc=example,dc=com
+objectClass: organizationalUnit
+ou: People
+
+dn: ou=Group,dc=example,dc=com
+objectClass: organizationalUnit
+ou: Group
+
+dn: dc=pki,dc=example,dc=com
+objectClass: dcObject
+objectclass: organization
+o: PKI
+dc: pki
+</pre>
+
+Then execute the following command:
+
+<pre>
+$ ldapadd -H ldap://$HOSTNAME:10389/ -x -D cn=Manager,dc=example,dc=com -w Secret.123 -f base.ldif
+</pre>
+
+= See Also =
+
+* [[OpenLDAP]]
+* [https://www.server-world.info/en/note?os=Fedora_31&p=openldap&f=1 OpenLDAP: Configure LDAP Server]
+* [https://www.zytrax.com/books/ldap/ch6/slapd-config.html OpenLDAP using OLC (cn=config)]
+* [[PKI CA with OpenLDAP Database]]
+* [[Deploying OpenLDAP on OpenShift]]

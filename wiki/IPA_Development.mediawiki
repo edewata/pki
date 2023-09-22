@@ -1,0 +1,42 @@
+= Dependencies =
+<pre>
+$ dnf copr enable mkosek/freeipa-master
+$ yum-builddep -y freeipa.spec
+</pre>
+
+See also:
+* [https://copr.fedorainfracloud.org/coprs/mkosek/freeipa-4.2 mkosek/freeipa-4.2]
+* [https://copr.fedorainfracloud.org/coprs/mkosek/freeipa-4.3 mkosek/freeipa-4.3]
+
+= Spec File =
+
+See [https://github.com/dogtagpki/freeipa/wiki/Packaging Packaging].
+
+= Installation =
+
+The installation code is located in the following files:
+* ipaserver/install/cainstance.py
+* ipaserver/install/dogtaginstance.py
+* ipaserver/install/krainstance.py
+
+= Backends =
+
+The CA and KRA backend code is located in the following file:
+* ipaserver/plugins/dogtag.py
+
+= Password Vault =
+
+See [https://github.com/dogtagpki/freeipa/wiki/Password-Vault-Development Password Vault Development].
+
+= Certificate Renewal =
+
+See [https://github.com/dogtagpki/freeipa/wiki/Certificate-Renewal Certificate Renewal].
+
+= Cloning =
+
+See [https://github.com/dogtagpki/freeipa/wiki/Cloning Cloning].
+
+= References =
+
+* [[IPA]]
+* [https://copr.fedoraproject.org/coprs/mkosek/ IPA COPR repos]

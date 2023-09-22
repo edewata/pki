@@ -1,0 +1,12 @@
+* SEARCH
+* navigation
+** mainpage|Home
+** https://github.com/dogtagpki/pki/wiki|Documentation
+** https://github.com/dogtagpki/pki/wiki/FAQ|FAQ
+** https://github.com/dogtagpki/pki/wiki/User-Guide|Users
+** https://github.com/dogtagpki/pki/wiki/Development-Guide|Developers
+** PKI_Download|Download
+** https://github.com/dogtagpki/pki/issues|Bugs
+** recentchanges-url|recentchanges
+* TOOLBOX
+* LANGUAGES

@@ -1,0 +1,148 @@
+= Supported Versions =
+
+== Fedora ==
+
+{| border="1" style="border-collapse: collapse;" width="600"
+! width="200" bgcolor="darkgrey" | Platform
+! width="150" bgcolor="darkgrey" | Product Version
+! bgcolor="darkgrey" | Source Code Branch
+|-
+|
+| Dogtag 10.4.X
+| master
+|-
+| Fedora 25
+| Dogtag 10.4.X
+| master
+|-
+| Fedora 24
+| Dogtag 10.3.X
+| DOGTAG_10_3_BRANCH
+|-
+|
+| Dogtag 10.2.X
+| DOGTAG_10_2_BRANCH
+|-
+| <strike>Fedora 23</strike>
+| <strike>Dogtag 10.2.6-X</strike>
+| <strike>DOGTAG_10_2_6_BRANCH</strike>
+|-
+| <strike>Fedora 22</strike>
+| <strike>Dogtag 10.2.6-X</strike>
+| <strike>DOGTAG_10_2_6_BRANCH</strike>
+|-
+| <strike>Fedora 22</strike>
+| <strike>Dogtag 10.2.5-X</strike>
+| <strike>DOGTAG_10_2_5_BRANCH</strike>
+|-
+| <strike>Fedora 22</strike>
+| <strike>Dogtag 10.2.4-X</strike>
+| <strike>DOGTAG_10_2_4_BRANCH</strike>
+|-
+| <strike>Fedora 22</strike>
+| <strike>Dogtag 10.2.3-X</strike>
+| <strike>DOGTAG_10_2_3_BRANCH</strike>
+|-
+| <strike>Fedora 22</strike>
+| <strike>Dogtag 10.2.2-X</strike>
+| <strike>DOGTAG_10_2_2_BRANCH</strike>
+|-
+| <strike>Fedora 22</strike>
+| <strike>Dogtag 10.2.1-X</strike>
+| <strike>DOGTAG_10_2_1_BRANCH</strike>
+|-
+| <strike>Fedora 21</strike>
+| <strike>Dogtag 10.2.1-X</strike>
+| <strike>DOGTAG_10_2_1_BRANCH</strike>
+|-
+| <strike>Fedora 21</strike>
+| <strike>Dogtag 10.2.0-X</strike>
+| <strike>DOGTAG_10_2_0_BRANCH</strike>
+|-
+| <strike>Fedora 20</strike>
+| <strike>Dogtag 10.1.X</strike>
+| <strike>DOGTAG_10_1_BRANCH</strike>
+|-
+| <strike>Fedora 18, Fedora 19</strike>
+| <strike>Dogtag 10.0.X</strike>
+| <strike>DOGTAG_10_0_BRANCH</strike>
+|-
+| <strike>Fedora 15, Fedora 16, Fedora 17</strike>
+| <strike>Dogtag 9.0.X</strike>
+| <strike>DOGTAG_9_0_BRANCH</strike>
+|}
+
+== RHEL ==
+
+{| border="1" style="border-collapse: collapse;" width="600"
+! width="200" bgcolor="darkgrey" | Platform
+! width="150" bgcolor="darkgrey" | Product Version
+! bgcolor="darkgrey" | Source Code Branch
+|-
+| RHEL 7.3, RHCS 9.1
+| PKI 10.3.3
+| DOGTAG_10_3_RHEL_BRANCH
+|-
+| RHCS 9.0
+| PKI 10.2.6
+| DOGTAG_10_2_RHEL_BRANCH
+|-
+| RHEL 7.2
+| PKI 10.2.5
+| DOGTAG_10_2_5_RHEL_BRANCH
+|-
+| RHEL 7.1
+| PKI 10.1.2
+| DOGTAG_10_1_5_RHEL_BRANCH
+|-
+| RHEL 7
+| PKI 10.2.X
+| DOGTAG_10_2_RHEL_BRANCH
+|-
+| RHEL 6
+| PKI 9.0.3
+| DOGTAG_9_0_RHEL_BRANCH
+|-
+| RHEL 5.11+
+| RHCS 8.1.6+
+| PKI_8_1_ADVANCED_ERRATA_BRANCH
+|-
+| RHEL 5
+| RHCS 8.1
+| PKI_8_1_ERRATA_BRANCH
+|}
+
+== CentOS ==
+
+{| border="1" style="border-collapse: collapse;" width="600"
+! width="200" bgcolor="darkgrey" | Platform
+! width="150" bgcolor="darkgrey" | Product Version
+! bgcolor="darkgrey" | Source Code Branch
+|-
+| CentOS 7
+| PKI 10.2.5
+| DOGTAG_10_2_RHEL_BRANCH
+|-
+| CentOS 6
+| PKI 9.0.3
+| DOGTAG_9_0_RHEL_BRANCH
+|}
+
+== Debian ==
+
+{| border="1" style="border-collapse: collapse;" width="600"
+! width="200" bgcolor="darkgrey" | Platform
+! width="150" bgcolor="darkgrey" | Product Version
+! bgcolor="darkgrey" | Source Code Branch
+|-
+| Debian
+| PKI 10.2.6
+| DOGTAG_10_2_6_BRANCH
+|}
+
+== Ubuntu ==
+
+= References =
+
+* [[Versioning Scheme]]
+* [[Releases]]

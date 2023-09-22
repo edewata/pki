@@ -1,0 +1,60 @@
+= Prerequisites =
+
+== Dogtag 9.0 ==
+
+Additionally, the RA and TPS subsystems require the Fortitude '''mod_nss''' and '''mod_revocator''' Apache plug-ins to be installed and enabled by the system's Apache web server.
+
+For an RA subsystem, become the root user, and install the following packages:
+
+ yum install mod_nss mod_perl mod_revocator openldap-clients\
+             openldap-devel perl-DBD-SQLite perl-HTML-Parser\
+             perl-HTML-Tagset perl-Parse-RecDescent perl-URI\
+             perl-XML-NamespaceSupport perl-XML-Parser perl-XML-SAX\
+             perl-XML-Simple perl-libwww-perl sendmail sqlite
+
+For a TPS subsystem, become the root user, and install the following packages:
+
+ yum install mod_nss mod_perl mod_revocator openldap-clients\
+             openldap-devel pcre-devel perl-HTML-Parser\
+             perl-HTML-Tagset perl-Parse-RecDescent perl-URI\
+             perl-XML-NamespaceSupport perl-XML-Parser perl-XML-SAX\
+             perl-XML-Simple perl-libwww-perl
+
+== Dogtag 1.3 and Earlier ==
+
+Additionally, the RA and TPS subsystems require the Fortitude '''mod_nss''' Apache plug-in to be installed and enabled by the system's Apache web server.
+
+For an RA subsystem, become the root user, and install the following packages:
+
+ yum install mod_nss mod_perl mozldap perl-DBD-SQLite perl-HTML-Parser\
+             perl-HTML-Tagset perl-Parse-RecDescent perl-URI\
+             perl-XML-NamespaceSupport perl-XML-Parser perl-XML-SAX\
+             perl-XML-Simple perl-libwww-perl sendmail sqlite
+
+For a TPS subsystem, become the root user, and install the following packages:
+
+ yum install mod_nss mod_perl mozldap pcre-devel perl-HTML-Parser\
+             perl-HTML-Tagset perl-Parse-RecDescent perl-URI\
+             perl-XML-NamespaceSupport perl-XML-Parser\
+             perl-XML-SAX perl-XML-Simple perl-libwww-perl
+
+= Building Dogtag 9 =
+
+PKI components can be built ''individually'' '''or''' ''collectively'' via the subversion repository:
+
+* [[PKI_Components_via_Subversion|Building PKI Components Individually via Subversion]]
+* [[PKI_Components_Collectively_via_Subversion|Building PKI Components Collectively via Subversion]]
+
+Alternatively, if the user does not wish to use the subversion repository, PKI components can be built ''individually'' using SRPMS:
+
+* [[PKI_Components_via_SRPMS|Building PKI Components via SRPMS]]
+
+= Managing PKI Instances =
+
+To ''create additional instances'', the following command can be used:
+
+ $ /usr/bin/pkicreate
+
+Similarly, to ''remove an existing instance'', the following command can be used:
+
+ $ /usr/bin/pkiremove

@@ -1,0 +1,295 @@
+= Overview =
+
+This page describes the procedure to deploy a DS instance on OpenShift.
+
+= Current Issues =
+
+* This is still a work in progress.
+* The code changes has not been merged upstream.
+* DS instance cannot be created in OpenShift yet. The instance needs to be created locally, then uploaded to OpenShift.
+* DS cannot create Unix socket in OpenShift.
+* DS cannot change the ownership of directories and files in OpenShift.
+* DS cannot change the UID it's running as in OpenShift.
+* The default nsslapd-dbcachesize is too large in OpenShift.
+* If the DS crashes, the data may become corrupted and the data has to be uploaded again.
+
+= Code Changes =
+
+Some changes in DS code are required in order to support OpenShift.
+
+The code is available in this branch:
+* https://github.com/edewata/389-ds-base/commits/openshift
+
+The build with these changes is available in this repository:
+* https://copr.fedorainfracloud.org/coprs/edewata/acme
+
+Note that these changes are not ready to be merged upstream.
+
+= Creating Local DS Instance =
+
+[https://github.com/dogtagpki/pki/wiki/DS-Installation Install] a DS instance in the local machine:
+
+<pre>
+$ dscreate create-template | sed \
+    -e 's/;root_password = .*/root_password = Secret.123/g' \
+    -e 's/;suffix = .*/suffix = dc=example,dc=com/g' \
+    -e 's/;systemd = .*/systemd = False/g' \
+    -e 's/;port = .*/port = 10389/g' \
+    -e 's/;secure_port = .*/secure_port = 10636/g' \
+    > ds.inf
+$ dscreate from-file ds.inf
+</pre>
+
+Then create a [[DS Backup|backup]]:
+
+<pre>
+$ systemctl stop dirsrv@localhost.service
+$ tar czvf slapd-localhost.tar.gz -C / \
+    etc/dirsrv/slapd-localhost \
+    etc/dirsrv/ssca \
+    etc/sysconfig/dirsrv-localhost \
+    var/lib/dirsrv/slapd-localhost \
+    var/log/dirsrv/slapd-localhost
+</pre>
+
+Put the slapd-localhost.tar.gz in a <backup dir>.
+
+= Creating Persistent Storage =
+
+Create a configuration file (e.g. ds-pvc.yaml):
+
+<pre>
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ds
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+</pre>
+
+Then execute:
+
+<pre>
+$ oc create -f ds-pvc.yaml
+</pre>
+
+= Uploading DS Instance Files =
+
+Deploy a temporary application (e.g. [[Fedora OpenShift]]).
+
+Mount the storage into the application's pod into /data.
+
+Upload the backup file:
+
+<pre>
+$ oc rsync <backup dir> <pod>:/data
+</pre>
+
+Open a remote shell:
+
+<pre>
+$ oc rsh <pod>
+</pre>
+
+Execute the following commands:
+
+<pre>
+$ cd /data
+$ tar xvf slapd-localhost.tar.gz
+$ rm slapd-localhost.tar.gz
+</pre>
+
+Edit /data/etc/dirsrv/slapd-localhost/dse.ldif:
+
+<pre>
+dn: cn=config
+nsslapd-port: 10389
+nsslapd-securePort: 10636
+# nsslapd-ldapifilepath: /var/run/slapd-localhost.socket
+# nsslapd-ldapilisten: on
+# nsslapd-ldapiautobind: on
+# nsslapd-ldapimaprootdn: cn=Directory Manager
+
+dn: cn=config,cn=ldbm database,cn=plugins,cn=config
+nsslapd-dbcachesize: 50000000
+</pre>
+
+Unmount the storage. The temporary application can be undeployed as well.
+
+= Dockerfile =
+
+<pre>
+FROM fedora:30
+
+EXPOSE 10389 10636
+
+# Install tweaked 389-ds-base package from edewata/pki
+RUN dnf install -y dnf-plugins-core && dnf copr enable -y edewata/pki
+RUN dnf install -y 389-ds-base && dnf clean all
+
+# Create links to DS instance files on persistent storage
+RUN ln -s /data/etc/dirsrv/slapd-localhost /etc/dirsrv/slapd-localhost & \
+    ln -s /data/etc/dirsrv/ssca /etc/dirsrv/ssca && \
+    ln -s /data/etc/sysconfig/dirsrv-localhost /etc/sysconfig/slapd-localhost & \
+    ln -s /data/var/lib/dirsrv/slapd-localhost /var/lib/dirsrv/slapd-localhost & \
+    ln -s /data/var/log/dirsrv/slapd-localhost /var/log/dirsrv/slapd-localhost & \
+
+# Create non-persistent directory for runtime files
+RUN mkdir -p /var/run/dirsrv/slapd-localhost && \
+    chgrp -Rf root /var/run/dirsrv && \
+    chmod -Rf g+w /var/run/dirsrv
+
+# Create non-persistent directory for lock files
+RUN mkdir -p /var/lock/dirsrv/slapd-localhost && \
+    chgrp -Rf root /var/lock/dirsrv && \
+    chmod -Rf g+w /var/lock/dirsrv
+
+USER dirsrv
+
+VOLUME /data
+
+CMD [ "/usr/sbin/ns-slapd", "-D", "/etc/dirsrv/slapd-localhost", "-d", "266354688" ]
+</pre>
+
+= Building Container Image =
+
+<pre>
+$ docker build -t ds .
+</pre>
+
+= Publishing Container Image =
+
+<pre>
+$ docker tag ds:latest <username>/ds:latest
+$ docker push <username>/ds:latest
+</pre>
+
+= Available Images =
+
+* [https://cloud.docker.com/repository/docker/edewata/ds edewata/ds]
+
+= Creating DS Image Stream =
+
+Prepare a configuration file (e.g. ds-is.yaml):
+
+<pre>
+apiVersion: v1
+kind: ImageStream
+metadata:
+  labels:
+    app: ds
+  name: ds
+spec:
+  tags:
+    - from:
+        kind: DockerImage
+        name: edewata/ds
+      name: latest
+</pre>
+
+Then execute the following command:
+
+<pre>
+$ oc create -f ds-is.yaml
+</pre>
+
+= Creating DS Application =
+
+Prepare a configuration file (e.g. ds-dc.yaml):
+
+<pre>
+apiVersion: v1
+kind: DeploymentConfig
+metadata:
+  labels:
+    app: ds
+  name: ds
+spec:
+  selector:
+    app: ds
+    deploymentconfig: ds
+  template:
+    metadata:
+      labels:
+        app: ds
+        deploymentconfig: ds
+    spec:
+      containers:
+        - env:
+            - name: LD_PRELOAD
+              value: /usr/lib64/dirsrv/lib/libjemalloc.so.2
+            - name: SERVER_DIR
+              value: /usr/lib64
+            - name: SERVERBIN_DIR
+              value: /usr/sbin
+            - name: CONFIG_DIR
+              value: /etc/dirsrv/slapd-localhost
+            - name: INST_DIR
+              value: /usr/lib64/dirsrv/slapd-localhost
+            - name: RUN_DIR
+              value: /var/run/dirsrv
+            - name: DS_ROOT
+            - name: PRODUCT_NAME
+              value: slapd
+          image: edewata/ds
+          name: ds
+          ports:
+            - containerPort: 10389
+              protocol: TCP
+            - containerPort: 10636
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /data
+              name: data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: ds
+  test: false
+  triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+          - ds
+        from:
+          kind: ImageStreamTag
+          name: 'ds:latest'
+      type: ImageChange
+</pre>
+
+Then execute the following command:
+
+<pre>
+$ oc create -f ds-dc.yaml
+</pre>
+
+Check the pod's logs to make sure the DS instance is running, or execute the following command in the terminal:
+
+<pre>
+$ ldapsearch -h $HOSTNAME -p 10389 -x -s base -b "" * +
+</pre>
+
+= Updating Container Image =
+
+If newer container image is available, it can be deployed with the following command:
+
+<pre>
+$ oc import-image <username>/ds:latest
+</pre>
+
+= See Also =
+
+* [[DS Container]]
+* [[DS Backup]]
+* [[DS Restore]]
+* [https://blog.openshift.com/jupyter-on-openshift-part-6-running-as-an-assigned-user-id/ Running as an Assigned User ID]
+* [[Fedora OpenShift]]
+* [[PKI CA OpenShift]]
+* [https://github.com/dogtagpki/kubernetes/wiki/OpenShift-3 OpenShift 3]
+* [https://pagure.io/389-ds-base/issue/50343 Ticket #50343 - Option to disable LDAPI in dscreate]
+* [https://directory.fedoraproject.org/docs/389ds/howto/howto-deploy-389ds-on-openshift.html Deploying 389 Directory Server on OpenShift]

@@ -1,0 +1,20 @@
+= Configuration =
+
+<pre>
+log.instance.Transactions.type=transaction
+log.instance.Transactions.enable=true
+log.instance.Transactions.bufferSize=512
+log.instance.Transactions.expirationTime=0
+log.instance.Transactions.fileName=/var/lib/pki/pki-tomcat/logs/ca/transactions
+log.instance.Transactions.flushInterval=5
+log.instance.Transactions.level=1
+log.instance.Transactions.maxFileSize=2000
+log.instance.Transactions.pluginName=file
+log.instance.Transactions.rolloverInterval=2592000
+</pre>
+
+By default transaction logs are stored in /var/log/pki/<instance>/<subsystem>/transactions.
+
+= References =
+
+* [[PKI Server Logging]]

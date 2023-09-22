@@ -1,0 +1,44 @@
+= Installation =
+
+ $ dnf install nmap
+
+= Running nmap =
+
+<pre>
+$ nmap --script ssl-enum-ciphers -p 8443 $HOSTNAME
+
+Starting Nmap 7.60 ( https://nmap.org ) at 2018-08-04 05:23 CEST
+Nmap scan report for server.example.com (192.168.1.1)
+Host is up (0.00027s latency).
+Other addresses for server.example.com (not scanned): 1111:2222:3333:4444:5555:6666:7777:8888
+
+PORT     STATE SERVICE
+8443/tcp open  https-alt
+| ssl-enum-ciphers: 
+|   TLSv1.2: 
+|     ciphers: 
+|       TLS_DHE_RSA_WITH_AES_128_CBC_SHA (dh 1024) - A
+|       TLS_DHE_RSA_WITH_AES_128_CBC_SHA256 (dh 1024) - A
+|       TLS_DHE_RSA_WITH_AES_128_GCM_SHA256 (dh 1024) - A
+|       TLS_DHE_RSA_WITH_AES_256_CBC_SHA (dh 1024) - A
+|       TLS_DHE_RSA_WITH_AES_256_CBC_SHA256 (dh 1024) - A
+|       TLS_DHE_RSA_WITH_AES_256_GCM_SHA384 (dh 1024) - A
+|       TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA (secp256r1) - A
+|       TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256 (secp256r1) - A
+|       TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 (secp256r1) - A
+|       TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA (secp256r1) - A
+|       TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384 (secp256r1) - A
+|       TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 (secp256r1) - A
+|     compressors: 
+|       NULL
+|     cipher preference: client
+|     warnings: 
+|       Key exchange (dh 1024) of lower strength than certificate key
+|_  least strength: A
+
+Nmap done: 1 IP address (1 host up) scanned in 1.31 seconds
+</pre>
+
+= References =
+
+* [https://github.com/dogtagpki/pki/wiki/SSL SSL]

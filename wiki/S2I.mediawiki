@@ -1,0 +1,79 @@
+= Installation =
+
+<pre>
+$ dnf install source-to-image
+</pre>
+
+= Create Templates =
+
+<pre>
+$ s2i create <image name> .
+</pre>
+
+= S2I Scripts =
+
+== run ==
+
+<pre>
+#!/bin/bash -e
+
+mkdir -p $JWS_HOME/conf/Catalina/localhost
+
+cat > $JWS_HOME/conf/Catalina/localhost/ROOT.xml << EOF
+<Context>
+    <Realm .../>
+</Context>
+EOF
+
+/usr/local/s2i/run
+</pre>
+
+= Building Image =
+
+To build an image:
+
+<pre>
+$ s2i build <git URL> <base image> <new image>
+</pre>
+
+= Running Container =
+
+<pre>
+$ docker run --name <name> <image>
+</pre>
+
+= Examples =
+
+== Django ==
+
+To deploy Django:
+
+<pre>
+$ s2i build https://github.com/sclorg/django-ex centos/python-35-centos7 hello-python
+$ docker run -p 8080:8080 hello-python
+</pre>
+
+Open http://$HOSTNAME:8080 in a browser.
+
+== WildFly ==
+
+To deploy WildFly:
+
+<pre>
+$ s2i build --ref=10.x --context-dir=helloworld https://github.com/wildfly/quickstart openshift/wildfly-101-centos7 test-jee-app
+$ docker run --rm -i -p 8080:8080 -t test-jee-app
+</pre>
+
+Open http://$HOSTNAME:8080 in a browser.
+
+= References =
+
+* [[Docker]]
+* [[PHP]]
+* [https://github.com/openshift/source-to-image openshift/source-to-image]
+* [https://github.com/sclorg/s2i-php-container PHP Docker images]
+* [https://docs.openshift.org/latest/using_images/s2i_images/php.html OpenShift PHP]
+* [https://docs.openshift.org/latest/creating_images/s2i.html S2I Requirements]
+* [https://dzone.com/articles/how-to-create-a-builder-image-with-s2i How to Create a Builder Image With S2I]
+* [https://src.fedoraproject.org/container/s2i-core/ s2i-core]
+* [https://src.fedoraproject.org/container/s2i-base/ s2i-base]

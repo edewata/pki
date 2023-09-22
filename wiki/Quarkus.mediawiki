@@ -1,0 +1,16 @@
+= Quick Start =
+
+<pre>
+$ git clone https://github.com/quarkusio/quarkus-quickstarts.git
+$ cd quarkus-quickstarts/getting-started
+$ mvn compile quarkus:dev
+</pre>
+
+= See Also =
+
+* [https://redhat-developer-demos.github.io/quarkus-tutorial/quarkus-tutorial/1.0.1.Final/index.html Quarkus Tutorial]
+* [https://quarkus.io/guides/getting-started Quarkus - Creating Your First Application]
+* [https://dzone.com/articles/build-a-java-rest-api-with-quarkus Build a Java REST API With Quarkus]
+* [https://quarkus.io/guides/http-reference Quarkus - HTTP Reference]
+* [[Maven]]
+* [[Gradle]]

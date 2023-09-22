@@ -1,0 +1,37 @@
+= Generating Makefile =
+
+ $ cd pki
+ $ mkdir build
+ $ cd build
+ $ cmake \
+     -DVERSION=10.6.0-1 \
+     -DVAR_INSTALL_DIR:PATH=/var \
+     -DBUILD_PKI_CORE:BOOL=ON \
+     -DJAVA_LIB_INSTALL_DIR=/usr/lib/java \
+     -DSYSTEMD_LIB_INSTALL_DIR=/usr/lib/systemd/system \
+     -DWITH_JAVADOC:BOOL=OFF \
+     -DAPP_SERVER=tomcat8 \
+     -DJAXRS_API_JAR=/usr/share/java/jboss-jaxrs-2.0-api.jar \
+     -DRESTEASY_LIB=/usr/share/java/resteasy \
+     -DWITH_SERVER:BOOL=OFF \
+     -DWITH_JAVADOC:BOOL=OFF \
+     ..
+
+= Building the Binaries =
+
+To build the binaries:
+
+ $ make
+
+To build in verbose mode:
+
+ $ make VERBOSE=1
+
+= Cleaning Up Build Directory =
+
+ $ make clean-cmake
+
+= References =
+
+* [[CMake]]
+* [[PKI CMake Development]]

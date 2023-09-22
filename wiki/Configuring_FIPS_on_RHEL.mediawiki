@@ -1,0 +1,93 @@
+= Overview =
+
+This page describes the process to enable FIPS mode on RHEL.
+
+<font color="red">'''WARNING:''' Make sure the system is backed up. This procedure may render the system unusable.</font>
+
+= Enabling FIPS Mode =
+
+Install the following packages:
+
+<pre>
+$ yum -y install prelink dracut-fips
+</pre>
+
+Disable prelink:
+
+<pre>
+$ cat /etc/sysconfig/prelink | grep PRELINKING
+PRELINKING=no
+$ prelink -u -a
+</pre>
+
+Recreate the initramfs file: 
+
+<pre>
+$ dracut -f
+</pre>
+
+Identify the partition:
+
+<pre>
+$ df /boot
+Filesystem     1K-blocks   Used Available Use% Mounted on
+/dev/vda1        1038336 147424    890912  15% /boot
+</pre>
+
+Identify the universally unique identifier (UUID) of the partition:
+
+<pre>
+$ blkid /dev/vda1
+/dev/vda1: UUID="21f4da90-4055-47e4-8971-763691191f14" TYPE="xfs"
+</pre>
+
+Edit /etc/default/grub to add fips=1 and boot=value:
+
+<pre>
+GRUB_TIMEOUT=5
+GRUB_DISTRIBUTOR="$(sed 's, release .*$,,g' /etc/system-release)"
+GRUB_DEFAULT=saved
+GRUB_DISABLE_SUBMENU=true
+GRUB_TERMINAL="serial console"
+GRUB_SERIAL_COMMAND="serial --unit=1 --speed=19200"
+GRUB_CMDLINE_LINUX="fips=1 boot=UUID=21f4da90-4055-47e4-8971-763691191f14 crashkernel=auto rd.lvm.lv=rhel_nocp11/root rd.lvm.lv=rhel_nocp11/swap console=ttyS1,19200"
+GRUB_DISABLE_RECOVERY="true"
+</pre>
+
+Regenerate grub.cfg:
+
+<pre>
+$ grub2-mkconfig -o /boot/grub2/grub.cfg
+Generating grub configuration file ...
+Found linux image: /boot/vmlinuz-3.10.0-655.el7.x86_64
+Found initrd image: /boot/initramfs-3.10.0-655.el7.x86_64.img
+Found linux image: /boot/vmlinuz-0-rescue-e9f58f1897434fada2858923988fd2ca
+Found initrd image: /boot/initramfs-0-rescue-e9f58f1897434fada2858923988fd2ca.img
+Done
+</pre>
+
+Reboot the system:
+
+<pre>
+$ reboot
+</pre>
+
+To verify that the system is running in FIPS mode:
+
+<pre>
+$ sysctl crypto.fips_enabled
+crypto.fips_enabled = 1
+</pre>
+
+See also:
+
+* [https://access.redhat.com/solutions/137833 How can I make RHEL 6 or RHEL 7 FIPS 140-2 compliant?]
+
+= Disabling FIPS Mode =
+
+* [https://access.redhat.com/solutions/2422061 How to disable FIPS mode in RHEL 6 or RHEL 7]
+
+= References =
+
+* [[FIPS]]
+* [https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/security_guide/chap-federal_standards_and_regulations Federal Standards and Regulations]

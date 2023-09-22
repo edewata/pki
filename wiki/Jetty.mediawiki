@@ -1,0 +1,81 @@
+= Overview =
+
+{| border="1" style="border-collapse: collapse;"
+! width="100" | Platform
+! width="100" | Tomcat
+|-
+| Fedora 28
+| [https://koji.fedoraproject.org/koji/packageinfo?packageID=4951 Jetty 9.4]
+|-
+| Fedora 27
+| [https://koji.fedoraproject.org/koji/packageinfo?packageID=4951 Jetty 9.4]
+|-
+| Debian
+| [https://packages.debian.org/sid/jetty9 Jetty 9.2]
+|}
+
+= Installation =
+
+ $ dnf install jetty
+
+= Configuration =
+
+Jetty configuration is located in /etc/jetty folder:
+
+* jetty.xml
+* jetty-http.xml
+* jetty-https.xml
+
+= Starting Jetty =
+
+To start Jetty as an application:
+
+ $ /usr/share/jetty/bin/jetty.sh
+
+To start Jetty as a service:
+
+ $ systemctl start jetty
+
+To start Demo Application:
+
+ $ cd /usr/share/jetty/demo-base
+ $ java -jar /usr/share/jetty/start.jar
+
+The server can be accessed at http://localhost:8080.
+
+= Class Loading =
+
+* [https://www.eclipse.org/jetty/documentation/9.4.x/jetty-classloading.html Jetty Classloading]
+
+= Deploying Web Application =
+
+Web application can be deployed in /var/lib/jetty/webapps folder.
+
+To deploy web application from outside of /var/lib/jetty/webapps,
+create an deployment descriptor (e.g. acme.xml) in /var/lib/jetty/webapps
+that points to the web application folder, e.g.:
+
+<pre>
+<Configure class="org.eclipse.jetty.webapp.WebAppContext">
+  <Set name="contextPath">/acme</Set>
+  <Set name="war">/usr/share/pki/acme/webapps/acme</Set>
+</Configure>
+</pre>
+
+= Logs =
+
+To view Jetty logs:
+
+ $ journalctl -fu jetty
+
+= References =
+
+* [[Web Container]]
+* [https://www.eclipse.org/jetty/ Jetty]
+* [https://www.eclipse.org/jetty/documentation/current/ Jetty Documentation]
+* [https://github.com/eclipse/jetty.project Jetty on GitHub]
+* [https://apps.fedoraproject.org/packages/jetty Jetty on Fedora]
+* [https://src.fedoraproject.org/rpms/jetty Jetty Fedora Source Package]
+* [https://sangupta.com/tech/rest-server-with-jetty.html Building a REST Server using Jetty]
+* [[Jersey]]
+* [[Jetty Systemd]]

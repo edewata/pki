@@ -1,0 +1,96 @@
+= Overview =
+
+VLV allows a client application to page the search results. This is important if the search results contain a huge number of entries.
+
+= VLV Request =
+
+The VirtualListViewRequest control contains:
+* the target entry
+* the number of entries to be returned before the target entry
+* the number of entries to be returned after the target entry
+* optional contextID
+
+The target entry can be defined by either:
+* offset and contentCount, or
+* greaterThanOrEqual matching rule
+
+= VLV Response =
+
+The VirtualListViewResponse control contains
+* actual target offset
+* content count
+* error code
+* optional contextID
+
+= Certificates =
+
+<pre>
+ICertRecordList list = repo.findCertRecordsInList(filter, null, "serialno", size);
+int total = list.getSize();
+CMS.debug("CertService: total: " + total);
+
+// return entries in the requested page
+for (int i = start; i < start + size && i < total; i++) {
+    ICertRecord record = list.getCertRecord(i);
+
+    if (record == null) {
+        CMS.debug("CertService: Certificate record not found");
+        throw new PKIException("Certificate record not found");
+    }
+
+    infos.addEntry(createCertDataInfo(record));
+}
+
+infos.setTotal(total);
+</pre>
+
+= Keys =
+
+<pre>
+Enumeration<IKeyRecord> e = repo.searchKeys(filter, maxResults, maxTime);
+if (e == null) {
+    auditRetrieveKey(ILogger.SUCCESS, null, clientKeyID, auditInfo);
+    return infos;
+}
+
+// store non-null results in a list
+List<KeyInfo> results = new ArrayList<KeyInfo>();
+while (e.hasMoreElements()) {
+    IKeyRecord rec = e.nextElement();
+    if (rec == null) continue;
+    results.add(createKeyDataInfo(rec, false));
+}
+
+int total = results.size();
+infos.setTotal(total);
+
+// return entries in the requested page
+for (int i = start; i < start + size && i < total; i++) {
+    infos.addEntry(results.get(i));
+}
+</pre>
+
+= Requests =
+
+<pre>
+IRequestVirtualList vlvlist = queue.getPagedRequestsByFilter(
+    start, false, filter,
+    pageSize + 1, "requestId");
+
+totalSize = vlvlist.getSize();
+ret.setTotal(totalSize);
+current = vlvlist.getCurrentIndex();
+
+int numRecords = (totalSize > (current + pageSize)) ? pageSize :
+    totalSize - current;
+
+for (int i = 0; i < numRecords; i++) {
+    IRequest request = vlvlist.getElementAt(i);
+    ret.addEntry(createCMSRequestInfo(request, uriInfo));
+}
+</pre>
+
+= References =
+
+* [http://tools.ietf.org/html/draft-ietf-ldapext-ldapv3-vlv-09 LDAP Extensions for Scrolling View Browsing of Search Results]
+* [http://www.freeipa.org/page/V4/Directory_Browsing Directory Browsing]

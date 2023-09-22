@@ -1,0 +1,53 @@
+= Checking NTP Status =
+
+To check NTP status:
+
+<pre>
+$ ntpq -p
+     remote           refid      st t when poll reach   delay   offset  jitter
+==============================================================================
++chl.la          216.218.254.202  2 u    8   64    3  174.046    2.242   2.282
+*utcnist2.colora .NIST.           1 u    3   64    3  164.484   10.623   3.013
+ ntp.newfxlabs.c .STEP.          16 u    -   64    0    0.000    0.000   0.000
++103.245.79.2    118.189.138.5    2 u    9   64    3  275.932   -4.128   1.948
+</pre>
+
+If the output looks like this, check the NTP configuration is located at /etc/ntp.conf.
+
+<pre>
+     remote           refid      st t when poll reach   delay   offset  jitter
+==============================================================================
+*LOCAL(0)        .LOCL.          10 l    5   64  377    0.000    0.000   0.000
+</pre>
+
+= Enabling/Disabling NTP =
+
+To enable NTP:
+
+<pre>
+$ timedatectl set-ntp true --adjust-system-clock
+</pre>
+
+To disable NTP:
+
+<pre>
+$ timedatectl set-ntp false
+</pre>
+
+= Synchronizing Clock =
+
+To force synchronization:
+
+<pre>
+$ ntpdate -s time.nist.gov
+</pre>
+
+= Changing System Clock =
+
+Sometimes it is necessary to change the system date in order to renew a certificate, for example to renew an already expired certificate or for testing.
+
+To change the system date, first disable NTP, then change the date:
+
+<pre>
+$ timedatectl set-time <YYYY-MM-DD>
+</pre>

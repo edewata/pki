@@ -1,0 +1,746 @@
+= Overview =
+
+Upstream releases are published in [https://github.com/dogtagpki/pki/releases this page].
+
+See also [[PKI Change Logs]].
+
+= PKI 10 Releases =
+
+== Dogtag Certificate System 10.3.5 ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.3.5 represents the fifth phase of Dogtag 10.3 and builds upon the bugs/features addressed by Dogtag 10.3.4.  Dogtag 10.3.5 is associated with Fedora 24.
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the PKI TRAC Ticket Instance:
+* 10.3.6 - page  11 (7  tickets) plus a new CMCEnroll man page and 3 miscellaneous enhancements [08/22/2016 update - 10.3.5-3]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (5 tickets) including 1 won't fix [08/29/2016 update - 10.3.5-4]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (7 tickets) [09/07/2016 update - 10.3.5-5]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (3 tickets) including 1 invalid and 1 won't fix [09/12/2016 update - 10.3.5-6]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (17 tickets) including 5 invalid and 1 works for me [10/10/2016 update - 10.3.5-7]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (10 tickets) including 1 invalid and 2 works for me [11/05/2016 update - 10.3.5-8]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (12 tickets) including 1 invalid and 1 won't fix [12/15/2016 update - 10.3.5-9]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (0 tickets) Fedora 26 rebuild for Python 3.6 [12/22/2016 update - 10.3.5-10]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (10 tickets) including 2 works for me [01/31/2017 update - 10.3.5-11]<br>
+
+
+* 10.3.5 - page 12 (25 tickets) including 1 release task, 4 duplicates, 1 invalid, and 1 won't fix
+
+The primary purposes of this release was to address the following issues:
+
+* Continuation of work begun in 10.3.4
+
+== Dogtag Certificate System 10.3.4<sup>&dagger;</sup> ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.3.4 represents the fourth phase of Dogtag 10.3 and builds upon the bugs/features addressed by Dogtag 10.3.3.  Dogtag 10.3.4 is associated with Fedora 24.
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the PKI TRAC Ticket Instance:
+* 10.3.4 - pages 10-11 (28 tickets) including 1 release task, 1 duplicate, 1 invalid, 1 works for me, and 1 won't fix 
+
+The primary purposes of this release was to address the following issues:
+
+* Continuation of work begun in 10.3.3
+
+<sup>&dagger;</sup> - Dogtag 10.3.4 was released as a set of patches to Dogtag 10.3.3
+
+== Dogtag Certificate System 10.3.3 ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.3.3 represents the third phase of Dogtag 10.3 and builds upon the bugs/features addressed by Dogtag 10.3.2.  Dogtag 10.3.3 is associated with Fedora 24.
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the PKI TRAC Ticket Instance:
+* 10.3.3 - page  11    (27 tickets) including 1 release task, 2 invalid, and 3 works for me
+
+The primary purposes of this release was to address the following issues:
+
+* Continuation of work begun in 10.3.2
+
+== Dogtag Certificate System 10.3.2 ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.3.2 represents the second phase of Dogtag 10.3 and builds upon the bugs/features addressed by Dogtag 10.3.1.  Dogtag 10.3.2 is associated with Fedora 24.
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the PKI TRAC Ticket Instance:
+* 10.3.2 - page 11 (43 tickets) including 1 release task, 2 invalid, 1 duplicate, and 2 works for me 
+
+The primary purposes of this release was to address the following issues:
+
+* Continuation of work begun in 10.3.1
+
+== Dogtag Certificate System 10.3.1 ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.3.1 represents the first phase of Dogtag 10.3 and builds upon the bugs/features addressed by Dogtag 10.2.  Dogtag 10.3.1 is associated with Fedora 24.
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the PKI TRAC Ticket Instance:
+* 10.3.1 - page 11 (47 tickets) including 1 release task, 1 invalid, 3 duplicates, 2 won't fix, and 2 works for me 
+
+The primary purposes of this release was to address the following issues:
+
+* Creation of Existing CA Use Case
+* Established Lunasa and nCipher HSM support for TPS
+* Continued creation of support for Lightweight CAs
+* Began port of symkey JNI component to Java
+* Numerous miscellaneous bug fixes in TMS
+
+== Dogtag Certificate System 10.2.6 ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.2.6 represents the seventh phase of Dogtag 10.2 and builds upon the bugs/features addressed by Dogtag 10.2.5.  Like Dogtag 10.2.5, Dogtag 10.2.6 is associated with Fedora 22.
+
+<table>
+<tr>
+<td valign="top"><b>NOTE:&nbsp;&nbsp;</b></td>
+<td valign="top">Due to the size, scope, and complexity of Dogtag 10.2, separate revisions of Dogtag 10.2 which incorporate a portion of the features will be released in phases over time.  Each phase will likely correspond to a specific version of Fedora.</td>
+</tr>
+</table>
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the PKI TRAC Ticket Instance:
+* 10.2.6 - page 9 (33 tickets) including 1 release task, 4 invalid, 1 duplicate, and 1 works for me 
+
+The primary purposes of this release continued to address the following issues:
+
+* Release 1
+** TPS rewrite: provide externalReg functionality
+** NIST SP800-108 KDF -( GP Key sanity check & full feature test)
+** TPS Rewrite: Implement Secure Channel Protocol 02
+
+== Dogtag Certificate System 10.2.5 ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.2.5 represents the sixth phase of Dogtag 10.2 and builds upon the bugs/features addressed by Dogtag 10.2.4.  Like Dogtag 10.2.4, Dogtag 10.2.5 is associated with Fedora 22.
+
+<table>
+<tr>
+<td valign="top"><b>NOTE:&nbsp;&nbsp;</b></td>
+<td valign="top">Due to the size, scope, and complexity of Dogtag 10.2, separate revisions of Dogtag 10.2 which incorporate a portion of the features will be released in phases over time.  Each phase will likely correspond to a specific version of Fedora.</td>
+</tr>
+</table>
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the PKI TRAC Ticket Instance:
+* 10.2.5 - pages 8-9 (28 tickets) including 1 release task, 3 invalid, and 1 works for me 
+
+The primary purposes of this release continued to addressed the following issues:
+
+* Release 1
+** TPS rewrite: provide externalReg functionality
+** NIST SP800-108 KDF -( GP Key sanity check & full feature test)
+** TPS Rewrite: Implement Secure Channel Protocol 02
+
+== Dogtag Certificate System 10.2.4 ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.2.4 represents the fifth phase of Dogtag 10.2 and builds upon the bugs/features addressed by Dogtag 10.2.3.  Like Dogtag 10.2.3, Dogtag 10.2.4 is associated with Fedora 22.
+
+<table>
+<tr>
+<td valign="top"><b>NOTE:&nbsp;&nbsp;</b></td>
+<td valign="top">Due to the size, scope, and complexity of Dogtag 10.2, separate revisions of Dogtag 10.2 which incorporate a portion of the features will be released in phases over time.  Each phase will likely correspond to a specific version of Fedora.</td>
+</tr>
+</table>
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the PKI TRAC Ticket Instance:
+* 10.2.4 - pages 8-9 (27 tickets) including 1 release task, 1 won't fix, and 1 works for me 
+
+The primary purposes of this release continued to addressed the following issues:
+
+* Release 1
+** TPS rewrite: provide externalReg functionality
+** NIST SP800-108 KDF -( GP Key sanity check & full feature test)
+** TPS Rewrite: Implement Secure Channel Protocol 02
+
+== Dogtag Certificate System 10.2.3 ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.2.3 represents the fourth phase of Dogtag 10.2 and builds upon the bugs/features addressed by Dogtag 10.2.2.  Like Dogtag 10.2.2, Dogtag 10.2.3 is associated with Fedora 22.
+
+<table>
+<tr>
+<td valign="top"><b>NOTE:&nbsp;&nbsp;</b></td>
+<td valign="top">Due to the size, scope, and complexity of Dogtag 10.2, separate revisions of Dogtag 10.2 which incorporate a portion of the features will be released in phases over time.  Each phase will likely correspond to a specific version of Fedora.</td>
+</tr>
+</table>
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the PKI TRAC Ticket Instance:
+* 10.2.3 - page 9 (31 tickets) including 4 duplicates, 2 invalid, 1 release task, 2 won't fix, and 1 works for me 
+
+The primary purposes of this release continued to addressed the following issues:
+
+* Release 1
+** TPS rewrite: provide externalReg functionality
+** NIST SP800-108 KDF -( GP Key sanity check & full feature test)
+** TPS Rewrite: Implement Secure Channel Protocol 02
+
+== Dogtag Certificate System 10.2.2 ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.2.2 represents the third phase of Dogtag 10.2 and builds upon the bugs/features addressed by Dogtag 10.2.1.  Like Dogtag 10.2.1, Dogtag 10.2.2 is associated with Fedora 22.
+
+<table>
+<tr>
+<td valign="top"><b>NOTE:&nbsp;&nbsp;</b></td>
+<td valign="top">Due to the size, scope, and complexity of Dogtag 10.2, separate revisions of Dogtag 10.2 which incorporate a portion of the features will be released in phases over time.  Each phase will likely correspond to a specific version of Fedora.</td>
+</tr>
+</table>
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the PKI TRAC Ticket Instance:
+* 10.2.2 - page 8 (32 tickets) including 3 duplicates, 4 fixed in previous versions, 1 invalid, 1 release task, 4 won't fix, and 3 works for me 
+
+The primary purposes of this release addressed the following issues:
+
+* Release 1
+** TPS rewrite: provide externalReg functionality
+** NIST SP800-108 KDF -( GP Key sanity check & full feature test)
+** TPS Rewrite: Implement Secure Channel Protocol 02
+
+== Dogtag Certificate System 10.2.1 ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.2.1 represents the second phase of Dogtag 10.2 and builds upon the bugs/features addressed by Dogtag 10.2.0.  Dogtag 10.2.1 is associated with Fedora 22.
+
+<table>
+<tr>
+<td valign="top"><b>NOTE:&nbsp;&nbsp;</b></td>
+<td valign="top">Due to the size, scope, and complexity of Dogtag 10.2, separate revisions of Dogtag 10.2 which incorporate a portion of the features will be released in phases over time.  Each phase will likely correspond to a specific version of Fedora.</td>
+</tr>
+</table>
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the PKI TRAC Ticket Instance:
+* 10.2.1 - pages 8-9 (45 tickets)
+
+Additionally, this release addressed the following issues:
+
+* Release 1:
+** Added CLIs to simplify generating user certificates
+** Added enhancements to KRA Python API
+** Added a man page for pki ca-profile commands
+** Added python api docs
+** Change resteasy dependencies for F22+
+** PKI TRAC Ticket #1187 - mod_perl should be removed from requirements for 10.2
+** PKI TRAC Ticket #1205 - Outdated selinux-policy dependency.
+** Removed perl(XML::LibXML), perl-Crypt-SSLeay, and perl-Mozilla-LDAP runtime dependencies
+
+== Dogtag Certificate System 10.2.0 ==
+
+=== What's new? ===
+
+The primary purpose of Dogtag 10.2 was to perform a re-write of the TPS system from a native Apache-based plug-in process to a java Tomcat-based process which utilizes the same framework utilized by the other Dogtag java-based Tomcat processes. 
+
+Dogtag Certificate System 10.2.0 represents the first phase of Dogtag 10.2, and is associated with Fedora 21.
+
+<table>
+<tr>
+<td valign="top"><b>NOTE:&nbsp;&nbsp;</b></td>
+<td valign="top">Due to the size, scope, and complexity of Dogtag 10.2, separate revisions of Dogtag 10.2 which incorporate a portion of the features will be released in phases over time.  Each phase will likely correspond to a specific version of Fedora.</td>
+</tr>
+</table>
+
+The numerous tickets fixed during this particular phase can be found in the specified milestones of the [https://fedorahosted.org/pki/report/6 PKI TRAC Ticket Instance]:
+
+* 10.2 - 11/13 (November) - page 9 (1 ticket)
+* 10.2 - 12/13 (December) - page 9 (4 tickets)
+* 10.2 - 01/14 (January) - page 10 (2 tickets)
+* 10.2 - 03/14 (March) - page 10 (7 tickets)
+* 10.2 - 04/14 (April) - pages 9-10 (26 tickets)
+* 10.2 - 05/14 (May) - page 9 (16 tickets)
+* 10.2 - 06/14 (June) - page 9 (16 tickets)
+* 10.2 - 07/14 (July) - page 9 (17 tickets)
+* 10.2 - 08/14 (August)  - page 9 (36 tickets)
+* 10.2 Backlog - pages 8-9 (17 tickets)
+
+Additionally, specific releases addressed the following issues:
+
+* Release 5:
+** Ticket 1198 Bugzilla 1158410 add TLS range support to server.xml by default and upgrade
+** Bugzilla Bug #1165351 - Errata TPS test fails due to dependent packages not found
+** PKI Trac Ticket #1211 - New release overwrites old source tarball
+** Bugzilla Bug #1151147 - issuerDN encoding correction
+** Make dependencies comply with TLS changes
+* Release 3:
+** PKI TRAC Ticket #1130 - Add RHEL/CentOS conditionals to spec
+** Disable pylint dependency for RHEL builds
+** Added jakarta-commons-httpclient requirements
+** Added tomcat version for RHEL build
+** Added resteasy-base-client for RHEL build
+* Release 2:
+** Revised dependencies
+** Removed RA references
+** Changed Apache TPS references to Tomcat TPS references
+* Release 1:
+** Added option to build without server packages.
+** Replaced Jettison with Jackson.
+** Added python-nss build requirement
+** Bugzilla Bug #1057959 - pkispawn requires policycoreutils-python
+** TRAC Ticket #840 - pkispawn requires policycoreutils-python
+** Updated requirements for resteasy
+** Added template files for archive, retrieve and generate key requests to the client package.
+** PKI TRAC Ticket #832 - Remove legacy 'systemctl' files . . .
+** Bugzilla Bug #1120045 - pki-core: Switch to java-headless (build)requires
+** drop dependency on java-atk-wrapper
+** Removed 'java-atk-wrapper' dependency from 'pki-server'
+** Respin to include the applet files with the rpm install. No change to spec file needed.
+** PKI TRAC Ticket #1127 - Remove 'pki-ra', 'pki-setup', and 'pki-silent' packages . . .
+** Merged jmagne@redhat.com's spec file changes from the stand-alone 'pki-tps-client' package needed to build/run the native 'tpsclient' command line utility into this 'pki-core' spec file under the 'tps' package.
+** Original tps libararies must be built to support this native utility.
+** Modified tps package from 'noarch' into 'architecture-specific' package
+** PKI TRAC Ticket #1017 - Rename pki-tps-tomcat to pki-tps
+
+== Dogtag Certificate System 10.1.2 ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.1.2 represents the second errata build for Dogtag 10.1.0.
+
+This release addressed the following issues:
+* Release 7:
+** Bugzilla Bug #1165351 - Errata TPS test fails due to dependent packages not found
+** Make dependencies comply with TLS changes
+* Release 5:
+** Ticket 1198 Bugzilla 1158410 add TLS range support to server.xml by default and upgrade
+** PKI Trac Ticket #1211 - New release overwrites old source tarball
+** updated various version dependencies
+* Release 4:
+** Bugzilla Bug #1151147 - issuerDN encoding correction
+* Release 2:
+**  addressed numerous issues in RHEL
+
+== Dogtag Certificate System 10.1.1 ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.1.1 represents the first errata build for Dogtag 10.1.0.
+
+<table>
+<tr>
+<td valign="top">'''NOTE:&nbsp;&nbsp;''' </td>
+<td valign="top">Due to changes in the way tomcat is started in Fedora 20, and the corresponding changes in the Dogtag init scripts,  Dogtag 10.1 will only be delivered from Fedora 20 upwards.  Dogtag 10.0 will continue to be delivered and supported for Fedora 19.</td>
+</tr>
+</table>
+
+This release fixes four bugs found in Dogtag 10.1.0:
+# PKI TRAC Ticket #840 - pkispawn requires policycoreutils-python<br>Bugzilla Bug #1057959 - pkispawn requires policycoreutils-python
+#* Added this runtime dependency to the pki-core package.
+# PKI TRAC Ticket #868 - REST API get certs links missing segment
+#* Fixed links to generate proper URLs (attempted to future-proof this to avoid any issues that might be caused by future re-factoring).
+# PKI TRAC Ticket #869 - f19 ipa-server-install fails at step 6/22 of cert sys install - systemctl start pki-tomcatd.target fails
+#* Fixed problem by adding a 'daemon-reload' method and calling it prior to starting the 'pki-tomcatd' target.
+# PKI TRAC Ticket #816 - pki-tomcat cannot be started after installation of ipa replica with ca
+#* IPA replica installation was failing due to encoding errors when generating the SSL server certificate.  To avoid these errors, Dogtag CA clones were fixed by requiring that their SSL server certificates mustalways be signed by the associated Dogtag CA master.
+
+== Dogtag Certificate System 10.0.7 ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.0.7 represents the seventh errata build for Dogtag 10.0.0.
+
+This release fixes three bugs found in Dogtag 10.0.6:
+
+# PKI TRAC Ticket #803 - avc generated for useradd in pkispawn scripts
+#* Fixed so that useradd does not generate an AVC by closing file descriptors prior to invoking useradd.
+# PKI TRAC Ticket #868 - REST API get certs links missing segment
+#* Fixed links to generate proper URLs (attempted to future-proof this to avoid any issues that might be caused by future re-factoring).
+# PKI TRAC Ticket #869 - f19 ipa-server-install fails at step 6/22 of cert sys install - systemctl start pki-tomcatd.target fails
+#* Fixed problem by adding a 'daemon-reload' method and calling it prior to starting the 'pki-tomcatd' target.
+
+Notes on Fedora 19:
+<ul>
+Fedora 19 does not provide tomcat 6.  Dogtag 9 style instances will therefore no longer work on Fedora 19.  These instances need to be migrated to Dogtag 10.<br>
+<br>
+To prevent inadvertently disabling Dogtag instances, code has been added to prevent upgrades to Fedora 19 if Dogtag 9 instances exist.  Details on how to upgrade Dogtag 9 instances and workarounds can be found at:
+[https://github.com/dogtagpki/pki/wiki/Migrating-PKI-9-to-PKI-10 Migrating PKI 9 to PKI 10]
+</ul>
+
+== Dogtag Certificate System 10.1 ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.1 represents the release being bundled with the GA release of Fedora 20, and marks the culmination of nearly a year's worth of developments by the Dogtag team.
+
+<table>
+<tr>
+<td valign="top">'''NOTE:&nbsp;&nbsp;''' </td>
+<td valign="top">Due to changes in the way tomcat is started in Fedora 20, and the corresponding changes in the Dogtag init scripts,  Dogtag 10.1 will only be delivered from Fedora 20 upwards.  Dogtag 10.0 will continue to be delivered and supported for Fedora 18 and 19.</td>
+</tr>
+</table>
+
+This release contains the following changes since Dogtag 10.0:
+
+'''Infrastructure/ Version Changes:'''
+* pylint was added to the build scripts, and any pylint errors and warnings in the python code were fixed.  The build now fails if any new errors or warnings are generated.
+* RESTEasy was updated from version 2.3.2 to 3.0.1.  As part of this transition, some server code (the interceptors) was modified to implement JAX-RS 2.0.
+* In Fedora 20, tomcat has changed to more properly use systemd unit files to start up, rather than system V init scripts. ([https://bugzilla.redhat.com/show_bug.cgi?id=842346 Bugzilla Bug #842346 - Properly migrate tomcat to systemd])<br>As a result, new Dogtag systemd unit files (based on the tomcat unit files) were required.  This change is the primary reason Dogtag 10.1 cannot be deployed in Fedora versions < 20.
+'''New Testing Framework:'''
+A new test framework was added to the upstream git source tree.  This framework can be used to do standalone tests or as part of a continuous integration testing framework.  This framework includes:
+* QE tests are added to upstream git as part of this release. These tests use the beaker libraries to generate results and are run in a beaker test bed.
+* A mechanism for writing JUnit tests, with some sample tests.  These tests can be run through eclipse on a local test environment or run along with the QE tests on a beaker machine. Customized Suite and RunNotifier classes are provided to generate the results using beaker libraries in place of the actual JUnit result.
+* The README file in tests/dogtag provides information on how to run the tests.
+'''REST interface enhancements:'''
+* The interface has been updated to use standard HTTP return codes under various operations. Paging support has been added to most search operations. 
+* New REST interfaces have been added for managing certificate profiles on the CA.  This includes:
+** Methods to list, add, remove, edit, enable/disable profiles.  These methods are protected by ACLs that limit authorization to agents or administrators as appropriate.
+** Extensions to the pki CLI tool to perform all the above operations.
+** A new method to provide enrollment templates to end-entity users for specific profiles.  An enrollment template is a certificate request representation that contains all the required inputs for a given profile.  End entity users can list available profiles by calling GET /certrequests/profiles, and fetch an enrollment template by navigating to GET /certrequests/profiles/{id}.
+'''DRM Enhancements:'''
+* Audit logging has been added to the REST interfaces for key archival and recovery.
+* REST interface for asymmetric key retrieval provides ability to submit key recovery requests, approve them, and retrieve keys approved for recovery.
+* Transport Key rotation provides ability to gradually migrate DRM and connected CAs from a current to a new transport key.  It also provides support for simultaneous use of both transport keys.
+'''New Stand-alone DRM:'''
+* It is now possible to deploy a stand-alone DRM through pkispawn.
+* Dogtag subsystems such as a DRMs have always required the presence of a Dogtag Certificate Authority (CA) to be part of a PKI deployment. A stand-alone DRM uses an external CA to obtain its system certificates, such that the DRM can be set up without a Dogtag CA in its PKI deployment.  The DRM is not expected to communicate with any other PKI subsystems (with the exception of its clones, which will be implemented in a future release).<br>Potential users of this feature include CA-less IPA installation and storage of secrets, and possible integration with CloudKeep.
+'''New Java-Based TPS:'''
+* We have begun an effort to re-implement the TPS subsystem (which is currently written as C/C++ Apache modules) in Java.  The new tomcat-tps will run in a Tomcat server like the other Java subsystems, either within the same or in a separate Tomcat instance.<br>There are many steps in this effort, detailed below.  As of this release, steps 1,2 and the design phase of step 3 are complete.  The remaining steps are slated to be delivered in the next major release.
+*# Creation of installation/configuration code through pkispawn (either interactive or non-interactive).  In particular, a new interface has been created to automate the generation and distribution of the symmetric key that acts as a shared secret between the TKS and TPS.  Currently, this secret is generated and distributed using tkstool - which is a manual, error-prone process.
+*# Creation of new REST interface and CLI for various TPS resources and services including tokens, certificates, profiles, users, groups, self tests, configurations, and logs.
+*# Design and implementation of new TPS Web UI for administrators, operators and agents.
+*# Porting of lower level code that interacts with tokens and other subsystems.
+'''CLI improvements:'''
+*  The "pki" CLI commands have been organized according to the target of the operations: the client, the subsystems, and the security domain. The client commands provide an interface to manage client certificates. The subsystem commands provide an interface to access various services in each subsystem. The security domain commands provide an interface for managing subsystems. The old-style commands are still available for backward compatibility.
+
+== Dogtag Certificate System 10.0.6 ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.0.6 represents the sixth errata build for Dogtag 10.0.0.
+
+This release contains the following features:
+
+1. Some commands in the pki CLI have been renamed for better consistency. The old commands will continue to work, but they have not been deprecated, and will be displayed accordingly in the usage and man pages.
+   The commands that have been renamed are:
+     * old command            -> new command
+     * client-find-cert       -> client-cert-find
+     * client-import-cert     -> client-cert-import
+     * client-remove-cert     -> client-cert-del
+     * group-add-member       -> group-member-add
+     * group-find-member      -> group-member-find
+     * group-show-member      -> group-member-show
+     * group-remove-member    -> group-member-remove
+     * user-add-cert          -> user-cert-add
+     * user-find-cert         -> user-cert-find
+     * user-show-cert         -> user-cert-show
+     * user-remove-cert       -> user-cert-del
+     * user-add-membership    -> user-membership-add
+     * user-find-membership   -> user-membership-find
+     * user-show-membership   -> user-membership-show
+     * user-remove-membership -> user-membership-del
+2. The upgrade scripts have been modified to backup the files used to track the upgrade process.  For instance specific upgrade scripts, this is CS.cfg.
+
+3. A missing jar link to apache-commons-io prevented IPA replica installs from completing successfully on RHEL 7.  The required link has been added.  (BZ 1024679)
+
+4. Due to a bug in the configuration code, when installing a non-cloned CA, the certificate for the admin user configured during the install was signed with SHA1 by default.  With the fix, the admin cert is signed with SHA256 by default.  It is possible to override this setting by changing values in the caAdminCert.cfg profile prior to configuration. (BZ 1024445)
+
+5. ipa-cert-remove-hold <non_existent_cert_id> used to return a server error.  The error handling code for this servlet has been modified to return the correct error message (BZ 999722)
+
+6. java-abrt crashes were being generated during IPA server installs due to exceptions being thrown during tomcat shutdown.  This was due to the shutdown code being called multiple times internally.  This code has been fixed. (BZ 1018268)
+
+Notes on Fedora 19:
+<ul>
+Fedora 19 does not provide tomcat 6.  Dogtag 9 style instances will therefore no longer work on Fedora 19.  These instances need to be migrated to Dogtag 10.<br>
+<br>
+To prevent inadvertently disabling Dogtag instances, code has been added to prevent upgrades to Fedora 19 if Dogtag 9 instances exist.  Details on how to upgrade Dogtag 9 instances and workarounds can be found at:
+[https://github.com/dogtagpki/pki/wiki/Migrating-PKI-9-to-PKI-10 Migrating PKI 9 to PKI 10]
+</ul>
+
+== Dogtag Certificate System 10.0.5 ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.0.5 represents the fifth errata build for Dogtag 10.0.0.
+
+This release contains the following features:
+#  Due to changes in systemd, restarting Dogtag 10 instances using systemctl restart pki-tomcatd.target failed.  Changes have been made to the systemd startup configuration to ensure that this works correctly. In addition, configuration has been added to require systemd to accept an exit status of 143 (a correct exit status for the JVM) as valid, so this exit value will no longer be reported in the system logs.
+# Due to changes in the python-requests, a new exception (ProxyError) was returned when attempting to connect to a server that is not yet available.  This affected pkispawn installation code when we wait for a server to restart.  The code has been modified to handle this (and other) exceptions.
+# In a case following a bad restart, the CS.cfg for an instance appeared to be cleared or truncated.  The code has been changed to not write server status to the CS.cfg on startup, but rather to use an in-memory variable.
+# Fixed LDAP search filter code to no longer return certificates expired for both reason 1 and reason 10 when searching only for reason 1. 
+
+Notes on Fedora 19:
+<ul>
+Fedora 19 does not provide tomcat 6.  Dogtag 9 style instances will therefore no longer work on Fedora 19.  These instances need to be migrated to Dogtag 10.<br>
+<br>
+To prevent inadvertently disabling Dogtag instances, code has been added to prevent upgrades to Fedora 19 if Dogtag 9 instances exist.  Details on how to upgrade Dogtag 9 instances and workarounds can be found at:
+[https://github.com/dogtagpki/pki/wiki/Migrating-PKI-9-to-PKI-10 Migrating PKI 9 to PKI 10]
+</ul>
+
+== Dogtag Certificate System 10.0.4 ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.0.4 represents the fourth errata build for Dogtag 10.0.0.
+
+This release contains the following features:
+# Enhanced pkispawn to provide automatic backup and restore mechanism for files modified during the upgrade process.
+# Improved the summary information at the end of pkispawn to include, among other things, the location of the agent PKCS #12 file.
+# Fixes to pkispawn and the installation servlets to fix cloning.
+# Fix to pkispawn to correctly overwrite the pki_issuing_ca when configuring with an external CA.  This resolves an issue reported by IPA in BZ #986901.
+# Numerous fixes to resolve build issues on F19 and RHEL.
+
+Notes on Fedora 19:
+<ul>
+Fedora 19 does not provide tomcat 6.  Dogtag 9 style instances will therefore no longer work on Fedora 19.  These instances need to be migrated to Dogtag 10.<br>
+<br>
+To prevent inadvertently disabling Dogtag instances, code has been added to prevent upgrades to Fedora 19 if Dogtag 9 instances exist.  Details on how to upgrade Dogtag 9 instances and workarounds can be found at:
+[https://github.com/dogtagpki/pki/wiki/Migrating-PKI-9-to-PKI-10 Migrating PKI 9 to PKI 10]
+</ul>
+
+== Dogtag Certificate System 10.0.3 ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.0.3 represents the third errata build for Dogtag 10.0.0.
+
+This release contains the following features:
+# Fixes for security flaws in the TPS as described in CVE-2013-1885 and CVE-2013-1886
+# Added checking for sane lengths of the fields in subject DNs in the TPS, to prevent a TPS crash.
+# Previously the server certificate name was partially hard-coded.  Now in Tomcat-based subsystems, it can be fully configured using pki_ssl_server_nickname parameter.
+# Corrections and additions to man pages and other documentation.
+
+Notes on Fedora 19:
+<ul>
+Fedora 19 does not provide tomcat 6.  Dogtag 9 style instances will therefore no longer work on Fedora 19.  These instances need to be migrated to Dogtag 10.<br>
+<br>
+To prevent inadvertently disabling Dogtag instances, code has been added to prevent upgrades to Fedora 19 if Dogtag 9 instances exist.  Details on how to upgrade Dogtag 9 instances and workarounds can be found at:
+[https://github.com/dogtagpki/pki/wiki/Migrating-PKI-9-to-PKI-10 Migrating PKI 9 to PKI 10]
+</ul>
+
+== Dogtag Certificate System 10.0.2 ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.0.2 represents the second errata build for Dogtag 10.0.0.
+
+This release contains the following features:
+# A new Python client framework has been written to connect to the restful interface on the java subsystems.  This interface was used for some installation functionality and will continue to be expanded.
+# pkispawn and pkidestroy were modified to use the new Python client framework and the dependency on jython was eliminated.
+# The installation interfaces were changed so that most of the installation interactions take place over the admin interface.
+# New command line parameters have been added to pkidestroy to provide the username and password of the security domain administrator to update the security domain.  Formerly, no credentials were required because we used the subsystem certificate of the subsystem for authentication.  The new method provides better auditing as to exactly who is de-registering and removing a subsystem.  As such, use of the new options is recommended, and will be made mandatory in a future release.
+# Although it is possible to run Dogtag 9 style instances on Dogtag 10, these instances do not have the required configuration to expose the RESTful interface.  A new servlet has been added to return 501 (Not implemented) on these instances when the REST URLs are accessed.  This is only applicable on Fedora 18 (See Fedora 19 note below).
+# A new interactive mode has been added to pkispawn and pkidestroy.  In this mode, users are prompted for details in order to set up the most basic servers.  Any customizations would still need to be done through configuration files.   Interactive mode is an excellent way for users to set up a server and become familiar with Dogtag.
+# Support has been added for the random generation of serial numbers for certificates issued.  More details about this feature and how to enable it can be found here: [https://github.com/dogtagpki/pki/wiki/Random-Certificate-Serial-Numbers Random Certificate Serial Numbers]
+# Nonces are used in Dogtag to prevent cross-site request forgery and replay attack, but they were stored in a global list.  To prevent possible collisions with other user's nonces, they are now stored in each user's session.
+# Previously, session IDs were generated using /dev/random, which may block under certain circumstances, making server startup slow. To avoid this, the server configuration has been changed to use PKCS11PRNG provided by JSS.
+# A new upgrade framework has been added to allow instances to be automatically upgraded when new packages are installed.  This framework will be used to eventually remove the need for migrations between releases.  The upgrade scripts are invoked by postinstall scriptlets in the pki-base and pki-server packages.  On completing an upgrade, users should check the upgrade logs in /var/log/pki/pki-upgrade-*.log and /var/log/pki/pki-server-upgrade-*.log for any errors.  The upgrade scripts (pki-upgrade and pki-server-upgrade) can also be run manually.  Additional troubleshooting information can be found at:  [https://github.com/dogtagpki/pki/wiki/Upgrading-PKI-Server Upgrading PKI Server]
+# New CLI has been added to simplify client certificate management including importing and trusting CA certificates.
+# Previously, the pki CLI tool used the same parameter (-w) to specify both user and client certificate database passwords.  The CLI has been modified to use a new parameter (-c) for the database password, and -w for the user password.
+# Multiple additional fixes to pkispawn, pkidestroy, pki and their man pages.
+
+Notes on Fedora 19:
+<ul>
+Fedora 19 does not provide tomcat 6.  Dogtag 9 style instances will therefore no longer work on Fedora 19.  These instances need to be migrated to Dogtag 10.<br>
+<br>
+To prevent inadvertently disabling Dogtag instances, code has been added to prevent upgrades to Fedora 19 if Dogtag 9 instances exist.  Details on how to upgrade Dogtag 9 instances and workarounds can be found at:
+[https://github.com/dogtagpki/pki/wiki/Migrating-PKI-9-to-PKI-10 Migrating PKI 9 to PKI 10]
+</ul>
+
+== Dogtag Certificate System 10.0.1 ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.0.1 represents the first errata build for Dogtag 10.0.0.
+
+This release contains the following features:
+# Nonces have been added to the RESTful interface for certificate revocation to preventing cross site scripting attacks on that interface.
+# A new servlet has been added to the RESTful interface to add and remove KRA connector configuration from a CA.  This is used to clean up a CA when a KRA is destroyed.
+# The default validity of the CA signing cert has been lengthened from 8 to 20 years.
+# pkispawn has been modified to allow the user to specify the location of the generated admin cert PKCS#12 file.
+# OCSP now supports ECC CRLs.
+# A more robust use of interpolation has been added to pkispawn.
+# pkidaemon has been repaired to display the runtime status of PKI Java-based instances
+# A third-party license file has been added for Dogtag 10's use of JQuery and the JQuery.i18n.properties plug-in
+
+== Dogtag Certificate System 10.0 ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.0 represents the release being bundled with the GA release of Fedora 18, and marks the culmination of over a year of development by the Dogtag team.
+
+This release contains the following changes since Dogtag 9.0:
+<ul>
+'''Infrastructure and Development Changes:'''
+* The Dogtag code base was moved to git from svn.
+* Java development is now done under Eclipse.
+* Dogtag 10 uses its own public-facing TRAC project management system.
+* Improvements were made to CMake modules for Java development.
+* Java development uses OpenJDK 7.
+* Python development uses Python 2.7 and Jython 2.2.
+* Dogtag 10 Java-based instances run on Tomcat 7.
+* Dogtag 10 RA and TPS instances run on Apache 2.4.
+'''Refactoring and Cleanup:'''
+* Code has been reformatted to uniform formatting and coding standards.
+* Based on feedback provided by Eclipse and Coverity, the following types of cleanup occurred:
+** Removal of dead code and unnecessary code blocks.
+** Removal of generic containers and implementation of type safety.
+** Removal/ replacement of deprecated code, with the addition of JUnit tests to confirm correctness.
+** Address various memory leaks and corruption issues, coding style issues etc.
+* The Dogtag code pre-dates many of the modern Java utilities to do encoding, HTTP and XML parsing etc.  As a result, custom code was written to do these functions.  This code has been replaced with standard code, and a whole package (osutil) was eliminated.
+'''REST Interface:'''
+* To allow easier and more intuitive interaction with the Dogtag servers, a new REST interface has been added.  This interface is based on RESTEasy framework, a fully certified implementation of the JAX-RS specification.  Clients interact with this framework using intuitive REST URLs, and using standard XML or JSON inputs.
+* Included is a Java client proxy framework which can be used by client applications to build HTTP requests on the Dogtag servers, simply by invoking methods on the client objects.  This client framework is used in the new command line interface "pki" as described below.
+* The plan is to continue over time to extend the REST interface to cover all of the essential Dogtag functionality.  In this release, the following functionality has been implemented:
+** With a CA:
+*** Create, review and approve certificate requests.
+*** List, view, revoke, hold and release certificates.
+*** Get installation token from security domain
+*** Add/remove KRA connector configuration
+*** Retrieve and list certificate profiles
+** With KRA:
+*** Retrieve transport certificate
+*** List/ archive and recover symmetric keys
+** With all Java systems:
+*** Add/Remove/Modify/View users, groups and group members
+*** Start system installation service
+'''Third-party Components:'''
+* Dogtag 10 includes JQuery and the Jquery.i18n.properties plug-in.
+'''CLI:'''
+* A new intuitive command line interface has been created, based on the RESTEasy client framework.  This allows administrators and agents to perform all of the operations exposed by the REST interface from the command line, or from scripts.
+'''Storage of symmetric keys in the DRM:'''
+* The DRM provides secure encrypted storage for asymmetric keys.  The KRA has been extended to provide a mechanism to securely archive and recover symmetric keys.  This would be useful for storing disk encryption keys for instance. 
+'''SELinux changes:'''
+* In Dogtag 9, we maintained a custom SELinux policy to provide mandatory access controls for interactions with the Dogtag server.  In Dogtag 10, this policy has been cleaned up, simplified and integrated into the system base policy. As a result, the pki-selinux package has been retired.
+'''ECC:'''
+* In earlier releases, Dogtag only supported ECC certificate issuance when the CA was connected to an ECC-capable external crypto token.  In Dogtag 10, all CS servers (CA, OCSP, DRM, TKS, TPS) can now be issued ECC certificates and run in such environment that:
+** CS servers can communicate securely with ECC SSL certificates.
+** Administrators and agents can access their administration ports via SSL using ECC certificates
+** ECC encryption certificates can now have their private keys archived (and recovered) by the DRM.  For this feature, we used an ECC-capable HSM in our development and QE environment on the client side for development and testing. Certicom software tokens could not be used because of an issue with malformed private keys.
+** The TMS testing client tool, tpsclient, can now be used to test token-based enrollment and key archival in the TMS environment (the actual smart card support will follow in a later release)
+'''New Installer:'''
+* New installer tools (pkispawn, pkidestroy) has been written in Python to create Dogtag Java-based instances (CA, KRA, OCSP, TKS).  Over time, this installer will be extended to handle the remaining Apache-based instances (TPS and RA), and pkicreate/pkiremove/pkisilent will be retired and removed.
+* pkispawn performs the same operations that pkicreate and the pkisilent used to do, meaning that a Dogtag Java-based instance can be installed and configured in a single non-interactive step.  With the right options, though, it is still possible to configure an instance by going through the web-based installation UI panels.
+'''New Directory Layout/ Architecture/ Standard Ports'''
+* It is now possible (though not required) to install multiple Java subsystems (CA, KRA, TKS, OCSP) within a single tomcat instance.  This is useful for small deployments where, for example, you might want leverage the capabilities of a CA and KRA on a single server.  In keeping with this change, the directory structure of a Dogtag instance has changed.
+* By default, Dogtag will install on the default tomcat ports (8443 and 8080).  There will no longer be any separation of EE, admin and agent interfaces on different ports. 
+'''Package Restructuring:'''
+* The Dogtag RPM packages have been restructured to reduce the number of packages and more accurately separate client and server components.  The current packages are:
+** pki-base: code common to clients and server
+** pki-tools: Java and native tools used by client and server.
+** pki-server: code used by Java servers, only on the server.
+** pki-ca, pki-kra, pki-ocsp, pki-tks, pki-ra, pki-tps: subsystem specific code
+** pki-javadoc: consolidation of the pki-common-javadoc, pki-java-tools-javadoc, and pki-util-javadoc packages
+** pki-symkey: provides native symmetric key operations
+** pki-console: administrative tool for CA, KRA, OCSP, and TKS
+* The UI packages have been rearranged and consolidated to make customizing an instance's user interfaces more straightforward, and to ensure a more consistent look and feel across subsystems.  All of the subsystem-specific UI packages have been eliminated, and there is now a single UI package (dogtag-pki-server-theme) which contains all the CSS style sheets, image files and properties files for all subsystems.  A customer wanting to customize the UI could simply replace the components in this package.  Additionally, the pki-console requires its own UI package, dogtag-pki-console-theme.
+* A meta-package (dogtag-pki) has been created to conveniently install all existing Dogtag 10 PKI packages.
+</ul>
+
+== Dogtag Certificate System 10.0 (Release Candidate 1) ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.0 (Release Candidate 1) builds upon Dogtag Certificate System 10.0 (Beta 2) and represents the first release candidate release of future Dogtag PKI technology.
+
+This release contains the following features:
+# Simplified and enhanced pkispawn.
+#* Added detailed man pages to document use of pkispawn, pkidestroy and the command line utility pki.  
+#* Removed --dry-run option and unused respawn() code.
+#* Replaced links of scriptlets with lists
+#* Modified the way pkispawn parses configuration files.  pkispawn now reads a template file for default settings, and a much smaller and simpler user-defined configuration file for customizations and overrides.  Moreover, pkispawn uses interpolation to substitute in values.  See the man pages for details.
+#* Added the ability to import an admin cert into the administrative user created for each subsystem.  This allows multiple subsystems within the same instance to be more easily managed within the same browser.
+#* Implemented ability to install a subordinate CA using pkispawn.
+#* Implemented ability to install an externally signed CA using pkispawn.
+# Simplified the structure of the UI packages
+#* All images and css files have been moved to dogtag-pki-server-theme for all subsystems.  
+#* Removed unused and duplicated files.
+#* Template files have been moved to the underlying subsystem files.  In future, all theme related messages in those files will be parameterized and placed in dogtag-pki-server-theme.  This will significantly simplify the process of customizing or internationalizing an instance and its theme.
+#* Retired all the subsystem specific UI packages, reducing the number of UI packages from 7 to 1.
+# Security fixes for CVE-2012-4543 Certificate System: Multiple cross-site scripting flaws by displaying CRL or processing.
+# Memory fixes for the TPS 
+# Updated to latest version of cmake, removing obsolete modules.
+
+== Dogtag Certificate System 10.0 (Beta 2) ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.0 (Beta 2) builds upon Dogtag Certificate System 10.0 (Beta 1) and represents the second beta release of future Dogtag PKI technology.
+
+This release contains the following features:
+# Selinux policy moved into system selinux policy.  For F18, pki-selinux will no longer be built and delivered by the dogtag team.  The PKI policy will instead be managed by the selinux base packages team.
+# Added option to install schema on a clone, rather than simply replicating it.  This is to resolve an IPA issue when replicating from a non-merged to a merged database.<sup>&dagger;</sup>
+# Restricted AJP to allow access from localhost only by default.  This is an IPA reported issue.<sup>&dagger;</sup>
+# Changes to allow the TPS and RA to install and configure correctly.
+# Enabled Tomcat security manager and added mechanism to configure custom security policy.
+# Added CLI tools to obtain security domain information and install tokens.
+# Refactored REST client classes to support multiple operations over authenticated HTTP session.
+# Added automatic recovery to the LDAP modification listener.
+# Added login service to protect REST services including certificate operations, key operations, security domain, TKS and OCSP.
+# Added option to pkispawn to exit before configuration, in case the installer wants to go through the UI configuration panels.  In this way, pkispawn can be operated like pkicreate/pkisilent.
+# Removed version numbers from jar files to comply with Fedora packaging recommendations.
+
+<sup>&dagger;</sup> - denotes IPA related/reported issue
+
+== Dogtag Certificate System 10.0 (Beta 1) ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.0 (Beta 1) builds upon Dogtag Certificate System 10.0 (Alpha 2) and represents the first beta release of future Dogtag PKI technology.
+
+This release contains the following features:
+# Merged pki-silent into pki-server.
+# Added Provides to packages replacing obsolete packages.
+# Added needed link for updated d9 -> d10 instances. Found in IPA testing.<sup>&dagger;</sup>
+# Backed up CS.cfg before upgrading from d9 -> d10
+# New selinux policy for all components.  The Java components now take advantage of a tomcat domain defined in the base selinux policy, and the RA/TPS policies have been cleaned up considerably.  The policy that is now delivered is very close to the final version that will be delivered in the base policy.  That will be a deliverable for beta 2.
+# Selinux context for startup scripts for all components set so that runcon is not required.
+# Cleaned up lock and pid files generation and removal for java processes.
+# Rebuilt packages against the latest F18 base selinux policy packages to resolve an issue in installing pki-selinux due to removal of a boolean in F18 base selinux policies.  This issue was reported by IPA.<sup>&dagger;</sup>
+
+<sup>&dagger;</sup> - denotes IPA related/reported issue
+
+== Dogtag Certificate System 10.0 (Alpha 2) ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.0 (Alpha 2) builds upon Dogtag Certificate System 10.0 (Alpha 1) and represents the second alpha release of future Dogtag PKI technology.
+
+This release contains the following features:
+# Dogtag 10 can now clone from Dogtag 9 masters.  We will fall back to the old installation servlet if needed.<sup>&dagger;</sup>
+# Startup state of a server can be determined from the getStatus() servlet<sup>&dagger;</sup>
+# Consistent database user provided during installation for client authentication (used in IPA merged database install)
+# Fixed package dependency issue with pki-symkey<sup>&dagger;</sup>
+# pki-setup merged into pki-server<sup>&dagger;</sup>
+# Audit Cert Renewal time extended to two years<sup>&dagger;</sup>
+# Versioning added to jar manifest files and VERSION file and reported in getStatus
+# ECC enhancements in DRM and TMS environment
+# Addition of time based searches in preparation for randomized serial numbers
+# Enhanced escaping of LDAP attributes
+# Improved transition control for token operations in the TPS.
+
+== Dogtag Certificate System 10.0 (Alpha 1) ==
+
+=== What's new? ===
+
+Dogtag Certificate System 10.0 (Alpha 1) builds upon Dogtag Certificate System 9.0 and represents the first alpha release of the future direction for Dogtag PKI technology. 
+
+This release contains the following features:
+# Extension of the functionality of the DRM to store and retrieve symmetric keys and passphrases, rather than only asymmetric keys.  This feature allows the DRM to be used as a secure vault-like storage for essentially any sensitive data.  The data is stored using the same secure FIPS-compliant storage mechanism used to store PKI keys.
+# The new DRM functionality is exposed through a new REST interface, provided by the RESTEasy framework.  This provides an intuitive mechanism for writing clients to the interface.  Both Java (using the RESTEasy client proxy framework) and Python clients have been coded.  The server uses standard Java libraries to generate and parse XML or JSON input and output data.
+# Extracted authentication and authorization code from the individual servlets into a standard Tomcat authentication realm.  This realm has been configured to require client certificate authentication, and is being used to secure the new DRM REST interface.  In the future, this authentication realm could be extended to include other kinds of authentication (such as Kerberos).  This is part of a push to refactor the code to expose the core business functionality in the servlets, while extracting the ancillary tasks (authentication, authorization, XML parsing and generation, etc.) and using standard methods and libraries to accomplish these tasks.
+# Enhanced Java subsystems so that they could connect to the internal database using a non-directory manager user, that is authenticated using client authentication.  This resolves a number of issues with LDAP operations ignoring search limits.  In addition, some changes have been made to allow integrating the Dogtag database with other systems such as IPA.
+# A new package pki-deploy contains the initial framework for a Python-based installer/de-installer (pkispawn/pkidestroy) that will be used to install and configure a Dogtag instance.  This will ultimately replace the pki-setup installer/de-installer (pkicreate, pkidestroy) package, and the pki-silent instance configuration (pkisilent) package.
+# Much of the focus of this release was on cleaning up and modernizing the Dogtag source code.
+#* Dogtag source code has been moved to git.
+#* Java coding standards have been revised - and the code has been reformatted to match those standards.
+#* Initially, Eclipse reported about 13000 warnings in the dogtag code. Those have been reduced to close to 2400.  This included removing dead and unused code, replacing calls to deprecated functions and replacing raw collections with type-safe generics.
+#**NOTE:  These numbers currently exclude console code.
+#* OSUtil is a package that has certain utilities that were not available when the Dogtag code was originally written.  These utilities are now available in current standard libraries - and so this package has been eliminated entirely.
+#* Improved handling of short and long lived threads which allow threads to exit gracefully on shutdown.
+
+= PKI 9 Releases =
+
+See [[PKI 9 Releases]].
+
+= PKI 1 Releases =
+
+See [[PKI 1 Releases]].
+
+= See Also =
+
+* [[Releases]]

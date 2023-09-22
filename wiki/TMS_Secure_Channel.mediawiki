@@ -1,0 +1,224 @@
+== TMS Secure Channel (CC LLD) ==
+
+<!--
+Original Author: Christina Fu <cfu@redhat.com>
+-->
+
+=== Introduction ===
+
+RHCS 8 Token Management System (TMS) supports the GlobalPlatform smart card specification, in which the Secure Channel implementation is done with the Token Key System (TKS) managing the master key, and the Token Processing System (TPS) communicating with the smart card (tokens) with APDUs.
+
+This section first gives a high level description of the Secure Channel establishment, then delves into the low-level design of which.
+For detail of the exact protocol, please reference the GlobalPlatform smart card specification.
+
+For an overview of the RHCS TMS system, see:
+http://www.redhat.com/docs/manuals/cert-system/8.0/esc/html/crts-and-the-esc.html
+(note: the picture needs to be corrected in which between ESC and TPS it says "The TPS and smart card communicate over SSL using private keys" should read "The TPS and ESC communicate over SSL using private keys; and over SSL, TPS and the smart card communicate via secure chanel."
+
+=== 2. Secure Channel Establishment Overview ===
+This section gives readers a high-level description of how a secure channel is established between the smart card (SC) and the RHCS servers.
+
+For the rest of the document:
+*TKS = Token Key Server
+*TPS = Token Processing System
+*SC = Smart Card
+*ESC = Enterprise Security Client
+*CUID = Card Unique ID
+*cch = card challenge
+*hch = host challenge
+*ccryp = card cryptogram
+*hcryp = host cryptogram
+*skdd = session key derivation data
+
+==== Static keys ====
+The secure channel establishment is based on the following key concepts:
+* TKS holds the master key that is responsible for deriving 3 keys embedded with each SC with a Card Unique ID (CUID). Because of this relationship, these 3 keys on the smart card can be derived by TKS given the CUID at any time.  In other words, they are the shared secret between the SC and TKS.
+* The 3 keys (16 byte 3ES keys) embedded with each SC are the following:
+** K(ENC,AUTH) - static key used for encryption and authentication.  Session keys, K(enc,auth), are generated for each Secure Channel.
+** K(MAC) - static key used for message authentication.  Session keys, K(mac), are generated for each Secure Channel.
+** K(KEK) - static key used for key encryption. It is used directly.
+
+==== Session Keys generation ====
+One set of session keys are generated each time a Secure Channel is established.
+
+Session keys are generated in the following fashion (refer to the GlobalPlatform spec for algorithms used):
+# generate session key derivation data (skdd), <b>using cch and hch</b>
+# generate K(enc,auth) session key, using <b>K(ENC,AUTH) and skdd</b>
+# generate K(mac) session key, using <b>K(MAC) and skdd</b>
+Note: Key Encryption Keys (KEK) are always used statically: K(KEK), so no session key generation for them.
+
+==== Security Levels ====
+There are 3 security levels specified in the specification for the Secure Channel:
+* No security
+* MAC (Message Authentication Code)
+** to ensure integrity, commands are signed and verified. The MAC is a chained signed command, meaning, the ICV (initialization chaining vector) of MAC of the next command is the MAC of the previous command MAC.  Note that it is the K(mac) session key that is used for each Secure Channel, not the K(MAC) static key itself.
+* MAC+Enc (MAC with encryption)
+** MAC first, and then encrypt the input data with K(enc) session key.  Note that it is the K(enc) session key that is used for encryption, not the K(ENC,AUTH) static key itself
+
+==== Establishing Secure Channel ====
+;NOTE!
+:APDU's are commands driven by the servers.  They are always initiated by the server (TPS) and elicit responses from the smart cards. The initiation of the APDU commands may be triggered when the clients take action and connects to the server for requests.
+
+A secure channel begins with an <i>InitializeUpdate</i> APDU sent from TPS to SC, and is fully established with the <i>ExternalAuthenticate</i> APDU.
+The "Server" in this section is a combination of TKS and TPS with their distinct roles defined in the introduction. See Low Level Design for details.
+
+<pre>
+Server                                                            Smart Card (token)
+* generate 8 random bytes== host challenge (hch)
+* send InitializeUpdate APDU
+   KeyID (key set version, key index)
+   Host Challenge (hch)
+                           -------------------------------------->  * generate 8 random bytes ==> card challenge (cch, 8 random bytes)
+                                                                    * generate session keys (see Session Keys Generation above)
+                                                                    * generate Card Cryptogram (ccryp):
+                                                                        using K(enc,auth), hch, and cch ==> ccryp
+                                                                    * InitializeUpdate Response
+                                                                       keySet version, key index
+                                                                       Card Challenge (cch)
+                                                                       Card Cryptogram (ccryp)
+                          <---------------------------------------
+* generate session keys (see Session Keys Generation above)
+* generate Host Cryptogram (hcryp):
+    using K(enc,auth), cch, and hch == hcryp
+* Verification (compare ccryp with hcryp)
+* send ExternalAuthenticate APDU
+   Security Level
+   hcryp
+   MAC
+                           -------------------------------------->  
+</pre>
+
+=== Low Level Design ===
+
+TPS provides a <i>SetupSecureChannel</i> method that takes care of the establishment of the Secure Channel.
+The following is the logic of the method in a pseudocode fashion:
+
+Note: Wherever TKS is mentioned, please see RHCS8 TKS Low-Level Design (to be written) for detail.
+ // key_version comes from TPS's CS.cfg param: channel.defKeyVersion, which is defaulted to 0
+ // key_index comes from TPS's CS.cfg param: channel.defKeyIndex, which is defaulted to 0
+ // 
+ Secure_Channel *RA_Processor::SetupSecureChannel(RA_Session *session,
+     BYTE key_version, BYTE key_index, const char *connId) {
+       Generate host challenge; // This should be done by TKS.. filing bug
+       Send to SC: InitializeUpdate APDU with key_version, key_index and host challenge;
+       Parse InitializeUpdate command response:
+       /**
+        * Initialize Update response:
+        *   Key Diversification Data - 10 bytes
+        *   Key Information Data - 2 bytes
+        *   Card Challenge - 8 bytes
+        *   Card Cryptogram - 8 bytes
+        */
+ 
+     channel = GenerateSecureChannel(
+        session, connId,
+        key_diversification_data,
+        key_info_data, - keyVersion and keyIndex
+        card_challenge,
+        card_cryptogram,
+        host_challenge);
+ }
+
+The method <i>GenerateSecureChannel</i> handles the server side verification:
+ Secure_Channel *RA_Processor::GenerateSecureChannel(
+    RA_Session *session, const char *connId,
+    Buffer &key_diversification_data, /* CUID */
+    Buffer &key_info_data,
+    Buffer &card_challenge,
+    Buffer &card_cryptogram,
+    Buffer &host_challenge)
+ {
+    call ComputeSessionKey() to get session keys as well as host cryptogram (hcryp);
+    establish Secure Channel:
+      Secure_Channel *channel = new Secure_Channel(...);
+    Set Security Level to the param set in CS.cfg: channel.encryption (default to true, thereby MAC+ENC);
+ }
+
+The method <i>ComputeSessionKey</i> calls to TKS to compute the session keys for the Secure Channel:
+ PK11SymKey *RA::ComputeSessionKey(RA_Session *session,
+                                  Buffer &CUID,
+                                  Buffer &keyInfo,
+                                  Buffer &card_challenge,
+                                  Buffer &host_challenge,
+                                  Buffer **host_cryptogram,
+                                  Buffer &card_cryptogram,
+                                  PK11SymKey **encSymKey,
+                                  char** drm_desKey_s,
+                                  char** kek_desKey_s,
+                                  char** keycheck_s,
+                                  const char *connId)
+ {
+    //call out to TKS to retrieve host cryptogram, K(mac) session key and K(enc) session key;
+    ComputeSessionKey called to TKS with the following Req params:
+        boolean serverKeygen - if true, keys to be generated/archived on server.
+        cuid
+        card_challenge
+        host_challenge
+        KeyInfo - from InitianizeUpdate response from sc. 2 bytes: Key set version, Key index.
+        card_cryptogram
+        keySet - from TPS CS.cfg param (e.g. conn.tks1.keySet=defKeySet)
+     // NOTE: on TKS, key set info is retrieved from TKS's CS.cfg from the KeyInfo and keySet provided in
+     // the ComputeSessionKey request:
+     // keyInfoMap = "tks." + keySet + ".mk_mappings." + KeyInfo;
+     // So, for example, if keySet="defKeySet" and KeyInfo="#02#01" then the TKS CS.cfg param retrieved will be:
+     //     tks.defKeySet.mk_mappings.#02#01=<tokenname>:<nickname>
+ }
+
+The class <i>Secure_Channel</i> is a representation for the Secure Channel. Here is the constructor:
+<pre>
+ Secure_Channel::Secure_Channel(RA_Session *session, PK11SymKey *session_key,
+                   PK11SymKey *enc_session_key,
+                   char *drm_des_key_s,
+                   char *kek_des_key_s, char *keycheck_s,
+    Buffer &key_diversification_data, Buffer &key_info_data,
+    Buffer &card_challenge, Buffer &card_cryptogram,
+    Buffer &host_challenge, Buffer &host_cryptogram)
+ {   
+    m_icv = Buffer(8,(BYTE)0);
+    m_session = session;
+    m_session_key = session_key;
+    m_enc_session_key = enc_session_key;
+    m_drm_wrapped_des_key_s = drm_des_key_s;
+    m_kek_wrapped_des_key_s = kek_des_key_s;
+    m_keycheck_s = keycheck_s; 
+    m_key_diversification_data = key_diversification_data;
+    m_key_info_data = key_info_data;
+    m_card_challenge = card_challenge;
+    m_card_cryptogram = card_cryptogram;
+    m_host_challenge = host_challenge;
+    m_host_cryptogram = host_cryptogram;
+ } /* Secure_Channel */
+</pre>
+
+=== SC Setup Flow ===
+This section is a different way to state the above information. 
+
+# User initiates some action, such as requesting certificate enrollment through the ESC UI.
+# ESC establishes an SSL (server-auth) connection to TPS. (note that the trust needs to be set up beforehand; and client-auth is also available with more steps)
+# ESC sends a request to TPS (over an HTTPS POST request). 
+# TPS determines whether there is a need for applet update (Applet Update is a whole different topic that deserves its own section. The steps are omitted in this doc, since the focus is on Secure Channel).  Applet Update occurs once determined to be necessary.
+# TPS generates 8 random bytes to be used as the “host challenge” (hch), in preparing for Secure Channel setup
+# TPS sends to Token an APDU command (InitializeUpdate) with KeyID (key set info) and Host Challenge (hch) that causes the Token to:
+## generate 8 random byte card challenge (cch)
+## generate Card cryptogram (ccryp) using K(enc,auth), hch, and cch
+## generate session keys
+# Token replies to TPS with these values with InitializeUpdate response:
+## keySet version, key index
+## Card challenge (cch)
+## Card cryptogram (ccryp)
+# TPS establishes an SSL (client-auth) connection to TKS.
+# TPS sends command to TKS to generate session keys  and host cryptogram with these parameters:
+## CUID of the token in question
+## keyInfo
+## card challenge (cch)
+# TKS verifies the card cryptogram against the host cryptogram, and returns to TPS:
+## K(enc,auth) session key
+## K(mac) session key
+## host cryptogram
+# TPS sends to Token the ExternalAuthenticate APDU command to wrap up the establishment of Secure Channel:
+## hcryp
+## Security Level (No security, MAC, or MAC+Enc)
+# Token validates that ccryp and hcryp are the same. Token notes the requested security level for all future communications with TPS
+# Before further communication, there is a check for the need for key change over.
+
+TPS now has session keys it can use to communicate securely with the Token,  over the SSL channel between ESC and TPS (if set), secured by the Security Level agreed upon between the card and TPS.

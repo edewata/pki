@@ -1,0 +1,35 @@
+= PKI CI Container =
+
+== Repositories ==
+
+Source repositories:
+
+* https://github.com/dogtagpki/pki-ci/tree/master/docker
+
+Image repositories:
+
+* https://hub.docker.com/r/dogtagpki/pki-ci/
+
+== Pulling PKI CI Container ==
+
+To pull PKI CI container:
+
+<pre>
+$ docker pull dogtagpki/pki-ci:f26_105
+</pre>
+
+== Building PKI CI Container ==
+
+To build PKI CI container:
+
+<pre>
+$ docker build -t pki-ci docker/f26_105
+</pre>
+
+* https://hub.docker.com/r/dogtagpki/pki-ci/builds/
+* https://hub.docker.com/r/dogtagpki/pki-ci/~/settings/automated-builds/
+
+= See Also =
+
+* [[PKI CA Container]]
+* [[CI Containers]]

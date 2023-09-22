@@ -1,0 +1,279 @@
+= PKI FIPS Ciphers =
+
+The following ciphers are enabled by default in PKI:
+
+{| class="wikitable"
+! Cipher ID
+! IANA/NSS Cipher Name
+! OpenSSL Cipher Name
+|-
+| 0x0033
+| TLS_DHE_RSA_WITH_AES_128_CBC_SHA
+| DHE-RSA-AES128-SHA
+|-
+| 0x0039
+| TLS_DHE_RSA_WITH_AES_256_CBC_SHA
+| DHE-RSA-AES256-SHA
+|-
+| 0x003c
+| TLS_RSA_WITH_AES_128_CBC_SHA256
+| AES128-SHA256
+|-
+| 0x003d
+| TLS_RSA_WITH_AES_256_CBC_SHA256
+| AES256-SHA256
+|-
+| 0x0067
+| TLS_DHE_RSA_WITH_AES_128_CBC_SHA256
+| DHE-RSA-AES128-SHA256
+|-
+| 0x006b
+| TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
+| DHE-RSA-AES256-SHA256
+|-
+| 0x009e
+| TLS_DHE_RSA_WITH_AES_128_GCM_SHA256
+| DHE-RSA-AES128-GCM-SHA256
+|}
+
+See also:
+
+* [https://wiki.openssl.org/index.php/FIPS_mode_and_TLS FIPS mode and TLS]
+* [https://pagure.io/dogtagpki/issue/2855 Ticket #2855 - Restrict default cipher suite to those ciphers permitted in FIPS mode]
+* [https://testssl.sh/openssl-iana.mapping.html Mapping OpenSSL cipher suite names to IANA names]
+
+= RSA Server in FIPS mode =
+
+In FIPS mode, certain HSMs may require enabling certain SSL ciphers in order to work with PKI CLI and Firefox 34 or older (newer Firefox will not work).
+
+For Thales HSM, enable the following SSL range ciphers for '''RSA ciphers''':
+* TLS_DHE_RSA_WITH_AES_128_CBC_SHA
+* TLS_DHE_RSA_WITH_AES_256_CBC_SHA
+* TLS_DHE_RSA_WITH_AES_128_CBC_SHA256
+* TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
+* TLS_DHE_RSA_WITH_AES_128_GCM_SHA256
+* TLS_RSA_WITH_AES_128_CBC_SHA256
+* TLS_RSA_WITH_AES_256_CBC_SHA256
+* TLS_RSA_WITH_AES_128_CBC_SHA (may need to remain enabled in order to talk to the LDAP server during pkispawn installation/configuration)
+* TLS_RSA_WITH_AES_256_CBC_SHA (may need to remain enabled in order to talk to the LDAP server during pkispawn installation/configuration)
+
+Disable everything else in SSL range ciphers.
+
+The <Connector> element in server.xml will look like the following:
+
+<pre>
+<Connector
+    ...
+    sslRangeCiphers="
+-TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA,
+-TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA,
+-TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA,
+-TLS_ECDH_RSA_WITH_AES_128_CBC_SHA,
+-TLS_ECDH_RSA_WITH_AES_256_CBC_SHA,
+-TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA,
+-TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
+-TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA,
+-TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
+-TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,
+-TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+-TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+-TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA,
+-TLS_DHE_DSS_WITH_AES_128_CBC_SHA,
+-TLS_DHE_DSS_WITH_AES_256_CBC_SHA,
+-TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA,
++TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
++TLS_DHE_RSA_WITH_AES_256_CBC_SHA,
++TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,
++TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,
++TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,
+-TLS_DHE_DSS_WITH_AES_128_GCM_SHA256,
+-TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,
+-TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
+-TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+-TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
++TLS_RSA_WITH_AES_128_CBC_SHA256,
++TLS_RSA_WITH_AES_256_CBC_SHA256,
+-TLS_RSA_WITH_AES_128_GCM_SHA256,
+-TLS_RSA_WITH_3DES_EDE_CBC_SHA,
++TLS_RSA_WITH_AES_128_CBC_SHA,
++TLS_RSA_WITH_AES_256_CBC_SHA"
+    .../>
+</pre>
+
+== Installing RSA Server in FIPS Mode ==
+
+In systems prior to Fedora 27 (pki-core-10.5.5-1), in order to configure an RSA server, it was necessary to run pkispawn in two separate steps (installation and configuration).
+
+With the completion of https://pagure.io/dogtagpki/issue/2855 which altered FIPS ciphers to be the default cipher suite,
+pkispawn installation/configuration can be run in a single pass, and the same default RSA cipher suite is utilized, regardless of whether or not FIPS has been enabled or disabled.
+
+For systems running Fedora 27 (pki-core-10.5.5-1) or later, the following sample procedure may be used to create a Dogtag CA RSA Server using a software token after enabling [[FIPS]] mode:
+
+    # pkispawn -s CA -f /root/pki/ca.cfg
+    
+        where 'ca.cfg' contains:
+    
+            [DEFAULT]
+            pki_admin_password=<password>
+            pki_client_pkcs12_password=<password>
+            pki_ds_password=<password>
+            
+            # Optionally keep client databases
+            pki_client_database_purge=False
+    
+Check '<instance>/conf/server.xml':
+
+ sslVersionRangeStream="tls1_1:tls1_2"
+ 
+ sslRangeCiphers="-TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA,-TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA,-TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA,-TLS_ECDH_RSA_WITH_AES_128_CBC_SHA,
+                  -TLS_ECDH_RSA_WITH_AES_256_CBC_SHA,-TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA,-TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,-TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA,
+                  -TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,-TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,-TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,-TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+                  -TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA,-TLS_DHE_DSS_WITH_AES_128_CBC_SHA,-TLS_DHE_DSS_WITH_AES_256_CBC_SHA,-TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA,
+                  +TLS_DHE_RSA_WITH_AES_128_CBC_SHA,+TLS_DHE_RSA_WITH_AES_256_CBC_SHA,+TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,+TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,
+                  +TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,-TLS_DHE_DSS_WITH_AES_128_GCM_SHA256,-TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,-TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
+                  -TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,-TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,+TLS_RSA_WITH_AES_128_CBC_SHA256,+TLS_RSA_WITH_AES_256_CBC_SHA256,
+                  -TLS_RSA_WITH_AES_128_GCM_SHA256,-TLS_RSA_WITH_3DES_EDE_CBC_SHA,+TLS_RSA_WITH_AES_128_CBC_SHA,+TLS_RSA_WITH_AES_256_CBC_SHA"
+
+The following ciphers should be enabled:
+    
+* TLS_DHE_RSA_WITH_AES_128_CBC_SHA
+* TLS_DHE_RSA_WITH_AES_256_CBC_SHA
+* TLS_DHE_RSA_WITH_AES_128_CBC_SHA256
+* TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
+* TLS_DHE_RSA_WITH_AES_128_GCM_SHA256
+* TLS_RSA_WITH_AES_128_CBC_SHA256
+* TLS_RSA_WITH_AES_256_CBC_SHA256
+* TLS_RSA_WITH_AES_128_CBC_SHA
+* TLS_RSA_WITH_AES_256_CBC_SHA
+
+= ECC Server in FIPS mode =
+
+In FIPS mode, certain HSMs may require enabling certain SSL ciphers in order to work with PKI CLI and Firefox 34 or older (newer Firefox will not work).
+
+For Thales HSM, enable the following SSL range ciphers for '''ECC ciphers''':
+* TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA
+* TLS_RSA_WITH_AES_256_CBC_SHA
+* TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA
+* TLS_RSA_WITH_AES_256_CBC_SHA256
+* TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256
+* TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+
+Disable everything else in SSL range ciphers.
+
+The <Connector> element in server.xml will look like the following:
+
+<pre>
+<Connector
+    ...
+    sslRangeCiphers="
+-TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA,
+-TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA,
+-TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA,
+-TLS_ECDH_RSA_WITH_AES_128_CBC_SHA,
+-TLS_ECDH_RSA_WITH_AES_256_CBC_SHA,
+-TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA,
++TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
+-TLS_RSA_WITH_3DES_EDE_CBC_SHA,
+-TLS_RSA_WITH_AES_128_CBC_SHA,
++TLS_RSA_WITH_AES_256_CBC_SHA,
+-TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA,
++TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
+-TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,
+-TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+-TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA,
+-TLS_DHE_DSS_WITH_AES_128_CBC_SHA,
+-TLS_DHE_DSS_WITH_AES_256_CBC_SHA,
+-TLS_DHE_DSS_WITH_AES_128_GCM_SHA256,
+-TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA,
+-TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
+-TLS_DHE_RSA_WITH_AES_256_CBC_SHA,
+-TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,
+-TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,
+-TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,
+-TLS_RSA_WITH_AES_128_CBC_SHA256,
++TLS_RSA_WITH_AES_256_CBC_SHA256,
+-TLS_RSA_WITH_AES_128_GCM_SHA256,
++TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,
++TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+-TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+-TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,
+-TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+    .../>
+</pre>
+
+== Installing ECC Server in FIPS Mode ==
+
+In order to configure an ECC server, pkispawn installation/configuration has always been able to be run in a single pass.
+
+With the completion of https://pagure.io/dogtagpki/issue/2855 which altered FIPS ciphers to be the default cipher suite,
+pkispawn installation/configuration can be run in a single pass, and the same default ECC cipher suite is utilized, regardless of whether or not FIPS has been enabled or disabled.
+
+The following sample procedure may be used to create a Dogtag CA ECC Server using a software token after enabling [[FIPS]] mode:
+
+    # pkispawn -s CA -f /root/pki/ca_ecc.cfg
+    
+        where 'ca_ecc.cfg' contains:
+    
+            [DEFAULT]
+            pki_admin_password=<password>
+            pki_client_pkcs12_password=<password>
+            pki_ds_password=<password>
+            
+            # Override default RSA Admin parameters with ECC parameters
+            pki_admin_key_algorithm=SHA256withEC
+            pki_admin_key_size=nistp256
+            pki_admin_key_type=ecc
+            
+            # Override default RSA SSL Server parameters with ECC parameters
+            pki_sslserver_key_algorithm=SHA256withEC
+            pki_sslserver_key_size=nistp256
+            pki_sslserver_key_type=ecc
+            
+            # Override default RSA Subsystem parameters with ECC parameters
+            pki_subsystem_key_algorithm=SHA256withEC
+            pki_subsystem_key_size=nistp256
+            pki_subsystem_key_type=ecc
+            
+            # Optionally keep client databases
+            pki_client_database_purge=False
+            
+            [CA]
+            # Override default RSA CA Signing parameters with ECC parameters
+            pki_ca_signing_key_algorithm=SHA256withEC
+            pki_ca_signing_key_size=nistp256
+            pki_ca_signing_key_type=ecc
+            pki_ca_signing_signing_algorithm=SHA256withEC
+            
+            # Override default RSA CA OCSP Signing parameters with ECC parameters
+            pki_ocsp_signing_key_algorithm=SHA256withEC
+            pki_ocsp_signing_key_size=nistp256
+            pki_ocsp_signing_key_type=ecc
+            pki_ocsp_signing_signing_algorithm=SHA256withEC
+
+Check '<instance>/conf/server.xml':
+
+ sslVersionRangeStream="tls1_1:tls1_2"
+ 
+ sslRangeCiphers="-TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA,-TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA,-TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA,-TLS_ECDH_RSA_WITH_AES_128_CBC_SHA,
+                  -TLS_ECDH_RSA_WITH_AES_256_CBC_SHA,-TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA,-TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA,+TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
+                  -TLS_RSA_WITH_3DES_EDE_CBC_SHA,-TLS_RSA_WITH_AES_128_CBC_SHA,+TLS_RSA_WITH_AES_256_CBC_SHA,+TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
+                  -TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,-TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,-TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA,-TLS_DHE_DSS_WITH_AES_128_CBC_SHA,
+                  -TLS_DHE_DSS_WITH_AES_256_CBC_SHA,-TLS_DHE_DSS_WITH_AES_128_GCM_SHA256,-TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA,-TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
+                  -TLS_DHE_RSA_WITH_AES_256_CBC_SHA,-TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,-TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,-TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,
+                  -TLS_RSA_WITH_AES_128_CBC_SHA256,+TLS_RSA_WITH_AES_256_CBC_SHA256,-TLS_RSA_WITH_AES_128_GCM_SHA256,+TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,
+                  +TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,-TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,-TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,-TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+
+The following ciphers should be enabled:
+    
+* TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA
+* TLS_RSA_WITH_AES_256_CBC_SHA
+* TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA
+* TLS_RSA_WITH_AES_256_CBC_SHA256
+* TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256
+* TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+
+= References =
+
+* [[FIPS]]
+* [https://github.com/dogtagpki/pki/wiki/SSL SSL]
+* [[OpenSSL Ciphers]]

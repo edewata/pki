@@ -1,0 +1,120 @@
+= Checking SELinux mode =
+
+<pre>
+$ getenforce
+Enforcing
+</pre>
+
+= Changing SELinux mode =
+
+<pre>
+$ setenforce 0
+</pre>
+
+= Listing SELinux Contexts =
+
+ $ semanage fcontext -l
+ SELinux fcontext                                   type               Context
+ 
+ /                                                  directory          system_u:object_r:root_t:s0
+ /.*                                                all files          system_u:object_r:default_t:s0
+ ...
+ /etc/pki/<font color="red">instance</font>(/.*)?                          all files          system_u:object_r:pki_tomcat_etc_rw_t:s0
+ /etc/pki/<font color="red">instance</font>/alias(/.*)?                    all files          system_u:object_r:pki_tomcat_cert_t:s0
+ /usr/lib/systemd/system/pki-tomcat.*               all files          system_u:object_r:pki_tomcat_unit_file_t:s0
+ /var/lib/pki/<font color="red">instance</font>(/.*)?                      all files          system_u:object_r:pki_tomcat_var_lib_t:s0
+ /var/log/pki/<font color="red">instance</font>(/.*)?                      all files          system_u:object_r:pki_tomcat_log_t:s0
+
+= Creating SELinux Contexts =
+
+* [https://github.com/dogtagpki/pki/wiki/Creating-SELinux-Contexts-with-CLI Creating SELinux Contexts with CLI]
+* [https://github.com/dogtagpki/pki/wiki/Creating-SELinux-Contexts-with-Python-API Creating SELinux Contexts with Python API]
+
+= Removing SELinux Contexts =
+
+* [https://github.com/dogtagpki/pki/wiki/Removing-SELinux-Contexts-with-CLI Removing SELinux Contexts with CLI]
+* [https://github.com/dogtagpki/pki/wiki/Removing-SELinux-Contexts-with-Python-API Removing SELinux Contexts with Python API]
+
+= Displaying SELinux Contexts =
+
+ $ ls -lZ /var/lib/pki/<font color="red">instance</font>
+ lrwxrwxrwx. 1 pkiuser pkiuser system_u:object_r:pki_tomcat_var_lib_t:s0   25 Jul 26 14:28 alias -> /etc/pki/<font color="red">instance</font>/alias
+ lrwxrwxrwx. 1 pkiuser pkiuser system_u:object_r:pki_tomcat_var_lib_t:s0   21 Jul 26 14:28 bin -> /usr/share/tomcat/bin
+ drwxrwx---. 5 pkiuser pkiuser system_u:object_r:pki_tomcat_var_lib_t:s0  104 Jul 26 14:28 ca
+ lrwxrwxrwx. 1 pkiuser pkiuser system_u:object_r:pki_tomcat_var_lib_t:s0   28 Jul 26 14:28 common -> /usr/share/pki/server/common
+ lrwxrwxrwx. 1 pkiuser pkiuser system_u:object_r:pki_tomcat_var_lib_t:s0   19 Jul 26 14:28 conf -> /etc/pki/<font color="red">instance</font>
+ drwxrwx---. 2 pkiuser pkiuser system_u:object_r:pki_tomcat_var_lib_t:s0 4096 Jul 26 14:28 lib
+ lrwxrwxrwx. 1 pkiuser pkiuser system_u:object_r:pki_tomcat_var_lib_t:s0   23 Jul 26 14:28 logs -> /var/log/pki/<font color="red">instance</font>
+ lrwxrwxrwx. 1 root    root    system_u:object_r:pki_tomcat_var_lib_t:s0   16 Jul 26 14:28 <font color="red">instance</font> -> /usr/sbin/tomcat
+ drwxrwx---. 2 pkiuser pkiuser system_u:object_r:pki_tomcat_var_lib_t:s0    6 Jul 26 14:28 temp
+ drwxr-xr-x. 2 pkiuser pkiuser system_u:object_r:pki_tomcat_var_lib_t:s0    6 Jul 26 14:28 webapps
+ drwxrwx---. 3 pkiuser pkiuser system_u:object_r:pki_tomcat_var_lib_t:s0   22 Jul 26 14:28 work
+
+= Restoring SELinux Contexts =
+
+<pre>
+$ restorecon -FR /var/lib/pki/pki-tomcat
+</pre>
+
+= Listing SELinux Ports =
+
+<pre>
+$ semanage port -l
+</pre>
+
+= Verification =
+
+Reset the audit log:
+
+<pre>
+$ cat /dev/null > /var/log/audit/audit.log
+</pre>
+
+Switch to permissive mode:
+
+<pre>
+$ setenforce 0
+</pre>
+
+Run the tests, then check the AVCs in the audit log:
+
+<pre>
+$ audit2allow -i /var/log/audit/audit.log
+</pre>
+
+Switch to enforcing mode:
+
+<pre>
+$ setenforce 1
+</pre>
+
+Run the tests again to make sure it works.
+
+= Listing AVC Messages =
+
+<pre>
+$ ausearch -m AVC
+</pre>
+
+= Issues =
+
+== Running Java under HTTPD ==
+
+AVC denial:
+
+<pre>
+type=AVC msg=audit(1571779838.122:1337): avc:  denied  { execmem } for  pid=108666 comm="java" scontext=system_u:system_r:httpd_t:s0 tcontext=system_u:system_r:httpd_t:s0 tclass=process permissive=0
+</pre>
+
+Possible solution:
+
+<pre>
+$ setsebool -P httpd_execmem 1
+</pre>
+
+= References =
+
+* [https://github.com/dogtagpki/pki/wiki/SELinux SELinux]
+* [https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/SELinux_Users_and_Administrators_Guide/ RHEL 7 SELinux User's and Administrator's Guide]
+* [https://access.redhat.com/articles/2191331 Basic SELinux Troubleshooting in CLI]
+* [https://www.thegeekdiary.com/how-to-install-and-configrue-setroubleshootd-on-centos-rhel/ How to install and configure “setroubleshootd” on CentOS/RHEL]

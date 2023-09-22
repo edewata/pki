@@ -1,0 +1,54 @@
+= Installation =
+
+Download a [https://www.centos.org/download/ CentOS ISO]. Create a VM with [[KVM]].
+
+= RPM Package Repositories =
+
+== Official repositories ==
+
+* [http://mirror.centos.org/centos/6/ CentOS 6 repo]
+* [http://mirror.centos.org/centos/7/ CentOS 7 repo]
+* [https://git.centos.org/summary/?r=rpms/pki-core Source repo]
+
+== Development repositories ==
+
+* [https://copr.fedorainfracloud.org/groups/g/pki/coprs/ @pki Group repos]
+* [https://copr.fedorainfracloud.org/coprs/edewata/pki-epel-7/ edewata/pki-epel-7 repo]
+
+== Third-party repositories ==
+
+* [https://github.com/marksteele/marksteele.github.io/tree/master/repo/CentOS/7 Mark Steele's CentOS 7 repo]
+
+= Getting the Source Code =
+
+<pre>
+$ cd WORK_DIR
+$ git clone git://git.fedorahosted.org/git/pki.git
+</pre>
+
+= Building RPM Packages =
+
+<pre>
+$ cd WORK_DIR
+$ pki/scripts/compose_pki_core_packages srpm
+</pre>
+
+The RPM packages will be available in WORK_DIR/packages/RPMS folder.
+
+= Building Source RPM =
+
+<pre>
+$ cd WORK_DIR
+$ pki/scripts/compose_pki_core_packages srpm
+</pre>
+
+The source RPM will be available in WORK_DIR/packages/SRPMS folder.
+
+= References =
+
+* [[Releases]]
+* [https://github.com/dogtagpki/pki/wiki/CentOS-Packaging-Guide CentOS Packaging Guide]
+* [https://www.centos.org/ CentOS]
+* [[Fedora]]
+* [[Debian]]
+* [[EPEL]]

@@ -1,0 +1,34 @@
+== Team, History, and Contributors ==
+
+* [[PKI_Credit|PKI Team, History, and Contributors]]
+
+== Releases ==
+
+* Dogtag Certificate System 9.0
+* Dogtag Certificate System 1.3
+* Dogtag Certificate System 1.2.0
+* Dogtag Certificate System 1.1.0
+* Dogtag Certificate System 1.0.0
+
+== Next Steps ==
+
+This is a community-based project. Your ideas matter and it will shape our roadmap. Please add your ideas to the [[PKI_Wishlist|Wishlist]].
+
+=== Future ===
+
+* Allow '''tomcatjss''' to be provided as part of the operating system
+* Allow '''osutil''' to be provided as part of the operating system
+* Create a symmetric key API inside of '''jss''', and change '''pki-symkey''' to utilize this new symmetric key API
+* Provide an inventory and descriptions of all of the various tools present in this PKI
+* Provide some real world use cases for this product
+* Update the code to use newer openJDK features
+* Make certificate enrollment, renewal dead easy with other products such as Apache, tomcat
+* Simplify the configuration, and provide more detailed documentation in this area
+* Provide greater detail on the use of pkisilent
+* Clarify development practices including how to remove PKI instances and subsystems
+* Provide clean XML-based external interface
+* Enhance Performance in enrollment and CRL generation
+* Update user, agent interfaces to use Ajax-style navigation
+* Merge TPS agent interface with the security officer interface
+* Fine-tune TPS and ESC interaction for handling the lost key scenario
+* Support Failover/Cloning everywhere including TPS

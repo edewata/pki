@@ -1,0 +1,76 @@
+= Overview =
+
+This page describes how to use [https://www.ej-technologies.com/products/jprofiler/overview.html JProfiler Java Profiler] on PKI server.
+
+= Installing JProfiler =
+
+[https://www.ej-technologies.com/download/jprofiler/files Download] JProfiler:
+
+<pre>
+$ wget https://download-gcdn.ej-technologies.com/jprofiler/jprofiler_linux_11_1_2.rpm
+$ dnf install ./jprofiler_linux_11_1_2.rpm
+</pre>
+
+JProfiler will be installed in /opt/jprofiler11 folder.
+
+Alternatively:
+
+<pre>
+$ wget https://download-gcdn.ej-technologies.com/jprofiler/jprofiler_linux_11_1_2.sh
+$ sh jprofiler_linux_11_1_2.sh
+</pre>
+
+JProfiler will be installed in ~/jprofiler11 folder.
+
+= Running JProfiler =
+
+To run JProfiler:
+
+<pre>
+$ /opt/jprofiler11/bin/jprofiler
+</pre>
+
+= Enabling JProfiler Agent =
+
+Select a port for JProfiler agent (e.g. 8849). If [[SELinux]] is enabled, enable the SELinux port:
+
+<pre>
+$ semanage port -a -t http_port_t -p tcp 8849
+</pre>
+
+In PKI 10.9 or later, to run the server with JProfiler agent:
+
+<pre>
+$ pki-server run --agentpath /opt/jprofiler11/bin/linux-x64/libjprofilerti.so=port=8849
+JProfiler> Listening on port: 8849.
+JProfiler> Enabling native methods instrumentation.
+JProfiler> Can retransform classes.
+JProfiler> Can retransform any class.
+JProfiler> Native library initialized
+JProfiler> VM initialized
+JProfiler> Waiting for a connection from the JProfiler GUI ...
+</pre>
+
+It will run the server in foreground.
+
+Alternatively, edit /etc/sysconfig/pki-tomcat and define the JProfiler agent as follows:
+
+<pre>
+JAVA_OPTS="-agentpath:/opt/jprofiler11/bin/linux-x64/libjprofilerti.so=port=8849,nowait"
+</pre>
+
+Then restart the systemd service. If the service fails to start, check the systemd journal for errors.
+
+= Connecting to PKI Server =
+
+Once the server is started, in JProfiler open '''Start Center''' -> '''Quick Attach''', select '''On another computer'''.
+Select '''Direct connection to''', then enter the hostname and JProfiler port.
+
+= See Also =
+
+* [[Java]]
+* [https://www.ej-technologies.com/buy/jprofiler/openSource JProfiler: Open Source Licenses]
+* [https://www.ej-technologies.com/resources/jprofiler/v/11.1/help/doc/main/profiling.html JProfiler: Profiling A JVM]
+* [https://www.ej-technologies.com/resources/jprofiler/v/11.1/help/doc/advancedConfig/troubleShooting.html JProfiler: Trouble Shooting Connection Problems]
+* [https://docs.oracle.com/javase/1.5.0/docs/guide/jvmti/jvmti.html JVM Tool Interface]
+* [[VisualVM]]

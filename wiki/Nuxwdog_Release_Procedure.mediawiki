@@ -1,0 +1,183 @@
+= Overview =
+
+This page describes the process to release '''nuxwdog''' on Fedora.
+
+A simple and neat workflow for this process would be:
+
+# Commit changes locally on the local upstream (github) repo
+# Tagging upstream repo locally
+# Generate source tarball using ''git'' (rather than ''tar'')
+# Importing into fedpkg using ''fedpkg new-sources''
+# Committing the source package repo
+# Building in COPR (testing)
+# Push to upstream (github) repo
+# Tag upstream (github) repo
+# Push changes to source package repo
+# Create koji build
+# Tag source package repo
+# Submit for bodhi update (if required)
+# Make a GH release
+
+= Authentication =
+
+Obtain a Kerberos ticket for FEDORAPROJECT.ORG account and [[COPR]] authentication token.
+
+= Getting Source Package =
+
+The repository for '''nuxwdog''' source package for Fedora is located at https://src.fedoraproject.org/rpms/nuxwdog. To clone the repository locally:
+
+ $ fedpkg clone nuxwdog
+ $ cd nuxwdog
+
+The repository can be forked for development. To add the fork into the local repository:
+
+ $ git remote add <username> ssh://<username>@pkgs.fedoraproject.org/forks/<username>/rpms/nuxwdog.git
+ $ git fetch <username>
+
+= Updating Version and Release Numbers =
+
+Follow this guideline to update the version number, release number, and phase in the [https://github.com/dogtagpki/nuxwdog/blob/master/nuxwdog.spec spec template]:
+
+* version: <x>.<y>.<z>
+* release: 0.1, 0.2, ..., 1, 2, ...
+* phase: a1, a2, ..., b1, b2, ...
+
+For pre-releases, set the version number to <x>.<y>.0, set the release number to 0.<n>, and phase to -<phase>:
+
+<pre>
+Version:        1.0.0
+Release:        0.1%{?_timestamp}%{?_commit_id}%{?dist}
+%global         _phase -a1
+</pre>
+
+For initial release, keep the version number as <x>.<y>.0, set the release number to 1, and comment out the phase:
+
+<pre>
+Version:        1.0.0
+Release:        1%{?_timestamp}%{?_commit_id}%{?dist}
+# %global       _phase -a1
+</pre>
+
+For upstream updates (i.e. upstream bug fixes), increment the <z> in the version number, set the release number to 1:
+
+<pre>
+Version:        1.0.1
+Release:        1%{?_timestamp}%{?_commit_id}%{?dist}
+# %global       _phase -a1
+</pre>
+
+For downstream patches (e.g. platform-specific patches), keep the version number as <x>.<y>.<z>, increment the release number:
+
+<pre>
+Version:        1.0.1
+Release:        2%{?_timestamp}%{?_commit_id}%{?dist}
+# %global       _phase -a1
+</pre>
+
+See also:
+
+* [[Versioning Scheme]]
+* [https://fedoraproject.org/wiki/Packaging:Versioning Guidelines for Versioning Fedora Packages]
+
+= Merging Spec Changes =
+
+To merge the spec template with the actual spec files:
+
+ $ meld <font color="red">nuxwdog</font>/nuxwdog.spec <font color="red">Fedora/nuxwdog</font>/nuxwdog.spec
+
+In the actual spec files, add a change log entry for the new release in downstream spec file (unless there is one already that has not been released):
+
+ * Tue May 29 2018 Dogtag PKI Team <pki-devel@redhat.com> - 1.0.4-1
+ - Rebased to Nuxwdog 1.0.4
+
+'''Notes:'''
+* Do not override changes that were done downstream unless they were done improperly.
+* Do not add a change log entry in the upstream spec template.
+* There might be changes that cannot be merged. This is OK.
+
+= Commit Upstream Changes =
+
+Commit all changes to upstream:
+
+ $ git commit -a -m "Updated version number to x.y.z-r"
+
+Create a local tag with the following commands:
+
+ $ git tag v1.0.4
+
+For pre-releases, append the phase name to the version number, e.g. v1.0.4-a1.
+
+= Update Source Tarball =
+
+Generate a tarball with the following commands:
+
+ $ cd <font color="red">nuxwdog</font>
+ $ git -C . archive --format=tar.gz --prefix nuxwdog-<version> -o nuxwdog-<version>.tar.gz v<version>-<release>
+
+Import the source tarball with the following commands:
+
+ $ cd <font color="red">Fedora/nuxwdog</font>
+ $ fedpkg new-sources <font color="red">nuxwdog</font>/release/dist/rpmpkg/SOURCES/nuxwdog-1.0.4.tar.gz
+
+Then verify with the following commands:
+
+ $ fedpkg local
+ $ fedpkg lint
+
+= Creating Test Build =
+
+Create a [[COPR]] build with the following command:
+
+ $ cd <font color="red">Fedora/nuxwdog</font>
+ $ fedpkg copr-build <user/group>/<repo-name> --nowait
+
+or create a scratch build (testing in Koji) with the following commands:
+ 
+* If you have updated sources using the above command '''fedpkg new-sources''', then skip this step
+
+ $ cp <font color="red">nuxwdog</font>/release/dist/rpmpkg/SOURCES/nuxwdog-1.0.4.tar.gz
+
+Generate source rpm (srpm):
+
+ $ fedpkg srpm
+ $ fedpkg scratch-build --nowait --srpm nuxwdog-1.0.4-2.fc29.src.rpm
+
+Once the test build is complete, push the changes and tag upstream:
+
+ $ cd <font color="red">nuxwdog</font>
+ $ git push origin master
+ $ git push origin v1.0.4
+
+= Koji Release =
+== Commit Source Package Changes ==
+
+Commit the changes to master (i.e. rawhide):
+
+ $ cd <font color="red">Fedora/nuxwdog</font>
+ $ git commit -m "Rebased to nuxwdog 1.0.4"
+ $ git push origin master
+
+
+== Creating Koji Build for Rawhide ==
+
+Create an official Koji build:
+
+ $ cd <font color="red">Fedora/nuxwdog</font>
+ $ fedpkg build --nowait
+
+If necessary, the task can be monitored with the following command:
+
+ $ koji watch-task <task ID>
+
+Once the build is complete, tag the source package repository:
+
+ $ git tag nuxwdog-1.0.4-2.fc29
+ $ git push origin nuxwdog-1.0.4-2.fc29
+
+= Creating GitHub Release =
+
+Go to https://github.com/dogtagpki/nuxwdog/releases/ and draft a new release (if required).
+
+Include links to the new releases:
+
+* https://src.fedoraproject.org/rpms/nuxwdog/releases

@@ -1,0 +1,78 @@
+= Overview =
+
+{| class="wikitable"
+! Section
+! Description
+|-
+| 1
+| General commands
+|-
+| 2
+| System calls
+|-
+| 3
+| Library functions, covering in particular the C standard library
+|-
+| 4
+| Special files (usually devices, those found in /dev) and drivers
+|-
+| 5
+| File formats and conventions
+|-
+| 6
+| Games and screensavers
+|-
+| 7
+| Miscellanea
+|-
+| 8
+| System administration commands and daemons
+|}
+
+Source: [https://en.wikipedia.org/wiki/Man_page Man Page]
+
+= Viewing Man Page =
+
+<pre>
+$ man [section] <page>
+</pre>
+
+= Styling =
+
+From [http://man7.org/linux/man-pages/man7/man-pages.7.html man-pages(7)]:
+
+   Formatting conventions for manual pages describing commands
+       For manual pages that describe a command (typically in Sections 1 and
+       8), the arguments are always specified using italics, even in the
+       SYNOPSIS section.
+ 
+       The name of the command, and its options, should always be formatted
+       in bold.
+
+= Converting Markdown to Roff Man Page =
+
+<pre>
+$ go-md2man -in <markdown file> -out <roff file>
+</pre>
+
+= Previewing Roff Man Page =
+
+<pre>
+$ man <roff file>
+</pre>
+
+= Clearing Man Page Cache =
+
+<pre>
+$ mandb
+</pre>
+
+= References =
+
+* [https://github.com/dogtagpki/pki/wiki/Manuals PKI Manual Pages]
+* [[PKI Fedora Development]]
+* [https://liw.fi/manpages/ Writing manual pages]
+* [http://man7.org/linux/man-pages/man7/man-pages.7.html man-pages(7)]
+* [https://www.kernel.org/doc/man-pages/ The Linux man-pages project]
+* [https://www.gnu.org/software/groff/manual/html_node/Man-usage.html The GNU Troff Manual]
+* [[Markdown]]

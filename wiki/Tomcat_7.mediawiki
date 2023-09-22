@@ -1,0 +1,21 @@
+= Installation =
+
+<pre>
+$ wget http://mirror.wanxp.id/apache/tomcat/tomcat-7/v7.0.73/bin/apache-tomcat-7.0.73.tar.gz
+$ tar xzvf apache-tomcat-7.0.73.tar.gz
+$ mv apache-tomcat-7.0.73 /usr/share
+$ cd /usr/share
+$ ln -s apache-tomcat-7.0.73 tomcat70
+$ chown -R root.tomcat tomcat70/
+</pre>
+
+= Getting Source Code =
+
+<pre>
+$ dnf builddep tomcat
+$ git clone https://github.com/apache/tomcat70.git
+</pre>
+
+= References =
+
+* [[Tomcat]]

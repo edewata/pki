@@ -1,0 +1,52 @@
+= Installation =
+
+<pre>
+$ dnf install fedpkg standard-test-roles
+</pre>
+
+= Defining Tests =
+
+Create tests/tests.yml:
+
+<pre>
+- hosts: localhost
+  roles:
+  - role: standard-test-basic
+    tags:
+    - classic
+    tests:
+    - simple:
+        dir: .
+        run: "<command> --help"
+</pre>
+
+= Running Tests =
+
+Run the tests as root user:
+
+<pre>
+$ cd tests
+$ ansible-playbook --tags=classic tests.yml
+</pre>
+
+= Defining Package-specific Policies =
+
+Create gating.yaml:
+
+<pre>
+--- !Policy
+product_versions:
+  - fedora-*
+decision_context: bodhi_update_push_testing
+rules:
+  - !PassingTestCaseRule {test_case_name: dist.depcheck}
+</pre>
+
+= References =
+
+* [[Fedora]]
+* [https://fedoraproject.org/wiki/CI/Tests CI/Tests]
+* [https://fedoraproject.org/wiki/CI/Standard_Test_Interface CI/Standard Test Interface]
+* [https://fedoraproject.org/wiki/CI/Standard_Test_Roles CI/Standard Test Roles]
+* [https://fedoraproject.org/wiki/Changes/InvokingTests Standard Discovery, Staging and Invocation of Integration Tests]
+* [https://docs.pagure.org/greenwave/package-specific-policies.html Package-specific policies]

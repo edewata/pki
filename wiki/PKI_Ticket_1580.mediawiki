@@ -1,0 +1,18 @@
+= Overview =
+
+= Steps to Reproduce =
+
+* [https://github.com/dogtagpki/pki/blob/master/docs/installation/ca/Installing_CA.md Installing CA]
+* [https://github.com/dogtagpki/pki/blob/master/docs/installation/kra/Installing_KRA.md Installing KRA]]
+* [https://github.com/dogtagpki/pki/blob/master/docs/installation/ca/Installing_CA_Clone.md Installing CA Clone]
+* Search the directory:
+
+<pre>
+$ ldapsearch -x -D "cn=Directory Manager" -w Secret.123 -b "dc=ca,dc=example,dc=com" "(uid=caadmin)" dn uid
+</pre>
+
+It will return multiple entries.
+
+= References =
+
+* [https://github.com/dogtagpki/pki/issues/2139 Ticket #2139: dogtag can get confused about users]

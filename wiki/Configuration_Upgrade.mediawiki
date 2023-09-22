@@ -1,0 +1,8 @@
+= Manual Upgrade =
+
+* [https://github.com/dogtagpki/pki/wiki/PKI-10.5-Configuration-Upgrade PKI 10.5 Configuration Upgrade]
+* [https://github.com/dogtagpki/pki/wiki/PKI-10.6-Configuration-Upgrade PKI 10.6 Configuration Upgrade]
+
+= References =
+
+* [https://github.com/dogtagpki/pki/wiki/Upgrading-PKI-Server Upgrading PKI Server]

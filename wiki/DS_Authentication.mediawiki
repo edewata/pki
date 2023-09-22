@@ -1,0 +1,81 @@
+= Overview =
+
+This page describes the process to set up a user in the DS for PKI server to access the DS.
+
+= DS User =
+
+During PKI server installation a new user (i.e. pkidbuser) will be created in the database for the PKI server to access the database. This user is added as a replacement for Directory Manager such that it's no longer necessary to store the Directory Manager password in PKI server configuration files.
+
+By default PKI server will still use the Directory Manager, but it can be switched to use this user after installation. This user can be used for basic authentication with username and password or client-certificate authentication.
+
+<pre>
+dn: uid=pkidbuser,<current subsystem's suffix>
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+cn: pkidbuser
+sn: pkidbuser
+uid: pkidbuser
+userPassword: <password>
+userCertificate: <DER-encoded certificate>
+uidNumber: <uid>
+gidNumber: <gid>
+</pre>
+
+== Separate Database ==
+
+<pre>
+pki_share_db=False
+</pre>
+
+== Shared Database ==
+
+<pre>
+pki_share_db=True
+pki_share_dbuser_dn=uid=pkidbuser,<initial subsystem's suffix>
+</pre>
+
+= DS Authentication =
+
+== Basic Authentication ==
+
+=== Pre-Install Configuration ===
+
+Currently PKI server can only be deployed by a Directory Manager:
+
+<pre>
+pki_ds_bind_dn=cn=Directory Manager
+pki_ds_password=Secret.123
+</pre>
+
+=== Post-Install Configuration ===
+
+After installation it can be switched to pkidbuser. See [https://github.com/dogtagpki/pki/wiki/Configuring-Basic-Authentication-to-Internal-Database Configuring Basic Authentication to Internal Database].
+
+== Client Certificate Authentication ==
+
+=== Pre-Install Configuration (NOT IMPLEMENTED) ===
+
+<pre>
+pki_ds_auth_type=ClientCertificate
+pki_ds_client_cert_nickname=subsystemCert cert-pki-ca
+</pre>
+
+=== Post-Install Configuration ===
+
+Client-certificate authentication can be enabled post-install. See [https://github.com/dogtagpki/pki/wiki/Configuring-Client-Certificate-Authentication-to-Internal-Database Configuring Client Certificate Authentication to Internal Database].
+
+== GSSAPI (IPA only) ==
+
+See [https://github.com/dogtagpki/389-ds-base/wiki/Authenticating-with-GSSAPI Authenticating with GSSAPI].
+
+== Autobind (NOT IMPLEMENTED) ==
+
+See [https://github.com/dogtagpki/389-ds-base/wiki/Enabling-Autobind Enabling Autobind].
+
+= References =
+
+* [[PKI LDAP]]
+* [[PKI Ticket 1595]]
+* [[PKI Ticket 1009]]
+* [[Disabling Anonymous Binds]]

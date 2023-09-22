@@ -1,0 +1,27 @@
+= Overview =
+
+The PKCS12Export is a tool to export all certificates and keys from an NSS database into a PKCS #12 file for backup or cloning. To export individual certificates and keys see [https://github.com/dogtagpki/pki/wiki/PKI-PKCS12-CLI PKI PKCS12 CLI].
+
+= Exporting System Certificates =
+
+Store the server's NSS database password in a file:
+
+<pre>
+$ grep "internal=" /var/lib/pki/pki-tomcat/conf/password.conf | awk -F= '{print $2}' > internal.txt
+</pre>
+
+Store the password for the new PKCS #12 file in a file:
+
+<pre>
+$ echo Secret.123 > password.txt
+</pre>
+
+Export the server keys and certificates with the following command:
+
+<pre>
+$ PKCS12Export \
+ -d /var/lib/pki/pki-tomcat/alias \
+ -p internal.txt \
+ -o pki-server.p12 \
+ -w password.txt
+</pre>

@@ -1,0 +1,41 @@
+= Overview =
+
+Tomcat provides built-in support for SSL using OpenSSL.
+
+= Using PKCS #12 Key Store =
+
+== Generating a self-signed SSL server certificate ==
+
+To generate a self-signed SSL server certificate:
+
+ $ cd /usr/share/tomcat
+ $ openssl req -x509 \
+     -newkey rsa:2048 \
+     -keyout sslserver.key \
+     -nodes \
+     -out sslserver.crt \
+     -subj "/CN=$HOSTNAME/O=EXAMPLE" \
+     -days 365
+
+To import the SSL server certificate and key into a PKCS #12 file:
+
+ $ openssl pkcs12 -export \
+     -in sslserver.crt \
+     -inkey sslserver.key \
+     -out sslserver.p12 \
+     -name "sslserver" \
+     -passout pass:Secret.123
+ $ chmod +r sslserver.p12
+
+== Configuring SSL connector ==
+
+Uncomment the SSL connector in $CATALINA_BASE/conf/server.xml and add the keystore parameters as follows:
+
+ <Connector port="8443" protocol="org.apache.coyote.http11.Http11NioProtocol"
+            maxThreads="150" SSLEnabled="true" scheme="https" secure="true"
+            clientAuth="false" sslProtocol="TLS"
+            <font color="red">keystoreType="pkcs12"
+            keystoreFile="${catalina.base}/sslserver.p12"
+            keystorePass="Secret.123"
+            keyAlias="sslserver"</font>
+ />

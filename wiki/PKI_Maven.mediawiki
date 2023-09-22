@@ -1,0 +1,43 @@
+= Overview =
+
+This functionality is not yet implemented.
+
+= Installing Dependencies =
+
+To install PKI dependencies:
+
+<pre>
+$ mvn -f /usr/share/pki/pom.xml dependency:resolve
+</pre>
+
+The dependencies will be installed in ~/.m2 directory:
+
+* ~/.m2/repository/org/jboss/resteasy/resteasy-atom-provider/3.0.19.Final/resteasy-atom-provider-3.0.19.Final.jar
+* ~/.m2/repository/org/jboss/resteasy/resteasy-client/3.0.19.Final/resteasy-client-3.0.19.Final.jar
+* ~/.m2/repository/org/jboss/resteasy/resteasy-jackson2-provider/3.0.19.Final/resteasy-jackson2-provider-3.0.19.Final.jar
+* ~/.m2/repository/org/jboss/resteasy/resteasy-jaxb-provider/3.0.19.Final/resteasy-jaxb-provider-3.0.19.Final.jar
+* ~/.m2/repository/org/jboss/resteasy/resteasy-jaxrs/3.0.19.Final/resteasy-jaxrs-3.0.19.Final.jar
+
+= Installing PKI Server =
+
+Make sure the system has maven installed:
+
+<pre>
+$ dnf install -y maven
+</pre>
+
+To create a PKI server instance with a PKI subsystem:
+
+<pre>
+$ pkispawn -f ca.cfg -s CA --with-maven-deps
+</pre>
+
+To create a basic PKI server instance without any PKI subsystems:
+
+<pre>
+$ pki-server create --with-maven-deps
+</pre>
+
+= See Also =
+
+* [[Maven]]

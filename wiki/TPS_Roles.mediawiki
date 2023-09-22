@@ -1,0 +1,50 @@
+= Overview =
+
+The TPS supports the following roles:
+
+* TPS Administrator
+* TPS Agent
+* TPS Operator
+
+The permissions for each role are defined in [https://github.com/dogtagpki/pki/wiki/TPS-ACL TPS ACL].
+
+A user can have multiple roles. The default TPS admin user will have all of the above roles.
+
+= TPS Administrator =
+
+A TPS administrator is allowed to:
+* manage TPS tokens
+* view TPS certificates and activities
+* manage TPS users and groups
+* configure general TPS configuration
+* manage TPS authenticators and connectors
+* configure TPS profiles and profile mappings
+* configure TPS audit logging
+
+By default a TPS administrator is allowed to access the following TPS components:
+* Authentication_Sources
+* Subsystem_Connections
+* Profiles
+* Profile_Mappings
+
+This can be configured in the following property in /etc/pki/<font color="red">pki-tomcat</font>/tps/CS.cfg:
+
+ target.configure.list=<font color="red">Authentication_Sources,Subsystem_Connections,Profiles,Profile_Mappings</font>
+
+= TPS Agent =
+
+A TPS agent is allowed to:
+* configure TPS tokens
+* view TPS certificates and activities
+* change the status of TPS profiles
+
+= TPS Operator =
+
+A TPS operator is allowed to:
+* view TPS tokens, certificates, and activities
+
+= See Also =
+
+* [https://github.com/dogtagpki/pki/wiki/Adding-TPS-Agent Adding TPS Agent]
+* [https://github.com/dogtagpki/pki/wiki/Enabling-TPS-Agent-Approval Enabling TPS Agent Approval]
+* [https://github.com/dogtagpki/pki/wiki/Adding-TPS-Operator Adding TPS Operator]

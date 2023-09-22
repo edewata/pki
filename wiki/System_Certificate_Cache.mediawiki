@@ -1,0 +1,147 @@
+= Overview =
+
+This document describes the process to update system certificate cache in the PKI subsystem configuration file.
+
+PKI server stores the system certificates in the following locations:
+* The certificate data is stored in the NSS database (i.e. /var/lib/pki/<instance>/alias)
+* The certificate request is stored in the CA's internal database (i.e. ou=requests,<CA suffix>)
+
+PKI server also stores a copy of the data and request in each subsystem's configuration file (i.e. /var/lib/pki/<instance>/<subsystem>/conf/CS.cfg) as a cache:
+* The certificate data is stored in <subsystem ID>.<certificate ID>.cert property
+* The certificate request is stored in <subsystem ID>.<certificate ID>.certreq
+
+Under some circumstances the certificate data and request cache need to be updated:
+* the system certificate is renewed
+* the configuration file is corrupted
+
+= Updating System Certificates Cache =
+
+== Using pki-server tool ==
+
+The pki-server tool must be run locally by the system administrator.
+
+First, stop PKI server:
+
+<pre>
+$ systemctl stop pki-tomcatd@pki-tomcat.service
+</pre>
+
+Use the subsystem-find command to list subsystems installed on the machine:
+
+<pre>
+$  pki-server subsystem-find
+-----------------
+2 entries matched
+-----------------
+  Subsystem ID: ca
+  Instance ID: pki-tomcat
+  Enabled: True
+
+  Subsystem ID: kra
+  Instance ID: pki-tomcat
+  Enabled: True
+</pre>
+
+Use the subsystem-cert-find command to list the system certificates in each subsystem:
+
+<pre>
+$ pki-server subsystem-cert-find ca
+-----------------
+5 entries matched
+-----------------
+  Cert ID: signing
+  Nickname: caSigningCert cert-pki-tomcat CA
+  Token: Internal Key Storage Token
+  Certificate: <base-64 encoded certificate data>
+  Request: <base-64 encoded certificate request>
+
+  Cert ID: ocsp_signing
+  Nickname: ocspSigningCert cert-pki-tomcat CA
+  Token: Internal Key Storage Token
+  Certificate: <base-64 encoded certificate data>
+  Request: <base-64 encoded certificate request>
+
+  Cert ID: sslserver
+  Nickname: Server-Cert cert-pki-tomcat
+  Token: Internal Key Storage Token
+  Certificate: <base-64 encoded certificate data>
+  Request: <base-64 encoded certificate request>
+
+  Cert ID: subsystem
+  Nickname: subsystemCert cert-pki-tomcat
+  Token: Internal Key Storage Token
+  Certificate: <base-64 encoded certificate data>
+  Request: <base-64 encoded certificate request>
+
+  Cert ID: audit_signing
+  Nickname: auditSigningCert cert-pki-tomcat CA
+  Token: Internal Key Storage Token
+  Certificate: <base-64 encoded certificate data>
+  Request: <base-64 encoded certificate request>
+</pre>
+
+If any of the above certificate data or request is missing, use the subsystem-cert-update command to update the system certificate:
+
+<pre>
+$ pki-server subsystem-cert-update ca signing
+---------------------------------------
+Updated "signing" subsystem certificate
+---------------------------------------
+  Cert ID: signing
+  Nickname: caSigningCert cert-pki-tomcat CA
+  Token: Internal Key Storage Token
+  Certificate: <base-64 encoded certificate data>
+  Request: <base-64 encoded certificate request>
+</pre>
+
+Finally, restart PKI server:
+
+<pre>
+$ systemctl start pki-tomcatd@pki-tomcat.service
+</pre>
+
+== Manual process ==
+
+=== Getting system certificate list ===
+
+The list of system certificates can be obtained from the <subsystem>.cert.list property, for example:
+
+<pre>
+ca.cert.list=transport,storage,sslserver,subsystem,audit_signing
+</pre>
+
+=== Updating the certificate data ===
+
+Get the certificate nickname from <subsystem ID>.<certificate ID>.nickname property.
+
+Get the base-64 encoded certificate data from the NSS database:
+
+<pre>
+$ certutil -L -d /var/lib/pki/<instance>/alias/ -n "caSigningCert cert-pki-tomcat CA" -r | base64
+</pre>
+
+Store the base-64 encoded certificate data in the <subsystem ID>.<certificate ID>.cert property.
+
+=== Updating the certificate request ===
+
+Get the base-64 encoded certificate request from the LDAP database:
+
+<pre>
+$ ldapsearch -x -D "cn=Directory Manager" -w Secret.123 -t \
+  -b ou=requests,dc=ca,dc=example,dc=com "(extdata-origprofileid=<profile ID>)" extdata-cert--005frequest
+</pre>
+
+Use the appropriate certificate profile ID:
+* signing: caCert
+* ocsp_signing: caOCSPCert
+* sslserver: serverCert
+* subsystem: subsystemCert
+* audit_signing: caAuditSigningCert
+
+Store the base-64 encoded certificate request in the <subsystem ID>.<certificate ID>.certreq property.
+
+= References =
+
+* [https://fedorahosted.org/pki/ticket/1551 Ticket #1551: Upgraded CA lacks ca.sslserver.certreq in CS.cfg]
+* [https://fedorahosted.org/pki/ticket/1598 Ticket #1598: Redundant cert data in CS.cfg]
+* [https://fedorahosted.org/pki/ticket/1552 Ticket #1552: Redundant cert requests in CS.cfg]

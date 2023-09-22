@@ -1,0 +1,27 @@
+= Overview =
+
+This page describes how the subsystem user is created and used.
+
+= Creation =
+
+The subsystem user is created in CertUtil.addUserCertificate() with the following user ID:
+
+<pre>
+<subsystem type>-<hostname>-<port>
+</pre>
+
+For example: CA-server.example.com-8443
+
+The subsystem user will contain a subsystem certificate (subsystemCert cert-pki-tomcat).
+
+= Usage =
+
+The subsystem user UID is used in the following cases:
+* requesting for subsystem certificate from a remote CA (see ConfigurationUtils.configCert())
+* requesting for subsystem certificate from an SD CA (see ConfigurationUtils.configCert())
+* registering user (see ConfigurationUtils.registerUser())
+* updating security domain (see UpdateDomainXML.process())
+
+= References =
+
+* [[Subsystem Certificate]]

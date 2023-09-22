@@ -1,0 +1,45 @@
+= Prerequisite =
+
+Initialize [[NPM]].
+
+= Installation =
+
+To download PatternFly:
+
+<pre>
+$ npm install @patternfly/patternfly
+</pre>
+
+It will store the files into node_modules/@patternfly/patternfly folder and also update package.json and package-lock.json.
+
+Copy the required files into the webapp, for example:
+
+<pre>
+$ cp node_modules/@patternfly/patternfly/patternfly.min.css base/acme/webapps/acme/css/patternfly-4.35.2.css
+$ cp node_modules/@patternfly/patternfly/assets/fonts/RedHatDisplay/RedHatDisplay-Medium.woff base/acme/webapps/acme/css/assets/fonts/RedHatDisplay
+$ cp node_modules/@patternfly/patternfly/assets/fonts/RedHatText/RedHatText-Medium.woff base/acme/webapps/acme/css/assets/fonts/RedHatText
+$ cp node_modules/@patternfly/patternfly/assets/fonts/RedHatText/RedHatText-Regular.woff base/acme/webapps/acme/css/assets/fonts/RedHatText
+$ cp node_modules/@patternfly/patternfly/assets/fonts/overpass-webfont/overpass-bold.ttf base/acme/webapps/acme/css/assets/fonts/overpass-webfont
+$ cp node_modules/@patternfly/patternfly/assets/fonts/overpass-webfont/overpass-bold.woff base/acme/webapps/acme/css/assets/fonts/overpass-webfont
+$ cp node_modules/@patternfly/patternfly/assets/fonts/overpass-webfont/overpass-bold.woff2 base/acme/webapps/acme/css/assets/fonts/overpass-webfont
+$ cp node_modules/@patternfly/patternfly/assets/fonts/overpass-webfont/overpass-light.ttf base/acme/webapps/acme/css/assets/fonts/overpass-webfont
+$ cp node_modules/@patternfly/patternfly/assets/fonts/overpass-webfont/overpass-light.woff base/acme/webapps/acme/css/assets/fonts/overpass-webfont
+$ cp node_modules/@patternfly/patternfly/assets/fonts/overpass-webfont/overpass-light.woff2 base/acme/webapps/acme/css/assets/fonts/overpass-webfont
+$ cp node_modules/@patternfly/patternfly/assets/fonts/webfonts/fa-solid-900.ttf base/acme/webapps/acme/css/assets/fonts/webfonts
+$ cp node_modules/@patternfly/patternfly/assets/fonts/webfonts/fa-solid-900.woff base/acme/webapps/acme/css/assets/fonts/webfonts
+$ cp node_modules/@patternfly/patternfly/assets/fonts/webfonts/fa-solid-900.woff2 base/acme/webapps/acme/css/assets/fonts/webfonts
+$ cp node_modules/@patternfly/patternfly/assets/images/img_avatar.svg base/acme/webapps/acme/css/assets/images
+$ cp node_modules/@patternfly/patternfly/assets/pficon/pficon.ttf base/acme/webapps/acme/css/assets/pficon
+$ cp node_modules/@patternfly/patternfly/assets/pficon/pficon.woff base/acme/webapps/acme/css/assets/pficon
+$ cp node_modules/@patternfly/patternfly/assets/pficon/pficon.woff2 base/acme/webapps/acme/css/assets/pficon
+</pre>
+
+= See Also =
+
+* [https://www.patternfly.org/ PatternFly]
+* [https://github.com/patternfly/patternfly patternfly/patternfly]
+* [http://rcue-uxd.itos.redhat.com/ Red Hat Common User Experience]
+* [https://github.com/rhamilto/rcue Red Hat Common User Interface (RCUE) reference implementation]
+* [http://getbootstrap.com/ Bootstrap]
+* [[NPM]]
+* [[JQuery]]

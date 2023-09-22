@@ -1,0 +1,83 @@
+= &#91;Feature Name&#93; =
+== Overview ==
+<font color="RED">'''TBD'''</font>
+
+Short overview of the problem set and any background material or references one would need to understand the details.
+
+== Associated Bugs and Tickets ==
+<font color="RED">'''TBD'''</font>
+
+Provide URLs to all associated bugs and tickets.
+
+== Use Cases ==
+<font color="RED">'''TBD'''</font>
+
+Walk through one or more full examples of how the feature will be used. These should not all be the simplest cases.
+
+== Operating System Platforms and Architectures ==
+<font color="RED">'''TBD'''</font>
+
+Provide the initial operating systems and architectures.
+
+== Design ==
+<font color="RED">'''TBD'''</font>
+
+The proposed solution. This may include but is not limited to:
+
+* new schema
+* syntax of commands
+* logic flow
+* access control considerations
+
+== Implementation ==
+<font color="RED">'''TBD'''</font>
+
+Any additional requirements or changes discovered during the implementation phase.
+
+Include any rejected design information in the [[PKI_Design_Template#History|History]] section.
+
+== Major configuration options and enablement ==
+<font color="RED">'''TBD'''</font>
+
+Any configuration options? Any commands to enable/disable the feature or turn on/off its parts?
+
+== Cloning ==
+<font color="RED">'''TBD'''</font>
+
+Any impact on cloning?
+
+== Updates and Upgrades ==
+<font color="RED">'''TBD'''</font>
+
+Any impact on updates and upgrades?
+
+== Tests ==
+<font color="RED">'''TBD'''</font>
+
+Identify any tests associated with this feature including:
+* JUnit
+* Functional
+* Build Time
+* Runtime
+
+== Dependencies ==
+<font color="RED">'''TBD'''</font>
+
+Any new package and library dependencies?
+
+== Packages ==
+<font color="RED">'''TBD'''</font>
+
+Provide the initial packages that finally included this feature (e. g. - pki-core-10.1.0-1).
+
+== External Impact ==
+<font color="RED">'''TBD'''</font>
+
+Impact on other development teams and components?
+
+== History ==
+'''ORIGINAL DESIGN DATE:&nbsp;&nbsp;''' &#91;Provide the original design date in 'Month DD, YYYY' format (e. g. - September 5, 2013).&#93;
+
+Document any design ideas that were rejected during design and implementation of this feature with a brief explanation explaining why.
+
+Note that this section is meant for documenting the history of this design, not the history of changes to the Wiki.

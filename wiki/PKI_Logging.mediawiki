@@ -1,0 +1,12 @@
+= Common Logging =
+
+* [https://github.com/dogtagpki/pki/wiki/PKI-10.3-Configuring-Client-Logging PKI 10.3 Logging Configuration]
+
+= Server Logging =
+
+* [[PKI Server Logging]]
+
+= References =
+
+* [[Logging Frameworks]]
+* [https://github.com/dogtagpki/pki/wiki/PKI-Environment-Variables PKI Environment Variables]

@@ -1,0 +1,58 @@
+= Overview =
+
+The current source code is stored in a GitHub repository.
+
+= GitHub Repository =
+
+To create a new local repository from GitHub:
+
+<pre>
+$ git clone git@github.com:dogtagpki/pki.git
+</pre>
+
+To switch an existing local repository (i.e. preserving local branches) to GitHub, execute the following commands in the local repository's folder.
+
+To check the current repository:
+
+<pre>
+$ git config remote.origin.url
+ssh://username@git.fedorahosted.org/git/pki.git
+</pre>
+
+To switch the repository to GitHub:
+
+<pre>
+$ git config remote.origin.url git@github.com:dogtagpki/pki.git
+</pre>
+
+To verify the switch:
+
+<pre>
+$ git fetch
+</pre>
+
+= Fedora Git Repository =
+
+Previously the source code was stored in a Fedora git repository.
+
+To browse the repository, go to [https://github.com/dogtagpki/pki.git/ https://github.com/dogtagpki/pki.git/].
+
+To checkout anonymously (read-only):
+
+<pre>
+$ git clone git://github.com/dogtagpki/pki.git
+</pre>
+
+To checkout as a Fedora user (with write access):
+
+<pre>
+$ git clone ssh://username@github.com/dogtagpki/pki.git
+</pre>
+
+= Fedora Subversion Repository =
+
+Previously the source code was stored in a Fedora subversion repository.
+
+To browse the repository, go to [https://svn.fedorahosted.org/svn/pki/ https://svn.fedorahosted.org/svn/pki/].
+
+To check out from SVN see our [[PKI_Subversion_Instructions|Subversion instructions]] page.

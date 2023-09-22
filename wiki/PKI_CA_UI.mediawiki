@@ -1,0 +1,98 @@
+= Certificate Requests =
+
+QueryReq.doSearch(count, direction, top, bottom):
+
+<pre>
+if direction == 'previous':
+    doSearch(-count, top)
+
+elif direction == 'next':
+    doSearch(count, bottom + 1)
+
+elif direction == 'begin':
+    doSearch(count, 0)
+
+elif direction == 'first':
+    doSearch(count, bottom)
+
+else:  # direction == 'end':
+    doSearch(-count, -1)
+</pre>
+
+QueryReq.doSearch(count, marker):
+
+<pre>
+jumptoend = false
+if marker == -1:
+    marker = 0
+    jumptoend = true
+
+list = getPagedRequestsByFilter(marker, jumptoend, count < 0 ? count -1 : count + 1)
+
+maxCount = 0
+if count < 0 && jumptoend:
+    maxCount = -count
+elif count < 0:
+    maxCount = -count + 1
+else:
+    maxCount = count
+
+totalCount = jumptoend ? maxCount : list.getSize() - list.getCurrentIndex()
+
+v = fetchRecords(list, maxCount)
+v = normalizeOrder(v)
+trim(v, marker)
+</pre>
+
+== Scenario 1: Searching the last request ID ==
+
+In this example there are 7 entries in the database.
+
+=== First page ===
+
+* QueryReq.doSearch(20, 'first', 0, 7)
+* marker: 7
+* list: [7]
+* entry #7 was removed => bug
+
+== Scenario 2: Navigating to next page with 1 entry ==
+
+In this example there are 7 entries in the database.
+
+=== First page ===
+
+* QueryReq.doSearch(20, 'first', 0, 0)
+* marker: 0
+
+=== Changing page size to 3 ===
+
+* QueryReq.doSearch(3, 'begin', 1, 7)
+* marker: 0
+
+=== Going to the 2nd page ===
+
+* QueryReq.doSearch(3, 'next', 1, 3)
+* marker: 4
+
+=== Going to the 3rd page ===
+
+* QueryReq.doSearch(3, 'next', 4, 6)
+* marker: 7
+* list: [7]
+* entry #7 was removed => bug
+
+== Scenario 3: Navigating to prev page with 1 entry ==
+
+In this example there are 7 entries in the database.
+
+=== First page ===
+
+* QueryReq.doSearch(20, 'first', 0, 2)
+* marker: 2
+
+=== Going to the previous page ===
+
+* QueryReq.doSearch(20, 'prev', 2, 7)
+* marker: 2
+* list: [1, 2]
+* entry #2 was removed => correct

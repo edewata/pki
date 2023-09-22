@@ -1,0 +1,23 @@
+Configure Network
+<pre>
+scep> enable
+scep# conf t
+scep(config)# ip name-server 172.16.27.23
+scep(config)# interface Ethernet0/0
+scep(interface)# ip address 10.14.1.94 255.255.255.0
+scep(interface)# exit
+scep(config)# ip route 0.0.0.0 0.0.0.0 10.14.1.254
+scep(config)# hostname scep
+scep(config)# ip domain-name dev.example.com
+
+</pre>
+
+Write this configuration to NV-RAM
+<pre>
+scep(config)# write mem
+</pre>
+
+Set clock
+<pre>
+scep# clock set 13:01:00 12 Jan 2007
+</pre>

@@ -1,0 +1,90 @@
+= Authentication for REST Services =
+
+== Authentication Methods ==
+
+=== Overview ===
+
+PKI server supports the following authentication methods:
+
+* user certificate
+* user password
+
+User certificate authentication can be done with pki CLI as follows:
+
+ $ pki -n <user certificate nickname> -c <NSS database password> <command>
+
+User password authentication can be done with pki CLI as follows:
+
+ $ pki -u <username> -w <user password> <command>
+
+See [https://github.com/dogtagpki/pki/wiki/PKI-CLI-Authentication PKI CLI Authentication].
+
+=== Default Configuration ===
+
+By default each REST services are configured to accept certain authentication methods only. For example, the REST services in CA are configured as follows:
+
+<pre>
+# Account Services
+account = certUserDBAuthMgr,passwdUserDBAuthMgr
+
+# CA Audit Services
+audit = certUserDBAuthMgr
+
+# Lightweight SubCA Services
+authorities = certUserDBAuthMgr
+
+# CA Certificate Services
+certs = certUserDBAuthMgr
+
+# CA Certificate Request Services
+certrequests = certUserDBAuthMgr
+
+# CA Group Services
+groups = certUserDBAuthMgr
+
+# CA-KRA Connector Services
+kraconnectors = certUserDBAuthMgr
+
+# CA Certificate Profile Services
+profiles = certUserDBAuthMgr
+
+# Security Domain Install Token Services
+securityDomain.installToken = passwdUserDBAuthMgr
+
+# CA SelfTest Services
+selftests = certUserDBAuthMgr
+
+# CA User Services
+users = certUserDBAuthMgr
+
+# Other Services
+default = *
+</pre>
+
+The '''certUserDBAuthMgr''' indicates that the service accepts client certificate authentication. The '''passwdUserDBAuthMgr''' indicates that the service accepts password authentication. The '''*''' indicates that all types of authentication are accepted including no authentication, but some services may require certain roles which can only be provided through proper authentication.
+
+The default configuration files are located in the following locations:
+
+* CA: [https://github.com/dogtagpki/pki/blob/master/base/ca/shared/conf/auth-method.properties /usr/share/pki/ca/conf/auth-method.properties]
+* KRA: [https://github.com/dogtagpki/pki/blob/master/base/kra/shared/conf/auth-method.properties /usr/share/pki/kra/conf/auth-method.properties]
+* OCSP: [https://github.com/dogtagpki/pki/blob/master/base/ocsp/shared/conf/auth-method.properties /usr/share/pki/ocsp/conf/auth-method.properties]
+* TKS: [https://github.com/dogtagpki/pki/blob/master/base/tks/shared/conf/auth-method.properties /usr/share/pki/tks/conf/auth-method.properties]
+* TPS: [https://github.com/dogtagpki/pki/blob/master/base/tps/shared/conf/auth-method.properties /usr/share/pki/tps/conf/auth-method.properties]
+
+=== Customization ===
+
+To customize the authentication methods, copy the default configuration file into the subsystem configuration folder, for example:
+
+ $ cp /usr/share/pki/<font color="red">ca</font>/conf/auth-method.properties /etc/pki/pki-tomcat/<font color="red">ca</font>/
+
+Edit it as needed, then restart the server.
+
+See also [[Enabling Password Authentication]].
+
+= Authentication for Legacy Servlets =
+
+T.B.A.
+
+= See Also =
+
+* [[Enabling Password Authentication]]

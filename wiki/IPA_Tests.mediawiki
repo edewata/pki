@@ -1,0 +1,115 @@
+= Overview =
+
+This page describes the testing procedure to verify IPA interoperability.
+
+The tests include:
+
+* [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_caacl_plugin.py test_caacl_plugin.py]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_caacl_plugin.py#L73 TestDefaultACL]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_caacl_plugin.py#L79 TestCAACLbasicCRUD]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_caacl_plugin.py#L108 TestCAACLMembers]
+* [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_caacl_profile_enforcement.py test_caacl_profile_enforcement.py]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_caacl_profile_enforcement.py#L115 TestCertSignMIME]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_caacl_profile_enforcement.py#L148 TestSignWithDisabledACL]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_caacl_profile_enforcement.py#L186 TestSignWithoutGroupMembership]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_caacl_profile_enforcement.py#L222 TestSignWithChangedProfile]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_caacl_profile_enforcement.py#L269 TestCertSignMIMEwithSubCA]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_caacl_profile_enforcement.py#L509 TestNoMatchForSubjectAltNameDnsName]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_caacl_profile_enforcement.py#L532 TestPrincipalAliasForSubjectAltNameDnsName]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_caacl_profile_enforcement.py#L559 TestSignCertificateWithInvalidSAN]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_caacl_profile_enforcement.py#L583 TestSignServiceCertManagedByMultipleHosts]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_caacl_profile_enforcement.py#L622 TestSignServiceCertWithoutSANServiceInACL]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_caacl_profile_enforcement.py#L660 TestManagedByACIOnCertRequest]
+* [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_cert_plugin.py test_cert_plugin.py]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_cert_plugin.py#L120 test_cert]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_cert_plugin.py#L270 test_cert_find]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_cert_plugin.py#L452 test_cert_revocation]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_cert_plugin.py#L510 test_cert_remove_hold]
+* [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_certprofile_plugin.py test_certprofile_plugin.py]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_certprofile_plugin.py#L104 TestDefaultProfile]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_certprofile_plugin.py#L127 TestProfileCRUD]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_certprofile_plugin.py#L214 TestMalformedProfile]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_certprofile_plugin.py#L221 TestImportFromXML]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_certprofile_plugin.py#L239 TestImportProfileIdHandling]
+* [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_ca_plugin.py test_ca_plugin.py]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_ca_plugin.py#L77 TestDefaultCA]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_ca_plugin.py#L93 TestCAbasicCRUD]
+* [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_vault_plugin.py test_vault_plugin.py]
+** [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_vault_plugin.py#L134 test_vault_plugin]
+
+= Prerequisites =
+
+<pre>
+$ dnf install freeipa-tests
+</pre>
+
+= Install IPA Server =
+
+<pre>
+$ FORWARDER=`grep nameserver /etc/resolv.conf | head -1 | awk '{print $2;}'`
+$ DOMAIN=`dnsdomainname`
+$ REALM=${DOMAIN^^}
+$ ipa-server-install\
+  -d\
+  -U\
+  -r $REALM\
+  -p Secret.123\
+  -a Secret.123\
+  --no-pkinit\
+  --setup-dns\
+  --forwarder $FORWARDER\
+  --no-ntp
+</pre>
+
+= Running IPA Tests =
+
+python-nose package is needed by the tests.
+Copy the file /etc/ipa/default.conf to ~/.ipa/default.conf.
+
+ $ mkdir -p ~/.ipa/
+ $ cp /etc/ipa/default.conf ~/.ipa/default.conf
+
+For certificate tests to pass, copy the 3 NSS db files in /etc/httpd/alias to  ~/.ipa/alias and
+copy /etc/httpd/alias/pwdfile.txt to ~/.ipa/alias/.pwd . 
+
+ $ mkdir -p ~/.ipa/alias
+ $ cp /etc/httpd/alias/*.db ~/.ipa/alias
+ $ cp /etc/httpd/alias/pwdfile.txt ~/.ipa/alias/.pwd
+
+Set the appropriate permissions for these files, if the tests are run by a non-root users.
+
+Get a kerberos ticket for admin.
+
+ $ kinit admin
+
+Run the Dogtag tests.
+
+ $ ipa-run-tests test_xmlrpc/test_cert_plugin.py
+
+where the path of the test is a relative from <python_site_packages>/ipatests
+
+= Running IPA Tests in Vagrant =
+
+<pre>
+$ dnf install vagrant vagrant-libvirt
+$ git clone https://github.com/bastiak/ipa-devel-tools
+$ cd ipa-devel-tools
+$ python3 setup.py install
+$ ipa-vagrant-ci-topology-create test_ipa --replicas 2 --add-copr='@freeipa/freeipa-4-3-rc' \
+  --add-packages={freeipa-server,freeipa-server-dns,python2-ipatests}
+$ cd test_ipa
+$ vagrant up
+$ vagrant ssh
+$ IPATEST_YAML_CONFIG=/vagrant/ipa-test-config.yaml ipa-run-tests test_integration/test_replica_promotion.py \
+  --verbose --logging-level=debug --pdb
+</pre>
+
+= Running IPA Tests in Container =
+
+See [[IPA Testing in Container]].
+
+= References =
+
+* [http://www.freeipa.org/page/Testing IPA Testing]
+* [[IPA Testing in Container]]
+* [[IPA Test]]

@@ -1,0 +1,54 @@
+= Overview =
+
+As the product gets bigger and complex, building and maintaining the product gets difficult. So is the case with Dogtag. Currently, we have per-commit automated builds that run on COPR for the following components:
+
+* JSS
+* tomcatjss
+* ldapjdk
+* pki
+
+= Workflow =
+
+# Developer pushes a commit directly (or by merging PR) to respective Github repo
+# [Automatic] Github has a webhook setup to COPR. So, Github sends a notification to COPR
+# [Automatic] COPR clones and the repo and runs the file located in `.copr/Makefile`
+# COPR builds the package with NVR: <font color=red><pkg>-<version>.<timestamp>.<commit-ID></font>
+
+Look below for packages and their corresponding COPR build location
+
+= Components & their locations =
+
+{|class="wikitable"
+! Component
+! Branch
+! COPR used
+|-
+|rowspan="2"|JSS
+|v4.5.x
+|[https://copr.fedorainfracloud.org/coprs/g/pki/10.6/package/jss/ @pki/10.6]
+|-
+|master
+|[https://copr.fedorainfracloud.org/coprs/g/pki/master/package/jss @pki/master]
+|-
+|rowspan="2"|tomcatjss
+|TOMCATJSS_7_3_BRANCH
+|[https://copr.fedorainfracloud.org/coprs/g/pki/10.6/package/tomcatjss/ @pki/10.6]
+|-
+|master
+|[https://copr.fedorainfracloud.org/coprs/g/pki/master/package/tomcatjss @pki/master]
+|-
+|rowspan="2"|ldapjdk
+|master
+|[https://copr.fedorainfracloud.org/coprs/g/pki/10.6/package/ldapjdk/ @pki/10.6]
+|-
+|master
+|[https://copr.fedorainfracloud.org/coprs/g/pki/master/package/ldapjdk @pki/master]
+|-
+|rowspan="2"|pki
+|DOGTAG_10_6_BRANCH
+|[https://copr.fedorainfracloud.org/coprs/g/pki/10.6/package/pki/ @pki/10.6]
+|-
+|master
+|[https://copr.fedorainfracloud.org/coprs/g/pki/master/package/pki @pki/master]
+|-
+|}

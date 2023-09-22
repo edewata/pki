@@ -1,0 +1,86 @@
+== Introduction ==
+
+This document describes the procedure required to build the NSS crypto libraries with ECC capabilities. You'll need this document if you are trying to [[ECC_Enabling_Dogtag|ECC-enable Dogtag]]
+
+''Note'': Please feel free to update this page if you find ways to improve it.
+
+== Obtain and Build Standard NSS==
+
+You must be familiar with building NSS before attempting these instructions. We recommend building NSS (without ECC capabilities) as a first step to obtain experience with the NSS build system.  You can find instructions on how to [http://www.mozilla.org/projects/security/pki/nss/nss-3.11.4/nss-3.11.4-build.html obtain and build version 3.11.4 of NSS here]. 
+
+The instructions in that link list special steps to deal with different target OS platforms.  Be sure to perform any Linux specific actions if building on Linux.
+
+==Build ECC-enabled NSS==
+
+To build a version of NSS that can use a third-party ECC PKCS #11 module, perform these steps:
+
+* If you have already performed a practice standard build of NSS, discard that source tree. Check out a new tree per the NSS build instructions as shown below:
+
+ export CVSROOT=:pserver:anonymous@cvs-mirror.mozilla.org:/cvsroot    
+ cvs co -r NSPR_4_7_1_RTM mozilla/nsprpub
+ cvs co -r NSS_3_11_BRANCH mozilla/dbm mozilla/security/dbm mozilla/security/coreconf mozilla/security/nss
+
+* Make sure that the required ECC environment variables are cleared for now. Failure to do so will result in unwanted compilation errors.
+ unset NSS_ENABLE_ECC
+ unset NSS_ECC_MORE_THAN_SUITE_B
+* Note: Only if performing a 64 bit build, make sure the environment variable USE_64 is enabled:
+ export USE_64=1
+* Note: If you would like to build an optimized version of NSS set the following environment variable.  The default is an un-optimized, debug build:
+ export BUILD_OPT=1
+* Perform the following build steps: 
+ cd mozilla/security/nss
+ make build_coreconf # Make the NSS build system tools 
+ make build_nspr # Make NSPR
+ make build_dbm  # Make DBM
+ make export  # Publish all the headers needed by libraries below
+ cd -
+ # Make the libraries we want to compile without ECC support
+ cd mozilla/security/nss/lib/util
+ make libs
+ cd -
+ cd mozilla/security/nss/lib/freebl
+ make libs
+ cd -
+ cd mozilla/security/nss/lib/softoken
+ make libs
+ cd -
+
+*Now make sure to enable the variables NSS_ENABLE_ECC and NSS_ECC_MORE_THAN_SUITE_B in your environment.  Failure to do so will result in even more unwanted compiler errors.
+ export NSS_ENABLE_ECC=1
+ export NSS_ECC_MORE_THAN_SUITE_B=1
+*Edit <b>mozilla/security/nss/lib/manifest.mn</b> and remove "<b>util freebl softoken</b>" from the make variable <b>DIRS</b>. We don't want the build system recompiling these libraries already done.
+*Edit <b>mozilla/security/nss/cmd/manifest.mn</b> and remove "<b>bltest</b>" and "<b>fipstest</b>" from the make variable <b>DIRS</b>. We don't want the build system to compile these two test programs with ECC support.
+*Build the rest of NSS with ECC support:
+ cd mozilla/security/nss
+ make libs
+
+==Retrieve ECC-enabled NSS==
+
+After completing the ECC enabled NSS build, you must obtain the files representing NSS.  The output of an NSS build is placed in the "mozilla/dist" directory.
+
+For more information about how to [https://developer.mozilla.org/en/NSS_reference/Building_and_installing_NSS install or distribute the NSS build to a desired location see  here].
+[[Category:PKI]]
+
+=== Install the libraries and at least a few of the applications ===
+Dynamic libraries
+ su
+ cd <builddir>/mozilla/dist/*OPT*/lib
+ install -m 755 -b -t /lib libfreebl3.so
+ install -m 644 -b -t /lib libfreebl3.chk
+ install -m 755 -b -t /usr/lib libnspr4.so libpkc4.so libplds4.so
+ install -m 755 -b -t /usr/lib libnss3.so libnssckbi.so libsmime3.so \
+ libsoftokn3.so libssl3.so libsqlite3.so libnssutil3.so \
+ libnsssysinit.so libnssdbm3.so
+ install -m 644 -b -t /usr/lib libsoftokn3.chk libnssdbm3.chk
+Applications
+ su
+ cd <builddir>/mozilla/dist/*OPT*/bin
+ install -m 755 -b -t /usr/bin certutil modutil cmsutil crlutil \
+ pk12util signtool [others TBD]
+
+=== Other notes ===
+This section is a work in progress and is the result of mostly stumbling against the '''/bin/login''' issue to the point of having to re-image a Fedora test system from scratch.
+
+To test you've built this correctly, once you do the first of the install steps - that for '''libfreebl3.so''' - do
+ ldd /bin/login
+If this succeeds, you've probably built this correctly and won't lock yourself out of your system.  If this fails, you can revert to the backup copy of the library - '''/lib/libfreebl3.so~''' - that was created by the '''-b''' argument to '''install'''.

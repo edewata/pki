@@ -1,0 +1,730 @@
+= Overview =
+
+Currently CA and KRA run in completely separate Tomcat instances. We need a way to deploy them into the same Tomcat instance while maintaining the ability to run independently.
+
+See also [https://fedorahosted.org/pki/ticket/89 Ticket #89].
+
+== Directory structure ==
+
+In order to minimize the conflicts during merging, the configuration files will need to be rearranged as follows.
+
+CA directory structure:
+
+<pre>
+/var/lib/pki-ca
+ + conf (common Tomcat configuration)
+ + conf-pki-ca (CA-specific configuration)
+</pre>
+
+KRA directory structure:
+
+<pre>
+/var/lib/pki-ca
+ + conf (common Tomcat configuration)
+ + conf-pki-kra (KRA-specific configuration)
+</pre>
+
+== LDAP tree structure ==
+
+The CA and KRA LDAP trees will be unified into a single tree using referrals.
+
+Main tree:
+
+<pre>
+dc=example,dc=com
+ + ou=ca (referral to CA subtree)
+ + ou=kra (referral to KRA subtree)
+</pre>
+
+CA subtree:
+
+<pre>
+ou=ca,dc=example,dc=com
+</pre>
+
+KRA subtree:
+
+<pre>
+ou=kra,dc=example,dc=com
+</pre>
+
+= Initial Setup =
+
+== Installing DS ==
+
+Create the following example.ldif file:
+
+<pre>
+dn: dc=example,dc=com
+objectClass: dcObject
+dc: example
+
+dn: ou=ca,dc=example,dc=com
+objectClass: organizationalUnit
+objectClass: referral
+ou: ca
+ref: ldap://localhost/ou=cs,dc=example,dc=com
+
+dn: ou=kra,dc=example,dc=com
+objectClass: organizationalUnit
+objectClass: referral
+ou: kra
+ref: ldap://localhost/ou=kra,dc=example,dc=com
+</pre>
+
+Create the following example.inf file:
+
+<pre>
+[General]
+FullMachineName=<hostname>
+SuiteSpotUserID=nobody
+SuiteSpotGroup=nobody
+
+[slapd]
+ServerPort=389
+ServerIdentifier=<server id>
+Suffix=dc=example,dc=com
+RootDN=cn=Directory Manager
+RootDNPwd=Secret.123
+InstallLdifFile=<full path to example.ldif>
+</pre>
+
+Create DS instance:
+<pre>
+% setup-ds.pl -s -f example.inf
+</pre>
+
+== Installing CA ==
+
+Create CA instance:
+
+<pre>
+% pkicreate -pki_instance_root=/var/lib     \
+          -pki_instance_name=pki-ca         \
+          -subsystem_type=ca                \
+          -secure_port=9443                 \
+          -unsecure_port=9180               \
+          -tomcat_server_port=9701          \
+          -user=pkiuser                     \
+          -group=pkiuser                    \
+          -redirect conf=/etc/pki-ca        \
+          -redirect logs=/var/log/pki-ca    \
+          -verbose
+</pre>
+
+Use binaries compiled by Eclipse:
+
+<pre>
+% ln -s /usr/share/tomcat6/bin /var/lib/pki-ca/bin
+% ln -s /usr/share/tomcat6/lib /var/lib/pki-ca/lib
+% rm -f /var/lib/pki-ca/webapps/ca/WEB-INF/lib/pki-*
+% ln -s $PKI_SRC/pki/build/classes /var/lib/pki-ca/webapps/ca/WEB-INF/classes
+</pre>
+
+Restart CA instance:
+
+<pre>
+% systemctl restart pki-cad@pki-ca.service
+</pre>
+
+== Configuring CA ==
+
+Configure CA instance:
+
+<pre>
+% mkdir -p /var/lib/pki-ca/certs
+% pkisilent ConfigureCA \
+        -cs_hostname `hostname` \
+        -cs_port 9443 \
+        -preop_pin $PIN \
+        -client_certdb_dir "/var/lib/pki-ca/certs" \
+        -client_certdb_pwd "Secret.123" \
+        -token_name "internal" \
+        -domain_name "Example\ Domain" \
+        -subsystem_name "Certificate\ Authority" \
+        -ldap_host "localhost" \
+        -ldap_port "389" \
+        -base_dn "ou=ca,dc=example,dc=com" \
+        -db_name "example.com-pki-ca" \
+        -bind_dn "cn=Directory\ Manager" \
+        -bind_password "Secret.123" \
+        -remove_data true \
+        -key_type rsa \
+        -key_size 2048 \
+        -key_algorithm SHA256withRSA \
+        -signing_signingalgorithm SHA256withRSA \
+        -save_p12 true \
+        -backup_fname /var/lib/pki-ca/certs/server-certs.p12 \
+        -backup_pwd Secret.123 \
+        -ca_sign_cert_subject_name "CN=Certificate\ Authority,OU=pki-ca,O=Example\ Domain" \
+        -ca_ocsp_cert_subject_name "CN=OCSP\ Signing\ Certificate,OU=pki-ca,O=Example\ Domain" \
+        -ca_server_cert_subject_name "CN=cs-dev.example.com,OU=pki-ca,O=Example\ Domain" \
+        -ca_subsystem_cert_subject_name "CN=CA\ Subsystem\ Certificate,OU=pki-ca,O=Example\ Domain" \
+        -ca_audit_signing_cert_subject_name "CN=CA\ Audit\ Signing\ Certificate,OU=pki-ca,O=Example\ Domain" \
+        -admin_user "caadmin" \
+        -agent_name "caadmin" \
+        -admin_email "caadmin@example.com" \
+        -admin_password "Secret.123" \
+        -agent_key_size 2048 \
+        -agent_key_type rsa \
+        -agent_cert_subject "CN=caadmin,UID=caadmin,E=caadmin@example.com,O=Example\ Domain" 
+</pre>
+
+Restart CA instance:
+
+<pre>
+% systemctl restart pki-cad@pki-ca.service
+</pre>
+
+== Exporting CA Client Certificates ==
+
+Export CA client certificates:
+
+<pre>
+% cd /var/lib/pki-ca/certs
+% echo Secret.123 > password.txt
+% PKCS12Export -d . -o client-certs.p12 -p password.txt -w password.txt 
+</pre>
+
+Then import the client-certs.p12 into Firefox.
+
+== Installing KRA ==
+
+Create KRA instance:
+
+<pre>
+% pkicreate -pki_instance_root=/var/lib    \
+          -pki_instance_name=pki-kra       \
+          -subsystem_type=kra              \
+          -secure_port=10443               \
+          -unsecure_port=10180             \
+          -tomcat_server_port=10701        \
+          -user=pkiuser                    \
+          -group=pkiuser                   \
+          -audit_group=pkiaudit            \
+          -redirect conf=/etc/pki-kra      \
+          -redirect logs=/var/log/pki-kra  \
+          -verbose
+</pre>
+
+Use binaries compiled by Eclipse:
+
+<pre>
+% ln -s /usr/share/tomcat6/bin /var/lib/pki-kra/bin
+% ln -s /usr/share/tomcat6/lib /var/lib/pki-kra/lib
+% rm -f /var/lib/pki-kra/webapps/kra/WEB-INF/lib/pki-*
+% ln -s $PKI_SRC/pki/build/classes /var/lib/pki-kra/webapps/kra/WEB-INF/classes
+</pre>
+
+Restart the KRA instance:
+
+<pre>
+% systemctl restart pki-krad@pki-kra.service
+</pre>
+
+== Configuring KRA ==
+
+Configure KRA instance:
+
+<pre>
+% mkdir -p /var/lib/pki-kra/certs
+% pkisilent ConfigureDRM \
+        -cs_hostname `hostname` \
+        -cs_port 10443 \
+        -preop_pin $PIN \
+        -client_certdb_dir "/var/lib/pki-kra/certs" \
+        -client_certdb_pwd "Secret.123" \
+        -token_name "internal" \
+        -sd_hostname `hostname` \
+        -sd_admin_port 9443 \
+        -sd_ssl_port 9443 \
+        -sd_agent_port 9443 \
+        -sd_admin_name "caadmin" \
+        -sd_admin_password "Secret.123" \
+        -domain_name "Example\ Domain" \
+        -subsystem_name "Data\ Recovery\ Manager" \
+        -ldap_host "localhost" \
+        -ldap_port "389" \
+        -base_dn "ou=kra,dc=example,dc=com" \
+        -db_name "example.com-pki-kra" \
+        -bind_dn "cn=Directory\ Manager" \
+        -bind_password "Secret.123" \
+        -remove_data true \
+        -key_type rsa \
+        -key_size 2048 \
+        -signing_algorithm SHA256withRSA \
+        -drm_transport_cert_subject_name "CN=DRM\ Transport\ Certificate,OU=pki-kra,O=Example\ Domain" \
+        -drm_storage_cert_subject_name "CN=DRM\ Storage\ Certificate,OU=pki-kra,O=Example\ Domain" \
+        -drm_server_cert_subject_name "CN=cs-dev.example.com,OU=pki-kra,O=Example\ Domain" \
+        -drm_subsystem_cert_subject_name "CN=DRM\ Subsystem\ Certificate,OU=pki-kra,O=Example\ Domain" \
+        -drm_audit_signing_cert_subject_name "CN=DRM\ Audit\ Signing\ Certificate,OU=pki-kra,O=Example\ Domain" \
+        -ca_hostname `hostname` \
+        -ca_port 9180 \
+        -ca_ssl_port 9443 \
+        -backup_fname /var/lib/pki-kra/certs/server-certs.p12 \
+        -backup_pwd Secret.123 \
+        -admin_user "kraadmin" \
+        -agent_name "kraadmin" \
+        -admin_email "kraadmin@example.com" \
+        -admin_password "Secret.123" \
+        -agent_key_size 2048 \
+        -agent_key_type rsa \
+        -agent_cert_subject "CN=kraadmin,UID=kraadmin,E=kraadmin@example.com,O=Example\ Domain"
+</pre>
+
+== Exporting KRA Client Certificates ==
+
+Export KRA client certificates:
+
+<pre>
+% cd /var/lib/pki-kra/certs
+% echo Secret.123 > password.txt
+% PKCS12Export -d . -o certs2.p12 -p password.txt -w password.txt 
+</pre>
+
+Stop CA and KRA instances:
+
+<pre>
+% systemctl stop pki-cad@pki-ca.service
+% systemctl stop pki-krad@pki-kra.service
+</pre>
+
+= Preparation for Merge =
+
+== Splitting configuration ==
+
+=== Splitting CA configuration ===
+
+Move CA configuration out of /var/lib/pki-ca/conf into /var/lib/pki-ca/conf-pki-ca:
+<pre>
+% cd /var/lib/pki-ca
+% mkdir conf-pki-ca
+% mv conf/CS.cfg conf-pki-ca
+% mv conf/password.conf conf-pki-ca
+% mv conf/pki_security_domain conf-pki-ca
+% mv conf/flatfile.txt conf-pki-ca
+% mv conf/registry.cfg conf-pki-ca
+% mv conf/serverCertNick.conf conf-pki-ca
+% mv conf/*.profile conf-pki-ca
+</pre>
+
+=== Splitting KRA configuration ===
+
+Move KRA configuration out of /var/lib/pki-kra/conf into /var/lib/pki-kra/conf-pki-kra:
+<pre>
+% cd /var/lib/pki-kra
+% mkdir conf-pki-kra
+% mv conf/CS.cfg conf-pki-kra
+% mv conf/admin.b64 conf-pki-kra
+% mv conf/password.conf conf-pki-kra
+% mv conf/registry.cfg conf-pki-kra
+% mv conf/serverCertNick.conf conf-pki-kra
+% mv conf/*.profile conf-pki-kra
+</pre>
+
+== Fixing CS.cfg ==
+
+=== Fixing CS.cfg in CA ===
+
+Fix the paths in conf-pki-ca/CS.cfg:
+
+<pre>
+0010: passwordFile=/var/lib/pki-ca/conf-pki-ca/password.conf
+0044: auths.instance.flatFileAuth.fileName=/var/lib/pki-ca/conf-pki-ca/flatfile.txt
+0445: ca.connector.KRA.port=9443
+0695: cmsgateway._007=##   (3) Edit '/var/lib/pki-ca/conf-pki-ca/CS.cfg'
+1026: registry.file=/var/lib/pki-ca/conf-pki-ca/registry.cfg
+</pre>
+
+=== Fixing CS.cfg in KRA ===
+
+Fix the paths in conf-pki-kra/CS.cfg:
+
+<pre>
+0007: instanceRoot=/var/lib/pki-ca
+0011: passwordFile=/var/lib/pki-ca/conf-pki-kra/password.conf
+0171: jss.configDir=/var/lib/pki-ca/alias/
+0306: pkicreate.admin_secure_port=9443
+0307: pkicreate.agent_secure_port=9443
+0308: pkicreate.ee_secure_port=9443
+0312: pkicreate.secure_port=9443
+0314: pkicreate.tomcat_server_port=9701
+0315: pkicreate.unsecure_port=9180
+0321: registry.file=/var/lib/pki-ca/conf-pki-kra/registry.cfg
+0359: service.non_clientauth_securePort=9443
+0360: service.securePort=9443
+0361: service.securityDomainPort=9443
+0362: service.unsecurePort=9180
+</pre>
+
+== Fixing server.xml ==
+
+=== Fixing server.xml in CA ===
+
+Fix the names and paths in conf/server.xml:
+
+<pre>
+    <Connector
+        name="Secure"
+        passwordFile="/var/lib/pki-ca/conf-pki-ca/password.conf"
+        serverCertNickFile="/var/lib/pki-ca/conf-pki-ca/serverCertNick.conf"
+    />
+</pre>
+
+=== Fixing server.xml in KRA ===
+
+Fix the names and paths in conf/server.xml:
+
+<pre>
+    <Connector
+        name="Secure"
+        passwordFile="/var/lib/pki-ca/conf-pki-kra/password.conf"
+        serverCertNickFile="/var/lib/pki-ca/conf-pki-kra/serverCertNick.conf"
+    />
+</pre>
+
+== Fixing web.xml ==
+
+=== Fixing web.xml in CA ===
+
+Fix the path in webapps/ca/WEB-INF/web.xml:
+
+<pre>
+<servlet>
+    <servlet-name>castart</servlet-name>
+    <servlet-class>com.netscape.cms.servlet.base.CMSStartServlet</servlet-class>
+    <init-param>
+        <param-name>AuthzMgr</param-name>
+        <param-value>BasicAclAuthz</param-value>
+    </init-param>
+    <init-param>
+        <param-name>cfgPath</param-name>
+        <param-value>/var/lib/pki-ca/conf-pki-ca/CS.cfg</param-value>
+    </init-param>
+    <init-param>
+        <param-name>ID</param-name>
+        <param-value>castart</param-value>
+    </init-param>
+    <load-on-startup>1</load-on-startup>
+</servlet>
+</pre>
+
+=== Fixing web.xml in KRA ===
+
+Fix the path in webapps/kra/WEB-INF/web.xml:
+
+<pre>
+<filter>
+    <filter-name>AgentRequestFilter</filter-name>
+    <filter-class>com.netscape.cms.servlet.filter.AgentRequestFilter</filter-class>
+    <init-param>
+        <param-name>https_port</param-name>
+        <param-value>9443</param-value>
+    </init-param>
+</filter>
+
+<filter>
+    <filter-name>AdminRequestFilter</filter-name>
+    <filter-class>com.netscape.cms.servlet.filter.AdminRequestFilter</filter-class>
+    <init-param>
+        <param-name>https_port</param-name>
+        <param-value>9443</param-value>
+    </init-param>
+</filter>
+
+<filter>
+    <filter-name>EERequestFilter</filter-name>
+    <filter-class>com.netscape.cms.servlet.filter.EERequestFilter</filter-class>
+    <init-param>
+        <param-name>http_port</param-name>
+        <param-value>9180</param-value>
+    </init-param>
+    <init-param>
+        <param-name>https_port</param-name>
+        <param-value>9443</param-value>
+    </init-param>
+</filter>
+
+<servlet>
+    <servlet-name>krastart</servlet-name>
+    <servlet-class>com.netscape.cms.servlet.base.CMSStartServlet</servlet-class>
+    <init-param>
+        <param-name>AuthzMgr</param-name>
+        <param-value>BasicAclAuthz</param-value>
+    </init-param>
+    <init-param>
+        <param-name>cfgPath</param-name>
+        <param-value>/var/lib/pki-ca/conf-pki-kra/CS.cfg</param-value>
+    </init-param>
+    <init-param>
+        <param-name>ID</param-name>
+        <param-value>krastart</param-value>
+    </init-param>
+    <load-on-startup>1</load-on-startup>
+</servlet>
+</pre>
+
+== Fixing sysconfig scripts ==
+
+=== Fixing sysconfig script in CA ===
+
+Fix the path in /etc/sysconfig/pki/ca/pki-ca:
+
+<pre>
+pki_instance_configuration_file=${PKI_INSTANCE_PATH}/conf-${PKI_INSTANCE_ID}/CS.cfg
+</pre>
+
+=== Fixing sysconfig script in KRA ===
+
+Fix the path in /etc/sysconfig/pki/kra/pki-kra:
+
+<pre>
+pki_instance_configuration_file=${PKI_INSTANCE_PATH}/conf-${PKI_INSTANCE_ID}/CS.cfg
+</pre>
+
+= Merging CA and KRA Instances =
+
+== Linking KRA configuration ==
+
+<pre>
+% cd /var/lib/pki-ca
+% ln -s /var/lib/pki-kra/conf-pki-kra
+</pre>
+
+== Linking KRA webapps ==
+
+<pre>
+% cd /var/lib/pki-ca/webapps
+% ln -s /var/lib/pki-kra/webapps/kra
+</pre>
+
+== Merging NSS database ==
+
+=== Exporting KRA certificates ===
+
+Get KRA NSS database password:
+
+<pre>
+% cd /var/lib/pki-kra
+% grep 'internal=' conf-pki-kra/password.conf | awk -F'=' '{print $2}' > conf-pki-kra/password.txt
+</pre>
+
+Export certificates from KRA NSS database:
+
+<pre>
+% PKCS12Export -d alias -p conf-pki-kra/password.txt -w conf-pki-kra/password.txt -o conf-pki-kra/certs.pkcs12
+</pre>
+
+Verify exported certificates:
+
+<pre>
+% pk12util -l conf-pki-kra/certs.pkcs12 -w conf-pki-kra/password.txt
+</pre>
+
+=== Importing CA certificates ===
+
+Get CS NSS database password:
+
+<pre>
+% cd /var/lib/pki-ca
+% grep 'internal=' conf-pki-ca/password.conf | awk -F'=' '{print $2}' > conf-pki-ca/password.txt
+</pre>
+
+Import certificates into CA NSS database:
+
+<pre>
+% pk12util -i conf-pki-kra/certs.pkcs12 -d alias -k conf-pki-ca/password.txt -w conf-pki-kra/password.txt
+</pre>
+
+Fix trust attribute:
+<pre>
+% certutil -M -t "u,u,Pu" -n "auditSigningCert cert-pki-kra" -d alias
+</pre>
+
+Verify imported certificates:
+<pre>
+% certutil -L -d alias
+</pre>
+
+== Merging LDAP authentication ==
+
+Find the CA admin's certificate identifier in the description attribute:
+
+<pre>
+% ldapsearch -x -D "cn=Directory Manager" -w Secret.123 -b "uid=caadmin,ou=people,ou=ca,dc=example,dc=com" description
+dn: uid=caadmin,ou=people,ou=ca,dc=example,dc=com
+description: 2;6;CN=Certificate Authority,OU=pki-ca,O=Example Domain;CN=caadmi
+ n,UID=caadmin,E=caadmin@example.com,O=Example Domain
+</pre>
+
+Map CA admin's certificate to KRA admin user:
+
+<pre>
+% ldapmodify -x -D "cn=Directory Manager" -w Secret.123
+dn: uid=kraadmin,ou=people,ou=kra,dc=example,dc=com
+changetype: modify
+add: description
+description: 2;6;CN=Certificate Authority,OU=pki-ca,O=Example Domain;CN=caadmi
+ n,UID=caadmin,E=caadmin@example.com,O=Example Domain
+-
+</pre>
+
+= Fixing the Code =
+
+Fix hard-coded path in base/common/src/com/netscape/cms/servlet/csadmin/CertUtil.java:370:
+
+<pre>
+String instanceId = config.getString("instanceId");
+String instanceRoot = config.getString("instanceRoot");
+
+CertInfoProfile processor = new CertInfoProfile(instanceRoot + "/conf-" + instanceId + "/" + profile);
+</pre>
+
+Fix hard-coded path in base/common/src/com/netscape/cms/servlet/csadmin/DatabasePanel.java:799:
+
+<pre>
+String configDir = instancePath + File.separator + "conf-" + instanceId;
+</pre>
+
+Fix hard-coded path in base/common/src/com/netscape/cms/servlet/csadmin/AdminPanel.java:547:
+
+<pre>
+String instanceId = cs.getString("instanceId", "");
+String instanceRoot = cs.getString("instanceRoot", "");
+String dir = instanceRoot + File.separator + "conf-" + instanceId + File.separator + "admin.b64";
+</pre>
+
+Fix hard-coded path in base/common/src/com/netscape/cms/servlet/csadmin/DonePanel.java:377:
+
+<pre>
+String security_domain = instanceRoot + "/conf-" + instanceId + "/" + PKI_SECURITY_DOMAIN;
+</pre>
+
+Recompile the code in Eclipse, then start CA:
+
+<pre>
+% systemctl start pki-cad@pki-ca.service
+</pre>
+
+= Testing =
+
+The applications are now located in the following URLs:
+* CA Services: https://localhost:9443/ca/services
+* KRA Services: https://localhost:9443/kra/services
+
+= Dogtag 10 =
+
+== Create CA ==
+
+Prepare a deployment config for CA based on the default deployment config with the following changes:
+
+<pre>
+# diff /usr/share/pki/deployment/config/pkideployment.cfg ca-merged.cfg 
+11,18c11,18
+< pki_admin_password=
+< pki_backup_password=
+< pki_client_database_password=
+< pki_client_pkcs12_password=
+< pki_clone_pkcs12_password=
+< pki_ds_password=
+< pki_security_domain_password=
+< pki_token_password=
+---
+> pki_admin_password=Secret.123
+> pki_backup_password=Secret.123
+> pki_client_database_password=Secret.123
+> pki_client_pkcs12_password=Secret.123
+> pki_clone_pkcs12_password=Secret.123
+> pki_ds_password=Secret.123
+> pki_security_domain_password=Secret.123
+> pki_token_password=Secret.123
+33c33
+< pki_admin_email=
+---
+> pki_admin_email=caadmin@example.com
+35,36c35,36
+< pki_admin_name=admin
+< pki_admin_nickname=
+---
+> pki_admin_name=caadmin
+> pki_admin_nickname=caadmin
+38c38
+< pki_admin_uid=admin
+---
+> pki_admin_uid=caadmin
+48,49c48,49
+< pki_client_database_dir=
+< pki_client_database_purge=True
+---
+> pki_client_database_dir=/var/lib/pki/master/ca/certs
+> pki_client_database_purge=False
+51c51
+< pki_ds_base_dn=
+---
+> pki_ds_base_dn=dc=ca,dc=example,dc=com
+53c53
+< pki_ds_database=
+---
+> pki_ds_database=ca
+64,65c64,65
+< pki_security_domain_name=
+< pki_security_domain_user=admin
+---
+> pki_security_domain_name=EXAMPLE
+> pki_security_domain_user=caadmin
+116c116
+< pki_instance_name=pki-tomcat
+---
+> pki_instance_name=master
+</pre>
+
+Create CA instance with this deployment config:
+
+<pre>
+pkispawn -v -f ca-merged.cfg -s CA
+</pre>
+
+== Create KRA ==
+
+Prepare a deployment config for KRA based on CA deployment config above with the following changes:
+
+<pre>
+# diff ca-merged.cfg kra-merged.cfg 
+33c33
+< pki_admin_email=caadmin@example.com
+---
+> pki_admin_email=kraadmin@example.com
+35,36c35,36
+< pki_admin_name=caadmin
+< pki_admin_nickname=caadmin
+---
+> pki_admin_name=kraadmin
+> pki_admin_nickname=kraadmin
+38c38
+< pki_admin_uid=caadmin
+---
+> pki_admin_uid=kraadmin
+48c48
+< pki_client_database_dir=/var/lib/pki/master/ca/certs
+---
+> pki_client_database_dir=/var/lib/pki/master/kra/certs
+51c51
+< pki_ds_base_dn=dc=ca,dc=example,dc=com
+---
+> pki_ds_base_dn=dc=kra,dc=example,dc=com
+53c53
+< pki_ds_database=ca
+---
+> pki_ds_database=kra
+</pre>
+
+To avoid conflicts use different certificates nicknames in CA and KRA:
+* pki_subsystem_nickname
+* pki_audit_signing_nickname
+* pki_ssl_server_nickname
+
+Create KRA instance with this deployment config:
+
+<pre>
+pkispawn -v -f kra-merged.cfg -s KRA
+</pre>

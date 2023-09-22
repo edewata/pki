@@ -1,0 +1,14 @@
+= Past CoolKey Releases =
+{| border="1" summary="Releases"
+|style="border-width:0px; font-size:large; background-color:#f0f0f0;" colspan=3 | Releases
+|-
+! Release Data !! Version !! Source code
+|-
+| Feb 16, 2007 || 1.1.0 || [http://directory.fedora.redhat.com/download/coolkey/coolkey-1.1.0.tar.gz coolkey-1.1.0.tar.gz]
+|-
+| Jul 14, 2006 || 1.0.1 || [http://directory.fedora.redhat.com/download/coolkey/coolkey-1.0.1.tar.gz coolkey-1.0.1.tar.gz]
+|-
+| Jun 12, 2006 || 1.0.0 || [http://directory.fedora.redhat.com/download/coolkey/coolkey-1.0.0.tar.gz coolkey-1.0.0.tar.gz]
+|}
+
+[[CoolKey|Back to CoolKey home page]]

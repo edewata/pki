@@ -1,0 +1,24 @@
+= Overview =
+
+This page describes the process to back up a DS instance that can be [[DS Restore|restored]] in the future.
+
+There are several ways to backup a DS instance:
+
+* back up individual databases in the instance
+* back up the entire instance (which includes all databases)
+
+= Backing Up DS Database =
+
+See [https://github.com/dogtagpki/389-ds-base/wiki/Backing-Up-DS-Database Backing Up DS Database].
+
+= Backing Up DS Instance =
+
+See [https://github.com/dogtagpki/389-ds-base/wiki/Backing-Up-DS-Instance Backing Up DS Instance].
+
+= See Also =
+
+* [[DS]]
+* [[DS Restore]]
+* [[DS OpenShift]]
+* [https://access.redhat.com/documentation/en-us/red_hat_directory_server/9.0/html-single/configuration_command_and_file_reference/index RHDS - Configuration, Command, and File Reference]
+* [[PKI Server Backup]]

@@ -1,0 +1,182 @@
+= Overview =
+
+PKI Core source package for Fedora is located at https://src.fedoraproject.org/rpms/pki-core.
+
+= Authentication =
+
+Obtain a Kerberos ticket for FEDORAPROJECT.ORG account and [[COPR]] authentication token.
+
+= Getting PKI Core Source Package =
+
+To get the source package:
+
+ $ fedpkg clone pki-core <font color="red">Fedora/pki-core</font>
+
+The above command will create a new <font color="red">Fedora/pki-core</font> folder.
+
+To add a forked repository:
+
+ $ cd Fedora/pki-core
+ $ git remote add <username> ssh://<username>@pkgs.fedoraproject.org/forks/<username>/rpms/pki-core.git
+ $ git fetch <username>
+
+= Updating Version and Release Numbers =
+
+In <font color="red">pki</font>, update the version numbers and release numbers in the spec templates.
+
+Pre-release (i.e. alpha, beta) where x is major version and y is minor version:
+* x.y.0-0.n
+
+Initial release:
+* x.y.0-1
+
+Updates (i.e. upstream bug fixes) where z is 1, 2, and so on:
+* x.y.z-1
+
+Downstream patch (e.g. Fedora-specific patches) where r is 2, 3, and so on:
+* x.y.z-r
+
+See also:
+* [[Versioning Scheme]]
+* [https://fedoraproject.org/wiki/Packaging:Versioning Guidelines for Versioning Fedora Packages]
+
+= Merging Spec Changes =
+
+Changes in RPM spec file template needs to be merged with the actual RPM spec file. Use a visual merge tools such as Meld or Diffuse.
+
+ $ cd pki
+ $ meld pki.spec <font color="red">Fedora/pki-core</font>/pki-core.spec
+
+'''Note:''' Do not override changes that were done downstream unless they were done improperly.
+
+In the actual spec files, add a change log entry for the new release in downstream spec file (unless there is one already that has not been released):
+
+ * Mon Mar 29 2018 Dogtag PKI Team <pki-devel@redhat.com> - 10.6.0-1
+ - Rebased to PKI 10.6.0
+
+'''Note:''' Do not add a change log entry in the upstream spec template.
+
+= Committing Upstream Changes =
+
+In <font color="red">pki</font>, commit all changes to upstream:
+
+ $ git commit -a -m "Updated version number to x.y.z-r"
+
+Create a local tag with the following commands:
+
+ $ git tag v10.6.0
+
+For pre-releases, append the phase name to the version number, e.g. v10.6.0-a1.
+
+= Updating Source Tarball =
+
+In <font color="red">pki</font>, generate a tarball with the following command:
+
+ $ ./build.sh --source-tag=v10.6.0 src
+
+Import the source tarball into each pacakge with the following commands:
+
+ $ cd <font color="red">Fedora/pki-core</font>
+ $ fedpkg new-sources pki-10.6.0.tar.gz
+
+If patch files are used, import the patch files as well, then edit the spec file to include the patch files:
+
+ Patch: pki-10.6.1.patch
+
+Then verify with the following commands:
+
+ $ fedpkg local
+ $ fedpkg lint
+
+= Creating Test Build =
+
+For each package, create a [[COPR]] build with the following commands:
+
+ $ cd <font color="red">Fedora/pki-core</font>
+ $ fedpkg copr-build @pki/10.6 --nowait
+
+Once the test builds are complete, push the tag upstream:
+
+ $ cd <font color="red">pki</font>
+ $ git push origin v10.6.0
+
+= Committing Source Package Changes =
+
+For each package, commit package changes to master (i.e. rawhide):
+
+ $ cd <font color="red">Fedora/pki-core</font>
+ $ git commit -m "Rebased to PKI 10.6.0"
+ $ git push origin master
+
+= Creating Koji Build for Rawhide =
+
+For each package, create a Koji build from the master branch:
+
+ $ cd <font color="red">Fedora/pki-core</font>
+ $ fedpkg build --nowait
+
+If necessary, the task can be monitored with the following command:
+
+ $ koji watch-task <task ID>
+
+Once the build is complete, tag package repository:
+
+ $ cd <font color="red">Fedora/pki-core</font>
+ $ git tag pki-core-10.6.0-1.fc29
+ $ git push origin pki-core-10.6.0-1.fc29
+
+= Creating Koji Build for Current Branches =
+
+For each package, cherry pick the changes from master into the current branch (e.g. f28):
+
+ $ cd <font color="red">Fedora/pki-core</font>
+ $ git checkout <branch>
+ $ git cherry-pick <prev tag>..<current tag>
+ $ git push origin <branch>
+
+If necessary, create BuildRoot overrides for unpublished dependencies, for example:
+
+<pre>
+$ bodhi overrides save jss-4.4.4-1.fc28
+$ koji wait-repo f28-build --build=jss-4.4.4-1.fc28
+</pre>
+
+<pre>
+$ bodhi overrides save tomcat-8.5.29-1.fc28
+$ koji wait-repo f28-build --build=tomcat-8.5.29-1.fc28
+</pre>
+
+<pre>
+$ bodhi overrides save tomcatjss-7.3.0-1.fc28
+$ koji wait-repo f28-build --build=tomcatjss-7.3.0-1.fc28
+</pre>
+
+Then create a Koji build:
+
+ $ fedpkg build --nowait
+
+If necessary, the task can be monitored with the following command:
+
+ $ koji watch-task <task ID>
+
+Once the build is complete, tag package repository:
+
+ $ cd <font color="red">Fedora/pki-core</font>
+ $ git tag pki-core-10.6.0-1.fc28
+ $ git push origin pki-core-10.6.0-1.fc28
+
+= Creating Bodhi Update for Current Branches =
+
+To submit Bodhi update:
+
+ $ bodhi updates new \
+  --request=testing \
+  --type=enhancement \
+  --notes="Update to PKI 10.6.0-1" \
+ pki-core-10.6.0-1.fc28,\
+ dogtag-pki-10.6.0-1.fc28
+
+= References =
+
+* [[PKI Fedora Development]]
+* [https://github.com/dogtagpki/pki/wiki/COPR-Repositories COPR Repositories]

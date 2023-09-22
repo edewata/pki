@@ -1,0 +1,69 @@
+= Overview =
+
+CA signing or designated SCEP signing certificates can be generated using SHA2 algorithms.
+If yes SSCEP client has to be [[#SSCEP Updates | updated]].
+
+Router certificate request can be generated using SHA2 algorithms.
+If yes SSCEP client has to be [[#SCEP Request Generation with SHA2 | updated]].
+
+Router certificate can be generated using SHA2 algorithms.
+This is configurable through either '''caRouterCert''' profile defaults and constraints for signing algorithms or CA's default signing algorithm defined.
+
+SCEP message (in PKCS7 format) can be generated using SHA2 algorithms:
+
+* Server side messages are configured within '''ca.scep''' section of '''CS.cfg''' ('''ca.scep.hashAlgorithm=SHA512''').
+* Client side messages are configured by [[#SSCEP Configuration | SSCEP client configuration]]
+
+= Testing with SSCEP =
+
+See [https://github.com/dogtagpki/pki/wiki/Testing-SCEP-Responder-with-SSCEP Testing SCEP Responder with SSCEP].
+
+= Testing with Key Manager =
+
+See [https://github.com/dogtagpki/pki/wiki/Testing-SCEP-Responder-with-Firefox-Key-Manager Testing SCEP Responder with Firefox Key Manager].
+
+= Test Results =
+
+SCEP unit testing was performed using SSCEP and FF Key Manager as SCEP clients:
+
+{| border="0" cellspacing="1" width="100%" style="background:#cccccc;"
+|-
+| style="background:white"    | &nbsp;
+! style="background:#efefef;" | Signing certificate
+! style="background:#efefef;" | SCEP certificate
+! style="background:#efefef;" | SCEP request
+! style="background:#efefef;" | SCEP response
+! style="background:#efefef;" | PKCS10 request
+
+|- style="background:white"
+! style="background:#efefef;" | &nbsp;'''MD5'''
+| &nbsp;[[#SSCEP | SSCEP]]
+| &nbsp;[[#SSCEP | SSCEP]]
+| &nbsp;[[#SSCEP | SSCEP]]
+| &nbsp;[[#SSCEP | SSCEP]]
+| &nbsp;[[#SSCEP | SSCEP]]
+
+|- style="background:white"
+! style="background:#efefef;" | &nbsp;'''SHA1'''
+| &nbsp;[[#SSCEP | SSCEP]]
+| &nbsp;[[#SSCEP | SSCEP]]
+| &nbsp;[[#SSCEP | SSCEP]]
+| &nbsp;[[#SSCEP | SSCEP]]
+| &nbsp;[[#SSCEP | SSCEP]]
+
+|- style="background:white"
+! style="background:#efefef;" | &nbsp;'''SHA256'''
+| &nbsp;[[#SSCEP Updates | Modified SSCEP]]
+| &nbsp;[[#SSCEP Updates | Modified SSCEP]]
+| &nbsp;[[#SSCEP Updates | Modified SSCEP]]
+| &nbsp;[[#Key Manager FireFox Extension | Key Manager]]
+| &nbsp;[[#SCEP Request Generation with SHA2 | Modified Request Generation ]]
+
+|- style="background:white"
+! style="background:#efefef;" | &nbsp;'''SHA512'''
+| &nbsp;[[#SSCEP Updates | Modified SSCEP]]
+| &nbsp;[[#SSCEP Updates | Modified SSCEP]]
+| &nbsp;[[#SSCEP Updates | Modified SSCEP]]
+| &nbsp;[[#Key Manager FireFox Extension | Key Manager]]
+| &nbsp;[[#SCEP Request Generation with SHA2 | Modified Request Generation ]]
+|}

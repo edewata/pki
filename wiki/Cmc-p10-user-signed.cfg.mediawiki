@@ -1,0 +1,55 @@
+= cmc-p10-user-signed.cfg =
+<pre>
+#numRequests: Total number of PKCS10 requests or CRMF requests.
+numRequests=1
+
+#input: full path for the PKCS10 request or CRMF request,
+#the content must be in Base-64 encoded format
+#Multiple files are supported. They must be separated by space.
+input=pkcs10.req
+
+#output: full path for the CMC request in binary format
+output=/root/cfu/test/cmc/cmc.pkcs10.req
+
+#tokenname: name of token where user signing cert can be found (default is internal)
+tokenname=internal
+
+#nickname: nickname for user signing certificate which will be used
+#to sign the CMC full request.
+#nickname=caadmin
+nickname=signer cfu cert
+
+#dbdir: directory for cert8.db, key3.db and secmod.db
+dbdir=/root/cfu/test/cmc/
+
+#password: password for cert8.db which stores the user signing
+#certificate and keys
+password=netscape
+
+#format: request format, either pkcs10 or crmf
+format=pkcs10
+
+#identityProofV2.enable: if true, then the request will contain
+#this control. Otherwise, false.
+#Note that if both identityProof and identityProofV2
+#  are enabled, identityProofV2 takes precedence; Only one of them can be active at a time
+#Supported hashAlg are:
+# SHA-1, SHA-256, SHA-384, and SHA-512
+#Supported macAlg are:
+# SHA-1-HMAC, SHA-256-HMAC, SHA-384-HMAC, and SHA-512-HMAC
+identityProofV2.enable=false
+identityProofV2.hashAlg=SHA-512
+identityProofV2.macAlg=SHA-256-HMAC
+
+#identityProofV2.sharedSecret: Shared Secret
+witness.sharedSecret=testing
+
+#identification works with identityProofV2
+identification.enable=true
+identification=testuser
+
+request.privKeyId=-3ee22f9ba039c9c4b65f8512beea7b009b730e9d
+popLinkWitnessV2.enable=true
+popLinkWitnessV2.keyGenAlg=SHA-256
+popLinkWitnessV2.macAlg=SHA-256-HMAC
+</pre>

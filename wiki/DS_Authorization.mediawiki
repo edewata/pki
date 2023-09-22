@@ -1,0 +1,172 @@
+= Access Control Instruction =
+
+ACI is defined in directory entry:
+
+<pre>
+dn: ...
+...
+aci: (target_rule)(version 3.0; acl "ACL_name"; permission_rule bind_rules;)
+</pre>
+
+== Target Rules ==
+
+Syntax:
+
+<pre>
+keyword comparison_operator "expression"
+</pre>
+
+Examples:
+
+{| class="wikitable"
+! Description
+! Target Rule
+|-
+| Subtree
+| target = "ldap:///dc=example,dc=com"
+|-
+| Wildcard
+| target = "ldap:///uid=*,dc=example,dc=com"
+|-
+| Specific attribute
+| targetattr = "userPassword"
+|-
+| Search filter
+| targetfilter = "(uid=*)"
+|}
+
+See also:
+* [https://access.redhat.com/documentation/en-us/red_hat_directory_server/10/html-single/administration_guide/index#defining_targets Defining Targets]
+
+== Permissions ==
+
+Syntax:
+
+<pre>
+permission (rights)
+</pre>
+
+Examples:
+
+{| class="wikitable"
+! Description
+! Permission
+|-
+| Granting rights
+| allow (search, read)
+|-
+| Denying rights
+| deny (write)
+|}
+
+See also:
+
+* [https://access.redhat.com/documentation/en-us/red_hat_directory_server/10/html-single/administration_guide/index#defining_permissions Defining Permissions]
+
+== Bind Rules ==
+
+Syntax:
+
+<pre>
+keyword comparison_operator "expression"
+</pre>
+
+Examples:
+
+{| class="wikitable"
+! Description
+! Bind Rule
+|-
+| Anonymous users
+| userdn = "ldap:///anyone"
+|-
+| Authenticated users
+| userdn = "ldap:///all"
+|-
+| Self
+| userdn = "ldap:///self"
+|-
+| Children
+| userdn = "ldap:///parent"
+|-
+| Specific user
+| userdn = "ldap:///uid=admin,ou=people,dc=example,dc=com"
+|-
+| User filter
+| userdn = "ldap:///ou=people,dc=example,dc=com??sub?(department=Engineering)"
+|-
+| Group members
+| groupdn = "ldap:///cn=admins,ou=groups,dc=example,dc=com"
+|-
+| Group filter
+| groupdn = "ldap:///ou=groups,dc=example,dc=com??sub?(department=Engineering)"
+|}
+
+See also:
+
+* [https://access.redhat.com/documentation/en-us/red_hat_directory_server/10/html-single/administration_guide/index#defining_bind_rules Defining Bind Rules]
+
+= Configuring ACI =
+
+<pre>
+$ ldapmodify -h $HOSTNAME -x -D "cn=Directory Manager" -w Secret.123 << EOF
+dn: dc=example,dc=com
+changetype: modify
+replace: aci
+aci: (target = "ldap:///dc=example,dc=com")(targetattr=objectClass||dc||ou||uid||cn||sn||givenName)(version 3.0; acl "Allow anyone to read and search basic attributes"; allow (search, read) userdn = "ldap:///anyone";)
+aci: (target = "ldap:///dc=example,dc=com")(targetattr=*)(version 3.0; acl "Allow anyone to read and search itself"; allow (search, read) userdn = "ldap:///self";)
+EOF
+</pre>
+
+= Instance ACIs =
+
+<pre>
+dn: cn=ldbm database,cn=plugins,cn=config
+changetype: modify
+add: aci
+aci: (targetattr=*)(version 3.0; acl "Cert Manager access for VLV searches"; allow (read) userdn="ldap:///{dbuser}";)
+
+dn: cn=config
+changetype: modify
+add: aci
+aci: (targetattr != aci)(version 3.0; aci "cert manager read access"; allow (read, search, compare) userdn = "ldap:///{dbuser}";)
+
+dn: ou=csusers,cn=config
+changetype: modify
+add: aci
+aci: (targetattr != aci)(version 3.0; aci "cert manager manage replication users"; allow (all) userdn = "ldap:///{dbuser}";)
+
+dn: cn=tasks,cn=config
+changetype: modify
+add: aci
+aci: (targetattr=*)(version 3.0; acl "cert manager: Run tasks after replica re-initialization"; allow (add) userdn = "ldap:///{dbuser}";)
+</pre>
+
+= Subsystem ACIs =
+
+<pre>
+dn: {rootSuffix}
+changetype: modify
+add: aci
+aci: (targetattr=*)(version 3.0; acl "cert manager access v2"; allow (all) userdn = "ldap:///{dbuser}";)
+
+dn: cn="{rootSuffix}",cn=mapping tree,cn=config
+changetype: modify
+add: aci
+aci: (targetattr=*)(version 3.0;acl "cert manager: Add Replication Agreements";allow (add) userdn = "ldap:///{dbuser}";)
+
+dn: cn="{rootSuffix}",cn=mapping tree,cn=config
+changetype: modify
+add: aci
+aci: (targetattr=*)(targetfilter="(|(objectclass=nsds5Replica)(objectclass=nsds5replicationagreement)(objectclass=nsDSWindowsReplicationAgreement)(objectClass=nsMappingTree))")(version 3.0; acl "cert manager: Modify Replication Agreements"; allow (read, write, search) userdn = "ldap:///{dbuser}";)
+
+dn: cn="{rootSuffix}",cn=mapping tree,cn=config
+changetype: modify
+add: aci
+aci: (targetattr=*)(targetfilter="(|(objectclass=nsds5replicationagreement)(objectclass=nsDSWindowsReplicationAgreement))")(version 3.0;acl "cert manager: Remove Replication Agreements";allow (delete) userdn = "ldap:///{dbuser}";)
+</pre>
+
+= See Also =
+
+* [[PKI LDAP]]
+* [https://access.redhat.com/documentation/en-us/red_hat_directory_server/10/html-single/administration_guide/index#managing_access_control RHDS 10: Managing Access Control]

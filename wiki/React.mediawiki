@@ -1,0 +1,11 @@
+= Creating React App =
+
+<pre>
+$ npx create-react-app <name>
+</pre>
+
+= See Also =
+
+* [https://reactjs.org/docs/add-react-to-a-website.html Add React to a Website]
+* [https://reactjs.org/docs/cdn-links.html CDN Links]
+* [[NPM]]

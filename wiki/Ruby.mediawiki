@@ -1,0 +1,42 @@
+= Installation =
+
+To install RubyGems:
+
+<pre>
+$ dnf install rubygems
+</pre>
+
+= Listing Gems =
+
+To find gems:
+
+<pre>
+$ gem search <regular expression>
+</pre>
+
+To list installed gems:
+
+<pre>
+$ gem list
+</pre>
+
+= Installing a Gem =
+
+To install a gem:
+
+<pre>
+$ gem install <name>
+</pre>
+
+= Removing a Gem =
+
+To remove a gem:
+
+<pre>
+$ gem uninstall <name>
+</pre>
+
+= References =
+
+* [http://guides.rubygems.org/rubygems-basics/ RubyGems Basics]
+* [[GitHub]]

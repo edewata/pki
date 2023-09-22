@@ -1,0 +1,290 @@
+= Overview =
+
+This document describes PKI server installation/deployment process. The document is still work in progress.
+
+PKI server is installed using pkispawn CLI. The deployment parameters can be provided interactively or using a configuration file. The pkispawn will execute some deployment scriptlets located in PYTHON_HOME/site-packages/pki/server/deployment/scriptlets.
+
+To run interactive installation:
+<pre>
+$ pkispawn
+</pre>
+
+To deploy with a configuration file:
+<pre>
+$ pkispawn -s <subsystem> -f <configuration file>
+</pre>
+
+= Initialization =
+* set UID and GID
+* initialize HSM
+* verify subsystem doesn't exist
+* check name collision
+* verify sensitive data
+* verify mutually exclusive parameters
+* verify predefined parameters
+* populate non-default ports
+* verify SELinux ports
+* verify DS connection
+
+= Infrastructure Layout =
+* create registry files
+* copy deployment configuration
+* remove sensitive parameters from copy
+* create instance base directory
+* create instance directory
+* create subsystem directory
+
+= Instance Layout =
+
+* create log directory
+* copy configuration files
+* deploy ROOT web application
+* deploy theme web application
+* deploy admin templates
+* deploy JavaScript library
+* create common/lib directory
+* create lib directory
+* create log4j.properties
+* create tmp directory
+* create work directory
+* create bin directory
+* create systemd link
+* create library links
+* create NSS database links
+
+= Subsystem Layout =
+
+* create log directory
+* create archive log directory
+* create audit log directory
+* create configuration directory
+* copy subsystem-specific files
+* create subsystem links
+
+= SELinux Setup =
+= Web Application Deployment =
+* create subsystem webapps directory
+* deploy subsystem web application
+
+= Slot Substitution =
+= Security Database =
+
+* create password configuration file
+* create NSS database
+* register HSM security module
+* set file permissions
+* check temporary server certificates
+* generate temporary server certificates
+* check DS certificate
+* import DS certificate
+
+* Create password.conf.
+* Create temporary pfile.
+* Modify password.conf.
+* Create security database.
+* Modify certificate_database permission.
+* Modify key database permission.
+* Modify secmod database permission.
+* If this is a new instance, generate self signed certificate.
+** Generate noise file.
+** Generate self signed certificate.
+** Delete temporary noise file.
+** Delete temporary pfile.
+
+= Configuration =
+
+== Preparation ==
+
+* create systemd link
+* create client password file
+* create client PKCS #12 password file
+* create client database directory
+* create client NSS database
+* enable java debugger
+* start/restart instance
+* attach debugger
+* create configuration data
+
+== Initialization ==
+* validate request
+* log into token
+
+== Configure security domain ==
+* new domain:
+** create new security domain
+* new subdomain:
+** create new subordinate security domain
+** get certificate chain from parent security domain
+** get install token
+* join existing security domain:
+** get certificate chain from security domain
+** get install token
+
+== Configure subsystem ==
+* Configure master subsystem
+* Configure cloned subsystem
+** verify clone URI
+** get config entries
+*** CA or KRA: update number ranges
+*** update config entries
+** import system certificates from PKCS #12 or HSM
+** verify certs
+* Cloned CA:
+** import certificate chain
+* TPS:
+** configure CA connector
+** configure TKS connector
+** configure KRA connector
+** configure authentication database
+
+== Configure hierarchy ==
+* master CA:
+** root: configure root
+** join: configure subordinate
+
+== Database setup ==
+* Configure database
+** configure internal database
+** TPS: configure token database
+* Initialize database
+** clone & setup replication:
+*** verify master & clone database
+*** verify master & clone base DN
+*** configure master replication port
+*** configure clone replication port
+*** configure replication security
+*** configure replication schema
+** create password file
+** if not step 2
+*** populate database
+*** clone: setup replication
+*** re-init subsystem
+*** import manager.ldif
+*** populate VLV indexes
+
+== Configure CA certificate chain ==
+
+* join:
+** External CA:
+*** type = otherca
+** Local CA:
+*** Non-clone: import cert chain
+*** CA:
+
+== Process certificates ==
+
+* update sslserver
+** update sslserver configuration
+* update subsystem configuration
+** update configuration
+** update clone configuration
+* process certificate
+** if cert already exists
+*** loadKeyPair()
+*** storeKeyPair()
+** else
+*** create key pair
+
+* standalone step 2:
+** set external cert chain
+* update SSL server cert configuration
+* update subsystem cert configuration
+* update subsystem cert clone configuration
+* store server cert SAN
+* step 1:
+** ECC: create ECC key pair
+** RSA: create RSA key pair
+** configure cert
+* step 2:
+** set certificate
+* standalone:
+** step 1:
+*** handle cert request
+*** normalize cert and request
+* non-standalone:
+** handle cert request
+* clone:
+** update clone config
+
+== Handle certificates ==
+
+== Backup keys ==
+
+* export certs and private keys to PKCS #12 file
+
+== Configure administrator ==
+
+* create admin user
+* add user to Certificate Manager Agents and Administrators group
+* new security domain:
+** add user to Security Domain Administrators group
+** add user to Enterprise CA Administrators group
+** add user to Enterprise KRA Administrators group
+** add user to Enterprise OCSP Administrators group
+** add user to Enterprise TKS Administrators group
+** add user to Enterprise RA Administrators group
+** add user to Enterprise TPS Administrators group
+* import admin certificate
+* CA:
+** create local admin certificate
+* non-CA:
+** request admin certificate from CA
+** store cert in admin.b64
+* reinitialize UGSubsystem
+* map cert to admin
+
+== Update security domain ==
+
+* create security domain
+* create subordinate security domain
+* join security domain
+
+== Setup database user ==
+
+This step is executed only if the database is not shared (e.g. the initial subsystem):
+
+* create pkidbuser
+* map pkidbuser to subsystem certificate by adding description and userCertificate attributes
+* map pkidbuser to subsystem certificate by adding seeAlso attribute
+* unmap existing users from subsystem certificate by removing seeAlso attribute
+
+Parameters:
+
+* pki_share_db (default: False in CA, True in other subsystems)
+* pki_share_dbuser_dn (default: uid=pkidbuser,ou=people,SUFFIX)
+
+== Finalize configuration ==
+
+* CA:
+** master: update next ranges
+** clone: disable CRL caching and generation
+** enable profile subsystem
+* KRA:
+** update connector
+** create user: CA-<hostname>-<port>
+** add user to Trust Manager group
+* OCSP:
+** master: import CA cert
+** update config
+** create user: CA-<hostname>-<port>
+** add user to Trust Manager group
+** clone: configure clone refresh
+* TPS:
+** add profiles to TPS user
+** register to CA
+** register to TKS
+** register to KRA
+** generate shared secret
+
+= Finalization =
+
+* save deployment configuration
+* save installation manifest file
+* enable instance on boot
+* modify serverCertNick.conf
+* restart instance
+* purge client database
+
+= References =
+
+* [[Deployment]]

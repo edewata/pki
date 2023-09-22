@@ -1,0 +1,148 @@
+= Overview =
+
+In order to run Tomcat 8.5+ with SSL server certificate and key stored in HSM, the [https://tomcat.apache.org/tomcat-8.5-doc/ssl-howto.html#Configuration Tomcat HTTP NIO connector] needs to be configured with PKCS #11 keystore with JSS as [https://github.com/dogtagpki/jss/wiki/JSS-KeyStore keystore provider]. When Tomcat is configured this way, it will execute the following code in [https://github.com/dmlloyd/openjdk/blob/jdk/jdk/src/java.base/share/classes/sun/security/util/KeyUtil.java#L86 sun.security.KeyUtil] to determine the size of the RSA key based on its modulus:
+
+<pre>
+public static final int getKeySize(Key key) {
+    ...
+    } else if (key instanceof RSAKey) {
+        RSAKey pubk = (RSAKey)key;
+        size = pubk.getModulus().bitLength();
+    ...
+}
+</pre>
+
+However, currently the RSAPrivateKey.getModulus() is not supported in JSS, so Tomcat will fail to start properly.
+
+There are several ways to fix the problem.
+
+= Option 1: Get Modulus from Public Key =
+
+It may be possible to get the modulus of the public key corresponding to the private key. However, currently there seems to be no mechanism to get the public key directly from the private key.
+
+== Option 1a: Get Public Key from Certificate ==
+
+Assuming there is a certificate that corresponds to the private key, it might be possible to implement a new CryptoManager.getCertFromPrivateKey() to get the certificate from the private key, then get the public key from the certificate, then get the modulus from the public key:
+
+<pre>
+public class PK11RSAPrivateKey {
+
+    public BigInteger getModulus() {
+
+        CryptoManager cryptoManager = CryptoManager.getInstance();
+
+        // get the certificate from the private key
+        X509Certificate cert = cryptoManager.getCertFromPrivateKey(this);
+
+        // get the public key from the certificate
+        PublicKey publicKey = cert.getPublicKey();
+
+        // return the modulus from the public key
+        return publicKey.getModulus();
+    }
+}
+</pre>
+
+Notes:
+* this option will not work if the certificate does not exist
+* it's not clear if CryptoManager.getCertFromPrivateKey() can be implemented efficiently (without looping through all existing certificates)
+
+== Option 1b: Get Public Key from Private Key ==
+
+If the certificate cannot be guaranteed to exist, it might be possible to implement a new CryptoManager.getPublicKeyFromPrivateKey() to get the public key from the private key, then get the modulus from the public key:
+
+<pre>
+public class PK11RSAPrivateKey {
+
+    public BigInteger getModulus() {
+
+        CryptoManager cryptoManager = CryptoManager.getInstance();
+
+        // get the public key from the private key
+        PublicKey publicKey = cryptoManager.getPublicKeyFromPrivateKey(this);
+
+        // return the modulus from the public key
+        return publicKey.getModulus();
+    }
+}
+</pre>
+
+Notes:
+* this option does not depend on certificates
+* it's not clear if CryptoManager.getPublicKeyFromPrivateKey() can be implemented efficiently (without looping through all existing public keys)
+
+= Option 2: Get Modulus from Private Key =
+
+== Option 2a: Using PK11_GetAttributes() ==
+
+It might be possible to get the modulus of the private key directly using PK11_GetAttributes():
+
+<pre>
+JNIEXPORT jbyteArray JNICALL
+Java_org_mozilla_jss_pkcs11_PK11RSAPrivateKey_getModulusByteArray
+    (JNIEnv *env, jobject this)
+{
+    // get private key
+    JSS_PK11_getPrivKeyPtr(env, this, &privateKey);
+
+    // get token of private key
+    slot = PK11_GetSlotFromPrivateKey(privateKey);
+
+    // login to token if necessary
+    PK11_Authenticate(slot, PR_TRUE /*readCerts*/, NULL /*wincx*/);
+
+    // get modulus from private key
+    crv = PK11_GetAttributes(NULL, slot, privateKey->pkcs11ID, &theTemplate, 1);
+
+    value = theTemplate.pValue;
+    length = theTemplate.ulValueLen;
+
+    // convert modulus into byte array
+
+    return array;
+}
+</pre>
+
+Notes:
+* this option does not depend on certificates
+* currently PK11_GetAttributes() is available but not exported by NSS
+* this might be the most efficient solution
+
+== Option 2b: Using SECKEY_ConvertToPublicKey() ==
+
+It might be possible to convert the private key into public key using SECKEY_ConvertToPublicKey() then get the modulus from the public key:
+
+<pre>
+JNIEXPORT jbyteArray JNICALL
+Java_org_mozilla_jss_pkcs11_PK11RSAPrivateKey_getModulusByteArray
+    (JNIEnv *env, jobject this)
+{
+    // get private key
+    JSS_PK11_getPrivKeyPtr(env, this, &privateKey);
+
+    // get token of private key
+    slot = PK11_GetSlotFromPrivateKey(privateKey);
+
+    // login to token if necessary
+    PK11_Authenticate(slot, PR_TRUE /*readCerts*/, NULL /*wincx*/);
+
+    // convert private key into public key
+    publicKey = SECKEY_ConvertToPublicKey(privateKey);
+
+    // get modulus from public key
+    value = publicKey->u.rsa.modulus.data;
+    length = publicKey->u.rsa.modulus.len;
+
+    // convert modulus into byte array
+
+    return array;
+}
+</pre>
+
+* this option does not require NSS changes
+
+= References =
+
+* [[JSS Design]]
+* [https://github.com/dogtagpki/jss/wiki/JSS-KeyStore JSS KeyStore]
+* [https://bugzilla.mozilla.org/show_bug.cgi?id=1467321 API to obtain the modulus of an RSA key]

@@ -1,0 +1,47 @@
+= Issue =
+
+Currently PKI cannot run inside OpenShift due to the following issues:
+
+* pkispawn needs to run as root
+* OpenShift requires containers to run as non-root (except during initialization in Dockerfile)
+* pkispawn needs systemd for installation and runtime
+* OpenShift doesn't support systemd (except after running /usr/sbin/init at the end of Dockerfile)
+
+= Solution =
+
+Remove PKI's dependency on systemd for installation and runtime.
+
+== Installation ==
+
+Convert the configuration servlets into CLIs that can run without starting the server:
+
+* pki-server config-init
+* pki-server db-setup
+* pki-server cert-setup
+* pki-server admin-setup
+* pki-server nssdb-backup
+* pki-server sd-setup
+* pki-server db-user-setup
+* pki-server config-finalize
+
+== Runtime ==
+
+Provide a CLI to run the server in the foreground:
+
+* pki-server run
+
+= Tasks =
+
+* Refactor installation code not to depend on CMSEngine.
+* Refactor configuration servlets into CLIs.
+* Update installation code to use the CLIs instead of servlets (without systemd).
+* Add CLI to run PKI server in the foreground (without systemd).
+* Create Dockerfile to call pkispawn and then run the server in the foreground.
+* Publish PKI server image on DockerHub.
+* Deploy PKI server on OpenShift for demo.
+
+= See Also =
+
+* [https://github.com/dogtagpki/pki/wiki/Building-ACME-Container Building ACME Container]
+* [[PKI CA Container]]
+* [[IPA Containerization]]

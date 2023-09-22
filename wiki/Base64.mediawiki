@@ -1,0 +1,11 @@
+= Encoders =
+
+* CryptoUtil.base64Encode()
+* CMS.BtoA() -> Utils.base64encode()
+* Utils.base64encode()
+
+= Decoders =
+
+* CryptoUtil.base64Decode()
+* CMS.AtoB() -> Utils.base64decode()
+* Utils.base64decode()

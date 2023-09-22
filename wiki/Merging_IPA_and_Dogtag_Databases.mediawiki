@@ -1,0 +1,51 @@
+== Requirements ==
+Up to now, when Dogtag is deployed with IPA, it has used a separate database instance than the main IPA database instance.
+We want to merge the two instances for the following reasons:
+* Less ports and instances to manage
+* Easier for IPA to manage replication = especially when cloning.
+* Making it easier for IPA to manage Dogtag groups.  That is - eventually, IPA may want to add real users to Dogtag roles.  An example of this would be having a quorum of agents to approve a key recovery (for example).
+
+== Design ==
+We will proceed as follows:
+* Dogtag data (certificates, security domains, acis etc) will remain in its own suffix within the main IPA instance.
+* Dogtag data will be read/writeable by a special dogtag-directory-manager user, who :
+** will have an entry that resides in the dogtag suffix.
+** will have read only permissions on the IPA suffix.
+** will connect to the directory using client certificate authentication.  The private key for this user will be created and stored in the NSS certdb for the dogtag instance.  This will remove the need to keep the directory server password in a file on the system.
+
+=== Dogtag Users and Groups ===
+Initially, the thought was to move all Dogtag users and groups to IPA.  That way, dogtag users and groups could be modified by IPA administrators using the standard UI and CLI tools.  But, there are some problems with that:
+* Not all users in the dogtag users/groups are in fact real users.  Some of them are "service accounts" - which are used most notably for inter-system communication.  As an example, a CA communicates with a KRA using a special user that is created on the KRA during the installation process and placed in the Trusted Manager Group.  Exposing this user to the UI could result in key escrow not working if this user is modified or deleted.
+* Dogtag needs to create new users and groups whenever say, a new subsystem like a DRM joins a security domain.
+* It is likely that Dogtag will want to add new users/ groups in the future, and this may need to be done post-install in the case of upgrading systems.  If the dogtag directory manager has no permissions in the IPA database, this becomes problematic.
+
+To address these issues, I suggest the following instead:
+* Dogtag groups will continue to reside in the dogtag suffix.  They will be changed so that Dogtag uses groupOfNames instead of groupOfUniqueNames, so that we can store DNs as members and use the memberOf syntax.  This will allow dogtag-directory-manager to add members to the dogtag groups.
+* Dogtag system users (ie. users created by dogtag  - "service accounts") will continue to be stored in the dogtag suffix.  This will allow dogtag-directory manager to create service accounts as needed.
+* Real users that are part of dogtag groups will remain in the IPA suffix.  As such they will be manageable by IPA CLI and UI.
+* In Dogtag, the authentication code basically takes the certificate that is presented and compares it to certificates for all users in a specified $USER_BASE_DN.  The code would be modified to look in multiple basedns. (ipa side and dogtag side).  This would be a config option set by IPA.
+
+So, how does IPA add a user to a dogtag group?
+* The simplest way would be to allow members of a "dogtag-admins" group (defined on the IPA side) to modify the composition of the dogtag groups.  They could then add a DN that refers to the user on the Dogtag side.  The downside of this is that IPA UI and CLI tools to manage users/ groups would have to look in two places.  Moreover, we still have the issue that dogtag service accounts would be exposed to IPA admins.
+* A more complicated way would be to create nested groups.  That is, we could define a group "Real Certificate Agents" for example, on the IPA side, and have that group be a member of the "Certificate Agents" group on the dogtag side.  Because memberOf supports nested groups, this would work for dogtag searches.  IPA dogtag-admins would then only manage the IPA "Real Certificate Agents" group - and would need no permissions on the dogtag suffix.  Also, dogtag service accounts would not be exposed to IPA.
+  
+=== IPA installation sequence for a Master CA ===
+The IPA installation sequence will look something like this:
+* DS instance is first installed.  In this step: 
+** schema for dogtag and IPA are copied to the relevant DS instance.  I have already confirmed that IPA and Dogtag schema do not conflict.
+** Initial databases are created.
+** indexes are created for IPA and Dogtag.
+*** the Dogtag VLV and regular indexes are database specific and are therefore tied to the dogtag suffix.  So they should not present any incompatibilities with IPA.
+*** IPA on the other hand, changes some default indexes.  We will need to confirm that the changes do not adversely affect Dogtag performance.
+** cn=config entries are modified as required for IPA and dogtag.
+*** Dogtag only modifies one entry nsslapd-maxbersize: 209715200 which should not be a problem for IPA
+*** IPA changes a bunch of entries.  Need to investigate how these will affect dogtag performance.
+** Any initial users are also created along with acls.
+*** This includes the dogtag-directory-manager, which does not, however, have a certificate yet.
+* Dogtag instance is created and configured
+** pkisilent is called and directed to use the main directory server instance (localhost/389) with the Directory Manager credentials
+** pkisilent is also called with a special option NOT to create the database (as it has already been done) 
+** Dogtag configuration will include a step that generates a certificate for the dogtag-directory-manager and populates the relevant entry in the database.
+* SSL is enabled on the DS instance.  This includes putting the CA certificate in the DS certdb.
+* Client authentication is enabled on the DS instance for the dogtag-directory-manager.
+* IPA installation continues ..

@@ -1,0 +1,62 @@
+= Overview =
+
+This page describes the process to setup KRA agent in IPA.
+
+= KRA Agent Setup =
+
+After KRA is installed, IPA will execute the following steps to set up KRA agent (see ipaserver/install/krainstance.py).
+
+Create a client security database (i.e. ~/.dogtag/nssdb):
+<pre>
+$ pki -c Secret.123 client-init
+</pre>
+
+Import CA certificate:
+<pre>
+$ pki -c Secret.123 client-cert-import --pkcs12 /root/kracert.p12 --pkcs12-password <IPA admin password>
+</pre>
+
+Trust CA certificate:
+<pre>
+$ pki -c Secret.123 client-cert-mod "Certificate Authority - <IPA realm>" --trust "CT,C,C"
+</pre>
+
+Import CA admin certificate:
+<pre>
+$ pki -c Secret.123 client-cert-import --pkcs12 /root/ca-agent.p12 --pkcs12-password <IPA admin password>
+</pre>
+
+Create KRA user:
+<pre>
+$ pki -c Secret.123 -n ipa-ca-agent kra-user-add ipakra --fullName "IPA KRA User"
+</pre>
+
+Add KRA user into KRA agents group:
+<pre>
+$ pki -c Secret.123 -n ipa-ca-agent kra-user-membership-add ipakra "Data Recovery Manager Agents"
+</pre>
+
+Export IPA cert as DER file:
+<pre>
+$ pki -d /etc/httpd/alias -C /etc/httpd/alias/pwdfile.txt client-cert-show ipaCert --cert ipa.crt
+</pre>
+
+Assign IPA cert to KRA user:
+<pre>
+$ pki -c Secret.123 -n ipa-ca-agent kra-user-cert-add ipakra --input ipa.crt
+</pre>
+
+Export IPA cert as PEM file:
+<pre>
+$ pki -d /etc/httpd/alias -C /etc/httpd/alias/pwdfile.txt client-cert-show ipaCert --client-cert /etc/httpd/alias/kra-agent.pem
+</pre>
+
+Set the file ownership and permission:
+<pre>
+$ chown root.apache /etc/httpd/alias/kra-agent.pem
+$ chmod 660 /etc/httpd/alias/kra-agent.pem
+</pre>
+
+= References =
+* [[IPA]]
+* [[IPA PKI Users]]

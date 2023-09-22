@@ -1,0 +1,107 @@
+= Error Log =
+
+<pre>
+[17/Jan/2019:21:01:35.130740025 +0100] - INFO - slapd_extract_cert - CA CERT NAME: DS Signing Certificate
+[17/Jan/2019:21:01:35.137177302 +0100] - WARN - Security Initialization - SSL alert: Sending pin request to SVRCore. You may need to run systemd-tty-ask-password-agent to provide the password.
+[17/Jan/2019:21:01:35.159726601 +0100] - INFO - slapd_extract_cert - SERVER CERT NAME: Server-Cert
+[17/Jan/2019:21:01:35.175612250 +0100] - INFO - Security Initialization - SSL info: Enabling default cipher set.
+[17/Jan/2019:21:01:35.179844670 +0100] - INFO - Security Initialization - SSL info: Configured NSS Ciphers
+[17/Jan/2019:21:01:35.181848298 +0100] - INFO - Security Initialization - SSL info:     TLS_AES_128_GCM_SHA256: enabled
+[17/Jan/2019:21:01:35.183842000 +0100] - INFO - Security Initialization - SSL info:     TLS_CHACHA20_POLY1305_SHA256: enabled
+[17/Jan/2019:21:01:35.185881431 +0100] - INFO - Security Initialization - SSL info:     TLS_AES_256_GCM_SHA384: enabled
+[17/Jan/2019:21:01:35.191815153 +0100] - INFO - Security Initialization - SSL info:     TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256: enabled
+[17/Jan/2019:21:01:35.193724065 +0100] - INFO - Security Initialization - SSL info:     TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256: enabled
+[17/Jan/2019:21:01:35.195552964 +0100] - INFO - Security Initialization - SSL info:     TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256: enabled
+[17/Jan/2019:21:01:35.197401773 +0100] - INFO - Security Initialization - SSL info:     TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256: enabled
+[17/Jan/2019:21:01:35.203225575 +0100] - INFO - Security Initialization - SSL info:     TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA: enabled
+[17/Jan/2019:21:01:35.205356180 +0100] - INFO - Security Initialization - SSL info:     TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA: enabled
+[17/Jan/2019:21:01:35.208502406 +0100] - INFO - Security Initialization - SSL info:     TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA: enabled
+[17/Jan/2019:21:01:35.210287906 +0100] - INFO - Security Initialization - SSL info:     TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256: enabled
+[17/Jan/2019:21:01:35.213210240 +0100] - INFO - Security Initialization - SSL info:     TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256: enabled
+[17/Jan/2019:21:01:35.215800811 +0100] - INFO - Security Initialization - SSL info:     TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA: enabled
+[17/Jan/2019:21:01:35.218439820 +0100] - INFO - Security Initialization - SSL info:     TLS_DHE_RSA_WITH_AES_128_GCM_SHA256: enabled
+[17/Jan/2019:21:01:35.220903578 +0100] - INFO - Security Initialization - SSL info:     TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256: enabled
+[17/Jan/2019:21:01:35.222831185 +0100] - INFO - Security Initialization - SSL info:     TLS_DHE_RSA_WITH_AES_128_CBC_SHA: enabled
+[17/Jan/2019:21:01:35.225278884 +0100] - INFO - Security Initialization - SSL info:     TLS_DHE_RSA_WITH_AES_128_CBC_SHA256: enabled
+[17/Jan/2019:21:01:35.227842055 +0100] - INFO - Security Initialization - SSL info:     TLS_DHE_RSA_WITH_AES_256_CBC_SHA: enabled
+[17/Jan/2019:21:01:35.230265619 +0100] - INFO - Security Initialization - SSL info:     TLS_DHE_RSA_WITH_AES_256_CBC_SHA256: enabled
+[17/Jan/2019:21:01:35.236751304 +0100] - INFO - Security Initialization - SSL info:     TLS_RSA_WITH_AES_128_GCM_SHA256: enabled
+[17/Jan/2019:21:01:35.239028280 +0100] - INFO - Security Initialization - SSL info:     TLS_RSA_WITH_AES_128_CBC_SHA: enabled
+[17/Jan/2019:21:01:35.241169428 +0100] - INFO - Security Initialization - SSL info:     TLS_RSA_WITH_AES_128_CBC_SHA256: enabled
+[17/Jan/2019:21:01:35.243249017 +0100] - INFO - Security Initialization - SSL info:     TLS_RSA_WITH_AES_256_CBC_SHA: enabled
+[17/Jan/2019:21:01:35.245257722 +0100] - INFO - Security Initialization - SSL info:     TLS_RSA_WITH_AES_256_CBC_SHA256: enabled
+[17/Jan/2019:21:01:35.263640145 +0100] - INFO - Security Initialization - slapd_ssl_init2 - Configured SSL version range: min: TLS1.0, max: TLS1.3
+...
+[17/Jan/2019:21:01:36.794988506 +0100] - INFO - slapd_daemon - Listening on All Interfaces port 636 for LDAPS requests
+</pre>
+
+= sslscan =
+
+<pre>
+$ sslscan $HOSTNAME:636
+Version: 1.11.11
+OpenSSL 1.0.2o-fips  27 Mar 2018
+
+OpenSSL version does not support SSLv2
+SSLv2 ciphers will not be detected
+
+Connected to 1111:2222:3333:4444:5555:6666:7777:8888
+
+Testing SSL server server.example.com on port 636 using SNI name server.example.com
+
+  TLS Fallback SCSV:
+Server supports TLS Fallback SCSV
+
+  TLS renegotiation:
+Secure session renegotiation supported
+
+  TLS Compression:
+Compression disabled
+
+  Heartbleed:
+TLS 1.2 not vulnerable to heartbleed
+TLS 1.1 not vulnerable to heartbleed
+TLS 1.0 not vulnerable to heartbleed
+
+  Supported Server Cipher(s):
+Preferred TLSv1.2  128 bits  ECDHE-RSA-AES128-GCM-SHA256   Curve P-256 DHE 256
+Accepted  TLSv1.2  128 bits  ECDHE-RSA-AES128-SHA          Curve P-256 DHE 256
+Accepted  TLSv1.2  128 bits  ECDHE-RSA-AES128-SHA256       Curve P-256 DHE 256
+Accepted  TLSv1.2  256 bits  ECDHE-RSA-AES256-SHA          Curve P-256 DHE 256
+Accepted  TLSv1.2  128 bits  DHE-RSA-AES128-GCM-SHA256     DHE 2048 bits
+Accepted  TLSv1.2  128 bits  DHE-RSA-AES128-SHA            DHE 2048 bits
+Accepted  TLSv1.2  128 bits  DHE-RSA-AES128-SHA256         DHE 2048 bits
+Accepted  TLSv1.2  256 bits  DHE-RSA-AES256-SHA            DHE 2048 bits
+Accepted  TLSv1.2  256 bits  DHE-RSA-AES256-SHA256         DHE 2048 bits
+Accepted  TLSv1.2  128 bits  AES128-GCM-SHA256            
+Accepted  TLSv1.2  128 bits  AES128-SHA                   
+Accepted  TLSv1.2  128 bits  AES128-SHA256                
+Accepted  TLSv1.2  256 bits  AES256-SHA                   
+Accepted  TLSv1.2  256 bits  AES256-SHA256                
+Preferred TLSv1.1  128 bits  ECDHE-RSA-AES128-SHA          Curve P-256 DHE 256
+Accepted  TLSv1.1  256 bits  ECDHE-RSA-AES256-SHA          Curve P-256 DHE 256
+Accepted  TLSv1.1  128 bits  DHE-RSA-AES128-SHA            DHE 2048 bits
+Accepted  TLSv1.1  256 bits  DHE-RSA-AES256-SHA            DHE 2048 bits
+Accepted  TLSv1.1  128 bits  AES128-SHA                   
+Accepted  TLSv1.1  256 bits  AES256-SHA                   
+Preferred TLSv1.0  128 bits  ECDHE-RSA-AES128-SHA          Curve P-256 DHE 256
+Accepted  TLSv1.0  256 bits  ECDHE-RSA-AES256-SHA          Curve P-256 DHE 256
+Accepted  TLSv1.0  128 bits  DHE-RSA-AES128-SHA            DHE 2048 bits
+Accepted  TLSv1.0  256 bits  DHE-RSA-AES256-SHA            DHE 2048 bits
+Accepted  TLSv1.0  128 bits  AES128-SHA                   
+Accepted  TLSv1.0  256 bits  AES256-SHA                   
+
+  SSL Certificate:
+Signature Algorithm: sha256WithRSAEncryption
+RSA Key Strength:    2048
+
+Subject:  server.example.com
+Issuer:   DS Signing Certificate
+
+Not valid before: Jan 17 19:44:20 2019 GMT
+Not valid after:  Apr 17 19:44:20 2019 GMT
+</pre>
+
+= References =
+
+* [[DS]]

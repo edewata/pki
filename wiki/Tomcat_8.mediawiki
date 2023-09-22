@@ -1,0 +1,68 @@
+= Installation =
+
+On Fedora:
+
+ $ dnf install tomcat
+
+On Debian:
+
+ $ apt install tomcat8
+
+= SSL Connector =
+
+See also:
+
+* https://github.com/apache/tomcat80/blob/trunk/java/org/apache/tomcat/util/net/jsse/JSSESocketFactory.java
+
+== Blocking Java connector ==
+
+<pre>
+<Connector name="Secure"
+       port="8443"
+       protocol="org.apache.coyote.http11.Http11Protocol"
+       SSLEnabled="true"
+       sslProtocol="SSL"
+       scheme="https"
+       secure="true"
+       ...>
+</Connector>
+</pre>
+
+== Non-blocking Java NIO connector ==
+
+<pre>
+<Connector name="Secure"
+       port="8443"
+       protocol="org.apache.coyote.http11.Http11NioProtocol"
+       SSLEnabled="true"
+       sslProtocol="SSL"
+       scheme="https"
+       secure="true"
+       ...>
+</Connector>
+</pre>
+
+See also [https://tomcat.apache.org/tomcat-8.0-doc/config/http.html Tomcat 8.0 - The HTTP Connector].
+
+= Getting Source Code =
+
+<pre>
+$ dnf builddep tomcat
+$ git clone https://github.com/apache/tomcat80.git
+</pre>
+
+= Configuring Build Environment =
+
+<pre>
+$ cp build.properties.default build.properties
+</pre>
+
+<pre>
+base.path=<home>/java
+</pre>
+
+= References =
+
+* [[Tomcat]]
+* [[Tomcat 8 Migration]]
+* [https://github.com/apache/tomcat80 Tomcat 8 Source Code]

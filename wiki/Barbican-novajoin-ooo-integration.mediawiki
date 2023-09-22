@@ -1,0 +1,59 @@
+== The Problem ==
+
+The problem is how to set up the authentication from Barbican (deployed in the overcloud)
+and the KRA in a secure and automatable way in a Triple-O deployment.
+
+Currently, the only way to set up Barbican with a Dogtag/IPA back-end is manual.
+The Dogtag barbican back-end plugin communicates with the KRA directly through certificate
+authentication using an agent certificate.
+
+There is no automated way to create the agent (especially if we have one agent per overcloud node)
+or retrieve the certificate for that agent.
+
+== Proposed Solution ==
+
+The proposed solution takes advantage of the fact that the undercloud is enrolled as an IPA
+client, and has novajoin deployed on the undercloud.  In addition, the overcloud nodes are
+also enrolled in IPA through novajoin.
+
+As a result, both the overcloud and undercloud nodes have Kerberos host and service credentials
+that can be used to communicate with IPA.
+
+In this proposed solution, Barbican will interact with the KRA only indirectly through the IPA Vault,
+rather than going to the KRA directly.  This may incur a small performance penalty in having
+another system in the pipeline, but this is a pipeline which we will need to optimize for many
+other use cases.  Moreover, in future, IPA offers a number of advantages for future refinement
+(including possibly project level separation at the IPA Vault level).
+
+The solution therefore looks like the following:
+
+Barbican --(1)--> IPA Vault --(2)--> KRA
+
+Interaction (2) is opaque to Barbican, and is currently done through a trusted agent mechanism.
+In future, we will add GSSAPI integration with the KRA, along with an authz module for IPA specific
+access rules.  This should remain opaque to Barbican though.
+
+Interaction (1) will be done through the IPA Vault python API, using the service kerberos credential
+for the Barbican service.  This service ("barbican/example.com") will store and retrieve secrets
+in its own vaults.  By IPA access rules, it will not have access to any other secrets in IPA,
+though access rules may be added by IPA admins to provide access to the secrets by different IPA accounts.
+
+The installation flow will go roughly as follows:
+
+# Admin runs a script to enroll undercloud node in IPA, and then executes quickstart.
+# Undercloud is deployed and novajoin is deployed.
+# Overcloud nodes are deployed.  These have ipa_enroll=True to allow the overcloud nodes to register to IPA through novajoin.
+# The metadata passed to novajoin also includes managed_services.  These are services (like haproxy/overcloud.com for instance) for which novajoin will:
+## Create the subnode (overcloud.com in this case) if needed by doing a host-add with no otp.
+## Create the service (haproxy/overcloud.com) if needed by doing a service-add.
+## Associate the overcloud host principal with the service by doing service_add_host.
+# The above operations are done using the nova service principal's credentials, which were previously retrieved using ipa-getkeytab.  The nova service user is a member of the the "Nova Management" role, which has all the relevant permissions.
+# We will pass in one more managed_service: "barbican/example.com" - which will result in the service being created and the overcloud node host principal added to the service.
+# When the overcloud node comes up, cloud-init runs and enrolls the overcloud node with IPA with the OTP provided by novajoin.  The host principal is also retrieved.
+# puppet modules then run to install the overcloud services, including barbican.  The puppet module for Barbican then uses the host principal to retrieve the service keytab for barbican/example.com, and store it in /etc/barbican/barbican.keytab.  The puppet module also configures Barbican to interact with the IPA vault.
+
+== Steps to get there ==    
+# Write an IPA Vault/Barbican plugin.  This is basically the same as the Dogtag plugin except we use the barbican service keytab and use vault primitives, rather than the KRA API.
+# Write puppet code in puppet-barbican to get the Batrbican service keytab and configure Barbican <-> IPA Vault.
+# Write OOO heat templates to add a barbican metadata service to the managed_services passed to novajoin through the metadata.
+# It may be necessary to add an additional field to the managed services to NOT delete the service when the last host has been removed.  Currently, novajoin-notify will delete the service in this case when notified by nova.  This may result in the secrets stored by the service being deleted.

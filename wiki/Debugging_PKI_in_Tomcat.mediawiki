@@ -1,0 +1,99 @@
+= Overview =
+
+The Dogtag Certificate System or the Dogtag setup wizard can be debugged with the simple command line JDB debugger or a GUI based debugger such as JSwat. The following explains how to do this:
+
+The process of debugging a Tomcat servlet such as CS depends upon the notion of remote debugging. Java supports a system called "jpda" which allows the server to sit in a state waiting for debuggers to make connections.
+
+= Configuring Tomcat =
+
+The server can be easily configured to run with JPDA:
+
+*First find the generated tomcat launcher script for the instance of CS in question ex: /etc/init.d/pki-ca.
+*Search through the code to find the function "start()".
+*Within this very long function search for the following block of code:
+
+  # daemon --user $TOMCAT_USER $TOMCAT_SCRIPT start
+        if [ ${OS} = "SunOS" ] ; then
+                su  $TOMCAT_USER -c "$TOMCAT_SCRIPT start" > /dev/null
+        else
+                su -s /bin/bash $TOMCAT_USER -c "$TOMCAT_SCRIPT start" > /dev/null
+        fi
+* Based on platform, where you see "$TOMCAT_SCRIPT start" change this to "$TOMCAT_SCRIPT jpda start".
+* The above will configure tomcat such that an external  debugger can remotely attach to the running process. This is what we want when we debug servlet based web applications.
+* Restart the server. ex: /etc/init.d/pki-ca restart
+* If there is a problem restarting the server check /var/log/pki-ca/catalina.out.
+* If you see something ugly like the following, there is a conflict with the debugging port:
+
+  ERROR: transport error 202: bind failed: Address already in use
+  ERROR: JDWP Transport dt_socket failed to initialize, TRANSPORT_INIT(510)
+ JDWP exit error AGENT_ERROR_TRANSPORT_INIT(197): No transports initialized [../../../src/share 
+ /back/debugInit.c:708]
+ FATAL ERROR in native method: JDWP No transports initialized, jvmtiError=AGENT_ERROR_TRANSPORT_INIT(197)
+* To solve this, set the following environment variable before trying to restart the server:
+
+   export JPDA_ADDRESS=XXXX, where XXXX is some other free port on your system besides 8000.
+
+Tomcat 6 can be configured by adding the following line into /etc/tomcat6/tomcat6.conf:
+
+OpenJDK:
+<pre>
+JAVA_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000"
+</pre>
+
+Sun JDK:
+<pre>
+JAVA_OPTS="-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8000"
+</pre>
+
+= Connecting with JDB =
+
+* Attach jdb to the running process with something like:
+    jdb  -attach 8000 -sourcepath ~/svnwork/src/pki/base/common/src
+*In the above example the "8000" is the default port upon which tomcat is configured to listen for debugging sessions. Also note the string "~/svnwork/src/pki/base/common/src". This is optionally provided on the command line to tell the debugger where to search for the source code you want to debug. The default is ".".
+* If you were forced to set JPDA_ADDRESS to some port besides 8000, use that value in the jdb command above.
+* Set an appropriate breakpoint with something like:
+
+  stop in com.netscape.cms.servlet.csadmin.WelcomePanel.display
+ Deferring breakpoint com.netscape.cms.servlet.csadmin.WelcomePanel.display.
+ It will be set after the class is loaded.
+ > Set deferred breakpoint com.netscape.cms.servlet.csadmin.WelcomePanel.display
+* Negotiate the web application as usual. When you see the UI unresponsive in the browser, this may mean that your breakpoint has been reached. Take a look back at the terminal and you may see the following:
+
+
+ Breakpoint hit: "thread=http-9180-Processor19", com.netscape.cms.servlet.csadmin.WelcomePanel.display()
+  ,  line=76 bci=0
+ 76            IConfigStore cs = CMS.getConfigStore();
+*Proceed to use the standard "jdb" commands when inspecting data and stepping through the code. As a guide, use the JSS example above in this document.
+
+= Using GUI debugger JSwat =
+
+The open source GUI debugger called "JSwat" can be used in much the same way as jdb. Here is how:
+
+*Obtain JSwat here: http://downloads.sourceforge.net/jswat/jswat-4.3-installer.jar?modtime=1202519156&big_mirror=0
+*This will give you the file "jswat-4.3-installer.jar".
+*More info on JSwat here: http://jswat.sourceforge.net/
+* Install the thing:
+  java -jar jswat-4.3-installer.jar
+* The above will launch a simple installer that asks a few questions about your JRE and about where you want to install the program.
+* Once the install is done as an example perform:
+  cd /opt/jswat-4.3/bin
+  ./jswat
+* The program is up and running and ready for use.
+* To attach to our fictitious servlet from above do the following:
+** As directed above, configure CS for debugging and launch the CS server.
+** Launch JSwat.
+** Proceed to the main menu entry "Session/Attach".
+** Select "Attach by socket" for "Connector", "dt socket" for "Transport".
+** Fill in the host name of the machine running CS.
+** Fill in the port the server is listening for debug sessions. This will usually be 8000.
+** Hit OK.
+** The debugger is now connected and ready use.
+** Goto the menu item "Session/Settings" to set the path of the source code to be debugged. For this reason, it is nice to have JSwat installed and running on the same host being debugged. This way, code can be built and installed easily on the test system if desired. This is by no means a requirement. The debugger can be run remotely just fine.
+** To set a breakpoint, proceed to "Breakpoint/New".
+** Once a breakpoint has been set, negotiate around in the CS server using the browser interface. Once a breakpoint has been reached, the browser will become unresponsive and the debugger will come to life.
+** From this point on, it should be simple to figure out how to perform simple debugging tasks with the help of the GUI.
+
+= References =
+
+* [[Debugging]]
+* [[Debugging Tomcat]]

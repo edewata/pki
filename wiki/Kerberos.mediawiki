@@ -1,0 +1,130 @@
+= Installation =
+
+To install Kerberos client:
+
+<pre>
+$ dnf install krb5-workstation
+</pre>
+
+= Authentication =
+
+<pre>
+$ kinit <username>@<realm>
+</pre>
+
+= Tomcat =
+
+== Instance Configuration ==
+
+krb5.ini:
+<pre>
+[logging]
+    default = FILE:/var/lib/tomcat/logs/krb5libs.log
+    kdc = FILE:/var/lib/tomcat/logs/krb5kdc.log
+    admin_server = FILE:/var/lib/tomcat/logs/kadmind.log
+
+[libdefaults]
+    default_tkt_enctypes = aes128-cts rc4-hmac des3-cbc-sha1 des-cbc-md5 des-cbc-crc
+    default_tgs_enctypes = aes128-cts rc4-hmac des3-cbc-sha1 des-cbc-md5 des-cbc-crc
+    permitted_enctypes   = aes128-cts rc4-hmac des3-cbc-sha1 des-cbc-md5 des-cbc-crc
+    default_realm = EXAMPLE.COM
+
+[realms]
+    EXAMPLE.COM = {
+        kdc = server.example.com:88
+        default_domain = EXAMPLE.COM
+    }
+
+[domain_realm]
+    .EXAMPLE.COM = EXAMPLE.COM
+    .example.com = EXAMPLE.COM
+    example.com = EXAMPLE.COM
+</pre>
+
+jaas.conf:
+<pre>
+com.sun.security.jgss.krb5.initiate {
+    com.sun.security.auth.module.Krb5LoginModule required
+    doNotPrompt=true
+    principal="HTTP/server.example.com@EXAMPLE.COM"
+    useKeyTab=true
+    keyTab="/var/lib/tomcat/conf/tomcat.keytab"
+    storeKey=true
+    debug=true;
+};
+
+com.sun.security.jgss.krb5.accept {
+    com.sun.security.auth.module.Krb5LoginModule required
+    doNotPrompt=true
+    principal="HTTP/server.example.com@EXAMPLE.COM"
+    useKeyTab=true
+    keyTab="/var/lib/tomcat/conf/tomcat.keytab"
+    storeKey=true
+    debug=true;
+};
+</pre>
+
+== Subsystem Configuration ==
+
+context.xml:
+<pre>
+<Valve 
+    className="org.apache.catalina.authenticator.SpnegoAuthenticator"
+    storeDelegatedCredential="true"
+/>
+
+<Realm className="org.apache.catalina.realm.JNDIRealm" debug="9"
+    connectionURL="ldap://server.example.com:389"
+    connectionName="cn=Directory Manager"
+    connectionPassword="Secret123"
+    userBase="dc=example,dc=com"
+    userSearch="(&amp;(objectClass=user)(userPrincipalName={0}))"
+    userRoleName="memberOf"
+    userSubtree="true"
+    roleBase="***"
+    roleName="name"
+    roleSubtree="true"
+    roleSearch="(&amp;(objectClass=group)(member={0}))"
+    referrals="follow"
+    authentication="none"
+    useDelegatedCredential="true"
+    spnegoDelegationQop="auth"
+    stripRealmForGss="false"
+/>
+</Realm>
+</pre>
+
+web.xml:
+<pre>
+<login-config>
+    <auth-method>SPNEGO</auth-method>
+</login-config>
+</pre>
+
+= Client =
+
+<pre>
+$ curl -v -u : --negotiate -c cookies.txt -L <URL>
+</pre>
+
+= Troubleshooting =
+
+<pre>
+$ KRB5_TRACE=/dev/stderr <command>
+</pre>
+
+<pre>
+$ KRB5_TRACE=/dev/stderr kvno -S HTTP <hostname>
+</pre>
+
+= References =
+
+* [http://docs.oracle.com/javase/7/docs/technotes/guides/security/jgss/tutorials/KerberosReq.html Kerberos Requirements]
+* [https://tomcat.apache.org/tomcat-7.0-doc/config/realm.html Apache Tomcat 7 - The Realm Component]
+* [https://tomcat.apache.org/tomcat-7.0-doc/windows-auth-howto.html Apache Tomcat 7 - Windows Authentication How-To]
+* [https://tomcat.apache.org/tomcat-7.0-doc/config/valve.html#SPNEGO_Valve Apache Tomcat 7 - The Valve Component - SPNEGO Valve]
+* [http://curl.haxx.se/docs/http-cookies.html cURL - HTTP Cookies]
+* [http://spnego.sourceforge.net/spnego_tomcat.html Configuring Tomcat for Windows Integrated Authentication]
+* [https://tomcat.apache.org/tomcat-7.0-doc/api/org/apache/catalina/realm/RealmBase.html Apache Tomcat 7 - Class RealmBase]
+* [http://stackoverflow.com/questions/22982164/tomcat-windows-authentication-jndirealm-doesnt-use-spnego-delegated-credential Tomcat Windows Authentication: JNDIRealm doesn't use SPNEGO delegated credentials]
+* [https://github.com/dogtagpki/pki/wiki/DNS DNS]

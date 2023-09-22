@@ -1,0 +1,88 @@
+= Installation =
+
+To install prerequisites:
+
+<pre>
+$ dnf install -y docker
+$ systemctl start docker
+$ dnf install -y freeipa-server freeipa-server-dns freeipa-server-trust-ad python-ipatests
+</pre>
+
+To install ipa-docker-test-runner:
+
+<pre>
+$ pip3 install git+https://github.com/freeipa/ipa-docker-test-runner
+</pre>
+
+= Configuration =
+
+To generate sample configuration:
+
+<pre>
+$ mkdir -p ~/.config/ipa-docker-test-runner
+$ ipa-docker-test-runner sample-config
+</pre>
+
+= Running IPA Tests in Container =
+
+<pre>
+$ ipa-docker-test-runner run-tests
+</pre>
+
+<pre>
+$ ipa-docker-test-runner \
+    -c $PKI_SRC_DIR/.test_runner_config.yaml \
+    --developer-mode \
+    --container-environment "PYTHON=/usr/bin/python" \
+    --container-image dogtagpki/pki-ci:f27_106_46 \
+    --git-repo $IPA_SRC_DIR \
+    run-tests [test files...]
+</pre>
+
+= Running PKI-related IPA Tests in Container =
+
+PKI-related tests are specified in [https://github.com/dogtagpki/pki/blob/master/travis/ipa-test.sh ipa-test.sh]:
+
+* [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_caacl_plugin.py test_caacl_plugin.py]
+* [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_caacl_profile_enforcement.py test_caacl_profile_enforcement.py]
+* [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_cert_plugin.py test_cert_plugin.py]
+* [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_certprofile_plugin.py test_certprofile_plugin.py]
+* [https://github.com/freeipa/freeipa/blob/master/ipatests/test_xmlrpc/test_vault_plugin.py test_vault_plugin.py]
+
+To run PKI-related IPA tests:
+
+<pre>
+$ ipa-docker-test-runner \
+    -c travis/ipa-test.yaml \
+    --container-image dogtagpki/pki-ci:f27_106_46 \
+    --git-repo ~/build/pki \
+    run-tests \
+    test_xmlrpc/test_caacl_plugin.py \
+    test_xmlrpc/test_caacl_profile_enforcement.py \
+    test_xmlrpc/test_cert_plugin.py \
+    test_xmlrpc/test_certprofile_plugin.py \
+    test_xmlrpc/test_vault_plugin.py
+</pre>
+
+Alternatively, the tests can be run as follows:
+
+<pre>
+$ IMAGE=f27_106_46 TRAVIS_BUILD_DIR=~/build/pki LOGS=~/build/pki/logs.txt travis/ipa-test.sh
+</pre>
+
+= Troubleshooting =
+
+To get the container ID:
+
+ $ docker ps
+
+To access the container:
+
+ $ docker exec -ti <container ID> /bin/bash
+
+= References =
+
+* [[IPA]]
+* [[IPA Container]]
+* [[IPA Tests]]
+* [https://github.com/freeipa/ipa-docker-test-runner ipa-docker-test-runner]

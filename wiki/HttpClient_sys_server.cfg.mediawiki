@@ -1,0 +1,41 @@
+= HttpClient sys server.cfg =
+<pre>
+#host: host name for the http server
+host=host.example.com
+
+#port: port number
+port=8443
+
+#secure: true for secure connection, false for nonsecure connection
+#For secure connection, in an ECC setup, must set environment variable 'export NSS_USE_DECODED_CKA_EC_POINT=1' prior to running this command
+secure=true
+
+#input: full path for the enrollment request, the content must be in binary format
+input=/root/cfu/test/cmc/cmc.sys_server_pkcs10.req
+
+#output: full path for the response in binary format
+output=/root/cfu/test/cmc/cmc.sys_server_pkcs10.resp
+
+#tokenname: name of token where SSL client authentication cert can be found (default is internal)
+#This parameter will be ignored if secure=false
+tokenname=internal
+
+#dbdir: directory for cert8.db, key3.db and secmod.db
+#This parameter will be ignored if secure=false
+dbdir=/root/cfu/test/cmc
+
+#clientmode: true for client authentication, false for no client authentication
+#This parameter will be ignored if secure=false
+clientmode=true
+
+#password: password for cert8.db
+#This parameter will be ignored if secure=false and clientauth=false
+password=mypass
+
+#nickname: nickname for client certificate
+#This parameter will be ignored if clientmode=false
+nickname=PKI Administrator for unknown00262DFC6A5E
+
+#servlet: servlet name
+servlet=/ca/ee/ca/profileSubmitCMCFullServerCert
+</pre>

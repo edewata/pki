@@ -1,0 +1,129 @@
+= Installation =
+
+<pre>
+$ dnf install log4j log4j-web log4j-slf4j
+</pre>
+
+= Configuration =
+
+Log4j configuration should be specified in log4j.configurationFile system property:
+
+<pre>
+$ java -Dlog4j.configurationFile=log4j.xml ...
+</pre>
+
+Default configuration file:
+
+<pre>
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+  <Appenders>
+    <Console name="Console" target="SYSTEM_OUT">
+      <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+    </Console>
+  </Appenders>
+  <Loggers>
+    <Root level="error">
+      <AppenderRef ref="Console"/>
+    </Root>
+  </Loggers>
+</Configuration>
+</pre>
+
+More complex example:
+
+<pre>
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="debug" strict="true" name="XMLConfigTest"
+               packages="org.apache.logging.log4j.test">
+  <Properties>
+    <Property name="filename">target/test.log</Property>
+  </Properties>
+  <Filter type="ThresholdFilter" level="trace"/>
+
+  <Appenders>
+    <Appender type="Console" name="STDOUT">
+      <Layout type="PatternLayout" pattern="%m MDC%X%n"/>
+      <Filters>
+        <Filter type="MarkerFilter" marker="FLOW" onMatch="DENY" onMismatch="NEUTRAL"/>
+        <Filter type="MarkerFilter" marker="EXCEPTION" onMatch="DENY" onMismatch="ACCEPT"/>
+      </Filters>
+    </Appender>
+    <Appender type="Console" name="FLOW">
+      <Layout type="PatternLayout" pattern="%C{1}.%M %m %ex%n"/><!-- class and line number -->
+      <Filters>
+      <Filter type="MarkerFilter" marker="FLOW" onMatch="ACCEPT" onMismatch="NEUTRAL"/>
+      <Filter type="MarkerFilter" marker="EXCEPTION" onMatch="ACCEPT" onMismatch="DENY"/>
+      </Filters>
+    </Appender>
+    <Appender type="File" name="File" fileName="${filename}">
+      <Layout type="PatternLayout">
+        <Pattern>%d %p %C{1.} [%t] %m%n</Pattern>
+      </Layout>
+    </Appender>
+  </Appenders>
+
+  <Loggers>
+    <Logger name="org.apache.logging.log4j.test1" level="debug" additivity="false">
+      <Filter type="ThreadContextMapFilter">
+        <KeyValuePair key="test" value="123"/>
+      </Filter>
+      <AppenderRef ref="STDOUT"/>
+    </Logger>
+
+    <Logger name="org.apache.logging.log4j.test2" level="debug" additivity="false">
+      <AppenderRef ref="File"/>
+    </Logger>
+
+    <Root level="trace">
+      <AppenderRef ref="STDOUT"/>
+    </Root>
+  </Loggers>
+
+</Configuration>
+</pre>
+
+== Appender ==
+
+=== Console Appender ===
+
+<pre>
+<Console name="Console" target="SYSTEM_OUT">
+  <PatternLayout pattern="%-5level: %msg%n"/>
+</Console>
+</pre>
+
+See also [https://logging.apache.org/log4j/2.x/manual/appenders.html#ConsoleAppender Console Appender].
+
+=== Rolling File Appender ===
+
+<pre>
+<RollingFile name="RollingFile" fileName="logs/app.log"
+             filePattern="logs/$${date:yyyy-MM}/app-%d{MM-dd-yyyy}-%i.log.gz">
+  <PatternLayout pattern="%-5level: %msg%n"/>
+  <Policies>
+    <TimeBasedTriggeringPolicy />
+    <SizeBasedTriggeringPolicy size="250 MB"/>
+  </Policies>
+</RollingFile>
+</pre>
+
+See also [https://logging.apache.org/log4j/2.x/manual/appenders.html#RollingFileAppender Rolling File Appender].
+
+== Layout ==
+
+=== Pattern Layout ===
+
+<pre>
+<PatternLayout pattern="%-5level: %msg%n"/>
+</pre>
+
+See also [https://logging.apache.org/log4j/2.x/manual/layouts.html#PatternLayout PatternLayout].
+
+= References =
+
+* [[PKI Logging]]
+* [[Logging Frameworks]]
+* [https://logging.apache.org/log4j/2.x/log4j-api/apidocs/index.html Log4j 2 API]
+* [https://logging.apache.org/log4j/2.x/manual/configuration.html Log4j 2 Configuration]
+* [https://logging.apache.org/log4j/2.x/manual/webapp.html Using Log4j 2 in Web Applications]

@@ -1,0 +1,92 @@
+= Installation =
+
+To install a TKS subsystem instance, become the '''root''' user, and execute the following commands:
+
+ $ pkicreate -pki_instance_root=/var/lib      \
+             -pki_instance_name=pki-tks       \
+             -subsystem_type=tks              \
+             -agent_secure_port=13443         \
+             -ee_secure_port=13444            \
+             -admin_secure_port=13445         \
+             -unsecure_port=13180             \
+             -tomcat_server_port=13701        \
+             -user=pkiuser                    \
+             -group=pkiuser                   \
+             -redirect conf=/etc/pki-tks      \
+             -redirect logs=/var/log/pki-tks  \
+             -verbose
+
+= Configuration =
+
+Configuration of this PKI subsystem can be accomplished in one of three ways:
+
+'''(1)''' The configuration URL is present on the screen.  When this occurs, something similar to the following should appear on the screen (e. g. - Dogtag 1.3):
+
+    PKI instance creation Utility ...
+    
+    
+    PKI instance creation completed ...
+    
+    Starting pki-tks:          [  OK  ]
+    
+    PKI service(s) are available at https://&lt;fully qualified domain name&gt;:&lt;secure tks port&gt;
+    
+    Server can be operated with /etc/init.d/pki-tks start | stop | restart
+    
+    Please start the configuration by accessing:
+    http:/&lt;fully qualified domain name&gt;:&lt;tks port&gt;//tks/admin/console/config/login?pin=ki0R7vMRR75NoIhBrxmf
+
+<table>
+<tr>
+<td>'''NOTE:&nbsp;&nbsp;'''</td>
+<td>Default secure tks port:&nbsp;&nbsp;</td>
+<td>13443</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+<td>Default tks port:</td>
+<td>13080</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td valign="top">'''NOTE:&nbsp;&nbsp;'''</td>
+<td valign="top">Dogtag 9.0 uses a master daemon, 'pki-tksd', with an optional specific instance<br>(e. g. - '/sbin/service pki-tksd start | stop | restart [TKS instance])!</td>
+</tr>
+</table>
+
+Invoke a browser, insert the configuration URL, and follow the step-by-step instructions displayed in each panel.
+
+    '''IMPORTANT:&nbsp;&nbsp;''' When finished, don't forget to restart this PKI instance before attempting to use it!
+
+'''(2)''' If the user no longer has access to the configuration URL displayed on the screen, one can find the configuration URL at the end of the '''/var/log/&lt;instance name&gt;-install.log'''.  For example:
+
+    .
+    .
+    .
+    [2008-02-22 18:22:46] [log] Configuration Wizard listening on
+    http:/&lt;fully qualified domain name&gt;:&lt;tks port&gt;//tks/admin/console/config/login?pin=ki0R7vMRR75NoIhBrxmf
+
+<table>
+<tr>
+<td>'''NOTE:&nbsp;&nbsp;'''</td>
+<td>The pin is also stored in the '''/etc/&lt;instance name&gt;/CS.cfg''' file as the '''preop.pin''' parameter.</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+<td>The tks port is also stored in the '''/etc/&lt;instance name&gt;/server.xml''' file as the first uncommented "non-SSL HTTP/1.1 Connector" '''Connector port''' parameter.</td>
+</tr>
+</table>
+
+Invoke a browser, insert the configuration URL, and follow the step-by-step instructions displayed in each panel.
+
+    '''IMPORTANT:&nbsp;&nbsp;''' When finished, don't forget to restart this PKI instance before attempting to use it!
+
+'''(3)''' PKI subsystems can also be configured "automatically" by creating and using the pkisilent component with a predefined profile.
+
+    '''IMPORTANT:&nbsp;&nbsp;''' When finished, don't forget to restart this PKI instance before attempting to use it!
+
+= See Also =
+
+* [[PKI 9 Installation]]

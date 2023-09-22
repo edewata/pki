@@ -1,0 +1,57 @@
+= Overview =
+Travis CI uses 2 containers to build and run tests:
+* [https://hub.docker.com/r/dogtagpki/pki-ci-containers/ pki-ci-container] - Used to build and test PKI core components.
+* [https://hub.docker.com/r/dogtagpki/dogtag-freeipa-ci-containers/ dogtag-freeipa-ci-container] - Used in smoke testing PKI with IPA.
+
+= Ways to build Container Images =
+There are 2 ways to build a container image:
+* [[Docker_Images#Manual Triggering  | Manual Triggering]]
+* [[Docker_Images#Automated Triggering | Automated Triggering by push to official repo]]
+
+== Manual Triggering ==
+1. To trigger a manual build, go to the '''Build Settings''' from the repo you want to build as shown below:
+
+[[File:1-docker-manual.png|700px]]
+
+2. Click on '''Trigger''' button to trigger the build against that image
+
+3. You can view the status under '''Build Details'''
+
+[[File:2-Docker-manual.png|500px]]
+
+== Automated Triggering ==
+The build for existing images are auto-triggered when a change to '''Dockerfile''' is pushed to the linked github repo.
+
+* For [https://hub.docker.com/r/dogtagpki/dogtag-freeipa-ci-containers/ dogtag-freeipa-ci-containers], the linked repo is located [https://github.com/dogtagpki/dogtag-freeipa-ci-containers here].
+* For [https://hub.docker.com/r/dogtagpki/pki-ci-containers/ pki-ci-containers], the linked github repo is located [https://github.com/dogtagpki/pki-ci-containers here]
+
+For building new image that doesn't exist:
+
+1. Clone the corresponding repo.
+
+2. Create a folder (for this example, we will call '''f27_test''').
+
+3. Create a Dockerfile and write the required script.
+
+4. Create a new entry under '''Build Settings''' in the corresponding repo in Dockerhub. For example:
+
+[[File:Docker_automated_1.png|700px]]
+
+Here:
+* '''Type''' - Select the corresponding ''tag'' or ''branch'' against which automated trigger should be build.
+* '''Name''' - Enter the corresponding ''tag's'' or ''branch's'' name 
+* '''Docker File Location''' - Enter the location of the ''Dockerfile'' you created. In our cases, it's ''/f27_test''
+* '''Docker Tag Name''' - Enter the tag name of the image. In our case, it will be ''dogtagpki/dogtag-freeipa-ci-containers:f27_test''
+
+5. Click on '''Save Changes'''
+
+6. Push the local repo to the github repo.
+
+7. You can see the details under '''Build Details'''. Shown below:
+
+[[File:2-Docker-manual.png|500px]]
+
+= References =
+
+* [[Container]]
+* [[Travis CI]]

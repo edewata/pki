@@ -1,0 +1,35 @@
+= Prerequisites =
+
+<pre>
+$ dnf install -y postfix mailx
+</pre>
+
+= Configuring Hostnames =
+
+Edit /etc/hosts:
+
+<pre>
+127.0.0.1 example.com
+</pre>
+
+= Configuring Postfix =
+
+Edit /etc/postfix/main.cf:
+
+<pre>
+inet_interfaces = localhost
+
+inet_protocols = all
+</pre>
+
+= Start Postfix =
+
+<pre>
+$ systemctl start postfix
+</pre>
+
+= Sending a Mail =
+
+<pre>
+$ mail -s "Test" root@fedora.localdomain < /dev/null
+</pre>

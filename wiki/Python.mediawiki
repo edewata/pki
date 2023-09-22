@@ -1,0 +1,98 @@
+= Site Packages =
+
+To get all site-ackages:
+
+<pre>
+$ python -m site
+sys.path = [
+    '/home/edewata/Projects/pki-dev/scripts',
+    '/usr/lib/python27.zip',
+    '/usr/lib64/python2.7',
+    '/usr/lib64/python2.7/plat-linux2',
+    '/usr/lib64/python2.7/lib-tk',
+    '/usr/lib64/python2.7/lib-old',
+    '/usr/lib64/python2.7/lib-dynload',
+    '/usr/lib64/python2.7/site-packages',
+    '/usr/lib64/python2.7/site-packages/gtk-2.0',
+    '/usr/lib/python2.7/site-packages',
+]
+USER_BASE: '/root/.local' (exists)
+USER_SITE: '/root/.local/lib/python2.7/site-packages' (doesn't exist)
+ENABLE_USER_SITE: True
+</pre>
+
+To get global site-packages:
+
+<pre>
+$ python -c "import site; print(site.getsitepackages())"
+['/usr/lib64/python2.7/site-packages', '/usr/lib/python2.7/site-packages', '/usr/lib/site-python']
+</pre>
+
+To get Python library directory:
+
+<pre>
+$ python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())"
+/usr/lib/python2.7/site-packages
+</pre>
+
+To get user site-packages:
+
+<pre>
+$ python -m site --user-site
+/root/.local/lib/python2.7/site-packages
+</pre>
+
+python -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())"
+
+= Regular Expression =
+
+<pre>
+import re
+
+pattern = re.compile(r'...')
+
+while line in lines:
+
+    match = pattern.match(line)
+
+    if not match:
+        continue
+
+    value1 = match.group(1)
+    value2 = match.group(2)
+</pre>
+
+= LXML =
+
+To parse a file:
+
+ from lxml import etree
+ 
+ parser = etree.XMLParser(remove_blank_text=True)
+ document = etree.parse(filename, parser)
+
+To find an element:
+
+ root = document.getroot()
+ elements = root.findall(xpath)
+
+To set an attribute:
+
+ element.set(name, value)
+
+To remove an attribute:
+
+ element.attrib.pop(name, None)
+
+See also http://lxml.de/.
+
+= LDAP =
+
+See [[Python LDAP]].
+
+= See Also =
+
+* [[PyPI]]
+* [[Python Cryptography]]
+* [https://github.com/dogtagpki/pki/wiki/Setting-Up-PyDev-in-Eclipse Setting Up PyDev in Eclipse]
+* [[Java]]

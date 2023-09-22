@@ -1,0 +1,15 @@
+Supported algorithms:
+
+* AES
+* DES
+* DESede (DES3)
+* RC4
+
+Notes:
+
+* The SecureRandom argument passed to init() is ignored, because NSS does not support specifying an external source of randomness.
+* None of the key generation algorithms accepts an AlgorithmParameterSpec.
+
+= References =
+
+* [[JSS Provider]]

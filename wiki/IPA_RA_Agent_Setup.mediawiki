@@ -1,0 +1,36 @@
+= Initializing PKI CLI =
+
+Import the RA certificate and key into a PKCS #12 file:
+
+<pre>
+$ openssl pkcs12 -export \
+    -in /var/lib/ipa/ra-agent.pem \
+    -inkey /var/lib/ipa/ra-agent.key \
+    -out ra-agent.p12 \
+    -name ra-agent \
+    -passout file:password.txt
+</pre>
+
+Then import the PKCS #12 file into the NSS database:
+
+<pre>
+$ pki pkcs12-import --pkcs12-file ra-agent.p12 --pkcs12-password-file password.txt
+</pre>
+
+= Listing Keys =
+
+To list all keys:
+
+<pre>
+$ pki -n ra-agent kra-key-find
+</pre>
+
+To list the key for a vault:
+
+<pre>
+$ pki -n ra-agent kra-key-find --clientKeyID ipa:/users/<user>/<vault> --status active --output-format json
+</pre>
+
+= See Also =
+
+* [[IPA]]

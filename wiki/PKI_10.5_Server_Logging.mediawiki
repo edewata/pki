@@ -1,0 +1,57 @@
+= Installation Logs =
+
+Installation logs are stored in:
+* pki-<subsystem>-spawn.YYMMDDhhmmss.log
+* pki-<subsystem>-destroy.YYMMDDhhmmss.log
+
+= Server Logs =
+
+See [[PKI 10.5 Configuring Server Logging]].
+
+= Access Logs =
+
+See [https://github.com/dogtagpki/pki/wiki/Configuring-Server-Access-Log PKI Configuring Server Access Log].
+
+= Subsystem Logs =
+
+== Subsystem Access Log ==
+
+The log configuration is defined in /etc/pki/<font color="red">pki-tomcat</font>/<font color="red">ca</font>/CS.cfg:
+
+<pre>
+log.impl.file.class=com.netscape.cms.logging.RollingLogFile
+log.instance.<name>=...
+logAudit.fileName=[PKI_INSTANCE_PATH]/logs/[PKI_SUBSYSTEM_TYPE]/access
+logError.fileName=[PKI_INSTANCE_PATH]/logs/[PKI_SUBSYSTEM_TYPE]/error
+</pre>
+
+== Subsystem Self-Test Log ==
+
+Self-test logs are stored in /var/log/pki/pki-tomcat/ca/selftests.log.
+
+== Subsystem System Log ==
+
+See [[PKI Server System Log]].
+
+== Subsystem Transaction Log ==
+
+See [[PKI Server Transaction Log]].
+
+== Subsystem Audit ==
+
+See [https://github.com/dogtagpki/pki/wiki/Configuring-Signed-Audit Configuring Signed Audit].
+
+== Subsystem Debug Log ==
+
+See [[PKI 10.5 Subsystem Debug Log]].
+
+= Upgrade Logs =
+
+System upgrade logs are stored in /var/log/pki/pki-upgrade-<current version>.log.
+Server upgrade logs are stored in /var/log/pki/pki-server-upgrade-<current version>.log.
+
+See also [[Configuration Upgrade]].
+
+= See Also =
+
+* [[PKI Server Logging]]

@@ -1,0 +1,13 @@
+= Overview =
+
+In PKI 10.5 the server generates limited systemd logs.
+
+= Displaying Systemd Log =
+
+To view all logs:
+
+ journalctl -u pki-tomcatd@<font color="red">pki-tomcat</font>.service
+
+To follow logs:
+
+ journalctl -fu pki-tomcatd@<font color="red">pki-tomcat</font>.service

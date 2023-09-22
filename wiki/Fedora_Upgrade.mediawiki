@@ -1,0 +1,136 @@
+= Overview =
+
+This page describes the process upgrading a Fedora machine including Dogtag instances in it. The process assumes that the machine already has at least one Dogtag instance with a DS instance.
+
+= Pre-Upgrade Preparations =
+
+Update all packages before upgrading Fedora:
+
+<pre>
+$ yum update
+</pre>
+
+Make sure all Dogtag components are upgraded to the latest available version for the old Fedora:
+
+<pre>
+$ pki-upgrade --status
+$ pki-server-upgrade --status
+</pre>
+
+== Optional: Add Yum Repository ==
+
+To test a new build, add a test yum repository into /etc/yum.repos.d:
+
+<pre>
+[Dogtag]
+name=Dogtag $releasever - $basearch
+failovermethod=priority
+baseurl=http://server/pub/fedora/linux/releases/$releasever/Everything/$basearch/os/
+enabled=1
+gpgcheck=0
+</pre>
+
+== Optional: Remove rescue images from /boot ==
+
+To increase /boot filesystem, remove the rescue images:
+
+<pre>
+$ rm -f /boot/vmlinuz-0-rescue-*
+$ rm -f /boot/initramfs-0-rescue-*
+</pre>
+
+= Upgrading to Stable Fedora =
+
+== Upgrading with fedora-upgrade ==
+
+<pre>
+$ yum install fedora-upgrade
+$ fedora-upgrade
+</pre>
+
+== Upgrading with FedUp ==
+
+<pre>
+$ yum install fedup
+$ fedup-cli --network 20
+$ reboot
+</pre>
+
+== Upgrading with DNF ==
+
+<pre>
+$ dnf upgrade --refresh
+$ dnf install dnf-plugin-system-upgrade
+$ dnf system-upgrade download --releasever=27
+$ dnf system-upgrade reboot
+</pre>
+
+= Upgrading to Rawhide =
+
+See also:
+* [https://fedoraproject.org/wiki/Releases/Rawhide Releases/Rawhide]
+* [https://www.happyassassin.net/nightlies.html Nightly Builds]
+* [https://fedoraproject.org/wiki/Test_Results:Fedora_25_Rawhide_20160719.n.0_Cloud?rd=Test_Results:Current_Cloud_Test Cloud Test]
+
+== With fedup ==
+<pre>
+$ dnf install fedup
+$ fedup --network rawhide --nogpgcheck
+$ reboot
+</pre>
+
+== With yum ==
+
+Edit /etc/yum.repos.d/*.repo to use the new repos.
+
+<pre>
+$ yum update yum
+$ yum upgrade
+$ yum --releasever=rawhide distro-sync
+$ reboot
+</pre>
+
+== With DNF ==
+
+<pre>
+$ dnf upgrade
+$ dnf install dnf-plugins-core fedora-repos-rawhide
+$ dnf config-manager --set-disabled fedora updates updates-testing
+$ dnf config-manager --set-enabled rawhide
+$ dnf clean -q dbcache plugins metadata
+$ dnf --releasever=rawhide --setopt=deltarpm=false distro-sync --nogpgcheck
+</pre>
+
+== With DNF System Upgrade ==
+
+<pre>
+$ dnf update --refresh
+$ reboot
+$ dnf install dnf-plugin-system-upgrade
+$ rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-29-primary
+$ dnf system-upgrade download --releasever=rawhide
+$ dnf system-upgrade reboot
+$ dnf system-upgrade clean
+</pre>
+
+= Post-Upgrade Validation =
+
+Restart PKI server to make sure it still works after upgrading the system:
+
+<pre>
+$ systemctl start dirsrv@pki-tomcat.service
+$ systemctl start pki-tomcatd@pki-tomcat.service
+</pre>
+
+Make sure all PKI components are upgraded to the latest available version for the system:
+
+<pre>
+$ pki-upgrade --status
+$ pki-server-upgrade --status
+</pre>
+
+= References =
+
+* [https://github.com/dogtagpki/pki/wiki/Upgrading-PKI-Server Upgrading PKI Server]
+* [http://fedoraproject.org/wiki/FedUp FedUp]
+* [https://fedoraproject.org/wiki/DNF_system_upgrade DNF system upgrade]

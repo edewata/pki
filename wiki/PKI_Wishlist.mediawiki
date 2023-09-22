@@ -1,0 +1,103 @@
+This page contains features we'd like to see in the project.  Can you help? Please check our [[PKI_Roadmap|Roadmap]] also.
+
+== General Requests ==
+
+=== Misc Features ===
+
+* Better Active Directory integration 
+** issuing certificates to servers running in Windows via Auto Enrollment Proxy
+* Better integration between Fortitude (mod_nss) and CS
+** automated certificate issuance and renewal
+* OS integration
+** automatic CA discovery
+** centralized policy management
+* Make subsystem smaller and faster
+* Implement a new subsystem to management CRLs, CA certificates (Trust Management Server)
+* Implement document signing subsystem
+* Implement time stamping subsystem
+* Provide user interface to the security domain where subsystem infomation is stored
+* Implement service discovery for the CA service
+* Provide backup and restore capability so that certificates and requests can be migrated easily
+* Integrate log4j into the server
+
+== Shared PKI Subsystem Enhancement Requests ==
+=== Common Features ===
+
+* Change the backend to use a sql server
+* Change Java-based console to web-based
+* Provide better UI-based management utility
+* Integrate velocity (template system) into the subsystem
+* Better exception and error handling throughout the server
+* Create symmetric key calls in the JSS library and integrate this new API in pki-symkey
+* Remove the osutil library
+* Improve the startup and shutdown time of the Java servers
+
+=== Util Features ===
+
+* Remove the dependencies on netscape.security.*
+** Change the server to use JSS's ASN.1 decoding/encoding
+* Remove the dependencies on sun.io.*
+
+== Individual Server-Side PKI Subsystem Enhancement Requests ==
+=== Certificate Authority Features ===
+
+* Improve the way how we handle large CRLs
+* Implement CMP protocol
+* Make it smaller and more self-contained so that it can be embedded into other applications
+* Support kerberos authentication plugin for enrollment
+* Improve HSM and CA integration, make installing and debugging HSM easier
+* [http://www.freeipa.org IPA] Integration
+* [http://directory.fedoraproject.org/wiki/Mod_nss mod_nss] Integration
+* Update the user interface with Web 2.0 style
+* Intergrate JAAS Authentication framework into the server
+* Support multiple signing keys within the same instance
+* Support EV certificate profile
+
+=== Data Recovery Manager Features ===
+
+* Need cleaner interface between CA and DRM. Potentially use XML-based protocol.
+
+=== Online Certificate Status Protocol Manager Features ===
+
+* Improve performance
+* Support SCVP
+* Intergrate path validation service
+
+=== Registration Authority Features ===
+
+* Support SCEP encoding/decoding natively in RA. 
+** RA currently does not have any ASN.1 facility, and it relies on CA to encode the SCEP and return authentication information back.
+* Support SQL engine other than SQLite
+* Support multiple-level agent approvals
+* Support more authentication types (SQL, flatfile, ...etc)
+
+=== Token Key Service Features ===
+
+* Provide management UI to manage master keys
+
+=== Token Processing System Features ===
+
+* Build a small TPS that has CA/TKS/TPS functionalities all in one
+* Implement TPS in Java
+* Support TPS cloning
+* Consolidate the token management UI and the security officer UI
+* Clean up the protocol between TPS and ESC
+
+== PKI Subsystem Tools Enhancement Requests ==
+=== Java Tools ===
+
+* Improve startup time
+* Consider to provide user interfaces to some of the tools
+
+=== Native Tools ===
+
+* Create man pages for the native tools
+* Provide a set of command line utilities, that can be bundled in the base OS, that will enroll, renew certificate in Apache web servers, Machines
+
+== Individual Client-Side PKI Subsystem Enhancement Requests ==
+=== Enterprise Security Features ===
+
+* Need ways to enroll a token without the backend (TPS, CA, TKS...etc)
+* Build end-user applications around ESC
+** Sign files, encrypt files
+** ssh to web sites

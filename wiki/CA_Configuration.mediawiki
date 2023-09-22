@@ -1,0 +1,58 @@
+= Overview =
+
+Configuration files:
+* /etc/pki/pki-tomcat/ca/CS.cfg or /var/lib/pki/pki-tomcat/ca/conf/CS.cfg
+* /etc/pki/pki-tomcat/ca/registry.cfg
+
+CS.cfg is read by CMSStartServlet.
+
+The registry.cfg is read by PluginRegistry.
+
+= Database Configuration =
+
+<pre>
+dbs.ldap=internaldb
+</pre>
+
+= Certificate Configuration =
+
+<pre>
+dbs.enableSerialManagement=false
+dbs.enableRandomSerialNumbers=false
+dbs.randomSerialNumberCounter=0
+dbs.beginSerialNumber=1
+dbs.endSerialNumber=10000000
+dbs.serialIncrement=10000000
+dbs.serialLowWaterMark=2000000
+dbs.serialCloneTransferNumber=10000
+dbs.serialDN=ou=certificateRepository, ou=ca
+dbs.serialRangeDN=ou=certificateRepository, ou=ranges
+</pre>
+
+= Request Configuration =
+
+<pre>
+dbs.beginRequestNumber=1
+dbs.endRequestNumber=10000000
+dbs.requestIncrement=10000000
+dbs.requestLowWaterMark=2000000
+dbs.requestCloneTransferNumber=10000
+dbs.requestDN=ou=ca, ou=requests
+dbs.requestRangeDN=ou=requests, ou=ranges
+</pre>
+
+= Replica Configuration =
+
+<pre>
+dbs.beginReplicaNumber=1
+dbs.endReplicaNumber=100
+dbs.replicaIncrement=100
+dbs.replicaLowWaterMark=20
+dbs.replicaCloneTransferNumber=5
+dbs.replicaDN=ou=replica
+dbs.replicaRangeDN=ou=replica, ou=ranges
+</pre>
+
+= References =
+
+* [https://github.com/dogtagpki/pki/wiki/Random-Certificate-Serial-Numbers Random Certificate Serial Numbers]

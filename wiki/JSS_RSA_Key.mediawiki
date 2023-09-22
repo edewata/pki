@@ -1,0 +1,9 @@
+= RSA Private Key =
+
+* getModulus() is not supported because NSS does not support extracting data from private keys.
+* getPrivateExponent() is not supported because NSS does not support extracting data from private keys.
+
+= References =
+
+* [[JSS Provider]]
+* [[JSS 4.5 Supporting RSAPrivateKey.getModulus()]]

@@ -1,0 +1,80 @@
+= Overview =
+
+This page describes the process to build Mozilla LDAP SDK.
+
+Note that the text in <font color="red">red</font> may need to be adjusted according to the local environment.
+
+= Prerequisites =
+
+<pre>
+$ dnf install mercurial git-remote-hg
+$ dnf install fedpkg
+</pre>
+
+= Getting Source Code =
+
+=== LDAP SDK source repository ===
+
+The LDAP SDK source repository contains the source code. This is where the development should be done.
+
+There are two ways to get the source code, either using Mercurial or Git. Only one of them is needed.
+
+To get the source repository using Mercurial:
+
+ $ hg clone https://hg.mozilla.org/projects/ldap-sdks <font color="red">ldap-sdks</font>
+
+To get the source repository using Git:
+
+ $ git clone hg::https://hg.mozilla.org/projects/ldap-sdks <font color="red">ldap-sdks</font>
+
+The above command will create a new <font color="red">ldap-sdks</font> folder.
+
+=== LDAP SDK package repository ===
+
+The LDAP SDK package repository contains the files needed to build packages (i.e. source tarball, RPM spec file, patch files), but not the source code itself.
+
+To get the package repository for Fedora:
+
+ $ fedpkg clone ldapjdk <font color="red">Fedora/ldapjdk</font>
+
+The above command will create a new <font color="red">Fedora/ldapjdk</font> folder.
+
+= Building Fedora Packages =
+
+To build Fedora packages, first generate a new the source archive (no need to build upstream binaries).
+
+Go to <font color="red">ldap-sdks</font> folder, make sure all changes are committed. If the source repository was cloned using Mercurial, execute the following:
+
+ $ hg archive -p ldapjdk-<font color="red">4.19</font> -r default -t tgz -I buildjsdk.txt -I java-sdk ../<font color="red">Fedora/ldapjdk</font>/ldapjdk-<font color="red">4.19</font>.tar.gz
+
+or if the source repository was cloned using Git, execute the following:
+
+ $ git archive --format=tar.gz --prefix ldapjdk-<font color="red">4.19</font>/ldapjdk/ -o ../<font color="red">Fedora/ldapjdk</font>/ldapjdk-<font color="red">4.19</font>.tar.gz -v HEAD
+
+Then go to <font color="red">Fedora/ldapjdk</font> folder and follow the instructions below.
+
+Update the source checksum, for example:
+
+ $ sha512sum --tag ldapjdk-<font color="red">4.19</font>.tar.gz > sources
+
+To build Fedora packages:
+
+<pre>
+$ fedpkg local
+</pre>
+
+To install the packages:
+
+<pre>
+$ sudo dnf install noarch/*.rpm
+</pre>
+
+or reinstall the packages (if the same version/release number has already been installed):
+
+<pre>
+$ sudo dnf reinstall noarch/*.rpm
+</pre>
+
+= References =
+
+* [[LDAP]]

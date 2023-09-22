@@ -1,0 +1,56 @@
+= Installation =
+
+<pre>
+$ oc new-app openshift/openldap-2441-centos7
+</pre>
+
+= Configuring Persistent Storage =
+
+<pre>
+spec:
+  template:
+    spec:
+      containers:
+        - image: ...
+          volumeMounts:
+            - mountPath: /var/lib/ldap
+              name: openldap-data
+            - mountPath: /etc/openldap
+              name: openldap-conf
+      volumes:
+        - name: openldap-data
+          persistentVolumeClaim:
+            claimName: openldap-data
+        - name: openldap-conf
+          persistentVolumeClaim:
+            claimName: openldap-conf
+</pre>
+
+= Importing Schema =
+
+<pre>
+$ oc cp /etc/openldap/slapd.d/cn\=config/cn\=schema/cn\=\{4\}acme.ldif <pod>:/etc/openldap/slapd.d/cn\=config/cn\=schema
+</pre>
+
+= Setting Manager Password =
+
+Generate a password:
+
+<pre>
+$ slappasswd
+{SSHA}xxxxxxxxxxxxxxxxxxxxxxxx
+</pre>
+
+Edit /etc/openldap/slapd.d/cn\=config/olcDatabase\=\{2\}hdb.ldif:
+<pre>
+olcRootPW: {SSHA}xxxxxxxxxxxxxxxxxxxxxxxx
+</pre>
+
+= See Also =
+
+* [[OpenLDAP Server]]
+* [https://github.com/openshift/openldap GitHub: openshift/openldap]
+* [https://github.com/osixia/docker-openldap GitHub: osixia/docker-openldap]
+* [https://hub.docker.com/r/openshift/openldap-2441-centos7 DockerHub: openshift/openldap-2441-centos7]
+* [https://medium.com/ibm-garage/how-to-host-and-deploy-an-openldap-sever-in-openshift-affab06a4365 How to host and deploy an OpenLDAP sever in OpenShift]
+* [https://github.com/dogtagpki/kubernetes/wiki/OpenShift OpenShift]

@@ -1,0 +1,34 @@
+= Overview =
+
+* https://github.com/dogtagpki/ldap-sdk
+
+= LDAP Filter =
+
+See [https://hg.mozilla.org/projects/ldap-sdks/file/tip/java-sdk/ietfldap/org/ietf/ldap/client/JDAPFilter.java JDAPFilter].
+
+= netscape.ldap.beans.LDAPSimpleAuth =
+
+The Bean can be used from JavaScript, as in the following example
+where the parameters are taken from HTML text fields in an HTML
+form called "input":
+
+<pre>
+<script language="JavaScript">
+function checkAuthentication() {
+    auth = new Packages.netscape.ldap.beans.LDAPSimpleAuth();
+    auth.setHost( document.input.host.value );
+    auth.setPort( parseInt(document.input.port.value) );
+    auth.setAuthDN( document.input.username.value );
+    auth.setAuthPassword( document.input.password.value );
+    result = auth.authenticate();
+    alert( "The response is: " + result );
+}
+</script>
+</pre>
+
+= References =
+
+* [[LDAP]]
+* [[Mozilla LDAP SDK Development]]
+* [https://hg.mozilla.org/projects/ldap-sdks Mozilla LDAP SDK]
+* [https://www-archive.mozilla.org/directory/ The Mozilla Directory (LDAP) SDK Project]

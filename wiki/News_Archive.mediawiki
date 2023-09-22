@@ -1,0 +1,310 @@
+= 2017 =
+
+'''January 31, 2017:'''
+
+The Dogtag team is pleased to announce the availability of an eighth update (10.3.5-11) to Dogtag 10.3.5 for Fedora 24.
+
+= 2016 =
+
+'''December 22, 2016:'''
+
+The Dogtag team announces the availability of a Fedora 26 rebuild (10.3.5-10) for Dogtag 10.3.5 to account for Python 3.6.
+
+'''December 15, 2016:'''
+
+The Dogtag team is pleased to announce the availability of a seventh update (10.3.5-9) to Dogtag 10.3.5 for Fedora 24.
+
+'''November  7, 2016:'''
+
+The Dogtag team is pleased to announce the availability of Red Hat Certificate Server 9.1 for Red Hat Enterprise Linux 7.3 and later.
+
+'''November  5, 2016:'''
+
+The Dogtag team is pleased to announce the availability of a sixth update (10.3.5-8) to Dogtag 10.3.5 for Fedora 24.
+
+'''October  10, 2016:'''
+
+The Dogtag team is pleased to announce the availability of a fifth update (10.3.5-7) to Dogtag 10.3.5 for Fedora 24.
+
+'''September  22, 2016:'''
+
+The Dogtag team is pleased to announce the availability of COPR releases of Dogtag 10.2.6 for CentOS 7.2 and Dogtag 10.3.3 for CentOS 7.3.
+
+'''September  12, 2016:'''
+
+The Dogtag team is pleased to announce the availability of a fourth update (10.3.5-6) to Dogtag 10.3.5 for Fedora 24.
+
+'''September  7, 2016:'''
+
+The Dogtag team is pleased to announce the availability of a third update (10.3.5-5) to Dogtag 10.3.5 for Fedora 24.
+
+'''August  29, 2016:'''
+
+The Dogtag team is pleased to announce the availability of a second update (10.3.5-4) to Dogtag 10.3.5 for Fedora 24.
+
+'''August  22, 2016:'''
+
+The Dogtag team is pleased to announce the availability of an update (10.3.5-3) to Dogtag 10.3.5 for Fedora 24.
+
+'''August  8, 2016:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.3.5 for Fedora 24.
+
+'''July  5, 2016:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.3.4 which has been delivered as a series of updated patches to Dogtag 10.3.3 for Fedora 24.
+
+'''June 21, 2016:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.3.3 for Fedora 24.
+
+'''June 07, 2016:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.3.2 for Fedora 24.
+
+'''May 17, 2016:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.3.1 for Fedora 24.
+
+'''April 19, 2016:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.3.0.b1 (beta 1) for Fedora 24.
+
+'''April 7, 2016:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.3.0.a2 (alpha 2) for Fedora 24.
+
+'''March 7, 2016:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.3.0.a1 (alpha 1) for Fedora 24.
+
+= 2015 =
+
+'''August 27, 2015:'''
+
+The Dogtag team is pleased to announce the availability of Red Hat Certificate Server 9.0 for Red Hat Enterprise Linux 7.1 and later.
+
+'''July 18, 2015:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.2.6 for Fedora 22.
+
+'''June 22, 2015:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.2.5 for Fedora 22.
+
+'''May 26, 2015:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.2.4 for Fedora 22.
+
+'''April 24, 2015:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.2.3 for Fedora 22.
+
+'''March 18, 2015:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.2.2 for Fedora 22.
+
+'''March 5, 2015:'''
+
+The Dogtag team is pleased to announce the availability of a back-port of Dogtag 10.2.1 for Fedora 21.
+
+'''January 9, 2015:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.2.1 for Fedora 22.
+
+* See the [[PKI_Release_Notes#Dogtag_Certificate_System_10.2.1|Release Notes]] for information pertaining to this release.
+
+= 2014 =
+
+'''September 22, 2014:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.1.2 for Fedora 20.
+
+* See the [[PKI_Release_Notes#Dogtag_Certificate_System_10.1.2|Release Notes]] for information pertaining to this release.
+
+'''September 6, 2014:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.2.0 for Fedora 21.
+
+* See the [[PKI_Release_Notes#Dogtag_Certificate_System_10.2.0|Release Notes]] for information pertaining to this release.
+
+'''April 1, 2014:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.1.1 for Fedora 20.
+
+* See the [[PKI_Release_Notes#Dogtag_Certificate_System_10.1.1|Release Notes]] for information pertaining to this release.
+
+'''April 1, 2014:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.0.7 for Fedora 19.
+
+* See the [[PKI_Release_Notes#Dogtag_Certificate_System_10.0.7|Release Notes]] for information pertaining to this release.
+
+= 2013 =
+
+'''November 22, 2013:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.1 for Fedora 20.
+
+* See the [[PKI_Release_Notes#Dogtag_Certificate_System_10.1|Release Notes]] for information pertaining to this release.
+
+'''November 3, 2013:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.0.6 for Fedora 18 and Fedora 19.
+
+* See the [[PKI_Release_Notes#Dogtag_Certificate_System_10.0.6|Release Notes]] for information pertaining to this release.
+
+'''September 9, 2013:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.0.5 for Fedora 18 and Fedora 19.
+
+* See the [[PKI_Release_Notes#Dogtag_Certificate_System_10.0.5|Release Notes]] for information pertaining to this release.
+
+'''July 25, 2013:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.0.4 for Fedora 18 and Fedora 19.
+
+* See the [[PKI_Release_Notes#Dogtag_Certificate_System_10.0.4|Release Notes]] for information pertaining to this release.
+
+'''June 7, 2013:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.0.3 for Fedora 18 and Fedora 19 (alpha).
+
+* See the [[PKI_Release_Notes#Dogtag_Certificate_System_10.0.3|Release Notes]] for information pertaining to this release.
+
+'''May 2, 2013:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.0.2 for Fedora 18 and Fedora 19 (alpha).
+
+* See the [[PKI_Release_Notes#Dogtag_Certificate_System_10.0.2|Release Notes]] for information pertaining to this release.
+* Additionally, since the TIP of the source code will now be used for Dogtag 10.1 development, a branch was created from the [https://git.fedorahosted.org/cgit/pki.git/log/ master] as [https://git.fedorahosted.org/cgit/pki.git/log/?h=DOGTAG_10_0_BRANCH DOGTAG_10_0_BRANCH].
+
+'''January 23, 2013:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.0.1 for Fedora 18.
+
+* See the [[PKI_Release_Notes#Dogtag_Certificate_System_10.0.1|Release Notes]] for information pertaining to this release.
+
+'''January 15, 2013:'''
+
+The Dogtag team is pleased to announce the availability of Dogtag 10.0 for Fedora 18.
+
+* See the [[PKI_Release_Notes#Dogtag_Certificate_System_10.0|Release Notes]] for information pertaining to this release.
+
+= 2012 =
+
+'''December 11, 2012:'''
+
+The Dogtag team is pleased to announce the availability of the first Release Candidate Release of the Dogtag 10.0 code for Fedora 18.
+
+* See the [[PKI_Release_Notes#Dogtag_Certificate_System_10.0_.28Release_Candidate_1.29|Release Notes]] for information pertaining to this release.
+
+'''October 30, 2012:'''
+
+The Dogtag team is pleased to announce the availability of the second Beta Release of the Dogtag 10.0 code for Fedora 18.
+
+* See the [[PKI_Release_Notes#Dogtag_Certificate_System_10.0_.28Beta_2.29|Release Notes]] for information pertaining to this release.
+
+'''October 9, 2012:'''
+
+The Dogtag team is pleased to announce the availability of the first Beta Release of the Dogtag 10.0 code for Fedora 18.
+
+* See the [[PKI_Release_Notes#Dogtag_Certificate_System_10.0_.28Beta_1.29|Release Notes]] for information pertaining to this release.
+
+'''October 1, 2012:'''
+
+The Dogtag team is pleased to announce the availability of an Alpha Release of the Dogtag 10.0 code for Fedora 18.
+
+* See the [[PKI_Release_Notes#Dogtag_Certificate_System_10.0_.28Alpha_2.29|Release Notes]] for information pertaining to this release.
+
+'''March 14, 2012:'''
+
+The Dogtag team is pleased to announce the availability of an Alpha Release of the Dogtag 10.0 code for Fedora 16 and Fedora 17.
+
+* See the [[PKI_Release_Notes#Dogtag_Certificate_System_10.0_.28Alpha.29|Release Notes]] for more information
+ 
+= 2011 =
+
+'''November 23, 2011:'''
+
+It has been determined by our legal department that Dogtag no longer requires that a "Contributor License Agreement" be signed and filed prior to accepting code submittals for the Dogtag Certificate System!
+
+'''October 28, 2011:'''
+
+Dogtag is undergoing some exciting new changes which can be tracked on the top-level page entitled [[Dogtag]].
+
+As a part of this activity, the Dogtag trunk will be in flux, and so for the convenience of current Dogtag 9.0 users, we have created a source code branch entitled [https://fedorahosted.org/pki/browser/branches/DOGTAG_9_BRANCH/pki DOGTAG_9_BRANCH].
+
+'''July 22, 2011:'''
+
+We are pleased to announce the availability of both 32-bit and 64-bit versions of Dogtag Certificate System 9.0 for Fedora 15.
+
+The new release is now included in the standard Fedora repositories allowing the packages to be installed on Fedora.
+
+* [[PKI_Release_Notes | See the Release Notes]] for more information
+
+= 2010 =
+
+'''August 11, 2010:'''
+
+The subversion source repositories that were originally hosted on 'pki.fedoraproject.org' have been moved to 'fedorahosted.org'.
+
+Check-out details are documented at [[PKI_Subversion_Instructions | PKI Subversion Instructions (pki)]] and [[PKI_Pre-Built_Support_Components | PKI Pre-Built Support Components (tomcatjss)]].
+
+'''May 4, 2010:'''
+
+We are pleased to announce the availability of both 32-bit and 64-bit versions of Dogtag Certificate System 1.3 for Fedora 11, Fedora 12 Fedora 13 and EPEL packages for RHEL 5.5.
+
+The new release is now included in the standard EPEL and Fedora repositories allowing the packages to be installed on Fedora without configuring additional package repositories and on Red Hat Enterprise Linux systems that are configured to use the EPEL repositories.
+
+* [[PKI_Release_Notes | See the Release Notes]] for more information
+
+= 2009 =
+
+'''August 26, 2009:'''
+
+We are pleased to announce the availability of Dogtag Certificate System 1.2.0 for 32-bit and 64-bit versions of Fedora 11.
+* [[PKI_Release_Notes | See the Release Notes]] for more information 
+
+'''July 31, 2009:'''
+
+We are pleased to announce the availability of Dogtag Certificate System 1.2.0. This release contains numerous bug fixes. It is available for Fedora 8, 9 and 10.
+* [[PKI_Release_Notes | See the Release Notes]] for more information 
+
+'''April 6, 2009:'''
+
+We are pleased to announce the availability of Dogtag Certificate System 1.1.0. This release contains many new features and numerous bug fixes. It is available for Fedora 8, 9 and 10.
+* [[PKI_Release_Notes | See the Release Notes]] for more information 
+
+= 2008 =
+
+'''November 28, 2008:'''
+
+The Dogtag Subversion Source Code Repository formerly consisted of a "pki/base/" directory which contained the PKI source code, and a "pki/linux/" directory which held all of the Dogtag-branding UI and PKI component build scripts.  For reasons which were beyond our control when Dogtag was first released,  suffice it to say that the benign name of "linux" was given to this branding directory.  By fixing [https://bugzilla.redhat.com/show_bug.cgi?id=445402 Bugzilla Bug#445402], this problem has been rectified, as the following changes were made to the Dogtag Subversion Source Code Repository:
+
+* Subversion properties were applied to ALL shared files in the "config/" and "config-ext/" files (since this allows developers the ability to change one file and have those changes propogated to all other directories sharing this file).
+* The directory called "pki/linux/" was renamed to "pki/dogtag/".
+* All build scripts were renamed from "build_linux" to "build_dogtag".
+* All UI packages were renamed from from "pki-<component>-ui" to "dogtag-pki-<component>-ui" which ''provides'' "pki-<component>-ui";  this does not alter any existing dependencies since upper-level components will still require "pki-<component>-ui".  This affected the following eight packages:
+** pki-ca-ui --> dogtag-pki-ca-ui,
+** pki-common-ui --> dogtag-pki-common-ui,
+** pki-console-ui --> dogtag-pki-console-ui,
+** pki-kra-ui --> dogtag-pki-kra-ui,
+** pki-ocsp-ui --> dogtag-pki-ocsp-ui,
+** pki-ra-ui --> dogtag-pki-ra-ui,
+** pki-tks-ui --> dogtag-pki-tks-ui, and
+** pki-tps-ui --> dogtag-pki-tps-ui.
+* The pki.fedoraproject.org Wiki and top-level pki/README file were updated to reflect these changes.
+
+'''November 26, 2008:'''
+
+It has recently been brought to the attention of the Dogtag developers that numerous users in the Dogtag community have encountered problems successfully running the TPS subsystem.  On Fedora 8, we believe that we have isolated this issue as being related to normal Fedora 8 updates of the following two packages:
+
+    NSS 3.11 --> NSS 3.12
+    MOD_NSS 1.0.7-2 --> MOD_NSS 1.0.7-3 or later
+
+Dogtag developers are currently working on a permanent fix for this issue.  However, until such time, users wishing to run a TPS subsystem are urged to use the original Fedora 8 GOLD bits available via http://fedoraproject.org/en/get-fedora.
+
+After this fresh install it is important not to apply any updates that affect either the nss or mod_nss packages.
+
+As we believe a very similar problem exists on Fedora 9, we would urge users wishing to run a TPS subsystem install this component on the aforementioned  Fedora 8 platform.

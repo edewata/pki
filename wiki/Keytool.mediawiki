@@ -1,0 +1,114 @@
+= Overview =
+
+By default <code>keytool</code> will use the keystore at <code>~/.keystore</code>.
+
+= Listing Certificates =
+
+To list certificates:
+
+<pre>
+$ keytool -list -keystore keystore.p12 -storepass Secret.123
+</pre>
+
+To see more details:
+
+<pre>
+$ keytool -list -keystore keystore.p12 -storepass Secret.123 -v
+</pre>
+
+To list user's CA certificates:
+
+<pre>
+$ keytool -list
+</pre>
+
+To list system's CA certificates:
+
+<pre>
+$ keytool -list -keystore /etc/pki/java/cacerts -storepass changeit
+</pre>
+
+= Generating Self-Signed Certificate =
+
+To generate self-signed RSA server certificate:
+
+<pre>
+$ keytool -genkeypair \
+    -keystore keystore.p12 \
+    -storetype pkcs12 \
+    -storepass Secret.123 \
+    -alias sslserver \
+    -keyalg RSA \
+    -dname "CN=$HOSTNAME" \
+    -keypass Secret.123
+</pre>
+
+To generate self-signed ECC server certificate:
+
+<pre>
+$ keytool -genkeypair \
+    -keystore keystore.p12 \
+    -storetype pkcs12 \
+    -storepass Secret.123 \
+    -alias sslserver \
+    -keyalg EC \
+    -dname "CN=$HOSTNAME" \
+    -keypass Secret.123
+</pre>
+
+= Generating CSR =
+
+To generate a CSR from an existing key pair:
+
+<pre>
+$ keytool -certreq \
+    -keystore keystore.p12 \
+    -storepass Secret.123 \
+    -alias sslserver \
+    -file sslserver.csr
+</pre>
+
+= Importing CA Certificate =
+
+To import CA certificate for the current user:
+
+<pre>
+$ keytool -import -alias <nickname> -file <certificate> -trustcacerts -storepass changeit
+</pre>
+
+= Importing Certificate =
+
+To import a certificate into a keystore:
+
+<pre>
+$ keytool -import -keystore <keystore> -alias <nickname> -file <certificate>
+</pre>
+
+To import CA certificate into trusted keystore:
+
+<pre>
+$ keytool -import \
+    -keystore /etc/pki/java/cacerts \
+    -alias example \
+    -file example.crt
+</pre>
+
+= Exporting Certificates =
+
+<pre>
+$ keytool -export \
+    -rfc \
+    -keystore keystore.p12 \
+    -storepass Secret.123 \
+    -alias sslserver \
+    -file sslserver.crt
+</pre>
+
+= References =
+
+* [[JSSE]]
+* [[OpenJDK]]
+* [[OpenSSL]]
+* [https://github.com/dogtagpki/pki/wiki/PKI-PKCS12-CLI PKI PKCS12 CLI]
+* [[PKCS12]]
+* [https://www.sslshopper.com/article-most-common-java-keytool-keystore-commands.html The Most Common Java Keytool Keystore Commands]

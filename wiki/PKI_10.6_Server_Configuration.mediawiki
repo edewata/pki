@@ -1,0 +1,132 @@
+= Server Configuration Files =
+
+The main server configuration is located in /etc/pki/<font color="red">pki-tomcat</font>:
+
+ $ ls -la /etc/pki/<font color="red">pki-tomcat</font>
+ total 120
+ drwxrwx---. 5 pkiuser pkiuser  4096 Mar 13 15:42 .
+ drwxr-xr-x. 9 root    root     4096 Mar 13 15:41 ..
+ drwxrwx---. 2 pkiuser pkiuser  4096 Mar 13 15:41 alias
+ drwxrwx---. 3 pkiuser pkiuser  4096 Mar 13 15:42 ca
+ drwxrwx---. 3 pkiuser pkiuser  4096 Mar 13 15:40 Catalina
+ -rw-rw----. 1 pkiuser pkiuser 22317 Mar 13 15:42 catalina.policy
+ lrwxrwxrwx. 1 pkiuser pkiuser    46 Mar 13 15:41 catalina.properties -> /usr/share/pki/server/conf/catalina.properties
+ lrwxrwxrwx. 1 pkiuser pkiuser  7885 Mar 12 23:01 ciphers.info -> /usr/share/pki/server/conf/ciphers.info
+ lrwxrwxrwx. 1 pkiuser pkiuser    34 Mar 13 15:41 context.xml -> /usr/share/tomcat/conf/context.xml
+ -rw-rw----. 1 pkiuser pkiuser   292 Apr 11  2017 custom.policy
+ -rw-rw----. 1 pkiuser pkiuser  3817 Mar 13 15:42 keystore.p12
+ -rw-rw----. 1 pkiuser pkiuser    13 Mar 13 15:42 keystore.pwd
+ lrwxrwxrwx. 1 pkiuser pkiuser    45 Mar 13 15:41 logging.properties -> /usr/share/pki/server/conf/logging.properties
+ -rw-rw----. 1 pkiuser pkiuser    68 Mar 13 15:41 password.conf
+ -rw-rw----. 1 pkiuser pkiuser  8032 Mar 13 15:42 pki.policy
+ -rw-rw----. 1 pkiuser pkiuser  1622 Apr 11  2017 schema-authority.ldif
+ -rw-rw----. 1 pkiuser pkiuser   495 Apr 11  2017 schema-certProfile.ldif
+ -rw-rw----. 1 pkiuser pkiuser    10 Mar 13 15:41 serverCertNick.conf
+ -rw-rw----. 1 pkiuser pkiuser 13947 Mar 13 15:42 server.xml
+ -rw-rw----. 1 pkiuser pkiuser  1940 Mar 13 15:41 tomcat.conf
+ -rw-rw----. 1 pkiuser pkiuser  2473 Apr 11  2017 tomcat-users.xml
+ -rw-rw----. 1 pkiuser pkiuser   108 Apr 11  2017 usn.ldif
+ lrwxrwxrwx. 1 pkiuser pkiuser    30 Mar 13 15:41 web.xml -> /usr/share/tomcat/conf/web.xml
+
+Compared to PKI 10.5, some of the files in this folder have been converted into links in PKI 10.6. Existing files should be either updated manually (see [[Tomcat 8.5 Migration]]), or replaced with links as well.
+
+= Tomcat Configuration =
+
+The PKI Tomcat configuration is located at [https://github.com/dogtagpki/pki/blob/master/base/server/share/etc/tomcat.conf.in /usr/share/pki/etc/tomcat.conf]:
+
+<pre>
+# systemd environment file for pki-tomcatd and pki-tomcatd-nuxwdog services
+
+# NSS database format
+NSS_DEFAULT_DB_TYPE="sql"
+</pre>
+
+The instance Tomcat configuration is located at [https://github.com/dogtagpki/pki/blob/master/base/server/share/conf/tomcat.conf /etc/pki/<instance>/tomcat.conf]:
+
+<pre>
+# --- BEGIN COPYRIGHT BLOCK ---
+# Copyright (C) 2012 Red Hat, Inc.
+# All rights reserved.
+# Modifications: configuration parameters
+# --- END COPYRIGHT BLOCK ---
+
+# This file contains instance-specific configuration.
+
+# Default NSS DB type is loaded from /usr/share/pki/etc/tomcat.conf
+
+# Where your java installation lives
+JAVA_HOME="[JAVA_HOME]"
+
+# Where your tomcat installation lives
+CATALINA_BASE="[PKI_INSTANCE_PATH]"
+
+# Instance tmp dir
+CATALINA_TMPDIR=[PKI_TMPDIR]
+
+# NOTE: JAVA_OPTS is now only read once.  All desired settings must be concatenated
+# into a single line.
+#
+# Some parameters you might want to add are:
+# - parameters to the JVM like 
+#   -Xminf0.1 -Xmaxf0.3
+# - parameters to set java.library.path for libtcnative.so
+#   -Djava.library.path=/usr/lib
+# - parameters to run a java debugger (e. g. - 'eclipse')
+#   -Xdebug -Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=n -Djava.awt.headless=true -Xmx128M
+JAVA_OPTS=""
+
+# What user should run tomcat
+TOMCAT_USER="[PKI_USER]"
+
+# You can change your tomcat locale here
+#LANG="en_US"
+
+# Run tomcat under the Java Security Manager
+SECURITY_MANAGER="[PKI_SECURITY_MANAGER]"
+
+# Time to wait in seconds, before killing process
+#SHUTDOWN_WAIT="30"
+
+# Whether to annoy the user with "attempting to shut down" messages or not
+#SHUTDOWN_VERBOSE="false"
+
+# Set the TOMCAT_PID location
+CATALINA_PID="[TOMCAT_PIDFILE]"
+
+# Set the tomcat log file
+TOMCAT_LOG="[TOMCAT_LOG_DIR]/tomcat-initd.log"
+
+# Connector port is 8080 for this tomcat instance
+#CONNECTOR_PORT="8080"
+
+# If you wish to further customize your tomcat environment,
+# put your own definitions here
+# (i.e. LD_LIBRARY_PATH for some jdbc drivers)
+
+PKI_VERSION=[APPLICATION_VERSION]
+
+# Debian settings
+TOMCAT_USER="[PKI_USER]"
+TOMCAT_SECURITY="[PKI_SECURITY_MANAGER]"
+
+# Use Nuxwdog to start server
+USE_NUXWDOG="false"
+</pre>
+
+= Web Application Contexts =
+
+The web application context files are stored in /etc/pki/<font color="red">pki-tomcat</font>/Catalina/localhost:
+
+ $ ls -la /etc/pki/<font color="red">pki-tomcat</font>/Catalina/localhost
+ total 20
+ drwxrwx---. 2 pkiuser pkiuser 4096 Mar 12 23:43 .
+ drwxrwx---. 3 pkiuser pkiuser 4096 Mar 12 23:41 ..
+ -rw-rw----. 1 pkiuser pkiuser 1454 Mar 12 23:45 ca.xml
+ -rw-rw----. 1 pkiuser pkiuser 1156 Mar 12 23:45 pki.xml
+ -rw-rw----. 1 pkiuser pkiuser 1157 Mar 12 23:45 ROOT.xml
+
+Compared to PKI 10.5, there are no changes required.
+
+= See Also =
+
+* [[PKI 10.5 Server Configuration]]

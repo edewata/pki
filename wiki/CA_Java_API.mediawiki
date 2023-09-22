@@ -1,0 +1,24 @@
+= CertificateAuthority class =
+
+== Fields ==
+
+=== SigningUnit mSigningUnit ===
+
+=== SigningUnit mOCSPSigningUnit ===
+
+=== SigningUnit mCRLSigningUnit ===
+
+== Methods ==
+
+=== sign(X509CRLImpl crl, String algorithm) ===
+
+=== sign(X509CertInfo cert, String algorithm) ===
+
+=== sign(byte[] data, String algorithm) ===
+
+=== sign(ResponseData ocspResponseData) ===
+
+= References =
+
+* [[SigningUnit API]]
+* [[PKI Javadoc]]

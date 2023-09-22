@@ -1,0 +1,113 @@
+= PKI Version Number in Fedora =
+
+In Fedora the version number is defined in [https://github.com/dogtagpki/pki/blob/master/pki.spec pki.spec]:
+
+<pre>
+Version:          10.6.7
+Release:          1%{?_timestamp}%{?_commit_id}%{?dist}
+</pre>
+
+The version number and release number are passed to CMake with the following parameter:
+
+<pre>
+%build
+
+%cmake \
+    ...
+    -DVERSION=%{version}-%{release} \
+    ...
+</pre>
+
+After installation, the package version number will be stored in /usr/share/pki/VERSION:
+
+<pre>
+Specification-Version: ${APPLICATION_VERSION}
+Implementation-Version: ${VERSION}
+</pre>
+
+The configuration version number will be stored in /etc/pki/pki.version during installation:
+
+<pre>
+%post -n pki-base
+
+if [ $1 -eq 1 ]
+then
+    echo "Configuration-Version: %{version}" > %{_sysconfdir}/pki/pki.version
+else
+    /sbin/pki-upgrade --silent >> /var/log/pki/pki-upgrade-%{version}.log 2>&1
+fi
+</pre>
+
+= PKI Version Number in CMake Scripts =
+
+The version number is initialized with this code:
+
+<pre>
+if (NOT DEFINED VERSION)
+    set(VERSION "10.0.0")
+endif(NOT DEFINED VERSION)
+</pre>
+
+The version number is parsed into major, minor, and patch versions.
+
+<pre>
+string(REGEX REPLACE "^([0-9]+).*" "\\1" APPLICATION_VERSION_MAJOR ${VERSION})
+string(REGEX REPLACE "^[0-9]+\\.([0-9]+).*" "\\1" APPLICATION_VERSION_MINOR ${VERSION})
+string(REGEX REPLACE "^[0-9]+\\.[0-9]+\\.([0-9]+).*" "\\1" APPLICATION_VERSION_PATCH ${VERSION})
+</pre>
+
+The version number (without the release number) is reconstructed with the following code:
+
+<pre>
+set(APPLICATION_VERSION "${APPLICATION_VERSION_MAJOR}.${APPLICATION_VERSION_MINOR}.${APPLICATION_VERSION_PATCH}")
+</pre>
+
+= PKI Version Number in JAR Files =
+
+In JAR files the version number is stored in META-INF/MANIFEST.MF:
+
+<pre>
+Specification-Version: ${APPLICATION_VERSION}
+Implementation-Version: ${VERSION}
+</pre>
+
+= PKI Version Number in Python =
+
+In conf.py:
+
+<pre>
+version = '@APPLICATION_VERSION@'
+release = '@APPLICATION_VERSION@'
+</pre>
+
+= PKI Version Number in System Configuration =
+
+In /etc/pki/pki.version:
+
+<pre>
+Configuration-Version: %{version}"
+</pre>
+
+= PKI Version Number in Server Configuration =
+
+In /etc/pki/<instance>/tomcat.conf:
+
+<pre>
+PKI_VERSION=[APPLICATION_VERSION]
+</pre>
+
+= PKI Version Number in Subsystem Configuration =
+
+In CS.cfg:
+
+<pre>
+cms.product.version=@APPLICATION_VERSION@
+cms.version=@APPLICATION_VERSION_MAJOR@.@APPLICATION_VERSION_MINOR@
+</pre>
+
+
+= References =
+
+* [[API Versioning]]
+* [[Versioning Scheme]]
+* [[PKI Upgrade Framework]]

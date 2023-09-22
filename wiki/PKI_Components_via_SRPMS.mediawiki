@@ -1,0 +1,36 @@
+= Building PKI Components via SRPMS =
+
+== Installing Pre-Built PKI Support Components ==
+
+Follow the instructions to install pre-built PKI support components:
+* [[PKI_Pre-Built_Support_Components|Pre-built PKI Support Components]]
+
+== Install Yum Utilities ==
+
+To download the PKI source RPMS, the user must first install the yum utilities:
+
+   yum install yum-utils
+
+== Building PKI Components ==
+
+=== Dogtag 9.0 ===
+'''<font color="red">To Be Documented</font>'''
+
+=== Dogtag 1.3 and Earlier ===
+
+Instructions on building PKI components are contained in the following sections (which must be followed in order):
+
+=== Building PKI Common Components ===
+
+For details, see:
+* [[PKI_Common_Components_via_SRPMS|Building PKI Common Components]]
+
+=== Building PKI Subsystem Components ===
+
+For details, see:
+* [[PKI_Subsystem_Components_via_SRPMS|Building PKI Subsystem Components]]
+
+=== Building Optional PKI Components ===
+
+For details, see:
+* [[PKI_Optional_Components_via_SRPMS|Building Optional PKI Components]]

@@ -1,0 +1,85 @@
+    #!/bin/bash
+    
+    ##
+    ## Set OUTPUT to the classes directory in which to install this plug-in.
+    ##
+    ##   - By default, to NOT automatically install this plug-in into CS use:
+    ##
+    ##         OUTPUT=.
+    ##         export OUTPUT
+    ##
+    ##     The user will then need to have the appropriate permissions
+    ##     to copy this plug-in to the desired PKI location(s).
+    ##
+    ##   - To automatically install this plug-in to be unique
+    ##     to a particular CS instance use:
+    ##
+    ##         OUTPUT=<pki-instance>/webapps/<pki-subsystem>/WEB-INF/classes
+    ##         export OUTPUT
+    ##
+    ##     where <pki-instance> is the complete path to the desired CS instance,
+    ##     and <pki-subsystem> is either ca, kra, ocsp, or tks.
+    ##     The user will need to have permissions to the desired CS instance to
+    ##     accomplish this task.
+    ##
+    ##   - To automatically install this plug-in to be common
+    ##     to all CS instances use:
+    ##
+    ##         OUTPUT=/var/lib/tomcat5/shared/classes
+    ##         export OUTPUT
+    ##
+    ##     The user will need to have root permission to accomplish this task.
+    ##
+    
+    OUTPUT=.
+    export OUTPUT
+    
+    
+    ##
+    ## Set the location of various jar files.
+    ##
+    
+    JARHOME=/usr/share/java
+    export JARHOME
+    
+    JNIHOME=/usr/lib/java
+    export JNIHOME
+    
+    PKIHOME=${JARHOME}/pki
+    export PKIHOME
+    
+    
+    ##
+    ## Set CLASSPATH to be used by the java compiler to locate class files
+    ## needed during compilation of this plug-in.
+    ##
+            
+    CLASSPATH=${JARHOME}/servlet.jar:${JARHOME}/ldapjdk.jar:.
+    CLASSPATH=${PKIHOME}/cmsutil.jar:${PKIHOME}/cms.jar:${CLASSPATH}
+    CLASSPATH=${PKIHOME}/nsutil.jar:${PKIHOME}/certsrv.jar:${CLASSPATH}
+    CLASSPATH=${JNIHOME}/jss4.jar:${CLASSPATH}
+    export CLASSPATH
+    
+    
+    ##
+    ## Set the command used to compile the java code comprising this plug-in.
+    ##
+    
+    JAVAC=/usr/bin/javac
+    export JAVAC
+    
+    
+    ##
+    ## Set the names of the java source code comprising this plug-in.
+    ##
+    
+    JAVA_FILES=SSNAuth.java
+    export JAVA_FILES
+    
+    
+    ##
+    ## Build the java classes comprising this plug-in.
+    ##
+    
+    echo $JAVAC -d $OUTPUT -classpath $CLASSPATH $JAVA_FILES
+    $JAVAC -d $OUTPUT -classpath $CLASSPATH $JAVA_FILES

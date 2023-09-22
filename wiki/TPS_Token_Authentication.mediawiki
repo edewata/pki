@@ -1,0 +1,81 @@
+= Configuration =
+
+<pre>
+externalReg.authId=ldap1
+op.enroll.delegateIEtoken.auth.id=ldap1
+op.enroll.delegateISEtoken.auth.id=ldap1
+op.enroll.externalRegAddToToken.auth.id=ldap1
+op.enroll.externalRegISEtoken.auth.id=ldap1
+op.enroll.soKey.auth.id=ldap1
+op.enroll.soKeyTemporary.auth.id=ldap1
+op.enroll.userKey.auth.id=ldap1
+op.enroll.userKeyTemporary.auth.id=ldap1
+op.format.cleanToken.auth.id=ldap1
+op.format.delegateIEtoken.auth.id=ldap1
+op.format.delegateISEtoken.auth.id=ldap1
+op.format.externalRegAddToToken.auth.id=ldap1
+op.format.externalRegISEtoken.auth.id=ldap1
+op.format.soCleanSOToken.auth.id=ldap1
+op.format.soCleanUserToken.auth.id=ldap1
+op.format.soKey.auth.id=ldap1
+op.format.soUserKey.auth.id=ldap1
+op.format.tokenKey.auth.id=ldap1
+op.format.userKey.auth.id=ldap1
+op.pinReset.userKey.auth.id=ldap1
+target.Authentication_Sources.list=ldap1
+</pre>
+
+= Authenticator =
+
+To get the authenticator configuration:
+
+<pre>
+$ pki-server tps-config-find | grep ^auths.instance.ldap1
+auths.instance.ldap1.authCredName=uid
+auths.instance.ldap1.dnpattern=
+auths.instance.ldap1.externalReg.certs.recoverAttributeName=certsToAdd
+auths.instance.ldap1.externalReg.cuidAttributeName=tokenCUID
+auths.instance.ldap1.externalReg.tokenTypeAttributeName=tokenType
+auths.instance.ldap1.ldap.basedn=dc=example,dc=com
+auths.instance.ldap1.ldap.ldapauth.authtype=BasicAuth
+auths.instance.ldap1.ldap.ldapauth.bindDN=
+auths.instance.ldap1.ldap.ldapauth.bindPWPrompt=ldap1
+auths.instance.ldap1.ldap.ldapauth.clientCertNickname=subsystemCert cert-pki-tomcat
+auths.instance.ldap1.ldap.ldapconn.host=localhost.localdomain
+auths.instance.ldap1.ldap.ldapconn.port=389
+auths.instance.ldap1.ldap.ldapconn.secureConn=False
+auths.instance.ldap1.ldap.ldapconn.version=3
+auths.instance.ldap1.ldap.maxConns=15
+auths.instance.ldap1.ldap.minConns=3
+auths.instance.ldap1.ldapByteAttributes=
+auths.instance.ldap1.ldapStringAttributes=mail,cn,uid
+auths.instance.ldap1.ldapStringAttributes._000=#################################
+auths.instance.ldap1.ldapStringAttributes._001=# For isExternalReg
+auths.instance.ldap1.ldapStringAttributes._002=#   attributes will be available as
+auths.instance.ldap1.ldapStringAttributes._003=#       $<attribute>$
+auths.instance.ldap1.ldapStringAttributes._004=#   attributes example:
+auths.instance.ldap1.ldapStringAttributes._005=#mail,cn,uid,edipi,pcc,firstname,lastname,exec-edipi,exec-pcc,exec-mail,certsToAdd,tokenCUID,tokenType
+auths.instance.ldap1.ldapStringAttributes._006=#################################
+auths.instance.ldap1.pluginName=UidPwdDirAuth
+auths.instance.ldap1.ui.description.en=This authenticates user against the LDAP directory.
+auths.instance.ldap1.ui.id.PASSWORD.credMap.authCred=pwd
+auths.instance.ldap1.ui.id.PASSWORD.credMap.msgCred.extlogin=PASSWORD
+auths.instance.ldap1.ui.id.PASSWORD.credMap.msgCred.login=password
+auths.instance.ldap1.ui.id.PASSWORD.description.en=LDAP Password
+auths.instance.ldap1.ui.id.PASSWORD.name.en=LDAP Password
+auths.instance.ldap1.ui.id.UID.credMap.authCred=uid
+</pre>
+
+By default it's configured to use anonymous connection. To configure DS to allow anonymous connection see [[DS Authorization|this page]].
+
+To configure the authenticator to use authenticated connection:
+
+<pre>
+$ pki-server tps-config-set auths.instance.ldap1.ldap.ldapBoundConn true
+$ pki-server tps-config-set auths.instance.ldap1.ldap.ldapauth.bindDN "cn=Directory Manager"
+$ pki-server tps-config-set auths.instance.ldap1.ldap.ldapauth.bindPWPrompt internaldb
+</pre>
+
+= See Also =
+
+* [[TPS Tokens]]

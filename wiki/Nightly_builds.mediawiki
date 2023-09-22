@@ -1,0 +1,36 @@
+= Overview =
+
+<font color=red>'''NOTE:''' Nightly builds have been converted into per-commit builds as of 01 Apr 2019</font>
+
+As the product gets bigger and complex, building and maintaining the product gets difficult. So is the case with Dogtag. We have a per-commit based autobuilds enabled in COPR and a nightly infrastructure that runs IPA tests.
+
+* [[Automated COPR builds]]
+* [[Nightly builds#IPA_Nightly_test|IPA nightly test]]
+
+See also deprecated version of [[Nightly Builds (Deprecated)|nightly build design]]
+
+= IPA Nightly test =
+
+IPA uses components of Dogtag PKI to generate certificates, renew, etc. Cert related tests of IPA run every night.
+
+2 versions of PKI are tested across 2 different platforms, creating 4 jobs in a Travis build:
+
+{|
+|-
+! style="text-align:left;"|Versions
+|10.6, master
+|-
+! style="text-align:left;"|Platform
+|f28, f29
+|-
+|}
+
+== Under the hood ==
+
+# Travis enables the corresponding per-commit based COPR repo
+# Installs IPA and pulls the corresponding Dogtag PKI packages from the COPR repo
+# Runs cert related IPA tests
+
+= Future Work =
+
+# Move the complete nightly builds from Travis to Gitlab to sync up with the QE team

@@ -1,0 +1,42 @@
+= Overview =
+
+PKI server uses an LDAP server as a backend to store the data and some of the server configuration. Currently the only supported LDAP server is [http://directory.fedoraproject.org/ 389 DS]. Each PKI subsystem requires an DS instance. The DS instance can be shared among multiple subsystems and the subsystems will use separate backend databases. The DS instance can be local or remote.
+
+= Deployment Scenarios =
+
+See [[DS Deployment Scenarios]].
+
+= Instance =
+
+See [[DS Instance Setup]].
+
+To restart DS instance:
+
+ $ systemctl restart dirsrv@<font color="red">pki-tomcat</font>.service
+
+= DS Backend =
+
+* [https://github.com/dogtagpki/389-ds-base/wiki/Managing-DS-Backends Managing DS Backends]
+* [[DS Database Setup]]
+* [[DS Database Initialization]]
+* [[DS Database Indexes]]
+* [[DS Replication Setup]]
+
+= Connection =
+
+* [https://github.com/dogtagpki/389-ds-base/wiki/Configuring-SSL-Connection SSL Connection]
+* [https://github.com/dogtagpki/pki/wiki/Configuring-Connection-to-Internal-Database PKI LDAP Connection]
+
+= Queries =
+
+See [[PKI LDAP Queries]].
+
+= References =
+
+* [[DS]]
+* [[LDAP]]
+* [[Deployment]]
+* [https://github.com/dogtagpki/pki/wiki/Shared-Subsystem-Certificate Shared Subsystem Certificate]
+* [[Subystem Certificates]]
+* [[PKI DS CLI]]
+* [https://access.redhat.com/documentation/en-US/Red_Hat_Directory_Server/10/index.html Red Hat Directory Server Red Hat Directory Server 10]

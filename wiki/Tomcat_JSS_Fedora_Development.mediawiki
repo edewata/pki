@@ -1,0 +1,140 @@
+= Overview =
+
+TomcatJSS Fedora source package is located at https://src.fedoraproject.org/rpms/tomcatjss.
+
+= Prerequisites =
+
+ $ dnf install git fedpkg rpm-build
+ $ dnf builddep tomcatjss
+
+= Getting Source Package =
+
+To get the source package:
+
+ $ fedpkg clone tomcatjss <font color="red">Fedora/tomcatjss</font>
+
+The above command will create a new <font color="red">Fedora/tomcatjss</font> folder.
+
+To add a forked repository:
+
+ $ cd Fedora/tomcatjss
+ $ git remote add <username> ssh://<username>@pkgs.fedoraproject.org/forks/<username>/rpms/tomcatjss.git
+
+= Updating Source Package =
+
+== Creating Source Tarball from Current Directory ==
+
+To create a source tarball from the current directory:
+
+<pre>
+$ ant dist
+</pre>
+
+The source tarball will be created in dist/source/tomcatjss-7.3.0.tar.gz. Move it into the source package:
+
+ $ mv dist/source/tomcatjss-7.3.0.tar.gz ../Fedora/tomcatjss
+
+== Creating Source Tarball from Git Repository ==
+
+Go to TomcatJSS upstream repository and execute the following:
+
+<pre>
+$ VERSION=`grep "Version:" tomcatjss.spec | awk '{print $2;}'`
+$ git archive --format=tar.gz --prefix tomcatjss-7.3.0/ -o ../Fedora/tomcatjss/tomcatjss-7.3.0.tar.gz -v HEAD
+</pre>
+
+== Downloading Source Tarball from GitHub ==
+
+Source tarball and patch files can be downloaded directly from GitHub, for example:
+
+* [https://github.com/dogtagpki/tomcatjss/archive/v7.3.0/tomcatjss-7.3.0.tar.gz tomcatjss-7.3.0.tar.gz]
+* [https://github.com/dogtagpki/tomcatjss/commit/9d3a89e87af023caf7f5bae0db6e7de3c72b7870.patch 9d3a89e87af023caf7f5bae0db6e7de3c72b7870.patch]
+
+== Updating Source Checksum ==
+
+To update the source checksum:
+
+<pre>
+$ sha512sum --tag tomcatjss-7.3.0.tar.gz > sources
+</pre>
+
+The sources file should contain something like this:
+
+<pre>
+SHA512 (tomcatjss-7.3.0.tar.gz) = 6394d725af4fed1ace96963b306c62b90252654558e2f0eace8a0a31018934994fcf25ef5cedf07dea9b355f4fb078498db5e9e979dd9f1d6976fe91fafc680e
+</pre>
+
+== Merging RPM Spec Changes ==
+
+Changes in RPM spec file template needs to be merged with the actual RPM spec file. Use a visual merge tools such as Meld or Diffuse.
+
+<pre>
+$ meld tomcatjss.spec.in ../Fedora/tomcatjss/tomcatjss.spec
+</pre>
+
+The development source URL can be defined as follows:
+
+<pre>
+Source:           https://github.com/dogtagpki/pki/archive/%{commit}/tomcatjss-%{commit}.tar.gz
+
+%prep
+%autosetup -n tomcatjss-%{commit} -p 1
+</pre>
+
+The official source URL can be defined as follows:
+
+<pre>
+Source:           https://github.com/dogtagpki/pki/archive/v%{version}/tomcatjss-%{version}.tar.gz
+
+%prep
+%autosetup -n tomcatjss-%{version} -p 1
+</pre>
+
+= Building TomcatJSS Package =
+
+== Creating Local Build ==
+
+To create a local build:
+
+<pre>
+$ fedpkg local
+</pre>
+
+== Creating SRPM ==
+
+To create an SRPM:
+
+<pre>
+$ fedpkg srpm
+</pre>
+
+== Creating Mock Build ==
+
+To create Mock build:
+
+<pre>
+$ fedpkg mockbuild --root fedora-rawhide-x86_64
+</pre>
+
+== Creating COPR Build ==
+
+To create a COPR build for all platforms:
+
+<pre>
+$ fedpkg copr-build <username>/pki-10.6
+</pre>
+
+To create a COPR build for certain platforms only, create an SRPM, then execute the following command:
+
+<pre>
+$ copr build <username>/pki-10.6 <SRPM> \
+  -r fedora-27-x86_64 \
+  -r fedora-28-x86_64 \
+  -r fedora-rawhide-x86_64
+</pre>
+
+= References =
+
+* [[Tomcat JSS Development]]
+* [[Tomcat JSS Release Procedure]]
+* [https://src.fedoraproject.org/rpms/tomcatjss rpms/tomcatjss]

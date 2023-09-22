@@ -1,0 +1,78 @@
+= Converting Markdown to Man Pages =
+
+== md2man ==
+
+To install md2man:
+
+<pre>
+$ dnf install golang-github-cpuguy83-go-md2man
+</pre>
+
+To convert a Markdown file to man page:
+
+<pre>
+$ go-md2man -in test.md -out test.1
+</pre>
+
+== ronn ==
+
+To install ronn:
+
+<pre>
+$ dnf install rubygem-ronn
+</pre>
+
+To convert a Markdown file to a man page and HTML page:
+
+<pre>
+$ ronn test.1.ronn
+</pre>
+
+= Converting MediaWiki to Markdown =
+
+MediaWiki document can be converted to Markdown using [http://pandoc.org/ pandoc].
+
+Online conversion tool is available [http://pandoc.org/try/ here].
+
+See also:
+* https://pandoc.org/
+* https://github.com/philipashlock/mediawiki-to-markdown
+* https://github.com/outofcontrol/mediawiki-to-gfm
+
+= Embedding Markdown in MediaWiki =
+
+See also:
+* https://github.com/showdownjs/showdown
+* https://github.com/crf-cucs/mediawiki-github-markdown
+* https://github.com/JeroenDeDauw/GitHub
+* https://github.com/Rican7/MediaWiki-MarkdownExtraParser (not maintained)
+
+= Markdown Viewer =
+
+Create ~/.local/share/mime/packages/text-markdown.xml with the following content:
+
+<pre>
+<?xml version="1.0"?>
+<mime-info xmlns='http://www.freedesktop.org/standards/shared-mime-info'>
+  <mime-type type="text/plain">
+    <glob pattern="*.md"/>
+    <glob pattern="*.mkd"/>
+    <glob pattern="*.markdown"/>
+  </mime-type>
+</mime-info>
+</pre>
+
+= See Also =
+
+* [https://daringfireball.net/projects/markdown/ Markdown]
+* [https://github.com/dogtagpki/pki/wiki/MediaWiki MediaWiki]
+* [https://github.com/sunaku/md2man md2man]
+* [[PHP]]
+* [https://michelf.ca/projects/php-markdown/ PHP Markdown]
+* [https://github.com/michelf/php-markdown php-markdown]
+* [https://spin.atomicobject.com/2015/05/06/man-pages-in-markdown-ronn/ Creating Man Pages in Markdown with Ronn]
+* [[Man Pages]]
+* [[AsciiDoc]]
+* [https://pandoc.org/ Pandoc]
+* [https://guides.github.com/features/mastering-markdown/ Mastering Markdown]
+* [https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet Markdown Cheatsheet]

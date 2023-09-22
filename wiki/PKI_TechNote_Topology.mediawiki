@@ -1,0 +1,29 @@
+= Deployment Scenarios =
+
+Dogtag Certificate System consists of multiple subsystems and they can be connected in different fashion. We will discuss some scenarios here.
+
+Note that all connection between subsystems are SSL-protected.
+
+== RA ==
+
+This is a very simple setup. The registration authority (RA) is running outside of the firewall. It will be the main interface to interact with the users. 
+
+[[Image:Topology-ra.png]]
+
+== Key Archival ==
+
+A DRM subsystem can be setup behind a CA. When the CA receives a CRMF request with the archival option, it will forward the request to DRM for key archival.
+
+[[Image:Topology-kra.png]]
+
+== Cloned Subsystem ==
+
+To avoid single point of failure, you can clone a subsystem. A cloned subsystem requires a new LDAP instance which will have multi-master replication setup with the master LDAP instance. The subsystem itself supports multiple failover connections.
+
+[[Image:Clone.png]]
+
+== Token Management ==
+
+In this token management setup, TPS is running outside of the firewall, and it interfaces with ESC directly.
+
+[[Image:Topology.png]]

@@ -1,0 +1,138 @@
+== Building Optional PKI Components (Dogtag 1.3 and Earlier ONLY) ==
+
+=== PKI Management (pki-manage) ===
+
+'''<font color="RED">NOTE: The 'pki-manage' RPM has been 'deprecated' on Fedora platforms in favor of 'yum' and 'yum-utils'!</font>'''
+
+Obtain the latest pki-manage SRPM:
+
+    yumdownloader --source pki-manage
+
+To create binary RPMs from this SRPM, become '''root''', and execute the following commands:
+
+    rpm -Uvh pki-manage-{version}-{release}.src.rpm
+    cd /usr/src/redhat
+    rpmbuild -bb SPECS/pki-manage.spec
+
+The RPMs will be created in RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd RPMS/noarch
+    rpm -Uvh *.rpm
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio pki-manage-{version}-{release}.src.rpm} | cpio -idumv
+    gtar -zxvf pki-manage-{version}.tar.gz
+    cd pki-manage-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in pki-manage-{version}/dist/rpmpkg/RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd pki-manage-{version}/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+=== PKI Console (pki-console) ===
+
+Obtain the latest pki-console-ui and pki-console SRPMs:
+
+    yumdownloader --source pki-console-ui pki-console
+
+To create binary RPMs from these SRPMs, become '''root''', and execute the following commands:
+
+    rpm -Uvh pki-console-ui-{version}-{release}.src.rpm
+    rpm -Uvh pki-console-{version}-{release}.src.rpm
+    cd /usr/src/redhat
+    rpmbuild -bb SPECS/pki-console-ui.spec
+    rpmbuild -bb SPECS/pki-console.spec
+
+The RPMs will be created in RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd RPMS/noarch
+    rpm -Uvh *.rpm
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio pki-console-ui-{version}-{release}.src.rpm} | cpio -idumv
+    gtar -zxvf pki-console-ui-{version}.tar.gz
+    cd pki-console-ui-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in pki-console-ui-{version}/dist/rpmpkg/RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd pki-console-ui-{version}/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio pki-console-{version}-{release}.src.rpm} | cpio -idumv
+    gtar -zxvf pki-console-{version}.tar.gz
+    cd pki-console-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in pki-console-{version}/dist/rpmpkg/RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd pki-console-{version}/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+=== PKI Silent Installer (pki-silent) ===
+
+Obtain the latest pki-silent SRPM:
+
+    yumdownloader --source pki-silent
+
+To create binary RPMs from this SRPM, become '''root''', and execute the following commands:
+
+    rpm -Uvh pki-manage-{version}-{release}.src.rpm
+    cd /usr/src/redhat
+    rpmbuild -bb SPECS/pki-manage.spec
+
+The RPMs will be created in RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd RPMS/noarch
+    rpm -Uvh *.rpm
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio pki-manage-{version}-{release}.src.rpm} | cpio -idumv
+    gtar -zxvf pki-manage-{version}.tar.gz
+    cd pki-manage-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in pki-manage-{version}/dist/rpmpkg/RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd pki-manage-{version}/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm
+
+=== PKI Migration Scripts (pki-migrate) ===
+
+Obtain the latest pki-migrate SRPM:
+
+    yumdownloader --source pki-migrate
+
+To create binary RPMs from this SRPM, become '''root''', and execute the following commands:
+
+    rpm -Uvh pki-migrate-{version}-{release}.src.rpm
+    cd /usr/src/redhat
+    rpmbuild -bb SPECS/pki-migrate.spec
+
+The RPMs will be created in RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd RPMS/noarch
+    rpm -Uvh *.rpm
+
+If a developer needs to make changes or apply patches to RPMs, do the following:
+
+    rpm2cpio pki-migrate-{version}-{release}.src.rpm} | cpio -idumv
+    gtar -zxvf pki-migrate-{version}.tar.gz
+    cd pki-migrate-{version}
+    make changes, or add a patch
+    ./release
+
+The RPMs will be created in pki-migrate-{version}/dist/rpmpkg/RPMS/noarch.  Become '''root''', and execute the following commands:
+
+    cd pki-migrate-{version}/dist/rpmpkg/RPMS/noarch
+    rpm -Uvh *.rpm

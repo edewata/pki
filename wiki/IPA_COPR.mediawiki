@@ -1,0 +1,11 @@
+= Repositories =
+
+Official IPA COPR repositories are located at https://copr.fedorainfracloud.org/groups/g/freeipa/coprs/.
+
+Development repositories:
+
+* [https://copr.fedorainfracloud.org/coprs/rcritten/freeipa/ rcritten/freeipa]
+
+= References =
+
+* [[COPR]]

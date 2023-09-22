@@ -1,0 +1,64 @@
+= Installing TinyCA =
+
+<pre>
+$ yum install tinyca2
+</pre>
+
+= Configuring TinyCA =
+
+Edit /etc/tinyca2/openssl.cnf:
+
+<pre>
+[ v3_ca ]
+#subjectAltName=email:copy
+#issuerAltName=issuer:copy
+</pre>
+
+= Creating Root CA =
+
+Use the GUI to create a root CA:
+
+<pre>
+$ tinyca2
+</pre>
+
+= Managing Root CA =
+
+Use the GUI to manage the root CA:
+
+<pre>
+$ tinyca2 --ManageCA
+</pre>
+
+= Configuring Root CA =
+
+Edit /root/.TinyCA/RootCA/index.txt.attr:
+
+<pre>
+unique_subject = no
+</pre>
+
+= Signing Certificate Request =
+
+<pre>
+$ openssl ca \
+ -batch \
+ -passin pass:Secret.123 \
+ -notext \
+ -config /root/.TinyCA/RootCA/openssl.cnf \
+ -name ca_ca \
+ -in "ca_signing.csr" \
+ -out "ca_signing.crt" \
+ -days 7200 \
+ -preserveDN \
+ -md sha256 \
+ -noemailDN
+</pre>
+
+The root CA is located at /root/.TinyCA/RootCA/cacert.pem.
+
+= References =
+
+* [https://github.com/dogtagpki/pki/wiki/Certificate-Extensions Certificate Extensions]
+* [http://manpages.ubuntu.com/manpages/hardy/man1/tinyca2.1.html tinyca2 man page]
+* [https://adminadventure.wordpress.com/2012/07/10/create-your-own-certificate-authority-with-tinyca2-and-debian-squeeze/ Create your own Certificate Authority with TinyCA2 and Debian Squeeze]

@@ -1,0 +1,188 @@
+= Installation =
+
+<pre>
+$ dnf install @virtualization
+</pre>
+
+= Starting the Service =
+
+<pre>
+$ systemctl start libvirtd
+</pre>
+
+= Creating a Storage =
+
+See [https://libvirt.org/storage.html Storage Management].
+
+== Sparse Raw File ==
+
+<pre>
+$ rm -f /var/lib/libvirt/images/guest.img
+$ truncate --size=10240M /var/lib/libvirt/images/guest.img
+</pre>
+
+== QCOW2 ==
+
+<pre>
+$ qemu-img create -f qcow2 /var/lib/libvirt/images/guest.qcow2 10240
+</pre>
+
+= Installing a Guest =
+
+== Installing QCOW2 Image ==
+
+To create a VM from a QCOW2 image:
+
+<pre>
+$ virt-install --name <name> --memory 1024 --import --disk path=<image> --noautoconsole
+</pre>
+
+== Installing Fedora ISO ==
+
+To create a Fedora 28 VM:
+
+<pre>
+$ virt-install \
+    --name fedora \
+    --memory 1024 \
+    --disk path=/var/lib/libvirt/images/guest.qcow2,size=10 \
+    --network bridge=virbr0 \
+    --graphics vnc,listen=127.0.0.1,port=5901 \
+    --cdrom /var/lib/libvirt/images/Fedora-Workstation-Live-x86_64-28-1.1.iso \
+    --noautoconsole
+</pre>
+
+== Installing Debian ISO ==
+
+<pre>
+$ virt-install \
+    --name debian \
+    --memory 1024 \
+    --disk size=10 \
+    --cdrom /var/lib/libvirt/images/debian-9.5.0-amd64-netinst.iso
+</pre>
+
+= Connecting to VM =
+
+Connect with VNC to 127.0.0.1:1.
+
+<pre>
+$ dnf install spice-vdagent
+$ systemctl start spice-vdagentd
+</pre>
+
+= Running KVM =
+
+Start the VM with the following command:
+
+ $ virt-manager
+
+= Managing Virtual Machines =
+
+To list running virtual machines:
+
+<pre>
+$ virsh list
+</pre>
+
+To show virtual machine configuration:
+
+<pre>
+$ virsh dumpxml <machine>
+</pre>
+
+To find the mac address:
+
+<pre>
+$ virsh dumpxml <machine> | grep -i '<mac'
+</pre>
+
+= Managing Networks =
+
+To display available networks:
+
+<pre>
+$ virsh net-list
+</pre>
+
+To show network configuration:
+
+<pre>
+$ virsh net-dumpxml <network>
+</pre>
+
+To configure port forwarding:
+
+<pre>
+$ virsh net-edit <network>
+</pre>
+
+Add a <host> element as follows:
+
+<pre>
+<network>
+    <dhcp>
+      <range start='192.168.124.<start>' end='192.168.124.<end>'/>
+      <host mac='<mac address>' name='<machine>' ip='192.168.124.<n>'/>
+    </dhcp>
+  </ip>
+</network>
+</pre>
+
+Then restart the network:
+
+<pre>
+$ virsh net-destroy default
+$ virsh net-start default
+</pre>
+
+If that doesn't work, restart
+
+<pre>
+$ virsh shutdown <machine>
+$ systemctl restart libvirtd
+$ virsh start <machine>
+$ ping 192.168.124.<n>
+</pre>
+
+= Configuring Port Forwarding =
+
+To configure port forwarding:
+
+<pre>
+$ iptables -I FORWARD -o virbr0 -d 192.168.124.<n> -j ACCEPT
+$ iptables -t nat -I PREROUTING -p tcp --dport 8080 -j DNAT --to 192.168.124.<n>:8080
+$ iptables -I FORWARD -o virbr0 -d 192.168.124.<n> -j ACCEPT
+$ iptables -t nat -A POSTROUTING -s 192.168.124.0/24 -j MASQUERADE
+$ iptables -A FORWARD -o virbr0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+$ iptables -A FORWARD -i virbr0 -o eth0 -j ACCEPT
+$ iptables -A FORWARD -i virbr0 -o lo -j ACCEPT
+</pre>
+
+To verify port forwarding configuration:
+
+<pre>
+$ iptables -n -L FORWARD
+$ iptables -t nat -n -L PREROUTING
+$ iptables -t nat -n -L POSTROUTING
+</pre>
+
+To remove port forwarding:
+
+<pre>
+$ iptables -D FORWARD -o virbr0 -d 192.168.124.<n> -j ACCEPT
+$ iptables -t nat -D PREROUTING -p tcp --dport 8080 -j DNAT --to 192.168.124.<n>:8080
+$ iptables -D FORWARD -o virbr0 -d 192.168.124.<n> -j ACCEPT
+$ iptables -t nat -D POSTROUTING -s 192.168.124.0/24 -j MASQUERADE
+$ iptables -D FORWARD -o virbr0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+$ iptables -D FORWARD -i virbr0 -o eth0 -j ACCEPT
+$ iptables -D FORWARD -i virbr0 -o lo -j ACCEPT
+</pre>
+
+= References =
+
+* [https://docs.fedoraproject.org/quick-docs/en-US/getting-started-with-virtualization.html Fedora: Getting started with virtualization]
+* [https://wiki.debian.org/KVM Debian KVM]
+* [[LVM]]
+* [https://aboullaite.me/kvm-qemo-forward-ports-with-iptables/ KVM/libvirt: Forward Ports to guests with Iptables]
+* [https://wiki.libvirt.org/page/Networking Networking]

@@ -1,0 +1,15 @@
+= Capturing Packets =
+
+<pre>
+$ tcpdump -s 0 -i <interface> -w <file>
+</pre>
+
+= Viewing Captured Packets =
+
+<pre>
+$ tcpdump -r <file>
+</pre>
+
+= References =
+
+* [https://github.com/dogtagpki/pki/wiki/SSL SSL]

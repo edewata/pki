@@ -1,0 +1,78 @@
+= Overview =
+
+Currently the subsystem certificate is mapped to the multiple users:
+* subsystem user (e.g. CA-<hostname>-<port>)
+* pkidbuser
+
+If a client authenticates using the subsystem certificate, it could be mapped into any of the above users. Since the users belong to different groups, the client might not get the proper authorization to perform certain operations.
+
+= Steps to Reproduce =
+
+Install CA and KRA on separate databases by adding the following deployment parameter:
+
+<pre>
+pki_share_db=False
+</pre>
+
+Request a certificate with key archival (see [https://github.com/dogtagpki/pki/wiki/Getting-KRA-Transport-Certificate Getting KRA Transport Certificate]):
+
+<pre>
+$ pki -c Secret.123 client-init
+$ pki -c Secret.123 client-cert-request uid=testuser --profile caDualCert --type crmf --transport transport.pem
+</pre>
+
+Approve the request:
+
+<pre>
+$ pki -d ~/.dogtag/pki-tomcat/ca/alias -c Secret.123 -n caadmin ca-cert-request-review <request ID> --action approve
+</pre>
+
+Actual result: the approval fails (quite consistently).
+
+Expected result: the approval should complete successfully.
+
+= Short Term Solution =
+
+As a short term solution, the pkidbuser will be added to the same groups that the subsystem user belongs to. This way the pkidbuser will mirror the behavior of the subsystem user:
+
+* In CA the pkidbuser should be added to Subsystem Group and Certificate Manager Agents.
+* In KRA the pkidbuser should be added to Data Recovery Manager Agents and Trusted Managers.
+* In OCSP the pkidbuser should be added to Trusted Managers.
+* In TKS the pkidbuser should be added to Token Key Service Manager Agents.
+
+== New Instances ==
+
+On new instances the pkidbuser will be added to the correct groups automatically.
+
+== Existing Instances with Shared Database ==
+
+This includes IPA.
+
+On a shared database the problem only affects CA. The pkidbuser group membership in CA can be fixed with the following commands:
+
+<pre>
+$ pki -d ~/.dogtag/pki-tomcat/ca/alias -c Secret.123 -n caadmin ca-group-user-add "Subsystem Group" pkidbuser
+$ pki -d ~/.dogtag/pki-tomcat/ca/alias -c Secret.123 -n caadmin ca-group-user-add "Certificate Manager Agents" pkidbuser
+</pre>
+
+== Existing Instances with Separate Databases ==
+
+On separate databases the problem affects all subsystems. The pkidbuser group membership can be fixed with the following commands:
+
+<pre>
+$ pki -d ~/.dogtag/pki-tomcat/ca/alias -c Secret.123 -n caadmin ca-group-user-add "Subsystem Group" pkidbuser
+$ pki -d ~/.dogtag/pki-tomcat/ca/alias -c Secret.123 -n caadmin ca-group-user-add "Certificate Manager Agents" pkidbuser
+$ pki -d ~/.dogtag/pki-tomcat/ca/alias -c Secret.123 -n caadmin kra-group-user-add "Data Recovery Manager Agents" pkidbuser
+$ pki -d ~/.dogtag/pki-tomcat/ca/alias -c Secret.123 -n caadmin kra-group-user-add "Trusted Managers" pkidbuser
+$ pki -d ~/.dogtag/pki-tomcat/ca/alias -c Secret.123 -n caadmin ocsp-group-user-add "Trusted Managers" pkidbuser
+$ pki -d ~/.dogtag/pki-tomcat/ca/alias -c Secret.123 -n caadmin tks-group-user-add "Token Key Service Manager Agents" pkidbuser
+</pre>
+
+= Long Term Solution =
+
+The pkidbuser is an LDAP user created to replace cn=Directory Manager, it is not a PKI user, so it can be moved from ou=people,<suffix> to the parent subtree <suffix> (see [[PKI Ticket 1009]]).
+
+= References =
+
+* [https://fedorahosted.org/pki/ticket/1595 PKI Ticket #1595]
+* [https://github.com/dogtagpki/pki/wiki/Shared-Subsystem-Certificate Shared Subsystem Certificate]

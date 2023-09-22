@@ -1,0 +1,11 @@
+= References =
+
+* [[CRL Configuration]]
+* [https://github.com/dogtagpki/pki/wiki/Configuring-CRL-with-PKI-Console Configuring CRL with PKI Console]
+* [https://github.com/dogtagpki/pki/wiki/Publishing-Configuration Publishing Configuration]
+* [[CRL Tools]]
+* [[CRL Migration]]
+* [https://github.com/dogtagpki/pki/wiki/Certificate-Revocation-Checking Certificate Revocation Checking]
+* [http://wiki-old.idm.lab.bos.redhat.com/export/dumpasn1/ ASN.1 Decoder]
+* [https://www.openssl.org/docs/manmaster/apps/crl.html OpenSSL CRL]
+* [https://tools.ietf.org/html/rfc5280 RFC 5280]

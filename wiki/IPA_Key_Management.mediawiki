@@ -1,0 +1,22 @@
+= Listing Key Requests =
+
+This command requires KRA agent authentication. To list key requests:
+ 
+<pre>
+$ pki -U https://`hostname`:8443 -d /etc/httpd/alias/ -n ipaCert -C /etc/httpd/alias/pwdfile.txt \
+ kra-key-request-find
+</pre>
+
+= Listing Keys =
+
+This command requires KRA agent authentication. To list keys:
+ 
+<pre>
+$ pki -U https://`hostname`:8443 -d /etc/httpd/alias/ -n ipaCert -C /etc/httpd/alias/pwdfile.txt \
+ kra-key-find
+</pre>
+
+= References =
+
+* [[IPA]]
+* [https://github.com/dogtagpki/pki/wiki/PKI-KRA-Key-CLI PKI KRA Key CLI]

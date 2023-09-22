@@ -1,0 +1,52 @@
+= Overview =
+
+This page describes the PKI certificates used by IPA.
+
+= Certificate Profiles =
+
+IPA uses the following certificate profiles:
+
+* caCACert
+* caOCSPCert
+* caSignedLogCert
+* caSubsystemCert
+* caServerCert
+* AdminCert
+* caIPAServiceCert
+
+= DS Certificates =
+
+See [https://github.com/dogtagpki/freeipa/wiki/DS-Certificates DS Certificates].
+
+= PKI Certificates =
+
+See [https://github.com/dogtagpki/freeipa/wiki/PKI-Certificates PKI Certificates].
+
+= PKI Admin Certificate =
+PKI admin certificate is stored in several locations:
+* /root/ca-agent.p12 with nickname ipa-ca-agent (misleading nickname).
+* /root/.dogtag/pki-tomcat/ca_admin.cert
+* /root/.dogtag/pki-tomcat/ca_admin.cert.der
+* /root/.dogtag/pki-tomcat/ca_admin_cert.p12 (moved to /root/ca-agent.p12)
+
+= PKI Agent Certificate =
+PKI agent certificate is stored in /etc/httpd/alias and tracked by IPA:
+* ipaCert (CN=IPA RA)
+
+For [https://github.com/dogtagpki/freeipa/wiki/Password-Vault IPA Password Vault] the certificate is exported and cached into /etc/httpd/alias/kra-agent.pem since python-requests does not support NSS. The cache is invalidated if the KRA authentication fails.
+
+= IPA Certificates =
+
+IPA certificates are stored in /etc/httpd/alias:
+* <REALM> IPA CA (CN=Certificate Authority)
+* <External CA DN>
+* ipa-ca-agent (CN=ipa-ca-agent)
+* ipaCert (CN=IPA RA)
+* Signing-Cert (CN=Object Signing Cert)
+
+See [https://github.com/dogtagpki/freeipa/wiki/HTTPD-Certificates HTTPD Certificates].
+
+= References =
+
+* [[IPA]]
+* [[IPA Certificate Management]]

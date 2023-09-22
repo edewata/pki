@@ -1,0 +1,367 @@
+= Overview =
+
+KRATool allows the LDAP contents of the KRA to be migrated during a major system migration. The KRATool offers the following functionalities:
+
+# Replacing the storage cert key  
+# Append offset IDs to LDAP entries
+# Remove offset IDs from LDAP entries
+
+
+= Use Cases =
+
+=== As KRA admin I want to migrate an existing KRA into a new KRA while replacing the storage key ===
+
+==== Input ====
+
+* Existing KRA’s security database (HSM or NSSDB)
+* Existing KRA’s storage cert nickname
+* Existing KRA’s payload key algorithm name
+* Existing KRA’s storage token name
+* Existing KRA’s naming context
+* New KRA’s storage cert
+* New KRA’s naming context
+* LDIF file from existing KRA
+
+==== Output ====
+
+* LDIF file for new KRA
+
+=== As KRA admin I want to merge multiple existing KRAs into a single existing KRA ===
+
+==== Input ====
+* LDIF files from existing KRAs
+* Offset for each KRA
+
+==== Output ====
+* LDIF file for the target KRA
+
+=== As KRA admin, I want to rekey the payload with stronger payload key algorithm (ie) to replace old symmetric key (like DES3) with new stronger algorithms (like AES) [Future] ===
+==== Input ====
+* Existing KRA’s security database (HSM or NSSDB)
+* Existing KRA’s storage cert nickname
+* Existing KRA’s payload key algorithm name
+* Existing KRA’s storage token name
+* Existing KRA’s naming context
+* New KRA’s storage cert
+* New KRA’s naming context
+* Desired algorithm for rekey
+* LDIF file from existing KRA
+
+==== Output ====
+* LDIF file for the target KRA
+
+= Case 1: Simple KRA Migration =
+As KRA admin, I want to migrate an existing KRA into a new KRA while replacing the storage key (ie) rewrapping the payload key (eg. from 1024-RSA to 2048-RSA) 
+
+The following example is based on migrating from one legacy system to the latest system.
+
+
+{| class="wikitable"
+|-
+! scope="col"| Hostname
+
+! scope="col"| Operating System
+! scope="col"| PKI KRA Version
+! scope="col"| RSA Storage Key Size
+|-
+! alpha.example.com
+| Fedora 27 (64-bit)
+| PKI 10.5
+| 1024-bit
+|-
+! omega.example.com
+| Fedora 30 (64-bit)
+| PKI 10.8
+| 2048-bit
+|}
+
+Within this deployment, the KRA located on alpha.example.com contains data, while the KRA located on omega.example.com does not yet exist.
+
+== Solution ==
+
+The administrator is tasked with installing and configuring a PKI 10.8 KRA on omega.example.com including:
+
+# Extracting the data from the old KRA located on alpha.example.com
+# Rewrapping the private key data stored with the 2048-bit storage key located on omega.example.com
+# Renaming this data so that it can be consolidated and imported into omega.example.com
+
+=== Preparing omega ===
+
+1. Login as 'root' on omega.example.com
+
+2. Install and configure a new PKI 10.8 KRA on omega.example.com 
+
+'''NOTE:''' Select an RSA storage key size of 2048-bits! Also, if TPS data is to be "imported", be certain to install and configure a TKS and TPS (make certain that the TPS uses this KRA)
+
+3. Shutdown this PKI 10.8 KRA server (and leave it shutdown until instructed otherwise):
+   systemctl stop pki-tomcatd@<instance>
+
+4. Prepare a place for data:
+   mkdir -p /export/pki
+
+5. Go to the directory containing the NSS security databases for this PKI 10.8 KRA:
+   cd /var/lib/pki/<instance>/alias
+
+6. Extract the public storage certificate to a flat-file located in the new data area:
+  pki-server cert-export kra_storage --cert-file omega.crt 
+
+7. Presuming that the Directory Server instance associated with this KRA is located on the same machine, shutdown Directory Server (and leave it shutdown until instructed otherwise):
+   systemctl stop dirsrv@<ds_instance>
+
+8. Extract the pristine PKI 10.8 KRA LDAP database configuration:
+   /usr/lib64/dirsrv/slapd-omega/db2ldif -n omega.example.com-pki-kra -a /tmp/omega.ldif
+   mv /tmp/omega.ldif /export/pki/omega.ldif
+
+'''Note 1:''' The db2ldif runs as "nobody" and so, it fails to create the omega.ldif other than /tmp location <br/>
+'''Note 2:''' Be certain that the file 'omega.ldif' contains a single blank line at the end of the file!
+
+
+=== Exporting contents from alpha ===
+9. Login as 'root' on alpha.example.com
+
+10. Prepare a place for data:
+   mkdir -p /export/pki
+
+11. Make certain that all PKI 10.5 servers are shut down
+
+12. Stop the Directory Server
+   systemctl stop dirsrv@<ds_instance>
+
+13. Generate the LDIF from the KRA LDAP Database
+   /usr/lib64/dirsrv/slapd-alpha/db2ldif -n alpha.example.com-pki-kra -a /tmp/alpha.ldif
+    
+14. Copy the 'alpha.ldif' to the data area
+   mv /tmp/alpha.ldif /export/pki/alpha.ldif
+
+15. Copy the KRA NSS security databases to the data area:
+    cp -p /var/lib/pki-kra/alias/cert8.db /export/pki
+    cp -p /var/lib/pki-kra/alias/key3.db /export/pki
+    cp -p /var/lib/pki-kra/alias/secmod.db /export/pki
+
+16. Go to the data area
+   cd /export/pki
+
+17. Obtain the flat-file containing the public storage certificate from omega.example.com
+   sftp root@omega.example.com
+    sftp> cd /export/pki
+    sftp> get omega.cert
+    sftp> quit
+
+18. Run KRATool on alpha.example.com:
+   KRATool    
+    -kratool_config_file /usr/share/pki/java-tools/KRATool.cfg       \
+    -source_ldif_file "`pwd`/alpha.ldif"                             \
+    -target_ldif_file "`pwd`/alpha2omega.ldif"                       \         
+    -log_file /tmp/KRATool.log                                       \
+    -source_pki_security_database_path "`pwd`"                       \
+    -source_storage_token_name "Internal Key Storage Token"          \
+    -source_storage_certificate_nickname "storageCert cert-pki-kra"  \
+    -target_storage_certificate_file "`pwd`/omega.cert"              \     
+    -source_kra_naming_context "alpha.example.com-pki-kra"           \
+    -target_kra_naming_context "omega.example.com-pki-kra"           \
+    -unwrap_algorithm AES                                            \
+    -process_requests_and_key_records_only
+
+'''NOTE:''' Obtain the password from /var/lib/<instance>/conf/password.conf. If the private storage key is stored on an HSM attached to alpha.example.com, change the input parameters appropriately, and select the appropriate password when prompted!
+Alternatively, create a file that ONLY contains the password to automatically supply the password to include in a certificate or to access a certificate database. This is a plain-text file containing one password. Be sure to prevent unauthorized access to this file. Supply this file to KRATool by adding the -source_pki_security_database_pwdfile <path to PKI password file> command-line option.
+
+20. Copy 'alpha2omega.ldif' to omega.example.com:
+    sftp root@omega.example.com
+    sftp> cd /export/pki
+    sftp> put alpha2omega.ldif
+    sftp> quit
+
+=== Importing into omega ===
+
+21. Login as 'root' on omega.example.com
+22. Go to the data area
+   cd /export/pki
+
+23. Concatenate the ldif files:
+   cat omega.ldif alpha2omega.ldif > omega_alpha.ldif
+
+24. Import the file 'omega_alpha.ldif' into the LDAP database associated with the PKI 10.5 KRA:
+   /usr/lib64/dirsrv/slapd-omega/ldif2db -n omega.example.com-pki-kra -i /export/pki/omega_alpha.ldif
+
+25. Restart directory server:
+   systemctl start dirsrv@<ds_instance>
+
+26. Restart the PKI 10.8 KRA:
+   systemctl start pki-tomcatd@<instance>
+
+= Case 2: Merging Multiple KRAs =
+
+As KRA admin, I want to merge multiple existing KRAs into a single existing KRA
+
+The following example is based on migrating from two existing KRAs to one existing KRA.
+{| class="wikitable"
+|-
+! scope="col"| Hostname
+! scope="col"| Operating System
+! scope="col"| PKI KRA Version
+! scope="col"| RSA Storage Key Size
+|-
+! alpha.example.com
+| Fedora 27 (64-bit)
+| PKI 10.5
+| 2048-bit
+|-
+! omega.example.com
+| Fedora 30 (64-bit)
+| PKI 10.8
+| 2048-bit
+|}
+
+Within this deployment, both KRAs contain data.
+
+== Solution ==
+The administrator is tasked with merging KRAs from alpha.example.com and beta.example.com into omega.example.com including:
+
+* Extracting the data from the 2 KRAs located on alpha.example.com and beta.example.com
+* Rewrapping the private key data stored with the 2048-bit storage key located on omega.example.com
+* Renumbering the KRA data located on omega.example.com
+* Renaming this data so that it can be consolidated and imported into omega.example.com
+
+=== Preparing Omega ===
+1. Login as 'root' on omega.example.com
+
+2. Shutdown this PKI 10.8 KRA server (and leave it shutdown until instructed otherwise):
+   systemctl stop pki-tomcatd@<instance>
+
+3. Prepare a place for data:
+   mkdir -p /export/pki
+
+4. Go to the directory containing the NSS security databases for this PKI 10.8 KRA:
+   cd /var/lib/pki/<instance>/alias
+
+5. Extract the public storage certificate to a flat-file located in the new data area:
+  pki-server cert-export kra_storage --cert-file omega.crt 
+
+6. Copy the omega.crt to /export/pki
+  cp omega.crt /export/pki
+ 
+
+=== Exporting contents from alpha ===
+'''NOTE:''' Follow the same steps in all KRA servers after replacing the alpha specific values
+
+1. Login as 'root' on <font color=red>alpha.example.com</font>
+
+2. Prepare a place for data:
+   mkdir -p /export/pki
+
+3. Make certain that all PKI servers are shut down
+
+4. Stop the Directory Server
+   systemctl stop dirsrv@<ds_instance>
+
+5. Generate the LDIF from the KRA LDAP Database
+   /usr/lib64/dirsrv/slapd-alpha/db2ldif -n <font color=red>alpha.example.com-pki-kra</font> -a /tmp/alpha.ldif
+    
+6. Copy the <font color=red>'alpha.ldif'</font> to the data area
+   mv /tmp/<font color=red>alpha.ldif</font> /export/pki/<font color=red>alpha.ldif</font>
+
+7. Copy the KRA NSS security databases to the data area:
+    cp -p /var/lib/pki-kra/alias/cert8.db /export/pki
+    cp -p /var/lib/pki-kra/alias/key3.db /export/pki
+    cp -p /var/lib/pki-kra/alias/secmod.db /export/pki
+
+8. Go to the data area
+   cd /export/pki
+
+9. Obtain the flat-file containing the public storage certificate from omega.example.com
+   sftp root@omega.example.com
+    sftp> cd /export/pki
+    sftp> get omega.cert
+    sftp> quit
+
+10. Run KRATool on alpha.example.com:
+   KRATool    
+    -kratool_config_file /usr/share/pki/java-tools/KRATool.cfg       \
+    -source_ldif_file "`pwd`/alpha.ldif"                             \
+    -target_ldif_file "`pwd`/alpha2omega.ldif"                       \         
+    -log_file /tmp/KRATool.log                                       \
+    -source_pki_security_database_path "`pwd`"                       \
+    -source_storage_token_name "Internal Key Storage Token"          \
+    -source_storage_certificate_nickname "storageCert cert-pki-kra"  \
+    -target_storage_certificate_file "`pwd`/omega.cert"              \   
+    -source_kra_naming_context <font color=red>"alpha.example.com-pki-kra"</font>           \
+    -target_kra_naming_context "omega.example.com-pki-kra"           \
+    -append_id_offset 100000000                     \
+    -unwrap_algorithm AES                                            \
+    -process_requests_and_key_records_only
+
+NOTE:' Obtain the password from /var/lib/<instance>/conf/password.conf. If the private storage key is stored on an HSM attached to alpha.example.com, change the input parameters appropriately, and select the appropriate password when prompted!
+Alternatively, create a file that ONLY contains the password to automatically supply the password to include in a certificate or to access a certificate database. This is a plain-text file containing one password. Be sure to prevent unauthorized access to this file. Supply this file to KRATool by adding the -source_pki_security_database_pwdfile <path to PKI password file> command-line option.
+
+11. Copy <font color=red>'alpha2omega.ldif'</font> to omega.example.com:
+   sftp root@omega.example.com
+    sftp> cd /export/pki
+    sftp> put <font color=red>alpha2omega.ldif</font>
+    sftp> quit
+
+=== Exporting contents from omega ===
+
+1. Login to omega.example.com
+2. Presuming that the Directory Server instance associated with this KRA is located on the same machine, shutdown Directory Server (and leave it shutdown until instructed otherwise):
+   systemctl stop dirsrv@<ds_instance>
+
+2. Extract the existing contents of PKI 10.8 KRA LDAP database configuration:
+   /usr/lib64/dirsrv/slapd-omega/db2ldif -n omega.example.com-pki-kra -a /tmp/omega.ldif
+    mv /tmp/omega.ldif /export/pki/omega.ldif
+
+3. Run the KRATool to renumber the existing records in omega.example.com:
+  KRATool 
+    -kratool_config_file /usr/share/pki/java-tools/KRATool.cfg 
+    -source_ldif_file /export/pki/omega.ldif
+    -target_ldif_file /export/pki/omega_renumbered.ldif
+    -log_file /export/pki/KRATool.log
+    -append_id_offset 300000000
+
+=== Importing contents into omega ===
+1. Login as 'root' on omega.example.com
+
+2. Go to the data area
+   cd /export/pki
+
+3. Concatenate the ldif files:
+   cat omega_renumbered.ldif alpha2omega.ldif > omega_alpha_beta.ldif
+
+'''Note:''' cat ldif files from ALL KRAs generated
+
+4. Import the file 'omega_alpha.ldif' into the LDAP database associated with the PKI 10.6 KRA:
+   /usr/lib64/dirsrv/slapd-omega/ldif2db -n omega.example.com-pki-kra -i /export/pki/omega_alpha.ldif
+
+5. Restart directory server:
+   systemctl start dirsrv@<ds_instance>
+
+6. Restart the PKI 10.8 KRA:
+   systemctl start pki-tomcatd@<instance>
+
+
+
+= Case 3: Rekeying the payload entries in existing KRA [FUTURE] =
+As a KRA admin, I want to rekey the payload with stronger payload key algorithm (ie) to replace old symmetric key (like DES3) with new stronger algorithms (like AES) 
+
+The following example is based on migrating from two existing KRAs to one existing KRA.
+
+{| class="wikitable"
+|-
+! scope="col"| Hostname
+! scope="col"| Operating System
+! scope="col"| PKI KRA Version
+! scope="col"| RSA Storage Key Size
+! scope="col"| Payload key Algorithm
+|-
+! omega.example.com
+| Fedora 27 (64-bit)
+| PKI 10.5
+| 2048-bit
+| DES3
+|}
+
+== Solution ==
+The administrator is tasked with rekeying payload entries in an existing omega.example.com KRA:
+
+* Extracting the data from the KRA located on omega.example.com
+* Rekeying the payload with a stronger payload key (like AES)
+* Rewrapping the private key data stored with the 2048-bit storage key located on omega.example.com

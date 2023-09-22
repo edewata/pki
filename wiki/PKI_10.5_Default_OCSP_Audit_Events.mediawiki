@@ -1,0 +1,1 @@
+This page has been moved to https://github.com/dogtagpki/pki/blob/DOGTAG_10_5_BRANCH/docs/admin/Default_OCSP_Audit_Events.md.

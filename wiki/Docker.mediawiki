@@ -1,0 +1,344 @@
+= Installing Docker =
+
+To install Docker from Docker repository:
+
+<pre>
+$ dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+$ dnf install docker-ce docker-ce-cli containerd.io
+</pre>
+
+See [https://docs.docker.com/engine/install/fedora/ Install Docker Engine on Fedora].
+
+To install Docker from Fedora:
+
+<pre>
+$ dnf install docker
+</pre>
+
+= Installing Docker Machine =
+
+To install Docker Machine:
+
+<pre>
+$ curl -L https://github.com/docker/machine/releases/download/v0.16.2/docker-machine-`uname -s`-`uname -m` >/tmp/docker-machine &&
+    chmod +x /tmp/docker-machine &&
+    sudo cp /tmp/docker-machine /usr/local/bin/docker-machine
+</pre>
+
+See also:
+
+* [https://docs.docker.com/machine/install-machine/ Install Docker Machine]
+* [https://github.com/docker/machine/releases/ docker/machine Releases]
+
+= Installing Docker SDK =
+
+To install Docker SDK for Python:
+
+<pre>
+$ pip install docker
+</pre>
+
+To test the installation:
+
+<pre>
+$ python
+>>> import docker
+>>> client = docker.from_env()
+>>> print(client.containers.run("alpine", ["echo", "hello", "world"]))
+</pre>
+
+See also:
+* [https://docs.docker.com/engine/api/sdk/ Develop with Docker Engine SDKs]
+* [https://docker-py.readthedocs.io/en/stable/ Docker SDK for Python]
+
+= Starting Docker Service =
+
+Start Docker service with the following command:
+
+<pre>
+$ systemctl start docker
+$ systemctl enable docker
+</pre>
+
+Verify with the following command:
+
+<pre>
+$ docker info
+$ docker run hello-world
+$ docker run -it ubuntu bash
+</pre>
+
+= Listing Images =
+
+<pre>
+$ docker images
+</pre>
+
+= Pulling an Image =
+
+== PHP ==
+
+<pre>
+$ docker pull registry.access.redhat.com/rhscl/php-56-rhel7
+</pre>
+
+== MySQL ==
+
+<pre>
+$ docker pull mysql
+</pre>
+
+== PKI ==
+
+<pre>
+$ docker pull dogtagpki/pki-ci:f26
+</pre>
+
+== IPA ==
+
+<pre>
+$ docker pull freeipa/freeipa-server
+</pre>
+
+= Running Container =
+
+To run a command in a new container:
+
+<pre>
+$ docker run --name=<container> <image> /bin/echo "Hello World!"
+</pre>
+
+To run an interactive shell in a new container:
+
+<pre>
+$ docker run -ti <image> /bin/bash
+</pre>
+
+To run a container in the background:
+
+<pre>
+$ docker run --name=<container> --detach -i <image>
+</pre>
+
+To run a command in an existing container:
+
+<pre>
+$ docker exec <container> <command>
+</pre>
+
+To run an interactive shell in an existing container:
+
+<pre>
+$ docker exec -ti <container> /bin/bash
+</pre>
+
+= File Transfer =
+
+To copy a file to container:
+
+<pre>
+$ docker cp <source> <container>:<target full path>
+</pre>
+
+To copy a file from a container:
+
+<pre>
+$ docker cp <container>:<source full path> <target>
+</pre>
+
+= Listing Containers =
+
+To list active containers:
+
+<pre>
+$ docker ps
+</pre>
+
+To list all containers:
+
+<pre>
+$ docker ps --all
+</pre>
+
+To list certain columns only:
+
+<pre>
+$ docker ps --format 'table {{.Names}},{{.Image}},{{.Command}}'
+</pre>
+
+= Displaying Container Info =
+
+<pre>
+$ docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' <name or ID>
+</pre>
+
+= Attaching to a Container =
+
+To attach to an existing container:
+
+<pre>
+$ docker attach <container>
+</pre>
+
+To detach, press Ctrl-PQ.
+
+= Networking =
+
+To list networks:
+
+<pre>
+$ docker network ls
+</pre>
+
+To create a network:
+
+<pre>
+$ docker network create <network>
+</pre>
+
+To attach containers:
+
+<pre>
+$ docker network connect <network> <container>
+</pre>
+
+= Clean-up =
+
+To remove a container:
+
+<pre>
+$ docker rm -f <container>
+</pre>
+
+To remove all stopped containers:
+
+<pre>
+$ docker container prune -f
+</pre>
+
+To remove an image:
+
+<pre>
+$ docker rmi -f <image>
+</pre>
+
+To remove all unused images:
+
+<pre>
+$ docker image prune --all -f
+</pre>
+
+To clean up the system:
+
+<pre>
+$ docker system prune -a
+</pre>
+
+= Building an Image =
+
+== Creating a Dockerfile ==
+
+<pre>
+FROM fedora:27
+LABEL maintainer="Dogtag PKI Team <pki-devel@redhat.com>"
+ENV container=docker LANG=en_US.utf8 LANGUAGE=en_US.utf8 LC_ALL=en_US.utf8
+
+RUN echo 'deltarpm = false' >> /etc/dnf/dnf.conf
+RUN dnf update -y dnf
+RUN dnf install -y dnf-plugins-core sudo wget
+RUN dnf install -y python-srpm-macros
+RUN dnf install -y @buildsys-build @development-tools
+
+# Enable PKI COPR.
+RUN dnf copr enable -y @pki/10.6
+RUN dnf builddep -y pki-base
+
+# Enable IPA COPR.
+RUN dnf copr enable -y @freeipa/freeipa-4-6
+RUN dnf install -y freeipa-server \
+    freeipa-server-dns \
+    freeipa-server-trust-ad \
+    python-ipatests \
+    --best --allowerasing
+
+STOPSIGNAL RTMIN+3
+VOLUME ["/freeipa", "/run", "/tmp"]
+ENTRYPOINT ["/usr/sbin/init"]
+</pre>
+
+== Building an image locally ==
+
+To build an image from a Dockerfile:
+
+<pre>
+$ docker build -t <image> <folder that contains Dockerfile>
+</pre>
+
+== Pushing an image to DockerHub ==
+
+<pre>
+$ docker login --username=<username>
+$ docker tag <image> <repo>/<username>/<image>:<tag>
+$ docker push <repo><username>/<image>:<tag>
+</pre>
+
+== Building an image on DockerHub ==
+
+* Link DockerHub to GitHub: https://hub.docker.com/account/authorized-services/
+* Create automated build: https://hub.docker.com/add/automated-build/USER/
+* Select pki-ci repository on GitHub.
+* Configure the builds: https://hub.docker.com/r/USER/pki-ci/~/settings/automated-builds/
+** Type: Branch
+** Name: master
+** Dockerfile location: /docker/f27
+** Docker Tag Name: latest
+* Check build status: https://hub.docker.com/r/USER/pki-ci/builds/
+
+= VPN Issue =
+
+If /etc/resolv.conf is configured to use 127.0.0.1 (e.g. due to VPN), Docker build may not work.
+
+<pre>
+nameserver 127.0.0.1
+</pre>
+
+To fix the problem, find the actual DNS server:
+
+<pre>
+$ nmcli dev show | grep IP4.DNS
+IP4.DNS[1]:                             <DNS server>
+</pre>
+
+Then edit /etc/sysconfig/docker-network and specify the following:
+
+<pre>
+DOCKER_NETWORK_OPTIONS="--dns <DNS server>"
+</pre>
+
+Then restart Docker:
+
+<pre>
+$ systemctl restart docker
+</pre>
+
+See also [https://github.com/moby/moby/issues/541 Containers cannot resolve DNS if docker host uses 127.0.0.1 as resolver].
+
+= References =
+
+* [[Container]]
+* [[Podman]]
+* [[S2I]]
+* [http://fedoraproject.org/wiki/Docker Docker]
+* [https://hub.docker.com/ Docker Hub]
+* [https://docs.docker.com/engine/reference/builder/ Dockerfile reference]
+* [https://docs.docker.com/docker-hub/builds/ Configure automated builds on Docker Hub]
+* [https://docs.docker.com/engine/reference/commandline/docker/ Docker CLI]
+* [https://docs.docker.com/install/linux/docker-ee/rhel/ Get Docker EE for Red Hat Enterprise Linux]
+* [[Fedora Container]]
+* [[HTTPD Docker]]
+* [https://github.com/dogtagpki/pki/wiki/MySQL-on-Docker MySQL on Docker]
+* [[PHP Docker]]
+* [[MediaWiki Docker]]
+* [[Tomcat Container]]
+* [[DS Container]]
+* [[PKI CA Container]]
