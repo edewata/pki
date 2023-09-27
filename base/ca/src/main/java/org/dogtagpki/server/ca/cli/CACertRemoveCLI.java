@@ -85,7 +85,6 @@ public class CACertRemoveCLI extends CommandCLI {
 
         DatabaseConfig dbConfig = cs.getDatabaseConfig();
         LDAPConfig ldapConfig = dbConfig.getLDAPConfig();
-        ldapConfig.putInteger("minConns", 1);
 
         PKISocketConfig socketConfig = cs.getSocketConfig();
 
