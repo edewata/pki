@@ -33,6 +33,7 @@ import org.mozilla.jss.netscape.security.x509.X509CertImpl;
 import org.mozilla.jss.netscape.security.x509.X509CertInfo;
 
 import com.netscape.certsrv.base.EBaseException;
+import com.netscape.certsrv.dbs.certdb.CertId;
 import com.netscape.certsrv.profile.ERejectException;
 import com.netscape.certsrv.property.Descriptor;
 import com.netscape.certsrv.property.IDescriptor;
@@ -143,13 +144,14 @@ public class UniqueSubjectNameConstraint extends EnrollConstraint {
     @Override
     public void validate(Request request, X509CertInfo info)
             throws ERejectException {
-        logger.debug("UniqueSubjectNameConstraint: validate start");
+        logger.info("UniqueSubjectNameConstraint: validate start");
         CertificateSubjectName sn = null;
 
         CAEngine engine = CAEngine.getInstance();
         CertificateRepository certdb = engine.getCertificateRepository();
 
         mKeyUsageExtensionChecking = getConfigBoolean(CONFIG_KEY_USAGE_EXTENSION_CHECKING);
+        logger.info("UniqueSubjectNameConstraint: key usage extension checking: " + mKeyUsageExtensionChecking);
 
         try {
             sn = (CertificateSubjectName) info.get(X509CertInfo.SUBJECT);
@@ -159,22 +161,33 @@ public class UniqueSubjectNameConstraint extends EnrollConstraint {
                             "CMS_PROFILE_SUBJECT_NAME_NOT_FOUND"));
         }
 
-        String certsubjectname = null;
+        logger.info("UniqueSubjectNameConstraint: subject: " + sn);
+
         if (sn == null)
             throw new ERejectException(
                     CMS.getUserMessage(getLocale(request),
                             "CMS_PROFILE_SUBJECT_NAME_NOT_FOUND"));
-        certsubjectname = sn.toString();
+
+        String certsubjectname = sn.toString();
         String filter = "x509Cert.subject=" + certsubjectname;
+        logger.info("UniqueSubjectNameConstraint: filter: " + filter);
+
         Enumeration<CertRecord> sameSubjRecords = null;
         try {
             sameSubjRecords = certdb.findCertRecords(filter);
         } catch (EBaseException e) {
             logger.warn("UniqueSubjectNameConstraint exception: " + e.getMessage(), e);
+            throw new ERejectException(e);
         }
+
+        logger.info("UniqueSubjectNameConstraint: result: ");
+
         while (sameSubjRecords != null && sameSubjRecords.hasMoreElements()) {
             CertRecord rec = sameSubjRecords.nextElement();
+            logger.info("UniqueSubjectNameConstraint: - serial number: " + new CertId(rec.getSerialNumber()).toHexString());
+
             String status = rec.getStatus();
+            logger.info("UniqueSubjectNameConstraint:   status: " + status);
 
             RevocationInfo revocationInfo = rec.getRevocationInfo();
             RevocationReason reason = null;
@@ -193,6 +206,8 @@ public class UniqueSubjectNameConstraint extends EnrollConstraint {
                         }
                     }
                 }
+
+                logger.info("UniqueSubjectNameConstraint:   reason: " + reason);
             }
 
             if (status.equals(CertRecord.STATUS_EXPIRED) || status.equals(CertRecord.STATUS_REVOKED_EXPIRED)) {
@@ -208,11 +223,14 @@ public class UniqueSubjectNameConstraint extends EnrollConstraint {
                 continue;
             }
 
+            logger.error("UniqueSubjectNameConstraint: subject name not unique");
+
             throw new ERejectException(
                     CMS.getUserMessage(getLocale(request),
                             "CMS_PROFILE_SUBJECT_NAME_NOT_UNIQUE",
                             certsubjectname));
         }
+
         logger.debug("UniqueSubjectNameConstraint: validate end");
     }
 
