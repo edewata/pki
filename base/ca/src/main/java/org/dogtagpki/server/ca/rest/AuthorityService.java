@@ -31,6 +31,7 @@ import javax.ws.rs.core.GenericEntity;
 import javax.ws.rs.core.Response;
 
 import org.dogtagpki.server.authentication.AuthToken;
+import org.dogtagpki.server.ca.AuthorityRecord;
 import org.dogtagpki.server.ca.CAEngine;
 import org.mozilla.jss.netscape.security.util.Utils;
 import org.mozilla.jss.netscape.security.x509.X500Name;
@@ -58,6 +59,7 @@ import com.netscape.certsrv.ca.CATypeException;
 import com.netscape.certsrv.ca.IssuerUnavailableException;
 import com.netscape.certsrv.common.OpDef;
 import com.netscape.certsrv.common.ScopeDef;
+import com.netscape.certsrv.dbs.certdb.CertId;
 import com.netscape.certsrv.logging.AuditEvent;
 import com.netscape.certsrv.logging.ILogger;
 import com.netscape.cms.servlet.base.SubsystemService;
@@ -92,7 +94,8 @@ public class AuthorityService extends SubsystemService implements AuthorityResou
         CAEngine engine = CAEngine.getInstance();
         for (CertificateAuthority ca : engine.getCAs()) {
 
-            AuthorityData authority = readAuthorityData(ca);
+            AuthorityRecord record = engine.getAuthorityRecord(ca);
+            AuthorityData authority = createAuthorityData(record, ca);
 
             // search by ID
             if (id != null && !id.equalsIgnoreCase(authority.getID())) continue;
@@ -129,7 +132,7 @@ public class AuthorityService extends SubsystemService implements AuthorityResou
     }
 
     @Override
-    public Response getCA(String aidString) {
+    public Response getCA(String aidString) throws Exception {
 
         logger.info("AuthorityService: getting authority " + aidString + ":");
 
@@ -150,7 +153,8 @@ public class AuthorityService extends SubsystemService implements AuthorityResou
                 throw new ResourceNotFoundException("CA \"" + aidString + "\" not found");
         }
 
-        AuthorityData authority = readAuthorityData(ca);
+        AuthorityRecord record = engine.getAuthorityRecord(ca);
+        AuthorityData authority = createAuthorityData(record, ca);
 
         logger.info("AuthorityService:   DN: " + authority.getDN());
         if (authority.getParentID() != null) {
@@ -276,7 +280,10 @@ public class AuthorityService extends SubsystemService implements AuthorityResou
                     data.getDescription());
             audit(ILogger.SUCCESS, OpDef.OP_ADD,
                     subCA.getAuthorityID().toString(), auditParams);
-            return createOKResponse(readAuthorityData(subCA));
+
+            AuthorityRecord record = engine.getAuthorityRecord(subCA);
+            return createOKResponse(createAuthorityData(record, subCA));
+
         } catch (IllegalArgumentException | BadRequestDataException e) {
             throw new BadRequestException(e.toString());
         } catch (CANotFoundException e) {
@@ -331,7 +338,10 @@ public class AuthorityService extends SubsystemService implements AuthorityResou
         try {
             engine.modifyAuthority(ca, data.getEnabled(), data.getDescription());
             audit(ILogger.SUCCESS, OpDef.OP_MODIFY, ca.getAuthorityID().toString(), auditParams);
-            return createOKResponse(readAuthorityData(ca));
+
+            AuthorityRecord record = engine.getAuthorityRecord(ca);
+            return createOKResponse(createAuthorityData(record, ca));
+
         } catch (CATypeException e) {
             auditParams.put("exception", e.toString());
             audit(ILogger.FAILURE, OpDef.OP_MODIFY, ca.getAuthorityID().toString(), auditParams);
@@ -340,7 +350,7 @@ public class AuthorityService extends SubsystemService implements AuthorityResou
             auditParams.put("exception", e.toString());
             audit(ILogger.FAILURE, OpDef.OP_MODIFY, ca.getAuthorityID().toString(), auditParams);
             throw new ConflictingOperationException(e.toString());
-        } catch (EBaseException e) {
+        } catch (Exception e) {
             String message = "Error modifying authority: " + e.getMessage();
             logger.error(message, e);
             auditParams.put("exception", e.toString());
@@ -441,36 +451,28 @@ public class AuthorityService extends SubsystemService implements AuthorityResou
         }
     }
 
-    private static AuthorityData readAuthorityData(CertificateAuthority ca)
-            throws PKIException {
-        String dn;
-        try {
-            dn = ca.getX500Name().toLdapDNString();
-        } catch (IOException e) {
-            throw new PKIException("Error reading CA data: could not determine subject DN");
-        }
+    AuthorityData createAuthorityData(AuthorityRecord record, CertificateAuthority ca)
+            throws Exception {
 
-        String issuerDN;
-        BigInteger serial;
-        try {
-            issuerDN = ca.getCACert().getIssuerName().toString();
-            serial = ca.getCACert().getSerialNumber();
-        } catch (EBaseException e) {
-            throw new PKIException("Error reading CA data: missing CA cert", e);
-        }
+        AuthorityID parentID = record.getParentID();
+        X500Name parentDN = record.getParentDN();
 
-        AuthorityID parentAID = ca.getAuthorityParentID();
-        return new AuthorityData(
+        CertId certID = record.getSerialNumber();
+        BigInteger serialNumber = certID == null ? null : certID.toBigInteger();
+
+        AuthorityData data = new AuthorityData(
             ca.isHostAuthority(),
-            dn,
-            ca.getAuthorityID().toString(),
-            parentAID != null ? parentAID.toString() : null,
-            issuerDN,
-            serial,
-            ca.getAuthorityEnabled(),
-            ca.getAuthorityDescription(),
+            record.getAuthorityDN().toLdapDNString(),
+            record.getAuthorityID().toString(),
+            parentID == null ? null : parentID.toString(),
+            parentDN == null ? null : parentDN.toLdapDNString(),
+            serialNumber,
+            record.getEnabled(),
+            record.getDescription(),
             ca.isReady()
         );
+
+        return data;
     }
 
     private String toPem(String name, byte[] data) {
