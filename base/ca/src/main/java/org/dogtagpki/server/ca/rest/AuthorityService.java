@@ -92,9 +92,9 @@ public class AuthorityService extends SubsystemService implements AuthorityResou
         List<AuthorityData> results = new ArrayList<>();
 
         CAEngine engine = CAEngine.getInstance();
-        for (CertificateAuthority ca : engine.getCAs()) {
+        for (AuthorityRecord record : engine.getAuthorityRecords()) {
 
-            AuthorityRecord record = engine.getAuthorityRecord(ca);
+            CertificateAuthority ca = engine.getCA(record.getAuthorityID());
             AuthorityData authority = createAuthorityData(record, ca);
 
             // search by ID
@@ -166,7 +166,7 @@ public class AuthorityService extends SubsystemService implements AuthorityResou
     }
 
     @Override
-    public Response getCert(String aidString) {
+    public Response getCert(String aidString) throws Exception {
 
         logger.info("AuthorityService: getting cert for authority " + aidString);
 
@@ -199,13 +199,13 @@ public class AuthorityService extends SubsystemService implements AuthorityResou
     }
 
     @Override
-    public Response getCertPEM(String aidString) {
+    public Response getCertPEM(String aidString) throws Exception {
         byte[] der = (byte[]) getCert(aidString).getEntity();
         return Response.ok(toPem("CERTIFICATE", der)).build();
     }
 
     @Override
-    public Response getChain(String aidString) {
+    public Response getChain(String aidString) throws Exception {
 
         logger.info("AuthorityService: getting cert chain for authority " + aidString);
 
@@ -240,7 +240,7 @@ public class AuthorityService extends SubsystemService implements AuthorityResou
     }
 
     @Override
-    public Response getChainPEM(String aidString) {
+    public Response getChainPEM(String aidString) throws Exception {
         byte[] der = (byte[]) getChain(aidString).getEntity();
         return Response.ok(toPem("PKCS7", der)).build();
     }
@@ -304,7 +304,7 @@ public class AuthorityService extends SubsystemService implements AuthorityResou
     }
 
     @Override
-    public Response modifyCA(String aidString, AuthorityData data) {
+    public Response modifyCA(String aidString, AuthorityData data) throws Exception {
 
         logger.info("AuthorityService: modifying authority " + aidString);
 
@@ -360,21 +360,21 @@ public class AuthorityService extends SubsystemService implements AuthorityResou
     }
 
     @Override
-    public Response enableCA(String aidString) {
+    public Response enableCA(String aidString) throws Exception {
         return modifyCA(
             aidString,
             new AuthorityData(null, null, null, null, null, null, true, null, null));
     }
 
     @Override
-    public Response disableCA(String aidString) {
+    public Response disableCA(String aidString) throws Exception {
         return modifyCA(
             aidString,
             new AuthorityData(null, null, null, null, null, null, false, null, null));
     }
 
     @Override
-    public Response renewCA(String aidString) {
+    public Response renewCA(String aidString) throws Exception {
 
         logger.info("AuthorityService: renewing cert for authority " + aidString);
 
@@ -411,7 +411,7 @@ public class AuthorityService extends SubsystemService implements AuthorityResou
     }
 
     @Override
-    public Response deleteCA(String aidString) {
+    public Response deleteCA(String aidString) throws Exception {
 
         logger.info("AuthorityService: deleting authority " + aidString);
 

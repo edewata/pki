@@ -76,6 +76,9 @@ public class KeyRetrieverRunner implements Runnable {
                 d += d / 2;  // back off
             }
 
+        } catch (Exception e) {
+            logger.error("KeyRetrieverRunner: " + e.getMessage(), e);
+
         } finally {
             // remove self from tracker
             CAEngine engine = CAEngine.getInstance();
@@ -92,7 +95,7 @@ public class KeyRetrieverRunner implements Runnable {
      *         completed.  See comments at sites of 'return true;'
      *         below.
      */
-    private boolean _run() {
+    private boolean _run() throws Exception {
 
         CAEngine engine = CAEngine.getInstance();
         CAEngineConfig cs = engine.getConfig();

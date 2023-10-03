@@ -37,22 +37,22 @@ public interface AuthorityResource {
     @GET
     @Path("{id}/cert")
     @Produces("application/pkix-cert")
-    public Response getCert(@PathParam("id") String caIDString);
+    public Response getCert(@PathParam("id") String caIDString) throws Exception;
 
     @GET
     @Path("{id}/cert")
     @Produces("application/x-pem-file")
-    public Response getCertPEM(@PathParam("id") String caIDString);
+    public Response getCertPEM(@PathParam("id") String caIDString) throws Exception;
 
     @GET
     @Path("{id}/chain")
     @Produces("application/pkcs7-mime")
-    public Response getChain(@PathParam("id") String caIDString);
+    public Response getChain(@PathParam("id") String caIDString) throws Exception;
 
     @GET
     @Path("{id}/chain")
     @Produces("application/x-pem-file")
-    public Response getChainPEM(@PathParam("id") String caIDString);
+    public Response getChainPEM(@PathParam("id") String caIDString) throws Exception;
 
     @POST
     @AuthMethodMapping("authorities")
@@ -68,6 +68,7 @@ public interface AuthorityResource {
      * Other values, if null, are ignored, otherwise they are
      * set to the new value.  To remove the description, use an
      * empty string.
+     * @throws Exception
      */
     @PUT
     @Path("{id}")
@@ -75,30 +76,30 @@ public interface AuthorityResource {
     @ACLMapping("authorities.modify")
     public Response modifyCA(
         @PathParam("id") String caIDString,
-        AuthorityData data);
+        AuthorityData data) throws Exception;
 
     @POST
     @Path("{id}/enable")
     @AuthMethodMapping("authorities")
     @ACLMapping("authorities.modify")
-    public Response enableCA(@PathParam("id") String caIDString);
+    public Response enableCA(@PathParam("id") String caIDString) throws Exception;
 
     @POST
     @Path("{id}/disable")
     @AuthMethodMapping("authorities")
     @ACLMapping("authorities.modify")
-    public Response disableCA(@PathParam("id") String caIDString);
+    public Response disableCA(@PathParam("id") String caIDString) throws Exception;
 
     @POST
     @Path("{id}/renew")
     @AuthMethodMapping("authorities")
     @ACLMapping("authorities.modify")
-    public Response renewCA(@PathParam("id") String caIDString);
+    public Response renewCA(@PathParam("id") String caIDString) throws Exception;
 
     @DELETE
     @Path("{id}")
     @AuthMethodMapping("authorities")
     @ACLMapping("authorities.delete")
-    public Response deleteCA(@PathParam("id") String caIDString);
+    public Response deleteCA(@PathParam("id") String caIDString) throws Exception;
 
 }

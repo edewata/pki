@@ -44,6 +44,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.StringUtils;
 import org.dogtagpki.server.authentication.AuthToken;
+import org.dogtagpki.server.ca.AuthorityRecord;
 import org.dogtagpki.server.ca.CAConfig;
 import org.dogtagpki.server.ca.CAEngine;
 import org.dogtagpki.server.ca.CAEngineConfig;
@@ -1338,7 +1339,7 @@ public class CertificateAuthority extends Subsystem implements IAuthority, IOCSP
      */
     @Override
     public OCSPResponse validate(OCSPRequest request)
-            throws EBaseException {
+            throws Exception {
 
         CAEngine engine = CAEngine.getInstance();
         if (!engine.getEnableOCSP()) {
@@ -1378,7 +1379,8 @@ public class CertificateAuthority extends Subsystem implements IAuthority, IOCSP
          *    Otherwise, we move forward to generate and sign the
          *    aggregate OCSP response.
          */
-        for (CertificateAuthority ocspCA: engine.getCAs()) {
+        for (AuthorityRecord record : engine.getAuthorityRecords()) {
+            CertificateAuthority ocspCA = engine.getCA(record.getAuthorityID());
             Request req = tbsReq.getRequestAt(0);
             CertID cid = req.getCertID();
             byte[] nameHash = null;
@@ -1834,7 +1836,7 @@ public class CertificateAuthority extends Subsystem implements IAuthority, IOCSP
      * Delete this lightweight CA.
      */
     public synchronized void deleteAuthority(HttpServletRequest httpReq)
-            throws EBaseException {
+            throws Exception {
         if (hostCA)
             throw new CATypeException("Cannot delete the host CA");
 
@@ -1844,8 +1846,8 @@ public class CertificateAuthority extends Subsystem implements IAuthority, IOCSP
         CAEngine engine = CAEngine.getInstance();
         boolean hasSubCAs = false;
 
-        for (CertificateAuthority ca : engine.getCAs()) {
-            AuthorityID parentAID = ca.getAuthorityParentID();
+        for (AuthorityRecord authorityRecord : engine.getAuthorityRecords()) {
+            AuthorityID parentAID = authorityRecord.getParentID();
             if (parentAID != null && parentAID.equals(this.authorityID)) {
                 hasSubCAs = true;
                 break;

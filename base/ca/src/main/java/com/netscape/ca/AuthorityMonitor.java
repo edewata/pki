@@ -244,7 +244,7 @@ public class AuthorityMonitor implements Runnable {
         }
     }
 
-    private synchronized void handleDELETE(LDAPEntry entry) {
+    private synchronized void handleDELETE(LDAPEntry entry) throws Exception {
 
         LDAPAttribute attr = entry.getAttribute("nsUniqueId");
         String nsUniqueId = null;

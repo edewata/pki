@@ -17,7 +17,6 @@
 // --- END COPYRIGHT BLOCK ---
 package com.netscape.certsrv.ocsp;
 
-import com.netscape.certsrv.base.EBaseException;
 import com.netscape.cmsutil.ocsp.OCSPRequest;
 import com.netscape.cmsutil.ocsp.OCSPResponse;
 
@@ -36,11 +35,11 @@ public interface IOCSPService {
      * @param r an OCSP request
      * @return OCSPResponse the OCSP response associated with the specified
      *         OCSP request
-     * @exception EBaseException an error associated with the inability to
+     * @exception Exception an error associated with the inability to
      *                process the supplied OCSP request
      */
     public OCSPResponse validate(OCSPRequest r)
-            throws EBaseException;
+            throws Exception;
 
     /**
      * Returns the in-memory count of the processed OCSP requests.

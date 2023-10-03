@@ -29,7 +29,6 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -103,6 +102,7 @@ import com.netscape.cmscore.request.RequestNotifier;
 import com.netscape.cmscore.request.RequestQueue;
 import com.netscape.cmsutil.crypto.CryptoUtil;
 import com.netscape.cmsutil.ldap.LDAPPostReadControl;
+import com.netscape.cmsutil.ldap.LDAPUtil;
 
 import netscape.ldap.LDAPAttribute;
 import netscape.ldap.LDAPAttributeSet;
@@ -977,12 +977,102 @@ public class CAEngine extends CMSEngine {
 
         Collection<AuthorityRecord> list = new ArrayList<>();
 
-        for (CertificateAuthority ca : getCAs()) {
-            AuthorityRecord record = getAuthorityRecord(ca);
-            list.add(record);
+        logger.info("CAEngine: Loading authorities");
+
+        String baseDN = getAuthorityBaseDN();
+        String[] attrs = {"*", "entryUSN", "nsUniqueId", "numSubordinates"};
+
+        LDAPConnection conn = connectionFactory.getConn();
+
+        try {
+            LDAPSearchResults results = conn.search(
+                    baseDN,
+                    LDAPConnection.SCOPE_ONE,
+                    "(objectclass=*)",
+                    attrs,
+                    false);
+
+            while (results.hasMoreElements()) {
+                LDAPEntry entry = results.next();
+                AuthorityRecord record = getAuthorityRecord(entry);
+                list.add(record);
+            }
+
+        } catch (Exception e) {
+            throw new EBaseException(e);
+
+        } finally {
+            connectionFactory.returnConn(conn);
         }
 
         return list;
+    }
+
+    public AuthorityRecord getAuthorityRecordByID(AuthorityID authorityID) throws Exception {
+
+        String aidString = authorityID.toString();
+        logger.info("CAEngine: Loading authority " + aidString);
+
+        String dn = "cn=" + aidString + "," + getAuthorityBaseDN();
+        logger.info("CAEngine: - authority record: " + dn);
+
+        String[] attrs = {"*", "entryUSN", "nsUniqueId", "numSubordinates"};
+
+        LDAPConnection conn = connectionFactory.getConn();
+        LDAPEntry entry;
+
+        try {
+            LDAPSearchResults results = conn.search(
+                    dn,
+                    LDAPConnection.SCOPE_BASE,
+                    "(objectclass=*)",
+                    attrs,
+                    false);
+
+            if (!results.hasMoreElements()) {
+                logger.warn("CAEngine: Authority " + aidString + " not found");
+                return null;
+            }
+
+            entry = results.next();
+            return getAuthorityRecord(entry);
+
+        } finally {
+            connectionFactory.returnConn(conn);
+        }
+    }
+
+    public AuthorityRecord getAuthorityRecordByDN(X500Name authorityDN) throws Exception {
+
+        logger.info("CAEngine: Find authority " + authorityDN);
+
+        String baseDN = getAuthorityBaseDN();
+        String[] attrs = {"*", "entryUSN", "nsUniqueId", "numSubordinates"};
+
+        String filter = "(authorityDN=" + LDAPUtil.escapeFilter(authorityDN) + ")";
+
+        LDAPConnection conn = connectionFactory.getConn();
+        LDAPEntry entry;
+
+        try {
+            LDAPSearchResults results = conn.search(
+                    baseDN,
+                    LDAPConnection.SCOPE_ONE,
+                    filter,
+                    attrs,
+                    false);
+
+            if (!results.hasMoreElements()) {
+                logger.warn("CAEngine: Authority " + authorityDN + " not found");
+                return null;
+            }
+
+            entry = results.next();
+            return getAuthorityRecord(entry);
+
+        } finally {
+            connectionFactory.returnConn(conn);
+        }
     }
 
     public AuthorityRecord getAuthorityRecord(LDAPEntry entry) throws Exception {
@@ -1092,17 +1182,6 @@ public class CAEngine extends CMSEngine {
     }
 
     /**
-     * Enumerate all authorities (including host authority)
-     */
-    public List<CertificateAuthority> getCAs() {
-        List<CertificateAuthority> list = new ArrayList<>();
-        synchronized (authorityMonitor.authorities) {
-            list.addAll(authorityMonitor.authorities.values());
-        }
-        return list;
-    }
-
-    /**
      * Get authority by ID.
      *
      * @param aid The ID of the CA to retrieve, or null
@@ -1110,18 +1189,31 @@ public class CAEngine extends CMSEngine {
      *
      * @return the authority, or null if not found
      */
-    public CertificateAuthority getCA(AuthorityID aid) {
-        return aid == null ? getCA() : authorityMonitor.authorities.get(aid);
-    }
+    public CertificateAuthority getCA(AuthorityID aid) throws EBaseException {
 
-    public CertificateAuthority getCA(X500Name dn) {
+        if (aid == null) return getCA();
 
-        for (CertificateAuthority ca : getCAs()) {
-            if (ca.getX500Name().equals(dn))
-                return ca;
+        if (enableAuthorityMonitor) {
+            return authorityMonitor.authorities.get(aid);
         }
 
-        return null;
+        try {
+            AuthorityRecord record = getAuthorityRecordByID(aid);
+            if (record == null) return null;
+
+            return createCA(record);
+
+        } catch (Exception e) {
+            throw new EBaseException(e);
+        }
+    }
+
+    public CertificateAuthority getCA(X500Name dn) throws Exception {
+
+        AuthorityRecord record = getAuthorityRecordByDN(dn);
+        if (record == null) return null;
+
+        return createCA(record);
     }
 
     /**
@@ -1230,7 +1322,10 @@ public class CAEngine extends CMSEngine {
         }
 
         CertificateAuthority ca = createCA(parentCA, authToken, subjectDN, description);
-        authorityMonitor.authorities.put(ca.getAuthorityID(), ca);
+
+        if (enableAuthorityMonitor) {
+            authorityMonitor.authorities.put(ca.getAuthorityID(), ca);
+        }
 
         return ca;
     }
@@ -1321,7 +1416,9 @@ public class CAEngine extends CMSEngine {
     }
 
     public void removeKeyRetriever(AuthorityID aid) {
-        authorityMonitor.keyRetrievers.remove(aid);
+        if (enableAuthorityMonitor) {
+            authorityMonitor.keyRetrievers.remove(aid);
+        }
     }
 
     public String getAuthorityBaseDN() {
@@ -1427,7 +1524,9 @@ public class CAEngine extends CMSEngine {
             connectionFactory.returnConn(conn);
         }
 
-        authorityMonitor.trackUpdate(authorityID, responseControls);
+        if (enableAuthorityMonitor) {
+            authorityMonitor.trackUpdate(authorityID, responseControls);
+        }
     }
 
     public synchronized void modifyAuthorityEntry(AuthorityID aid, LDAPModificationSet mods) throws EBaseException {
@@ -1447,7 +1546,9 @@ public class CAEngine extends CMSEngine {
             connectionFactory.returnConn(conn);
         }
 
-        authorityMonitor.trackUpdate(aid, responseControls);
+        if (enableAuthorityMonitor) {
+            authorityMonitor.trackUpdate(aid, responseControls);
+        }
     }
 
     public synchronized void deleteAuthorityEntry(AuthorityID aid) throws EBaseException {
@@ -1465,12 +1566,14 @@ public class CAEngine extends CMSEngine {
             connectionFactory.returnConn(conn);
         }
 
-        String nsUniqueId = authorityMonitor.nsUniqueIds.get(aid);
-        if (nsUniqueId != null) {
-            authorityMonitor.deletedNsUniqueIds.add(nsUniqueId);
-        }
+        if (enableAuthorityMonitor) {
+            String nsUniqueId = authorityMonitor.nsUniqueIds.get(aid);
+            if (nsUniqueId != null) {
+                authorityMonitor.deletedNsUniqueIds.add(nsUniqueId);
+            }
 
-        authorityMonitor.removeCA(aid);
+            authorityMonitor.removeCA(aid);
+        }
     }
 
     /**
@@ -1901,7 +2004,7 @@ public class CAEngine extends CMSEngine {
 
     public void shutdownAuthorityMonitor() {
 
-        if (authorityMonitor != null) {
+        if (enableAuthorityMonitor) {
             authorityMonitor.shutdown();
         }
     }
