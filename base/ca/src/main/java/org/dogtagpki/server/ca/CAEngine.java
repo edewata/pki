@@ -1208,6 +1208,12 @@ public class CAEngine extends CMSEngine {
 
     public CertificateAuthority createCA(AuthorityRecord record) throws Exception {
 
+        CertificateAuthority hostCA = getCA();
+
+        if (hostCA.getAuthorityID().equals(record.getAuthorityID())) {
+            return hostCA;
+        }
+
         CertId certID = record.getSerialNumber();
         BigInteger serialNumber = certID == null ? null : certID.toBigInteger();
 
