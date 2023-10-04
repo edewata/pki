@@ -973,6 +973,18 @@ public class CAEngine extends CMSEngine {
         }
     }
 
+    public Collection<AuthorityRecord> getAuthorityRecords() throws Exception {
+
+        Collection<AuthorityRecord> list = new ArrayList<>();
+
+        for (CertificateAuthority ca : getCAs()) {
+            AuthorityRecord record = getAuthorityRecord(ca);
+            list.add(record);
+        }
+
+        return list;
+    }
+
     public AuthorityRecord getAuthorityRecord(LDAPEntry entry) throws Exception {
 
         logger.info("CAEngine: Loading " + entry.getDN());
@@ -1051,6 +1063,23 @@ public class CAEngine extends CMSEngine {
             BigInteger entryUSN = new BigInteger(entryUSNAttr.getStringValueArray()[0]);
             record.setEntryUSN(entryUSN);
         }
+
+        return record;
+    }
+
+    public AuthorityRecord getAuthorityRecord(CertificateAuthority ca) throws Exception {
+
+        AuthorityRecord record = new AuthorityRecord();
+
+        record.setAuthorityDN(ca.getX500Name());
+        record.setAuthorityID(ca.getAuthorityID());
+
+        record.setParentID(ca.getAuthorityParentID());
+        record.setParentDN(ca.getCACert().getIssuerName());
+
+        record.setDescription(ca.getAuthorityDescription());
+        record.setEnabled(ca.getAuthorityEnabled());
+        record.setSerialNumber(new CertId(ca.getCACert().getSerialNumber()));
 
         return record;
     }
