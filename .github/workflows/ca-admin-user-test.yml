@@ -49,7 +49,7 @@ jobs:
       - name: Connect PKI container to network
         run: docker network connect example pki --alias pki.example.com
 
-      - name: Install CA
+      - name: Install CA without default admin
         run: |
           docker exec pki pkispawn \
               -f /usr/share/pki/server/examples/installation/ca.cfg \
@@ -57,22 +57,39 @@ jobs:
               -D pki_ds_url=ldap://ds.example.com:3389 \
               -D pki_cert_id_generator=random \
               -D pki_request_id_generator=random \
+              -D pki_admin_setup=False \
               -v
 
       - name: Check CA users
         run: |
-          docker exec pki pki-server ca-user-find
+          docker exec pki pki-server ca-user-find | tee output
 
       - name: Check CA groups
         run: |
-          docker exec pki pki-server ca-group-find
+          docker exec pki pki-server ca-group-find | tee output
 
-      - name: Check CA admin user
+      - name: Add CA admin user
         run: |
+          docker exec pki pki-server ca-user-add caadmin \
+              --full-name Administrator \
+              --password Secret.123 \
+              --type adminType \
+              --state 1
+
           docker exec pki pki-server ca-user-show caadmin | tee output
 
           echo "adminType" > expected
           sed -n 's/^ *Type: *\(.*\)$/\1/p' output > actual
+          diff expected actual
+
+      - name: Grant Administrators role to CA admin user
+        run: |
+          docker exec pki pki-server ca-user-role-add caadmin Administrators
+
+          docker exec pki pki-server ca-user-role-find caadmin | tee output
+
+          echo "Administrators" > expected
+          sed -n 's/^ *Role ID: *\(.*\)$/\1/p' output | sort > actual
           diff expected actual
 
       - name: Check auth with CA admin password
@@ -131,23 +148,47 @@ jobs:
           echo "PKIException: Unauthorized" > expected
           diff expected stderr
 
-      - name: Check certs assigned to CA admin user
+      - name: Generate CA admin cert
         run: |
-          docker exec pki pki-server ca-user-cert-find caadmin | tee output
+          # generate cert request
+          docker exec pki pki nss-cert-request \
+              --subject "CN=Administrator" \
+              --ext /usr/share/pki/server/certs/admin.conf \
+              --csr caadmin.csr
 
-          # get admin cert ID
+          # issue cert
+          docker exec pki pki \
+              -d /etc/pki/pki-tomcat/alias \
+              -f /etc/pki/pki-tomcat/password.conf \
+              nss-cert-issue \
+              --issuer ca_signing \
+              --csr caadmin.csr \
+              --ext /usr/share/pki/server/certs/admin.conf \
+              --cert caadmin.crt
+
+      - name: Check auth with CA admin cert
+        run: |
+          # import cert
+          docker exec pki pki nss-cert-import --cert caadmin.crt caadmin
+
+          # get cert serial number
+          docker exec pki pki nss-cert-show caadmin | tee output
+          sed -n 's/^ *Serial Number: *\(.*\)$/\1/p' output > cert.sn
+
+          # assign cert to user
+          docker exec pki pki-server ca-user-cert-add --cert caadmin.crt caadmin
+
+          # check assigned cert serial number
+          docker exec pki pki-server ca-user-cert-find caadmin | tee output
+          sed -n 's/^ *Serial Number: *\(.*\)$/\1/p' output > actual
+          diff cert.sn actual
+
+          # get assigned cert ID
           sed -n 's/^ *Cert ID: *\(.*\)$/\1/p' output > cert.id
           CERT_ID=$(cat cert.id)
           echo "CERT_ID: $CERT_ID"
 
-      - name: Check auth with CA admin cert
-        run: |
-          # import admin cert
-          docker exec pki pki pkcs12-import \
-              --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
-              --pkcs12-password Secret.123
-
-          # admin cert should work
+          # auth with admin cert should work
           docker exec pki pki -n caadmin ca-user-find
 
       - name: Unassign certs from CA admin user
@@ -161,7 +202,7 @@ jobs:
           docker exec pki pki-server ca-user-cert-find caadmin | tee actual
           diff /dev/null actual
 
-          # admin cert should no longer work
+          # auth with admin cert should no longer work
           docker exec pki pki -n caadmin ca-user-find \
               > >(tee stdout) 2> >(tee stderr >&2) || true
 
@@ -173,35 +214,17 @@ jobs:
           CERT_ID=$(cat cert.id)
           echo "CERT_ID: $CERT_ID"
 
-          docker exec pki pki nss-cert-export caadmin > caadmin.crt
-          cat caadmin.crt | docker exec -i pki pki-server ca-user-cert-add caadmin
+          docker exec pki pki-server ca-user-cert-add --cert caadmin.crt caadmin
 
           # new admin cert ID should match the original admin cert ID
           docker exec pki pki-server ca-user-cert-find caadmin | tee output
           sed -n 's/^ *Cert ID: *\(.*\)$/\1/p' output > actual
           diff cert.id actual
 
-          # admin cert should work again
+          # auth with admin cert should work again
           docker exec pki pki -n caadmin ca-user-find
 
-      - name: Check CA admin roles
-        run: |
-          docker exec pki pki-server ca-user-role-find caadmin | tee output
-
-          echo "Administrators" > expected
-          echo "Certificate Manager Agents" >> expected
-          echo "Enterprise CA Administrators" >> expected
-          echo "Enterprise KRA Administrators" >> expected
-          echo "Enterprise OCSP Administrators" >> expected
-          echo "Enterprise RA Administrators" >> expected
-          echo "Enterprise TKS Administrators" >> expected
-          echo "Enterprise TPS Administrators" >> expected
-          echo "Security Domain Administrators" >> expected
-
-          sed -n 's/^ *Role ID: *\(.*\)$/\1/p' output | sort > actual
-          diff expected actual
-
-      - name: Remove CA admin role
+      - name: Remove Administrators role from CA admin user
         run: |
           docker exec pki pki-server ca-user-role-del caadmin Administrators
 
@@ -213,7 +236,7 @@ jobs:
           echo "ForbiddenException: Authorization Error" > expected
           diff expected stderr
 
-      - name: Restore CA admin role
+      - name: Restore Administrators role for CA admin user
         run: |
           docker exec pki pki-server ca-user-role-add caadmin Administrators
 

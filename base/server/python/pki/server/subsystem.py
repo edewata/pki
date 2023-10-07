@@ -1771,6 +1771,8 @@ class PKISubsystem(object):
                 with open(password_file, 'w', encoding='utf-8') as f:
                     f.write(password)
 
+            pki.util.chown(tmpdir, self.instance.uid, self.instance.gid)
+
             cmd = [self.name + '-user-add']
 
             if full_name:

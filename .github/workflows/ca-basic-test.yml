@@ -153,12 +153,44 @@ jobs:
           docker exec pki /usr/share/pki/tests/ca/bin/test-subsystem-cert.sh
           docker exec pki /usr/share/pki/tests/ca/bin/test-ca-certs.sh
 
-      - name: Test CA admin
+      - name: Check auth with default CA admin password
         run: |
+          # auth with correct password should work
+          docker exec pki pki -u caadmin -w Secret.123 ca-user-find
+
+          # auth with wrong password should not work
+          docker exec pki pki -u caadmin -w wrong ca-user-find \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          echo "PKIException: Unauthorized" > expected
+          diff expected stderr
+
+      - name: Check auth with default CA admin cert
+        run: |
+          # import admin certs
           docker exec pki pki pkcs12-import \
               --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
               --pkcs12-password Secret.123
+
+          # auth with client cert should work
           docker exec pki pki -n caadmin ca-user-show caadmin
+
+      - name: Check default CA admin roles
+        run: |
+          docker exec pki pki-server ca-user-role-find caadmin | tee output
+
+          echo "Administrators" > expected
+          echo "Certificate Manager Agents" >> expected
+          echo "Enterprise CA Administrators" >> expected
+          echo "Enterprise KRA Administrators" >> expected
+          echo "Enterprise OCSP Administrators" >> expected
+          echo "Enterprise RA Administrators" >> expected
+          echo "Enterprise TKS Administrators" >> expected
+          echo "Enterprise TPS Administrators" >> expected
+          echo "Security Domain Administrators" >> expected
+
+          sed -n 's/^ *Role ID: *\(.*\)$/\1/p' output | sort > actual
+          diff expected actual
 
       - name: Check cert requests in CA
         run: |
