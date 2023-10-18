@@ -2,6 +2,75 @@
 
 # https://fy.blackhats.net.au/blog/html/2020/03/28/389ds_in_containers.html
 
+SCRIPT_PATH=$(readlink -f "$0")
+SCRIPT_NAME=$(basename "$SCRIPT_PATH")
+SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
+
+LDAP_PORT=3389
+LDAPS_PORT=
+
+VERBOSE=
+DEBUG=
+
+usage() {
+    echo "Usage: $SCRIPT_NAME [OPTIONS] <name>"
+    echo
+    echo "Options:"
+    echo "    --ldap-port=<port>     LDAP port (default: $LDAP_PORT)"
+    echo "    --ldaps-port=<port>    LDAPS port"
+    echo " -v,--verbose              Run in verbose mode."
+    echo "    --debug                Run in debug mode."
+    echo "    --help                 Show help message."
+}
+
+while getopts v-: arg ; do
+    case $arg in
+    v)
+        VERBOSE=true
+        ;;
+    -)
+        LONG_OPTARG="${OPTARG#*=}"
+
+        case $OPTARG in
+        ldap-port=?*)
+            LDAP_PORT="$LONG_OPTARG"
+            ;;
+        ldaps-port=?*)
+            LDAPS_PORT="$LONG_OPTARG"
+            ;;
+        verbose)
+            VERBOSE=true
+            ;;
+        debug)
+            VERBOSE=true
+            DEBUG=true
+            ;;
+        help)
+            usage
+            exit
+            ;;
+        '')
+            break # "--" terminates argument processing
+            ;;
+        ldap-port* | ldaps-port*)
+            echo "ERROR: Missing argument for --$OPTARG option" >&2
+            exit 1
+            ;;
+        *)
+            echo "ERROR: Illegal option --$OPTARG" >&2
+            exit 1
+            ;;
+        esac
+        ;;
+    \?)
+        exit 1 # getopts already reported the illegal option
+        ;;
+    esac
+done
+
+# remove parsed options and args from $@ list
+shift $((OPTIND-1))
+
 NAME=$1
 
 if [ "$NAME" == "" ]
@@ -37,13 +106,20 @@ fi
 
 HOSTNAME=$(docker exec $NAME uname -n)
 
+if [ "$LDAPS_PORT" == "" ]
+then
+    LDAP_URL=ldap://$HOSTNAME:$LDAP_PORT
+else
+    LDAP_URL=ldaps://$HOSTNAME:$LDAPS_PORT
+fi
+
 while :
 do
     sleep 1
 
     docker exec $NAME \
         ldapsearch \
-        -H ldap://$HOSTNAME:3389 \
+        -H $LDAP_URL \
         -D "cn=Directory Manager" \
         -w $PASSWORD \
         -x \

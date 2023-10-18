@@ -332,10 +332,13 @@ class PKISubsystem(object):
         self.instance.makedirs(certs_path, exist_ok=True)
         if cert_id != 'sslserver' and cert_id != 'subsystem':
             cert_id = self.name + '_' + cert_id
-        csr_file = os.path.join(certs_path, cert_id + '.csr')
-        with open(csr_file, "w", encoding='utf-8') as f:
-            f.write(pki.nssdb.convert_csr(cert.get('request'), 'base64', 'pem'))
-        os.chown(csr_file, self.instance.uid, self.instance.gid)
+
+        request = cert.get('request')
+        if request is not None:
+            csr_file = os.path.join(certs_path, cert_id + '.csr')
+            with open(csr_file, "w", encoding='utf-8') as f:
+                f.write(pki.nssdb.convert_csr(request, 'base64', 'pem'))
+            os.chown(csr_file, self.instance.uid, self.instance.gid)
 
     def validate_system_cert(self, tag):
 
@@ -945,22 +948,10 @@ class PKISubsystem(object):
         :return: (ca_signing_cert, aki, csr_file)
         """
 
-        csr_file = os.path.join(tmpdir, cert_tag + '.csr')
+        csr_file = self.instance.csr_file(cert_tag)
+        logger.debug('CSR for %s cert: %s', cert_tag, csr_file)
+
         ca_cert_file = os.path.join(tmpdir, 'ca_certificate.crt')
-
-        logger.debug('Exporting CSR for %s cert', cert_tag)
-
-        # Retrieve CSR for cert_id
-        cert_request = self.get_subsystem_cert(cert_tag).get('request')
-        if cert_request is None:
-            raise pki.server.PKIServerException('Unable to find CSR for %s cert' % cert_tag)
-
-        logger.debug('Retrieved CSR: %s', cert_request)
-
-        csr_data = pki.nssdb.convert_csr(cert_request, 'base64', 'pem')
-        with open(csr_file, 'w', encoding='utf-8') as f:
-            f.write(csr_data)
-        logger.info('CSR for %s has been written to %s', cert_tag, csr_file)
 
         logger.debug('Extracting SKI from CA cert')
         # TODO: Support remote CA.
@@ -1018,7 +1009,7 @@ class PKISubsystem(object):
         :return: None
         :rtype: None
         """
-        logger.info('Generate temp SSL certificate')
+        logger.info('PKISubsystem: Creating temp %s cert in NSS database', cert_tag)
 
         if cert_tag != 'sslserver':
             raise pki.server.PKIServerException(
@@ -1045,8 +1036,6 @@ class PKISubsystem(object):
         ext_key_usage_ext = {
             'serverAuth': True
         }
-
-        logger.debug('Creating temp cert')
 
         rc = nssdb.create_cert(
             issuer=ca_signing_cert['nickname'],

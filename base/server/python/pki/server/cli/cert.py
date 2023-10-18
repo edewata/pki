@@ -1302,6 +1302,7 @@ class CertFixCLI(pki.cli.CLI):
                     ldap_conn_args(ldap_url, use_ldapi, dm_pass_file) + \
                     ['-s', 'base', '-b', basedn, '1.1']
                 try:
+                    logger.debug('Command: %s', ' '.join(cmd))
                     subprocess.check_output(cmd)
                 except subprocess.CalledProcessError:
                     logger.error("Failed to connect/authenticate to LDAP at '%s'", ldap_url)
@@ -1378,6 +1379,8 @@ class CertFixCLI(pki.cli.CLI):
                             cmd = ['ldapmodify'] + \
                                 ldap_conn_args(ldap_url, use_ldapi, dm_pass_file) + \
                                 ['-f', ldif_file]
+
+                            logger.debug('Command: %s', ' '.join(cmd))
                             subprocess.check_call(cmd)
 
             # 10. Bring up the server
@@ -1443,6 +1446,7 @@ def ldap_password_authn(
 
     - if we are already using BasicAuth, force port 389 and no TLS/STARTTLS
       but leave everything else alone.
+      TODO: don't hard-code port number
 
     - if using TLS client cert auth, switch to BasicAuth, using pkidbuser
       account, and using a randomly generated password.  The DM credential
@@ -1481,6 +1485,7 @@ def ldap_password_authn(
         if authtype == 'SslClientAuth':
             # switch to BasicAuth
             cfg['internaldb.ldapauth.authtype'] = 'BasicAuth'
+            # TODO: don't hard-code port number
             cfg['internaldb.ldapconn.port'] = '389'
             cfg['internaldb.ldapconn.secureConn'] = 'false'
             cfg['internaldb.ldapauth.bindDN'] = bind_dn
@@ -1494,6 +1499,7 @@ def ldap_password_authn(
 
         elif authtype == 'BasicAuth':
             # force port 389, no TLS / STARTTLS.  Leave other settings alone.
+            # TODO: don't hard-code port number
             cfg['internaldb.ldapconn.port'] = '389'
             cfg['internaldb.ldapconn.secureConn'] = 'false'
 
@@ -1546,6 +1552,8 @@ def ldappasswd(ldap_url, use_ldapi, dm_pass_file, user_dn, pass_file):
     cmd = ['ldappasswd'] + \
         ldap_conn_args(ldap_url, use_ldapi, dm_pass_file) + \
         ['-T', pass_file, user_dn]
+
+    logger.debug('Command: %s', ' '.join(cmd))
     subprocess.check_call(cmd)
 
 

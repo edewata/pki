@@ -144,6 +144,14 @@ class PKIInstance(pki.server.PKIServer):
         return os.path.join(pki.server.PKIServer.CONFIG_DIR, self.name)
 
     @property
+    def cert_folder(self):
+        return os.path.join(pki.CONF_DIR, self.name, 'certs')
+
+    @property
+    def certs_dir(self):
+        return os.path.join(self.conf_dir, 'certs')
+
+    @property
     def logging_properties(self):
         return os.path.join(self.base_dir, 'conf', 'logging.properties')
 
@@ -699,13 +707,13 @@ class PKIInstance(pki.server.PKIServer):
                 raise pki.server.PKIServerException(
                     'No subsystem can be loaded for %s in instance %s.' % (cert_id, self.name))
 
-    @property
-    def cert_folder(self):
-        return os.path.join(pki.CONF_DIR, self.name, 'certs')
-
     def cert_file(self, cert_id):
         """Compute name of certificate under instance cert folder."""
         return os.path.join(self.cert_folder, cert_id + '.crt')
+
+    def csr_file(self, cert_id):
+        """Compute name of CSR under instance cert folder."""
+        return os.path.join(self.cert_folder, cert_id + '.csr')
 
     def nssdb_import_cert(self, cert_id, cert_file=None):
         """
@@ -767,14 +775,14 @@ class PKIInstance(pki.server.PKIServer):
                 cert_file=cert_file,
                 trust_attributes=trust_attributes)
 
-            logger.info('Updating CS.cfg with the new certificate')
-            data = nssdb.get_cert(
-                nickname=cert['nickname'],
-                token=cert['token'],
-                output_format='base64')
+            #logger.info('Updating CS.cfg with the new certificate')
+            #data = nssdb.get_cert(
+            #    nickname=cert['nickname'],
+            #    token=cert['token'],
+            #    output_format='base64')
 
             # Store the cert data retrieved from NSS db
-            cert['data'] = data
+            #cert['data'] = data
 
             return cert
 
@@ -843,6 +851,9 @@ class PKIInstance(pki.server.PKIServer):
         Note that client_nssdb should be specified in either case, as it
         contains the CA Certificate.
         """
+
+        logger.info('PKIInstance: Issuing new %s cert', cert_id)
+
         nssdb = self.open_nssdb()
         tmpdir = tempfile.mkdtemp()
         subsystem = None  # used for system certs
@@ -860,6 +871,9 @@ class PKIInstance(pki.server.PKIServer):
                     # If admin doesn't provide a serial number, set the serial to
                     # the same serial number available in the nssdb
                     serial = subsystem.get_subsystem_cert(cert_tag)["serial_number"]
+                    logger.info('PKIInstance: Existing serial number: 0x%x', serial)
+                else:
+                    logger.info('PKIInstance: Serial number: 0x%x', serial)
 
             else:
                 if serial is None:
@@ -873,18 +887,16 @@ class PKIInstance(pki.server.PKIServer):
                         "'temp_cert' must be used with 'cert_id'")
                 new_cert_file = output
 
+            logger.info('PKIInstance: Cert file: %s', new_cert_file)
+
             if not os.path.exists(self.cert_folder):
                 os.makedirs(self.cert_folder)
 
             if temp_cert:
                 assert subsystem is not None  # temp_cert only supported with cert_id
 
-                logger.info('Trying to create a new temp cert for %s.', cert_id)
-
-                # Create Temp Cert and write it to new_cert_file
+                logger.info('PKIInstance: Creating temporary %s cert', cert_id)
                 subsystem.temp_cert_create(nssdb, tmpdir, cert_tag, serial, new_cert_file)
-
-                logger.info('Temp cert for %s is available at %s.', cert_id, new_cert_file)
 
             else:
                 # Create permanent certificate
@@ -892,7 +904,7 @@ class PKIInstance(pki.server.PKIServer):
                     # TODO: Support rekey
                     raise pki.server.PKIServerException('Rekey is not supported yet.')
 
-                logger.info('Trying to setup a secure connection to CA subsystem.')
+                logger.info('PKIInstance: Trying to setup a secure connection to CA subsystem.')
                 if username and password:
                     connection = pki.server.PKIServer.setup_password_authentication(
                         username, password, subsystem_name='ca', secure_port=secure_port,
@@ -910,11 +922,12 @@ class PKIInstance(pki.server.PKIServer):
                         tmpdir=tmpdir,
                         secure_port=secure_port
                     )
-                logger.info('Secure connection with CA is established.')
+                logger.info('PKIInstance: Secure connection with CA is established.')
 
-                logger.info('Placing cert creation request for serial: %s', serial)
+                logger.info('PKIInstance: Renewing cert 0x%x', serial)
                 pki.server.PKIServer.renew_certificate(connection, new_cert_file, serial)
-                logger.info('New cert is available at: %s', new_cert_file)
+
+            logger.info('PKIInstance: New cert created in %s', new_cert_file)
 
         finally:
             nssdb.close()
