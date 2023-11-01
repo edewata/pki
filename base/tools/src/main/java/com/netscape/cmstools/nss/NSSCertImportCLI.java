@@ -93,9 +93,19 @@ public class NSSCertImportCLI extends CommandCLI {
         X509CertImpl cert = new X509CertImpl(bytes);
 
         ClientConfig clientConfig = mainCLI.getConfig();
-        NSSDatabase nssdb = mainCLI.getNSSDatabase();
 
-        String tokenName = clientConfig.getTokenName();
+        // split nickname and token name
+        String tokenName = null;
+        int i = nickname.indexOf(':');
+
+        if (i < 0) {
+            tokenName = clientConfig.getTokenName();
+        } else {
+            tokenName = nickname.substring(0, i);
+            nickname = nickname.substring(i + 1);
+        }
+
+        NSSDatabase nssdb = mainCLI.getNSSDatabase();
 
         if (nickname == null) {
             nssdb.addCertificate(cert, trustFlags);
