@@ -28,6 +28,11 @@ jobs:
     needs: build
     uses: ./.github/workflows/ca-rsa-pss-test.yml
 
+  ca-existing-server-test:
+    name: CA on existing server
+    needs: build
+    uses: ./.github/workflows/ca-existing-server-test.yml
+
   ca-existing-certs-test:
     name: CA with existing certs
     needs: build

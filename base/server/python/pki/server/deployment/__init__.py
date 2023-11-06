@@ -261,13 +261,13 @@ class PKIDeployer:
 
     def create_server_xml(self):
 
-        # Copy /etc/tomcat/server.xml
-        # to /etc/pki/<instance>/server.xml
-
-        self.file.copy_with_slot_substitution(
-            pki.server.Tomcat.SERVER_XML,
-            self.instance.server_xml,
-            overwrite_flag=True)
+        if os.path.exists(self.instance.server_xml):
+            logger.info('Reusing existing %s', self.instance.server_xml)
+        else:
+            logger.info('Creating new %s', self.instance.server_xml)
+            self.instance.copy(
+                pki.server.Tomcat.SERVER_XML,
+                self.instance.server_xml)
 
         # Configure /etc/pki/<instance>/server.xml
         server_config = self.instance.get_server_config()
@@ -401,8 +401,14 @@ class PKIDeployer:
             logger.info('Disabling access log')
             server_config.remove_valve('org.apache.catalina.valves.AccessLogValve')
 
-        logger.info('Adding RewriteValve')
-        server_config.create_valve('org.apache.catalina.valves.rewrite.RewriteValve')
+        rewrite_valve_class = 'org.apache.catalina.valves.rewrite.RewriteValve'
+        rewrite_valve = server_config.get_valve(rewrite_valve_class)
+
+        if rewrite_valve is None:
+            logger.info('Adding new RewriteValve')
+            server_config.create_valve(rewrite_valve_class)
+        else:
+            logger.info('Reusing existing RewriteValve')
 
         server_config.save()
 
@@ -2014,6 +2020,9 @@ class PKIDeployer:
         cert = subsystem.get_subsystem_cert(tag)
         nickname = cert['nickname']
         token = pki.nssdb.normalize_token(cert['token'])
+
+        if cert.get('data') is not None:
+            raise Exception('%s cert already exists: %s' % nickname)
 
         if not token:
             token = self.mdict.get('pki_sslserver_token')

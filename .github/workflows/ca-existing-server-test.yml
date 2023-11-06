@@ -1,0 +1,107 @@
+name: CA on existing server
+
+on: workflow_call
+
+env:
+  DB_IMAGE: ${{ vars.DB_IMAGE || 'quay.io/389ds/dirsrv' }}
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    env:
+      SHARED: /tmp/workdir/pki
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install libxml2-utils
+
+      - name: Clone repository
+        uses: actions/checkout@v3
+
+      - name: Retrieve PKI images
+        uses: actions/cache@v3
+        with:
+          key: pki-images-${{ github.sha }}
+          path: pki-images.tar
+
+      - name: Load PKI images
+        run: docker load --input pki-images.tar
+
+      - name: Create network
+        run: docker network create example
+
+      - name: Set up DS container
+        run: |
+          tests/bin/ds-container-create.sh ds
+        env:
+          IMAGE: ${{ env.DB_IMAGE }}
+          HOSTNAME: ds.example.com
+          PASSWORD: Secret.123
+
+      - name: Connect DS container to network
+        run: docker network connect example ds --alias ds.example.com
+
+      - name: Set up PKI container
+        run: |
+          tests/bin/runner-init.sh pki
+        env:
+          HOSTNAME: pki.example.com
+
+      - name: Connect PKI container to network
+        run: docker network connect example pki --alias pki.example.com
+
+      - name: Create PKI server
+        run: |
+          docker exec pki pki-server create -v
+
+      - name: Check original server.xml
+        run: |
+          docker exec pki cat /etc/pki/pki-tomcat/server.xml | tee server.xml.orig
+          #docker exec pki xmllint --c14n /etc/pki/pki-tomcat/server.xml | tee server.xml.orig
+
+      - name: Install CA
+        run: |
+          docker exec pki pkispawn \
+              -f /usr/share/pki/server/examples/installation/ca.cfg \
+              -s CA \
+              -D pki_ds_url=ldap://ds.example.com:3389 \
+              -D pki_cert_id_generator=random \
+              -D pki_request_id_generator=random \
+              -v
+
+      - name: Check server.xml after installing CA
+        run: |
+          docker exec pki cat /etc/pki/pki-tomcat/server.xml | tee server.xml.after
+          #docker exec pki xmllint --c14n /etc/pki/pki-tomcat/server.xml | tee server.xml.after
+          diff server.xml.orig server.xml.after || true
+
+      - name: Check system certs
+        run: |
+          docker exec pki pki-server cert-find
+
+      - name: Run PKI healthcheck
+        run: docker exec pki pki-healthcheck --failures-only
+
+      - name: Check CA admin
+        run: |
+          docker exec pki pki-server cert-export ca_signing --cert-file ca_signing.crt
+          docker exec pki pki client-cert-import ca_signing --ca-cert ca_signing.crt
+          docker exec pki pki pkcs12-import \
+              --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
+              --pkcs12-password Secret.123
+          docker exec pki pki -n caadmin ca-user-show caadmin
+
+      - name: Check systemd journal
+        if: always()
+        run: |
+          docker exec pki journalctl -x --no-pager -u pki-tomcatd@pki-tomcat.service
+
+      - name: Check CA debug log
+        if: always()
+        run: |
+          docker exec pki find /var/log/pki/pki-tomcat/ca -name "debug.*" -exec cat {} \;
+
+      - name: Remove CA
+        run: docker exec pki pkidestroy -i pki-tomcat -s CA -v
