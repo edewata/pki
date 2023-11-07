@@ -1609,6 +1609,12 @@ class PKIDeployer:
 
     def generate_ca_signing_request(self, subsystem):
 
+        tag = 'signing'
+        cert = subsystem.get_subsystem_cert(tag)
+
+        if cert.get('data') is not None:
+            return
+
         csr_path = self.mdict.get('pki_ca_signing_csr_path')
         if not csr_path:
             return
@@ -1644,8 +1650,6 @@ class PKIDeployer:
 
             generic_exts = [generic_ext]
 
-        tag = 'signing'
-        cert = subsystem.get_subsystem_cert(tag)
         token = pki.nssdb.normalize_token(cert['token'])
 
         if not token:
@@ -1670,6 +1674,12 @@ class PKIDeployer:
 
     def generate_kra_storage_request(self, subsystem):
 
+        tag = 'storage'
+        cert = subsystem.get_subsystem_cert(tag)
+
+        if cert.get('data') is not None:
+            return
+
         csr_path = self.mdict.get('pki_storage_csr_path')
         if not csr_path:
             return
@@ -1686,8 +1696,6 @@ class PKIDeployer:
             'clientAuth': True
         }
 
-        tag = 'storage'
-        cert = subsystem.get_subsystem_cert(tag)
         token = pki.nssdb.normalize_token(cert['token'])
 
         if not token:
@@ -1710,6 +1718,12 @@ class PKIDeployer:
 
     def generate_kra_transport_request(self, subsystem):
 
+        tag = 'transport'
+        cert = subsystem.get_subsystem_cert(tag)
+
+        if cert.get('data') is not None:
+            return
+
         csr_path = self.mdict.get('pki_transport_csr_path')
         if not csr_path:
             return
@@ -1726,8 +1740,6 @@ class PKIDeployer:
             'clientAuth': True
         }
 
-        tag = 'transport'
-        cert = subsystem.get_subsystem_cert(tag)
         token = pki.nssdb.normalize_token(cert['token'])
 
         if not token:
@@ -1750,12 +1762,16 @@ class PKIDeployer:
 
     def generate_ocsp_signing_request(self, subsystem):
 
+        tag = 'signing'
+        cert = subsystem.get_subsystem_cert(tag)
+
+        if cert.get('data') is not None:
+            return
+
         csr_path = self.mdict.get('pki_ocsp_signing_csr_path')
         if not csr_path:
             return
 
-        tag = 'signing'
-        cert = subsystem.get_subsystem_cert(tag)
         token = pki.nssdb.normalize_token(cert['token'])
 
         if not token:
@@ -1776,6 +1792,12 @@ class PKIDeployer:
 
     def generate_sslserver_request(self, subsystem):
 
+        tag = 'sslserver'
+        cert = subsystem.get_subsystem_cert(tag)
+
+        if cert.get('data') is not None:
+            return
+
         csr_path = self.mdict.get('pki_sslserver_csr_path')
         if not csr_path:
             return
@@ -1792,8 +1814,6 @@ class PKIDeployer:
             'serverAuth': True
         }
 
-        tag = 'sslserver'
-        cert = subsystem.get_subsystem_cert(tag)
         token = pki.nssdb.normalize_token(cert['token'])
 
         if not token:
@@ -1816,6 +1836,12 @@ class PKIDeployer:
 
     def generate_subsystem_request(self, subsystem):
 
+        tag = 'subsystem'
+        cert = subsystem.get_subsystem_cert(tag)
+
+        if cert.get('data') is not None:
+            return
+
         csr_path = self.mdict.get('pki_subsystem_csr_path')
         if not csr_path:
             return
@@ -1833,8 +1859,6 @@ class PKIDeployer:
             'clientAuth': True
         }
 
-        tag = 'subsystem'
-        cert = subsystem.get_subsystem_cert(tag)
         token = pki.nssdb.normalize_token(cert['token'])
 
         if not token:
@@ -1857,6 +1881,12 @@ class PKIDeployer:
 
     def generate_audit_signing_request(self, subsystem):
 
+        tag = 'audit_signing'
+        cert = subsystem.get_subsystem_cert(tag)
+
+        if cert.get('data') is not None:
+            return
+
         csr_path = self.mdict.get('pki_audit_signing_csr_path')
         if not csr_path:
             return
@@ -1867,8 +1897,6 @@ class PKIDeployer:
             'critical': True
         }
 
-        tag = 'audit_signing'
-        cert = subsystem.get_subsystem_cert(tag)
         token = pki.nssdb.normalize_token(cert['token'])
 
         if not token:
