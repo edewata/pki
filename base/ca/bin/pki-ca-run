@@ -343,6 +343,8 @@ pki-server ca-config-set ca.authorityMonitor.enable false
 pki-server ca-config-set ca.certStatusUpdateInterval 0
 pki-server ca-config-set requests.recovery.enabled false
 pki-server ca-config-set ca.serialNumberUpdateInterval 0
+pki-server ca-config-set ca.publish.queue.enable false
+pki-server ca-config-set ca.publish.queue.maxNumberOfThreads 0
 
 echo "################################################################################"
 echo "INFO: Starting PKI CA"
