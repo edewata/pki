@@ -294,7 +294,6 @@ jobs:
         run: |
           # generate key and cert request
           docker exec pki pki \
-              -U http://pki.example.com:8080 \
               client-cert-request \
               --profile caECUserCert \
               --type crmf \

@@ -93,7 +93,6 @@ jobs:
           # generate key and submit cert request
           # https://github.com/dogtagpki/pki/wiki/Submitting-Certificate-Request-with-Key-Archival
           docker exec pki1 pki \
-              -U http://pki1.example.com:8080 \
               client-cert-request \
               --profile caUserCert \
               --type crmf \
