@@ -54,10 +54,10 @@ RUN dnf builddep -y --skip-unavailable --spec pki.spec
 FROM pki-builder-deps AS pki-builder
 
 # Import JSS packages
-COPY --from=quay.io/dogtagpki/jss-dist:4.9 /root/RPMS /tmp/RPMS/
+COPY --from=quay.io/dogtagpki/jss-dist:4 /root/RPMS /tmp/RPMS/
 
 # Import Tomcat JSS packages
-COPY --from=quay.io/dogtagpki/tomcatjss-dist:7.7 /root/RPMS /tmp/RPMS/
+COPY --from=quay.io/dogtagpki/tomcatjss-dist:7 /root/RPMS /tmp/RPMS/
 
 # Import LDAP SDK packages
 COPY --from=quay.io/dogtagpki/ldapjdk-dist:4.23 /root/RPMS /tmp/RPMS/
@@ -87,10 +87,10 @@ COPY --from=pki-builder /root/pki/build/RPMS /root/RPMS/
 FROM pki-deps AS pki-runner
 
 # Import JSS packages
-COPY --from=quay.io/dogtagpki/jss-dist:4.9 /root/RPMS /tmp/RPMS/
+COPY --from=quay.io/dogtagpki/jss-dist:4 /root/RPMS /tmp/RPMS/
 
 # Import Tomcat JSS packages
-COPY --from=quay.io/dogtagpki/tomcatjss-dist:7.7 /root/RPMS /tmp/RPMS/
+COPY --from=quay.io/dogtagpki/tomcatjss-dist:7 /root/RPMS /tmp/RPMS/
 
 # Import LDAP SDK packages
 COPY --from=quay.io/dogtagpki/ldapjdk-dist:4.23 /root/RPMS /tmp/RPMS/
@@ -134,10 +134,10 @@ RUN if [ -n "$COPR_REPO" ]; then dnf copr enable -y $COPR_REPO; fi
 RUN dnf install -y bind-utils iputils abrt-java-connector postgresql postgresql-jdbc
 
 # Import JSS packages
-COPY --from=quay.io/dogtagpki/jss-dist:4.9 /root/RPMS /tmp/RPMS/
+COPY --from=quay.io/dogtagpki/jss-dist:4 /root/RPMS /tmp/RPMS/
 
 # Import Tomcat JSS packages
-COPY --from=quay.io/dogtagpki/tomcatjss-dist:7.7 /root/RPMS /tmp/RPMS/
+COPY --from=quay.io/dogtagpki/tomcatjss-dist:7 /root/RPMS /tmp/RPMS/
 
 # Import LDAP SDK packages
 COPY --from=quay.io/dogtagpki/ldapjdk-dist:4.23 /root/RPMS /tmp/RPMS/
