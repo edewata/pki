@@ -32,10 +32,11 @@ import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateParsingException;
 import java.security.interfaces.RSAKey;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
-import java.util.Vector;
+import java.util.List;
 
 import org.dogtagpki.server.ca.CAConfig;
 import org.dogtagpki.server.ca.CAEngine;
@@ -84,7 +85,6 @@ import com.netscape.certsrv.ocsp.IOCSPService;
 import com.netscape.cmscore.apps.CMS;
 import com.netscape.cmscore.dbs.CertRecord;
 import com.netscape.cmscore.dbs.CertificateRepository;
-import com.netscape.cmscore.util.StatsSubsystem;
 import com.netscape.cmsutil.crypto.CryptoUtil;
 import com.netscape.cmsutil.ocsp.BasicOCSPResponse;
 import com.netscape.cmsutil.ocsp.CertID;
@@ -92,11 +92,8 @@ import com.netscape.cmsutil.ocsp.CertStatus;
 import com.netscape.cmsutil.ocsp.GoodInfo;
 import com.netscape.cmsutil.ocsp.KeyHashID;
 import com.netscape.cmsutil.ocsp.NameID;
-import com.netscape.cmsutil.ocsp.OCSPResponse;
-import com.netscape.cmsutil.ocsp.OCSPResponseStatus;
 import com.netscape.cmsutil.ocsp.Request;
 import com.netscape.cmsutil.ocsp.ResponderID;
-import com.netscape.cmsutil.ocsp.ResponseBytes;
 import com.netscape.cmsutil.ocsp.ResponseData;
 import com.netscape.cmsutil.ocsp.RevokedInfo;
 import com.netscape.cmsutil.ocsp.SingleResponse;
@@ -785,6 +782,10 @@ public class CertificateAuthority extends Subsystem implements IAuthority, IOCSP
         return mTotalTime;
     }
 
+    public void incOCSPRequestTotalTime(long time) {
+        mTotalTime += time;
+    }
+
     /**
      * Returns the total data signed
      * for OCSP requests.
@@ -844,112 +845,69 @@ public class CertificateAuthority extends Subsystem implements IAuthority, IOCSP
         return new KeyHashID(new OCTET_STRING(digested));
     }
 
-    public OCSPResponse validate(TBSRequest tbsReq)throws EBaseException {
+    public SingleResponse[] getCertStatus(TBSRequest tbsRequest) throws EBaseException {
 
-        logger.debug("CertificateAuthority: validating OCSP request");
+        long lookupStartTime = new Date().getTime();
 
         mNumOCSPRequest++;
-        StatsSubsystem statsSub = (StatsSubsystem) engine.getSubsystem(StatsSubsystem.ID);
-        long startTime = new Date().getTime();
 
-        try {
-            //logger.info("start OCSP request");
+        List<SingleResponse> responses = new ArrayList<>();
 
-            // (3) look into database to check the
-            //     certificate's status
-            Vector<SingleResponse> singleResponses = new Vector<>();
+        // (3) look into database to check the
+        //     certificate's status
 
-            if (statsSub != null) {
-                statsSub.startTiming("lookup");
-            }
-
-            long lookupStartTime = new Date().getTime();
-
-            for (int i = 0; i < tbsReq.getRequestCount(); i++) {
-                Request req = tbsReq.getRequestAt(i);
-                SingleResponse sr = processRequest(req);
-                singleResponses.addElement(sr);
-            }
-
-            long lookupEndTime = new Date().getTime();
-            mLookupTime += lookupEndTime - lookupStartTime;
-
-            if (statsSub != null) {
-                statsSub.endTiming("lookup");
-            }
-
-            if (statsSub != null) {
-                statsSub.startTiming("build_response");
-            }
-
-            SingleResponse res[] = new SingleResponse[singleResponses.size()];
-            singleResponses.copyInto(res);
-
-            ResponderID rid = null;
-
-            if (ocspResponderByName) {
-                if (mResponderIDByName == null) {
-                    mResponderIDByName = getResponderIDByName();
-                }
-                rid = mResponderIDByName;
-            } else {
-                if (mResponderIDByHash == null) {
-                    mResponderIDByHash = getResponderIDByHash();
-                }
-                rid = mResponderIDByHash;
-            }
-
-            Extension nonce[] = null;
-
-            for (int j = 0; j < tbsReq.getExtensionsCount(); j++) {
-                Extension thisExt = tbsReq.getRequestExtensionAt(j);
-
-                if (thisExt.getExtnId().equals(OCSP_NONCE)) {
-                    nonce = new Extension[1];
-                    nonce[0] = thisExt;
-                }
-            }
-
-            ResponseData rd = new ResponseData(rid,
-                    new GeneralizedTime(new Date()), res, nonce);
-
-            if (statsSub != null) {
-                statsSub.endTiming("build_response");
-            }
-
-            if (statsSub != null) {
-                statsSub.startTiming("signing");
-            }
-
-            long signStartTime = new Date().getTime();
-
-            BasicOCSPResponse basicRes = sign(rd);
-
-            long signEndTime = new Date().getTime();
-            mSignTime += signEndTime - signStartTime;
-
-            if (statsSub != null) {
-                statsSub.endTiming("signing");
-            }
-
-            OCSPResponse response = new OCSPResponse(
-                    OCSPResponseStatus.SUCCESSFUL,
-                    new ResponseBytes(ResponseBytes.OCSP_BASIC,
-                            new OCTET_STRING(ASN1Util.encode(basicRes))));
-
-            //logger.info("done OCSP request");
-            long endTime = new Date().getTime();
-            mTotalTime += endTime - startTime;
-
-            return response;
-
-        } catch (EBaseException e) {
-            logger.error(CMS.getLogMessage("CMSCORE_CA_CA_OCSP_REQUEST", e.toString()), e);
-            throw e;
+        for (int i = 0; i < tbsRequest.getRequestCount(); i++) {
+            Request request = tbsRequest.getRequestAt(i);
+            SingleResponse sr = processRequest(request);
+            responses.add(sr);
         }
+
+        SingleResponse[] certStatus = new SingleResponse[responses.size()];
+        responses.toArray(certStatus);
+
+        long lookupEndTime = new Date().getTime();
+        mLookupTime += lookupEndTime - lookupStartTime;
+
+        return certStatus;
     }
 
-    private BasicOCSPResponse sign(ResponseData rd) throws EBaseException {
+    public ResponseData buildOCSPResponse(
+            TBSRequest tbsReq,
+            boolean getResponderIDByName,
+            SingleResponse[] certStatus) {
+
+        ResponderID rid = null;
+
+        if (getResponderIDByName) {
+            if (mResponderIDByName == null) {
+                mResponderIDByName = getResponderIDByName();
+            }
+            rid = mResponderIDByName;
+
+        } else {
+            if (mResponderIDByHash == null) {
+                mResponderIDByHash = getResponderIDByHash();
+            }
+            rid = mResponderIDByHash;
+        }
+
+        Extension[] nonce = null;
+
+        for (int j = 0; j < tbsReq.getExtensionsCount(); j++) {
+            Extension requestExtension = tbsReq.getRequestExtensionAt(j);
+
+            if (requestExtension.getExtnId().equals(OCSP_NONCE)) {
+                nonce = new Extension[1];
+                nonce[0] = requestExtension;
+            }
+        }
+
+        return new ResponseData(rid, new GeneralizedTime(new Date()), certStatus, nonce);
+    }
+
+    public BasicOCSPResponse signOCSPResponse(ResponseData rd) throws EBaseException {
+
+        long signStartTime = new Date().getTime();
 
         CAEngine engine = CAEngine.getInstance();
         ensureReady();
@@ -979,14 +937,11 @@ public class CertificateAuthority extends Subsystem implements IAuthority, IOCSP
                 tmpChain.putDerValue(new DerValue(chains[i].getEncoded()));
             }
             tmp1.write(DerValue.tag_Sequence, tmpChain);
-            tmp.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0),
-                    tmp1);
+            tmp.write(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte) 0), tmp1);
 
             out.write(DerValue.tag_Sequence, tmp);
 
-            BasicOCSPResponse response = new BasicOCSPResponse(out.toByteArray());
-
-            return response;
+            return new BasicOCSPResponse(out.toByteArray());
 
         } catch (NoSuchAlgorithmException e) {
             logger.error(CMS.getLogMessage("OPERATION_ERROR", e.toString()), e);
@@ -1000,6 +955,10 @@ public class CertificateAuthority extends Subsystem implements IAuthority, IOCSP
         } catch (Exception e) {
             logger.error(CMS.getLogMessage("CMSCORE_CA_CA_OCSP_SIGN", e.toString()), e);
             throw new EBaseException(e);
+
+        } finally {
+            long signEndTime = new Date().getTime();
+            mSignTime += signEndTime - signStartTime;
         }
     }
 

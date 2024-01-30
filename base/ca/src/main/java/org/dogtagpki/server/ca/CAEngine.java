@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -56,6 +57,8 @@ import org.mozilla.jss.CryptoManager;
 import org.mozilla.jss.NicknameConflictException;
 import org.mozilla.jss.NotInitializedException;
 import org.mozilla.jss.UserCertConflictException;
+import org.mozilla.jss.asn1.ASN1Util;
+import org.mozilla.jss.asn1.OCTET_STRING;
 import org.mozilla.jss.crypto.CryptoStore;
 import org.mozilla.jss.crypto.CryptoToken;
 import org.mozilla.jss.crypto.EncryptionAlgorithm;
@@ -154,10 +157,15 @@ import com.netscape.cmscore.request.RequestQueue;
 import com.netscape.cmscore.util.StatsSubsystem;
 import com.netscape.cmsutil.crypto.CryptoUtil;
 import com.netscape.cmsutil.ldap.LDAPPostReadControl;
+import com.netscape.cmsutil.ocsp.BasicOCSPResponse;
 import com.netscape.cmsutil.ocsp.CertID;
 import com.netscape.cmsutil.ocsp.OCSPRequest;
 import com.netscape.cmsutil.ocsp.OCSPResponse;
+import com.netscape.cmsutil.ocsp.OCSPResponseStatus;
 import com.netscape.cmsutil.ocsp.Request;
+import com.netscape.cmsutil.ocsp.ResponseBytes;
+import com.netscape.cmsutil.ocsp.ResponseData;
+import com.netscape.cmsutil.ocsp.SingleResponse;
 import com.netscape.cmsutil.ocsp.TBSRequest;
 
 import netscape.ldap.LDAPAttribute;
@@ -2748,7 +2756,67 @@ public class CAEngine extends CMSEngine {
             }
         }
 
-        return ca.validate(tbsRequest);
+        return validate(ca, tbsRequest);
+    }
+
+    public OCSPResponse validate(
+            CertificateAuthority ca,
+            TBSRequest tbsRequest)
+            throws EBaseException {
+
+        logger.debug("CAEngine: validating OCSP request");
+
+        StatsSubsystem statsSub = (StatsSubsystem) subsystems.get(StatsSubsystem.ID);
+        long startTime = new Date().getTime();
+
+        try {
+            //logger.info("start OCSP request");
+
+            if (statsSub != null) {
+                statsSub.startTiming("lookup");
+            }
+
+            SingleResponse[] certStatus = ca.getCertStatus(tbsRequest);
+
+            if (statsSub != null) {
+                statsSub.endTiming("lookup");
+            }
+
+            if (statsSub != null) {
+                statsSub.startTiming("build_response");
+            }
+
+            ResponseData rd = ca.buildOCSPResponse(tbsRequest, getOCSPResponderByName(), certStatus);
+
+            if (statsSub != null) {
+                statsSub.endTiming("build_response");
+            }
+
+            if (statsSub != null) {
+                statsSub.startTiming("signing");
+            }
+
+            BasicOCSPResponse basicResponse = ca.signOCSPResponse(rd);
+
+            if (statsSub != null) {
+                statsSub.endTiming("signing");
+            }
+
+            OCSPResponse response = new OCSPResponse(
+                    OCSPResponseStatus.SUCCESSFUL,
+                    new ResponseBytes(ResponseBytes.OCSP_BASIC,
+                            new OCTET_STRING(ASN1Util.encode(basicResponse))));
+
+            //logger.info("done OCSP request");
+            long endTime = new Date().getTime();
+            ca.incOCSPRequestTotalTime(endTime - startTime);
+
+            return response;
+
+        } catch (EBaseException e) {
+            logger.error(CMS.getLogMessage("CMSCORE_CA_CA_OCSP_REQUEST", e.toString()), e);
+            throw e;
+        }
     }
 
     /**
