@@ -181,6 +181,7 @@ public class CertificateAuthority extends Subsystem implements IAuthority, IOCSP
     protected boolean ocspResponderByName;
 
     protected CertificateRepository certRepository;
+    protected CRLIssuingPoint crlIssuingPoint;
 
     protected CASigningUnit mSigningUnit;
     protected CASigningUnit mOCSPSigningUnit;
@@ -379,6 +380,14 @@ public class CertificateAuthority extends Subsystem implements IAuthority, IOCSP
 
     public void setCertRepository(CertificateRepository certRepository) {
         this.certRepository = certRepository;
+    }
+
+    public CRLIssuingPoint getCRLIssuingPoint() {
+        return crlIssuingPoint;
+    }
+
+    public void setCRLIssuingPoint(CRLIssuingPoint crlIssuingPoint) {
+        this.crlIssuingPoint = crlIssuingPoint;
     }
 
     /**
@@ -1044,17 +1053,7 @@ public class CertificateAuthority extends Subsystem implements IAuthority, IOCSP
 
     public SingleResponse getCertStatusFromCRL(Request request) throws EBaseException {
 
-        boolean ocspUseCache = mConfig.getOCSPUseCache();
-
-        if (!ocspUseCache) {
-            return null;
-        }
-
-        CAEngine engine = CAEngine.getInstance();
-        String issuingPointId = mConfig.getOCSPUseCacheIssuingPointId();
-        CRLIssuingPoint crlIssuingPoint = engine.getCRLIssuingPoint(issuingPointId);
-
-        if (!crlIssuingPoint.isCRLCacheEnabled()) {
+        if (crlIssuingPoint == null || !crlIssuingPoint.isCRLCacheEnabled()) {
             return null;
         }
 

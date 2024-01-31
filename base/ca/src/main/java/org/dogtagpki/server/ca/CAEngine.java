@@ -792,6 +792,17 @@ public class CAEngine extends CMSEngine {
 
             crlIssuingPoints.put(id, issuingPoint);
         }
+
+        boolean ocspUseCache = caConfig.getOCSPUseCache();
+        if (ocspUseCache) {
+
+            String issuingPointID = caConfig.getOCSPUseCacheIssuingPointId();
+            CRLIssuingPoint crlIssuingPoint = crlIssuingPoints.get(issuingPointID);
+
+            for (CertificateAuthority ca : getCAs()) {
+                ca.setCRLIssuingPoint(crlIssuingPoint);
+            }
+        }
     }
 
     /**
