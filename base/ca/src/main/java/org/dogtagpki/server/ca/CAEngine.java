@@ -2759,6 +2759,30 @@ public class CAEngine extends CMSEngine {
         return validate(ca, tbsRequest);
     }
 
+    public BasicOCSPResponse signOCSPResponse(
+            CertificateAuthority ca,
+            ResponseData rd)
+            throws EBaseException {
+
+        ca.ensureReady();
+
+        try {
+            return ca.signOCSPResponse(rd);
+
+        } catch (ECAException e) {
+            throw e;
+
+        } catch (SignatureException e) {
+            logger.error(CMS.getUserMessage("CMS_CA_SIGNING_OPERATION_FAILED", e.toString()), e);
+            checkForAndAutoShutdown();
+            throw new EBaseException(e);
+
+        } catch (Exception e) {
+            logger.error(CMS.getLogMessage("CMSCORE_CA_CA_OCSP_SIGN", e.toString()), e);
+            throw new EBaseException(e);
+        }
+    }
+
     public OCSPResponse validate(
             CertificateAuthority ca,
             TBSRequest tbsRequest)
@@ -2796,7 +2820,7 @@ public class CAEngine extends CMSEngine {
                 statsSub.startTiming("signing");
             }
 
-            BasicOCSPResponse basicResponse = ca.signOCSPResponse(rd);
+            BasicOCSPResponse basicResponse = signOCSPResponse(ca, rd);
 
             if (statsSub != null) {
                 statsSub.endTiming("signing");

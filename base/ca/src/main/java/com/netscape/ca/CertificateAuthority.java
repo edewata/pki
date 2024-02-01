@@ -28,7 +28,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.Signature;
-import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateParsingException;
 import java.security.interfaces.RSAKey;
@@ -39,7 +38,6 @@ import java.util.Date;
 import java.util.List;
 
 import org.dogtagpki.server.ca.CAConfig;
-import org.dogtagpki.server.ca.CAEngine;
 import org.mozilla.jss.CryptoManager;
 import org.mozilla.jss.NotInitializedException;
 import org.mozilla.jss.asn1.ASN1Util;
@@ -905,12 +903,9 @@ public class CertificateAuthority extends Subsystem implements IAuthority, IOCSP
         return new ResponseData(rid, new GeneralizedTime(new Date()), certStatus, nonce);
     }
 
-    public BasicOCSPResponse signOCSPResponse(ResponseData rd) throws EBaseException {
+    public BasicOCSPResponse signOCSPResponse(ResponseData rd) throws Exception {
 
         long signStartTime = new Date().getTime();
-
-        CAEngine engine = CAEngine.getInstance();
-        ensureReady();
 
         String algname = mOCSPSigningUnit.getDefaultAlgorithm();
 
@@ -946,15 +941,6 @@ public class CertificateAuthority extends Subsystem implements IAuthority, IOCSP
         } catch (NoSuchAlgorithmException e) {
             logger.error(CMS.getLogMessage("OPERATION_ERROR", e.toString()), e);
             throw new ECAException(CMS.getUserMessage("CMS_CA_SIGNING_ALGOR_NOT_SUPPORTED", algname), e);
-
-        } catch (SignatureException e) {
-            logger.error(CMS.getUserMessage("CMS_CA_SIGNING_OPERATION_FAILED", e.toString()), e);
-            engine.checkForAndAutoShutdown();
-            throw new EBaseException(e);
-
-        } catch (Exception e) {
-            logger.error(CMS.getLogMessage("CMSCORE_CA_CA_OCSP_SIGN", e.toString()), e);
-            throw new EBaseException(e);
 
         } finally {
             long signEndTime = new Date().getTime();
