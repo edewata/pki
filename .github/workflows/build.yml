@@ -5,6 +5,7 @@ on: [push, pull_request]
 env:
   BASE_IMAGE: ${{ vars.BASE_IMAGE || 'registry.fedoraproject.org/fedora:latest' }}
   COPR_REPO: ${{ vars.COPR_REPO || '@pki/master' }}
+  JAVA_VERSION: ${{ vars.JAVA_VERSION || '17' }}
   NAMESPACE: ${{ vars.REGISTRY_NAMESPACE || 'dogtagpki' }}
 
 jobs:
@@ -38,6 +39,7 @@ jobs:
           build-args: |
             BASE_IMAGE=${{ env.BASE_IMAGE }}
             COPR_REPO=${{ env.COPR_REPO }}
+            JAVA_VERSION=${{ env.JAVA_VERSION }}
           tags: pki-deps
           target: pki-deps
           cache-to: type=local,dest=/tmp/.buildx-cache
@@ -50,6 +52,7 @@ jobs:
           build-args: |
             BASE_IMAGE=${{ env.BASE_IMAGE }}
             COPR_REPO=${{ env.COPR_REPO }}
+            JAVA_VERSION=${{ env.JAVA_VERSION }}
           tags: pki-builder-deps
           target: pki-builder-deps
           cache-to: type=local,dest=/tmp/.buildx-cache
@@ -62,6 +65,7 @@ jobs:
           build-args: |
             BASE_IMAGE=${{ env.BASE_IMAGE }}
             COPR_REPO=${{ env.COPR_REPO }}
+            JAVA_VERSION=${{ env.JAVA_VERSION }}
           tags: pki-builder
           target: pki-builder
           cache-from: type=local,src=/tmp/.buildx-cache
@@ -74,6 +78,7 @@ jobs:
           build-args: |
             BASE_IMAGE=${{ env.BASE_IMAGE }}
             COPR_REPO=${{ env.COPR_REPO }}
+            JAVA_VERSION=${{ env.JAVA_VERSION }}
           tags: pki-dist
           target: pki-dist
           cache-from: type=local,src=/tmp/.buildx-cache
@@ -86,6 +91,7 @@ jobs:
           build-args: |
             BASE_IMAGE=${{ env.BASE_IMAGE }}
             COPR_REPO=${{ env.COPR_REPO }}
+            JAVA_VERSION=${{ env.JAVA_VERSION }}
           tags: pki-runner
           target: pki-runner
           cache-from: type=local,src=/tmp/.buildx-cache
@@ -98,6 +104,7 @@ jobs:
           build-args: |
             BASE_IMAGE=${{ env.BASE_IMAGE }}
             COPR_REPO=${{ env.COPR_REPO }}
+            JAVA_VERSION=${{ env.JAVA_VERSION }}
           tags: pki-server
           target: pki-server
           cache-from: type=local,src=/tmp/.buildx-cache
@@ -110,6 +117,7 @@ jobs:
           build-args: |
             BASE_IMAGE=${{ env.BASE_IMAGE }}
             COPR_REPO=${{ env.COPR_REPO }}
+            JAVA_VERSION=${{ env.JAVA_VERSION }}
           tags: pki-ca
           target: pki-ca
           cache-from: type=local,src=/tmp/.buildx-cache

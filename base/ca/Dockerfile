@@ -16,6 +16,8 @@ ARG MAINTAINER="Dogtag PKI Team <devel@lists.dogtagpki.org>"
 ARG VENDOR="Dogtag"
 ARG COMPONENT="dogtag-pki"
 ARG COPR_REPO=""
+ARG JAVA_VERSION="17"
+ARG BUILD_OPTS=""
 
 LABEL name="$NAME" \
       summary="$SUMMARY" \
@@ -43,7 +45,12 @@ WORKDIR /tmp/pki
 
 # Build and install PKI packages
 RUN dnf builddep -y --spec pki.spec \
-    && ./build.sh --with-pkgs=base,server,ca --work-dir=build rpm \
+    && ./build.sh \
+        --with-pkgs=base,server,ca \
+        --work-dir=build \
+        --java-version=$JAVA_VERSION \
+        $BUILD_OPTS \
+        rpm \
     && dnf localinstall -y build/RPMS/* \
     && dnf clean all \
     && rm -rf /var/cache/dnf \

@@ -11,11 +11,14 @@ jobs:
       scriptSource: inline
       script: |
         import os
-        import re
 
         value = os.getenv('BASE_IMAGE', 'registry.fedoraproject.org/fedora:latest')
         print('BASE_IMAGE: {value}'.format(value=value))
         print('##vso[task.setvariable variable=BASE_IMAGE]{value}'.format(value=value))
+
+        value = os.getenv('JAVA_VERSION', '17')
+        print('JAVA_VERSION: {value}'.format(value=value))
+        print('##vso[task.setvariable variable=JAVA_VERSION]{value}'.format(value=value))
 
         value = os.getenv('REGISTRY_NAMESPACE', 'dogtagpki')
         print('NAMESPACE: {value}'.format(value=value))
@@ -29,6 +32,7 @@ jobs:
   - script: |
       docker build \
           --build-arg BASE_IMAGE=$BASE_IMAGE \
+          --build-arg JAVA_VERSION=$JAVA_VERSION \
           --target pki-base \
           --tag pki-base:latest \
           .
@@ -36,6 +40,7 @@ jobs:
       docker run \
           --name=runner \
           -v $BUILD_SOURCESDIRECTORY:/root/src \
+          -e JAVA_HOME=/usr/lib/jvm/java-$JAVA_VERSION-openjdk \
           --privileged \
           --detach \
           pki-base:latest
@@ -70,12 +75,60 @@ jobs:
       docker cp /tmp/RPMS/. runner:RPMS
       docker exec runner bash -c "dnf install -y RPMS/*"
 
-      docker exec runner dnf builddep -y --spec /root/src/pki.spec
+      docker exec runner /root/src/build.sh \
+          --java-version=$JAVA_VERSION \
+          --with-console \
+          spec
+
+      docker exec runner dnf builddep \
+          --spec /root/build/pki/SPECS/pki.spec \
+          --skip-unavailable \
+          -y
+
+      #docker exec runner bash -c "dnf remove --noautoremove -y dogtag-* python3-dogtag-*"
+
+      OPENJDK_PACKAGES=$(docker exec runner bash -c "rpm -qa java-*")
+      docker exec runner rpm -e --nodeps $OPENJDK_PACKAGES
+
+      MAVEN_PACKAGES=$(docker exec runner bash -c "rpm -qa maven-openjdk*")
+      docker exec runner rpm -e --nodeps $MAVEN_PACKAGES
+
+      docker exec runner dnf install -y java-$JAVA_VERSION-openjdk-devel
+      docker exec runner dnf install -y maven-openjdk$JAVA_VERSION
+
     displayName: Install PKI dependencies
 
   - script: |
-      docker exec runner \
-          /root/src/build.sh -v rpm
+      JAVA_HOME=$(docker exec runner bash -c 'echo "$JAVA_HOME"')
+
+      docker exec runner which java
+      docker exec runner readlink -f $(which java)
+      docker exec runner alternatives --set java $JAVA_HOME/bin/java
+
+      docker exec runner which javac
+      docker exec runner readlink -f $(which javac)
+      docker exec runner alternatives --set javac $JAVA_HOME/bin/javac
+
+      echo "$JAVA_VERSION" > expected
+
+      # check java command's major version
+      docker exec runner java -version 2>&1 | tee output
+      sed -n 's/^openjdk version "\([^\.]*\).*$/\1/p' output > actual
+      diff expected actual
+
+      # check javac command's major version
+      docker exec runner javac -version | tee output
+      sed -n 's/^javac \([^\.]*\).*$/\1/p' output > actual
+      diff expected actual
+
+    displayName: Check Java version
+
+  - script: |
+      docker exec runner /root/src/build.sh \
+          --java-version=$JAVA_VERSION \
+          --with-console \
+          -v \
+          rpm
     displayName: Build PKI RPM packages
 
   - script: |
@@ -109,10 +162,10 @@ jobs:
       docker exec runner python3 --version | tee output
       PYTHON_VERSION=$(sed 's/Python \([0-9]\+\.[0-9]\+\)\..*/\1/' output)
 
-      docker exec runner \
-          /root/src/build.sh \
+      docker exec runner /root/src/build.sh \
           --work-dir=/root/build \
           --python-dir=/usr/lib/python$PYTHON_VERSION/site-packages \
+          --with-console \
           dist
     displayName: Build PKI with CMake
 

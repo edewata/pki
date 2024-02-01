@@ -63,9 +63,10 @@ ExcludeArch: i686
 # Java
 ################################################################################
 
-%global java_devel java-17-openjdk-devel
-%global java_headless java-17-openjdk-headless
-%global java_home %{_jvmdir}/jre-17-openjdk
+%global java_version 17
+%global java_devel java-%{java_version}-openjdk-devel
+%global java_headless java-%{java_version}-openjdk-headless
+%global java_home %{_jvmdir}/jre-%{java_version}-openjdk
 
 ################################################################################
 # Application Server
@@ -154,7 +155,6 @@ BuildRequires:    pkgconfig
 BuildRequires:    policycoreutils
 
 # Java build dependencies
-BuildRequires:    %{java_devel}
 BuildRequires:    maven-local
 %if 0%{?fedora}
 BuildRequires:    xmvn-tools
@@ -858,6 +858,22 @@ This package provides test suite for %{product_name}.
 
 %autosetup -n pki-%{version}%{?phase:-}%{?phase} -p 1
 
+# update release version for maven-compiler-plugin
+%pom_xpath_set "//pom:plugin[pom:artifactId='maven-compiler-plugin']/pom:configuration/pom:release" %{java_version} base/common
+%pom_xpath_set "//pom:plugin[pom:artifactId='maven-compiler-plugin']/pom:configuration/pom:release" %{java_version} base/tools
+%pom_xpath_set "//pom:plugin[pom:artifactId='maven-compiler-plugin']/pom:configuration/pom:release" %{java_version} base/tomcat
+%pom_xpath_set "//pom:plugin[pom:artifactId='maven-compiler-plugin']/pom:configuration/pom:release" %{java_version} base/tomcat-9.0
+%pom_xpath_set "//pom:plugin[pom:artifactId='maven-compiler-plugin']/pom:configuration/pom:release" %{java_version} base/server
+%pom_xpath_set "//pom:plugin[pom:artifactId='maven-compiler-plugin']/pom:configuration/pom:release" %{java_version} base/server-webapp
+%pom_xpath_set "//pom:plugin[pom:artifactId='maven-compiler-plugin']/pom:configuration/pom:release" %{java_version} base/ca
+%pom_xpath_set "//pom:plugin[pom:artifactId='maven-compiler-plugin']/pom:configuration/pom:release" %{java_version} base/kra
+%pom_xpath_set "//pom:plugin[pom:artifactId='maven-compiler-plugin']/pom:configuration/pom:release" %{java_version} base/ocsp
+%pom_xpath_set "//pom:plugin[pom:artifactId='maven-compiler-plugin']/pom:configuration/pom:release" %{java_version} base/tks
+%pom_xpath_set "//pom:plugin[pom:artifactId='maven-compiler-plugin']/pom:configuration/pom:release" %{java_version} base/tps
+%pom_xpath_set "//pom:plugin[pom:artifactId='maven-compiler-plugin']/pom:configuration/pom:release" %{java_version} base/acme
+%pom_xpath_set "//pom:plugin[pom:artifactId='maven-compiler-plugin']/pom:configuration/pom:release" %{java_version} base/est
+%pom_xpath_set "//pom:plugin[pom:artifactId='maven-compiler-plugin']/pom:configuration/pom:release" %{java_version} base/console
+
 %if ! %{with base}
 %pom_disable_module common base
 %pom_disable_module tools base
@@ -1071,6 +1087,8 @@ pkgs=base\
 ################################################################################
 %install
 ################################################################################
+
+export JAVA_HOME=%{java_home}
 
 # install Java binaries
 %mvn_install

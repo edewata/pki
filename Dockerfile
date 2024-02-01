@@ -13,6 +13,7 @@ ARG ARCH="x86_64"
 ARG VERSION="0"
 ARG BASE_IMAGE="registry.fedoraproject.org/fedora:latest"
 ARG COPR_REPO=""
+ARG JAVA_VERSION="17"
 ARG BUILD_OPTS=""
 
 ################################################################################
@@ -28,32 +29,47 @@ CMD [ "/usr/sbin/init" ]
 FROM pki-base AS pki-deps
 
 ARG COPR_REPO
+ARG JAVA_VERSION
 
 # Enable COPR repo if specified
 RUN if [ -n "$COPR_REPO" ]; then dnf copr enable -y $COPR_REPO; fi
 
 # Install PKI runtime dependencies
 RUN dnf install -y dogtag-pki \
-    && dnf remove -y dogtag-* --noautoremove \
+    && rpm -e --nodeps $(rpm -qa java-* dogtag-* python3-dogtag-*) \
+    && dnf install -y java-$JAVA_VERSION-openjdk-headless \
     && dnf clean all \
     && rm -rf /var/cache/dnf
 
 ################################################################################
 FROM pki-deps AS pki-builder-deps
 
-# Install build tools
-RUN dnf install -y rpm-build
-
 # Import PKI sources
 COPY pki.spec /root/pki/
+COPY build.sh /root/pki/
 WORKDIR /root/pki
 
 # Install PKI build dependencies
-RUN dnf builddep -y --skip-unavailable --spec pki.spec
+RUN dnf install -y rpm-build \
+    && ./build.sh \
+        --work-dir=build \
+        --java-version=$JAVA_VERSION \
+        $BUILD_OPTS \
+        spec \
+    && dnf builddep \
+        --skip-unavailable \
+        -y \
+        --spec build/SPECS/pki.spec \
+    && dnf clean all \
+    && rm -rf /var/cache/dnf
+
+#    && rpm -e --nodeps $(rpm -qa java-* maven-openjdk*) \
+#    && dnf install -y java-$JAVA_VERSION-openjdk-devel maven-openjdk$JAVA_VERSION \
 
 ################################################################################
 FROM pki-builder-deps AS pki-builder
 
+ARG JAVA_VERSION
 ARG BUILD_OPTS
 
 # Import JSS packages
@@ -72,7 +88,11 @@ RUN dnf localinstall -y /tmp/RPMS/* \
 COPY . /root/pki/
 
 # Build and install PKI packages
-RUN ./build.sh --work-dir=build $BUILD_OPTS rpm
+RUN ./build.sh \
+    --work-dir=build \
+    --java-version=$JAVA_VERSION \
+    $BUILD_OPTS \
+    rpm
 
 ################################################################################
 FROM alpine:latest AS pki-dist

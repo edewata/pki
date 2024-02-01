@@ -31,6 +31,7 @@ SHARE_DIR="/usr/share"
 CMAKE="cmake"
 C_FLAGS=
 
+JAVA_VERSION="17"
 JNI_DIR="/usr/lib/java"
 UNIT_DIR="/usr/lib/systemd/system"
 
@@ -64,37 +65,38 @@ usage() {
     echo "Usage: $SCRIPT_NAME [OPTIONS] <target>"
     echo
     echo "Options:"
-    echo "    --name=<name>          Package name (default: $NAME)."
-    echo "    --product-name=<name>  Use the specified product name."
-    echo "    --product-id=<ID>      Use the specified product ID."
-    echo "    --theme=<name>         Use the specified theme."
-    echo "    --work-dir=<path>      Working directory (default: ~/build/$NAME)."
-    echo "    --prefix-dir=<path>    Prefix directory (default: $PREFIX_DIR)"
-    echo "    --include-dir=<path>   Include directory (default: $INCLUDE_DIR)"
-    echo "    --lib-dir=<path>       Library directory (default: $LIB_DIR)"
-    echo "    --sysconf-dir=<path>   System configuration directory (default: $SYSCONF_DIR)"
-    echo "    --share-dir=<path>     Share directory (default: $SHARE_DIR)"
-    echo "    --cmake=<path>         Path to CMake executable"
-    echo "    --c-flags=<flags>      C compiler flags"
-    echo "    --java-home=<path>     Java home directory"
-    echo "    --jni-dir=<path>       JNI directory (default: $JNI_DIR)"
-    echo "    --unit-dir=<path>      Systemd unit directory (default: $UNIT_DIR)"
-    echo "    --python=<path>        Path to Python executable (default: $PYTHON)"
-    echo "    --python-dir=<path>    Path to Python modules"
-    echo "    --install-dir=<path>   Installation directory"
-    echo "    --source-tag=<tag>     Generate RPM sources from a source tag."
-    echo "    --spec=<file>          Use the specified RPM spec (default: $SPEC_TEMPLATE)."
-    echo "    --with-timestamp       Append timestamp to release number."
-    echo "    --with-commit-id       Append commit ID to release number."
-    echo "    --dist=<name>          Distribution name (e.g. fc28)."
-    echo "    --without-java         Do not build Java binaries."
-    echo "    --with-console         Build console package."
-    echo "    --with-pkgs=<list>     Build packages specified in comma-separated list only."
-    echo "    --without-pkgs=<list>  Build everything except packages specified in comma-separated list."
-    echo "    --without-test         Do not run unit tests."
-    echo " -v,--verbose              Run in verbose mode."
-    echo "    --debug                Run in debug mode."
-    echo "    --help                 Show help message."
+    echo "    --name=<name>             Package name (default: $NAME)."
+    echo "    --product-name=<name>     Use the specified product name."
+    echo "    --product-id=<ID>         Use the specified product ID."
+    echo "    --theme=<name>            Use the specified theme."
+    echo "    --work-dir=<path>         Working directory (default: ~/build/$NAME)."
+    echo "    --prefix-dir=<path>       Prefix directory (default: $PREFIX_DIR)"
+    echo "    --include-dir=<path>      Include directory (default: $INCLUDE_DIR)"
+    echo "    --lib-dir=<path>          Library directory (default: $LIB_DIR)"
+    echo "    --sysconf-dir=<path>      System configuration directory (default: $SYSCONF_DIR)"
+    echo "    --share-dir=<path>        Share directory (default: $SHARE_DIR)"
+    echo "    --cmake=<path>            Path to CMake executable"
+    echo "    --c-flags=<flags>         C compiler flags"
+    echo "    --java-version=<version>  Java version (default: $JAVA_VERSION)"
+    echo "    --java-home=<path>        Java home directory"
+    echo "    --jni-dir=<path>          JNI directory (default: $JNI_DIR)"
+    echo "    --unit-dir=<path>         Systemd unit directory (default: $UNIT_DIR)"
+    echo "    --python=<path>           Path to Python executable (default: $PYTHON)"
+    echo "    --python-dir=<path>       Path to Python modules"
+    echo "    --install-dir=<path>      Installation directory"
+    echo "    --source-tag=<tag>        Generate RPM sources from a source tag."
+    echo "    --spec=<file>             Use the specified RPM spec (default: $SPEC_TEMPLATE)."
+    echo "    --with-timestamp          Append timestamp to release number."
+    echo "    --with-commit-id          Append commit ID to release number."
+    echo "    --dist=<name>             Distribution name (e.g. fc28)."
+    echo "    --without-java            Do not build Java binaries."
+    echo "    --with-console            Build console package."
+    echo "    --with-pkgs=<list>        Build packages specified in comma-separated list only."
+    echo "    --without-pkgs=<list>     Build everything except packages specified in comma-separated list."
+    echo "    --without-test            Do not run unit tests."
+    echo " -v,--verbose                 Run in verbose mode."
+    echo "    --debug                   Run in debug mode."
+    echo "    --help                    Show help message."
     echo
     echo "Packages:"
     echo "    $PKG_LIST"
@@ -210,6 +212,9 @@ generate_rpm_spec() {
         sed -i "s/# Patch: pki-VERSION-RELEASE.patch/Patch: $PATCH/g" "$SPEC_FILE"
     fi
 
+    # hard-code Java version
+    sed -i "s/^\(%global *java_version *\).*\$/\1$JAVA_VERSION/g" "$SPEC_FILE"
+
     if [ "$WITH_CONSOLE" = true ] ; then
         # convert bcond_with into bcond_without to build console by default
         sed -i "s/%bcond_with *console\$/%bcond_without console/g" "$SPEC_FILE"
@@ -274,6 +279,9 @@ while getopts v-: arg ; do
             ;;
         c-flags=?*)
             C_FLAGS="$LONG_OPTARG"
+            ;;
+        java-version=?*)
+            JAVA_VERSION="$LONG_OPTARG"
             ;;
         java-home=?*)
             # Don't convert Java home into an absolute path since that
@@ -349,7 +357,7 @@ while getopts v-: arg ; do
             ;;
         name* | product-name* | product-id* | theme* | work-dir* | \
         prefix-dir* | include-dir* | lib-dir* | sysconf-dir* | share-dir* | \
-        cmake* | c-flags* | java-home* | jni-dir* | \
+        cmake* | c-flags* | java-version* | java-home* | jni-dir* | \
         unit-dir* | python* | python-dir* | install-dir* | \
         source-tag* | spec* | with-pkgs* | without-pkgs* | dist*)
             echo "ERROR: Missing argument for --$OPTARG option" >&2
@@ -416,6 +424,7 @@ if [ "$DEBUG" = true ] ; then
     echo "SHARE_DIR: $SHARE_DIR"
     echo "CMAKE: $CMAKE"
     echo "C_FLAGS: $C_FLAGS"
+    echo "JAVA_VERSION: $JAVA_VERSION"
     echo "JAVA_HOME: $JAVA_HOME"
     echo "JNI_DIR: $JNI_DIR"
     echo "PYTHON: $PYTHON"
@@ -845,23 +854,10 @@ mkdir SPECS
 mkdir SRPMS
 
 ################################################################################
-# Generate RPM sources
+# Generate RPM spec
 ################################################################################
 
 SPEC_FILE="$WORK_DIR/SPECS/$NAME.spec"
-
-generate_rpm_sources
-
-echo "RPM sources:"
-find "$WORK_DIR/SOURCES" -type f -printf " %p\n"
-
-if [ "$BUILD_TARGET" = "src" ] ; then
-    exit
-fi
-
-################################################################################
-# Generate RPM spec
-################################################################################
 
 generate_rpm_spec
 
@@ -869,6 +865,19 @@ echo "RPM spec:"
 find "$WORK_DIR/SPECS" -type f -printf " %p\n"
 
 if [ "$BUILD_TARGET" = "spec" ] ; then
+    exit
+fi
+
+################################################################################
+# Generate RPM sources
+################################################################################
+
+generate_rpm_sources
+
+echo "RPM sources:"
+find "$WORK_DIR/SOURCES" -type f -printf " %p\n"
+
+if [ "$BUILD_TARGET" = "src" ] ; then
     exit
 fi
 

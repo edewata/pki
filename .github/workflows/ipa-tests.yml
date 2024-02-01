@@ -5,6 +5,7 @@ on: [push, pull_request]
 env:
   BASE_IMAGE: ${{ vars.BASE_IMAGE || 'registry.fedoraproject.org/fedora:latest' }}
   COPR_REPO: ${{ vars.COPR_REPO || '@pki/master' }}
+  JAVA_VERSION: ${{ vars.JAVA_VERSION || '17' }}
 
 jobs:
   build:
@@ -31,6 +32,7 @@ jobs:
           build-args: |
             BASE_IMAGE=${{ env.BASE_IMAGE }}
             COPR_REPO=${{ env.COPR_REPO }}
+            JAVA_VERSION=${{ env.JAVA_VERSION }}
           tags: pki-deps
           target: pki-deps
           cache-to: type=local,dest=/tmp/.buildx-cache
@@ -43,6 +45,7 @@ jobs:
           build-args: |
             BASE_IMAGE=${{ env.BASE_IMAGE }}
             COPR_REPO=${{ env.COPR_REPO }}
+            JAVA_VERSION=${{ env.JAVA_VERSION }}
           tags: pki-builder-deps
           target: pki-builder-deps
           cache-to: type=local,dest=/tmp/.buildx-cache
@@ -55,6 +58,7 @@ jobs:
           build-args: |
             BASE_IMAGE=${{ env.BASE_IMAGE }}
             COPR_REPO=${{ env.COPR_REPO }}
+            JAVA_VERSION=${{ env.JAVA_VERSION }}
             BUILD_OPTS=--with-pkgs=base,server,ca,kra,acme --without-test
           tags: ipa-runner
           target: ipa-runner
