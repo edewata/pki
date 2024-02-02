@@ -34,7 +34,7 @@ RUN if [ -n "$COPR_REPO" ]; then dnf copr enable -y $COPR_REPO; fi
 
 # Install PKI runtime dependencies
 RUN dnf install -y dogtag-pki \
-    && dnf remove -y dogtag-* --noautoremove \
+    && dnf remove -y dogtag-* python3-dogtag-* --noautoremove \
     && dnf clean all \
     && rm -rf /var/cache/dnf
 
@@ -49,7 +49,10 @@ COPY pki.spec /root/pki/
 WORKDIR /root/pki
 
 # Install PKI build dependencies
-RUN dnf builddep -y --skip-unavailable --spec pki.spec
+RUN dnf builddep \
+    --spec pki.spec \
+    --skip-unavailable \
+    -y
 
 ################################################################################
 FROM pki-builder-deps AS pki-builder
@@ -72,7 +75,7 @@ RUN dnf localinstall -y /tmp/RPMS/* \
 COPY . /root/pki/
 
 # Build and install PKI packages
-RUN ./build.sh --work-dir=build $BUILD_OPTS rpm
+RUN ./build.sh --work-dir=build $BUILD_OPTS -v rpm
 
 ################################################################################
 FROM alpine:latest AS pki-dist

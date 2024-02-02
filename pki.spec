@@ -63,9 +63,10 @@ ExcludeArch: i686
 # Java
 ################################################################################
 
-%global java_devel java-17-openjdk-devel
-%global java_headless java-17-openjdk-headless
-%global java_home %{_jvmdir}/jre-17-openjdk
+%global java_version 17
+%global java_devel java-%{java_version}-openjdk-devel
+%global java_headless java-%{java_version}-openjdk-headless
+%global java_home %{_jvmdir}/jre-%{java_version}-openjdk
 
 ################################################################################
 # Application Server
@@ -155,7 +156,7 @@ BuildRequires:    policycoreutils
 
 # Java build dependencies
 BuildRequires:    %{java_devel}
-BuildRequires:    maven-local
+BuildRequires:    maven-local-openjdk%{java_version}
 %if 0%{?fedora}
 BuildRequires:    xmvn-tools
 %endif
