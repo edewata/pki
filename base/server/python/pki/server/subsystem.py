@@ -21,8 +21,10 @@
 
 from __future__ import absolute_import
 
+import collections
 import datetime
 import functools
+import inspect
 import json
 import logging
 import os
@@ -49,6 +51,12 @@ SELFTEST_CRITICAL = 'critical'
 logger = logging.getLogger(__name__)
 
 
+class SubsystemConfig(collections.UserDict):
+    def __setitem__(self, key, value):
+        #logger.info(f'- {key}: {value}')
+        super().__setitem__(key, value)
+
+
 @functools.total_ordering
 class PKISubsystem(object):
 
@@ -60,7 +68,7 @@ class PKISubsystem(object):
         self.cs_conf = os.path.join(self.conf_dir, 'CS.cfg')
         self.registry_conf = os.path.join(self.conf_dir, 'registry.cfg')
 
-        self.config = {}
+        self.config = SubsystemConfig()
         self.registry = {}
 
         self.type = subsystem_name.upper()  # e.g. CA, KRA
@@ -246,6 +254,8 @@ class PKISubsystem(object):
         self.instance.copy(default_cfg, self.default_cfg)
 
     def load(self):
+
+        logger.warning('Loading subsystem in %s:%s\n', inspect.stack()[1].filename, inspect.stack()[1].lineno)
 
         self.config.clear()
 
@@ -571,6 +581,8 @@ class PKISubsystem(object):
             shutil.rmtree(tmpdir)
 
     def save(self):
+
+        logger.warning('Saving subsystem in %s:%s\n', inspect.stack()[1].filename, inspect.stack()[1].lineno)
 
         logger.info('Storing subsystem config: %s', self.cs_conf)
         self.instance.store_properties(self.cs_conf, self.config)
