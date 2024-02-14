@@ -49,6 +49,54 @@ jobs:
 
           docker exec ipa pki-server cert-export ca_signing --cert-file ca_signing.crt
 
+      - name: Check webapps
+        run: |
+          docker exec ipa pki-server webapp-find | tee output
+
+          echo "ROOT" > expected
+          echo "acme" >> expected
+          echo "ca" >> expected
+          echo "pki" >> expected
+          sed -n 's/^ *Webapp ID: *\(.*\)$/\1/p' output > actual
+          diff expected actual
+
+      - name: Check subsystems
+        run: |
+          docker exec ipa pki-server subsystem-find | tee output
+
+          # CA subsystem should be enabled
+          echo "ca" > expected
+          sed -n 's/^ *Subsystem ID: *\(.*\)$/\1/p' output > actual
+          diff expected actual
+
+          docker exec ipa pki-server subsystem-show ca | tee output
+
+          # CA subsystem should be enabled
+          echo "True" > expected
+          sed -n 's/^ *Enabled: *\(.*\)$/\1/p' output > actual
+          diff expected actual
+
+      - name: Check incomplete subsystems
+        run: |
+          # KRA subsystem should not exist initially
+          docker exec ipa pki-server subsystem-show kra \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          echo "ERROR: No kra subsystem in instance pki-tomcat." > expected
+          diff expected stderr
+
+          # create empty KRA folder
+          docker exec ipa mkdir -p /var/lib/pki/pki-tomcat/kra
+
+          # KRA subsystem should still not exist
+          docker exec ipa pki-server subsystem-show kra \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          echo "ERROR: No kra subsystem in instance pki-tomcat." > expected
+          diff expected stderr
+
+          docker exec ipa rm -rf /var/lib/pki/pki-tomcat/kra
+
       - name: Check DS certs and keys
         run: |
           docker exec ipa ls -la /etc/dirsrv/slapd-EXAMPLE-COM
@@ -171,6 +219,16 @@ jobs:
           docker exec ipa ipa-run-tests -x --verbose \
               test_xmlrpc/test_vault_plugin.py
 
+      - name: Check IPA CA install log
+        if: always()
+        run: |
+          docker exec ipa cat /var/log/ipaserver-install.log
+
+      - name: Check IPA KRA install log
+        if: always()
+        run: |
+          docker exec ipa cat /var/log/ipaserver-kra-install.log
+
       - name: Gather artifacts
         if: always()
         run: |
@@ -187,5 +245,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ipa-basic-test
-          path: |
-            /tmp/artifacts/ipa
+          path: /tmp/artifacts
