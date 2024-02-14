@@ -77,11 +77,63 @@ jobs:
               -r EXAMPLE.COM \
               -p Secret.123 \
               -a Secret.123 \
-              --setup-kra \
               --no-host-dns \
               --no-ntp
           docker exec ipa bash -c "echo Secret.123 | kinit admin"
           docker exec ipa ipa ping
+
+      - name: Check webapps
+        run: |
+          docker exec ipa pki-server webapp-find | tee output
+
+          echo "ROOT" > expected
+          echo "acme" >> expected
+          echo "ca" >> expected
+          echo "pki" >> expected
+          sed -n 's/^ *Webapp ID: *\(.*\)$/\1/p' output > actual
+          diff expected actual
+
+      - name: Check subsystems
+        run: |
+          docker exec ipa pki-server subsystem-find | tee output
+
+          echo "ca" > expected
+          sed -n 's/^ *Subsystem ID: *\(.*\)$/\1/p' output > actual
+          diff expected actual
+
+          docker exec ipa pki-server subsystem-show ca | tee output
+
+          # CA subsystem should be enabled
+          echo "True" > expected
+          sed -n 's/^ *Enabled: *\(.*\)$/\1/p' output > actual
+          diff expected actual
+
+      - name: Check incomplete subsystem
+        run: |
+          docker exec ipa ls -la /etc/pki/pki-tomcat/Catalina/localhost
+
+          docker exec ipa pki-server subsystem-show kra \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          # KRA subsystem should not exist initially
+          echo "ERROR: No kra subsystem in instance pki-tomcat." > expected
+          diff expected stderr
+
+          # create empty KRA subsystem folder
+          docker exec ipa mkdir -p /var/log/pki/pki-tomcat/kra
+
+          docker exec ipa pki-server subsystem-show kra \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          # KRA subsystem should still not exist
+          echo "ERROR: No kra subsystem in instance pki-tomcat." > expected
+          diff expected stderr
+
+          docker exec ipa rm -rf /var/log/pki/pki-tomcat/kra
+
+      - name: Install KRA
+        run: |
+          docker exec ipa ipa-kra-install -p Secret.123
 
       - name: Verify CA admin in IPA container
         run: |
