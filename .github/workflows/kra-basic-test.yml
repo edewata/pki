@@ -200,6 +200,90 @@ jobs:
         run: |
           docker exec pki /usr/share/pki/tests/kra/bin/test-cert-key-archival.sh
 
+      - name: Check key archival with pki client-cert-request
+        run: |
+          # generate key and cert request
+          docker exec pki pki \
+              -U http://pki.example.com:8080 \
+              client-cert-request \
+              --profile caUserCert \
+              --type crmf \
+              --algorithm rsa \
+              --permanent \
+              --transport kra_transport.crt \
+              UID=testuser | tee output
+
+          REQUEST_ID=$(sed -n "s/^\s*Request ID:\s*\(\S*\)\s*$/\1/p" output)
+          echo "Request ID: $REQUEST_ID"
+
+          # issue cert
+          docker exec pki pki \
+              -u caadmin \
+              -w Secret.123 \
+              ca-cert-request-approve \
+              --force \
+              $REQUEST_ID | tee output
+
+          CERT_ID=$(sed -n "s/^\s*Certificate ID:\s*\(\S*\)\s*$/\1/p" output)
+          echo "Cert ID: $CERT_ID"
+
+          # import cert
+          docker exec pki pki ca-cert-export --output-file testuser.crt $CERT_ID
+          docker exec pki pki nss-cert-import --cert testuser.crt testuser
+          docker exec pki pki nss-cert-show testuser | tee output
+
+          # verify that the cert matches the key (trust flags must be u,u,u)
+          sed -n "s/^\s*Trust Flags:\s*\(\S*\)\s*$/\1/p" output > actual
+          echo "u,u,u" > expected
+          diff expected actual
+
+          docker exec pki pki \
+              -u kraadmin \
+              -w Secret.123 \
+              kra-key-find --owner UID=testuser | tee output
+
+          HEX_KEY_ID=$(sed -n "s/^\s*Key ID:\s*\(\S*\)$/\1/p" output)
+          echo "Key ID: $HEX_KEY_ID"
+
+          DEC_KEY_ID=$(python -c "print(int('$HEX_KEY_ID', 16))")
+          echo "Dec Key ID: $DEC_KEY_ID"
+
+          # get key record
+          docker exec pki ldapsearch \
+              -H ldap://ds.example.com:3389 \
+              -x \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b "cn=$DEC_KEY_ID,ou=keyRepository,ou=kra,dc=kra,dc=pki,dc=example,dc=com" \
+              -o ldif_wrap=no \
+              -LLL | tee kra.ldif
+
+          # encryption mode should be "false" by default
+          echo "false" > expected
+          sed -n 's/^metaInfo: payloadEncrypted:\(.*\)$/\1/p' kra.ldif > actual
+          diff expected actual
+
+          # key wrap algorithm should be "AES KeyWrap/Padding" by default
+          echo "AES KeyWrap/Padding" > expected
+          sed -n 's/^metaInfo: payloadWrapAlgorithm:\(.*\)$/\1/p' kra.ldif > actual
+          diff expected actual
+
+      - name: Check key rewrap
+        run: |
+          docker exec pki KRATool \
+              -kratool_config_file /usr/share/pki/tools/KRATool.cfg \
+              -source_ldif_file kra.ldif \
+              -target_ldif_file target.ldif \
+              -log_file KRATool.log \
+              -source_pki_security_database_path /etc/pki/pki-tomcat/alias \
+              -source_storage_token_name "Internal Key Storage Token" \
+              -source_storage_certificate_nickname kra_storage \
+              -target_storage_certificate_file kra_transport \
+              -source_drm_naming_context "dc=example,dc=com" \
+              -target_drm_naming_context "dc=example,dc=com" \
+              -process_requests_and_key_records_only
+          docker exec pki cat KRATool.log
+
       - name: Remove KRA
         run: docker exec pki pkidestroy -i pki-tomcat -s KRA -v
 
