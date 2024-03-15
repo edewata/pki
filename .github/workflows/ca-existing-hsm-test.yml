@@ -281,7 +281,6 @@ jobs:
               -D pki_subsystem_token=HSM \
               -D pki_sslserver_token=internal \
               -D pki_admin_cert_path=/tmp/admin.crt \
-              -D pki_admin_csr_path=/tmp/admin.csr \
               -v
 
       - name: Run PKI healthcheck
