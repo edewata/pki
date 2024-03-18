@@ -553,10 +553,10 @@ public class ConnectorServlet extends CMSServlet {
                 String sskKeygenStage = thisreq.getExtDataInString(Request.SSK_STAGE);
                 if (sskKeygenStage!= null && sskKeygenStage.equalsIgnoreCase(Request.SSK_STAGE_KEYGEN)) {
                     logger.debug(method + "isServerSideKeygen Stage=" + sskKeygenStage);
-                    thisreq.setRequestType("asymkeyGenRequest"); //Request.ASYMKEY_GENERATION_REQUEST
+                    thisreq.setRequestType(Request.ASYMKEY_GENERATION_REQUEST);
                 } else if (sskKeygenStage.equalsIgnoreCase(Request.SSK_STAGE_KEY_RETRIEVE)) {
                     logger.debug(method + "isServerSideKeygen Stage=" + sskKeygenStage);
-                    thisreq.setRequestType("recovery"); //Request.KEYRECOVERY_REQUEST
+                    thisreq.setRequestType(Request.KEYRECOVERY_REQUEST);
                 }
                 String clientKeyId = thisreq.getExtDataInString(Request.SECURITY_DATA_CLIENT_KEY_ID);
                 if (clientKeyId != null)

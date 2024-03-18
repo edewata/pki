@@ -1353,7 +1353,7 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
         KRAEngine engine = KRAEngine.getInstance();
         KeyRequestRepository requestRepository = engine.getKeyRequestRepository();
 
-        Request r = requestRepository.createRequest("recovery");
+        Request r = requestRepository.createRequest(Request.KEYRECOVERY_REQUEST);
         r.setExtData(RecoveryService.ATTR_SERIALNO, kid);
         r.setExtData(RecoveryService.ATTR_TRANSPORT_PWD, password);
         r.setExtData(RecoveryService.ATTR_USER_CERT, cert);
@@ -1432,7 +1432,7 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
         KRAEngine engine = KRAEngine.getInstance();
 
         KeyRequestRepository requestRepository = engine.getKeyRequestRepository();
-        Request r = requestRepository.createRequest("recovery");
+        Request r = requestRepository.createRequest(Request.KEYRECOVERY_REQUEST);
 
         ByteArrayOutputStream certChainOut = new ByteArrayOutputStream();
         try {

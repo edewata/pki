@@ -158,10 +158,10 @@ public class KeyService extends SubsystemService implements KeyResource {
 
         if (requestId != null) {
 
-            logger.debug("KeyService: Searching for asynchronous request " + requestId);
+            logger.debug("KeyService: Searching for asynchronous request " + requestId.toHexString());
             // We assume that the request is valid and has been approved
 
-            auditInfo += ";requestID=" + requestId;
+            auditInfo += ";requestID=" + requestId.toHexString();
 
             try {
                 request = requestRepository.readRequest(requestId);
@@ -171,28 +171,28 @@ public class KeyService extends SubsystemService implements KeyResource {
             }
 
             if (request == null) {
-                auditRetrieveKeyError("Request not found: " + requestId);
-                throw new BadRequestException("Request not found: " + requestId);
+                auditRetrieveKeyError("Request not found: " + requestId.toHexString());
+                throw new BadRequestException("Request not found: " + requestId.toHexString());
             }
 
             keyId = new KeyId(request.getExtDataInString(ATTR_SERIALNO));
-            logger.debug("KeyService: Request found for key " + keyId);
+            logger.debug("KeyService: Request found for key " + keyId.toHexString());
 
-            auditInfo += ";keyID=" + keyId;
+            auditInfo += ";keyID=" + keyId.toHexString();
 
             data.setKeyId(keyId);
 
         } else {
 
             keyId = data.getKeyId();
-            logger.info("KeyService: Retrieving key " + keyId);
+            logger.info("KeyService: Retrieving key " + keyId.toHexString());
 
             if (keyId == null) {
                 auditRetrieveKeyError("Missing recovery request ID and key ID");
                 throw new BadRequestException("Missing recovery request ID and key ID");
             }
 
-            auditInfo += ";keyID=" + keyId;
+            auditInfo += ";keyID=" + keyId.toHexString();
 
             // TODO(alee): get the realm from the key record
             logger.info("KeyService: realm: " + realm);
@@ -221,9 +221,9 @@ public class KeyService extends SubsystemService implements KeyResource {
             }
 
             requestId = request.getRequestId();
-            logger.info("KeyService: Created request " + requestId);
+            logger.info("KeyService: Created request " + requestId.toHexString());
 
-            auditInfo += ";requestID=" + requestId;
+            auditInfo += ";requestID=" + requestId.toHexString();
 
             if (!synchronous) {
 
@@ -332,8 +332,8 @@ public class KeyService extends SubsystemService implements KeyResource {
             return null;
         }
 
-        auditInfo += ";keyID=" + keyId.toString();
-        auditInfo += ";requestID=" + requestId.toString();
+        auditInfo += ";keyID=" + keyId.toHexString();
+        auditInfo += ";requestID=" + requestId.toHexString();
         auditInfo += ";synchronous=" + Boolean.toString(synchronous);
         auditInfo += ";ephemeral=" + Boolean.toString(ephemeral);
 

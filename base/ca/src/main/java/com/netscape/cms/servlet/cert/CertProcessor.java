@@ -343,7 +343,7 @@ public class CertProcessor extends CAProcessor {
                 setInputsIntoRequest(origReq, profile, req, locale);
                 req.setExtData("origNotAfter", BigInteger.valueOf(origNotAfter.getTime()));
                 req.setExtData(AuthManager.AUTHENTICATED_NAME, origSubjectDN);
-                req.setRequestType("renewal");
+                req.setRequestType(Request.RENEWAL_REQUEST);
             } else {
                 setInputsIntoRequest(data, profile, req);
             }
