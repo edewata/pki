@@ -416,11 +416,7 @@ public class KeyClient extends Client {
      */
     public KeyData retrieveKey(KeyId keyId, SymmetricKey sessionKey) throws Exception {
 
-        logger.info("Retrieving key " + keyId + " with session key");
-
-        if (keyId == null) {
-            throw new IllegalArgumentException("KeyId must be specified.");
-        }
+        logger.info("Retrieving key " + keyId.toHexString() + " with session key");
 
         logger.info("Wrapping session key with transport certificate");
 
@@ -436,11 +432,15 @@ public class KeyClient extends Client {
     }
 
     public void processKeyData(Key data, SymmetricKey sessionKey) throws Exception {
-        if (data.getEncryptedData() == null)
+        logger.info("Processing key data");
+
+        if (data.getEncryptedData() == null) {
+            logger.info("No encrypted key data");
             return;
+        }
 
         if (data.getWrapAlgorithm() == null) {
-            // data was encrypted
+            logger.info("Decrypting key data with session key");
             data.setData(crypto.unwrapWithSessionKey(data.getEncryptedData(), sessionKey,
                     encryptAlgorithm, data.getNonceData()));
             return;
@@ -450,6 +450,7 @@ public class KeyClient extends Client {
         byte[] bytes = null;
 
         if (data.getType().equalsIgnoreCase(KeyRequestResource.SYMMETRIC_KEY_TYPE)) {
+            logger.info("Unwrapping symmetric key");
             bytes = crypto.unwrapSymmetricKeyWithSessionKey(
                     data.getEncryptedData(),
                     sessionKey,
@@ -458,6 +459,7 @@ public class KeyClient extends Client {
                     data.getAlgorithm(),
                     data.getSize());
         } else {
+            logger.info("Unwrapping asymmetric key");
             // private key in asymmetric key pair
 
             // get public key from key_info

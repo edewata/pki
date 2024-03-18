@@ -104,27 +104,34 @@ public class KRAKeyRetrieveCLI extends CommandCLI {
             keyClient.setUseOAEP(useOAEP);
 
             if (requestFile != null) {
+                logger.info("Loading " + requestFile);
                 Path path = Paths.get(requestFile);
                 String input = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
 
-                KeyRecoveryRequest req;
-                req = JSONSerializer.fromJSON(input, KeyRecoveryRequest.class);
+                KeyRecoveryRequest req = JSONSerializer.fromJSON(input, KeyRecoveryRequest.class);
                 logger.info("Request: " + req.toJSON());
 
                 if (req.getKeyId() == null) {
                     throw new Exception("Key ID must be specified in the request file.");
                 }
 
+                logger.info("Retrieving key " + req.getKeyId().toHexString());
+
                 if (req.getCertificate() != null) {
-                    keyData = keyClient.retrieveKeyByPKCS12(req.getKeyId(), req.getCertificate(),
+                    logger.info("Retrieving key as PKCS #12 data");
+                    keyData = keyClient.retrieveKeyByPKCS12(
+                            req.getKeyId(),
+                            req.getCertificate(),
                             req.getPassphrase());
                     key = new Key(keyData);
 
                 } else if (req.getPassphrase() != null) {
+                    logger.info("Retrieving key with passphrase");
                     keyData = keyClient.retrieveKeyByPassphrase(req.getKeyId(), req.getPassphrase());
                     key = new Key(keyData);
 
                 } else if (req.getSessionWrappedPassphrase() != null) {
+                    logger.info("Retrieving key with wrapped passphrase");
                     keyData = keyClient.retrieveKeyUsingWrappedPassphrase(req.getKeyId(),
                             Utils.base64decode(req.getTransWrappedSessionKey()),
                             Utils.base64decode(req.getSessionWrappedPassphrase()),
@@ -132,40 +139,32 @@ public class KRAKeyRetrieveCLI extends CommandCLI {
                     key = new Key(keyData);
 
                 } else if (req.getTransWrappedSessionKey() != null) {
+                    logger.info("Retrieving key with wrapped session key");
                     keyData = keyClient.retrieveKeyData(req);
                     key = new Key(keyData);
 
                 } else {
+                    logger.info("Generating session key");
                     SymmetricKey sessionKey = keyClient.generateSessionKey();
                     keyData = keyClient.retrieveKey(req.getKeyId(), sessionKey);
                     key = new Key(keyData);
                     keyClient.processKeyData(key, sessionKey);
                 }
 
-            } else {
-                // Using command line options.
-                if (requestId == null && keyId == null) {
-                    throw new Exception("Either requestID or keyID must be specified");
-                }
+            } else if (keyId != null) {
+
+                logger.info("Retrieving key " + keyId);
 
                 if (passphrase != null) {
-                    if (requestId != null) {
-                        key = keyClient.retrieveKeyByRequestWithPassphrase(
-                                new RequestId(requestId), passphrase);
-                    } else {
-                        keyData = keyClient.retrieveKeyByPassphrase(new KeyId(keyId), passphrase);
-                        key = new Key(keyData);
-                    }
+                    logger.info("Retrieving key with passphrase");
+                    keyData = keyClient.retrieveKeyByPassphrase(new KeyId(keyId), passphrase);
+                    key = new Key(keyData);
 
                 } else {
+                    logger.info("Generating session key");
                     SymmetricKey sessionKey = keyClient.generateSessionKey();
-                    if (requestId != null) {
-                        keyData = keyClient.retrieveKeyByRequest(new RequestId(requestId), sessionKey);
-                        key = new Key(keyData);
-                    } else {
-                        keyData = keyClient.retrieveKey(new KeyId(keyId), sessionKey);
-                        key = new Key(keyData);
-                    }
+                    keyData = keyClient.retrieveKey(new KeyId(keyId), sessionKey);
+                    key = new Key(keyData);
                     keyClient.processKeyData(key, sessionKey);
 
                     clientEncryption = false;
@@ -174,6 +173,32 @@ public class KRAKeyRetrieveCLI extends CommandCLI {
                     // is done locally.
                     key.setEncryptedData(null);
                 }
+
+            } else if (requestId != null) {
+
+                logger.info("Retrieving key by request " + requestId);
+
+                if (passphrase != null) {
+                    logger.info("Retrieving key with passphrase");
+                    key = keyClient.retrieveKeyByRequestWithPassphrase(
+                            new RequestId(requestId), passphrase);
+
+                } else {
+                    logger.info("Generating session key");
+                    SymmetricKey sessionKey = keyClient.generateSessionKey();
+                    keyData = keyClient.retrieveKeyByRequest(new RequestId(requestId), sessionKey);
+                    key = new Key(keyData);
+                    keyClient.processKeyData(key, sessionKey);
+
+                    clientEncryption = false;
+
+                    // No need to return the encrypted data since encryption
+                    // is done locally.
+                    key.setEncryptedData(null);
+                }
+
+            } else {
+                throw new Exception("Either requestID or keyID must be specified");
             }
 
             if (outputDataFile != null) {
