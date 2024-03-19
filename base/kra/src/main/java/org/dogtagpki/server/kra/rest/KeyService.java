@@ -258,8 +258,6 @@ public class KeyService extends SubsystemService implements KeyResource {
         logger.debug("KeyService: request type: " + type);
         auditInfo += ";request type:" + type;
 
-        if (synchronous)  request.setRequestStatus(RequestStatus.APPROVED);
-
         // process request
         KeyData keyData = null;
         try {
@@ -267,12 +265,13 @@ public class KeyService extends SubsystemService implements KeyResource {
                 case Request.KEYRECOVERY_REQUEST:
 
                     logger.info("KeyService: Processing key recovery request");
-                    keyData = recoverKey(data, request);
+                    keyData = recoverKey(data);
                     break;
 
                 case Request.SECURITY_DATA_RECOVERY_REQUEST:
 
                     logger.info("KeyService: Processing security data recovery request");
+                    if (synchronous)  request.setRequestStatus(RequestStatus.APPROVED);
                     validateRequest(data, request);
                     keyData = getKey(keyId, request, data, synchronous, ephemeral);
                     break;
@@ -759,13 +758,20 @@ public class KeyService extends SubsystemService implements KeyResource {
      * @param data
      * @return
      */
-    private KeyData recoverKey(KeyRecoveryRequest data, Request request) throws Exception {
+    private KeyData recoverKey(KeyRecoveryRequest data) throws Exception {
 
         String method = "KeyService.recoverKey: ";
         auditInfo = "KeyService.recoverKey";
         logger.debug(method + "begins.");
 
-        logger.info("Recovering with key request " + request.getRequestId().toHexString());
+        RequestId reqId = data.getRequestId();
+
+        // confirm request exists
+        Request request = requestRepository.readRequest(reqId);
+
+        if (request == null) {
+            throw new HTTPGoneException("Request not found: " + reqId);
+        }
 
         String type = request.getRequestType();
         RequestStatus status = request.getRequestStatus();
