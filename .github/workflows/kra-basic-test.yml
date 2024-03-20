@@ -279,6 +279,63 @@ jobs:
           sed -n 's/^metaInfo:\s*payloadWrapAlgorithm:\(.*\)$/\1/p' output > actual
           diff expected actual
 
+      - name: Check key recovery
+        run: |
+          KEY_ID=$(cat key.id)
+          echo "Key ID: $KEY_ID"
+
+          # submit key recovery request
+          # https://github.com/dogtagpki/pki/wiki/Recovering-Archived-Key
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-recover \
+              --keyID $KEY_ID | tee output
+
+          REQUEST_ID=$(sed -n 's/^ *Request ID: *\(.*\)$/\1/p' output)
+          echo "Request ID: $REQUEST_ID"
+          echo $REQUEST_ID > request.id
+
+          DEC_REQUEST_ID=$(python -c "print(int('$REQUEST_ID', 16))")
+          echo "Dec Key ID: $DEC_REQUEST_ID"
+
+          # get key request record before approval
+          docker exec ds ldapsearch \
+              -H ldap://ds.example.com:3389 \
+              -x \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b "cn=$DEC_REQUEST_ID,ou=kra,ou=requests,dc=kra,dc=pki,dc=example,dc=com" \
+              -o ldif_wrap=no \
+              -LLL | tee output
+
+          # request status should be "svc_pending"
+          echo "svc_pending" > expected
+          sed -n 's/^requestState: *\(.*\)$/\1/p' output > actual
+          diff expected actual
+
+          # approve request
+          # https://github.com/dogtagpki/pki/wiki/Handling-Key-Request
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-request-review \
+              --action approve \
+              $REQUEST_ID
+
+          # get key request record after approval
+          docker exec ds ldapsearch \
+              -H ldap://ds.example.com:3389 \
+              -x \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b "cn=$DEC_REQUEST_ID,ou=kra,ou=requests,dc=kra,dc=pki,dc=example,dc=com" \
+              -o ldif_wrap=no \
+              -LLL | tee output
+
+          # request status should be "approved"
+          echo "approved" > expected
+          sed -n 's/^requestState: *\(.*\)$/\1/p' output > actual
+          diff expected actual
+
       - name: Check key retrieval
         run: |
           KEY_ID=$(cat key.id)
