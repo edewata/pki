@@ -541,7 +541,7 @@ public class KRATool {
     private static final int ID_OFFSET_NAME_VALUE_PAIRS = 1;
     private static final int PWDFILE_NAME_VALUE_PAIRS = 1;
     private static final int NAMING_CONTEXT_NAME_VALUE_PAIRS = 2;
-    private static final int MANDATORY_NAME_VALUE_PAIRS = 4;
+    private static final int MANDATORY_NAME_VALUE_PAIRS = 3;
     private static final int REWRAP_NAME_VALUE_PAIRS = 4;
     private static final int ID_OFFSET_ARGS = 10;
     private static final int REWRAP_ARGS = 16;
@@ -4800,37 +4800,6 @@ public class KRATool {
         // Get current date and time
         mDateOfModify = now(DATE_OF_MODIFY_PATTERN);
 
-        // Check that the correct number of arguments were
-        // submitted to the program
-        if ((args.length != ID_OFFSET_ARGS) &&
-                (args.length != (ID_OFFSET_ARGS + 1)) &&
-                (args.length != (ID_OFFSET_ARGS + 4)) &&
-                (args.length != (ID_OFFSET_ARGS + 5)) &&
-                (args.length != (ID_OFFSET_ARGS + 7)) &&
-                (args.length != REWRAP_ARGS) &&
-                (args.length != (REWRAP_ARGS + 1)) &&
-                (args.length != (REWRAP_ARGS + 2)) &&
-                (args.length != (REWRAP_ARGS + 3)) &&
-                (args.length != (REWRAP_ARGS + 4)) &&
-                (args.length != (REWRAP_ARGS + 5)) &&
-                (args.length != (REWRAP_ARGS + 6)) &&
-                (args.length != (REWRAP_ARGS + 7)) &&
-                (args.length != (REWRAP_ARGS + 9)) &&
-                (args.length != REWRAP_AND_ID_OFFSET_ARGS) &&
-                (args.length != (REWRAP_AND_ID_OFFSET_ARGS + 1)) &&
-                (args.length != (REWRAP_AND_ID_OFFSET_ARGS + 2)) &&
-                (args.length != (REWRAP_AND_ID_OFFSET_ARGS + 3)) &&
-                (args.length != (REWRAP_AND_ID_OFFSET_ARGS + 4)) &&
-                (args.length != (REWRAP_AND_ID_OFFSET_ARGS + 5)) &&
-                (args.length != (REWRAP_AND_ID_OFFSET_ARGS + 6)) &&
-                (args.length != (REWRAP_AND_ID_OFFSET_ARGS + 7)) &&
-                (args.length != (REWRAP_AND_ID_OFFSET_ARGS + 8)) &&
-                (args.length != (REWRAP_AND_ID_OFFSET_ARGS + 9))) {
-            System.err.println("ERROR:  Incorrect number of arguments!"
-                              + NEWLINE);
-            printUsage();
-            System.exit(0);
-        }
         List<String> newArgs = new ArrayList<>();
 
         // Process command-line arguments
