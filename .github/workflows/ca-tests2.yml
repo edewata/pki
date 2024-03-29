@@ -73,6 +73,11 @@ jobs:
     needs: build
     uses: ./.github/workflows/ca-hsm-operation-test.yml
 
+  ca-enrollment-pin-test:
+    name: CA with PIN-based enrollment
+    needs: build
+    uses: ./.github/workflows/ca-enrollment-pin-test.yml
+
   scep-test:
     name: SCEP responder
     needs: build
