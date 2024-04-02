@@ -30,10 +30,10 @@ jobs:
       - name: Set up first DS container
         run: |
           tests/bin/ds-container-create.sh \
+              --image=${{ env.DB_IMAGE }} \
               --base-dn="dc=pki1,dc=example,dc=com" \
               ds1
         env:
-          IMAGE: ${{ env.DB_IMAGE }}
           HOSTNAME: ds1.example.com
           PASSWORD: Secret.123
 
@@ -217,10 +217,10 @@ jobs:
       - name: Set up second DS container
         run: |
           tests/bin/ds-container-create.sh \
+              --image=${{ env.DB_IMAGE }} \
               --base-dn="dc=pki2,dc=example,dc=com" \
               ds2
         env:
-          IMAGE: ${{ env.DB_IMAGE }}
           HOSTNAME: ds2.example.com
           PASSWORD: Secret.123
 

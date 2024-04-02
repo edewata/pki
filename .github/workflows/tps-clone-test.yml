@@ -32,9 +32,10 @@ jobs:
 
       - name: Set up primary DS container
         run: |
-          tests/bin/ds-container-create.sh primaryds
+          tests/bin/ds-container-create.sh \
+              --image=${{ env.DB_IMAGE }} \
+              primaryds
         env:
-          IMAGE: ${{ env.DB_IMAGE }}
           HOSTNAME: primaryds.example.com
           PASSWORD: Secret.123
 
@@ -95,9 +96,10 @@ jobs:
 
       - name: Set up secondary DS container
         run: |
-          tests/bin/ds-container-create.sh secondaryds
+          tests/bin/ds-container-create.sh \
+              --image=${{ env.DB_IMAGE }} \
+              secondaryds
         env:
-          IMAGE: ${{ env.DB_IMAGE }}
           HOSTNAME: secondaryds.example.com
           PASSWORD: Secret.123
 

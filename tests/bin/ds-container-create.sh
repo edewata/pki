@@ -13,9 +13,10 @@ VERBOSE=
 DEBUG=
 
 usage() {
-    echo "Usage: $SCRIPT_NAME [OPTIONS]"
+    echo "Usage: $SCRIPT_NAME [OPTIONS] <name>"
     echo
     echo "Options:"
+    echo "    --image=<image>        Container image (default: pki-runner)"
     echo "    --suffix=<DN>          Suffix (default: dc=example,dc=com)"
     echo "    --base-dn=<DN>         Base DN (default: dc=pki,dc=example,dc=com)"
     echo " -v,--verbose              Run in verbose mode."
@@ -32,6 +33,9 @@ while getopts v-: arg ; do
         LONG_OPTARG="${OPTARG#*=}"
 
         case $OPTARG in
+        image=?*)
+            IMAGE="$LONG_OPTARG"
+            ;;
         suffix=?*)
             SUFFIX="$LONG_OPTARG"
             ;;
@@ -52,7 +56,7 @@ while getopts v-: arg ; do
         '')
             break # "--" terminates argument processing
             ;;
-        suffix* | base-dn*)
+        image* | suffix* | base-dn*)
             echo "ERROR: Missing argument for --$OPTARG option" >&2
             exit 1
             ;;
@@ -72,7 +76,9 @@ create_server() {
 
     echo "Creating DS server"
 
-    $SCRIPT_DIR/runner-init.sh $NAME
+    $SCRIPT_DIR/runner-init.sh \
+        --image=$IMAGE \
+        $NAME
 
     docker exec $NAME dnf install -y 389-ds-base
 
@@ -108,7 +114,9 @@ create_container() {
         -p 3636 \
         $IMAGE > /dev/null
 
-    $SCRIPT_DIR/ds-container-start.sh $NAME
+    $SCRIPT_DIR/ds-container-start.sh \
+        --image=$IMAGE \
+        $NAME
 
     echo "Creating certs folder"
 
@@ -152,19 +160,19 @@ NAME=$1
 
 if [ "$NAME" = "" ]
 then
-    echo "Usage: ds-container-create.sh <name>"
+    echo "ERROR: Missing container name"
     exit 1
 fi
 
 if [ "$PASSWORD" = "" ]
 then
-    echo "Missing Directory Manager password"
+    echo "ERROR: Missing Directory Manager password"
     exit 1
 fi
 
 if [ "$IMAGE" = "" ]
 then
-    IMAGE=quay.io/389ds/dirsrv
+    IMAGE=pki-runner
 fi
 
 if [ "$SUFFIX" = "" ] && [ "$BASE_DN" = "" ]

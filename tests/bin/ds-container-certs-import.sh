@@ -2,39 +2,78 @@
 
 # https://fy.blackhats.net.au/blog/html/2020/03/28/389ds_in_containers.html
 
-NAME=$1
+SCRIPT_PATH=$(readlink -f "$0")
+SCRIPT_NAME=$(basename "$SCRIPT_PATH")
+SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
 
-if [ "$NAME" == "" ]
-then
-    echo "Usage: ds-container-certs-import.sh <name> <input>"
-    exit 1
-fi
+VERBOSE=
+DEBUG=
 
-INPUT=$2
+usage() {
+    echo "Usage: $SCRIPT_NAME [OPTIONS] <name> <input>"
+    echo
+    echo "Options:"
+    echo "    --image=<image>        Container image (default: pki-runner)"
+    echo " -v,--verbose              Run in verbose mode."
+    echo "    --debug                Run in debug mode."
+    echo "    --help                 Show help message."
+}
 
-if [ "$INPUT" == "" ]
-then
-    echo "Usage: ds-container-certs-import.sh <name> <input>"
-    exit 1
-fi
+while getopts v-: arg ; do
+    case $arg in
+    v)
+        VERBOSE=true
+        ;;
+    -)
+        LONG_OPTARG="${OPTARG#*=}"
 
-if [ "$PASSWORD" == "" ]
-then
-    PASSWORD=Secret.123
-fi
+        case $OPTARG in
+        image=?*)
+            IMAGE="$LONG_OPTARG"
+            ;;
+        verbose)
+            VERBOSE=true
+            ;;
+        debug)
+            VERBOSE=true
+            DEBUG=true
+            ;;
+        help)
+            usage
+            exit
+            ;;
+        '')
+            break # "--" terminates argument processing
+            ;;
+        image*)
+            echo "ERROR: Missing argument for --$OPTARG option" >&2
+            exit 1
+            ;;
+        *)
+            echo "ERROR: Illegal option --$OPTARG" >&2
+            exit 1
+            ;;
+        esac
+        ;;
+    \?)
+        exit 1 # getopts already reported the illegal option
+        ;;
+    esac
+done
 
 import_certs_into_server() {
 
-    echo "Importing DS certs into server"
+    echo "Importing $INPUT into $NAME"
 
     docker cp $INPUT $NAME:certs.p12
 
-    docker exec $NAME pki \
+    echo "Importing certs into NSS database in $NAME"
+
+    docker exec $NAME pk12util \
         -d /etc/dirsrv/slapd-localhost \
-        -C /etc/dirsrv/slapd-localhost/pwdfile.txt \
-        pkcs12-import \
-        --pkcs12 certs.p12 \
-        --pkcs12-password Secret.123
+        -k /etc/dirsrv/slapd-localhost/pwdfile.txt \
+        -i certs.p12 \
+        -W $PASSWORD
 
     echo "Configuring trust flags"
 
@@ -87,7 +126,35 @@ import_certs_into_container() {
         -nokeys
 }
 
-if [ "$IMAGE" == "" ]
+# remove parsed options and args from $@ list
+shift $((OPTIND-1))
+
+NAME=$1
+INPUT=$2
+
+if [ "$NAME" == "" ]
+then
+    echo "ERROR: Missing container name"
+    exit 1
+fi
+
+if [ "$INPUT" == "" ]
+then
+    echo "ERROR: Missing input file"
+    exit 1
+fi
+
+if [ "$PASSWORD" == "" ]
+then
+    PASSWORD=Secret.123
+fi
+
+if [ "$IMAGE" = "" ]
+then
+    IMAGE=pki-runner
+fi
+
+if [ "$IMAGE" == "pki-runner" ]
 then
     import_certs_into_server
 else

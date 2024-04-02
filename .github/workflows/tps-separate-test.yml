@@ -29,9 +29,10 @@ jobs:
 
       - name: Set up CA DS container
         run: |
-          tests/bin/ds-container-create.sh cads
+          tests/bin/ds-container-create.sh \
+              --image=${{ env.DB_IMAGE }} \
+              cads
         env:
-          IMAGE: ${{ env.DB_IMAGE }}
           HOSTNAME: cads.example.com
           PASSWORD: Secret.123
 
@@ -71,9 +72,10 @@ jobs:
 
       - name: Set up KRA DS container
         run: |
-          tests/bin/ds-container-create.sh krads
+          tests/bin/ds-container-create.sh \
+              --image=${{ env.DB_IMAGE }} \
+              krads
         env:
-          IMAGE: ${{ env.DB_IMAGE }}
           HOSTNAME: krads.example.com
           PASSWORD: Secret.123
 
@@ -119,9 +121,10 @@ jobs:
 
       - name: Set up TKS DS container
         run: |
-          tests/bin/ds-container-create.sh tksds
+          tests/bin/ds-container-create.sh \
+              --image=${{ env.DB_IMAGE }} \
+              tksds
         env:
-          IMAGE: ${{ env.DB_IMAGE }}
           HOSTNAME: tksds.example.com
           PASSWORD: Secret.123
 
@@ -165,9 +168,10 @@ jobs:
 
       - name: Set up TPS DS container
         run: |
-          tests/bin/ds-container-create.sh tpsds
+          tests/bin/ds-container-create.sh \
+              --image=${{ env.DB_IMAGE }} \
+              tpsds
         env:
-          IMAGE: ${{ env.DB_IMAGE }}
           HOSTNAME: tpsds.example.com
           PASSWORD: Secret.123
 

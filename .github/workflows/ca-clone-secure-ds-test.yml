@@ -33,7 +33,6 @@ jobs:
         run: |
           tests/bin/ds-container-create.sh primaryds
         env:
-          IMAGE: pki-runner
           HOSTNAME: primaryds.example.com
           PASSWORD: Secret.123
 
@@ -141,7 +140,6 @@ jobs:
         run: |
           tests/bin/ds-container-create.sh secondaryds
         env:
-          IMAGE: pki-runner
           HOSTNAME: secondaryds.example.com
           PASSWORD: Secret.123
 

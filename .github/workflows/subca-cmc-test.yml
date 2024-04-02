@@ -30,9 +30,9 @@ jobs:
 
       - name: Set up root DS container
         run: |
-          tests/bin/ds-container-create.sh rootds
+          tests/bin/ds-container-create.sh \
+              --image=${{ env.DB_IMAGE }} \rootds
         env:
-          IMAGE: ${{ env.DB_IMAGE }}
           HOSTNAME: rootds.example.com
           PASSWORD: Secret.123
 
@@ -84,9 +84,10 @@ jobs:
 
       - name: Set up subordinate DS container
         run: |
-          tests/bin/ds-container-create.sh subds
+          tests/bin/ds-container-create.sh \
+              --image=${{ env.DB_IMAGE }} \
+              subds
         env:
-          IMAGE: ${{ env.DB_IMAGE }}
           HOSTNAME: subds.example.com
           PASSWORD: Secret.123
 

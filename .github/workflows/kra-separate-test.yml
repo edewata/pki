@@ -30,9 +30,10 @@ jobs:
 
       - name: Set up root CA DS container
         run: |
-          tests/bin/ds-container-create.sh rootcads
+          tests/bin/ds-container-create.sh \
+              --image=${{ env.DB_IMAGE }} \
+              rootcads
         env:
-          IMAGE: ${{ env.DB_IMAGE }}
           HOSTNAME: rootcads.example.com
           PASSWORD: Secret.123
 
@@ -101,9 +102,10 @@ jobs:
 
       - name: Set up sub CA DS container
         run: |
-          tests/bin/ds-container-create.sh subcads
+          tests/bin/ds-container-create.sh \
+              --image=${{ env.DB_IMAGE }} \
+              subcads
         env:
-          IMAGE: ${{ env.DB_IMAGE }}
           HOSTNAME: subcads.example.com
           PASSWORD: Secret.123
 
@@ -203,9 +205,10 @@ jobs:
 
       - name: Set up KRA DS container
         run: |
-          tests/bin/ds-container-create.sh krads
+          tests/bin/ds-container-create.sh \
+              --image=${{ env.DB_IMAGE }} \
+              krads
         env:
-          IMAGE: ${{ env.DB_IMAGE }}
           HOSTNAME: krads.example.com
           PASSWORD: Secret.123
 

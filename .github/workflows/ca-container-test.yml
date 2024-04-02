@@ -233,9 +233,10 @@ jobs:
 
       - name: Set up DS container
         run: |
-          tests/bin/ds-container-create.sh ds
+          tests/bin/ds-container-create.sh \
+              --image=${{ env.DB_IMAGE }} \
+              ds
         env:
-          IMAGE: ${{ env.DB_IMAGE }}
           HOSTNAME: ds.example.com
           PASSWORD: Secret.123
 
