@@ -70,6 +70,24 @@ jobs:
               -e "/^$VALIDITY_DEFAULT.range=.*$/a $VALIDITY_DEFAULT.rangeUnit=minute" \
               /var/lib/pki/pki-tomcat/conf/ca/profiles/ca/caUserCert.cfg
 
+          # add CRL distribution point extension
+          URI="ldap://ds.example.com:3389/cn=MasterCRL,ou=crlIssuingPoints,ou=ca,dc=ca,dc=pki,dc=example,dc=com?certificateRevocationList"
+          docker exec pki sed -i \
+              -e "s/^\(policyset.userCertSet.list\)=\(.*\)$/\1=\2,11/" \
+              -e '$ a policyset.userCertSet.11.constraint.class_id=noConstraintImpl' \
+              -e '$ a policyset.userCertSet.11.constraint.name=No Constraint' \
+              -e '$ a policyset.userCertSet.11.default.class_id=crlDistributionPointsExtDefaultImpl' \
+              -e '$ a policyset.userCertSet.11.default.name=CRL Distribution Points Extension Default' \
+              -e '$ a policyset.userCertSet.11.default.params.crlDistPointsCritical=false' \
+              -e '$ a policyset.userCertSet.11.default.params.crlDistPointsNum=1' \
+              -e '$ a policyset.userCertSet.11.default.params.crlDistPointsEnable_0=true' \
+              -e '$ a policyset.userCertSet.11.default.params.crlDistPointsIssuerName_0=cn=CA Signing Certificate,ou=pki-tomcat,o=EXAMPLE' \
+              -e '$ a policyset.userCertSet.11.default.params.crlDistPointsIssuerType_0=DirectoryName' \
+              -e "\$ a policyset.userCertSet.11.default.params.crlDistPointsPointName_0=$URI" \
+              -e '$ a policyset.userCertSet.11.default.params.crlDistPointsPointType_0=URIName' \
+              -e '$ a policyset.userCertSet.11.default.params.crlDistPointsReasons_0=' \
+              /var/lib/pki/pki-tomcat/conf/ca/profiles/ca/caUserCert.cfg
+
           # check updated profile
           docker exec pki cat /var/lib/pki/pki-tomcat/conf/ca/profiles/ca/caUserCert.cfg
 
@@ -90,8 +108,8 @@ jobs:
 
       - name: Initialize PKI client
         run: |
-          docker exec pki pki-server cert-export ca_signing --cert-file ca_signing.crt
-          docker exec pki pki client-cert-import ca_signing --ca-cert ca_signing.crt
+          docker exec pki pki-server cert-export ca_signing --cert-file $SHARED/ca_signing.crt
+          docker exec pki pki client-cert-import ca_signing --ca-cert $SHARED/ca_signing.crt
           docker exec pki pki pkcs12-import \
               --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
               --pkcs12-password Secret.123
@@ -136,22 +154,44 @@ jobs:
 
       - name: Enroll user 1 cert
         run: |
+          # request cert
           docker exec pki pki client-cert-request uid=testuser1 | tee output
 
           REQUEST_ID=$(sed -n -e 's/^ *Request ID: *\(.*\)$/\1/p' output)
           echo "REQUEST_ID: $REQUEST_ID"
 
+          # issue cert
           docker exec pki pki -n caadmin ca-cert-request-approve $REQUEST_ID --force | tee output
+
           CERT_ID=$(sed -n -e 's/^ *Certificate ID: *\(.*\)$/\1/p' output)
           echo "CERT_ID: $CERT_ID"
           echo $CERT_ID > cert.id
 
+          # check cert status
           docker exec pki pki ca-cert-show $CERT_ID | tee output
 
           # cert should be valid
           sed -n "s/^ *Status: \(.*\)$/\1/p" output > actual
           echo "VALID" > expected
           diff expected actual
+
+          # check cert extension
+          docker exec pki pki ca-cert-export $CERT_ID --output-file testuser1.crt
+          docker exec pki openssl x509 -text -noout -in testuser1.crt | tee output
+
+          # check CRL distribution point extension
+          echo "X509v3 CRL Distribution Points: " > expected
+          echo "URI:ldap://ds.example.com:3389/cn=MasterCRL,ou=crlIssuingPoints,ou=ca,dc=ca,dc=pki,dc=example,dc=com?certificateRevocationList" >> expected
+          sed -En '1N;$!N;s/^ *(X509v3 CRL Distribution Points:.*)\n.*\n *(\S*).*$/\1\n\2/p;D' output | tee actual
+          diff expected actual
+
+          docker exec pki openssl verify \
+              -extended_crl \
+              -crl_check_all \
+              -crl_download \
+              -CAfile $SHARED/ca_signing.crt \
+              -verbose \
+              testuser1.crt || true
 
       - name: Revoke user 1 cert
         run: |
@@ -203,6 +243,42 @@ jobs:
           echo "1" > expected
           diff expected actual
 
+          # combine CA signing cert and CRL
+          docker exec pki openssl crl \
+              -inform DER \
+              -in $FILENAME \
+              -outform PEM \
+              -out $SHARED/crl.pem
+          cat ca_signing.crt crl.pem > crl_chain.pem
+
+          # check with OpenSSL
+          docker exec pki openssl verify \
+              -crl_check \
+              -CAfile $SHARED/crl_chain.pem \
+              testuser1.crt \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          echo "UID = testuser1" > expected
+          echo "error 23 at 0 depth lookup: certificate revoked" >> expected
+          echo "error testuser1.crt: verification failed" >> expected
+          diff expected stderr
+
+          # check with NSS
+          docker exec pki /usr/lib64/nss/unsupported-tools/vfychain \
+              -d /root/.dogtag/nssdb \
+              -a \
+              -u 0 \
+              -pp \
+              -g leaf \
+              -m crl \
+              testuser1.crt \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          echo "stdout:"
+          cat stdout
+          echo "stderr:"
+          cat stderr
+
       - name: Unrevoke user 1 cert
         run: |
           CERT_ID=$(cat cert.id)
@@ -253,24 +329,81 @@ jobs:
           echo "0" > expected
           diff expected actual
 
+          # combine CA signing cert and CRL
+          docker exec pki openssl crl \
+              -inform DER \
+              -in $FILENAME \
+              -outform PEM \
+              -out $SHARED/crl.pem
+          cat ca_signing.crt crl.pem > crl_chain.pem
+
+          # check with OpenSSL
+          docker exec pki openssl verify \
+              -crl_check \
+              -CAfile $SHARED/crl_chain.pem \
+              testuser1.crt \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          echo "testuser1.crt: OK" > expected
+          diff expected stdout
+
+          # check with NSS
+          docker exec pki /usr/lib64/nss/unsupported-tools/vfychain \
+              -d /root/.dogtag/nssdb \
+              -a \
+              -u 0 \
+              -pp \
+              -g leaf \
+              -m crl \
+              testuser1.crt \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          echo "stdout:"
+          cat stdout
+          echo "stderr:"
+          cat stderr
+
       - name: Enroll user 2 cert
         run: |
+          # request cert
           docker exec pki pki client-cert-request uid=testuser2 | tee output
 
           REQUEST_ID=$(sed -n -e 's/^ *Request ID: *\(.*\)$/\1/p' output)
           echo "REQUEST_ID: $REQUEST_ID"
 
+          # issue cert
           docker exec pki pki -n caadmin ca-cert-request-approve $REQUEST_ID --force | tee output
+
           CERT_ID=$(sed -n -e 's/^ *Certificate ID: *\(.*\)$/\1/p' output)
           echo "CERT_ID: $CERT_ID"
           echo $CERT_ID > cert.id
 
+          # check cert status
           docker exec pki pki ca-cert-show $CERT_ID | tee output
 
           # cert should be valid
           sed -n "s/^ *Status: \(.*\)$/\1/p" output > actual
           echo "VALID" > expected
           diff expected actual
+
+          # check cert extension
+          docker exec pki pki ca-cert-export $CERT_ID --output-file testuser2.crt
+          docker exec pki openssl x509 -text -noout -in testuser2.crt | tee output
+
+          # check CRL distribution point extension
+          echo "X509v3 CRL Distribution Points: " > expected
+          echo "URI:ldap://ds.example.com:3389/cn=MasterCRL,ou=crlIssuingPoints,ou=ca,dc=ca,dc=pki,dc=example,dc=com?certificateRevocationList" >> expected
+          echo "DirName:O = EXAMPLE, OU = pki-tomcat, CN = CA Signing Certificate" >> expected
+          sed -En 'N;N;N; s/^ *(X509v3 CRL Distribution Points: .*)\n.*\n *(\S*).*\n *(.*)$/\1\n\2\n\3/p' output | tee actual
+          diff expected actual || true
+
+          docker exec pki openssl verify \
+              -extended_crl \
+              -crl_check_all \
+              -crl_download \
+              -CAfile $SHARED/ca_signing.crt \
+              -verbose \
+              testuser2.crt || true
 
       - name: Revoke user 2 cert
         run: |
@@ -321,6 +454,42 @@ jobs:
           grep "Serial Number:" output | wc -l > actual
           echo "1" > expected
           diff expected actual
+
+          # combine CA signing cert and CRL
+          docker exec pki openssl crl \
+              -inform DER \
+              -in $FILENAME \
+              -outform PEM \
+              -out $SHARED/crl.pem
+          cat ca_signing.crt crl.pem > crl_chain.pem
+
+          # check with OpenSSL
+          docker exec pki openssl verify \
+              -crl_check \
+              -CAfile $SHARED/crl_chain.pem \
+              testuser2.crt \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          echo "UID = testuser2" > expected
+          echo "error 23 at 0 depth lookup: certificate revoked" >> expected
+          echo "error testuser2.crt: verification failed" >> expected
+          diff expected stderr
+
+          # check with NSS
+          docker exec pki /usr/lib64/nss/unsupported-tools/vfychain \
+              -d /root/.dogtag/nssdb \
+              -a \
+              -u 0 \
+              -pp \
+              -g leaf \
+              -m crl \
+              testuser2.crt \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          echo "stdout:"
+          cat stdout
+          echo "stderr:"
+          cat stderr
 
       - name: Wait for user 2 cert expiration
         run: |
@@ -385,6 +554,41 @@ jobs:
           grep "Serial Number:" output | wc -l > actual
           echo "0" > expected
           diff expected actual
+
+          # combine CA signing cert and CRL
+          docker exec pki openssl crl \
+              -inform DER \
+              -in $FILENAME \
+              -outform PEM \
+              -out $SHARED/crl.pem
+          cat ca_signing.crt crl.pem > crl_chain.pem
+
+          docker exec pki openssl verify \
+              -crl_check \
+              -CAfile $SHARED/crl_chain.pem \
+              testuser2.crt \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          echo "UID = testuser2" > expected
+          echo "error 10 at 0 depth lookup: certificate has expired" >> expected
+          echo "error testuser2.crt: verification failed" >> expected
+          diff expected stderr
+
+          # check with NSS
+          docker exec pki /usr/lib64/nss/unsupported-tools/vfychain \
+              -d /root/.dogtag/nssdb \
+              -a \
+              -u 0 \
+              -pp \
+              -g leaf \
+              -m crl \
+              testuser2.crt \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          echo "stdout:"
+          cat stdout
+          echo "stderr:"
+          cat stderr
 
       - name: Remove CA
         run: docker exec pki pkidestroy -i pki-tomcat -s CA -v
