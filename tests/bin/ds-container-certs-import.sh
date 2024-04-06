@@ -13,7 +13,7 @@ usage() {
     echo "Usage: $SCRIPT_NAME [OPTIONS] <name> <input>"
     echo
     echo "Options:"
-    echo "    --image=<image>        Container image (default: pki-base)"
+    echo "    --image=<image>        Container image (default: pki-runner)"
     echo " -v,--verbose              Run in verbose mode."
     echo "    --debug                Run in debug mode."
     echo "    --help                 Show help message."
@@ -151,10 +151,10 @@ fi
 
 if [ "$IMAGE" = "" ]
 then
-    IMAGE=pki-base
+    IMAGE=pki-runner
 fi
 
-if [ "$IMAGE" == "pki-base" ]
+if [ "$IMAGE" == "pki-runner" ]
 then
     import_certs_into_server
 else

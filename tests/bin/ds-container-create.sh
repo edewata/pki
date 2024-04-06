@@ -16,7 +16,7 @@ usage() {
     echo "Usage: $SCRIPT_NAME [OPTIONS] <name>"
     echo
     echo "Options:"
-    echo "    --image=<image>        Container image (default: pki-base)"
+    echo "    --image=<image>        Container image (default: pki-runner)"
     echo "    --suffix=<DN>          Suffix (default: dc=example,dc=com)"
     echo "    --base-dn=<DN>         Base DN (default: dc=pki,dc=example,dc=com)"
     echo " -v,--verbose              Run in verbose mode."
@@ -172,7 +172,7 @@ fi
 
 if [ "$IMAGE" = "" ]
 then
-    IMAGE=pki-base
+    IMAGE=pki-runner
 fi
 
 if [ "$SUFFIX" = "" ] && [ "$BASE_DN" = "" ]
@@ -196,7 +196,7 @@ if [ "$DEBUG" = true ] ; then
     echo "BASE_DN: $BASE_DN"
 fi
 
-if [ "$IMAGE" = "pki-base" ]
+if [ "$IMAGE" = "pki-runner" ]
 then
     create_server
 else
