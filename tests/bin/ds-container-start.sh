@@ -13,7 +13,7 @@ usage() {
     echo "Usage: $SCRIPT_NAME [OPTIONS] <name>"
     echo
     echo "Options:"
-    echo "    --image=<image>        Container image (default: pki-runner)"
+    echo "    --image=<image>        Container image (default: pki-base)"
     echo " -v,--verbose              Run in verbose mode."
     echo "    --debug                Run in debug mode."
     echo "    --help                 Show help message."
@@ -79,7 +79,7 @@ fi
 
 if [ "$IMAGE" = "" ]
 then
-    IMAGE=pki-runner
+    IMAGE=pki-base
 fi
 
 if [ "$MAX_WAIT" == "" ]
@@ -90,7 +90,7 @@ fi
 echo "Starting DS container"
 start_time=$(date +%s)
 
-if [ "$IMAGE" == "pki-runner" ]
+if [ "$IMAGE" == "pki-base" ]
 then
     docker exec $NAME dsctl localhost start
 else
