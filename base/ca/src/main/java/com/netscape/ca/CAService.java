@@ -792,9 +792,10 @@ public class CAService implements IService {
 
         // set issuer, serial number
         try {
+            logger.info("CAService: Generating cert serial number");
             BigInteger serialNo = cr.getNextSerialNumber();
-            logger.info("CAService: Signing cert 0x" + serialNo.toString(16));
 
+            logger.info("CAService: Signing cert 0x" + serialNo.toString(16));
             certi.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(serialNo));
 
         } catch (EBaseException e) {

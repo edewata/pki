@@ -86,22 +86,22 @@ public class RequestRepository extends Repository {
     @Override
     public void init() throws Exception {
 
-        logger.debug("RequestRepository: Initializing request repository");
-        logger.debug("RequestRepository: - filter: " + filter);
+        logger.info("RequestRepository: Initializing request repository");
+        logger.info("RequestRepository: - filter: " + filter);
 
         DatabaseConfig dbConfig = dbSubsystem.getDBConfigStore();
 
         mBaseDN = dbConfig.getRequestDN() + "," + dbSubsystem.getBaseDN();
-        logger.debug("RequestRepository: - base DN: " + mBaseDN);
+        logger.info("RequestRepository: - base DN: " + mBaseDN);
 
         String value = dbConfig.getString(PROP_REQUEST_ID_GENERATOR, DEFAULT_REQUEST_ID_GENERATOR);
-        logger.debug("RequestRepository: - request ID generator: " + value);
+        logger.info("RequestRepository: - request ID generator: " + value);
         setIDGenerator(value);
 
         if (idGenerator == IDGenerator.RANDOM) {
 
             idLength = dbConfig.getInteger(PROP_REQUEST_ID_LENGTH, DEFAULT_REQUEST_ID_LENGTH);
-            logger.debug("RequestRepository: - request ID length: " + idLength);
+            logger.info("RequestRepository: - request ID length: " + idLength);
 
         } else {
             initLegacyGenerator();
@@ -117,21 +117,21 @@ public class RequestRepository extends Repository {
         DatabaseConfig dbConfig = dbSubsystem.getDBConfigStore();
 
         rangeDN = dbConfig.getRequestRangeDN() + "," + dbSubsystem.getBaseDN();
-        logger.debug("RequestRepository: - range DN: " + rangeDN);
+        logger.info("RequestRepository: - range DN: " + rangeDN);
 
         minSerialName = DatabaseConfig.MIN_REQUEST_NUMBER;
         String minSerial = dbConfig.getBeginRequestNumber();
         if (minSerial != null) {
             mMinSerialNo = new BigInteger(minSerial, mRadix);
         }
-        logger.debug("RequestRepository: - min serial: " + mMinSerialNo);
+        logger.info("RequestRepository: - min serial: " + mMinSerialNo);
 
         maxSerialName = DatabaseConfig.MAX_REQUEST_NUMBER;
         String maxSerial = dbConfig.getEndRequestNumber();
         if (maxSerial != null) {
             mMaxSerialNo = new BigInteger(maxSerial, mRadix);
         }
-        logger.debug("RequestRepository: - max serial: " + mMaxSerialNo);
+        logger.info("RequestRepository: - max serial: " + mMaxSerialNo);
 
         nextMinSerialName = DatabaseConfig.NEXT_MIN_REQUEST_NUMBER;
         String nextMinSerial = dbConfig.getNextBeginRequestNumber();
@@ -140,7 +140,7 @@ public class RequestRepository extends Repository {
         } else {
             mNextMinSerialNo = new BigInteger(nextMinSerial, mRadix);
         }
-        logger.debug("RequestRepository: - next min serial: " + mNextMinSerialNo);
+        logger.info("RequestRepository: - next min serial: " + mNextMinSerialNo);
 
         nextMaxSerialName = DatabaseConfig.NEXT_MAX_REQUEST_NUMBER;
         String nextMaxSerial = dbConfig.getNextEndRequestNumber();
@@ -149,7 +149,7 @@ public class RequestRepository extends Repository {
         } else {
             mNextMaxSerialNo = new BigInteger(nextMaxSerial, mRadix);
         }
-        logger.debug("RequestRepository: - next max serial: " + mNextMaxSerialNo);
+        logger.info("RequestRepository: - next max serial: " + mNextMaxSerialNo);
 
         String lowWaterMark = dbConfig.getRequestLowWaterMark();
         if (lowWaterMark != null) {

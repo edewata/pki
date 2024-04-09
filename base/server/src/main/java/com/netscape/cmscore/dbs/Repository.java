@@ -195,6 +195,7 @@ public abstract class Repository {
     }
 
     protected void setLastSerialNo(BigInteger lastSN) {
+        logger.info("Repository: Setting last serial number to 0x" + lastSN.toString(16));
         mLastSerialNo = lastSN;
     }
 
@@ -219,7 +220,7 @@ public abstract class Repository {
             return;
         }
 
-        logger.debug("Repository: in InitCache");
+        logger.info("Repository: in InitCache");
 
         if (mLastSerialNo != null) {
             return;
@@ -227,6 +228,7 @@ public abstract class Repository {
 
         logger.info("Repository: Getting last serial number in range " + mMinSerialNo + ".." + mMaxSerialNo);
         BigInteger theSerialNo = getLastSerialNumberInRange(mMinSerialNo, mMaxSerialNo);
+        logger.info("Repository: Last serial number in range: " + theSerialNo);
 
         if (theSerialNo == null) {
             // This arises when range has been depleted by servicing
@@ -248,10 +250,11 @@ public abstract class Repository {
 
         if (theSerialNo != null) {
             mLastSerialNo = new BigInteger(theSerialNo.toString());
-            logger.debug("Repository: Last serial number: " + mLastSerialNo);
+            logger.info("Repository: Last serial number: " + mLastSerialNo);
 
         } else {
-            throw new EBaseException("Error in obtaining the last serial number in the repository!");
+            logger.error("Repository: Unable to get the last serial number");
+            throw new EBaseException("Unable to get the last serial number");
         }
     }
 
@@ -271,7 +274,7 @@ public abstract class Repository {
      */
     public synchronized BigInteger peekNextSerialNumber() throws EBaseException {
 
-        logger.debug("Repository:In getTheSerialNumber ");
+        logger.info("Repository:In getTheSerialNumber ");
 
         initCache();
 
@@ -292,7 +295,7 @@ public abstract class Repository {
     public void setTheSerialNumber(BigInteger num) throws EBaseException {
         // mSerialNo is already set. But just in case
 
-        logger.debug("Repository:In setTheSerialNumber " + num);
+        logger.info("Repository: In setTheSerialNumber " + num);
 
         initCache();
 
@@ -314,30 +317,28 @@ public abstract class Repository {
      * @return serial number
      * @exception EBaseException failed to retrieve next serial number
      */
-    public synchronized BigInteger getNextSerialNumber() throws
-            EBaseException {
+    public synchronized BigInteger getNextSerialNumber() throws EBaseException {
 
         if (idGenerator == IDGenerator.RANDOM) {
 
-            logger.debug("Repository: Generating random serial number");
+            logger.info("Repository: Generating random serial number v3");
 
             // JSS BigInt does not allow negative value.
             // The following BigInteger constructor will
             // always create a non-negative number.
             BigInteger id = new BigInteger(idLength, secureRandom);
-            logger.debug("Repository: - id: 0x" + id.toString(16));
+            logger.info("Repository: - serial number: 0x" + id.toString(16));
 
             return id;
         }
 
-        logger.debug("Repository: in getNextSerialNumber. ");
+        logger.info("Repository: Generating sequential serial number");
 
         initCache();
 
         if (mLastSerialNo == null) {
-            logger.error("Repository::getNextSerialNumber() " +
-                       "- mLastSerialNo is null!");
-            throw new EBaseException("mLastSerialNo is null");
+            logger.error("Repository: Missing last sequential serial number");
+            throw new EBaseException("Missing last sequential serial number");
         }
 
         /* Advance the serial number.  checkRange() will check if it exceeds
@@ -346,10 +347,10 @@ public abstract class Repository {
          * mLastSerialNo below, after the call to checkRange().
          */
         mLastSerialNo = mLastSerialNo.add(BigInteger.ONE);
+        logger.info("Repository: - serial number: 0x" + mLastSerialNo.toString(16));
 
         checkRange();
 
-        logger.debug("Repository: getNextSerialNumber: returning " + mLastSerialNo);
         return mLastSerialNo;
     }
 
@@ -384,17 +385,17 @@ public abstract class Repository {
         // if so, move to next range
 
         BigInteger rangeLength = getRangeLength();
-        logger.debug("Repository: range length: " + rangeLength);
+        logger.info("Repository: range length: " + rangeLength);
 
         BigInteger randomLimit = getRandomLimit(rangeLength);
-        logger.debug("Repository: random limit: " + randomLimit);
+        logger.info("Repository: random limit: " + randomLimit);
 
-        logger.debug("Repository: checkRange  mLastSerialNo="+mLastSerialNo);
+        logger.info("Repository: checkRange  mLastSerialNo="+mLastSerialNo);
         if (mLastSerialNo.compareTo( mMaxSerialNo ) > 0 ||
             ((!engine.isPreOpMode()) && randomLimit != null && mCounter.compareTo(randomLimit) > 0)) {
 
             if (dbSubsystem.getEnableSerialMgmt()) {
-                logger.debug("Reached the end of the range.  Attempting to move to next range");
+                logger.info("Reached the end of the range.  Attempting to move to next range");
                 if (!hasNextRange()) {
                     if (rangeLength == null || mCounter.compareTo(rangeLength) >= 0) {
                         throw new DBException(CMS.getUserMessage("CMS_DBS_LIMIT_REACHED",
@@ -664,8 +665,8 @@ public abstract class Repository {
         initCache();
 
         BigInteger numsInRange = getNumbersInRange();
-        logger.debug("Repository: Serial numbers left in range: " + numsInRange);
-        logger.debug("Repository: Last serial number: " + mLastSerialNo);
+        logger.info("Repository: Serial numbers left in range: " + numsInRange);
+        logger.info("Repository: Last serial number: " + mLastSerialNo);
 
         BigInteger numsInNextRange = null;
         BigInteger numsAvail = null;
@@ -673,24 +674,24 @@ public abstract class Repository {
         if ((mNextMaxSerialNo != null) && (mNextMinSerialNo != null)) {
             numsInNextRange = mNextMaxSerialNo.subtract(mNextMinSerialNo).add(BigInteger.ONE);
             numsAvail = numsInRange.add(numsInNextRange);
-            logger.debug("Repository: Serial numbers in next range: " + numsInNextRange);
+            logger.info("Repository: Serial numbers in next range: " + numsInNextRange);
         } else {
             numsAvail = numsInRange;
         }
 
-        logger.debug("Repository: Serial numbers available: " + numsAvail);
-        logger.debug("Repository: Low water mark: " + mLowWaterMarkNo);
+        logger.info("Repository: Serial numbers available: " + numsAvail);
+        logger.info("Repository: Low water mark: " + mLowWaterMarkNo);
 
         if ((numsAvail.compareTo(mLowWaterMarkNo) < 0) && (!engine.isPreOpMode())) {
-            logger.debug("Repository: Requesting next range");
+            logger.info("Repository: Requesting next range");
             String nextRange = getNextRange();
-            logger.debug("Repository: next range: " + nextRange);
+            logger.info("Repository: next range: " + nextRange);
 
             mNextMinSerialNo = new BigInteger(nextRange, mRadix);
             if (mNextMinSerialNo == null) {
-                logger.debug("Repository: Next range not available");
+                logger.info("Repository: Next range not available");
             } else {
-                logger.debug("Repository: Next min serial number: " + mNextMinSerialNo.toString(mRadix));
+                logger.info("Repository: Next min serial number: " + mNextMinSerialNo.toString(mRadix));
                 mNextMaxSerialNo = mNextMinSerialNo.add(mIncrementNo).subtract(BigInteger.ONE);
                 numsAvail = numsAvail.add(mIncrementNo);
 

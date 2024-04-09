@@ -111,21 +111,21 @@ public class CertificateRepository extends Repository {
     @Override
     public void init() throws Exception {
 
-        logger.debug("CertificateRepository: Initializing certificate repository");
+        logger.info("CertificateRepository: Initializing certificate repository");
 
         mDBConfig = dbSubsystem.getDBConfigStore();
 
         mBaseDN = mDBConfig.getSerialDN() + "," + dbSubsystem.getBaseDN();
-        logger.debug("CertificateRepository: - base DN: " + mBaseDN);
+        logger.info("CertificateRepository: - base DN: " + mBaseDN);
 
         String value = mDBConfig.getString(PROP_CERT_ID_GENERATOR, DEFAULT_CERT_ID_GENERATOR);
-        logger.debug("CertificateRepository: - cert ID generator: " + value);
+        logger.info("CertificateRepository: - cert ID generator: " + value);
         setIDGenerator(value);
 
         if (idGenerator == IDGenerator.RANDOM) {
 
             idLength = mDBConfig.getInteger(PROP_CERT_ID_LENGTH, DEFAULT_CERT_ID_LENGTH);
-            logger.debug("CertificateRepository: - cert ID length: " + idLength);
+            logger.info("CertificateRepository: - cert ID length: " + idLength);
 
         } else {
             initLegacyGenerator();
@@ -135,21 +135,21 @@ public class CertificateRepository extends Repository {
     public void initLegacyGenerator() throws Exception {
 
         rangeDN = mDBConfig.getSerialRangeDN() + "," + dbSubsystem.getBaseDN();
-        logger.debug("CertificateRepository: - range DN: " + rangeDN);
+        logger.info("CertificateRepository: - range DN: " + rangeDN);
 
         minSerialName = DatabaseConfig.MIN_SERIAL_NUMBER;
         String minSerial = mDBConfig.getBeginSerialNumber();
         if (minSerial != null) {
             mMinSerialNo = new BigInteger(minSerial, mRadix);
         }
-        logger.debug("CertificateRepository: - min serial: " + mMinSerialNo);
+        logger.info("CertificateRepository: - min serial: " + mMinSerialNo);
 
         maxSerialName = DatabaseConfig.MAX_SERIAL_NUMBER;
         String maxSerial = mDBConfig.getEndSerialNumber();
         if (maxSerial != null) {
             mMaxSerialNo = new BigInteger(maxSerial, mRadix);
         }
-        logger.debug("CertificateRepository: - max serial: " + mMaxSerialNo);
+        logger.info("CertificateRepository: - max serial: " + mMaxSerialNo);
 
         nextMinSerialName = DatabaseConfig.NEXT_MIN_SERIAL_NUMBER;
         String nextMinSerial = mDBConfig.getNextBeginSerialNumber();
@@ -158,7 +158,7 @@ public class CertificateRepository extends Repository {
         } else {
             mNextMinSerialNo = new BigInteger(nextMinSerial, mRadix);
         }
-        logger.debug("CertificateRepository: - next min serial: " + mNextMinSerialNo);
+        logger.info("CertificateRepository: - next min serial: " + mNextMinSerialNo);
 
         nextMaxSerialName = DatabaseConfig.NEXT_MAX_SERIAL_NUMBER;
         String nextMaxSerial = mDBConfig.getNextEndSerialNumber();
@@ -167,7 +167,7 @@ public class CertificateRepository extends Repository {
         } else {
             mNextMaxSerialNo = new BigInteger(nextMaxSerial, mRadix);
         }
-        logger.debug("CertificateRepository: - next max serial: " + mNextMaxSerialNo);
+        logger.info("CertificateRepository: - next max serial: " + mNextMaxSerialNo);
 
         String lowWaterMark = mDBConfig.getSerialLowWaterMark();
         if (lowWaterMark != null) {
@@ -199,13 +199,13 @@ public class CertificateRepository extends Repository {
      * @param forceModeChange "true" forces certificate repository mode change
      */
     public void setEnableRandomSerialNumbers(boolean random, boolean updateMode, boolean forceModeChange) {
-        logger.debug("CertificateRepository:  setEnableRandomSerialNumbers   random="+random+"  updateMode="+updateMode);
+        logger.info("CertificateRepository:  setEnableRandomSerialNumbers   random="+random+"  updateMode="+updateMode);
 
         EngineConfig cs = engine.getConfig();
 
         if (mEnableRandomSerialNumbers ^ random || forceModeChange) {
             mEnableRandomSerialNumbers = random;
-            logger.debug("CertificateRepository:  setEnableRandomSerialNumbers   switching to " +
+            logger.info("CertificateRepository:  setEnableRandomSerialNumbers   switching to " +
                       ((random)?PROP_RANDOM_MODE:PROP_SEQUENTIAL_MODE) + " mode");
             if (updateMode) {
                 setCertificateRepositoryMode((mEnableRandomSerialNumbers)? PROP_RANDOM_MODE: PROP_SEQUENTIAL_MODE);
@@ -216,12 +216,13 @@ public class CertificateRepository extends Repository {
             try {
                 lastSerialNumber = getLastSerialNumberInRange(mMinSerialNo,mMaxSerialNo);
             } catch (Exception e) {
+                logger.warn("CertificateRepository: Unable to get last serial number in range: " + e.getMessage(), e);
             }
             if (lastSerialNumber != null) {
                 super.setLastSerialNo(lastSerialNumber);
                 if (mEnableRandomSerialNumbers) {
                     mCounter = lastSerialNumber.subtract(mMinSerialNo).add(BigInteger.ONE);
-                    logger.debug("CertificateRepository:  setEnableRandomSerialNumbers  mCounter="+
+                    logger.info("CertificateRepository:  setEnableRandomSerialNumbers  mCounter="+
                                mCounter+"="+lastSerialNumber+"-"+mMinSerialNo+"+1");
                     long t = System.currentTimeMillis();
                     mDBConfig.putString(PROP_RANDOM_SERIAL_NUMBER_COUNTER, mCounter.toString()+","+t);
@@ -234,6 +235,7 @@ public class CertificateRepository extends Repository {
             try {
                 cs.commit(false);
             } catch (Exception e) {
+                logger.warn("Unable to update CS.cfg: " + e.getMessage(), e);
             }
         }
     }
@@ -244,21 +246,21 @@ public class CertificateRepository extends Repository {
 
         if (mRangeSize == null) {
             mRangeSize = (mMaxSerialNo.subtract(mMinSerialNo)).add(BigInteger.ONE);
-            logger.debug("CertificateRepository: getRandomNumber  mRangeSize="+mRangeSize);
+            logger.info("CertificateRepository: getRandomNumber  mRangeSize="+mRangeSize);
             mBitLength = mRangeSize.bitLength();
-            logger.debug("CertificateRepository: getRandomNumber  mBitLength="+mBitLength+
+            logger.info("CertificateRepository: getRandomNumber  mBitLength="+mBitLength+
                       " >mMinRandomBitLength="+mMinRandomBitLength);
         }
         if (mBitLength < mMinRandomBitLength) {
-            logger.debug("CertificateRepository: getRandomNumber  mBitLength="+mBitLength+
+            logger.info("CertificateRepository: getRandomNumber  mBitLength="+mBitLength+
                       " <mMinRandomBitLength="+mMinRandomBitLength);
-            logger.debug("CertificateRepository: getRandomNumber:  Range size is too small to support random certificate serial numbers.");
+            logger.info("CertificateRepository: getRandomNumber:  Range size is too small to support random certificate serial numbers.");
             throw new EBaseException ("Range size is too small to support random certificate serial numbers.");
         }
 
         BigInteger randomNumber = new BigInteger(mBitLength, secureRandom);
         randomNumber = (randomNumber.multiply(mRangeSize)).shiftRight(mBitLength);
-        logger.debug("CertificateRepository: getRandomNumber  randomNumber="+randomNumber);
+        logger.info("CertificateRepository: getRandomNumber  randomNumber="+randomNumber);
 
         return randomNumber;
     }
@@ -326,34 +328,33 @@ public class CertificateRepository extends Repository {
      * @exception EBaseException failed to retrieve next serial number
      */
     @Override
-    public synchronized BigInteger getNextSerialNumber()
-            throws EBaseException {
+    public synchronized BigInteger getNextSerialNumber() throws EBaseException {
 
         if (idGenerator == IDGenerator.RANDOM) {
             return super.getNextSerialNumber();
         }
 
-        BigInteger nextSerialNumber = null;
-        BigInteger randomNumber = null;
-
         initCache();
-        logger.debug("CertificateRepository: getNextSerialNumber  mEnableRandomSerialNumbers="+mEnableRandomSerialNumbers);
 
         if (mEnableRandomSerialNumbers) {
+
+            logger.info("CertificateRepository: Generating random serial number v1");
+
             int i = 0;
+            BigInteger nextSerialNumber;
             do {
                 if (i > 0) {
-                    logger.debug("CertificateRepository: getNextSerialNumber  regenerating serial number");
+                    logger.info("CertificateRepository: Regenerating random serial number v1");
                 }
-                randomNumber = getRandomNumber();
+                BigInteger randomNumber = getRandomNumber();
                 nextSerialNumber = getRandomSerialNumber(randomNumber);
                 nextSerialNumber = checkSerialNumbers(randomNumber, nextSerialNumber);
                 i++;
             } while (nextSerialNumber == null && i < mMaxCollisionRecoveryRegenerations);
 
             if (nextSerialNumber == null) {
-                logger.error("CertificateRepository: in getNextSerialNumber  nextSerialNumber is null");
-                throw new EBaseException( "nextSerialNumber is null" );
+                logger.error("CertificateRepository: Unable to generate random serial number v1");
+                throw new EBaseException("Unable to generate random serial number v1");
             }
 
             if (mCounter.compareTo(BigInteger.ZERO) >= 0 &&
@@ -363,15 +364,16 @@ public class CertificateRepository extends Repository {
                 nextSerialNumber.compareTo(mMaxSerialNo) <= 0) {
                 mCounter = mCounter.add(BigInteger.ONE);
             }
-            logger.debug("CertificateRepository: getNextSerialNumber  nextSerialNumber="+
-                      nextSerialNumber+"  mCounter="+mCounter);
+
+            logger.info("CertificateRepository: - serial number: 0x" + nextSerialNumber.toString(16));
+            logger.info("CertificateRepository: - counter: " + mCounter);
 
             super.checkRange();
-        } else {
-            nextSerialNumber = super.getNextSerialNumber();
+
+            return nextSerialNumber;
         }
 
-        return nextSerialNumber;
+        return super.getNextSerialNumber();
     }
 
     @Override
@@ -404,9 +406,9 @@ public class CertificateRepository extends Repository {
             return;
         }
 
-        logger.debug("CertificateRepository: Updating counter");
-        logger.debug("CertificateRepository: - enable RSNv1: " + mEnableRandomSerialNumbers);
-        logger.debug("CertificateRepository: - counter: " + mCounter);
+        logger.info("CertificateRepository: Updating counter");
+        logger.info("CertificateRepository: - enable RSNv1: " + mEnableRandomSerialNumbers);
+        logger.info("CertificateRepository: - counter: " + mCounter);
 
         EngineConfig cs = engine.getConfig();
 
@@ -417,11 +419,11 @@ public class CertificateRepository extends Repository {
         }
 
         String crMode = dbSubsystem.getEntryAttribute(mBaseDN, RepositoryRecord.ATTR_DESCRIPTION, "", null);
-        logger.debug("CertificateRepository: - mode: " + crMode);
+        logger.info("CertificateRepository: - mode: " + crMode);
 
         boolean modeChange = (mEnableRandomSerialNumbers && crMode != null && crMode.equals(PROP_SEQUENTIAL_MODE)) ||
                              ((!mEnableRandomSerialNumbers) && crMode != null && crMode.equals(PROP_RANDOM_MODE));
-        logger.debug("CertificateRepository: - mode change: " + modeChange);
+        logger.info("CertificateRepository: - mode change: " + modeChange);
 
         if (modeChange) {
             if (mForceModeChange) {
@@ -441,8 +443,8 @@ public class CertificateRepository extends Repository {
             logger.warn("CertificateRepository: Unable to update CS.cfg: " + e.getMessage(), e);
         }
 
-        logger.debug("CertificateRepository: - enable RSNv1: " + mEnableRandomSerialNumbers);
-        logger.debug("CertificateRepository: - counter: " + mCounter);
+        logger.info("CertificateRepository: - enable RSNv1: " + mEnableRandomSerialNumbers);
+        logger.info("CertificateRepository: - counter: " + mCounter);
     }
 
     private BigInteger getInRangeCount(String fromTime, BigInteger  minSerialNo, BigInteger maxSerialNo)
@@ -533,7 +535,7 @@ public class CertificateRepository extends Repository {
     public BigInteger getLastSerialNumberInRange(BigInteger serial_low_bound, BigInteger serial_upper_bound)
             throws EBaseException {
 
-        logger.debug("CertificateRepository:  in getLastSerialNumberInRange: low "
+        logger.info("CertificateRepository:  in getLastSerialNumberInRange: low "
                 + serial_low_bound + " high " + serial_upper_bound);
 
         if (serial_low_bound == null
@@ -554,11 +556,11 @@ public class CertificateRepository extends Repository {
                              ((!mEnableRandomSerialNumbers) && crMode != null && crMode.equals(PROP_RANDOM_MODE));
         boolean enableRsnAtConfig = mEnableRandomSerialNumbers && engine.isPreOpMode() &&
                                     (crMode == null || crMode.length() == 0);
-        logger.debug("CertificateRepository: getLastSerialNumberInRange"+
+        logger.info("CertificateRepository: getLastSerialNumberInRange"+
                   "  mEnableRandomSerialNumbers="+mEnableRandomSerialNumbers+
                   "  mMinRandomBitLength="+mMinRandomBitLength+
                   "  CollisionRecovery="+mMaxCollisionRecoveryRegenerations+","+mMaxCollisionRecoverySteps);
-        logger.debug("CertificateRepository: getLastSerialNumberInRange  modeChange="+modeChange+
+        logger.info("CertificateRepository: getLastSerialNumberInRange  modeChange="+modeChange+
                   "  enableRsnAtConfig="+enableRsnAtConfig+"  mForceModeChange="+mForceModeChange+
                   ((crMode != null)?"  mode="+crMode:""));
         if (modeChange || enableRsnAtConfig) {
@@ -582,8 +584,9 @@ public class CertificateRepository extends Repository {
         try {
             cs.commit(false);
         } catch (Exception e) {
+            logger.warn("Unable to update CS.cfg: " + e.getMessage(), e);
         }
-        logger.debug("CertificateRepository: getLastSerialNumberInRange  mEnableRandomSerialNumbers="+mEnableRandomSerialNumbers);
+        logger.info("CertificateRepository: getLastSerialNumberInRange  mEnableRandomSerialNumbers="+mEnableRandomSerialNumbers);
 
         String ldapfilter = "("+CertRecord.ATTR_CERT_STATUS+"=*"+")";
 
@@ -593,20 +596,20 @@ public class CertificateRepository extends Repository {
 
         int size = recList.getSize();
 
-        logger.debug("CertificateRepository:getLastSerialNumberInRange: recList size " + size);
+        logger.info("CertificateRepository:getLastSerialNumberInRange: recList size " + size);
 
         if (size <= 0) {
-            logger.debug("CertificateRepository:getLastSerialNumberInRange: index may be empty");
+            logger.info("CertificateRepository:getLastSerialNumberInRange: index may be empty");
 
             BigInteger ret = new BigInteger(serial_low_bound.toString(10));
 
             ret = ret.subtract(BigInteger.ONE);
-            logger.debug("CertificateRepository:getLastCertRecordSerialNo: returning " + ret);
+            logger.info("CertificateRepository:getLastCertRecordSerialNo: returning " + ret);
             return ret;
         }
         int ltSize = recList.getSizeBeforeJumpTo();
 
-        logger.debug("CertificateRepository:getLastSerialNumberInRange: ltSize " + ltSize);
+        logger.info("CertificateRepository:getLastSerialNumberInRange: ltSize " + ltSize);
 
         CertRecord curRec = null;
 
@@ -621,14 +624,14 @@ public class CertificateRepository extends Repository {
 
                 BigInteger serial = curRec.getSerialNumber();
 
-                logger.debug("CertificateRepository:getLastCertRecordSerialNo:  serialno  " + serial);
+                logger.info("CertificateRepository:getLastCertRecordSerialNo:  serialno  " + serial);
 
                 if (((serial.compareTo(serial_low_bound) == 0) || (serial.compareTo(serial_low_bound) == 1)) &&
                         ((serial.compareTo(serial_upper_bound) == 0) || (serial.compareTo(serial_upper_bound) == -1))) {
-                    logger.debug("getLastSerialNumberInRange returning: " + serial);
+                    logger.info("getLastSerialNumberInRange returning: " + serial);
                     if (modeChange && mEnableRandomSerialNumbers) {
                         mCounter = serial.subtract(serial_low_bound).add(BigInteger.ONE);
-                        logger.debug("getLastSerialNumberInRange mCounter: " + mCounter);
+                        logger.info("getLastSerialNumberInRange mCounter: " + mCounter);
                     }
                     return serial;
                 }
@@ -641,10 +644,10 @@ public class CertificateRepository extends Repository {
 
         ret = ret.subtract(BigInteger.ONE);
 
-        logger.debug("CertificateRepository:getLastCertRecordSerialNo: returning " + ret);
+        logger.info("CertificateRepository:getLastCertRecordSerialNo: returning " + ret);
         if (modeChange && mEnableRandomSerialNumbers) {
             mCounter = BigInteger.ZERO;
-            logger.debug("getLastSerialNumberInRange mCounter: " + mCounter);
+            logger.info("getLastSerialNumberInRange mCounter: " + mCounter);
         }
         return ret;
 
@@ -843,7 +846,7 @@ public class CertificateRepository extends Repository {
     private void setCertificateRepositoryMode(String mode) {
         DBSSession s = null;
 
-        logger.debug("CertificateRepository: setCertificateRepositoryMode   setting mode: "+mode);
+        logger.info("CertificateRepository: setCertificateRepositoryMode   setting mode: "+mode);
         try {
             s = dbSubsystem.createSession();
             ModificationSet mods = new ModificationSet();
@@ -1369,12 +1372,12 @@ public class CertificateRepository extends Repository {
             throws EBaseException {
         CertRecordList list = null;
 
-        logger.debug("In findCertRecordsInList with Jumpto " + jumpTo);
+        logger.info("In findCertRecordsInList with Jumpto " + jumpTo);
         try (DBSSession s = dbSubsystem.createSession()) {
             String jumpToVal = null;
 
             if (hardJumpTo) {
-                logger.debug("In findCertRecordsInList with hardJumpto ");
+                logger.info("In findCertRecordsInList with hardJumpto ");
                 jumpToVal = "99";
             } else {
                 int len = jumpTo.length();
