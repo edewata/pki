@@ -1270,6 +1270,7 @@ grant codeBase "file:%s" {
             self.add_subsystem(subsystem)
 
     def get_subsystems(self):
+        logger.info('Subsystems: %s', self.subsystems)
         return list(self.subsystems.values())
 
     def get_subsystem(self, subsystem_name):
