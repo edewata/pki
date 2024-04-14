@@ -105,6 +105,7 @@ class Tomcat(object):
 class PKIServer(object):
 
     BASE_DIR = '/var/lib/pki'
+    CONFIG_DIR = '/etc/pki'
     LOG_DIR = '/var/log/pki'
     SHARE_DIR = '/usr/share/pki'
     REGISTRY_DIR = SYSCONFIG_DIR + '/pki'
@@ -702,7 +703,6 @@ grant codeBase "file:%s" {
         bin_dir = os.path.join(Tomcat.SHARE_DIR, 'bin')
         self.symlink(bin_dir, self.bin_dir, exist_ok=True)
 
-        logger.info('Creating config dir: %s', instance.conf_dir)
         self.create_conf_dir(exist_ok=True)
 
         self.makedirs(self.certs_dir, exist_ok=True)

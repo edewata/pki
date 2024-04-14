@@ -376,8 +376,7 @@ def main(argv):
 
             else:
                 while True:
-                    instance_dir = os.path.join(Tomcat.BASE_DIR, instance_name)
-                    conf_dir = os.path.join(instance_dir, 'conf')
+                    conf_dir = os.path.join(pki.server.PKIServer.CONFIG_DIR, instance_name)
                     nssdb_dir = os.path.join(conf_dir, 'alias')
                     ca_cert = os.path.join(nssdb_dir, "ca.crt")
                     if not os.path.exists(ca_cert):
