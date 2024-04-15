@@ -174,11 +174,11 @@ class PKISubsystem(object):
         self.instance.makedirs(self.conf_dir, exist_ok=exist_ok)
 
         # Link /var/lib/pki/<instance>/<subsystem>/conf
-        # to /var/lib/pki/<instance>/conf/<subsystem>
+        # to ../conf/<subsystem>
 
         conf_link = os.path.join(self.base_dir, 'conf')
         self.instance.symlink(
-            self.conf_dir,
+            os.path.join('..', 'conf', self.name),
             conf_link,
             exist_ok=exist_ok)
 

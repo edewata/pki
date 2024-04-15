@@ -856,7 +856,13 @@ grant codeBase "file:%s" {
 
         self.makedirs(self.nssdb_dir, exist_ok=True)
 
-        self.symlink(self.nssdb_dir, self.nssdb_link, exist_ok=True)
+        # Link /var/lib/pki/<instance>/alias
+        # to conf/alias
+
+        self.symlink(
+            os.path.join('conf', 'alias'),
+            self.nssdb_link,
+            exist_ok=True)
 
         password = self.passwords.get(pki.nssdb.INTERNAL_TOKEN_NAME)
 

@@ -62,12 +62,12 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         subsystem.create_logs(exist_ok=True)
 
         # Link /var/lib/pki/<instance>/<subsystem>/alias
-        # to /var/lib/pki/<instance>/alias
+        # to ../conf/alias
 
         nssdb_link = os.path.join(subsystem.base_dir, 'alias')
 
         instance.symlink(
-            instance.nssdb_link,
+            os.path.join('..', 'conf', 'alias'),
             nssdb_link,
             exist_ok=True)
 
@@ -108,11 +108,13 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
                 subsystem.conf_dir + '/emails')
 
             # Link /var/lib/pki/<instance>/ca/emails
-            # to /var/lib/pki/<instance>/conf/ca/emails
+            # to ../conf/ca/emails
 
-            emails_path = os.path.join(instance.conf_dir, 'ca', 'emails')
             emails_link = os.path.join(instance.base_dir, 'ca', 'emails')
-            instance.symlink(emails_path, emails_link, exist_ok=True)
+            instance.symlink(
+                os.path.join('..', 'conf', 'ca', 'emails'),
+                emails_link,
+                exist_ok=True)
 
             # Copy /usr/share/pki/ca/profiles
             # to /var/lib/pki/<instance>/conf/ca/profiles
@@ -127,10 +129,12 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
                 subsystem.conf_dir + '/profiles')
 
             # Link /var/lib/pki/<instance>/ca/profiles
-            # to /var/lib/pki/<instance>/conf/ca/profiles
-            profiles_path = os.path.join(instance.conf_dir, 'ca', 'profiles')
+            # to ../conf/ca/profiles
             profiles_link = os.path.join(instance.base_dir, 'ca', 'profiles')
-            instance.symlink(profiles_path, profiles_link, exist_ok=True)
+            instance.symlink(
+                os.path.join('..', 'conf', 'ca', 'profiles'),
+                profiles_link,
+                exist_ok=True)
 
             # Copy /usr/share/pki/<subsystem>/conf/flatfile.txt
             # to /var/lib/pki/<instance>/conf/<subsystem>/flatfile.txt

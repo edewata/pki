@@ -67,7 +67,7 @@ jobs:
 
           # TODO: review permissions
           cat > expected << EOF
-          lrwxrwxrwx pkiuser pkiuser alias -> /var/lib/pki/pki-tomcat/conf/alias
+          lrwxrwxrwx pkiuser pkiuser alias -> conf/alias
           lrwxrwxrwx pkiuser pkiuser bin -> /usr/share/tomcat/bin
           drwxrwx--- pkiuser pkiuser ca
           drwxrwx--- pkiuser pkiuser common
@@ -120,11 +120,11 @@ jobs:
 
           # TODO: review permissions
           cat > expected << EOF
-          lrwxrwxrwx pkiuser pkiuser alias -> /var/lib/pki/pki-tomcat/alias
-          lrwxrwxrwx pkiuser pkiuser conf -> /var/lib/pki/pki-tomcat/conf/ca
-          lrwxrwxrwx pkiuser pkiuser emails -> /var/lib/pki/pki-tomcat/conf/ca/emails
+          lrwxrwxrwx pkiuser pkiuser alias -> ../conf/alias
+          lrwxrwxrwx pkiuser pkiuser conf -> ../conf/ca
+          lrwxrwxrwx pkiuser pkiuser emails -> ../conf/ca/emails
           lrwxrwxrwx pkiuser pkiuser logs -> /var/log/pki/pki-tomcat/ca
-          lrwxrwxrwx pkiuser pkiuser profiles -> /var/lib/pki/pki-tomcat/conf/ca/profiles
+          lrwxrwxrwx pkiuser pkiuser profiles -> ../conf/ca/profiles
           lrwxrwxrwx pkiuser pkiuser registry -> /etc/sysconfig/pki/tomcat/pki-tomcat
           EOF
 
