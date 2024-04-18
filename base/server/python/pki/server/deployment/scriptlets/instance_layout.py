@@ -70,6 +70,9 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         # Create /var/lib/pki/<instance>/temp
         instance.makedirs(instance.temp_dir, exist_ok=True)
 
+        # Create /var/lib/pki/<instance>/webapps
+        instance.makedirs(instance.webapps_dir, exist_ok=True)
+
         # Create /var/lib/pki/<instance>/work
         instance.makedirs(instance.work_dir, exist_ok=True)
 
