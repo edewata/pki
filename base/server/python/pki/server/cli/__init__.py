@@ -400,6 +400,7 @@ class RemoveCLI(pki.cli.CLI):
     def print_help(self):
         print('Usage: pki-server remove [OPTIONS] [<instance ID>]')
         print()
+        print('      --remove-config           Remove config files.')
         print('      --remove-logs             Remove logs.')
         print('      --force                   Force removal.')
         print('  -v, --verbose                 Run in verbose mode.')
@@ -420,11 +421,15 @@ class RemoveCLI(pki.cli.CLI):
             sys.exit(1)
 
         instance_name = 'pki-tomcat'
+        remove_config = False
         remove_logs = False
         force = False
 
         for o, _ in opts:
-            if o == '--remove-logs':
+            if o == '--remove-config':
+                remove_config = True
+
+            elif o == '--remove-logs':
                 remove_logs = True
 
             elif o == '--force':
@@ -456,7 +461,10 @@ class RemoveCLI(pki.cli.CLI):
 
         logger.info('Removing instance: %s', instance_name)
 
-        instance.remove(remove_logs=remove_logs, force=force)
+        instance.remove(
+            remove_config=remove_config,
+            remove_logs=remove_logs,
+            force=force)
 
 
 class StatusCLI(pki.cli.CLI):

@@ -268,9 +268,6 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         if config.str2bool(deployer.mdict['pki_registry_enable']):
             instance.remove_registry(force=deployer.force)
 
-        deployer.remove_server_nssdb()
-        instance.remove_passwords(force=deployer.force)
-
         logger.info('Removing %s', instance.service_conf)
         pki.util.remove(instance.service_conf, force=deployer.force)
 
@@ -291,11 +288,19 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
 
         instance.remove_libs(force=deployer.force)
 
-        # Remove /etc/pki/<instance> and /var/lib/pki/<instance>/conf
-        instance.remove_conf_dir(force=deployer.force)
+        if deployer.remove_config:
+
+            # Remove /etc/pki/<instance> and /var/lib/pki/<instance>/conf
+            # if requested
+            deployer.remove_server_nssdb()
+            instance.remove_passwords(force=deployer.force)
+            instance.remove_conf_dir(force=deployer.force)
 
         logger.info('Removing %s', instance.bin_dir)
         pki.util.unlink(instance.bin_dir, force=deployer.force)
+
+        logger.info('Removing %s', instance.nssdb_link)
+        pki.util.unlink(instance.nssdb_link, deployer.force)
 
         if os.path.isdir(instance.base_dir) and not os.listdir(instance.base_dir):
 
