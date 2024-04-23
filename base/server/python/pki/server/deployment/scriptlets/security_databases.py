@@ -57,7 +57,7 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         if instance.get_subsystems():
             return
 
-        if deployer.directory.exists(deployer.mdict['pki_client_dir']):
-            logger.info('Removing %s', deployer.mdict['pki_client_dir'])
-            pki.util.rmtree(deployer.mdict['pki_client_dir'],
-                            deployer.force)
+        #if deployer.directory.exists(deployer.mdict['pki_client_dir']):
+        #    logger.info('Removing %s', deployer.mdict['pki_client_dir'])
+        #    pki.util.rmtree(deployer.mdict['pki_client_dir'],
+        #                    deployer.force)
