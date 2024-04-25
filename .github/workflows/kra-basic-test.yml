@@ -163,6 +163,14 @@ jobs:
         run: |
           docker exec pki cat /etc/pki/pki-tomcat/server.xml
 
+      - name: Check tomcat.conf
+        run: |
+          docker exec pki cat /etc/pki/pki-tomcat/tomcat.conf
+
+      - name: Check systemd config
+        run: |
+          docker exec pki cat /etc/sysconfig/pki-tomcat
+
       - name: Check PKI server logs dir after installation
         run: |
           # check file types, owners, and permissions

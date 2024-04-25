@@ -519,6 +519,12 @@ class PropertyFile(object):
         for line in self.lines:
             print(line)
 
+    def get_line(self, index):
+        return self.lines[index]
+
+    def add_line(self, line):
+        self.lines.append(line)
+
     def insert_line(self, index, line):
         """
         Insert property into the list of properties maintained by this object
@@ -536,11 +542,11 @@ class PropertyFile(object):
         """
         Remove property at specified index from the properties list.
 
-        :param index: location of property to be removed.
+        :param index: index of line to be removed.
         :type index: int
-        :return: None
+        :return: removed line
         """
-        self.lines.pop(index)
+        return self.lines.pop(index)
 
     def index(self, name):
         """
@@ -596,7 +602,7 @@ class PropertyFile(object):
 
         return None
 
-    def set(self, name, value, index=None):
+    def set(self, name, value, index=-1):
         """
         Set value of specified property.
 
@@ -626,7 +632,7 @@ class PropertyFile(object):
                 self.lines[i] = key + self.delimiter + value
                 return
 
-        if index is None:
+        if index < 0:
             self.lines.append(name + self.delimiter + value)
 
         else:

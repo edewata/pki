@@ -430,6 +430,58 @@ class PKIDeployer:
 
         server_config.save()
 
+    def create_tomcat_conf(self, exist_ok=False):
+
+        # Copy /usr/share/pki/server/conf/tomcat.conf to
+        # /var/lib/pki/<instance>/conf/tomcat.conf.
+
+        tomcat_conf = os.path.join(
+            pki.server.PKIServer.SHARE_DIR,
+            'server',
+            'conf',
+            'tomcat.conf')
+
+        self.instance.copy(
+            tomcat_conf,
+            self.instance.tomcat_conf,
+            exist_ok=exist_ok)
+
+        tomcat_conf = pki.PropertyFile(self.instance.tomcat_conf, quote='"')
+        tomcat_conf.read()
+
+        java_home = os.getenv('JAVA_HOME')
+        logger.info('Setting JAVA_HOME to %s', java_home)
+        tomcat_conf.set('JAVA_HOME', java_home)
+
+        logger.info('Setting CATALINA_BASE to %s', self.instance.base_dir)
+        tomcat_conf.set('CATALINA_BASE', self.instance.base_dir)
+
+        logger.info('Setting CATALINA_TMPDIR to %s', self.instance.temp_dir)
+        tomcat_conf.set('CATALINA_TMPDIR', self.instance.temp_dir)
+
+        security_manager = self.mdict['pki_security_manager'].lower()
+        logger.info('Setting SECURITY_MANAGER to %s', security_manager)
+        tomcat_conf.set('SECURITY_MANAGER', security_manager)
+
+        catalina_pid = '/var/run/pki/tomcat/%s.pid' % self.instance.name
+        logger.info('Setting CATALINA_PID to %s', catalina_pid)
+        tomcat_conf.set('CATALINA_PID', catalina_pid)
+
+        logger.info('Setting TOMCAT_USER to %s', self.instance.user)
+        tomcat_conf.set('TOMCAT_USER', self.instance.user)
+
+        tomcat_log = '/var/log/pki/%s/tomcat-initd.log' % self.instance.name
+        logger.info('Setting TOMCAT_LOG to %s', tomcat_log)
+        tomcat_conf.set('TOMCAT_LOG', tomcat_log)
+
+        logger.info('Setting TOMCAT_SECURITY to %s', security_manager)
+        tomcat_conf.set('TOMCAT_SECURITY', security_manager)
+
+        logger.info('Setting PKI_VERSION to %s', pki.specification_version())
+        tomcat_conf.set('PKI_VERSION', pki.specification_version())
+
+        tomcat_conf.write()
+
     def update_rsa_pss_algorithm(self, cert_id, alg_type):
 
         param = 'pki_%s_%s_algorithm' % (cert_id, alg_type)

@@ -760,24 +760,7 @@ grant codeBase "file:%s" {
         self.create_logging_properties(exist_ok=True)
         self.create_web_xml(exist_ok=True)
 
-        # copy /etc/tomcat/tomcat.conf
-        self.copy(
-            Tomcat.TOMCAT_CONF,
-            self.tomcat_conf,
-            exist_ok=True,
-            force=force)
-
-        tomcat_conf = pki.PropertyFile(self.tomcat_conf, quote='"')
-        tomcat_conf.read()
-
-        # store JAVA_HOME from /usr/share/pki/etc/pki.conf
-        java_home = os.getenv('JAVA_HOME')
-        tomcat_conf.set('JAVA_HOME', java_home)
-
-        # store current PKI version
-        tomcat_conf.set('PKI_VERSION', pki.specification_version())
-
-        tomcat_conf.write()
+        self.create_tomcat_conf(exist_ok=True)
 
         service_conf = os.path.join(SYSCONFIG_DIR, 'tomcat')
         self.copy(
@@ -942,6 +925,44 @@ grant codeBase "file:%s" {
                 self.symlink(target, link, exist_ok=exist_ok)
 
         server_config.save()
+
+    def create_tomcat_conf(self, exist_ok=False):
+
+        # Copy /etc/tomcat/tomcat.conf to <instance>/conf/tomcat.conf
+
+        self.copy(
+            Tomcat.TOMCAT_CONF,
+            self.tomcat_conf,
+            exist_ok=exist_ok)
+
+        tomcat_conf = pki.PropertyFile(self.tomcat_conf, quote='"')
+        tomcat_conf.read()
+
+        java_home = os.getenv('JAVA_HOME')
+        logger.info('Setting JAVA_HOME to %s', java_home)
+        tomcat_conf.set('JAVA_HOME', java_home)
+
+        logger.info('Setting CATALINA_BASE to %s', self.base_dir)
+        if tomcat_conf.index('CATALINA_BASE') >= 0:
+            # Update CATALINA_BASE
+            tomcat_conf.set('CATALINA_BASE', self.base_dir)
+        else:
+            index = tomcat_conf.index('CATALINA_HOME')
+            if index >= 0:
+                # Replace CATALINA_HOME with CATALINA_BASE
+                tomcat_conf.remove_line(index)
+                tomcat_conf.set('CATALINA_BASE', self.base_dir, index=index)
+            else:
+                # Add CATALINA_BASE
+                tomcat_conf.set('CATALINA_BASE', self.base_dir)
+
+        logger.info('Setting CATALINA_TMPDIR to %s', self.temp_dir)
+        tomcat_conf.set('CATALINA_TMPDIR', self.temp_dir)
+
+        logger.info('Setting PKI_VERSION to %s', pki.specification_version())
+        tomcat_conf.set('PKI_VERSION', pki.specification_version())
+
+        tomcat_conf.write()
 
     def create_web_xml(self, exist_ok=False):
 

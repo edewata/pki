@@ -41,10 +41,6 @@ jobs:
         run: |
           docker exec pki pki-server create -v
 
-      - name: Start pki-tomcat server
-        run: |
-          docker exec pki pki-server start --wait -v
-
       - name: Check pki-tomcat server base dir after installation
         run: |
           # check file types, owners, and permissions
@@ -96,6 +92,18 @@ jobs:
         if: always()
         run: |
           docker exec pki cat /etc/pki/pki-tomcat/server.xml
+
+      - name: Check pki-tomcat tomcat.conf
+        run: |
+          docker exec pki cat /etc/pki/pki-tomcat/tomcat.conf
+
+      - name: Check pki-tomcat systemd config
+        run: |
+          docker exec pki cat /etc/sysconfig/pki-tomcat
+
+      - name: Start pki-tomcat server
+        run: |
+          docker exec pki pki-server start --wait -v
 
       - name: Check pki-tomcat server logs dir after installation
         run: |
@@ -230,10 +238,6 @@ jobs:
         run: |
           docker exec pki pki-server create tomcat@pki -v
 
-      - name: Start tomcat@pki server
-        run: |
-          docker exec pki pki-server start tomcat@pki --wait -v
-
       - name: Check tomcat@pki server base dir after installation
         run: |
           # check file types, owners, and permissions
@@ -285,6 +289,18 @@ jobs:
         if: always()
         run: |
           docker exec pki cat /var/lib/tomcats/pki/conf/server.xml
+
+      - name: Check tomcat@pki tomcat.conf
+        run: |
+          docker exec pki cat /var/lib/tomcats/pki/conf/tomcat.conf
+
+      - name: Check tomcat@pki systemd config
+        run: |
+          docker exec pki cat /etc/sysconfig/tomcat@pki
+
+      - name: Start tomcat@pki server
+        run: |
+          docker exec pki pki-server start tomcat@pki --wait -v
 
       - name: Check tomcat@pki server logs dir after installation
         run: |
