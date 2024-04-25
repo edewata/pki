@@ -131,7 +131,7 @@ jobs:
           drwxrwx--- pkiuser pkiuser Catalina
           drwxrwx--- pkiuser pkiuser alias
           drwxrwx--- pkiuser pkiuser ca
-          -rw-r--r-- pkiuser pkiuser catalina.policy
+          -rw-rw---- pkiuser pkiuser catalina.policy
           lrwxrwxrwx pkiuser pkiuser catalina.properties -> /usr/share/pki/server/conf/catalina.properties
           drwxrwx--- pkiuser pkiuser certs
           lrwxrwxrwx pkiuser pkiuser context.xml -> /etc/tomcat/context.xml
@@ -405,7 +405,7 @@ jobs:
           drwxrwx--- pkiuser pkiuser Catalina
           drwxrwx--- pkiuser pkiuser alias
           drwxrwx--- pkiuser pkiuser ca
-          -rw-r--r-- pkiuser pkiuser catalina.policy
+          -rw-rw---- pkiuser pkiuser catalina.policy
           lrwxrwxrwx pkiuser pkiuser catalina.properties -> /usr/share/pki/server/conf/catalina.properties
           drwxrwx--- pkiuser pkiuser certs
           lrwxrwxrwx pkiuser pkiuser context.xml -> /etc/tomcat/context.xml

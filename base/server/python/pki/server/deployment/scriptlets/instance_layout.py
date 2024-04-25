@@ -92,6 +92,8 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         else:
             deployer.disable_access_log()
 
+        instance.create_catalina_policy()
+
         shared_conf_path = os.path.join(
             pki.server.PKIServer.SHARE_DIR,
             'server',
