@@ -341,24 +341,24 @@ class PKIServer(object):
 
     def create_catalina_policy(self):
 
-        logger.info('Creating catalina.policy')
+        logger.info('Creating %s', self.catalina_policy)
 
-        # add "do not edit" warning
-        filename = '/usr/share/pki/server/conf/catalina.policy'
+        # add "do not edit" warning from /usr/share/pki/server/conf/catalina.policy
+        filename = os.path.join(PKIServer.SHARE_DIR, 'server', 'conf', 'catalina.policy')
         logger.info('Appending %s', filename)
         with open(filename, 'r', encoding='utf-8') as f:
             content = f.read()
 
-        # add Tomcat's default policy
-        filename = '/usr/share/tomcat/conf/catalina.policy'
+        # add Tomcat's default policy from /etc/tomcat/catalina.policy
+        filename = os.path.join(Tomcat.CONF_DIR, 'catalina.policy')
         logger.info('Appending %s', filename)
         with open(filename, 'r', encoding='utf-8') as f:
             content += f.read()
 
         content += '\n\n'
 
-        # add PKI's default policy
-        filename = '/usr/share/pki/server/conf/pki.policy'
+        # add PKI's default policy from /usr/share/pki/server/conf/pki.policy
+        filename = os.path.join(PKIServer.SHARE_DIR, 'server', 'conf', 'pki.policy')
         logger.info('Appending %s', filename)
         with open(filename, 'r', encoding='utf-8') as f:
             content += f.read()
@@ -374,8 +374,8 @@ grant codeBase "file:%s" {
 };
 ''' % filepath
 
-        # add admin's custom policy
-        filename = '%s/custom.policy' % self.conf_dir
+        # add admin's custom policy from <instance>/conf/custom.policy
+        filename = os.path.join(self.conf_dir, 'custom.policy')
         if os.path.exists(filename):
             logger.info('Appending %s', filename)
             content += '\n'
@@ -383,10 +383,12 @@ grant codeBase "file:%s" {
                 content += f.read()
 
         # store everything into <instance>/conf/catalina.policy
-        filename = '%s/catalina.policy' % self.conf_dir
-        logger.info('Storing %s', filename)
-        with open(filename, 'w', encoding='utf-8') as f:
+        logger.info('Storing %s', self.catalina_policy)
+        with open(self.catalina_policy, 'w', encoding='utf-8') as f:
             f.write(content)
+
+        os.chown(self.catalina_policy, self.uid, self.gid)
+        os.chmod(self.catalina_policy, DEFAULT_FILE_MODE)
 
     def init(self):
 
@@ -743,12 +745,7 @@ grant codeBase "file:%s" {
         self.create_server_xml(exist_ok=True)
         self.enable_rewrite(exist_ok=True)
 
-        catalina_policy = os.path.join(Tomcat.CONF_DIR, 'catalina.policy')
-        self.copy(
-            catalina_policy,
-            self.catalina_policy,
-            exist_ok=True,
-            force=force)
+        self.create_catalina_policy()
 
         self.create_catalina_properties(exist_ok=True)
         self.create_context_xml(exist_ok=True)
