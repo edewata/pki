@@ -104,6 +104,17 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         instance.create_logging_properties(exist_ok=True)
         instance.create_web_xml(exist_ok=True)
 
+        deployer.create_tomcat_conf(exist_ok=True)
+
+        # Copy /usr/share/pki/server/conf/tomcat.conf
+        # to /etc/sysconfig/<instance>
+
+        instance.copyfile(
+            os.path.join(shared_conf_path, 'tomcat.conf'),
+            instance.service_conf,
+            params=deployer.mdict,
+            exist_ok=True)
+
         # Configuring internal token password
 
         token = deployer.mdict['pki_self_signed_token']
@@ -164,24 +175,6 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         instance.store_passwords()
 
         deployer.create_server_nssdb()
-
-        # Copy /usr/share/pki/server/conf/tomcat.conf
-        # to /etc/sysconfig/<instance>
-
-        instance.copyfile(
-            os.path.join(shared_conf_path, 'tomcat.conf'),
-            instance.service_conf,
-            params=deployer.mdict,
-            exist_ok=True)
-
-        # Copy /usr/share/pki/server/conf/tomcat.conf to
-        # /var/lib/pki/<instance>/conf/tomcat.conf.
-
-        instance.copyfile(
-            os.path.join(shared_conf_path, 'tomcat.conf'),
-            instance.tomcat_conf,
-            params=deployer.mdict,
-            exist_ok=True)
 
         # Copy /usr/share/pki/server/conf/ROOT.xml
         # to /var/lib/pki/<instance>/conf/Catalina/localhost/ROOT.xml

@@ -760,8 +760,10 @@ grant codeBase "file:%s" {
         self.create_logging_properties(exist_ok=True)
         self.create_web_xml(exist_ok=True)
 
+        # Copy /etc/tomcat/tomcat.conf to <instance>/conf/tomcat.conf
         self.create_tomcat_conf(exist_ok=True)
 
+        # Copy /etc/sysconfing/tomcat to /etc/sysconfig/<instance>
         service_conf = os.path.join(SYSCONFIG_DIR, 'tomcat')
         self.copy(
             service_conf,
