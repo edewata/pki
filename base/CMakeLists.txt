@@ -143,14 +143,6 @@ find_file(JACKSON2_JAXRS_JSON_PROVIDER_JAR
         /usr/share/java
 )
 
-find_file(JACKSON2_JAXB_ANNOTATIONS_JAR
-    NAMES
-        jackson-module-jaxb-annotations.jar
-    PATHS
-        /usr/share/java/jackson-modules
-        /usr/share/java
-)
-
 execute_process(
     COMMAND awk -F= "$1==\"ID\" { print $2 ;}" /etc/os-release
     OUTPUT_VARIABLE DISTRO
@@ -158,23 +150,6 @@ execute_process(
 )
 
 find_program(XMVN_RESOLVE /bin/xmvn-resolve)
-
-if(XMVN_RESOLVE)
-    execute_process(
-        COMMAND xmvn-resolve jakarta.xml.bind:jakarta.xml.bind-api:4
-        OUTPUT_VARIABLE JAXB_API_JAR
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-else()
-    find_file(JAXB_API_JAR
-        NAMES
-            jaxb-api.jar
-        PATHS
-            /usr/share/java/jaxb-api4
-            /usr/share/java/jaxb-api
-            /usr/share/java
-    )
-endif(XMVN_RESOLVE)
 
 if(XMVN_RESOLVE)
     execute_process(

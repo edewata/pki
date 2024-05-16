@@ -5,12 +5,11 @@ javac(pki-acme-classes
         src/main/java/*.java
     CLASSPATH
         ${SERVLET_JAR} ${TOMCAT_CATALINA_JAR}
-        ${JAXB_API_JAR}
         ${JAXRS_API_JAR}
         ${SLF4J_API_JAR}
         ${COMMONS_CODEC_JAR} ${COMMONS_IO_JAR} ${COMMONS_LANG3_JAR}
         ${HTTPCLIENT_JAR} ${HTTPCORE_JAR}
-        ${JACKSON2_ANNOTATIONS_JAR} ${JACKSON2_JAXB_ANNOTATIONS_JAR}
+        ${JACKSON2_ANNOTATIONS_JAR}
         ${JACKSON2_CORE_JAR} ${JACKSON2_DATABIND_JAR}
         ${JSS_JAR}
         ${LDAPJDK_JAR}

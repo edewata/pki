@@ -15,7 +15,7 @@ javac(pki-tools-classes
         ${COMMONS_CLI_JAR} ${COMMONS_LANG3_JAR}
         ${JAXRS_API_JAR} ${RESTEASY_JAXRS_JAR}
         ${HTTPCLIENT_JAR} ${HTTPCORE_JAR}
-        ${SLF4J_API_JAR} ${JAXB_API_JAR}
+        ${SLF4J_API_JAR}
         ${JSS_JAR}
         ${LDAPJDK_JAR}
         ${PKI_COMMON_JAR}

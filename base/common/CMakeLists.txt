@@ -11,11 +11,10 @@ javac(pki-common-classes
         ${COMMONS_CODEC_JAR} ${COMMONS_IO_JAR}
         ${COMMONS_LANG3_JAR} ${COMMONS_CLI_JAR}
         ${TOMCAT_CATALINA_JAR} ${TOMCAT_UTIL_JAR}
-        ${JACKSON2_ANNOTATIONS_JAR} ${JACKSON2_JAXB_ANNOTATIONS_JAR} ${JACKSON2_CORE_JAR} ${JACKSON2_DATABIND_JAR}
+        ${JACKSON2_ANNOTATIONS_JAR} ${JACKSON2_CORE_JAR} ${JACKSON2_DATABIND_JAR}
         ${JAVAX_ANNOTATIONS_API_JAR}
         ${JAXRS_API_JAR} ${RESTEASY_JAXRS_JAR} ${RESTEASY_CLIENT_JAR}
         ${HTTPCLIENT_JAR} ${HTTPCORE_JAR}
-        ${JAXB_API_JAR}
     OUTPUT_DIR
         ${CMAKE_CURRENT_BINARY_DIR}/classes
 )
@@ -52,12 +51,11 @@ if(RUN_TESTS)
             src/test/java/*.java
         CLASSPATH
             ${JAVAX_ACTIVATION_JAR}
-            ${JAXB_API_JAR} ${JAXB_IMPL_JAR}
             ${SLF4J_API_JAR} ${SLF4J_JDK14_JAR}
             ${JSS_JAR}
             ${COMMONS_CLI_JAR} ${COMMONS_CODEC_JAR} ${COMMONS_LANG3_JAR}
             ${HTTPCLIENT_JAR} ${HTTPCORE_JAR}
-            ${JACKSON2_ANNOTATIONS_JAR} ${JACKSON2_JAXB_ANNOTATIONS_JAR} ${JACKSON2_CORE_JAR} ${JACKSON2_DATABIND_JAR}
+            ${JACKSON2_ANNOTATIONS_JAR} ${JACKSON2_CORE_JAR} ${JACKSON2_DATABIND_JAR}
             ${PKI_COMMON_JAR}
             ${HAMCREST_JAR} ${JAXRS_API_JAR}
             ${JUNIT_JUPITER_API_JAR} ${JUNIT_PLATFORM_LAUNCHER_JAR} ${JUNIT_PLATFORM_SUITE_JAR}
@@ -74,12 +72,11 @@ if(RUN_TESTS)
     add_junit_test(test-pki-common
         CLASSPATH
             ${JAVAX_ACTIVATION_JAR}
-            ${JAXB_API_JAR} ${JAXB_IMPL_JAR}
             ${SLF4J_API_JAR} ${SLF4J_JDK14_JAR}
             ${JSS_JAR}
             ${COMMONS_CLI_JAR} ${COMMONS_CODEC_JAR} ${COMMONS_LANG3_JAR}
             ${HTTPCLIENT_JAR} ${HTTPCORE_JAR}
-            ${JACKSON2_ANNOTATIONS_JAR} ${JACKSON2_JAXB_ANNOTATIONS_JAR} ${JACKSON2_CORE_JAR} ${JACKSON2_DATABIND_JAR}
+            ${JACKSON2_ANNOTATIONS_JAR} ${JACKSON2_CORE_JAR} ${JACKSON2_DATABIND_JAR}
             ${PKI_COMMON_JAR}
             ${HAMCREST_JAR} ${JAXRS_API_JAR}
             ${CMAKE_BINARY_DIR}/test/classes
@@ -117,10 +114,8 @@ add_custom_command(
     COMMAND ln -sf ../../../..${JACKSON2_ANNOTATIONS_JAR} lib/jackson-annotations.jar
     COMMAND ln -sf ../../../..${JACKSON2_JAXRS_BASE_JAR} lib/jackson-jaxrs-base.jar
     COMMAND ln -sf ../../../..${JACKSON2_JAXRS_JSON_PROVIDER_JAR} lib/jackson-jaxrs-json-provider.jar
-    COMMAND ln -sf ../../../..${JACKSON2_JAXB_ANNOTATIONS_JAR} lib/jackson-module-jaxb-annotations.jar
     COMMAND ln -sf ../../../..${JAVAX_ACTIVATION_JAR} lib/javax.activation.jar
     COMMAND ln -sf ../../../..${JAVAX_ANNOTATIONS_API_JAR} lib/javax.annotations-api.jar
-    COMMAND ln -sf ../../../..${JAXB_API_JAR} lib/jaxb-api.jar
     COMMAND ln -sf ../../../..${JAXRS_API_JAR} lib/jaxrs-api.jar
     COMMAND ln -sf ../../../..${JBOSS_LOGGING_JAR} lib/jboss-logging.jar
     COMMAND ln -sf ../../../..${JSS_JAR} lib/jss.jar

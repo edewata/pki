@@ -28,7 +28,6 @@
 	<classpathentry kind="lib" path="/usr/share/java/apache-commons-logging.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/commons-codec.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/ldapjdk.jar"/>
-	<classpathentry kind="lib" path="/usr/share/java/jaxb-api/jakarta.xml.bind-api.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/jakarta-activation/jakarta.activation-api.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/httpcomponents/httpclient.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/httpcomponents/httpcore.jar"/>
@@ -54,7 +53,6 @@
 	<classpathentry kind="lib" path="/usr/share/java/resteasy/resteasy-jackson2-provider.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/slf4j/slf4j-simple.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/jackson-annotations.jar"/>
-	<classpathentry kind="lib" path="/usr/share/java/jackson-modules/jackson-module-jaxb-annotations.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/apache-commons-net.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/hamcrest/hamcrest.jar"/>
 	<classpathentry kind="lib" path="/usr/share/java/jakarta-annotations/jakarta.annotation-api.jar"/>
