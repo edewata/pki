@@ -113,6 +113,9 @@ class PKIConfigParser:
         (None, 'pki_existing',
          None, None,
          'This parameter can be safely removed.'),
+        (None, 'pki_configuration_path',
+         None, None,
+         'Use pkispawn --conf <dir> instead.'),
     ]
 
     DEPRECATED_CA_PARAMS = [
