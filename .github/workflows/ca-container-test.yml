@@ -518,6 +518,28 @@ jobs:
               $REQUEST_ID \
               --force
 
+      - name: Check restarting CA
+        run: |
+          docker restart ca
+          sleep 5
+
+          # wait for CA to restart
+          docker exec client curl \
+              --retry 180 \
+              --retry-delay 0 \
+              --retry-connrefused \
+              -s \
+              -k \
+              -o /dev/null \
+              https://ca.example.com:8443
+
+          # check admin user again
+          docker exec client pki \
+              -U https://ca.example.com:8443 \
+              -n admin \
+              ca-user-show \
+              admin
+
       - name: Check DS server systemd journal
         if: always()
         run: |
