@@ -463,9 +463,17 @@ jobs:
               --cert /certs/admin.crt \
               admin
 
-      - name: Add admin user into OCSP groups
+      - name: Add OCSP admin user into OCSP groups
         run: |
           docker exec ocsp pki-server ocsp-user-role-add admin "Administrators"
+
+      - name: Check OCSP admin user
+        run: |
+          docker exec client pki \
+              -U https://ocsp.example.com:8443 \
+              -n admin \
+              ocsp-user-show \
+              admin
 
       # https://github.com/dogtagpki/pki/wiki/Setting-up-Subsystem-User
       - name: Add CA subsystem user in OCSP
@@ -521,14 +529,12 @@ jobs:
           # update CRL immediately after each cert revocation
           docker exec ca pki-server ca-crl-ip-mod -D alwaysUpdate=true MasterCRL
 
-      - name: Stop CA
+      - name: Restart CA
         run: |
-          docker stop ca
+          docker restart ca
           sleep 5
 
-      - name: Wait for CA container to start
-        run: |
-          docker start ca
+          # wait for CA to restart
           docker exec client curl \
               --retry 180 \
               --retry-delay 0 \
@@ -674,6 +680,28 @@ jobs:
           sed -n "s/^CertStatus=\(.*\)$/\1/p" output > actual
           echo Good > expected
           diff expected actual
+
+      - name: Check restarting OCSP
+        run: |
+          docker restart ocsp
+          sleep 5
+
+          # wait for OCSP to restart
+          docker exec client curl \
+              --retry 180 \
+              --retry-delay 0 \
+              --retry-connrefused \
+              -s \
+              -k \
+              -o /dev/null \
+              https://ocsp.example.com:8443
+
+          # check OCSP admin user again
+          docker exec client pki \
+              -U https://ocsp.example.com:8443 \
+              -n admin \
+              ocsp-user-show \
+              admin
 
       - name: Check CA DS server systemd journal
         if: always()
