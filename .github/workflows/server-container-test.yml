@@ -150,6 +150,20 @@ jobs:
               -U https://pki.example.com:8443 \
               info
 
+      - name: Check restarting server
+        run: |
+          docker restart server
+          sleep 5
+
+          docker exec client curl \
+              --retry 60 \
+              --retry-delay 0 \
+              --retry-connrefused \
+              -s \
+              -k \
+              -o /dev/null \
+              https://pki.example.com:8443
+
       - name: Check server container logs
         if: always()
         run: |
