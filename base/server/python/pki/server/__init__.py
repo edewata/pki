@@ -653,10 +653,18 @@ grant codeBase "file:%s" {
 
         pki.util.chown(path, self.uid, self.gid)
 
+    def chmod(self, path, mode, recursive=True):
+
+        # only root can change file permission
+        if not os.geteuid() == 0:
+            return
+
+        pki.util.chmod(path, mode, recursive=recursive)
+
     def touch(self, path):
         pathlib.Path(path).touch()
         self.chown(path)
-        os.chmod(path, DEFAULT_FILE_MODE)
+        self.chmod(path, DEFAULT_FILE_MODE)
 
     def makedirs(self, path, exist_ok=None, force=False):
 
@@ -1160,7 +1168,7 @@ grant codeBase "file:%s" {
 
             # set deployment descriptor ownership and permission
             self.chown(context_xml)
-            os.chmod(context_xml, DEFAULT_FILE_MODE)
+            self.chmod(context_xml, DEFAULT_FILE_MODE)
 
         if not wait:
             return

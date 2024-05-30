@@ -300,19 +300,19 @@ def chown(path, uid, gid):
         chown(itempath, uid, gid)
 
 
-def chmod(path, mode):
+def chmod(path, mode, recursive=True):
     """
     Change permissions of a file, link, or folder recursively.
     """
 
     os.chmod(path, mode)
 
-    if not os.path.isdir(path):
+    if not os.path.isdir(path) or not recursive:
         return
 
     for item in os.listdir(path):
         itempath = os.path.join(path, item)
-        chmod(itempath, mode)
+        chmod(itempath, mode, recursive=recursive)
 
 
 def remove(path, force=False):
