@@ -267,7 +267,7 @@ class PKIDeployer:
 
         # create empty file with the proper permission
         pathlib.Path(filename).touch()
-        self.instance.chmod(filename, pki.server.DEFAULT_FILE_MODE)
+        os.chmod(filename, pki.server.DEFAULT_FILE_MODE)
 
         # configure file handler with append mode to preserve the permission
         handler = logging.FileHandler(filename)
@@ -616,15 +616,14 @@ class PKIDeployer:
 
         # update NSS database file permissions
         for filename in os.listdir(self.instance.nssdb_dir):
-            self.instance.chmod(
+            pki.util.chmod(
                 os.path.join(self.instance.nssdb_dir, filename),
                 config.PKI_DEPLOYMENT_DEFAULT_SECURITY_DATABASE_PERMISSIONS)
 
         # update NSS database folder permission
-        self.instance.chmod(
+        os.chmod(
             self.instance.nssdb_dir,
-            pki.server.DEFAULT_DIR_MODE,
-            recursive=False)
+            pki.server.DEFAULT_DIR_MODE)
 
     def remove_server_nssdb(self):
 
@@ -736,8 +735,8 @@ class PKIDeployer:
             # will eventually start up as non-root and will attempt to do a
             # migration. If we don't fix the permissions now, migration will
             # fail and subsystem won't start up.
+            pki.util.chmod(pki_ca_crt_path, 0o644)
             self.instance.chown(pki_ca_crt_path)
-            self.instance.chmod(pki_ca_crt_path, 0o644)
 
         finally:
             nssdb.close()
@@ -2327,7 +2326,7 @@ class PKIDeployer:
         with open(cert_file, 'w', encoding='utf-8') as f:
             f.write(cert_data)
 
-        self.instance.chmod(cert_file, pki.server.DEFAULT_FILE_MODE)
+        os.chmod(cert_file, pki.server.DEFAULT_FILE_MODE)
 
     def export_admin_pkcs12(self):
 
@@ -2369,7 +2368,7 @@ class PKIDeployer:
         finally:
             client_nssdb.close()
 
-        self.instance.chmod(
+        os.chmod(
             pkcs12_file,
             config.PKI_DEPLOYMENT_DEFAULT_SECURITY_DATABASE_PERMISSIONS)
 
@@ -3633,15 +3632,14 @@ class PKIDeployer:
 
         # update NSS database file permissions
         for filename in os.listdir(self.instance.nssdb_dir):
-            self.instance.chmod(
+            pki.util.chmod(
                 os.path.join(self.instance.nssdb_dir, filename),
                 config.PKI_DEPLOYMENT_DEFAULT_SECURITY_DATABASE_PERMISSIONS)
 
         # update NSS database folder permission
-        self.instance.chmod(
+        os.chmod(
             self.instance.nssdb_dir,
-            pki.server.DEFAULT_DIR_MODE,
-            recursive=False)
+            pki.server.DEFAULT_DIR_MODE)
 
         return system_certs
 

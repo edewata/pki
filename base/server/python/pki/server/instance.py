@@ -573,7 +573,7 @@ class PKIInstance(pki.server.PKIServer):
             f.write(fullname + '\n')
 
         self.chown(server_cert_nick_conf)
-        self.chmod(server_cert_nick_conf, pki.server.DEFAULT_FILE_MODE)
+        os.chmod(server_cert_nick_conf, pki.server.DEFAULT_FILE_MODE)
 
         logger.info('Updating serverCertNickFile in server.xml')
 
