@@ -167,6 +167,9 @@ jobs:
     displayName: Install LDAP JDK into local Maven repo
 
   - script: |
+      docker exec runner id
+      docker exec runner pwd
+      docker exec runner ls -la /root/.m2
       docker exec runner \
           mvn package \
           -f /root/src \
