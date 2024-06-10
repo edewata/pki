@@ -46,7 +46,7 @@ jobs:
 
       - name: Install Podman
         run: |
-          docker exec pki dnf install -y podman
+          docker exec pki dnf install -y podman containers-common-0.58
 
       - name: Load PKI images into root user's space
         run: |
