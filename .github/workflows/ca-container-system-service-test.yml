@@ -47,6 +47,7 @@ jobs:
       - name: Install Podman
         run: |
           docker exec pki dnf install -y podman
+          docker exec pki podman info
 
       - name: Load PKI images into root user's space
         run: |
@@ -56,9 +57,9 @@ jobs:
       - name: Create shared folders in PKI user's home directory
         run: |
           # create folders with default owner and permissions
-          docker exec -u pkiuser pki mkdir /home/pkiuser/certs
-          docker exec -u pkiuser pki mkdir /home/pkiuser/conf
-          docker exec -u pkiuser pki mkdir /home/pkiuser/logs
+          docker exec -u pkiuser pki mkdir -p /home/pkiuser/.dogtag/pki-ca/certs
+          docker exec -u pkiuser pki mkdir -p /home/pkiuser/.dogtag/pki-ca/conf
+          docker exec -u pkiuser pki mkdir -p /home/pkiuser/.dogtag/pki-ca/logs
 
           docker exec pki ls -l /home/pkiuser
 
@@ -77,9 +78,9 @@ jobs:
           User=pkiuser
           Group=pkiuser
           # use shared folders in PKI home directory
-          Volume=/home/pkiuser/certs:/certs
-          Volume=/home/pkiuser/conf:/conf
-          Volume=/home/pkiuser/logs:/logs
+          Volume=/home/pkiuser/.dogtag/pki-ca/certs:/certs
+          Volume=/home/pkiuser/.dogtag/pki-ca/conf:/conf
+          Volume=/home/pkiuser/.dogtag/pki-ca/logs:/logs
           # connect to DS container
           Environment=PKI_DS_URL=ldap://ds.example.com:3389
           Environment=PKI_DS_PASSWORD=Secret.123
@@ -112,7 +113,7 @@ jobs:
       - name: Check conf dir
         if: always()
         run: |
-          docker exec pki ls -l /home/pkiuser/conf \
+          docker exec pki ls -l /home/pkiuser/.dogtag/pki-ca/conf \
               | sed \
                   -e '/^total/d' \
                   -e 's/^\(\S*\) *\S* *\S* *\(\S*\) *\S* *\S* *\S* *\S* *\(.*\)$/\1 \2 \3/' \
@@ -142,7 +143,7 @@ jobs:
       - name: Check conf/alias dir
         if: always()
         run: |
-          docker exec pki ls -l /home/pkiuser/conf/alias \
+          docker exec pki ls -l /home/pkiuser/.dogtag/pki-ca/conf/alias \
               | sed \
                   -e '/^total/d' \
                   -e 's/^\(\S*\) *\S* *\S* *\(\S*\) *\S* *\S* *\S* *\S* *\(.*\)$/\1 \2 \3/' \
@@ -162,7 +163,7 @@ jobs:
       - name: Check conf/ca dir
         if: always()
         run: |
-          docker exec pki ls -l /home/pkiuser/conf/ca \
+          docker exec pki ls -l /home/pkiuser/.dogtag/pki-ca/conf/ca \
               | sed \
                   -e '/^total/d' \
                   -e 's/^\(\S*\) *\S* *\S* *\(\S*\) *\S* *\S* *\S* *\S* *\(.*\)$/\1 \2 \3/' \
@@ -192,7 +193,7 @@ jobs:
       - name: Check logs dir
         if: always()
         run: |
-          docker exec pki ls -l /home/pkiuser/logs \
+          docker exec pki ls -l /home/pkiuser/.dogtag/pki-ca/logs \
               | sed \
                   -e '/^total/d' \
                   -e 's/^\(\S*\) *\S* *\S* *\(\S*\) *\S* *\S* *\S* *\S* *\(.*\)$/\1 \2 \3/' \
@@ -223,7 +224,7 @@ jobs:
               ca_signing
 
           docker exec pki pki nss-cert-import \
-              --cert /home/pkiuser/conf/certs/ca_signing.crt \
+              --cert /home/pkiuser/.dogtag/pki-ca/conf/certs/ca_signing.crt \
               --trust CT,C,C \
               ca_signing
 
@@ -329,7 +330,7 @@ jobs:
       - name: Check CA debug logs
         if: always()
         run: |
-          docker exec pki find /home/pkiuser/logs/ca -name "debug.*" -exec cat {} \;
+          docker exec pki find /home/pkiuser/.dogtag/pki-ca/logs/ca -name "debug.*" -exec cat {} \;
 
       - name: Gather artifacts
         if: always()
@@ -337,11 +338,7 @@ jobs:
           tests/bin/ds-artifacts-save.sh ds
           tests/bin/pki-artifacts-save.sh pki
 
-          mkdir -p /tmp/artifacts/ca
-          docker cp pki:/home/pkiuser/certs /tmp/artifacts/ca
-          docker cp pki:/home/pkiuser/conf /tmp/artifacts/ca
-          docker cp pki:/home/pkiuser/logs /tmp/artifacts/ca
-
+          docker cp pki:/home/pkiuser/.dogtag/pki-ca /tmp/artifacts/ca
           docker exec pki podman logs systemd-pki-ca > /tmp/artifacts/ca/container.out 2> /tmp/artifacts/ca/container.err
 
       - name: Upload artifacts
