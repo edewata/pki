@@ -407,8 +407,9 @@ jobs:
 
       - name: Check CA admin cert
         run: |
-          docker exec pki pki client-cert-import \
-              --ca-cert /var/lib/pki/pki-tomcat/conf/certs/ca_signing.crt \
+          docker exec pki pki nss-cert-import \
+              --cert /var/lib/pki/pki-tomcat/conf/certs/ca_signing.crt \
+              --trust CT,C,C \
               ca_signing
           docker exec pki pki -n caadmin ca-user-show caadmin
 
