@@ -796,12 +796,13 @@ class CertImportCLI(pki.cli.CLI):
     '''
 
     help = '''\
-        Usage: pki-server cert-import [OPTIONS] <Cert ID>
+        Usage: pki-server cert-import [OPTIONS] [Cert ID]
 
           -i, --instance <instance ID>    Instance ID (default: pki-tomcat)
               --token <name>              Token to store the certificate
               --nickname <nickname>       Certificate nickname
               --input <file>              Certificate file
+              --trust <flags>             Trust flags
           -v, --verbose                   Run in verbose mode.
               --debug                     Run in debug mode.
               --help                      Show help message.
@@ -826,6 +827,7 @@ class CertImportCLI(pki.cli.CLI):
         try:
             opts, args = getopt.gnu_getopt(argv, 'i:v', [
                 'instance=', 'token=', 'nickname=', 'input=',
+                'trust=',
                 'verbose', 'debug', 'help'])
 
         except getopt.GetoptError as e:
@@ -837,6 +839,7 @@ class CertImportCLI(pki.cli.CLI):
         token = None
         nickname = None
         cert_file = None
+        trust_attributes = None
 
         for o, a in opts:
             if o in ('-i', '--instance'):
@@ -850,6 +853,9 @@ class CertImportCLI(pki.cli.CLI):
 
             elif o == '--input':
                 cert_file = a
+
+            elif o == '--trust':
+                trust_attributes = a
 
             elif o == '--debug':
                 logging.getLogger().setLevel(logging.DEBUG)
@@ -866,12 +872,8 @@ class CertImportCLI(pki.cli.CLI):
                 self.print_help()
                 sys.exit(1)
 
-        if len(args) < 1:
-            logger.error('Missing cert ID.')
-            self.print_help()
-            sys.exit(1)
-
-        cert_id = args[0]
+        if len(args) > 0:
+            cert_id = args[0]
 
         instance = pki.server.PKIServerFactory.create(instance_name)
 
@@ -883,10 +885,11 @@ class CertImportCLI(pki.cli.CLI):
 
         try:
             instance.cert_import(
-                cert_id,
+                cert_id=cert_id,
                 cert_file=cert_file,
                 token=token,
-                nickname=nickname)
+                nickname=nickname,
+                trust_attributes=trust_attributes)
 
         except pki.server.PKIServerException as e:
             logger.error(str(e))

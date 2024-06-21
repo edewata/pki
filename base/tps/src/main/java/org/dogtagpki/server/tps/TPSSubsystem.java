@@ -385,7 +385,13 @@ public class TPSSubsystem extends Subsystem implements IAuthority {
 
         TPSEngine engine = TPSEngine.getInstance();
         TPSEngineConfig cs = engine.getConfig();
+
         String nickname = cs.getString("tps.subsystem.nickname", "");
+        if (StringUtils.isEmpty(nickname)) {
+            // subsystem cert is not enabled
+            return null;
+        }
+
         String tokenname = cs.getString("tps.subsystem.tokenname", "");
         if (!CryptoUtil.isInternalToken(tokenname))
             nickname = tokenname + ":" + nickname;

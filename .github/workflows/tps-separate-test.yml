@@ -240,6 +240,52 @@ jobs:
               --pkcs12-password Secret.123
           docker exec tps pki -n caadmin --ignore-banner tps-user-show tpsadmin
 
+      - name: Check CA users
+        run: |
+          docker exec ca pki-server ca-user-find
+
+      - name: Check KRA users
+        run: |
+          docker exec kra pki-server kra-user-find
+
+      - name: Check TKS users
+        run: |
+          docker exec tks pki-server tks-user-find
+
+      - name: Check TPS connector in TKS
+        run: |
+          docker exec tks pki-server tks-config-find | grep ^tps\\. | sort | tee actual
+
+          cat > expected << EOF
+          tps.0.host=tps.example.com
+          tps.0.nickname=TPS-tps.example.com-8443 sharedSecret
+          tps.0.port=8443
+          tps.0.userid=TPS-tps.example.com-8443
+          tps.list=0
+          EOF
+
+          diff expected actual
+
+      - name: Check auth database config in TPS
+        run: |
+          docker exec tps pki-server tps-config-find | grep ^auths\\.instance\\.ldap1\\.ldap\\. | sort | tee actual
+
+          cat > expected << EOF
+          auths.instance.ldap1.ldap.basedn=dc=pki,dc=example,dc=com
+          auths.instance.ldap1.ldap.ldapauth.authtype=BasicAuth
+          auths.instance.ldap1.ldap.ldapauth.bindDN=
+          auths.instance.ldap1.ldap.ldapauth.bindPWPrompt=ldap1
+          auths.instance.ldap1.ldap.ldapauth.clientCertNickname=subsystem
+          auths.instance.ldap1.ldap.ldapconn.host=tpsds.example.com
+          auths.instance.ldap1.ldap.ldapconn.port=3389
+          auths.instance.ldap1.ldap.ldapconn.secureConn=false
+          auths.instance.ldap1.ldap.ldapconn.version=3
+          auths.instance.ldap1.ldap.maxConns=15
+          auths.instance.ldap1.ldap.minConns=3
+          EOF
+
+          diff expected actual
+
       - name: Gather artifacts from CA containers
         if: always()
         run: |

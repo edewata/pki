@@ -7,7 +7,6 @@
 
 PKI_STORAGE_NICKNAME="${PKI_STORAGE_NICKNAME:-kra_storage}"
 PKI_TRANSPORT_NICKNAME="${PKI_TRANSPORT_NICKNAME:-kra_transport}"
-PKI_SUBSYSTEM_NICKNAME="${PKI_SUBSYSTEM_NICKNAME:-subsystem}"
 PKI_SSLSERVER_NICKNAME="${PKI_SSLSERVER_NICKNAME:-sslserver}"
 
 # Allow the owner of the container (who might not be in the root group)
@@ -106,7 +105,8 @@ pki \
     -d /conf/alias \
     -f /conf/password.conf \
     nss-cert-show \
-    "$PKI_SUBSYSTEM_NICKNAME"
+    "$PKI_SUBSYSTEM_NICKNAME" \
+    2> /dev/null || true
 
 echo "################################################################################"
 
@@ -162,7 +162,10 @@ then
 fi
 
 OPTIONS+=(-D pki_subsystem_nickname="$PKI_SUBSYSTEM_NICKNAME")
-OPTIONS+=(-D pki_subsystem_csr_path=/conf/certs/subsystem.csr)
+if [ -f /conf/certs/subsystem.csr ]
+then
+    OPTIONS+=(-D pki_subsystem_csr_path=/conf/certs/subsystem.csr)
+fi
 
 OPTIONS+=(-D pki_sslserver_nickname="$PKI_SSLSERVER_NICKNAME")
 OPTIONS+=(-D pki_sslserver_csr_path=/conf/certs/sslserver.csr)

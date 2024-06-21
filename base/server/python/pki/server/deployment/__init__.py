@@ -1169,9 +1169,11 @@ class PKIDeployer:
             subsystem.set_config(
                 'auths.instance.ldap1.ldap.ldapconn.secureConn',
                 str(self.authdb_url.scheme == 'ldaps').lower())
-            subsystem.set_config(
-                'auths.instance.ldap1.ldap.ldapauth.clientCertNickname',
-                self.mdict['pki_subsystem_nickname'])
+
+            if self.mdict.get('pki_subsystem_nickname'):
+                subsystem.set_config(
+                    'auths.instance.ldap1.ldap.ldapauth.clientCertNickname',
+                    self.mdict['pki_subsystem_nickname'])
 
     def configure_ca(self, subsystem):
 
@@ -2547,8 +2549,10 @@ class PKIDeployer:
         if self.mdict['pki_audit_signing_nickname']:
             subsystem.validate_system_cert('audit_signing')
 
+        if self.mdict['pki_subsystem_nickname']:
+            subsystem.validate_system_cert('subsystem')
+
         subsystem.validate_system_cert('sslserver')
-        subsystem.validate_system_cert('subsystem')
 
     def record(self, name, record_type, uid, gid, perms, acls=None):
         record = manifest.Record()

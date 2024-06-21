@@ -7,7 +7,6 @@
 
 PKI_CA_SIGNING_NICKNAME="${PKI_CA_SIGNING_NICKNAME:-ca_signing}"
 PKI_OCSP_SIGNING_NICKNAME="${PKI_OCSP_SIGNING_NICKNAME:-ca_ocsp_signing}"
-PKI_SUBSYSTEM_NICKNAME="${PKI_SUBSYSTEM_NICKNAME:-subsystem}"
 PKI_SSLSERVER_NICKNAME="${PKI_SSLSERVER_NICKNAME:-sslserver}"
 
 # Allow the owner of the container (who might not be in the root group)
@@ -181,50 +180,13 @@ then
     cp /certs/subsystem.csr /conf/certs/subsystem.csr
 fi
 
-# check whether subsystem cert exists
-rc=0
-pki \
-    -d /conf/alias \
-    -f /conf/password.conf \
-    nss-cert-export \
-    --output-file /tmp/subsystem.crt \
-    "$PKI_SUBSYSTEM_NICKNAME" \
-    2> /dev/null || rc=$?
-
-if [ $rc -ne 0 ]
-then
-    echo "INFO: Creating subsystem cert"
-
-    pki \
-        -d /conf/alias \
-        -f /conf/password.conf \
-        nss-cert-request \
-        --subject "CN=Subsystem Certificate" \
-        --csr /conf/certs/subsystem.csr
-
-    pki \
-        -d /conf/alias \
-        -f /conf/password.conf \
-        nss-cert-issue \
-        --issuer "$PKI_CA_SIGNING_NICKNAME" \
-        --csr /conf/certs/subsystem.csr \
-        --ext /usr/share/pki/server/certs/subsystem.conf \
-        --cert /tmp/subsystem.crt
-
-    pki \
-        -d /conf/alias \
-        -f /conf/password.conf \
-        nss-cert-import \
-        --cert /tmp/subsystem.crt \
-        "$PKI_SUBSYSTEM_NICKNAME"
-fi
-
 echo "INFO: Subsystem cert:"
 pki \
     -d /conf/alias \
     -f /conf/password.conf \
     nss-cert-show \
-    "$PKI_SUBSYSTEM_NICKNAME"
+    "$PKI_SUBSYSTEM_NICKNAME" \
+    2> /dev/null || true
 
 echo "################################################################################"
 
@@ -315,7 +277,10 @@ then
 fi
 
 OPTIONS+=(-D pki_subsystem_nickname="$PKI_SUBSYSTEM_NICKNAME")
-OPTIONS+=(-D pki_subsystem_csr_path=/conf/certs/subsystem.csr)
+if [ -f /conf/certs/subsystem.csr ]
+then
+    OPTIONS+=(-D pki_subsystem_csr_path=/conf/certs/subsystem.csr)
+fi
 
 OPTIONS+=(-D pki_sslserver_nickname="$PKI_SSLSERVER_NICKNAME")
 OPTIONS+=(-D pki_sslserver_csr_path=/conf/certs/sslserver.csr)
@@ -355,7 +320,6 @@ echo "INFO: Removing temporary files"
 
 rm /tmp/ca_signing.crt
 rm /tmp/ca_ocsp_signing.crt
-rm /tmp/subsystem.crt
 rm /tmp/sslserver.crt
 
 echo "################################################################################"

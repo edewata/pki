@@ -95,28 +95,6 @@ jobs:
               nss-cert-show \
               ca_ocsp_signing
 
-      - name: Create subsystem cert
-        run: |
-          docker exec client pki \
-              nss-cert-request \
-              --subject "CN=Subsystem Certificate" \
-              --ext /usr/share/pki/server/certs/subsystem.conf \
-              --csr $SHARED/certs/subsystem.csr
-          docker exec client pki \
-              nss-cert-issue \
-              --issuer ca_signing \
-              --csr $SHARED/certs/subsystem.csr \
-              --ext /usr/share/pki/server/certs/subsystem.conf \
-              --cert $SHARED/certs/subsystem.crt
-
-          docker exec client pki nss-cert-import \
-              --cert $SHARED/certs/subsystem.crt \
-              subsystem
-
-          docker exec client pki \
-              nss-cert-show \
-              subsystem
-
       - name: Create SSL server cert
         run: |
           docker exec client pki \
@@ -146,7 +124,6 @@ jobs:
               --password Secret.123 \
               ca_signing \
               ca_ocsp_signing \
-              subsystem \
               sslserver
 
           docker exec client pki pkcs12-cert-find \
@@ -316,13 +293,6 @@ jobs:
               --cert /certs/ca_ocsp_signing.crt \
               --csr /certs/ca_ocsp_signing.csr \
               --profile /usr/share/pki/ca/conf/caOCSPCert.profile
-
-      - name: Import subsystem cert into CA database
-        run: |
-          docker exec ca pki-server ca-cert-import \
-              --cert /certs/subsystem.crt \
-              --csr /certs/subsystem.csr \
-              --profile /usr/share/pki/ca/conf/rsaSubsystemCert.profile
 
       - name: Import SSL server cert into CA database
         run: |

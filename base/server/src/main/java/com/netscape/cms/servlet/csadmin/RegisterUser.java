@@ -166,11 +166,13 @@ public class RegisterUser extends CMSServlet {
         X509Certificate certs[] = new X509Certificate[1];
 
         try {
-            logger.info("RegisterUser: Searching user by cert");
+            logger.info("RegisterUser: Searching user by certs:");
 
             byte[] bCert = Utils.base64decode(certsString);
             cert = new X509CertImpl(bCert);
             certs[0] = cert;
+
+            logger.info("RegisterUser: - " + cert.getSubjectX500Principal());
 
             // test to see if the cert already belongs to a user
             CertUserLocator cul = new ExactMatchCertUserLocator();
@@ -181,7 +183,7 @@ public class RegisterUser extends CMSServlet {
             user = cul.locateUser(c);
 
         } catch (Exception e) {
-            logger.warn("Unable to find user: " + e.getMessage());
+            logger.warn("Unable to find user: " + e.getMessage(), e);
         }
 
         if (user == null) {
@@ -190,11 +192,11 @@ public class RegisterUser extends CMSServlet {
                 user = ugsys.getUser(uid);
                 logger.debug("RegisterUser: found user " + uid);
             } catch (Exception eee) {
-                logger.warn("Unable to find user " + uid);
+                logger.warn("Unable to find user " + uid + ": " + eee.getMessage(), eee);
             }
 
         } else {
-            logger.info("RegisterUser: Found user by cert");
+            logger.info("RegisterUser: Found user " + user.getUserID());
             foundByCert = true;
         }
 

@@ -182,12 +182,8 @@ public class TPSPresence extends SelfTest {
         }
 
         if (tpsCert == null) {
-            // log that the TPS is not yet initialized
-            String logMessage = CMS.getLogMessage(
-                    "SELFTESTS_TPS_IS_NOT_INITIALIZED",
-                    getSelfTestName());
-            mSelfTestSubsystem.log(logger, logMessage);
-            throw new Exception(logMessage);
+            // subsystem cert is not enabled
+            return;
         }
 
         // Retrieve the TPS certificate public key

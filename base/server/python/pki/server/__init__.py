@@ -1599,14 +1599,14 @@ grant codeBase "file:%s" {
         :returns: (subsystem_name, cert_tag)
         :rtype: (str, str)
         """
+        if not cert_id:
+            return None, None
+
         if cert_id == 'sslserver' or cert_id == 'subsystem':
-            subsystem_name = None
-            cert_tag = cert_id
-        else:
-            parts = cert_id.split('_', 1)
-            subsystem_name = parts[0]
-            cert_tag = parts[1]
-        return subsystem_name, cert_tag
+            return None, cert_id
+
+        parts = cert_id.split('_', 1)
+        return parts[0], parts[1]
 
     @staticmethod
     def build_ca_files(client_nssdb):
