@@ -216,17 +216,6 @@ jobs:
               --csr /conf/certs/ca_ocsp_signing.csr \
               --profile /usr/share/pki/ca/conf/caOCSPCert.profile
 
-      - name: Import subsystem cert into CA database
-        run: |
-          docker exec ca pki-server cert-export \
-              --cert-file /conf/certs/subsystem.crt \
-              subsystem
-
-          docker exec ca pki-server ca-cert-import \
-              --cert /conf/certs/subsystem.crt \
-              --csr /conf/certs/subsystem.csr \
-              --profile /usr/share/pki/ca/conf/rsaSubsystemCert.profile
-
       - name: Import SSL server cert into CA database
         run: |
           docker exec ca pki-server cert-export \

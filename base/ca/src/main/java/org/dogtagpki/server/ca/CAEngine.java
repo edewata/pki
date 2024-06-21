@@ -812,6 +812,11 @@ public class CAEngine extends CMSEngine {
             logger.info("CAEngine: - cert.subsystem.nickname: " + certNickName);
         }
 
+        if (StringUtils.isEmpty(certNickName)) {
+            logger.info("CAEngine: CA issuance protection disabled");
+            return;
+        }
+
         CryptoManager cm = CryptoManager.getInstance();
         issuanceProtectionCert = cm.findCertByNickname(certNickName);
 

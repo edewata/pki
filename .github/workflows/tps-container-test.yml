@@ -141,16 +141,27 @@ jobs:
               --csr /conf/certs/ca_ocsp_signing.csr \
               --profile /usr/share/pki/ca/conf/caOCSPCert.profile
 
-      - name: Import CA subsystem cert into CA database
+      - name: Create CA subsystem cert
         run: |
-          docker exec ca pki-server cert-export \
-              --cert-file /conf/certs/subsystem.crt \
-              subsystem
+          # create cert request
+          docker exec client pki nss-cert-request \
+              --subject "CN=Subsystem Certificate" \
+              --ext /usr/share/pki/server/certs/subsystem.conf \
+              --csr $SHARED/ca_subsystem.csr
 
-          docker exec ca pki-server ca-cert-import \
-              --cert /conf/certs/subsystem.crt \
+          docker cp ca_subsystem.csr ca:/conf/certs/subsystem.csr
+
+          # issue cert
+          docker exec ca pki-server ca-cert-create \
               --csr /conf/certs/subsystem.csr \
-              --profile /usr/share/pki/ca/conf/rsaSubsystemCert.profile
+              --profile /usr/share/pki/ca/conf/rsaSubsystemCert.profile \
+              --cert /conf/certs/subsystem.crt \
+              --import-cert
+
+          # import cert
+          docker exec ca pki-server cert-import subsystem
+
+          docker cp ca:/conf/certs/subsystem.crt ca_subsystem.crt
 
       - name: Import SSL server cert into CA database
         run: |
@@ -245,24 +256,6 @@ jobs:
               kra_transport
           docker exec client pki nss-cert-show kra_transport
 
-      - name: Create KRA subsystem cert
-        run: |
-          docker exec client pki nss-cert-request \
-              --subject "CN=Subsystem Certificate" \
-              --ext /usr/share/pki/server/certs/subsystem.conf \
-              --csr $SHARED/kra/certs/subsystem.csr
-          docker exec client pki \
-              -d $SHARED/ca/conf/alias \
-              nss-cert-issue \
-              --issuer ca_signing \
-              --csr $SHARED/kra/certs/subsystem.csr \
-              --ext /usr/share/pki/server/certs/subsystem.conf \
-              --cert $SHARED/kra/certs/subsystem.crt
-          docker exec client pki nss-cert-import \
-              --cert $SHARED/kra/certs/subsystem.crt \
-              kra_subsystem
-          docker exec client pki nss-cert-show kra_subsystem
-
       - name: Create KRA SSL server cert
         run: |
           docker exec client pki nss-cert-request \
@@ -294,14 +287,7 @@ jobs:
               --password Secret.123 \
               kra_storage \
               kra_transport \
-              kra_subsystem \
               kra_sslserver
-
-          docker exec client pki pkcs12-cert-mod \
-              --pkcs12 $SHARED/kra/certs/server.p12 \
-              --password Secret.123 \
-              --friendly-name "subsystem" \
-              kra_subsystem
 
           docker exec client pki pkcs12-cert-mod \
               --pkcs12 $SHARED/kra/certs/server.p12 \
@@ -387,11 +373,12 @@ jobs:
       # https://github.com/dogtagpki/pki/wiki/Setting-up-Subsystem-User
       - name: Add CA subsystem user in KRA
         run: |
-          cp ca/conf/certs/subsystem.crt kra/conf/certs/ca_subsystem.crt
+          docker cp ca_subsystem.crt kra:.
+
           docker exec kra pki-server kra-user-add \
               --full-name CA-ca.example.com-8443 \
               --type agentType \
-              --cert /conf/certs/ca_subsystem.crt \
+              --cert ca_subsystem.crt \
               CA-ca.example.com-8443
 
       - name: Assign roles to CA subsystem user
@@ -427,24 +414,6 @@ jobs:
               -o /dev/null \
               https://ca.example.com:8443
 
-      - name: Create TKS subsystem cert
-        run: |
-          docker exec client pki nss-cert-request \
-              --subject "CN=Subsystem Certificate" \
-              --ext /usr/share/pki/server/certs/subsystem.conf \
-              --csr $SHARED/tks/certs/subsystem.csr
-          docker exec client pki \
-              -d $SHARED/ca/conf/alias \
-              nss-cert-issue \
-              --issuer ca_signing \
-              --csr $SHARED/tks/certs/subsystem.csr \
-              --ext /usr/share/pki/server/certs/subsystem.conf \
-              --cert $SHARED/tks/certs/subsystem.crt
-          docker exec client pki nss-cert-import \
-              --cert $SHARED/tks/certs/subsystem.crt \
-              tks_subsystem
-          docker exec client pki nss-cert-show tks_subsystem
-
       - name: Create TKS SSL server cert
         run: |
           docker exec client pki nss-cert-request \
@@ -472,14 +441,7 @@ jobs:
           docker exec client pki pkcs12-export \
               --pkcs12 $SHARED/tks/certs/server.p12 \
               --password Secret.123 \
-              tks_subsystem \
               tks_sslserver
-
-          docker exec client pki pkcs12-cert-mod \
-              --pkcs12 $SHARED/tks/certs/server.p12 \
-              --password Secret.123 \
-              --friendly-name "subsystem" \
-              tks_subsystem
 
           docker exec client pki pkcs12-cert-mod \
               --pkcs12 $SHARED/tks/certs/server.p12 \
@@ -564,21 +526,26 @@ jobs:
 
       - name: Create TPS subsystem cert
         run: |
+          # create cert request
           docker exec client pki nss-cert-request \
               --subject "CN=Subsystem Certificate" \
               --ext /usr/share/pki/server/certs/subsystem.conf \
-              --csr $SHARED/tps/certs/subsystem.csr
-          docker exec client pki \
-              -d $SHARED/ca/conf/alias \
-              nss-cert-issue \
-              --issuer ca_signing \
-              --csr $SHARED/tps/certs/subsystem.csr \
-              --ext /usr/share/pki/server/certs/subsystem.conf \
-              --cert $SHARED/tps/certs/subsystem.crt
+              --csr $SHARED/tps_subsystem.csr
+
+          docker cp tps_subsystem.csr ca:.
+
+          # issue cert
+          docker exec ca pki-server ca-cert-create \
+              --csr tps_subsystem.csr \
+              --profile /usr/share/pki/ca/conf/rsaSubsystemCert.profile \
+              --cert tps_subsystem.crt \
+              --import-cert
+
+          docker cp ca:tps_subsystem.crt .
+
           docker exec client pki nss-cert-import \
-              --cert $SHARED/tps/certs/subsystem.crt \
+              --cert $SHARED/tps_subsystem.crt \
               tps_subsystem
-          docker exec client pki nss-cert-show tps_subsystem
 
       - name: Create TPS SSL server cert
         run: |
@@ -607,14 +574,7 @@ jobs:
           docker exec client pki pkcs12-export \
               --pkcs12 $SHARED/tps/certs/server.p12 \
               --password Secret.123 \
-              tps_subsystem \
               tps_sslserver
-
-          docker exec client pki pkcs12-cert-mod \
-              --pkcs12 $SHARED/tps/certs/server.p12 \
-              --password Secret.123 \
-              --friendly-name "subsystem" \
-              tps_subsystem
 
           docker exec client pki pkcs12-cert-mod \
               --pkcs12 $SHARED/tps/certs/server.p12 \
