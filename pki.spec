@@ -468,6 +468,13 @@ Requires:         mvn(org.dogtagpki.jss:jss-base) >= 5.5.0
 Requires:         mvn(org.dogtagpki.ldap-sdk:ldapjdk) >= 5.5.0
 Requires:         %{product_id}-base = %{version}-%{release}
 
+%if %{with deps}
+Provides:         bundled(mvn(org.jboss.resteasy:resteasy-client)) = 3.0.26
+Provides:         bundled(mvn(org.jboss.resteasy:resteasy-jackson2-provider)) = 3.0.26
+Provides:         bundled(mvn(org.jboss.resteasy:resteasy-jaxrs)) = 3.0.26
+Provides:         bundled(mvn(org.jboss.resteasy:resteasy-servlet-initializer)) = 3.0.26
+%endif
+
 %description -n   %{product_id}-java
 This package provides common and client libraries for Java.
 
@@ -1057,8 +1064,42 @@ ls -la
 
 export JAVA_HOME=%{java_home}
 
+#mvn install:install-file \
+#   -Dfile=/usr/share/java/resteasy/resteasy-client.jar \
+#   -DgroupId=org.dogtagpki.resteasy \
+#   -DartifactId=resteasy-client \
+#   -Dversion=3.0.26.Final \
+#   -Dpackaging=jar \
+#   -DgeneratePom=true
+
+#mvn install:install-file \
+#   -Dfile=/usr/share/java/resteasy/resteasy-jackson2-provider.jar \
+#   -DgroupId=org.dogtagpki.resteasy \
+#   -DartifactId=resteasy-jackson2-provider \
+#   -Dversion=3.0.26.Final \
+#   -Dpackaging=jar \
+#   -DgeneratePom=true
+
+#mvn install:install-file \
+#   -Dfile=/usr/share/java/resteasy/resteasy-jaxrs.jar \
+#   -DgroupId=org.dogtagpki.resteasy \
+#   -DartifactId=resteasy-jaxrs \
+#   -Dversion=3.0.26.Final \
+#   -Dpackaging=jar \
+#   -DgeneratePom=true
+
+#mvn install:install-file \
+#   -Dfile=/usr/share/java/resteasy/resteasy-servlet-initializer.jar \
+#   -DgroupId=org.dogtagpki.resteasy \
+#   -DartifactId=resteasy-servlet-initializer \
+#   -Dversion=3.0.26.Final \
+#   -Dpackaging=jar \
+#   -DgeneratePom=true
+
 # build Java binaries and run unit tests with Maven
 %mvn_build %{!?with_test:-f} -j
+
+find . -name "*.jar"
 
 # create links to Maven-built JAR files for CMake
 mkdir -p %{_vpath_builddir}/dist
