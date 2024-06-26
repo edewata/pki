@@ -1154,9 +1154,12 @@ class PKIDeployer:
 
         # configure TPS
         if subsystem.type == 'TPS':
-            subsystem.set_config(
-                'auths.instance.ldap1.ldap.basedn',
-                self.mdict['pki_authdb_basedn'])
+
+            if self.mdict.get('pki_authdb_basedn'):
+                subsystem.set_config(
+                    'auths.instance.ldap1.ldap.basedn',
+                    self.mdict['pki_authdb_basedn'])
+
             subsystem.set_config(
                 'auths.instance.ldap1.ldap.ldapconn.host',
                 self.authdb_url.hostname)

@@ -197,6 +197,7 @@ jobs:
               -D pki_subsystem_token=HSM \
               -D pki_sslserver_token=internal \
               -D pki_authdb_url=ldap://ds.example.com:3389 \
+              -D pki_authdb_basedn=dc=pki,dc=example,dc=com \
               -D pki_enable_server_side_keygen=True \
               -v
 

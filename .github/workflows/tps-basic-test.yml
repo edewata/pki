@@ -85,6 +85,7 @@ jobs:
               -s TPS \
               -D pki_ds_url=ldap://ds.example.com:3389 \
               -D pki_authdb_url=ldap://ds.example.com:3389 \
+              -D pki_authdb_basedn=dc=pki,dc=example,dc=com \
               -D pki_enable_server_side_keygen=True \
               -v
 
