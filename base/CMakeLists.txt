@@ -8,14 +8,34 @@ find_file(SERVLET_JAR
         /usr/share/java
 )
 
-find_file(JAXRS_API_JAR
-    NAMES
-        jaxrs-api.jar
-        jboss-jaxrs-2.0-api.jar
-        javax.ws.rs-api.jar
-    PATHS
-        /usr/share/java
-)
+
+if (EXISTS "${CMAKE_SOURCE_DIR}/lib")
+    # use imported JARs
+
+    execute_process(
+        COMMAND ls ${CMAKE_SOURCE_DIR}/lib
+        COMMAND sed -n "s/^jboss-jaxrs-2.0-api-\\(.*\\)\\.jar\$/\\1/p"
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        OUTPUT_VARIABLE JBOSS_JAXRS_API_VERSION
+    )
+    message("JBOSS_JAXRS_API_VERSION: ${JBOSS_JAXRS_API_VERSION}")
+
+    set(JAXRS_API_JAR "${CMAKE_SOURCE_DIR}/lib/jboss-jaxrs-2.0-api-${JBOSS_JAXRS_API_VERSION}.jar")
+    set(JAXRS_API_LINK "jboss-jaxrs-2.0-api-${JBOSS_JAXRS_API_VERSION}.jar")
+
+else()
+    # use system JARs
+
+    find_file(JAXRS_API_JAR
+        NAMES
+            jaxrs-api.jar
+            jboss-jaxrs-2.0-api.jar
+            javax.ws.rs-api.jar
+        PATHS
+            /usr/share/java
+    )
+    set(JAXRS_API_LINK "../../../..${JAXRS_API_JAR}")
+endif (EXISTS "${CMAKE_SOURCE_DIR}/lib")
 
 find_file(SLF4J_API_JAR
     NAMES
@@ -106,50 +126,89 @@ find_file(HTTPCORE_JAR
         /usr/share/java
 )
 
-find_file(JACKSON_CORE_JAR
-    NAMES
-        jackson-core.jar
-    PATHS
-        /usr/share/java
-)
+if (EXISTS "${CMAKE_SOURCE_DIR}/lib")
+    # use imported JARs
 
-find_file(JACKSON_DATABIND_JAR
-    NAMES
-        jackson-databind.jar
-    PATHS
-        /usr/share/java
-)
+    execute_process(
+        COMMAND ls ${CMAKE_SOURCE_DIR}/lib
+        COMMAND sed -n "s/^jackson-annotations-\\(.*\\)\\.jar\$/\\1/p"
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        OUTPUT_VARIABLE JACKSON_VERSION
+    )
+    message("JACKSON_VERSION: ${JACKSON_VERSION}")
 
-find_file(JACKSON_ANNOTATIONS_JAR
-    NAMES
-        jackson-annotations.jar
-    PATHS
-        /usr/share/java
-)
+    set(JACKSON_ANNOTATIONS_JAR "${CMAKE_SOURCE_DIR}/lib/jackson-annotations-${JACKSON_VERSION}.jar")
+    set(JACKSON_ANNOTATIONS_LINK "jackson-annotations-${JACKSON_VERSION}.jar")
 
-find_file(JACKSON_JAXRS_BASE_JAR
-    NAMES
-        jackson-jaxrs-base.jar
-    PATHS
-        /usr/share/java/jackson-jaxrs-providers
-        /usr/share/java
-)
+    set(JACKSON_CORE_JAR "${CMAKE_SOURCE_DIR}/lib/jackson-core-${JACKSON_VERSION}.jar")
+    set(JACKSON_CORE_LINK "jackson-core-${JACKSON_VERSION}.jar")
 
-find_file(JACKSON_JAXRS_JSON_PROVIDER_JAR
-    NAMES
-        jackson-jaxrs-json-provider.jar
-    PATHS
-        /usr/share/java/jackson-jaxrs-providers
-        /usr/share/java
-)
+    set(JACKSON_DATABIND_JAR "${CMAKE_SOURCE_DIR}/lib/jackson-databind-${JACKSON_VERSION}.jar")
+    set(JACKSON_DATABIND_LINK "jackson-databind-${JACKSON_VERSION}.jar")
 
-find_file(JACKSON_MODULE_JAXB_ANNOTATIONS_JAR
-    NAMES
-        jackson-module-jaxb-annotations.jar
-    PATHS
-        /usr/share/java/jackson-modules
-        /usr/share/java
-)
+    set(JACKSON_JAXRS_BASE_JAR "${CMAKE_SOURCE_DIR}/lib/jackson-jaxrs-base-${JACKSON_VERSION}.jar")
+    set(JACKSON_JAXRS_BASE_LINK "jackson-jaxrs-base-${JACKSON_VERSION}.jar")
+
+    set(JACKSON_JAXRS_JSON_PROVIDER_JAR "${CMAKE_SOURCE_DIR}/lib/jackson-jaxrs-json-provider-${JACKSON_VERSION}.jar")
+    set(JACKSON_JAXRS_JSON_PROVIDER_LINK "jackson-jaxrs-json-provider-${JACKSON_VERSION}.jar")
+
+    set(JACKSON_MODULE_JAXB_ANNOTATIONS_JAR "${CMAKE_SOURCE_DIR}/lib/jackson-module-jaxb-annotations-${JACKSON_VERSION}.jar")
+    set(JACKSON_MODULE_JAXB_ANNOTATIONS_LINK "jackson-module-jaxb-annotations-${JACKSON_VERSION}.jar")
+
+else()
+    # use system JARs
+
+    find_file(JACKSON_ANNOTATIONS_JAR
+        NAMES
+            jackson-annotations.jar
+        PATHS
+            /usr/share/java
+    )
+    set(JACKSON_ANNOTATIONS_LINK "../../../..${JACKSON_ANNOTATIONS_JAR}")
+
+    find_file(JACKSON_CORE_JAR
+        NAMES
+            jackson-core.jar
+        PATHS
+            /usr/share/java
+    )
+    set(JACKSON_CORE_LINK "../../../..${JACKSON_CORE_JAR}")
+
+    find_file(JACKSON_DATABIND_JAR
+        NAMES
+            jackson-databind.jar
+        PATHS
+            /usr/share/java
+    )
+    set(JACKSON_DATABIND_LINK "../../../..${JACKSON_DATABIND_JAR}")
+
+    find_file(JACKSON_JAXRS_BASE_JAR
+        NAMES
+            jackson-jaxrs-base.jar
+        PATHS
+            /usr/share/java/jackson-jaxrs-providers
+            /usr/share/java
+    )
+    set(JACKSON_JAXRS_BASE_LINK "../../../..${JACKSON_JAXRS_BASE_JAR}")
+
+    find_file(JACKSON_JAXRS_JSON_PROVIDER_JAR
+        NAMES
+            jackson-jaxrs-json-provider.jar
+        PATHS
+            /usr/share/java/jackson-jaxrs-providers
+            /usr/share/java
+    )
+    set(JACKSON_JAXRS_JSON_PROVIDER_LINK "../../../..${JACKSON_JAXRS_JSON_PROVIDER_JAR}")
+
+    find_file(JACKSON_MODULE_JAXB_ANNOTATIONS_JAR
+        NAMES
+            jackson-module-jaxb-annotations.jar
+        PATHS
+            /usr/share/java/jackson-modules
+            /usr/share/java
+    )
+    set(JACKSON_MODULE_JAXB_ANNOTATIONS_LINK "../../../..${JACKSON_MODULE_JAXB_ANNOTATIONS_JAR}")
+endif (EXISTS "${CMAKE_SOURCE_DIR}/lib")
 
 execute_process(
     COMMAND awk -F= "$1==\"ID\" { print $2 ;}" /etc/os-release
@@ -208,13 +267,32 @@ find_file(JAVAX_ANNOTATIONS_API_JAR
         /usr/share/java
 )
 
-find_file(JBOSS_LOGGING_JAR
-    NAMES
-        jboss-logging.jar
-    PATHS
-        /usr/share/java/jboss-logging
-        /usr/share/java
-)
+if (EXISTS "${CMAKE_SOURCE_DIR}/lib")
+    # use imported JARs
+
+    execute_process(
+        COMMAND ls ${CMAKE_SOURCE_DIR}/lib
+        COMMAND sed -n "s/^jboss-logging-\\(.*\\)\\.jar\$/\\1/p"
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        OUTPUT_VARIABLE JBOSS_LOGGING_VERSION
+    )
+    message("JBOSS_LOGGING_VERSION: ${JBOSS_LOGGING_VERSION}")
+
+    set(JBOSS_LOGGING_JAR "${CMAKE_SOURCE_DIR}/lib/jboss-logging-${JBOSS_LOGGING_VERSION}.jar")
+    set(JBOSS_LOGGING_LINK "jboss-logging-${JBOSS_LOGGING_VERSION}.jar")
+
+else()
+    # use system JARs
+
+    find_file(JBOSS_LOGGING_JAR
+        NAMES
+            jboss-logging.jar
+        PATHS
+            /usr/share/java/jboss-logging
+            /usr/share/java
+    )
+    set(JBOSS_LOGGING_LINK "../../../..${JBOSS_LOGGING_JAR}")
+endif (EXISTS "${CMAKE_SOURCE_DIR}/lib")
 
 find_file(JSS_JAR
     NAMES
@@ -281,33 +359,64 @@ find_file(LDAPJDK_JAR
         /usr/share/java
 )
 
-find_file(RESTEASY_JAXRS_JAR
-    NAMES
-        resteasy-jaxrs.jar
-    PATHS
-        /usr/share/java/resteasy
-)
+if (EXISTS "${CMAKE_SOURCE_DIR}/lib")
+    # use imported JARs
 
-find_file(RESTEASY_CLIENT_JAR
-    NAMES
-        resteasy-client.jar
-    PATHS
-        /usr/share/java/resteasy
-)
+    execute_process(
+        COMMAND ls ${CMAKE_SOURCE_DIR}/lib
+        COMMAND sed -n "s/^resteasy-jaxrs-\\(.*\\)\\.jar\$/\\1/p"
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        OUTPUT_VARIABLE RESTEASY_VERSION
+    )
+    message("RESTEASY_VERSION: ${RESTEASY_VERSION}")
 
-find_file(RESTEASY_JACKSON_PROVIDER_JAR
-    NAMES
-        resteasy-jackson2-provider.jar
-    PATHS
-        /usr/share/java/resteasy
-)
+    set(RESTEASY_JAXRS_JAR "${CMAKE_SOURCE_DIR}/lib/resteasy-jaxrs-${RESTEASY_VERSION}.jar")
+    set(RESTEASY_JAXRS_LINK "resteasy-jaxrs-${RESTEASY_VERSION}.jar")
 
-find_file(RESTEASY_SERVLET_INITIALIZER_JAR
-    NAMES
-        resteasy-servlet-initializer.jar
-    PATHS
-        /usr/share/java/resteasy
-)
+    set(RESTEASY_CLIENT_JAR "${CMAKE_SOURCE_DIR}/lib/resteasy-client-${RESTEASY_VERSION}.jar")
+    set(RESTEASY_CLIENT_LINK "resteasy-client-${RESTEASY_VERSION}.jar")
+
+    set(RESTEASY_JACKSON_PROVIDER_JAR "${CMAKE_SOURCE_DIR}/lib/resteasy-jackson2-provider-${RESTEASY_VERSION}.jar")
+    set(RESTEASY_JACKSON_PROVIDER_LINK "resteasy-jackson2-provider-${RESTEASY_VERSION}.jar")
+
+    set(RESTEASY_SERVLET_INITIALIZER_JAR "${CMAKE_SOURCE_DIR}/lib/resteasy-servlet-initializer-${RESTEASY_VERSION}.jar")
+    set(RESTEASY_SERVLET_INITIALIZER_LINK "resteasy-servlet-initializer-${RESTEASY_VERSION}.jar")
+
+else()
+    # use system JARs
+
+    find_file(RESTEASY_JAXRS_JAR
+        NAMES
+            resteasy-jaxrs.jar
+        PATHS
+            /usr/share/java/resteasy
+    )
+    set(RESTEASY_JAXRS_LINK "../../../..${RESTEASY_JAXRS_JAR}")
+
+    find_file(RESTEASY_CLIENT_JAR
+        NAMES
+            resteasy-client.jar
+        PATHS
+            /usr/share/java/resteasy
+    )
+    set(RESTEASY_CLIENT_LINK "../../../..${RESTEASY_CLIENT_JAR}")
+
+    find_file(RESTEASY_JACKSON_PROVIDER_JAR
+        NAMES
+            resteasy-jackson2-provider.jar
+        PATHS
+            /usr/share/java/resteasy
+    )
+    set(RESTEASY_JACKSON_PROVIDER_LINK "../../../..${RESTEASY_JACKSON_PROVIDER_JAR}")
+
+    find_file(RESTEASY_SERVLET_INITIALIZER_JAR
+        NAMES
+            resteasy-servlet-initializer.jar
+        PATHS
+            /usr/share/java/resteasy
+    )
+    set(RESTEASY_SERVLET_INITIALIZER_LINK "../../../..${RESTEASY_SERVLET_INITIALIZER_JAR}")
+endif (EXISTS "${CMAKE_SOURCE_DIR}/lib")
 
 find_file(JASPIC_API_JAR
     NAMES
