@@ -143,6 +143,7 @@ add_custom_command(
     COMMAND ln -sf ../../../..${RESTEASY_CLIENT_JAR} lib/resteasy-client.jar
     COMMAND ln -sf ../../../..${RESTEASY_JACKSON_PROVIDER_JAR} lib/resteasy-jackson2-provider.jar
     COMMAND ln -sf ../../../..${RESTEASY_JAXRS_JAR} lib/resteasy-jaxrs.jar
+    COMMAND ln -sf ../../../..${RESTEASY_SERVLET_INITIALIZER_JAR} lib/resteasy-servlet-intializer.jar
     COMMAND ln -sf ../../../..${SERVLET_JAR} lib/servlet.jar
     COMMAND ln -sf ../../../..${SLF4J_API_JAR} lib/slf4j-api.jar
     COMMAND ln -sf ../../../..${SLF4J_JDK14_JAR} lib/slf4j-jdk14.jar
