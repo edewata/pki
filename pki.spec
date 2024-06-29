@@ -1044,6 +1044,8 @@ fi
 %if %{with console}
 %mvn_package org.dogtagpki.pki:pki-console        pki-console
 %endif
+pwd
+ls -la
 
 ################################################################################
 %build
