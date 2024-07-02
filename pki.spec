@@ -176,7 +176,8 @@ BuildRequires:    policycoreutils
 
 # Java build dependencies
 BuildRequires:    %{java_devel}
-BuildRequires:    maven-local
+BuildRequires:    maven
+#BuildRequires:    maven-local
 %if 0%{?fedora}
 BuildRequires:    xmvn-tools
 %endif
@@ -910,6 +911,8 @@ This package provides test suite for %{product_name}.
 ################################################################################
 
 %autosetup -n pki-%{version}%{?phase:-}%{?phase} -p 1
+
+mvn clean package
 
 %if %{with deps}
 if [ ! -d lib ]
