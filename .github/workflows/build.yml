@@ -181,3 +181,7 @@ jobs:
         with:
           key: pki-images-${{ github.sha }}
           path: pki-images.tar
+
+  build-maven-test:
+    name: Maven build test
+    uses: ./.github/workflows/build-maven-test.yml

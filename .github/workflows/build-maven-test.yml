@@ -1,0 +1,277 @@
+name: Maven build test
+
+on: workflow_call
+
+jobs:
+  test:
+    name: Maven build test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Clone repository
+      uses: actions/checkout@v4
+
+    - name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'adopt'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+
+        # https://salsa.debian.org/freeipa-team/dogtag-pki/-/blob/master/debian/control?ref_type=heads
+        sudo apt-get install -y \
+            maven \
+            cmake \
+            g++ \
+            apache2-dev \
+            libnspr4-dev \
+            libnss3-dev \
+            libldap2-dev \
+            libjaxb-java \
+            libcommons-codec-java \
+            libcommons-net-java \
+            libtomcat9-java \
+            libhttpcore-java \
+            libhttpclient-java \
+            libjackson2-annotations-java \
+            libjackson2-core-java \
+            libjackson2-databind-java \
+            libjackson2-jaxrs-providers-java \
+            libresteasy3.0-java \
+            python3-ldap \
+            python3-sphinx \
+            junit5 \
+            libhamcrest-java \
+            go-md2man
+
+        # get dependencies from Maven
+        mvn \
+            --batch-mode \
+            -DincludeGroupIds='org.dogtagpki.jss,org.dogtagpki.ldap-sdk' \
+            -DoutputDirectory=lib \
+            dependency:copy-dependencies
+        #mvn dependency:copy \
+        #    --batch-mode \
+        #    -Dartifact='org.dogtagpki.jss:jss-base:5.6.0-SNAPSHOT' \
+        #    -DoutputDirectory=base/common/lib
+        #mvn dependency:copy \
+        #    --batch-mode \
+        #    -Dartifact='org.dogtagpki.jss:jss-tomcat:5.6.0-SNAPSHOT' \
+        #    -DoutputDirectory=base/tomcat/lib
+        #mvn dependency:copy \
+        #    --batch-mode \
+        #    -Dartifact='org.dogtagpki.jss:jss-tomcat-9.0:5.6.0-SNAPSHOT' \
+        #    -DoutputDirectory=base/tomcat-9.0/lib
+        #mvn dependency:copy \
+        #    --batch-mode \
+        #    -Dartifact='org.dogtagpki.ldap-sdk:ldapjdk:5.6.0-SNAPSHOT' \
+        #    -DoutputDirectory=base/common/lib
+
+        find /usr/share/java -name "*.jar" | sort
+        find . -name "*.jar" | sort
+
+    - name: Build with Maven
+      run: mvn --batch-mode package
+
+    - name: Build with CMake
+      run: |
+        ./build.sh --without-test dist
+
+    - name: Compare pki-common.jar
+      run: |
+        jar tvf base/common/target/pki-common.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | grep -v '^META-INF/maven/' \
+            | tee maven.out
+        jar tvf ~/build/pki/dist/pki-common.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | tee cmake.out
+        diff maven.out cmake.out
+
+    - name: Compare pki-tools.jar
+      run: |
+        jar tvf base/tools/target/pki-tools.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | grep -v '^META-INF/maven/' \
+            | tee maven.out
+        jar tvf ~/build/pki/dist/pki-tools.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | tee cmake.out
+        diff maven.out cmake.out
+
+    - name: Compare pki-tomcat.jar
+      run: |
+        jar tvf base/tomcat/target/pki-tomcat.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | grep -v '^META-INF/maven/' \
+            | tee maven.out
+        jar tvf ~/build/pki/dist/pki-tomcat.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | tee cmake.out
+        diff maven.out cmake.out
+
+    - name: Compare pki-tomcat-9.0.jar
+      run: |
+        jar tvf base/tomcat-9.0/target/pki-tomcat-9.0.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | grep -v '^META-INF/maven/' \
+            | tee maven.out
+        jar tvf ~/build/pki/dist/pki-tomcat-9.0.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | tee cmake.out
+        diff maven.out cmake.out
+
+    - name: Compare pki-server.jar
+      run: |
+        jar tvf base/server/target/pki-server.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | grep -v '^META-INF/maven/' \
+            | tee maven.out
+        jar tvf ~/build/pki/dist/pki-server.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | tee cmake.out
+        diff maven.out cmake.out
+
+    - name: Compare pki-server-webapp.jar
+      run: |
+        jar tvf base/server-webapp/target/pki-server-webapp.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | grep -v '^META-INF/maven/' \
+            | tee maven.out
+        jar tvf ~/build/pki/dist/pki-server-webapp.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | tee cmake.out
+        diff maven.out cmake.out
+
+    - name: Compare pki-ca.jar
+      run: |
+        jar tvf base/ca/target/pki-ca.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | grep -v '^META-INF/maven/' \
+            | tee maven.out
+        jar tvf ~/build/pki/dist/pki-ca.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | tee cmake.out
+        diff maven.out cmake.out
+
+    - name: Compare pki-kra.jar
+      run: |
+        jar tvf base/kra/target/pki-kra.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | grep -v '^META-INF/maven/' \
+            | tee maven.out
+        jar tvf ~/build/pki/dist/pki-kra.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | tee cmake.out
+        diff maven.out cmake.out
+
+    - name: Compare pki-ocsp.jar
+      run: |
+        jar tvf base/ocsp/target/pki-ocsp.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | grep -v '^META-INF/maven/' \
+            | tee maven.out
+        jar tvf ~/build/pki/dist/pki-ocsp.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | tee cmake.out
+        diff maven.out cmake.out
+
+    - name: Compare pki-tks.jar
+      run: |
+        jar tvf base/tks/target/pki-tks.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | grep -v '^META-INF/maven/' \
+            | tee maven.out
+        jar tvf ~/build/pki/dist/pki-tks.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | tee cmake.out
+        diff maven.out cmake.out
+
+    - name: Compare pki-tps.jar
+      run: |
+        jar tvf base/tps/target/pki-tps.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | grep -v '^META-INF/maven/' \
+            | tee maven.out
+        jar tvf ~/build/pki/dist/pki-tps.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | tee cmake.out
+        diff maven.out cmake.out
+
+    - name: Compare pki-acme.jar
+      run: |
+        jar tvf base/acme/target/pki-acme.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | grep -v '^META-INF/maven/' \
+            | tee maven.out
+        jar tvf ~/build/pki/dist/pki-acme.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | tee cmake.out
+        diff maven.out cmake.out
+
+    - name: Compare pki-est.jar
+      run: |
+        jar tvf base/est/target/pki-est.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | grep -v '^META-INF/maven/' \
+            | tee maven.out
+        jar tvf ~/build/pki/dist/pki-est.jar \
+            | awk '{print $8;}' \
+            | sort \
+            | grep -v '/$' \
+            | tee cmake.out
+        diff maven.out cmake.out
+
+    # TODO: Run examples
