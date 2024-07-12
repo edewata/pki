@@ -135,8 +135,8 @@ add_custom_command(
     COMMAND ln -sf ../../../..${JAXB_API_JAR} lib/jakarta.xml.bind-api.jar
     COMMAND ln -sf ${JAXRS_API_LINK} lib/jboss-jaxrs-2.0-api.jar
     COMMAND ln -sf ${JBOSS_LOGGING_LINK} lib/jboss-logging.jar
-    COMMAND ln -sf ${JSS_LINK} lib/jss.jar
-    COMMAND ln -sf ${LDAPJDK_LINK} lib/ldapjdk.jar
+    COMMAND ln -sf ../../../..${JSS_JAR} lib/jss.jar
+    COMMAND ln -sf ../../../..${LDAPJDK_JAR} lib/ldapjdk.jar
     COMMAND ln -sf ../../../..${P11_KIT_TRUST} lib/p11-kit-trust.so
     COMMAND ln -sf ../../../..${JAVA_JAR_INSTALL_DIR}/pki/pki-common.jar lib/pki-common.jar
     COMMAND ln -sf ../../../..${JAVA_JAR_INSTALL_DIR}/pki/pki-tools.jar lib/pki-tools.jar
