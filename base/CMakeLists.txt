@@ -302,13 +302,58 @@ else()
 
 endif (JBOSS_LOGGING_VERSION)
 
-find_file(JSS_JAR
-    NAMES
-        jss.jar
-    PATHS
-        ${JAVA_LIB_INSTALL_DIR}
-        /usr/share/java
-)
+if (EXISTS "${CMAKE_SOURCE_DIR}/base/common/lib")
+    execute_process(
+        COMMAND ls ${CMAKE_SOURCE_DIR}/base/common/lib
+        COMMAND sed -n "s/^jss-base-\\(.*\\)\\.jar\$/\\1/p"
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        OUTPUT_VARIABLE JSS_VERSION
+    )
+endif (EXISTS "${CMAKE_SOURCE_DIR}/base/common/lib")
+
+if (JSS_VERSION)
+    # use imported JARs
+
+    set(JSS_JAR "${CMAKE_SOURCE_DIR}/base/common/lib/jss-base-${JSS_VERSION}.jar")
+    set(JSS_LINK "jss-base-${JSS_VERSION}.jar")
+
+    set(JSS_TOMCAT_JAR "${CMAKE_SOURCE_DIR}/base/tomcat/lib/jss-tomcat-${JSS_VERSION}.jar")
+    set(JSS_TOMCAT_LINK "jss-tomcat-${JSS_VERSION}.jar")
+
+    set(JSS_TOMCAT_9_0_JAR "${CMAKE_SOURCE_DIR}/base/tomcat-9.0/lib/jss-tomcat-9.0-${JSS_VERSION}.jar")
+    set(JSS_TOMCAT_9_0_LINK "jss-tomcat-9.0-${JSS_VERSION}.jar")
+
+else()
+    # use system JARs
+
+    find_file(JSS_JAR
+        NAMES
+            jss.jar
+        PATHS
+            ${JAVA_LIB_INSTALL_DIR}
+            /usr/share/java
+    )
+    set(JSS_LINK "../../../..${JSS_JAR}")
+
+    find_file(JSS_TOMCAT_JAR
+        NAMES
+            jss-tomcat.jar
+        PATHS
+            /usr/share/java/jss
+            /usr/share/java
+    )
+    set(JSS_TOMCAT_LINK "../../../../../..${JSS_TOMCAT_JAR}")
+
+    find_file(JSS_TOMCAT_9_0_JAR
+        NAMES
+            jss-tomcat-9.0.jar
+        PATHS
+            /usr/share/java/jss
+            /usr/share/java
+    )
+    set(JSS_TOMCAT_9_0_LINK "../../../../../..${JSS_TOMCAT_9_0_JAR}")
+
+endif (JSS_VERSION)
 
 find_file(JUNIT_JUPITER_API_JAR
     NAMES
@@ -366,13 +411,34 @@ find_file(OPENTEST4J_JAR
         /usr/share/java
 )
 
-find_file(LDAPJDK_JAR
-    NAMES
-        ldapjdk.jar
-    PATHS
-        ${JAVA_LIB_INSTALL_DIR}
-        /usr/share/java
-)
+if (EXISTS "${CMAKE_SOURCE_DIR}/base/common/lib")
+    execute_process(
+        COMMAND ls ${CMAKE_SOURCE_DIR}/base/common/lib
+        COMMAND sed -n "s/^ldapjdk-\\(.*\\)\\.jar\$/\\1/p"
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        OUTPUT_VARIABLE LDAPJDK_VERSION
+    )
+endif (EXISTS "${CMAKE_SOURCE_DIR}/base/common/lib")
+
+if (LDAPJDK_VERSION)
+    # use imported JARs
+
+    set(LDAPJDK_JAR "${CMAKE_SOURCE_DIR}/base/common/lib/ldapjdk-${LDAPJDK_VERSION}.jar")
+    set(LDAPJDK_LINK "ldapjdk-${LDAPJDK_VERSION}.jar")
+
+else()
+    # use system JARs
+
+    find_file(LDAPJDK_JAR
+        NAMES
+            ldapjdk.jar
+        PATHS
+            ${JAVA_LIB_INSTALL_DIR}
+            /usr/share/java
+    )
+    set(EXISTS "${CMAKE_SOURCE_DIR}/base/common/lib")
+
+endif (LDAPJDK_VERSION)
 
 if (EXISTS "${CMAKE_SOURCE_DIR}/base/common/lib")
     execute_process(
@@ -490,22 +556,6 @@ find_file(TOMCAT_UTIL_SCAN_JAR
         tomcat9-util-scan.jar
     PATHS
         /usr/share/java/tomcat
-        /usr/share/java
-)
-
-find_file(JSS_TOMCAT_JAR
-    NAMES
-        jss-tomcat.jar
-    PATHS
-        /usr/share/java/jss
-        /usr/share/java
-)
-
-find_file(JSS_TOMCAT_9_0_JAR
-    NAMES
-        jss-tomcat-9.0.jar
-    PATHS
-        /usr/share/java/jss
         /usr/share/java
 )
 

@@ -1250,6 +1250,8 @@ xmlstarlet edit --inplace \
 %if %{with server}
 echo "Installing JAR deps into %{buildroot}%{_datadir}/pki/server/common/lib"
 cp base/server/lib/* %{buildroot}%{_datadir}/pki/server/common/lib
+cp base/tomcat/lib/* %{buildroot}%{_datadir}/pki/server/common/lib
+cp base/tomcat-9.0/lib/* %{buildroot}%{_datadir}/pki/server/common/lib
 ls -l %{buildroot}%{_datadir}/pki/server/common/lib
 
 echo "Removing RPM deps from %{buildroot}%{_datadir}/maven-metadata/pki-pki-server.xml"
