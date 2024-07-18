@@ -95,8 +95,8 @@ ExcludeArch: i686
 # PKI
 ################################################################################
 
-# Use external build dependencies unless --without build_deps is specified.
-%bcond_without build_deps
+# Use bundled build dependencies unless --with build_deps is specified.
+%bcond_with build_deps
 
 # Use bundled runtime dependencies unless --with runtime_deps is specified.
 %bcond_with runtime_deps
@@ -1021,6 +1021,67 @@ This package provides test suite for %{product_name}.
 ################################################################################
 
 %autosetup -n pki-%{version}%{?phase:-}%{?phase} -p 1
+
+%if %{without build_deps}
+
+# import common libraries from Maven repo
+
+pushd base/common
+
+mvn dependency:copy-dependencies \
+    --batch-mode \
+    -DincludeGroupIds=jakarta.activation \
+    -DoutputDirectory=lib
+mvn dependency:copy-dependencies \
+    --batch-mode \
+    -DincludeGroupIds=jakarta.annotation \
+    -DoutputDirectory=lib
+mvn dependency:copy-dependencies \
+    --batch-mode \
+    -DincludeGroupIds=jakarta.xml.bind \
+    -DoutputDirectory=lib
+mvn dependency:copy-dependencies \
+    --batch-mode \
+    -DincludeGroupIds=com.fasterxml.jackson.core \
+    -DoutputDirectory=lib
+mvn dependency:copy-dependencies \
+    --batch-mode \
+    -DincludeGroupIds=com.fasterxml.jackson.module \
+    -DoutputDirectory=lib
+mvn dependency:copy-dependencies \
+    --batch-mode \
+    -DincludeGroupIds=com.fasterxml.jackson.jaxrs \
+    -DoutputDirectory=lib
+mvn dependency:copy-dependencies \
+    --batch-mode \
+    -DincludeGroupIds=org.jboss.spec.javax.ws.rs \
+    -DoutputDirectory=lib
+mvn dependency:copy-dependencies \
+    --batch-mode \
+    -DincludeGroupIds=org.jboss.logging \
+    -DoutputDirectory=lib
+mvn dependency:copy-dependencies \
+    --batch-mode \
+    -DincludeGroupIds=org.jboss.resteasy \
+    -DoutputDirectory=lib
+
+ls -l lib
+popd
+
+# import server libraries from Maven repo
+
+pushd base/server
+
+mvn dependency:copy-dependencies \
+    --batch-mode \
+    -DincludeGroupIds=org.jboss.resteasy \
+    -DincludeArtifactIds=resteasy-servlet-initializer \
+    -DoutputDirectory=lib
+
+ls -l lib
+popd
+
+%endif
 
 %if %{without runtime_deps}
 
