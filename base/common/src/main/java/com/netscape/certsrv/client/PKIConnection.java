@@ -26,6 +26,9 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.URI;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.X509TrustManager;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.client.WebTarget;
 
@@ -38,23 +41,29 @@ import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpResponseInterceptor;
 import org.apache.http.ProtocolException;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.params.HttpClientParams;
-import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.scheme.SchemeLayeredSocketFactory;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.BufferedHttpEntity;
-import org.apache.http.impl.client.ClientParamsStack;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.EntityEnclosingRequestWrapper;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.RequestWrapper;
-import org.apache.http.message.BasicHttpResponse;
-import org.apache.http.params.HttpParams;
+import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
-import org.dogtagpki.client.DefaultSocketFactory;
+import org.dogtagpki.client.NonBlockingSocketFactory;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
+import org.mozilla.jss.provider.javax.crypto.JSSKeyManager;
+import org.mozilla.jss.provider.javax.crypto.JSSNativeTrustManager;
 import org.mozilla.jss.ssl.SSLCertificateApprovalCallback;
 
 public class PKIConnection implements AutoCloseable {
@@ -63,7 +72,8 @@ public class PKIConnection implements AutoCloseable {
 
     ClientConfig config;
 
-    DefaultHttpClient httpClient = new DefaultHttpClient();
+    CloseableHttpClient httpClient;
+
     SSLCertificateApprovalCallback callback;
     SchemeLayeredSocketFactory socketFactory;
 
@@ -77,29 +87,40 @@ public class PKIConnection implements AutoCloseable {
     File output;
 
     public PKIConnection(ClientConfig config) throws Exception {
-
         this.config = config;
 
-        // create socket factory
-        String className = System.getProperty(
-                "org.dogtagpki.client.socketFactory",
-                DefaultSocketFactory.class.getName());
-        logger.info("PKIConnection: Socket factory: " + className);
+        HttpClientBuilder httpClientBuilder = HttpClients.custom();
 
-        Class<? extends SchemeLayeredSocketFactory> clazz =
-                Class.forName(className).asSubclass(SchemeLayeredSocketFactory.class);
+        JSSKeyManager keyManager = (JSSKeyManager) KeyManagerFactory.getInstance("NssX509").getKeyManagers()[0];
 
-        socketFactory = clazz.getConstructor(PKIConnection.class).newInstance(this);
+        X509TrustManager[] trustManagers = new X509TrustManager[] {
+                new JSSNativeTrustManager() };
 
-        // Register https scheme.
-        Scheme scheme = new Scheme("https", 443, socketFactory);
+        SSLSocketFactory socketFactory = new NonBlockingSocketFactory(
+                this,
+                "TLS",
+                keyManager,
+                trustManagers);
 
-        httpClient.getConnectionManager().getSchemeRegistry().register(scheme);
+        SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
+                socketFactory,
+                NoopHostnameVerifier.INSTANCE);
+
+        // Register http and https schemes.
+        Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory> create()
+                .register("http", new PlainConnectionSocketFactory())
+                .register("https", sslsf)
+                .build();
+
+        BasicHttpClientConnectionManager connectionManager =
+                new BasicHttpClientConnectionManager(socketFactoryRegistry);
+
+        httpClientBuilder.setConnectionManager(connectionManager);
 
         // Don't retry operations.
-        httpClient.setHttpRequestRetryHandler(new DefaultHttpRequestRetryHandler(0, false));
+        httpClientBuilder.disableAutomaticRetries();
 
-        httpClient.addRequestInterceptor(new HttpRequestInterceptor() {
+        httpClientBuilder.addInterceptorFirst(new HttpRequestInterceptor() {
             @Override
             public void process(HttpRequest request, HttpContext context) throws HttpException, IOException {
 
@@ -131,18 +152,10 @@ public class PKIConnection implements AutoCloseable {
                     }
                     logger.debug("Request:\n" + os.toString("UTF-8"));
                 }
-
-                // Set the request parameter to follow redirections.
-                HttpParams params = request.getParams();
-                if (params instanceof ClientParamsStack) {
-                    ClientParamsStack paramsStack = (ClientParamsStack)request.getParams();
-                    params = paramsStack.getRequestParams();
-                }
-                HttpClientParams.setRedirecting(params, true);
             }
         });
 
-        httpClient.addResponseInterceptor(new HttpResponseInterceptor() {
+        httpClientBuilder.addInterceptorLast(new HttpResponseInterceptor() {
             @Override
             public void process(HttpResponse response, HttpContext context) throws HttpException, IOException {
 
@@ -170,7 +183,7 @@ public class PKIConnection implements AutoCloseable {
             }
         });
 
-        httpClient.setRedirectStrategy(new DefaultRedirectStrategy() {
+        httpClientBuilder.setRedirectStrategy(new DefaultRedirectStrategy() {
             @Override
             public HttpUriRequest getRedirect(HttpRequest request, HttpResponse response, HttpContext context)
                     throws ProtocolException {
@@ -178,7 +191,8 @@ public class PKIConnection implements AutoCloseable {
                 HttpUriRequest uriRequest = super.getRedirect(request, response, context);
 
                 URI uri = uriRequest.getURI();
-                logger.info("HTTP redirect: "+uri);
+                logger.info("HTTP redirect: " + uri);
+                logger.info("HTTP redirect class: " + request.getClass());
 
                 // Redirect the original request to the new URI.
                 RequestWrapper wrapper;
@@ -202,6 +216,7 @@ public class PKIConnection implements AutoCloseable {
             }
         });
 
+        httpClient = httpClientBuilder.build();
         engine = new ApacheHttpClient4Engine(httpClient);
 
         client = new ResteasyClientBuilder().httpEngine(engine).build();
@@ -227,37 +242,60 @@ public class PKIConnection implements AutoCloseable {
 
     public void storeRequest(PrintStream out, HttpRequest request) throws IOException {
 
-        if (request instanceof EntityEnclosingRequestWrapper) {
-            EntityEnclosingRequestWrapper wrapper = (EntityEnclosingRequestWrapper) request;
+        logger.info("Request class: " + request.getClass());
 
-            HttpEntity entity = wrapper.getEntity();
-            if (entity == null) return;
+        if (request instanceof HttpPost postRequest) {
+            HttpEntity entity = postRequest.getEntity();
+
+            if (entity == null)
+                return;
 
             if (!entity.isRepeatable()) {
+                // store entity into a buffer and put it back into request
                 BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
-                wrapper.setEntity(bufferedEntity);
+                postRequest.setEntity(bufferedEntity);
                 entity = bufferedEntity;
             }
 
-            storeEntity(out, entity);
+            //storeEntity(out, entity);
+
+            byte[] buffer = new byte[1024];
+            int c;
+
+            try (InputStream in = entity.getContent()) {
+                while ((c = in.read(buffer)) > 0) {
+                    logger.info("Writing request: " + c + " bytes");
+                    out.write(buffer, 0, c);
+                }
+            }
         }
     }
 
     public void storeResponse(PrintStream out, HttpResponse response) throws IOException {
 
-        if (response instanceof BasicHttpResponse) {
-            BasicHttpResponse basicResponse = (BasicHttpResponse) response;
+        logger.info("Response class: " + response.getClass());
 
-            HttpEntity entity = basicResponse.getEntity();
-            if (entity == null) return;
+        HttpEntity entity = response.getEntity();
+        if (entity == null)
+            return;
 
-            if (!entity.isRepeatable()) {
-                BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
-                basicResponse.setEntity(bufferedEntity);
-                entity = bufferedEntity;
+        if (!entity.isRepeatable()) {
+            // store entity into a buffer and put it back into response
+            BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
+            response.setEntity(bufferedEntity);
+            entity = bufferedEntity;
+        }
+
+        //storeEntity(out, entity);
+
+        byte[] buffer = new byte[1024];
+        int c;
+
+        try (InputStream in = entity.getContent()) {
+            while ((c = in.read(buffer)) > 0) {
+                logger.info("Writing response: " + c + " bytes");
+                out.write(buffer, 0, c);
             }
-
-            storeEntity(out, entity);
         }
     }
 
@@ -268,6 +306,7 @@ public class PKIConnection implements AutoCloseable {
 
         try (InputStream in = entity.getContent()) {
             while ((c = in.read(buffer)) > 0) {
+                logger.info("Writing " + c + " bytes");
                 out.write(buffer, 0, c);
             }
         }
@@ -286,7 +325,7 @@ public class PKIConnection implements AutoCloseable {
     }
 
     @Override
-    public void close() {
+    public void close() throws Exception {
         client.close();
         engine.close();
         httpClient.close();

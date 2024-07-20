@@ -301,7 +301,7 @@ public class PKIClient implements AutoCloseable {
     }
 
     @Override
-    public void close() {
+    public void close() throws Exception {
         connection.close();
     }
 }
