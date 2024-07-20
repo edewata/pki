@@ -24,12 +24,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URI;
-import java.net.UnknownHostException;
 
+import javax.net.ssl.HandshakeCompletedEvent;
+import javax.net.ssl.HandshakeCompletedListener;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.X509TrustManager;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.client.WebTarget;
 
@@ -42,31 +44,33 @@ import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpResponseInterceptor;
 import org.apache.http.ProtocolException;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.params.HttpClientParams;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeLayeredSocketFactory;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.BufferedHttpEntity;
-import org.apache.http.impl.client.ClientParamsStack;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.EntityEnclosingRequestWrapper;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.RequestWrapper;
-import org.apache.http.message.BasicHttpResponse;
-import org.apache.http.params.HttpParams;
+import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
-import org.mozilla.jss.CryptoManager;
-import org.mozilla.jss.NotInitializedException;
+import org.mozilla.jss.provider.javax.crypto.JSSKeyManager;
+import org.mozilla.jss.provider.javax.crypto.JSSNativeTrustManager;
 import org.mozilla.jss.ssl.SSLAlertDescription;
 import org.mozilla.jss.ssl.SSLAlertEvent;
 import org.mozilla.jss.ssl.SSLAlertLevel;
 import org.mozilla.jss.ssl.SSLCertificateApprovalCallback;
-import org.mozilla.jss.ssl.SSLHandshakeCompletedEvent;
-import org.mozilla.jss.ssl.SSLSocket;
-import org.mozilla.jss.ssl.SSLSocketListener;
+import org.mozilla.jss.ssl.javax.JSSSocket;
+import org.mozilla.jss.ssl.javax.JSSSocketFactory;
 
 public class PKIConnection implements AutoCloseable {
 
@@ -74,7 +78,8 @@ public class PKIConnection implements AutoCloseable {
 
     ClientConfig config;
 
-    DefaultHttpClient httpClient = new DefaultHttpClient();
+    CloseableHttpClient httpClient;
+
     SSLCertificateApprovalCallback callback;
 
     ApacheHttpClient4Engine engine;
@@ -87,17 +92,39 @@ public class PKIConnection implements AutoCloseable {
     File output;
 
     public PKIConnection(ClientConfig config) throws Exception {
-
         this.config = config;
 
-        // Register https scheme.
-        Scheme scheme = new Scheme("https", 443, new JSSProtocolSocketFactory());
-        httpClient.getConnectionManager().getSchemeRegistry().register(scheme);
+        HttpClientBuilder httpClientBuilder = HttpClients.custom();
+
+        JSSKeyManager keyManager = (JSSKeyManager) KeyManagerFactory.getInstance("NssX509").getKeyManagers()[0];
+
+        X509TrustManager[] trustManagers = new X509TrustManager[] {
+                new JSSNativeTrustManager() };
+
+        SSLSocketFactory socketFactory = new PKISocketFactory(
+                "TLS",
+                keyManager,
+                trustManagers);
+
+        SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
+                socketFactory,
+                NoopHostnameVerifier.INSTANCE);
+
+        // Register http and https schemes.
+        Registry<ConnectionSocketFactory> socketFactoryRegistry = RegistryBuilder.<ConnectionSocketFactory> create()
+                .register("http", new PlainConnectionSocketFactory())
+                .register("https", sslsf)
+                .build();
+
+        BasicHttpClientConnectionManager connectionManager =
+                new BasicHttpClientConnectionManager(socketFactoryRegistry);
+
+        httpClientBuilder.setConnectionManager(connectionManager);
 
         // Don't retry operations.
-        httpClient.setHttpRequestRetryHandler(new DefaultHttpRequestRetryHandler(0, false));
+        httpClientBuilder.disableAutomaticRetries();
 
-        httpClient.addRequestInterceptor(new HttpRequestInterceptor() {
+        httpClientBuilder.addInterceptorFirst(new HttpRequestInterceptor() {
             @Override
             public void process(HttpRequest request, HttpContext context) throws HttpException, IOException {
 
@@ -129,18 +156,10 @@ public class PKIConnection implements AutoCloseable {
                     }
                     logger.debug("Request:\n" + os.toString("UTF-8"));
                 }
-
-                // Set the request parameter to follow redirections.
-                HttpParams params = request.getParams();
-                if (params instanceof ClientParamsStack) {
-                    ClientParamsStack paramsStack = (ClientParamsStack)request.getParams();
-                    params = paramsStack.getRequestParams();
-                }
-                HttpClientParams.setRedirecting(params, true);
             }
         });
 
-        httpClient.addResponseInterceptor(new HttpResponseInterceptor() {
+        httpClientBuilder.addInterceptorLast(new HttpResponseInterceptor() {
             @Override
             public void process(HttpResponse response, HttpContext context) throws HttpException, IOException {
 
@@ -168,7 +187,7 @@ public class PKIConnection implements AutoCloseable {
             }
         });
 
-        httpClient.setRedirectStrategy(new DefaultRedirectStrategy() {
+        httpClientBuilder.setRedirectStrategy(new DefaultRedirectStrategy() {
             @Override
             public HttpUriRequest getRedirect(HttpRequest request, HttpResponse response, HttpContext context)
                     throws ProtocolException {
@@ -176,7 +195,8 @@ public class PKIConnection implements AutoCloseable {
                 HttpUriRequest uriRequest = super.getRedirect(request, response, context);
 
                 URI uri = uriRequest.getURI();
-                logger.info("HTTP redirect: "+uri);
+                logger.info("HTTP redirect: " + uri);
+                logger.info("HTTP redirect class: " + request.getClass());
 
                 // Redirect the original request to the new URI.
                 RequestWrapper wrapper;
@@ -200,6 +220,7 @@ public class PKIConnection implements AutoCloseable {
             }
         });
 
+        httpClient = httpClientBuilder.build();
         engine = new ApacheHttpClient4Engine(httpClient);
 
         client = new ResteasyClientBuilder().httpEngine(engine).build();
@@ -217,37 +238,60 @@ public class PKIConnection implements AutoCloseable {
 
     public void storeRequest(PrintStream out, HttpRequest request) throws IOException {
 
-        if (request instanceof EntityEnclosingRequestWrapper) {
-            EntityEnclosingRequestWrapper wrapper = (EntityEnclosingRequestWrapper) request;
+        logger.info("Request class: " + request.getClass());
 
-            HttpEntity entity = wrapper.getEntity();
-            if (entity == null) return;
+        if (request instanceof HttpPost postRequest) {
+            HttpEntity entity = postRequest.getEntity();
+
+            if (entity == null)
+                return;
 
             if (!entity.isRepeatable()) {
+                // store entity into a buffer and put it back into request
                 BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
-                wrapper.setEntity(bufferedEntity);
+                postRequest.setEntity(bufferedEntity);
                 entity = bufferedEntity;
             }
 
-            storeEntity(out, entity);
+            //storeEntity(out, entity);
+
+            byte[] buffer = new byte[1024];
+            int c;
+
+            try (InputStream in = entity.getContent()) {
+                while ((c = in.read(buffer)) > 0) {
+                    logger.info("Writing request: " + c + " bytes");
+                    out.write(buffer, 0, c);
+                }
+            }
         }
     }
 
     public void storeResponse(PrintStream out, HttpResponse response) throws IOException {
 
-        if (response instanceof BasicHttpResponse) {
-            BasicHttpResponse basicResponse = (BasicHttpResponse) response;
+        logger.info("Response class: " + response.getClass());
 
-            HttpEntity entity = basicResponse.getEntity();
-            if (entity == null) return;
+        HttpEntity entity = response.getEntity();
+        if (entity == null)
+            return;
 
-            if (!entity.isRepeatable()) {
-                BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
-                basicResponse.setEntity(bufferedEntity);
-                entity = bufferedEntity;
+        if (!entity.isRepeatable()) {
+            // store entity into a buffer and put it back into response
+            BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
+            response.setEntity(bufferedEntity);
+            entity = bufferedEntity;
+        }
+
+        //storeEntity(out, entity);
+
+        byte[] buffer = new byte[1024];
+        int c;
+
+        try (InputStream in = entity.getContent()) {
+            while ((c = in.read(buffer)) > 0) {
+                logger.info("Writing response: " + c + " bytes");
+                out.write(buffer, 0, c);
             }
-
-            storeEntity(out, entity);
         }
     }
 
@@ -258,72 +302,38 @@ public class PKIConnection implements AutoCloseable {
 
         try (InputStream in = entity.getContent()) {
             while ((c = in.read(buffer)) > 0) {
+                logger.info("Writing " + c + " bytes");
                 out.write(buffer, 0, c);
             }
         }
     }
 
-    private class JSSProtocolSocketFactory implements SchemeLayeredSocketFactory {
+    private class PKISocketFactory extends JSSSocketFactory {
 
-        @Override
-        public Socket createSocket(HttpParams params) throws IOException {
-            return null;
+        public PKISocketFactory(String protocol, JSSKeyManager km, X509TrustManager[] tms) {
+            super(protocol, km, tms);
         }
 
         @Override
-        public Socket connectSocket(Socket sock,
-                InetSocketAddress remoteAddress,
-                InetSocketAddress localAddress,
-                HttpParams params)
-                throws IOException,
-                UnknownHostException {
+        public JSSSocket createSocket(
+                Socket socket,
+                String host,
+                int port,
+                boolean autoClose) throws IOException {
 
-            // Make sure certificate database is already initialized,
-            // otherwise SSLSocket will throw UnsatisfiedLinkError.
-            try {
-                CryptoManager.getInstance();
-
-            } catch (NotInitializedException e) {
-                throw new Error("Certificate database not initialized.", e);
-            }
-
-            String hostName = null;
-            int port = 0;
-            if (remoteAddress != null) {
-                hostName = remoteAddress.getHostName();
-                port = remoteAddress.getPort();
-            }
-
-            int localPort = 0;
-            InetAddress localAddr = null;
-
-            if (localAddress != null) {
-                localPort = localAddress.getPort();
-                localAddr = localAddress.getAddress();
-            }
-
-            SSLSocket socket;
-            if (sock == null) {
-                socket = new SSLSocket(InetAddress.getByName(hostName),
-                        port,
-                        localAddr,
-                        localPort,
-                        callback,
-                        null);
-
-            } else {
-                socket = new SSLSocket(sock, hostName, callback, null);
-            }
+            JSSSocket jssSocket = super.createSocket(socket, host, port, autoClose);
 
             String certNickname = config.getCertNickname();
             if (certNickname != null) {
-                logger.info("Client certificate: "+certNickname);
-                socket.setClientCertNickname(certNickname);
+                logger.info("Client certificate: " + certNickname);
+                jssSocket.setCertFromAlias(certNickname);
             }
 
-            socket.addSocketListener(new SSLSocketListener() {
+            jssSocket.addHandshakeCompletedListener(new HandshakeCompletedListener() {
 
-                @Override
+                /**
+                 * TODO: Add support for socket listeners in JSSSocket
+                 */
                 public void alertReceived(SSLAlertEvent event) {
 
                     int intLevel = event.getLevel();
@@ -337,8 +347,10 @@ public class PKIConnection implements AutoCloseable {
                     }
                 }
 
-                @Override
-                public void alertSent(SSLAlertEvent event) {
+                /**
+                 * TODO: Add support for socket listeners in JSSSocket
+                 */
+               public void alertSent(SSLAlertEvent event) {
 
                     int intLevel = event.getLevel();
                     SSLAlertLevel level = SSLAlertLevel.valueOf(intLevel);
@@ -352,26 +364,18 @@ public class PKIConnection implements AutoCloseable {
                 }
 
                 @Override
-                public void handshakeCompleted(SSLHandshakeCompletedEvent event) {
+                public void handshakeCompleted(HandshakeCompletedEvent event) {
+                    try {
+                        logger.info("PKIConnection: local principal: " + event.getLocalPrincipal());
+                        logger.info("PKIConnection: peer principal: " + event.getPeerPrincipal());
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
                 }
 
             });
-            return socket;
+            return jssSocket;
         }
-
-        @Override
-        public boolean isSecure(Socket sock) {
-            // We only use this factory in the case of SSL Connections.
-            return true;
-        }
-
-        @Override
-        public Socket createLayeredSocket(Socket socket, String target, int port, HttpParams params)
-                throws IOException, UnknownHostException {
-            // This method implementation is required to get SSL working.
-            return null;
-        }
-
     }
 
     public WebTarget target(String path) {
@@ -387,7 +391,7 @@ public class PKIConnection implements AutoCloseable {
     }
 
     @Override
-    public void close() {
+    public void close() throws Exception {
         client.close();
         engine.close();
         httpClient.close();
