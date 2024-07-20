@@ -74,7 +74,7 @@ public class PKIClient implements AutoCloseable {
         this.config = config;
         this.crypto = crypto;
 
-        connection = new RESTEasyConnection(config);
+        connection = new RESTEasy4Connection(config);
 
         if (callback == null) {
             callback = new PKICertificateApprovalCallback(this);
@@ -357,7 +357,7 @@ public class PKIClient implements AutoCloseable {
     }
 
     @Override
-    public void close() {
+    public void close() throws Exception {
         connection.close();
     }
 }

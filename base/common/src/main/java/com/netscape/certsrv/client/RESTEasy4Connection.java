@@ -18,48 +18,33 @@
 
 package com.netscape.certsrv.client;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URI;
 import java.net.UnknownHostException;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.client.WebTarget;
 
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpEntityEnclosingRequest;
-import org.apache.http.HttpException;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpRequestInterceptor;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpResponseInterceptor;
-import org.apache.http.ProtocolException;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.params.HttpClientParams;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeLayeredSocketFactory;
-import org.apache.http.entity.BufferedHttpEntity;
-import org.apache.http.impl.client.ClientParamsStack;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
-import org.apache.http.impl.client.DefaultRedirectStrategy;
-import org.apache.http.impl.client.EntityEnclosingRequestWrapper;
-import org.apache.http.impl.client.RequestWrapper;
-import org.apache.http.message.BasicHttpResponse;
-import org.apache.http.params.HttpParams;
-import org.apache.http.protocol.HttpContext;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
 import org.mozilla.jss.CryptoManager;
 import org.mozilla.jss.NotInitializedException;
+import org.mozilla.jss.provider.javax.crypto.JSSNativeTrustManager;
 import org.mozilla.jss.ssl.SSLAlertDescription;
 import org.mozilla.jss.ssl.SSLAlertEvent;
 import org.mozilla.jss.ssl.SSLAlertLevel;
@@ -67,18 +52,53 @@ import org.mozilla.jss.ssl.SSLHandshakeCompletedEvent;
 import org.mozilla.jss.ssl.SSLSocket;
 import org.mozilla.jss.ssl.SSLSocketListener;
 
-public class RESTEasyConnection extends PKIConnection {
+public class RESTEasy4Connection extends PKIConnection {
 
-    DefaultHttpClient httpClient = new DefaultHttpClient();
+    CloseableHttpClient httpClient;
 
     ApacheHttpClient4Engine engine;
     javax.ws.rs.client.Client client;
     WebTarget target;
 
-    public RESTEasyConnection(ClientConfig config) throws Exception {
+    public RESTEasy4Connection(ClientConfig config) throws Exception {
 
         super(config);
 
+        //TrustStrategy acceptingTrustStrategy = (cert, authType) -> true;
+
+        //SSLContext sslContext = SSLContexts.custom()
+        //        .loadTrustMaterial(null, acceptingTrustStrategy)
+        //        .build();
+
+        SSLContext sslContext = javax.net.ssl.SSLContext.getInstance("TLS", "Mozilla-JSS");
+
+        sslContext.init(
+                KeyManagerFactory.getInstance("NssX509").getKeyManagers(),
+                new TrustManager[] { new JSSNativeTrustManager() },
+                null
+        );
+
+        SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
+               sslContext,
+               NoopHostnameVerifier.INSTANCE);
+
+        //SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
+        //        new JSSSocketFactory(),
+        //        NoopHostnameVerifier.INSTANCE);
+
+        Registry<ConnectionSocketFactory> socketFactoryRegistry =
+                RegistryBuilder.<ConnectionSocketFactory> create()
+                .register("https", sslsf)
+                .register("http", new PlainConnectionSocketFactory())
+                .build();
+
+        BasicHttpClientConnectionManager connectionManager =
+                new BasicHttpClientConnectionManager(socketFactoryRegistry);
+
+        httpClient = HttpClients.custom()
+                .setConnectionManager(connectionManager)
+                .build();
+/*
         // Register https scheme.
         Scheme scheme = new Scheme("https", 443, new JSSProtocolSocketFactory());
         httpClient.getConnectionManager().getSchemeRegistry().register(scheme);
@@ -188,7 +208,7 @@ public class RESTEasyConnection extends PKIConnection {
                 return response.getStatusLine().getStatusCode() == 302;
             }
         });
-
+*/
         engine = new ApacheHttpClient4Engine(httpClient);
 
         client = new ResteasyClientBuilder().httpEngine(engine).build();
@@ -199,14 +219,15 @@ public class RESTEasyConnection extends PKIConnection {
         URI uri = config.getServerURL().toURI();
         target = client.target(uri);
     }
-
+/*
     public void storeRequest(PrintStream out, HttpRequest request) throws IOException {
 
         if (request instanceof EntityEnclosingRequestWrapper) {
             EntityEnclosingRequestWrapper wrapper = (EntityEnclosingRequestWrapper) request;
 
             HttpEntity entity = wrapper.getEntity();
-            if (entity == null) return;
+            if (entity == null)
+                return;
 
             if (!entity.isRepeatable()) {
                 BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
@@ -224,7 +245,8 @@ public class RESTEasyConnection extends PKIConnection {
             BasicHttpResponse basicResponse = (BasicHttpResponse) response;
 
             HttpEntity entity = basicResponse.getEntity();
-            if (entity == null) return;
+            if (entity == null)
+                return;
 
             if (!entity.isRepeatable()) {
                 BufferedHttpEntity bufferedEntity = new BufferedHttpEntity(entity);
@@ -247,21 +269,25 @@ public class RESTEasyConnection extends PKIConnection {
             }
         }
     }
-
-    private class JSSProtocolSocketFactory implements SchemeLayeredSocketFactory {
+*/
+    private class JSSSocketFactory extends SSLSocketFactory {
 
         @Override
-        public Socket createSocket(HttpParams params) throws IOException {
+        public String[] getDefaultCipherSuites() {
             return null;
         }
 
         @Override
-        public Socket connectSocket(Socket sock,
-                InetSocketAddress remoteAddress,
-                InetSocketAddress localAddress,
-                HttpParams params)
-                throws IOException,
-                UnknownHostException {
+        public String[] getSupportedCipherSuites() {
+            return null;
+        }
+
+        @Override
+        public Socket createSocket(
+                Socket sock,
+                String hostName,
+                int port,
+                boolean autoClose) throws IOException {
 
             // Make sure certificate database is already initialized,
             // otherwise SSLSocket will throw UnsatisfiedLinkError.
@@ -272,37 +298,23 @@ public class RESTEasyConnection extends PKIConnection {
                 throw new Error("Certificate database not initialized.", e);
             }
 
-            String hostName = null;
-            int port = 0;
-            if (remoteAddress != null) {
-                hostName = remoteAddress.getHostName();
-                port = remoteAddress.getPort();
-            }
-
-            int localPort = 0;
-            InetAddress localAddr = null;
-
-            if (localAddress != null) {
-                localPort = localAddress.getPort();
-                localAddr = localAddress.getAddress();
-            }
-
             SSLSocket socket;
             if (sock == null) {
                 socket = new SSLSocket(InetAddress.getByName(hostName),
                         port,
-                        localAddr,
-                        localPort,
+                        null,
+                        0,
                         callback,
                         null);
 
             } else {
+                socker = JSSSocketFactory.createSocket();
                 socket = new SSLSocket(sock, hostName, callback, null);
             }
 
             String certNickname = config.getCertNickname();
             if (certNickname != null) {
-                logger.info("Client certificate: "+certNickname);
+                logger.info("Client certificate: " + certNickname);
                 socket.setClientCertNickname(certNickname);
             }
 
@@ -345,18 +357,30 @@ public class RESTEasyConnection extends PKIConnection {
         }
 
         @Override
-        public boolean isSecure(Socket sock) {
-            // We only use this factory in the case of SSL Connections.
-            return true;
-        }
-
-        @Override
-        public Socket createLayeredSocket(Socket socket, String target, int port, HttpParams params)
-                throws IOException, UnknownHostException {
-            // This method implementation is required to get SSL working.
+        public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
+            // TODO Auto-generated method stub
             return null;
         }
 
+        @Override
+        public Socket createSocket(String host, int port, InetAddress localHost, int localPort)
+                throws IOException, UnknownHostException {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public Socket createSocket(InetAddress host, int port) throws IOException {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public Socket createSocket(InetAddress address, int port, InetAddress localAddress, int localPort)
+                throws IOException {
+            // TODO Auto-generated method stub
+            return null;
+        }
     }
 
     public WebTarget target(String path) {
