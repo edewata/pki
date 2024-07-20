@@ -74,7 +74,7 @@ public class PKIClient implements AutoCloseable {
         this.config = config;
         this.crypto = crypto;
 
-        connection = new PKIConnection(config);
+        connection = new RESTEasyConnection(config);
 
         if (callback == null) {
             callback = new PKICertificateApprovalCallback(this);
