@@ -42,5 +42,6 @@ public class PKILogger {
         Logger.getLogger("org.dogtagpki").setLevel(julLevel);
         Logger.getLogger("com.netscape").setLevel(julLevel);
         Logger.getLogger("netscape").setLevel(julLevel);
+        Logger.getLogger("org.mozilla").setLevel(julLevel);
     }
 }
