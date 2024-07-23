@@ -10,26 +10,35 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Arrays;
+
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
 
 import org.apache.http.conn.scheme.SchemeLayeredSocketFactory;
 import org.apache.http.params.HttpParams;
+import org.mozilla.jss.CryptoManager;
+import org.mozilla.jss.provider.javax.crypto.JSSTrustManager;
 import org.mozilla.jss.ssl.SSLAlertDescription;
 import org.mozilla.jss.ssl.SSLAlertEvent;
 import org.mozilla.jss.ssl.SSLAlertLevel;
 import org.mozilla.jss.ssl.SSLHandshakeCompletedEvent;
-import org.mozilla.jss.ssl.SSLSocket;
 import org.mozilla.jss.ssl.SSLSocketListener;
+import org.mozilla.jss.ssl.javax.JSSSocket;
 
 import com.netscape.certsrv.client.PKIConnection;
 
 /**
- * This class provides blocking socket factory for PKIConnection.
+ * This class provides non-blocking socket factory for PKIConnection.
  */
-public class DefaultSocketFactory implements SchemeLayeredSocketFactory {
+public class NonBlockingSocketFactory implements SchemeLayeredSocketFactory {
 
     PKIConnection connection;
 
-    public DefaultSocketFactory(PKIConnection connection) {
+    public NonBlockingSocketFactory(PKIConnection connection) {
         this.connection = connection;
     }
 
@@ -39,8 +48,7 @@ public class DefaultSocketFactory implements SchemeLayeredSocketFactory {
     }
 
     @Override
-    public Socket connectSocket(
-            Socket sock,
+    public Socket connectSocket(Socket sock,
             InetSocketAddress remoteAddress,
             InetSocketAddress localAddress,
             HttpParams params)
@@ -62,26 +70,69 @@ public class DefaultSocketFactory implements SchemeLayeredSocketFactory {
             localAddr = localAddress.getAddress();
         }
 
-        SSLSocket socket;
-        if (sock == null) {
-            socket = new SSLSocket(InetAddress.getByName(hostName),
-                    port,
-                    localAddr,
-                    localPort,
-                    connection.getCallback(),
-                    null);
+        SSLSocketFactory socketFactory;
+        try {
+            CryptoManager.getInstance();
 
-        } else {
-            socket = new SSLSocket(sock, hostName, connection.getCallback(), null);
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance("NssX509", "Mozilla-JSS");
+            KeyManager[] kms = kmf.getKeyManagers();
+
+            // Create JSSTrustManager since the default JSSNativeTrustManager
+            // does not support hostname and callback.
+            //
+            // JSSTrustManager currently does not support cert validation
+            // with OCSP and CRL.
+            //
+            // TODO: Fix JSSTrustManager to support OCSP and CRL,
+            // then replace DefaultSocketFactory with this class.
+
+            JSSTrustManager trustManager = new JSSTrustManager();
+            trustManager.setHostname(hostName);
+            trustManager.setCallback(connection.getCallback());
+
+            TrustManager[] tms = new TrustManager[] { trustManager };
+
+            SSLContext ctx = SSLContext.getInstance("TLS", "Mozilla-JSS");
+            ctx.init(kms, tms, null);
+
+            socketFactory = ctx.getSocketFactory();
+
+        } catch (Exception e) {
+            throw new IOException("Unable to create SSL socket factory: " + e.getMessage(), e);
         }
+
+        JSSSocket socket;
+        try {
+            if (sock == null) {
+                PKIConnection.logger.info("Creating new SSL socket");
+                socket = (JSSSocket) socketFactory.createSocket(
+                        InetAddress.getByName(hostName),
+                        port,
+                        localAddr,
+                        localPort);
+
+            } else {
+                PKIConnection.logger.info("Creating SSL socket with existing socket");
+                socket = (JSSSocket) socketFactory.createSocket(
+                        sock,
+                        hostName,
+                        port,
+                        true);
+            }
+
+        } catch (Exception e) {
+            throw new IOException("Unable to create SSL socket: " + e.getMessage(), e);
+        }
+
+        socket.setUseClientMode(true);
 
         String certNickname = connection.getConfig().getCertNickname();
         if (certNickname != null) {
             PKIConnection.logger.info("Client certificate: "+certNickname);
-            socket.setClientCertNickname(certNickname);
+            socket.setCertFromAlias(certNickname);
         }
 
-        socket.addSocketListener(new SSLSocketListener() {
+        socket.getEngine().setListeners(Arrays.asList(new SSLSocketListener() {
 
             @Override
             public void alertReceived(SSLAlertEvent event) {
@@ -114,8 +165,10 @@ public class DefaultSocketFactory implements SchemeLayeredSocketFactory {
             @Override
             public void handshakeCompleted(SSLHandshakeCompletedEvent event) {
             }
+        }));
 
-        });
+        socket.startHandshake();
+
         return socket;
     }
 
