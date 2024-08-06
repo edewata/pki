@@ -526,43 +526,51 @@ public class RequestRepository extends Repository {
             int pageSize,
             String sortKey) throws EBaseException {
 
-        DBSSession session = dbSubsystem.createSession();
+        try (DBSSession session = dbSubsystem.createSession()) {
+            return getPagedRequestsByFilter(session, fromID, jumpToEnd, filter, pageSize, sortKey);
+        }
+    }
+
+    @Deprecated(since = "11.6.0", forRemoval = true)
+    public IRequestVirtualList getPagedRequestsByFilter(
+            DBSSession session,
+            RequestId fromID,
+            boolean jumpToEnd,
+            String filter,
+            int pageSize,
+            String sortKey) throws EBaseException {
+
         DBVirtualList<IDBObj> results;
 
-        try {
-            if (fromID == null) {
-                results = session.createVirtualList(
-                        mBaseDN,
-                        filter,
-                        (String[]) null,
-                        sortKey,
-                        pageSize);
+        if (fromID == null) {
+            results = session.createVirtualList(
+                    mBaseDN,
+                    filter,
+                    (String[]) null,
+                    sortKey,
+                    pageSize);
 
+        } else {
+            String internalRequestID;
+
+            if (jumpToEnd) {
+                internalRequestID = "99";
             } else {
-                String internalRequestID;
-
-                if (jumpToEnd) {
-                    internalRequestID = "99";
+                int length = fromID.toString().length();
+                if (length > 9) {
+                    internalRequestID = "" + length + fromID;
                 } else {
-                    int length = fromID.toString().length();
-                    if (length > 9) {
-                        internalRequestID = "" + length + fromID;
-                    } else {
-                        internalRequestID = "0" + length + fromID;
-                    }
+                    internalRequestID = "0" + length + fromID;
                 }
-
-                results = session.createVirtualList(
-                        mBaseDN,
-                        filter,
-                        (String[]) null,
-                        internalRequestID,
-                        sortKey,
-                        pageSize);
             }
 
-        } finally {
-            session.close();
+            results = session.createVirtualList(
+                    mBaseDN,
+                    filter,
+                    (String[]) null,
+                    internalRequestID,
+                    sortKey,
+                    pageSize);
         }
 
         results.setSortKey(sortKey);

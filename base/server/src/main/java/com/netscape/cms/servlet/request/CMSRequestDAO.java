@@ -29,6 +29,7 @@ import com.netscape.certsrv.request.CMSRequestInfo;
 import com.netscape.certsrv.request.CMSRequestInfos;
 import com.netscape.certsrv.request.IRequestVirtualList;
 import com.netscape.certsrv.request.RequestId;
+import com.netscape.cmscore.dbs.DBSSession;
 import com.netscape.cmscore.dbs.RecordPagedList;
 import com.netscape.cmscore.request.Request;
 import com.netscape.cmscore.request.RequestQueue;
@@ -151,27 +152,31 @@ public abstract class CMSRequestDAO {
 
             logger.debug("CMSRequestDAO: performing VLV search");
 
-            IRequestVirtualList vlvlist = requestRepository.getPagedRequestsByFilter(
-                    start,
-                    false,
-                    filter,
-                    pageSize + 1,
-                    "requestId");
+            try (DBSSession session = requestRepository.createSession()) {
 
-            totalSize = vlvlist.getSize();
-            logger.debug("CMSRequestDAO: total: " + totalSize);
-            ret.setTotal(totalSize);
+                IRequestVirtualList vlvlist = requestRepository.getPagedRequestsByFilter(
+                        session,
+                        start,
+                        false,
+                        filter,
+                        pageSize + 1,
+                        "requestId");
 
-            current = vlvlist.getCurrentIndex();
+                totalSize = vlvlist.getSize();
+                logger.debug("CMSRequestDAO: total: " + totalSize);
+                ret.setTotal(totalSize);
 
-            int numRecords = (totalSize > (current + pageSize)) ? pageSize :
-                    totalSize - current;
-            logger.debug("CMSRequestDAO: records (" + numRecords + "):");
+                current = vlvlist.getCurrentIndex();
 
-            for (int i = 0; i < numRecords; i++) {
-                Request request = vlvlist.getElementAt(i);
-                logger.debug("- " + request.getRequestId().toHexString());
-                ret.addEntry(createCMSRequestInfo(request, uriInfo));
+                int numRecords = (totalSize > (current + pageSize)) ? pageSize :
+                        totalSize - current;
+                logger.debug("CMSRequestDAO: records (" + numRecords + "):");
+
+                for (int i = 0; i < numRecords; i++) {
+                    Request request = vlvlist.getElementAt(i);
+                    logger.debug("- " + request.getRequestId().toHexString());
+                    ret.addEntry(createCMSRequestInfo(request, uriInfo));
+                }
             }
 
         } else {

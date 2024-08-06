@@ -210,6 +210,10 @@ public abstract class Repository {
         this.idGenerator = IDGenerator.fromString(idGenerator);
     }
 
+    public DBSSession createSession() throws DBException {
+        return dbSubsystem.createSession();
+    }
+
     /**
      * init serial number cache
      */
