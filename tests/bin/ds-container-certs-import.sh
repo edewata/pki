@@ -29,12 +29,11 @@ import_certs_into_server() {
 
     docker cp $INPUT $NAME:certs.p12
 
-    docker exec $NAME pki \
+    docker exec $NAME pk12util \
         -d /etc/dirsrv/slapd-localhost \
-        -C /etc/dirsrv/slapd-localhost/pwdfile.txt \
-        pkcs12-import \
-        --pkcs12 certs.p12 \
-        --pkcs12-password Secret.123
+        -k /etc/dirsrv/slapd-localhost/pwdfile.txt \
+        -i certs.p12 \
+        -W Secret.123
 
     echo "Configuring trust flags"
 
