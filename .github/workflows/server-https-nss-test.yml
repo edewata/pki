@@ -323,6 +323,51 @@ jobs:
           # check stderr
           diff /dev/null stderr
 
+      - name: Create self-signed admin cert
+        run: |
+          # generate admin CSR
+          docker exec client pki \
+              nss-cert-request \
+              --subject "UID=admin" \
+              --ext /usr/share/pki/server/certs/admin.conf \
+              --csr $SHARED/admin.csr
+
+          # issue admin cert
+          docker exec client pki \
+              nss-cert-issue \
+              --csr $SHARED/admin.csr \
+              --ext /usr/share/pki/server/certs/admin.conf \
+              --cert $SHARED/admin.crt
+
+          # check admin cert
+          openssl x509 -text -noout -in admin.crt
+
+          # import admin cert
+          docker exec client pki \
+              nss-cert-import \
+              --cert $SHARED/admin.crt \
+              admin
+
+      - name: Check PKI CLI with self-signed admin cert
+        run: |
+          # run PKI CLI
+          docker exec client pki \
+              -U https://pki.example.com:8443 \
+              -n admin \
+              info \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          # check stdout
+          cat > expected << EOF
+            Server URL: https://pki.example.com:8443
+            Server Name: Dogtag Certificate System
+          EOF
+
+          diff expected stdout
+
+          # check stderr
+          diff /dev/null stderr
+
       - name: Check PKI CLI with expired server cert
         run: |
           sleep 120

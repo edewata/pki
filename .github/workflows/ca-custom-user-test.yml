@@ -95,6 +95,53 @@ jobs:
               --pkcs12-password Secret.123
           docker exec pki pki -n caadmin ca-user-show caadmin
 
+      - name: Create self-signed user cert
+        run: |
+          # generate user CSR
+          docker exec pki pki nss-cert-request \
+              --subject "UID=testuser" \
+              --ext /usr/share/pki/server/certs/admin.conf \
+              --csr testuser.csr
+
+          # issue user cert
+          docker exec pki pki nss-cert-issue \
+              --csr testuser.csr \
+              --ext /usr/share/pki/server/certs/admin.conf \
+              --cert testuser.crt
+
+          # import user cert
+          docker exec pki pki nss-cert-import \
+              --cert testuser.crt \
+              testuser
+
+      - name: Authentication with self-signed user cert should not work
+        run: |
+          docker exec pki pki \
+              -n testuser \
+              ca-user-find \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          cat > expected << EOF
+          SEVERE: FATAL: SSL alert received: UNKNOWN_CA
+          IOException: Unable to read from socket: Error reading from socket: (-12195) Peer does not recognize and trust the CA that issued your certificate.
+          EOF
+
+          diff expected stderr
+
+          docker exec pki pki \
+              -D org.dogtagpki.client.socketFactory=org.dogtagpki.client.NonBlockingSocketFactory \
+              -n testuser \
+              ca-user-find \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          cat > expected << EOF
+          SEVERE: FATAL: SSL alert received: UNKNOWN_CA
+          SEVERE: FATAL: SSL alert sent: UNEXPECTED_MESSAGE
+          RuntimeException: Unexpected error trying to construct channel: Unable to perform operations on a closed socket!
+          EOF
+
+          diff expected stderr
+
       - name: Remove CA
         run: docker exec pki pkidestroy -i pki-tomcat -s CA -v
 

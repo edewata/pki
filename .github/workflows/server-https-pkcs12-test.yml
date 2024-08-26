@@ -346,6 +346,57 @@ jobs:
           # check stderr
           diff /dev/null stderr
 
+      - name: Create admin cert
+        run: |
+          # generate admin key in admin.p12
+          docker exec client keytool \
+              -genkeypair \
+              -keystore admin.p12 \
+              -storetype pkcs12 \
+              -storepass Secret.123 \
+              -alias admin \
+              -dname "UID=admin" \
+              -ext KeyUsage:critical=digitalSignature,nonRepudiation,keyEncipherment \
+              -ext ExtendedKeyUsage=clientAuth,emailProtection \
+              -keyalg RSA \
+              -keypass Secret.123
+
+          # check keys in admin.p12
+          docker exec client pki pkcs12-key-find \
+              --pkcs12-file admin.p12 \
+              --pkcs12-password Secret.123
+
+          # check certs in admin.p12
+          docker exec client pki pkcs12-cert-find \
+              --pkcs12-file admin.p12 \
+              --pkcs12-password Secret.123
+
+          # import admin.p12 into NSS database
+          docker exec client pki \
+              pkcs12-import \
+              --pkcs12-file admin.p12 \
+              --pkcs12-password Secret.123
+
+      - name: Check PKI CLI with self-signed admin cert
+        run: |
+          # run PKI CLI
+          docker exec client pki \
+              -U https://pki.example.com:8443 \
+              -n admin \
+              info \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          # check stdout
+          cat > expected << EOF
+            Server URL: https://pki.example.com:8443
+            Server Name: Dogtag Certificate System
+          EOF
+
+          diff expected stdout
+
+          # check stderr
+          diff /dev/null stderr
+
       - name: Check PKI CLI with expired server cert
         run: |
           sleep 120
