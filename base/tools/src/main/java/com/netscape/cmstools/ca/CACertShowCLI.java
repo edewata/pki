@@ -86,7 +86,7 @@ public class CACertShowCLI extends CommandCLI {
         MainCLI mainCLI = (MainCLI) getRoot();
         mainCLI.init();
 
-        CACertClient certClient = certCLI.getCertClient();
+        CACertClient certClient = certCLI.getCertClient(mainCLI.getAPIVersion());
         CertData certData = certClient.getCert(certID);
 
         String encoded = certData.getEncoded();

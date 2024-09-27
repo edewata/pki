@@ -75,6 +75,10 @@ public class CACertCLI extends CLI {
     }
 
     public CACertClient getCertClient() throws Exception {
+        return getCertClient("v1");
+    }
+
+    public CACertClient getCertClient(String apiVersion) throws Exception {
 
         if (certClient != null) return certClient;
 
@@ -90,7 +94,7 @@ public class CACertCLI extends CLI {
         }
 
         // create new cert client
-        certClient = new CACertClient(client, subsystem);
+        certClient = new CACertClient(client, subsystem, apiVersion);
 
         return certClient;
     }

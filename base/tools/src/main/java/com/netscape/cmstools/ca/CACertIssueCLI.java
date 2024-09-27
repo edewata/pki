@@ -294,12 +294,16 @@ public class CACertIssueCLI extends CommandCLI {
 
         String requestType = cmd.getOptionValue("request-type");
 
+        MainCLI mainCLI = (MainCLI) getRoot();
+        mainCLI.init();
+
+        CACertClient certClient = certCLI.getCertClient(mainCLI.getAPIVersion());
+
         CertEnrollmentRequest request;
         if (inputFile == null) { // if no request file specified, generate new request from profile
 
             logger.info("Retrieving " + profileID + " profile");
 
-            CACertClient certClient = certCLI.getCertClient();
             request = certClient.getEnrollmentTemplate(profileID);
 
             // set default request type for new request
@@ -479,11 +483,6 @@ public class CACertIssueCLI extends CommandCLI {
         logger.info("Requestor: " + requestor);
 
         String outputFormat = cmd.getOptionValue("output-format");
-
-        MainCLI mainCLI = (MainCLI) getRoot();
-        mainCLI.init();
-
-        CACertClient certClient = certCLI.getCertClient();
 
         String installToken = cmd.getOptionValue("install-token");
         String sessionID;
