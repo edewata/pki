@@ -123,6 +123,11 @@ jobs:
         run: |
           docker exec pki journalctl -x --no-pager -u pki-tomcatd@pki-tomcat.service
 
+      - name: Check PKI server access log
+        if: always()
+        run: |
+          docker exec pki find /var/log/pki/pki-tomcat -name "localhost_access_log.*" -exec cat {} \;
+
       - name: Check CA debug log
         if: always()
         run: |
