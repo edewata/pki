@@ -117,7 +117,7 @@ public class CACertReleaseHoldCLI extends CommandCLI {
         MainCLI mainCLI = (MainCLI) getRoot();
         mainCLI.init();
 
-        CACertClient certClient = certCLI.getCertClient(mainCLI.getAPIVersion());
+        CACertClient certClient = certCLI.getCertClient();
 
         for (String cmdArg : cmdArgs) {
             CertId certID = new CertId(cmdArg);
