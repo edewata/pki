@@ -75,7 +75,7 @@ public class CACertExportCLI extends CommandCLI {
         MainCLI mainCLI = (MainCLI) getRoot();
         mainCLI.init();
 
-        CACertClient certClient = certCLI.getCertClient();
+        CACertClient certClient = certCLI.getCertClient(mainCLI.getAPIVersion());
         CertData certData = certClient.getCert(certID);
 
         String outputFormat = cmd.getOptionValue("output-format", "pem");
