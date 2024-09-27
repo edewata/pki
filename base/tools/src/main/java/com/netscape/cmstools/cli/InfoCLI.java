@@ -51,5 +51,10 @@ public class InfoCLI extends CommandCLI {
         if (!StringUtils.isEmpty(version)) {
             System.out.println("  Server Version: " + version);
         }
+
+        String apiVersion = client.getAPIVersion();
+        if (!StringUtils.isEmpty(version)) {
+            System.out.println("  API Version: " + apiVersion);
+        }
     }
 }
