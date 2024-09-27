@@ -65,11 +65,7 @@ public class CACertClient extends Client {
     }
 
     public CACertClient(PKIClient client, String subsystem) throws Exception {
-        this(client, subsystem, "v1");
-    }
-
-    public CACertClient(PKIClient client, String subsystem, String apiVersion) throws Exception {
-        super(client, subsystem, apiVersion, "certs");
+        super(client, subsystem, "certs");
         init();
     }
 
