@@ -107,7 +107,7 @@ public class CertServlet extends CAServlet {
         }
     }
 
-    @WebAction(method = HttpMethod.POST, paths = {"search"})
+    @WebAction(method = HttpMethod.POST, paths = {""})
     public void searchCerts(HttpServletRequest request, HttpServletResponse response) throws Exception {
         HttpSession session = request.getSession();
         logger.debug("CertServlet.searchCerts(): session: {}", session.getId());
@@ -220,7 +220,8 @@ public class CertServlet extends CAServlet {
                 results.add(createCertDataInfo(rec));
             }
 
-            infos.setTotal(results.size());
+            // do not call infos.setTotal() in API v2
+
             logger.info("Search results: {}", results.size());
             infos.setEntries(results);
         } catch (Exception e) {

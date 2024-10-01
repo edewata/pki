@@ -99,7 +99,12 @@ public class CACertClient extends Client {
         if (size != null) params.put("size", size);
         String searchRequest = (String) client.marshall(data);
         Entity<String> entity = client.entity(searchRequest);
-        return post("search", params, entity, CertDataInfos.class);
+
+        if ("v2".equals(prefix)) {
+            return post(null, params, entity, CertDataInfos.class);
+        } else {
+            return post("search", params, entity, CertDataInfos.class);
+        }
     }
 
     public CertRequestInfo revokeCert(CertId id, CertRevokeRequest request) throws Exception {
