@@ -162,12 +162,12 @@ public abstract class UpdateNumberRange extends CMSServlet {
              */
 
             String endNumStr = dbConfig.getString(endNumConfig);
+            logger.info("UpdateNumberRange: dbs." + endNumConfig + ": " + endNumStr);
             BigInteger endNum = new BigInteger(endNumStr, radix);
-            logger.info("UpdateNumberRange: dbs." + endNumConfig + ": " + endNum);
 
             String transferSizeStr = dbConfig.getString(cloneNumConfig, "");
+            logger.info("UpdateNumberRange: dbs." + cloneNumConfig + ": " + transferSizeStr);
             BigInteger transferSize = new BigInteger(transferSizeStr, radix);
-            logger.info("UpdateNumberRange: dbs." + cloneNumConfig + ": " + transferSize);
 
             // transferred range will start at beginNum
             //  (which, for now, is just a candidate)
@@ -189,7 +189,7 @@ public abstract class UpdateNumberRange extends CMSServlet {
                     throw new RuntimeException(msg); // will be caught below
                 }
 
-                logger.info("Configured transfer size: " + transferSize);
+                logger.info("UpdateNumberRange: Configured transfer size: " + transferSize);
                 logger.info("UpdateNumberRange: Current range: " + nextSerial + ".." + endNum);
                 logger.info("UpdateNumberRange: Size: " + endNum.subtract(nextSerial).add(BigInteger.ONE));
 
@@ -224,7 +224,9 @@ public abstract class UpdateNumberRange extends CMSServlet {
                      * this scenario is unlikely to arise.  Furthermore,
                      * recovery is automatic thanks to the scheduled tasks.
                      */
-                    endNum = new BigInteger(dbConfig.getString(nextEndConfig, ""), radix);
+                    String nextEndNumStr = dbConfig.getString(nextEndConfig, "");
+                    logger.info("UpdateNumberRange: dbs." + nextEndConfig + ": " + nextEndNumStr);
+                    endNum = new BigInteger(nextEndNumStr, radix);
                     BigInteger newEndNum = endNum.subtract(transferSize);
 
                     logger.info("UpdateNumberRange: Transferring from the end of next range");

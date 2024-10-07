@@ -169,11 +169,13 @@ public class CertificateRepository extends Repository {
         if (lowWaterMark != null) {
             mLowWaterMarkNo = new BigInteger(lowWaterMark, mRadix);
         }
+        logger.debug("CertificateRepository: - low-water mark: " + mLowWaterMarkNo);
 
         String incrementNo = mDBConfig.getSerialIncrement();
         if (incrementNo != null) {
             mIncrementNo = new BigInteger(incrementNo, mRadix);
         }
+        logger.debug("CertificateRepository: - serial increment: " + mIncrementNo);
     }
 
     public void setMinSerialConfig() throws EBaseException {
@@ -241,13 +243,13 @@ public class CertificateRepository extends Repository {
      * @param forceModeChange "true" forces certificate repository mode change
      */
     public void setEnableRandomSerialNumbers(boolean random, boolean updateMode, boolean forceModeChange) {
-        logger.debug("CertificateRepository:  setEnableRandomSerialNumbers   random="+random+"  updateMode="+updateMode);
+        logger.info("CertificateRepository:  setEnableRandomSerialNumbers   random="+random+"  updateMode="+updateMode);
 
         EngineConfig cs = engine.getConfig();
 
         if (mEnableRandomSerialNumbers ^ random || forceModeChange) {
             mEnableRandomSerialNumbers = random;
-            logger.debug("CertificateRepository:  setEnableRandomSerialNumbers   switching to " +
+            logger.info("CertificateRepository:  setEnableRandomSerialNumbers   switching to " +
                       ((random)?PROP_RANDOM_MODE:PROP_SEQUENTIAL_MODE) + " mode");
             if (updateMode) {
                 setCertificateRepositoryMode((mEnableRandomSerialNumbers)? PROP_RANDOM_MODE: PROP_SEQUENTIAL_MODE);
@@ -258,12 +260,15 @@ public class CertificateRepository extends Repository {
             try {
                 lastSerialNumber = getLastSerialNumberInRange(mMinSerialNo,mMaxSerialNo);
             } catch (Exception e) {
+                logger.warn("CertificateRepository: Unable to get last serial number in range: " + e.getMessage(), e);
             }
+            logger.info("CertificateRepository: last serial number: " + lastSerialNumber);
+
             if (lastSerialNumber != null) {
                 super.setLastSerialNo(lastSerialNumber);
                 if (mEnableRandomSerialNumbers) {
                     mCounter = lastSerialNumber.subtract(mMinSerialNo).add(BigInteger.ONE);
-                    logger.debug("CertificateRepository:  setEnableRandomSerialNumbers  mCounter="+
+                    logger.info("CertificateRepository:  setEnableRandomSerialNumbers  mCounter="+
                                mCounter+"="+lastSerialNumber+"-"+mMinSerialNo+"+1");
                     long t = System.currentTimeMillis();
                     mDBConfig.putString(PROP_RANDOM_SERIAL_NUMBER_COUNTER, mCounter.toString()+","+t);
@@ -446,9 +451,9 @@ public class CertificateRepository extends Repository {
             return;
         }
 
-        logger.debug("CertificateRepository: Updating counter");
-        logger.debug("CertificateRepository: - enable RSNv1: " + mEnableRandomSerialNumbers);
-        logger.debug("CertificateRepository: - counter: " + mCounter);
+        logger.info("CertificateRepository: Updating counter");
+        logger.info("CertificateRepository: - enable RSNv1: " + mEnableRandomSerialNumbers);
+        logger.info("CertificateRepository: - counter: " + mCounter);
 
         EngineConfig cs = engine.getConfig();
 
@@ -459,11 +464,11 @@ public class CertificateRepository extends Repository {
         }
 
         String crMode = dbSubsystem.getEntryAttribute(mBaseDN, RepositoryRecord.ATTR_DESCRIPTION, "", null);
-        logger.debug("CertificateRepository: - mode: " + crMode);
+        logger.info("CertificateRepository: - mode: " + crMode);
 
         boolean modeChange = (mEnableRandomSerialNumbers && crMode != null && crMode.equals(PROP_SEQUENTIAL_MODE)) ||
                              ((!mEnableRandomSerialNumbers) && crMode != null && crMode.equals(PROP_RANDOM_MODE));
-        logger.debug("CertificateRepository: - mode change: " + modeChange);
+        logger.info("CertificateRepository: - mode change: " + modeChange);
 
         if (modeChange) {
             if (mForceModeChange) {
@@ -483,8 +488,8 @@ public class CertificateRepository extends Repository {
             logger.warn("CertificateRepository: Unable to update CS.cfg: " + e.getMessage(), e);
         }
 
-        logger.debug("CertificateRepository: - enable RSNv1: " + mEnableRandomSerialNumbers);
-        logger.debug("CertificateRepository: - counter: " + mCounter);
+        logger.info("CertificateRepository: - enable RSNv1: " + mEnableRandomSerialNumbers);
+        logger.info("CertificateRepository: - counter: " + mCounter);
     }
 
     private BigInteger getInRangeCount(String fromTime, BigInteger  minSerialNo, BigInteger maxSerialNo)

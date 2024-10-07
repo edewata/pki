@@ -323,14 +323,13 @@ public abstract class Repository {
             return id;
         }
 
-        logger.debug("Repository: in getNextSerialNumber. ");
+        logger.info("Repository: Generating sequential serial number");
 
         initCache();
 
         if (mLastSerialNo == null) {
-            logger.error("Repository::getNextSerialNumber() " +
-                       "- mLastSerialNo is null!");
-            throw new EBaseException("mLastSerialNo is null");
+            logger.error("Repository: Missing last serial number");
+            throw new EBaseException("Missing last serial number");
         }
 
         /* Advance the serial number.  checkRange() will check if it exceeds
@@ -339,10 +338,10 @@ public abstract class Repository {
          * mLastSerialNo below, after the call to checkRange().
          */
         mLastSerialNo = mLastSerialNo.add(BigInteger.ONE);
+        logger.info("Repository: - id: 0x" + mLastSerialNo.toString(16));
 
         checkRange();
 
-        logger.debug("Repository: getNextSerialNumber: returning " + mLastSerialNo);
         return mLastSerialNo;
     }
 
@@ -377,26 +376,34 @@ public abstract class Repository {
         // if so, move to next range
 
         BigInteger rangeLength = getRangeLength();
-        logger.debug("Repository: range length: " + rangeLength);
+        logger.info("Repository: range length: " + rangeLength);
 
         BigInteger randomLimit = getRandomLimit(rangeLength);
-        logger.debug("Repository: random limit: " + randomLimit);
+        logger.info("Repository: random limit: " + randomLimit);
 
-        logger.debug("Repository: checkRange  mLastSerialNo="+mLastSerialNo);
+        logger.info("Repository: last serial number: " + mLastSerialNo);
         if (mLastSerialNo.compareTo( mMaxSerialNo ) > 0 ||
             ((!engine.isPreOpMode()) && randomLimit != null && mCounter.compareTo(randomLimit) > 0)) {
 
             if (dbSubsystem.getEnableSerialMgmt()) {
-                logger.debug("Reached the end of the range.  Attempting to move to next range");
+                logger.info("Repository: End of range reached");
                 if (!hasNextRange()) {
+                    logger.info("Repository: counter: " + mCounter);
                     if (rangeLength == null || mCounter.compareTo(rangeLength) >= 0) {
+                        logger.info("Repository: Range too small");
                         throw new DBException(CMS.getUserMessage("CMS_DBS_LIMIT_REACHED",
                                                                   mLastSerialNo.toString()));
+                    } else {
+                        logger.info("Repository: Missing next range");
                     }
                     return;
                 }
+
+                logger.info("Repository: Switching to next range");
                 switchToNextRange();
+
             } else {
+                logger.info("Repository: Serial management disabled, no next range");
                 throw new DBException(CMS.getUserMessage("CMS_DBS_LIMIT_REACHED",
                         mLastSerialNo.toString()));
             }
@@ -522,6 +529,11 @@ public abstract class Repository {
 
             // Add new range object
 
+            String dn2 = "cn=" + nextRange + "," + rangeDN;
+            logger.info("Repository: Adding entry " + dn2);
+            logger.info("Repository: - beginRange: " + nextRange);
+            logger.info("Repository: - endRange: " + endRange);
+
             LDAPAttributeSet attrs = new LDAPAttributeSet();
             attrs.add(new LDAPAttribute("objectClass", "top"));
             attrs.add(new LDAPAttribute("objectClass", "pkiRange"));
@@ -536,10 +548,8 @@ public abstract class Repository {
             attrs.add(new LDAPAttribute("host", cs.getHostname()));
             attrs.add(new LDAPAttribute("securePort", engine.getEESSLPort()));
 
-            String dn2 = "cn=" + nextRange + "," + rangeDN;
             LDAPEntry rangeEntry = new LDAPEntry(dn2, attrs);
 
-            logger.info("Repository: Adding entry " + dn2);
             conn.add(rangeEntry);
 
             return nextRange;
@@ -619,7 +629,7 @@ public abstract class Repository {
         }
 
         if (!dbSubsystem.getEnableSerialMgmt()) {
-            logger.debug("Repository: serial management not enabled, ignore");
+            logger.info("Repository: serial management not enabled, ignore");
             return;
         }
 
@@ -631,8 +641,8 @@ public abstract class Repository {
         initCache();
 
         BigInteger numsInRange = getNumbersInRange();
-        logger.debug("Repository: Serial numbers left in range: " + numsInRange);
-        logger.debug("Repository: Last serial number: " + mLastSerialNo);
+        logger.info("Repository: Serial numbers left in range: " + numsInRange);
+        logger.info("Repository: Last serial number: " + mLastSerialNo);
 
         BigInteger numsInNextRange = null;
         BigInteger numsAvail = null;
@@ -640,24 +650,24 @@ public abstract class Repository {
         if ((mNextMaxSerialNo != null) && (mNextMinSerialNo != null)) {
             numsInNextRange = mNextMaxSerialNo.subtract(mNextMinSerialNo).add(BigInteger.ONE);
             numsAvail = numsInRange.add(numsInNextRange);
-            logger.debug("Repository: Serial numbers in next range: " + numsInNextRange);
+            logger.info("Repository: Serial numbers in next range: " + numsInNextRange);
         } else {
             numsAvail = numsInRange;
         }
 
-        logger.debug("Repository: Serial numbers available: " + numsAvail);
-        logger.debug("Repository: Low water mark: " + mLowWaterMarkNo);
+        logger.info("Repository: Serial numbers available: " + numsAvail);
+        logger.info("Repository: Low water mark: " + mLowWaterMarkNo);
 
         if ((numsAvail.compareTo(mLowWaterMarkNo) < 0) && (!engine.isPreOpMode())) {
-            logger.debug("Repository: Requesting next range");
+            logger.info("Repository: Requesting next range");
             String nextRange = getNextRange();
-            logger.debug("Repository: next range: " + nextRange);
+            logger.info("Repository: next range: " + nextRange);
 
             mNextMinSerialNo = new BigInteger(nextRange, mRadix);
             if (mNextMinSerialNo == null) {
-                logger.debug("Repository: Next range not available");
+                logger.info("Repository: Next range not available");
             } else {
-                logger.debug("Repository: Next min serial number: " + mNextMinSerialNo.toString(mRadix));
+                logger.info("Repository: Next min serial number: " + mNextMinSerialNo.toString(mRadix));
                 mNextMaxSerialNo = mNextMinSerialNo.add(mIncrementNo).subtract(BigInteger.ONE);
                 numsAvail = numsAvail.add(mIncrementNo);
 
@@ -671,9 +681,9 @@ public abstract class Repository {
 
         if (numsInRange.compareTo(mLowWaterMarkNo) < 0) {
             // check for a replication error
-            logger.debug("Checking for a range conflict");
+            logger.info("Repository: Checking for a range conflict");
             if (hasRangeConflict()) {
-                logger.debug("Range Conflict found! Removing next range.");
+                logger.info("Repository: Range Conflict found! Removing next range.");
                 mNextMaxSerialNo = null;
                 mNextMinSerialNo = null;
 

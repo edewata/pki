@@ -1207,10 +1207,10 @@ public class CAEngine extends CMSEngine {
         super.startupSubsystems();
 
         if (!isPreOpMode()) {
-            logger.debug("CAEngine: Checking cert request serial number ranges");
+            logger.info("CAEngine: Checking cert request serial number ranges");
             requestRepository.checkRanges();
 
-            logger.debug("CAEngine: Checking cert serial number ranges");
+            logger.info("CAEngine: Checking cert serial number ranges");
             certificateRepository.checkRanges();
         }
     }
