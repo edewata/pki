@@ -1,0 +1,1048 @@
+name: CA clone with Sequential Serial Numbers
+#
+# This test creates a CA subsystem and its clone with sequential
+# serial numbers for certs and requests, performs enrollments,
+# and verifies that the number ranges are maintained properly in
+# CS.cfg and DS.
+
+on: workflow_call
+
+env:
+  DS_IMAGE: ${{ vars.DS_IMAGE || 'quay.io/389ds/dirsrv' }}
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    env:
+      SHARED: /tmp/workdir/pki
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      - name: Retrieve PKI images
+        uses: actions/cache@v4
+        with:
+          key: pki-images-${{ github.sha }}
+          path: pki-images.tar
+
+      - name: Load PKI images
+        run: docker load --input pki-images.tar
+
+      - name: Create network
+        run: docker network create example
+
+      ####################################################################################################
+      # Create primary CA with Sequential Serial Numbers
+      #
+      # requests:
+      # - range: 1 - 10 decimal
+      # - increment: 10 decimal
+      # - minimum: 5 decimal
+      # certs:
+      # - range: 1 - 12 hex (1 - 18 decimal)
+      # - increment: 12 hex (18 decimal)
+      # - minimum: 9 hex (9 decimal)
+
+      - name: Set up primary DS container
+        run: |
+          tests/bin/ds-create.sh \
+              --image=${{ env.DS_IMAGE }} \
+              --hostname=primaryds.example.com \
+              --network=example \
+              --network-alias=primaryds.example.com \
+              --password=Secret.123 \
+              primaryds
+
+      - name: Set up primary PKI container
+        run: |
+          tests/bin/runner-init.sh \
+              --hostname=primary.example.com \
+              --network=example \
+              --network-alias=primary.example.com \
+              primary
+
+      - name: Create primary CA
+        run: |
+          docker exec primary pkispawn \
+              -f /usr/share/pki/server/examples/installation/ca.cfg \
+              -s CA \
+              -D pki_ds_url=ldap://primaryds.example.com:3389 \
+              -D pki_request_id_generator=legacy \
+              -D pki_request_number_range_start=1 \
+              -D pki_request_number_range_end=10 \
+              -D pki_request_number_range_increment=10 \
+              -D pki_request_number_range_minimum=5 \
+              -D pki_request_number_range_transfer=5 \
+              -D pki_cert_id_generator=legacy \
+              -D pki_serial_number_range_start=1 \
+              -D pki_serial_number_range_end=12 \
+              -D pki_serial_number_range_increment=12 \
+              -D pki_serial_number_range_minimum=9 \
+              -D pki_serial_number_range_transfer=9 \
+              -v
+
+      - name: Enable serial number management
+        run: |
+          docker exec primary pki-server ca-config-set dbs.enableSerialManagement true
+
+          # disable serial number update background task
+          docker exec primary pki-server ca-config-set ca.serialNumberUpdateInterval 0
+
+          # enable serial number update manual job
+          docker exec primary pki-server ca-config-set jobsScheduler.enabled true
+          docker exec primary pki-server ca-config-set jobsScheduler.job.serialNumberUpdate.enabled true
+
+          # restart primary CA
+          docker exec primary pki-server ca-redeploy --wait
+
+      - name: Check requests
+        run: |
+          docker exec primary pki-server ca-cert-request-find | tee output
+
+          sed -n "s/^ *Request ID: *\(.*\)$/\1/p" output > actual
+
+          # there should be 6 requests
+          seq 1 6 > expected
+
+          diff expected actual
+
+      - name: Check certs
+        run: |
+          docker exec primary pki-server ca-cert-find | tee output
+
+          sed -n "s/^ *Serial Number: *\(.*\)$/\1/p" output > actual
+
+          # there should be 6 certs
+          seq 1 6 | while read n; do printf "0x%x\n" $n; done > expected
+
+          diff expected actual
+
+      - name: Check request range config
+        run: |
+          docker exec primary pki-server ca-config-find \
+              | grep \
+                  -e dbs.beginRequestNumber \
+                  -e dbs.endRequestNumber \
+                  -e dbs.requestCloneTransferNumber \
+                  -e dbs.requestIncrement \
+                  -e dbs.requestLowWaterMark \
+              | tee actual
+
+          # request range should be 1 - 10 decimal (total: 10, remaining: 4)
+          cat > expected << EOF
+          dbs.beginRequestNumber=1
+          dbs.endRequestNumber=10
+          dbs.requestCloneTransferNumber=5
+          dbs.requestIncrement=10
+          dbs.requestLowWaterMark=5
+          EOF
+
+          diff expected actual
+
+      - name: Check cert range config
+        run: |
+          docker exec primary pki-server ca-config-find \
+              | grep \
+                  -e dbs.beginSerialNumber \
+                  -e dbs.endSerialNumber \
+                  -e dbs.serialCloneTransferNumber \
+                  -e dbs.serialIncrement \
+                  -e dbs.serialLowWaterMar \
+              | tee actual
+
+          # cert range should be 1 - 12 hex (total: 18, remaining: 12)
+          cat > expected << EOF
+          dbs.beginSerialNumber=1
+          dbs.endSerialNumber=12
+          dbs.serialCloneTransferNumber=9
+          dbs.serialIncrement=12
+          dbs.serialLowWaterMark=9
+          EOF
+
+          diff expected actual
+
+      - name: Check request repository
+        run: |
+          docker exec primaryds ldapsearch \
+              -H ldap://primaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b ou=ca,ou=requests,dc=ca,dc=pki,dc=example,dc=com \
+              -s base \
+              -o ldif_wrap=no \
+              -LLL | tee output
+
+          grep \
+              -e serialno: \
+              -e nextRange: \
+              output \
+              | sort > actual
+
+          # request nextRange should be incremented by 10 decimal to 21 decimal
+          cat > expected << EOF
+          nextRange: 21
+          serialno: 010
+          EOF
+
+          diff expected actual
+
+      - name: Check cert repository
+        run: |
+          docker exec primaryds ldapsearch \
+              -H ldap://primaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b ou=certificateRepository,ou=ca,dc=ca,dc=pki,dc=example,dc=com \
+              -s base \
+              -o ldif_wrap=no \
+              -LLL | tee output
+
+          grep \
+              -e serialno: \
+              -e nextRange: \
+              output \
+              | sort > actual
+
+          # cert nextRange should be incremented by 12 hex (18 decimal) to 13 hex
+          # (19 decimal), but currently the value will be processed as 13 decimal in:
+          # - Repository.getNextRange()
+          # - SubsystemRangeUpdateCLI.updateSerialNumberRange()
+          cat > expected << EOF
+          nextRange: 13
+          serialno: 011
+          EOF
+
+          diff expected actual
+
+      - name: Check request range objects
+        run: |
+          docker exec primaryds ldapsearch \
+              -H ldap://primaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b ou=requests,ou=ranges,dc=ca,dc=pki,dc=example,dc=com \
+              -s one \
+              -o ldif_wrap=no \
+              -LLL | tee output
+
+          grep \
+              -e SecurePort: \
+              -e beginRange: \
+              -e endRange: \
+              -e host: \
+              output \
+              | sort > actual
+
+          # new request range should be 11 - 20 decimal (total: 10)
+          cat > expected << EOF
+          SecurePort: 8443
+          beginRange: 11
+          endRange: 20
+          host: pki.example.com
+          EOF
+
+          diff expected actual
+
+      - name: Check cert range objects
+        run: |
+          docker exec primaryds ldapsearch \
+              -H ldap://primaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b ou=certificateRepository,ou=ranges,dc=ca,dc=pki,dc=example,dc=com \
+              -s one \
+              -o ldif_wrap=no \
+              -LLL | tee output
+
+          # there should be no new cert range
+          diff /dev/null output
+
+      ####################################################################################################
+      # Create secondary CA
+
+      - name: Set up secondary DS container
+        run: |
+          tests/bin/ds-create.sh \
+              --image=${{ env.DS_IMAGE }} \
+              --hostname=secondaryds.example.com \
+              --network=example \
+              --network-alias=secondaryds.example.com \
+              --password=Secret.123 \
+              secondaryds
+
+      - name: Set up secondary PKI container
+        run: |
+          tests/bin/runner-init.sh \
+              --hostname=secondary.example.com \
+              --network=example \
+              --network-alias=secondary.example.com \
+              secondary
+
+      - name: Create secondary CA
+        run: |
+          docker exec primary pki-server cert-export \
+              --cert-file $SHARED/ca_signing.crt \
+              ca_signing
+
+          docker exec primary pki-server ca-clone-prepare \
+              --pkcs12-file $SHARED/ca-certs.p12 \
+              --pkcs12-password Secret.123
+
+          docker exec secondary pkispawn \
+              -f /usr/share/pki/server/examples/installation/ca-clone.cfg \
+              -s CA \
+              -D pki_cert_chain_path=$SHARED/ca_signing.crt \
+              -D pki_clone_pkcs12_path=$SHARED/ca-certs.p12 \
+              -D pki_clone_pkcs12_password=Secret.123 \
+              -D pki_ds_url=ldap://secondaryds.example.com:3389 \
+              -D pki_request_id_generator=legacy \
+              -D pki_request_number_range_increment=10 \
+              -D pki_request_number_range_minimum=5 \
+              -D pki_request_number_range_transfer=5 \
+              -D pki_cert_id_generator=legacy \
+              -D pki_serial_number_range_increment=12 \
+              -D pki_serial_number_range_minimum=9 \
+              -D pki_serial_number_range_transfer=9 \
+              -v
+
+      - name: Configure serial number management
+        run: |
+          docker exec secondary pki-server ca-config-set dbs.enableSerialManagement true
+
+          # disable serial number update background task
+          docker exec secondary pki-server ca-config-set ca.serialNumberUpdateInterval 0
+
+          # enable serial number update manual job
+          docker exec secondary pki-server ca-config-set jobsScheduler.enabled true
+          docker exec secondary pki-server ca-config-set jobsScheduler.job.serialNumberUpdate.enabled true
+
+          # restart secondary CA
+          docker exec secondary pki-server ca-redeploy --wait
+
+      - name: Check requests
+        run: |
+          docker exec secondary pki-server ca-cert-request-find | tee output
+          sed -n "s/^ *Request ID: *\(.*\)$/\1/p" output > actual
+
+          # there should be 7 requests
+          seq 1 7 > expected
+
+          diff expected actual
+
+      - name: Check certs
+        run: |
+          docker exec secondary pki-server ca-cert-find | tee output
+          sed -n "s/^ *Serial Number: *\(.*\)$/\1/p" output > actual
+
+          # there should be 7 certs
+          seq 1 7 | while read n; do printf "0x%x\n" $n; done > expected
+
+          diff expected actual
+
+      - name: Check request range config in primary CA
+        run: |
+          docker exec primary pki-server ca-config-find \
+              | grep \
+                  -e dbs.beginRequestNumber \
+                  -e dbs.endRequestNumber \
+                  -e dbs.requestCloneTransferNumber \
+                  -e dbs.requestIncrement \
+                  -e dbs.requestLowWaterMark \
+              | tee actual
+
+          cat > expected << EOF
+          dbs.beginRequestNumber=1
+          dbs.endRequestNumber=5
+          dbs.requestCloneTransferNumber=5
+          dbs.requestIncrement=10
+          dbs.requestLowWaterMark=5
+          EOF
+
+          diff expected actual
+
+      - name: Check cert range config in primary CA
+        run: |
+          docker exec primary pki-server ca-config-find \
+              | grep \
+                  -e dbs.beginSerialNumber \
+                  -e dbs.endSerialNumber \
+                  -e dbs.serialCloneTransferNumber \
+                  -e dbs.serialIncrement \
+                  -e dbs.serialLowWaterMark \
+              | tee actual
+
+          cat > expected << EOF
+          dbs.beginSerialNumber=1
+          dbs.endSerialNumber=9
+          dbs.serialCloneTransferNumber=9
+          dbs.serialIncrement=12
+          dbs.serialLowWaterMark=9
+          EOF
+
+          diff expected actual
+
+      - name: Check request range config in secondary CA
+        run: |
+          docker exec secondary pki-server ca-config-find \
+              | grep \
+                  -e dbs.beginRequestNumber \
+                  -e dbs.endRequestNumber \
+                  -e dbs.requestCloneTransferNumber \
+                  -e dbs.requestIncrement \
+                  -e dbs.requestLowWaterMark \
+              | tee actual
+
+          cat > expected << EOF
+          dbs.beginRequestNumber=6
+          dbs.endRequestNumber=10
+          dbs.requestCloneTransferNumber=5
+          dbs.requestIncrement=10
+          dbs.requestLowWaterMark=5
+          EOF
+
+          diff expected actual
+
+      - name: Check cert range config in secondary CA
+        run: |
+          docker exec secondary pki-server ca-config-find \
+              | grep \
+                  -e dbs.beginSerialNumber \
+                  -e dbs.endSerialNumber \
+                  -e dbs.serialCloneTransferNumber \
+                  -e dbs.serialIncrement \
+                  -e dbs.serialLowWaterMark \
+              | tee actual
+
+          cat > expected << EOF
+          dbs.beginSerialNumber=10
+          dbs.endSerialNumber=12
+          dbs.serialCloneTransferNumber=9
+          dbs.serialIncrement=12
+          dbs.serialLowWaterMark=9
+          EOF
+
+          diff expected actual
+
+      - name: Check request repository
+        run: |
+          docker exec secondaryds ldapsearch \
+              -H ldap://secondaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b ou=ca,ou=requests,dc=ca,dc=pki,dc=example,dc=com \
+              -s base \
+              -o ldif_wrap=no \
+              -LLL | tee output
+
+          grep -e serialno: -e nextRange: output | sort > actual
+
+          # request nextRange should be incremented by 12 decimal
+          cat > expected << EOF
+          nextRange: 21
+          serialno: 010
+          EOF
+
+          diff expected actual
+
+      - name: Check cert repository
+        run: |
+          docker exec secondaryds ldapsearch \
+              -H ldap://secondaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b ou=certificateRepository,ou=ca,dc=ca,dc=pki,dc=example,dc=com \
+              -s base \
+              -o ldif_wrap=no \
+              -LLL | tee output
+
+          grep -E 'serialno:|nextRange:' output | sort > actual
+
+          # cert nextRange should be incremented by 12 hex (18 decimal)
+          cat > expected << EOF
+          nextRange: 31
+          serialno: 011
+          EOF
+
+          diff expected actual
+
+      - name: Check cert ranges
+        run: |
+          docker exec secondaryds ldapsearch \
+              -H ldap://secondaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b ou=certificateRepository,ou=ranges,dc=ca,dc=pki,dc=example,dc=com \
+              -s one \
+              -o ldif_wrap=no \
+              -LLL | tee output
+
+      ####################################################################################################
+      # Enroll 8 certs in secondary CA
+
+      - name: Install admin cert
+        run: |
+          docker exec primary cp \
+              /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
+              $SHARED/ca_admin_cert.p12
+
+          docker exec secondary pki nss-cert-import \
+              --cert $SHARED/ca_signing.crt \
+              --trust CT,C,C \
+              ca_signing
+
+          docker exec secondary pki pkcs12-import \
+              --pkcs12 $SHARED/ca_admin_cert.p12 \
+              --pkcs12-password Secret.123
+
+          docker exec secondary pki -n caadmin ca-user-find
+
+      - name: Enroll 8 certs in secondary CA
+        run: |
+          docker exec secondary pki \
+              nss-cert-request \
+              --subject "uid=testuser" \
+              --ext /usr/share/pki/tools/examples/certs/testuser.conf \
+              --csr testuser.csr
+
+          i=0
+          while [ $i -ne 8 ]; do
+              docker exec secondary pki \
+                  -n caadmin \
+                  ca-cert-issue \
+                  --profile caUserCert \
+                  --csr-file testuser.csr \
+                  --output-file testuser.crt
+
+              docker exec secondary openssl x509 -in testuser.crt -serial -noout
+
+              i=$(($i+1))
+          done
+
+      - name: Check request range config
+        run: |
+          docker exec secondary pki-server ca-config-find \
+              | grep \
+                  -e dbs.beginRequestNumber \
+                  -e dbs.endRequestNumber \
+                  -e dbs.requestCloneTransferNumber \
+                  -e dbs.requestIncrement \
+                  -e dbs.requestLowWaterMark \
+              | tee actual
+
+          cat > expected << EOF
+          dbs.beginRequestNumber=13
+          dbs.endRequestNumber=20
+          dbs.requestCloneTransferNumber=8
+          dbs.requestIncrement=10
+          dbs.requestLowWaterMark=8
+          EOF
+
+          diff expected actual
+
+      - name: Check cert range config
+        run: |
+          docker exec secondary pki-server ca-config-find \
+              | grep \
+                  -e dbs.beginSerialNumber \
+                  -e dbs.endSerialNumber \
+                  -e dbs.serialCloneTransferNumber \
+                  -e dbs.serialIncrement \
+                  -e dbs.serialLowWaterMark \
+              | tee actual
+
+          cat > expected << EOF
+          dbs.beginSerialNumber=9
+          dbs.endSerialNumber=10
+          dbs.serialCloneTransferNumber=8
+          dbs.serialIncrement=10
+          dbs.serialLowWaterMark=8
+          EOF
+
+          diff expected actual
+
+      - name: Check cert repository
+        run: |
+          docker exec secondaryds ldapsearch \
+              -H ldap://secondaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b ou=certificateRepository,ou=ca,dc=ca,dc=pki,dc=example,dc=com \
+              -s base \
+              -o ldif_wrap=no \
+              -LLL | tee output
+
+      - name: Check cert ranges
+        run: |
+          docker exec secondaryds ldapsearch \
+              -H ldap://secondaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b ou=certificateRepository,ou=ranges,dc=ca,dc=pki,dc=example,dc=com \
+              -s one \
+              -o ldif_wrap=no \
+              -LLL | tee output
+
+      - name: Check cert requests
+        run: |
+          docker exec secondary pki-server ca-cert-request-find | tee output
+
+      - name: Check certs
+        run: |
+          docker exec secondary pki-server ca-cert-find | tee output
+
+          grep "Serial Number:" output | wc -l > actual
+
+          # there should be 15 certs
+          echo "15" > expected
+          diff expected actual
+
+      ####################################################################################################
+      # Enroll 1 cert in primary CA
+
+      - name: Enroll 1 cert in primary CA
+        run: |
+          docker exec secondary pki \
+              nss-cert-request \
+              --subject "uid=testuser" \
+              --ext /usr/share/pki/tools/examples/certs/testuser.conf \
+              --csr testuser.csr
+
+          for i in $(seq 1 1); do
+              docker exec secondary pki \
+                  -U https://primary.example.com:8443 \
+                  -n caadmin \
+                  ca-cert-issue \
+                  --profile caUserCert \
+                  --csr-file testuser.csr \
+                  --output-file testuser.crt
+
+              docker exec secondary openssl x509 -in testuser.crt -serial -noout
+          done
+
+      - name: Check cert requests
+        run: |
+          docker exec secondary pki-server ca-cert-request-find | tee output
+
+      - name: Check certs
+        run: |
+          docker exec secondary pki-server ca-cert-find | tee output
+
+          grep "Serial Number:" output | wc -l > actual
+
+          # there should be 16 certs
+          echo "16" > expected
+          diff expected actual
+
+      ####################################################################################################
+      # Enroll a cert when range is full
+
+      - name: Enroll a cert in secondary CA
+        run: |
+          docker exec secondary pki \
+              -n caadmin \
+              ca-cert-issue \
+              --profile caUserCert \
+              --csr-file testuser.csr \
+              --output-file testuser.crt \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          cat > expected << EOF
+          PKIException: Unable to create enrollment request: Unable to create enrollment request: All serial numbers are used. The max serial number is 0x21
+          EOF
+
+          diff expected stderr
+
+      - name: Enroll a cert in primary CA
+        run: |
+          docker exec secondary pki \
+              -U https://primary.example.com:8443 \
+              -n caadmin \
+              ca-cert-issue \
+              --profile caUserCert \
+              --csr-file testuser.csr \
+              --output-file testuser.crt \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          cat > expected << EOF
+          PKIException: Server Internal Error: Request  was completed with errors.
+          CA has exausted all available serial numbers
+          EOF
+
+          diff expected stderr
+
+      - name: Check request range config
+        run: |
+          docker exec secondary pki-server ca-config-find \
+              | grep \
+                  -e dbs.beginRequestNumber \
+                  -e dbs.endRequestNumber \
+                  -e dbs.requestCloneTransferNumber \
+                  -e dbs.requestIncrement \
+                  -e dbs.requestLowWaterMark \
+              | tee actual
+
+          cat > expected << EOF
+          dbs.beginRequestNumber=13
+          dbs.endRequestNumber=20
+          dbs.requestCloneTransferNumber=8
+          dbs.requestIncrement=10
+          dbs.requestLowWaterMark=8
+          EOF
+
+          diff expected actual
+
+      - name: Check cert range config
+        run: |
+          docker exec secondary pki-server ca-config-find \
+              | grep \
+                  -e dbs.beginSerialNumber \
+                  -e dbs.endSerialNumber \
+                  -e dbs.serialCloneTransferNumber \
+                  -e dbs.serialIncrement \
+                  -e dbs.serialLowWaterMark \
+              | tee actual
+
+          cat > expected << EOF
+          dbs.beginSerialNumber=9
+          dbs.endSerialNumber=10
+          dbs.serialCloneTransferNumber=8
+          dbs.serialIncrement=10
+          dbs.serialLowWaterMark=8
+          EOF
+
+          diff expected actual
+
+      - name: Check request repository
+        run: |
+          docker exec secondaryds ldapsearch \
+              -H ldap://secondaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b ou=ca,ou=requests,dc=ca,dc=pki,dc=example,dc=com \
+              -s base \
+              -o ldif_wrap=no \
+              -LLL | tee output
+
+          grep -e serialno: -e nextRange: output | sort > actual
+
+          cat > expected << EOF
+          nextRange: 21
+          serialno: 010
+          EOF
+
+          diff expected actual
+
+      - name: Check cert repository
+        run: |
+          docker exec secondaryds ldapsearch \
+              -H ldap://secondaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b ou=certificateRepository,ou=ca,dc=ca,dc=pki,dc=example,dc=com \
+              -s base \
+              -o ldif_wrap=no \
+              -LLL | tee output
+
+          grep -e serialno: -e nextRange: output | sort > actual
+
+          cat > expected << EOF
+          nextRange: 11
+          serialno: 011
+          EOF
+
+          diff expected actual
+
+      - name: Check request ranges
+        run: |
+          docker exec secondaryds ldapsearch \
+              -H ldap://secondaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b ou=requests,ou=ranges,dc=ca,dc=pki,dc=example,dc=com \
+              -s one \
+              -o ldif_wrap=no \
+              -LLL | tee output
+
+      - name: Check cert ranges
+        run: |
+          docker exec secondaryds ldapsearch \
+              -H ldap://secondaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b ou=certificateRepository,ou=ranges,dc=ca,dc=pki,dc=example,dc=com \
+              -s one \
+              -o ldif_wrap=no \
+              -LLL | tee output
+
+      - name: Check cert requests
+        run: |
+          docker exec secondary pki-server ca-cert-request-find | tee output
+
+      - name: Check certs
+        run: |
+          docker exec secondary pki-server ca-cert-find | tee output
+
+          grep "Serial Number:" output | wc -l > actual
+
+          # there should be 16 certs
+          echo "16" > expected
+          diff expected actual
+
+      ####################################################################################################
+      # Update serial numbers then enroll again
+
+      - name: Update serial numbers
+        run: |
+          docker exec secondary pki \
+              -U https://primary.example.com:8443 \
+              -n caadmin \
+              ca-job-start \
+              serialNumberUpdate
+
+          docker exec secondary pki \
+              -U https://secondary.example.com:8443 \
+              -n caadmin \
+              ca-job-start \
+              serialNumberUpdate
+
+      - name: Check request range config
+        run: |
+          docker exec secondary pki-server ca-config-find \
+              | grep \
+                  -e dbs.beginRequestNumber \
+                  -e dbs.endRequestNumber \
+                  -e dbs.requestCloneTransferNumber \
+                  -e dbs.requestIncrement \
+                  -e dbs.requestLowWaterMark \
+              | tee actual
+
+          cat > expected << EOF
+          dbs.beginRequestNumber=13
+          dbs.endRequestNumber=20
+          dbs.requestCloneTransferNumber=8
+          dbs.requestIncrement=10
+          dbs.requestLowWaterMark=8
+          EOF
+
+          diff expected actual
+
+      - name: Check cert range config
+        run: |
+          docker exec secondary pki-server ca-config-find \
+              | grep \
+                  -e dbs.beginSerialNumber \
+                  -e dbs.endSerialNumber \
+                  -e dbs.serialCloneTransferNumber \
+                  -e dbs.serialIncrement \
+                  -e dbs.serialLowWaterMark \
+              | tee actual
+
+          cat > expected << EOF
+          dbs.beginSerialNumber=9
+          dbs.endSerialNumber=10
+          dbs.serialCloneTransferNumber=8
+          dbs.serialIncrement=10
+          dbs.serialLowWaterMark=8
+          EOF
+
+          diff expected actual
+
+      - name: Check request repository
+        run: |
+          docker exec secondaryds ldapsearch \
+              -H ldap://secondaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b ou=ca,ou=requests,dc=ca,dc=pki,dc=example,dc=com \
+              -s base \
+              -o ldif_wrap=no \
+              -LLL | tee output
+
+          grep -e serialno: -e nextRange: output | sort > actual
+
+          cat > expected << EOF
+          nextRange: 41
+          serialno: 010
+          EOF
+
+          diff expected actual
+
+      - name: Check cert repository
+        run: |
+          docker exec secondaryds ldapsearch \
+              -H ldap://secondaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b ou=certificateRepository,ou=ca,dc=ca,dc=pki,dc=example,dc=com \
+              -s base \
+              -o ldif_wrap=no \
+              -LLL | tee output
+
+          grep -e serialno: -e nextRange: output | sort > actual
+
+          cat > expected << EOF
+          nextRange: 43
+          serialno: 011
+          EOF
+
+          diff expected actual
+
+      - name: Check request ranges
+        run: |
+          docker exec secondaryds ldapsearch \
+              -H ldap://secondaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b ou=requests,ou=ranges,dc=ca,dc=pki,dc=example,dc=com \
+              -s one \
+              -o ldif_wrap=no \
+              -LLL | tee output
+
+          rm -f actual
+
+          for DN in $(sed -n 's/^dn: *\(.*\)$/\1/p' output)
+          do
+              docker exec secondaryds ldapsearch \
+                  -H ldap://secondaryds.example.com:3389 \
+                  -D "cn=Directory Manager" \
+                  -w Secret.123 \
+                  -b $DN \
+                  -s base \
+                  -o ldif_wrap=no \
+                  -LLL \
+                  | grep \
+                      -e SecurePort: \
+                      -e beginRange: \
+                      -e endRange: \
+                      -e host: \
+                  | sort >> actual
+
+              echo >> actual
+          done
+
+          cat > expected << EOF
+          SecurePort: 8443
+          beginRange: 11
+          endRange: 20
+          host: primary.example.com
+
+          SecurePort: 8443
+          beginRange: 21
+          endRange: 30
+          host: primary.example.com
+
+          SecurePort: 8443
+          beginRange: 31
+          endRange: 40
+          host: secondary.example.com
+
+          EOF
+
+          diff expected actual
+
+      - name: Check cert ranges
+        run: |
+          docker exec secondaryds ldapsearch \
+              -H ldap://secondaryds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b ou=certificateRepository,ou=ranges,dc=ca,dc=pki,dc=example,dc=com \
+              -s one \
+              -o ldif_wrap=no \
+              -LLL | tee output
+
+          rm -f actual
+
+          for DN in $(sed -n 's/^dn: *\(.*\)$/\1/p' output)
+          do
+              docker exec secondaryds ldapsearch \
+                  -H ldap://secondaryds.example.com:3389 \
+                  -D "cn=Directory Manager" \
+                  -w Secret.123 \
+                  -b $DN \
+                  -s base \
+                  -o ldif_wrap=no \
+                  -LLL \
+                  | grep \
+                      -e SecurePort: \
+                      -e beginRange: \
+                      -e endRange: \
+                      -e host: \
+                  | sort >> actual
+
+              echo >> actual
+          done
+
+          cat > expected << EOF
+          SecurePort: 8443
+          beginRange: 11
+          endRange: 26
+          host: primary.example.com
+
+          SecurePort: 8443
+          beginRange: 27
+          endRange: 42
+          host: secondary.example.com
+
+          EOF
+
+          diff expected actual
+
+      - name: Remove secondary CA
+        run: |
+          docker exec secondary pkidestroy -s CA -v
+
+      - name: Remove primary CA
+        run: |
+          docker exec primary pkidestroy -s CA -v
+
+      - name: Check primary DS server systemd journal
+        if: always()
+        run: |
+          docker exec primaryds journalctl -x --no-pager -u dirsrv@localhost.service
+
+      - name: Check primary DS container logs
+        if: always()
+        run: |
+          docker logs primaryds
+
+      - name: Check primary PKI server systemd journal
+        if: always()
+        run: |
+          docker exec primary journalctl -x --no-pager -u pki-tomcatd@pki-tomcat.service
+
+      - name: Check primary PKI server access log
+        if: always()
+        run: |
+          docker exec primary find /var/log/pki/pki-tomcat -name "localhost_access_log.*" -exec cat {} \;
+
+      - name: Check primary CA debug log
+        if: always()
+        run: |
+          docker exec primary find /var/lib/pki/pki-tomcat/logs/ca -name "debug.*" -exec cat {} \;
+
+      - name: Check secondary DS server systemd journal
+        if: always()
+        run: |
+          docker exec secondaryds journalctl -x --no-pager -u dirsrv@localhost.service
+
+      - name: Check secondary DS container logs
+        if: always()
+        run: |
+          docker logs secondaryds
+
+      - name: Check secondary PKI server systemd journal
+        if: always()
+        run: |
+          docker exec secondary journalctl -x --no-pager -u pki-tomcatd@pki-tomcat.service
+
+      - name: Check secondary PKI server access log
+        if: always()
+        run: |
+          docker exec secondary find /var/log/pki/pki-tomcat -name "localhost_access_log.*" -exec cat {} \;
+
+      - name: Check secondary CA debug log
+        if: always()
+        run: |
+          docker exec secondary find /var/lib/pki/pki-tomcat/logs/ca -name "debug.*" -exec cat {} \;
