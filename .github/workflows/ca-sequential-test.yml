@@ -162,7 +162,8 @@ jobs:
               output \
               | sort > actual
 
-          # request nextRange should be incremented by 10 decimal to 11
+          # request nextRange should be dbs.beginRequestNumber incremented by
+          # 10 decimal to 11 decimal
           cat > expected << EOF
           nextRange: 11
           serialno: 010
@@ -187,8 +188,9 @@ jobs:
               output \
               | sort > actual
 
-          # cert nextRange should be incremented by 12 hex (18 decimal) to 13 hex
-          # (19 decimal), but currently the value will be processed as 13 decimal in:
+          # cert nextRange should be dbs.beginSerialNumber incremented by 12 hex
+          # (18 decimal) to 13 hex (19 decimal), but currently the value will be
+          # processed as 13 decimal in:
           # - Repository.getNextRange()
           # - SubsystemRangeUpdateCLI.updateSerialNumberRange()
           cat > expected << EOF
