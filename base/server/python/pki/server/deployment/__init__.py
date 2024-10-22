@@ -1208,6 +1208,10 @@ class PKIDeployer:
             if request_transfer:
                 subsystem.set_config('dbs.requestCloneTransferNumber', request_transfer)
 
+            request_dn = self.mdict.get('pki_request_number_range_dn')
+            if request_dn:
+                subsystem.set_config('dbs.requestRangeDN', request_dn)
+
         cert_id_generator = self.mdict['pki_cert_id_generator']
 
         subsystem.set_config('dbs.cert.id.generator', cert_id_generator)
@@ -1246,6 +1250,10 @@ class PKIDeployer:
             serial_transfer = self.mdict.get('pki_serial_number_range_transfer')
             if serial_transfer:
                 subsystem.set_config('dbs.serialCloneTransferNumber', serial_transfer)
+
+            serial_dn = self.mdict.get('pki_serial_number_range_dn')
+            if serial_dn:
+                subsystem.set_config('dbs.serialRangeDN', serial_dn)
 
         replica_number_range_start = self.mdict.get('pki_replica_number_range_start')
         if replica_number_range_start:
