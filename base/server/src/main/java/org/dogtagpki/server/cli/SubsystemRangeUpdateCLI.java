@@ -86,7 +86,7 @@ public class SubsystemRangeUpdateCLI extends SubsystemCLI {
         DatabaseConfig dbConfig = cs.getDatabaseConfig();
 
         // currently the cert nextRange is stored in cert repository's base DN
-        String serialNextRangeDN = dbConfig.getSerialDN() + "," + baseDN;
+        String serialNextRangeDN = dbConfig.getSerialRangeDN() + "," + baseDN;
 
         updateSerialNumberRange(
                 socketFactory,
@@ -96,7 +96,7 @@ public class SubsystemRangeUpdateCLI extends SubsystemCLI {
                 serialNextRangeDN);
 
         // currently the request nextRange is stored in request repository's base DN
-        String requestNextRangeDN = dbConfig.getRequestDN() + "," + baseDN;
+        String requestNextRangeDN = dbConfig.getRequestRangeDN() + "," + baseDN;
 
         updateRequestNumberRange(
                 socketFactory,

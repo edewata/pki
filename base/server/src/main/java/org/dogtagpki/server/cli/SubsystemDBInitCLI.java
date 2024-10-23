@@ -114,14 +114,14 @@ public class SubsystemDBInitCLI extends SubsystemCLI {
                 if (!StringUtils.isEmpty(requestRangeRDN)) {
                     ldapConfigurator.createEntry(
                             requestRangeRDN + "," + ldapConfig.getBaseDN(),
-                            new String[] { "organizationalUnit" });
+                            new String[] { "repository" });
                 }
 
                 String serialRangeRDN = dbConfig.getSerialRangeDN();
                 if (!StringUtils.isEmpty(serialRangeRDN)) {
                     ldapConfigurator.createEntry(
                             serialRangeRDN + "," + ldapConfig.getBaseDN(),
-                            new String[] { "organizationalUnit" });
+                            new String[] { "repository" });
                 }
 
                 ldapConfigurator.setupACL(subsystem);

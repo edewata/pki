@@ -6,7 +6,7 @@ LIST=$(docker exec $NAME ldapsearch \
     -H ldap://$NAME.example.com:3389 \
     -D "cn=Directory Manager" \
     -w Secret.123 \
-    -b ou=requests,ou=ranges,dc=ca,dc=pki,dc=example,dc=com \
+    -b ou=requests2,ou=ranges,dc=ca,dc=pki,dc=example,dc=com \
     -s one \
     -o ldif_wrap=no \
     -LLL \

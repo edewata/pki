@@ -158,6 +158,10 @@ public class RequestRepository extends Repository {
         }
     }
 
+    public String getNextRangeDN() {
+        return rangeDN;
+    }
+
     public void setMinSerialConfig() throws EBaseException {
 
         DatabaseConfig dbConfig = dbSubsystem.getDBConfigStore();

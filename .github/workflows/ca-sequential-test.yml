@@ -80,12 +80,14 @@ jobs:
               -D pki_request_number_range_increment=10 \
               -D pki_request_number_range_minimum=5 \
               -D pki_request_number_range_transfer=5 \
+              -D pki_request_number_range_dn=ou=requests2,ou=ranges \
               -D pki_cert_id_generator=legacy \
               -D pki_serial_number_range_start=9 \
               -D pki_serial_number_range_end=18 \
               -D pki_serial_number_range_increment=12 \
               -D pki_serial_number_range_minimum=9 \
               -D pki_serial_number_range_transfer=9 \
+              -D pki_serial_number_range_dn=ou=certs2,ou=ranges \
               -v
 
       - name: Check requests

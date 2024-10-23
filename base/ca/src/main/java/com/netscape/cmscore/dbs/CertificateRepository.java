@@ -178,6 +178,10 @@ public class CertificateRepository extends Repository {
         logger.debug("CertificateRepository: - serial increment: " + mIncrementNo);
     }
 
+    public String getNextRangeDN() {
+        return rangeDN;
+    }
+
     public void setMinSerialConfig() throws EBaseException {
 
         DatabaseConfig dbConfig = dbSubsystem.getDBConfigStore();
