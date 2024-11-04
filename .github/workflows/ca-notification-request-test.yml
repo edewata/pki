@@ -58,6 +58,8 @@ jobs:
               -e 's/^inet_protocols = .*$/inet_protocols = ipv4/' \
               /etc/postfix/main.cf
 
+          docker exec pki cat /etc/postfix/main.cf
+
           docker exec pki systemctl start postfix
 
       - name: Install CA
@@ -166,6 +168,11 @@ jobs:
 
       - name: Remove CA
         run: docker exec pki pkidestroy -s CA -v
+
+      - name: Check mail server systemd journal
+        if: always()
+        run: |
+          docker exec pki journalctl -x --no-pager -u postfix.service
 
       - name: Check PKI server systemd journal
         if: always()
