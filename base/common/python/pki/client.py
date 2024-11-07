@@ -29,6 +29,7 @@ import logging
 import os
 import ssl
 import warnings
+import urllib
 
 import requests
 from requests import adapters
@@ -37,6 +38,8 @@ try:
     from requests.packages.urllib3.exceptions import InsecureRequestWarning
 except ImportError:
     from urllib3.exceptions import InsecureRequestWarning
+
+import pki.info
 
 logger = logging.getLogger(__name__)
 
@@ -169,7 +172,7 @@ class PKIConnection:
 
         self.protocol = protocol
         self.hostname = hostname
-        self.port = port
+        self.port = str(port)
         self.subsystem = subsystem
 
         self.rootURI = self.protocol + '://' + self.hostname
@@ -364,6 +367,40 @@ class PKIConnection:
         r = self.session.delete(target_path, headers=headers)
         r.raise_for_status()
         return r
+
+
+class PKIClient:
+
+    def __init__(
+            self,
+            url,
+            trust_env=None,
+            verify=True,
+            cert_paths=None,
+            api=None):
+
+        self.url = urllib.parse.urlparse(url)
+        self._api = api
+
+        self.connection = PKIConnection(
+            protocol=self.url.scheme,
+            hostname=self.url.hostname,
+            port=self.url.port,
+            accept='application/json',
+            cert_paths=cert_paths
+        )
+
+        self.info_client = pki.info.InfoClient(self)
+
+    @property
+    def api(self):
+
+        if self._api:
+            return self._api
+
+        info = self.info_client.get_info()
+
+        return 'rest'
 
 
 def main():

@@ -28,6 +28,7 @@ import logging
 from six import iteritems
 
 import pki
+import pki.ca
 import pki.client as client
 import pki.encoder as encoder
 import pki.profile as profile
@@ -600,17 +601,24 @@ class CertClient(object):
     Java interface class defining the REST API for Certificate resources.
     """
 
-    def __init__(self, connection):
+    def __init__(self, parent):
         """ Constructor """
 
-        self.connection = connection
+        if isinstance(parent, pki.client.PKIConnection):
+            self.ca_client = None
+            self.pki_client = None
+            self.connection = parent
+        else:
+            self.ca_client = parent
+            self.pki_client = self.ca_client.parent
+            self.connection = self.pki_client.connection
 
         self.cert_url = '/rest/certs'
         self.agent_cert_url = '/rest/agent/certs'
         self.cert_requests_url = '/rest/certrequests'
         self.agent_cert_requests_url = '/rest/agent/certrequests'
 
-        if connection.subsystem is None:
+        if self.connection.subsystem is None:
             self.cert_url = '/ca' + self.cert_url
             self.agent_cert_url = '/ca' + self.agent_cert_url
             self.cert_requests_url = '/ca' + self.cert_requests_url
@@ -642,7 +650,9 @@ class CertClient(object):
             the certificates that satisfy the search criteria.
             If cert_search_request=None, returns all the certificates.
         """
-        url = self.cert_url + '/search'
+        api = self.pki_client.api if self.pki_client else None
+        url = '/ca/%s/certs/search' % (api if api else 'rest')
+
         query_params = {"maxResults": max_results, "maxTime": max_time,
                         "start": start, "size": size}
         cert_search_request = CertSearchRequest(**cert_search_params)

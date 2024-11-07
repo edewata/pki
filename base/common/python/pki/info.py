@@ -103,20 +103,27 @@ class InfoClient(object):
     server Info resources.
     """
 
-    def __init__(self, connection):
+    def __init__(self, parent):
         """ Constructor """
 
-        self.connection = connection
-
-        self.info_url = '/pki/v2/info'
+        if isinstance(parent, pki.client.PKIConnection):
+            self.pki_client = None
+            self.connection = parent
+        else:
+            self.pki_client = parent
+            self.connection = self.pki_client.connection
 
     @pki.handle_exceptions()
     def get_info(self):
         """ Return an Info object form a PKI server """
 
+        logger.info('Getting PKI server info')
+
         headers = {'Content-type': 'application/json',
                    'Accept': 'application/json'}
-        response = self.connection.get(self.info_url, headers)
+
+        url = '/pki/v2/info'
+        response = self.connection.get(url, headers)
 
         json_response = response.json()
         logger.debug('Response:\n%s', json.dumps(json_response, indent=4))

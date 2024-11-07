@@ -530,6 +530,21 @@ jobs:
           docker exec pki pki --debug -n caadmin ca-profile-add ${SHARED}/profile.xml
           docker exec pki pki -n caadmin ca-profile-show caCustomUser
 
+      - name: Check Python API with default API
+        run: |
+          docker exec pki python /usr/share/pki/tests/ca/bin/test-ca-cert-find.py \
+              --url https://pki.example.com:8443 \
+              --cert-paths $SHARED/ca_signing.crt \
+              -v
+
+      - name: Check Python API with API v2
+        run: |
+          docker exec pki python /usr/share/pki/tests/ca/bin/test-ca-cert-find.py \
+              --url https://pki.example.com:8443 \
+              --cert-paths $SHARED/ca_signing.crt \
+              --api v2 \
+              -v
+
       - name: Remove CA
         run: docker exec pki pkidestroy -s CA -v
 
