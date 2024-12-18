@@ -104,6 +104,9 @@ class CLI(object):
             if not module or not command:
                 return module
 
+    def create_parser(self):
+        pass
+
     def parse_command(self, command):
 
         # A command consists of parts joined by dashes: <part 1>-<part 2>-...-<part N>.

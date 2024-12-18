@@ -61,7 +61,7 @@ class PKIServerCLI(pki.cli.CLI):
     def __init__(self):
         super().__init__('pki-server', 'PKI server command-line interface')
 
-        self.add_module(pki.server.cli.CreateCLI())
+        self.add_module(pki.server.cli.CreateCLI(self))
         self.add_module(pki.server.cli.RemoveCLI())
 
         self.add_module(pki.server.cli.StatusCLI())
@@ -99,6 +99,29 @@ class PKIServerCLI(pki.cli.CLI):
 
         self.add_module(pki.server.cli.upgrade.UpgradeCLI())
 
+        self.parser = argparse.ArgumentParser(
+            prog=self.name,
+            add_help=False)
+        #self.parser.add_argument(
+        #    '-i',
+        #    '--instance',
+        #    default='pki-tomcat')
+        #self.parser.add_argument(
+        #    '-v',
+        #    '--verbose',
+        #    action='store_true')
+        #self.parser.add_argument(
+        #    '--debug',
+        #    action='store_true')
+        #self.parser.add_argument(
+        #    '--help',
+        #    action='store_true')
+
+        self.subparsers = self.parser.add_subparsers()
+
+        for module in self.modules.values():
+            module.create_parser()
+
     def get_full_module_name(self, module_name):
         return module_name
 
@@ -113,34 +136,20 @@ class PKIServerCLI(pki.cli.CLI):
         super().print_help()
 
     def execute(self, argv):
-        try:
-            opts, args = getopt.getopt(argv[1:], 'v', [
-                'verbose', 'debug', 'help'])
 
-        except getopt.GetoptError as e:
-            logger.error(e)
+        args = self.parser.parse_args(args=argv)
+
+        if args.help:
             self.print_help()
-            sys.exit(1)
+            return
 
-        for o, _ in opts:
-            if o in ('-v', '--verbose'):
-                logging.getLogger().setLevel(logging.INFO)
+        if args.debug:
+            logging.getLogger().setLevel(logging.DEBUG)
 
-            elif o == '--debug':
-                logging.getLogger().setLevel(logging.DEBUG)
+        elif args.verbose:
+            logging.getLogger().setLevel(logging.INFO)
 
-            elif o == '--help':
-                self.print_help()
-                sys.exit()
-
-            else:
-                logger.error('Unknown option %s', o)
-                self.print_help()
-                sys.exit(1)
-
-        logger.debug('Command: %s', ' '.join(args))
-
-        super().execute(args)
+        #super().execute(args)
 
     @staticmethod
     def print_status(instance):
@@ -291,12 +300,20 @@ class PKIServerCLI(pki.cli.CLI):
 
 class CreateCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('create', 'Create PKI server')
 
-        self.parser = argparse.ArgumentParser(
-            prog=self.name,
+        self.parent = parent
+
+    def create_parser(self):
+
+        self.parser = self.parent.subparsers.add_parser(
+            self.name,
             add_help=False)
+
+        #self.parser = argparse.ArgumentParser(
+        #    prog=self.name,
+        #    add_help=False)
         self.parser.add_argument('--user')
         self.parser.add_argument('--group')
         self.parser.add_argument('--conf')
