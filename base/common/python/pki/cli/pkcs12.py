@@ -50,7 +50,7 @@ class PKCS12ImportCLI(pki.cli.CLI):
 
     def create_parser(self, subparsers=None):
 
-        self.parser = argparse.ArgumentParser(
+        self.parser = subparsers.add_parser(
             self.get_full_name(),
             add_help=False)
         self.parser.add_argument('--pkcs12')
