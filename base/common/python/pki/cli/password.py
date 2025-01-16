@@ -33,15 +33,13 @@ class PasswordCLI(pki.cli.CLI):
     def __init__(self):
         super().__init__('password', 'Password utilities')
 
-        self.add_module(PasswordGenerateCLI(self))
+        self.add_module(PasswordGenerateCLI())
 
 
 class PasswordGenerateCLI(pki.cli.CLI):
 
-    def __init__(self, parent):
+    def __init__(self):
         super().__init__('generate', 'Generate secure random password')
-
-        self.parent = parent
 
     def create_parser(self):
 

@@ -47,8 +47,8 @@ class OCSPCLI(pki.cli.CLI):
         self.add_module(pki.server.cli.subsystem.SubsystemUndeployCLI(self))
         self.add_module(pki.server.cli.subsystem.SubsystemRedeployCLI(self))
         self.add_module(pki.server.cli.audit.AuditCLI(self))
-        self.add_module(OCSPCloneCLI(self))
-        self.add_module(OCSPCRLCLI(self))
+        self.add_module(OCSPCloneCLI())
+        self.add_module(OCSPCRLCLI())
         self.add_module(pki.server.cli.config.SubsystemConfigCLI(self))
         self.add_module(pki.server.cli.db.SubsystemDBCLI(self))
         self.add_module(pki.server.cli.group.GroupCLI(self))
@@ -57,20 +57,16 @@ class OCSPCLI(pki.cli.CLI):
 
 class OCSPCloneCLI(pki.cli.CLI):
 
-    def __init__(self, parent):
+    def __init__(self):
         super().__init__('clone', 'OCSP clone management commands')
 
-        self.parent = parent
-
-        self.add_module(OCSPClonePrepareCLI(self))
+        self.add_module(OCSPClonePrepareCLI())
 
 
 class OCSPClonePrepareCLI(pki.cli.CLI):
 
-    def __init__(self, parent):
+    def __init__(self):
         super().__init__('prepare', 'Prepare OCSP clone')
-
-        self.parent = parent
 
     def create_parser(self):
 
@@ -183,31 +179,25 @@ class OCSPClonePrepareCLI(pki.cli.CLI):
 
 class OCSPCRLCLI(pki.cli.CLI):
 
-    def __init__(self, parent):
+    def __init__(self):
         super().__init__('crl', 'OCSP CRL management commands')
 
-        self.parent = parent
-
-        self.add_module(OCSPCRLIssuingPointCLI(self))
+        self.add_module(OCSPCRLIssuingPointCLI())
 
 
 class OCSPCRLIssuingPointCLI(pki.cli.CLI):
 
-    def __init__(self, parent):
+    def __init__(self):
         super().__init__('issuingpoint', 'OCSP CRL issuing point management commands')
 
-        self.parent = parent
-
-        self.add_module(OCSPCRLIssuingPointFindCLI(self))
-        self.add_module(OCSPCRLIssuingPointAddCLI(self))
+        self.add_module(OCSPCRLIssuingPointFindCLI())
+        self.add_module(OCSPCRLIssuingPointAddCLI())
 
 
 class OCSPCRLIssuingPointFindCLI(pki.cli.CLI):
 
-    def __init__(self, parent):
+    def __init__(self):
         super().__init__('find', 'Find OCSP CRL issuing points')
-
-        self.parent = parent
 
     def create_parser(self):
 
