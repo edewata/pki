@@ -37,6 +37,7 @@ class AuditCLI(pki.cli.CLI):
         super().__init__('audit', 'Audit management commands')
 
         self.parent = parent
+
         self.add_module(AuditConfigShowCLI(self))
         self.add_module(AuditConfigModifyCLI(self))
         self.add_module(AuditEventFindCLI(self))

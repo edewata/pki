@@ -35,10 +35,10 @@ class WebappCLI(pki.cli.CLI):
     def __init__(self):
         super().__init__('webapp', 'Webapp management commands')
 
-        self.add_module(WebappFindCLI())
-        self.add_module(WebappShowCLI())
-        self.add_module(WebappDeployCLI())
-        self.add_module(WebappUndeployCLI())
+        self.add_module(WebappFindCLI(self))
+        self.add_module(WebappShowCLI(self))
+        self.add_module(WebappDeployCLI(self))
+        self.add_module(WebappUndeployCLI(self))
 
     @staticmethod
     def print_webapp(webapp):
@@ -55,8 +55,10 @@ class WebappCLI(pki.cli.CLI):
 
 class WebappFindCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('find', 'Find webapps')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -135,8 +137,10 @@ class WebappShowCLI(pki.cli.CLI):
               --help                      Show help message.
     '''  # noqa: E501
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('show', inspect.cleandoc(self.__class__.__doc__))
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -197,8 +201,10 @@ class WebappShowCLI(pki.cli.CLI):
 
 class WebappDeployCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('deploy', 'Deploy webapp')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -286,8 +292,10 @@ class WebappDeployCLI(pki.cli.CLI):
 
 class WebappUndeployCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('undeploy', 'Undeploy webapp')
+
+        self.parent = parent
 
     def create_parser(self):
 

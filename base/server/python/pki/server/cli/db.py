@@ -38,14 +38,16 @@ class DBCLI(pki.cli.CLI):
     def __init__(self):
         super().__init__('db', 'Database management commands')
 
-        self.add_module(DBUpgradeCLI())
-        self.add_module(DBSchemaUpgradeCLI())
+        self.add_module(DBUpgradeCLI(self))
+        self.add_module(DBSchemaUpgradeCLI(self))
 
 
 class DBSchemaUpgradeCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('schema-upgrade', 'Upgrade PKI database schema')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -133,8 +135,10 @@ class DBSchemaUpgradeCLI(pki.cli.CLI):
 
 class DBUpgradeCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('upgrade', 'Upgrade PKI server database')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -284,6 +288,7 @@ class SubsystemDBConfigCLI(pki.cli.CLI):
             '%s database configuration management commands' % parent.parent.name.upper())
 
         self.parent = parent
+
         self.add_module(SubsystemDBConfigShowCLI(self))
         self.add_module(SubsystemDBConfigModifyCLI(self))
 

@@ -22,8 +22,8 @@ class ESTCLI(pki.cli.CLI):
     def __init__(self):
         super().__init__('est', 'Manage the EST subsystem')
 
-        self.add_module(ESTCreateCLI())
-        self.add_module(ESTRemoveCLI())
+        self.add_module(ESTCreateCLI(self))
+        self.add_module(ESTRemoveCLI(self))
         self.add_module(pki.server.cli.subsystem.SubsystemDeployCLI(self))
         self.add_module(pki.server.cli.subsystem.SubsystemUndeployCLI(self))
 

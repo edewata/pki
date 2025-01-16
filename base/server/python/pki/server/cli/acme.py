@@ -22,23 +22,25 @@ class ACMECLI(pki.cli.CLI):
     def __init__(self):
         super().__init__('acme', 'ACME management commands')
 
-        self.add_module(ACMECreateCLI())
-        self.add_module(ACMERemoveCLI())
+        self.add_module(ACMECreateCLI(self))
+        self.add_module(ACMERemoveCLI(self))
 
         self.add_module(pki.server.cli.subsystem.SubsystemDeployCLI(self))
         self.add_module(pki.server.cli.subsystem.SubsystemUndeployCLI(self))
         self.add_module(pki.server.cli.subsystem.SubsystemRedeployCLI(self))
 
-        self.add_module(ACMEMetadataCLI())
-        self.add_module(ACMEDatabaseCLI())
-        self.add_module(ACMEIssuerCLI())
-        self.add_module(ACMERealmCLI())
+        self.add_module(ACMEMetadataCLI(self))
+        self.add_module(ACMEDatabaseCLI(self))
+        self.add_module(ACMEIssuerCLI(self))
+        self.add_module(ACMERealmCLI(self))
 
 
 class ACMECreateCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('create', 'Create ACME subsystem')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -106,8 +108,10 @@ class ACMECreateCLI(pki.cli.CLI):
 
 class ACMERemoveCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('remove', 'Remove ACME subsystem')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -190,8 +194,10 @@ class ACMERemoveCLI(pki.cli.CLI):
 
 class ACMEDeployCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('deploy', 'Deploy ACME subsystem')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -282,8 +288,10 @@ class ACMEDeployCLI(pki.cli.CLI):
 
 class ACMEUndeployCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('undeploy', 'Undeploy ACME subsystem')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -367,17 +375,21 @@ class ACMEUndeployCLI(pki.cli.CLI):
 
 class ACMEMetadataCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('metadata', 'ACME metadata management commands')
 
+        self.parent = parent
+
         self.add_module(ACMEMetadataShowCLI())
-        self.add_module(ACMEMetadataModifyCLI())
+        self.add_module(ACMEMetadataModifyCLI(self))
 
 
 class ACMEMetadataShowCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('show', 'Show ACME metadata configuration')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -463,8 +475,10 @@ class ACMEMetadataShowCLI(pki.cli.CLI):
 
 class ACMEMetadataModifyCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('mod', 'Modify ACME metadata configuration')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -566,17 +580,21 @@ class ACMEMetadataModifyCLI(pki.cli.CLI):
 
 class ACMEDatabaseCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('database', 'ACME database management commands')
 
+        self.parent = parent
+
         self.add_module(ACMEDatabaseShowCLI())
-        self.add_module(ACMEDatabaseModifyCLI())
+        self.add_module(ACMEDatabaseModifyCLI(self))
 
 
 class ACMEDatabaseShowCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('show', 'Show ACME database configuration')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -695,8 +713,10 @@ class ACMEDatabaseShowCLI(pki.cli.CLI):
 
 class ACMEDatabaseModifyCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('mod', 'Modify ACME database configuration')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -904,17 +924,21 @@ class ACMEDatabaseModifyCLI(pki.cli.CLI):
 
 class ACMEIssuerCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('issuer', 'ACME issuer management commands')
 
+        self.parent = parent
+
         self.add_module(ACMEIssuerShowCLI())
-        self.add_module(ACMEIssuerModifyCLI())
+        self.add_module(ACMEIssuerModifyCLI(self))
 
 
 class ACMEIssuerShowCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('show', 'Show ACME issuer configuration')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -1028,8 +1052,10 @@ class ACMEIssuerShowCLI(pki.cli.CLI):
 
 class ACMEIssuerModifyCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('mod', 'Modify ACME issuer configuration')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -1232,17 +1258,21 @@ class ACMEIssuerModifyCLI(pki.cli.CLI):
 
 class ACMERealmCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('realm', 'ACME realm management commands')
 
+        self.parent = parent
+
         self.add_module(ACMERealmShowCLI())
-        self.add_module(ACMERealmModifyCLI())
+        self.add_module(ACMERealmModifyCLI(self))
 
 
 class ACMERealmShowCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('show', 'Show ACME realm configuration')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -1371,8 +1401,10 @@ class ACMERealmShowCLI(pki.cli.CLI):
 
 class ACMERealmModifyCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('mod', 'Modify ACME realm configuration')
+
+        self.parent = parent
 
     def create_parser(self):
 

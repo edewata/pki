@@ -48,7 +48,7 @@ class KRACLI(pki.cli.CLI):
         self.add_module(pki.server.cli.subsystem.SubsystemUndeployCLI(self))
         self.add_module(pki.server.cli.subsystem.SubsystemRedeployCLI(self))
         self.add_module(pki.server.cli.audit.AuditCLI(self))
-        self.add_module(KRACloneCLI())
+        self.add_module(KRACloneCLI(self))
         self.add_module(pki.server.cli.config.SubsystemConfigCLI(self))
         self.add_module(pki.server.cli.db.SubsystemDBCLI(self))
         self.add_module(pki.server.cli.group.GroupCLI(self))
@@ -58,16 +58,20 @@ class KRACLI(pki.cli.CLI):
 
 class KRACloneCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('clone', 'KRA clone management commands')
 
-        self.add_module(KRAClonePrepareCLI())
+        self.parent = parent
+
+        self.add_module(KRAClonePrepareCLI(self))
 
 
 class KRAClonePrepareCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('prepare', 'Prepare KRA clone')
+
+        self.parent = parent
 
     def create_parser(self):
 

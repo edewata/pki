@@ -46,16 +46,17 @@ logger = logging.getLogger(__name__)
 class CertCLI(pki.cli.CLI):
     def __init__(self):
         super().__init__('cert', 'System certificate management commands')
-        self.add_module(CertFindCLI())
-        self.add_module(CertShowCLI())
-        self.add_module(CertValidateCLI())
-        self.add_module(CertUpdateCLI())
-        self.add_module(CertRequestCLI())
-        self.add_module(CertCreateCLI())
-        self.add_module(CertImportCLI())
-        self.add_module(CertExportCLI())
-        self.add_module(CertRemoveCLI())
-        self.add_module(CertFixCLI())
+
+        self.add_module(CertFindCLI(self))
+        self.add_module(CertShowCLI(self))
+        self.add_module(CertValidateCLI(self))
+        self.add_module(CertUpdateCLI(self))
+        self.add_module(CertRequestCLI(self))
+        self.add_module(CertCreateCLI(self))
+        self.add_module(CertImportCLI(self))
+        self.add_module(CertExportCLI(self))
+        self.add_module(CertRemoveCLI(self))
+        self.add_module(CertFixCLI(self))
 
     @staticmethod
     def print_system_cert(cert, show_all=False):
@@ -100,8 +101,11 @@ class CertCLI(pki.cli.CLI):
 
 
 class CertFindCLI(pki.cli.CLI):
-    def __init__(self):
+
+    def __init__(self, parent):
         super().__init__('find', 'Find system certificates.')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -191,8 +195,11 @@ class CertFindCLI(pki.cli.CLI):
 
 
 class CertShowCLI(pki.cli.CLI):
-    def __init__(self):
+
+    def __init__(self, parent):
         super().__init__('show', 'Display system certificate details.')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -304,10 +311,12 @@ class CertValidateCLI(pki.cli.CLI):
               --help                      Show help message.
     '''
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__(
             'validate',
             inspect.cleandoc(self.__class__.__doc__))
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -376,8 +385,10 @@ class CertValidateCLI(pki.cli.CLI):
 
 
 class CertUpdateCLI(pki.cli.CLI):
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('update', 'Update system certificate.')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -518,8 +529,10 @@ class CertRequestCLI(pki.cli.CLI):
               --help                      Show help message.
     '''  # noqa: E501
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('request', inspect.cleandoc(self.__class__.__doc__))
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -626,8 +639,10 @@ class CertCreateCLI(pki.cli.CLI):
             subsystem, sslserver
     '''  # noqa: E501
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('create', inspect.cleandoc(self.__class__.__doc__))
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -784,8 +799,10 @@ class CertImportCLI(pki.cli.CLI):
             subsystem, sslserver
     '''  # noqa: E501
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('import', inspect.cleandoc(self.__class__.__doc__))
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -856,8 +873,11 @@ class CertImportCLI(pki.cli.CLI):
 
 
 class CertExportCLI(pki.cli.CLI):
-    def __init__(self):
+
+    def __init__(self, parent):
         super().__init__('export', 'Export system certificate.')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -1095,8 +1115,11 @@ class CertExportCLI(pki.cli.CLI):
 
 
 class CertRemoveCLI(pki.cli.CLI):
-    def __init__(self):
+
+    def __init__(self, parent):
         super().__init__('del', 'Remove system certificate.')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -1176,8 +1199,10 @@ class CertFixCLI(pki.cli.CLI):
         "userCertificate:< file://{der_file}\n"
     )
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('fix', 'Fix expired system certificate(s).')
+
+]       self.parent = parent
 
     def create_parser(self):
 

@@ -52,13 +52,13 @@ class CACLI(pki.cli.CLI):
         self.add_module(pki.server.cli.subsystem.SubsystemUndeployCLI(self))
         self.add_module(pki.server.cli.subsystem.SubsystemRedeployCLI(self))
         self.add_module(pki.server.cli.audit.AuditCLI(self))
-        self.add_module(CACertCLI())
-        self.add_module(CACRLCLI())
-        self.add_module(CACloneCLI())
+        self.add_module(CACertCLI(self))
+        self.add_module(CACRLCLI(self))
+        self.add_module(CACloneCLI(self))
         self.add_module(pki.server.cli.config.SubsystemConfigCLI(self))
         self.add_module(pki.server.cli.db.SubsystemDBCLI(self))
         self.add_module(pki.server.cli.group.GroupCLI(self))
-        self.add_module(CAProfileCLI())
+        self.add_module(CAProfileCLI(self))
         self.add_module(pki.server.cli.range.RangeCLI(self))
         self.add_module(pki.server.cli.id.IdCLI(self))
         self.add_module(pki.server.cli.user.UserCLI(self))
@@ -66,15 +66,17 @@ class CACLI(pki.cli.CLI):
 
 class CACertCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('cert', 'CA certificates management commands')
 
-        self.add_module(CACertFindCLI())
-        self.add_module(CACertCreateCLI())
-        self.add_module(CACertImportCLI())
-        self.add_module(CACertRemoveCLI())
-        self.add_module(CACertChainCLI())
-        self.add_module(CACertRequestCLI())
+        self.parent = parent
+
+        self.add_module(CACertFindCLI(self))
+        self.add_module(CACertCreateCLI(self))
+        self.add_module(CACertImportCLI(self))
+        self.add_module(CACertRemoveCLI(self))
+        self.add_module(CACertChainCLI(self))
+        self.add_module(CACertRequestCLI(self))
 
 
 class CACertFindCLI(pki.cli.CLI):
@@ -92,8 +94,10 @@ class CACertFindCLI(pki.cli.CLI):
               --help                         Show help message.
     '''  # noqa: E501
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('find', inspect.cleandoc(self.__class__.__doc__))
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -180,8 +184,10 @@ class CACertCreateCLI(pki.cli.CLI):
               --help                         Show help message.
     '''
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('create', inspect.cleandoc(self.__class__.__doc__))
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -310,8 +316,10 @@ class CACertCreateCLI(pki.cli.CLI):
 
 class CACertImportCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('import', 'Import certificate into CA')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -413,8 +421,10 @@ class CACertImportCLI(pki.cli.CLI):
 
 class CACertRemoveCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('del', 'Remove certificate in CA')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -481,16 +491,20 @@ class CACertRemoveCLI(pki.cli.CLI):
 
 class CACertChainCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('chain', 'CA certificate chain management commands')
 
-        self.add_module(CACertChainExportCLI())
+        self.parent = parent
+
+        self.add_module(CACertChainExportCLI(self))
 
 
 class CACertChainExportCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('export', 'Export certificate chain')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -591,12 +605,14 @@ class CACertChainExportCLI(pki.cli.CLI):
 
 class CACertRequestCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('request', 'CA certificate requests management commands')
 
-        self.add_module(CACertRequestFindCLI())
-        self.add_module(CACertRequestShowCLI())
-        self.add_module(CACertRequestImportCLI())
+        self.parent = parent
+
+        self.add_module(CACertRequestFindCLI(self))
+        self.add_module(CACertRequestShowCLI(self))
+        self.add_module(CACertRequestImportCLI(self))
 
     @staticmethod
     def print_request(request, details=False):
@@ -610,8 +626,10 @@ class CACertRequestCLI(pki.cli.CLI):
 
 class CACertRequestFindCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('find', 'Find CA certificate requests')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -696,8 +714,10 @@ class CACertRequestFindCLI(pki.cli.CLI):
 
 class CACertRequestShowCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('show', 'Show CA certificate request')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -774,8 +794,10 @@ class CACertRequestShowCLI(pki.cli.CLI):
 
 class CACertRequestImportCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('import', 'Import certificate request into CA')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -861,11 +883,13 @@ class CACertRequestImportCLI(pki.cli.CLI):
 
 class CACRLCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('crl', 'CA CRL configuration management commands')
 
-        self.add_module(CACRLShowCLI())
-        self.add_module(CACRLIPCLI())
+        self.parent = parent
+
+        self.add_module(CACRLShowCLI(self))
+        self.add_module(CACRLIPCLI(self))
 
     @staticmethod
     def print_crl_config(config):
@@ -891,8 +915,10 @@ class CACRLShowCLI(pki.cli.CLI):
               --help                         Show help message.
     '''  # noqa: E501
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('show', inspect.cleandoc(self.__class__.__doc__))
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -952,12 +978,14 @@ class CACRLShowCLI(pki.cli.CLI):
 
 class CACRLIPCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('ip', 'CA CRL issuing point configuration management commands')
 
-        self.add_module(CACRLIPFindCLI())
-        self.add_module(CACRLIPShowCLI())
-        self.add_module(CACRLIPModifyCLI())
+        self.parent = parent
+
+        self.add_module(CACRLIPFindCLI(self))
+        self.add_module(CACRLIPShowCLI(self))
+        self.add_module(CACRLIPModifyCLI(self))
 
     @staticmethod
     def print_crl_issuing_point_config(ip_id, config, details=False):
@@ -1016,8 +1044,10 @@ class CACRLIPFindCLI(pki.cli.CLI):
               --help                         Show help message.
     '''  # noqa: E501
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('find', inspect.cleandoc(self.__class__.__doc__))
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -1098,7 +1128,7 @@ class CACRLIPShowCLI(pki.cli.CLI):
               --help                         Show help message.
     '''  # noqa: E501
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('show', inspect.cleandoc(self.__class__.__doc__))
 
     def create_parser(self):
@@ -1177,8 +1207,10 @@ class CACRLIPModifyCLI(pki.cli.CLI):
               --help                         Show help message.
     '''  # noqa: E501
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('mod', inspect.cleandoc(self.__class__.__doc__))
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -1255,16 +1287,18 @@ class CACRLIPModifyCLI(pki.cli.CLI):
 
 class CACloneCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('clone', 'CA clone management commands')
 
-        self.add_module(CAClonePrepareCLI())
+        self.add_module(CAClonePrepareCLI(self))
 
 
 class CAClonePrepareCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('prepare', 'Prepare CA clone')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -1380,12 +1414,14 @@ class CAClonePrepareCLI(pki.cli.CLI):
 
 class CAProfileCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('profile', 'CA profile management commands')
 
-        self.add_module(CAProfileFindCLI())
-        self.add_module(CAProfileImportCLI())
-        self.add_module(CAProfileModifyCLI())
+        self.parent = parent
+
+        self.add_module(CAProfileFindCLI(self))
+        self.add_module(CAProfileImportCLI(self))
+        self.add_module(CAProfileModifyCLI(self))
 
     @staticmethod
     def print_profile(profile):
@@ -1410,8 +1446,10 @@ class CAProfileFindCLI(pki.cli.CLI):
               --help                         Show help message.
     '''  # noqa: E501
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('find', inspect.cleandoc(self.__class__.__doc__))
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -1479,8 +1517,10 @@ class CAProfileFindCLI(pki.cli.CLI):
 
 class CAProfileImportCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('import', 'Import CA profiles')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -1574,8 +1614,10 @@ class CAProfileModifyCLI(pki.cli.CLI):
               --help                         Show help message.
     '''  # noqa: E501
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('mod', inspect.cleandoc(self.__class__.__doc__))
+
+        self.parent = parent
 
     def create_parser(self):
 

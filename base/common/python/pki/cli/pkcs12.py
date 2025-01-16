@@ -39,14 +39,16 @@ class PKCS12CLI(pki.cli.CLI):
         super(PKCS12CLI, self).__init__(
             'pkcs12', 'PKCS #12 utilities')
 
-        self.add_module(PKCS12ImportCLI())
+        self.add_module(PKCS12ImportCLI(self))
 
 
 class PKCS12ImportCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super(PKCS12ImportCLI, self).__init__(
             'import', 'Import PKCS #12 file into NSS database')
+
+        self.parent = parent
 
     def create_parser(self):
 

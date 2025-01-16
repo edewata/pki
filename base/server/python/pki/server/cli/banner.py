@@ -30,17 +30,21 @@ logger = logging.getLogger(__name__)
 
 class BannerCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('banner', 'Banner management commands')
 
-        self.add_module(BannerShowCLI())
-        self.add_module(BannerValidateCLI())
+        self.parent = parent
+
+        self.add_module(BannerShowCLI(self))
+        self.add_module(BannerValidateCLI(self))
 
 
 class BannerShowCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('show', 'Show banner')
+
+        self.parent = parent
 
     def create_parser(self):
 
@@ -105,8 +109,10 @@ class BannerShowCLI(pki.cli.CLI):
 
 class BannerValidateCLI(pki.cli.CLI):
 
-    def __init__(self):
+    def __init__(self, parent):
         super().__init__('validate', 'Validate banner')
+
+        self.parent = parent
 
     def create_parser(self):
 
