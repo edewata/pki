@@ -51,9 +51,9 @@ class NuxwdogEnableCLI(pki.cli.CLI):
         )
         super().__init__('enable', 'Enable nuxwdog')
 
-    def create_parser(self):
+    def create_parser(self, subparsers=None):
 
-        self.parser = argparse.ArgumentParser(
+        self.parser = subparsers.add_parser(
             self.get_full_name(),
             add_help=False)
         self.parser.add_argument(
@@ -228,9 +228,9 @@ class NuxwdogDisableCLI(pki.cli.CLI):
         )
         super().__init__('disable', 'Disable nuxwdog')
 
-    def create_parser(self):
+    def create_parser(self, subparsers=None):
 
-        self.parser = argparse.ArgumentParser(
+        self.parser = subparsers.add_parser(
             self.get_full_name(),
             add_help=False)
         self.parser.add_argument(

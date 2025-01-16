@@ -39,10 +39,12 @@ jobs:
 
       - name: Create pki-tomcat server
         run: |
+          docker exec pki pki-server create --help
           docker exec pki pki-server create -v
 
       - name: Start pki-tomcat server
         run: |
+          docker exec pki pki-server start --help
           docker exec pki pki-server start --wait -v
 
       - name: Check pki-tomcat server base dir after installation
@@ -172,12 +174,19 @@ jobs:
               -o /dev/null \
               http://pki.example.com:8080
 
+      - name: Check pki-tomcat server status
+        run: |
+          docker exec pki pki-server status --help
+          docker exec pki pki-server status -v
+
       - name: Stop pki-tomcat server
         run: |
+          docker exec pki pki-server stop --help
           docker exec pki pki-server stop --wait -v
 
       - name: Remove pki-tomcat server
         run: |
+          docker exec pki pki-server remove --help
           docker exec pki pki-server remove -v
 
       - name: Check pki-tomcat server base dir after removal
@@ -341,6 +350,10 @@ jobs:
               -k \
               -o /dev/null \
               http://pki.example.com:8080
+
+      - name: Check tomcat@pki server status
+        run: |
+          docker exec pki pki-server status tomcat@pki -v
 
       - name: Stop tomcat@pki server
         run: |
