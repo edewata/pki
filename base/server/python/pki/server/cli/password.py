@@ -43,9 +43,9 @@ class PasswordFindCLI(pki.cli.CLI):
     def __init__(self):
         super().__init__('find', 'Find passwords')
 
-    def create_parser(self):
+    def create_parser(self, subparsers=None):
 
-        self.parser = argparse.ArgumentParser(
+        self.parser = subparsers.add_parser(
             self.get_full_name(),
             add_help=False)
         self.parser.add_argument(
@@ -113,9 +113,9 @@ class PasswordAddCLI(pki.cli.CLI):
     def __init__(self):
         super().__init__('add', 'Add password')
 
-    def create_parser(self):
+    def create_parser(self, subparsers=None):
 
-        self.parser = argparse.ArgumentParser(
+        self.parser = subparsers.add_parser(
             self.get_full_name(),
             add_help=False)
         self.parser.add_argument(
@@ -183,9 +183,9 @@ class PasswordRemoveCLI(pki.cli.CLI):
     def __init__(self):
         super().__init__('del', 'Remove password')
 
-    def create_parser(self):
+    def create_parser(self, subparsers=None):
 
-        self.parser = argparse.ArgumentParser(
+        self.parser = subparsers.add_parser(
             self.get_full_name(),
             add_help=False)
         self.parser.add_argument(
