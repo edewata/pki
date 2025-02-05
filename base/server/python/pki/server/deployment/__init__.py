@@ -2547,38 +2547,12 @@ class PKIDeployer:
 
         if subsystem.name == 'kra':
             self.import_ca_signing_cert(nssdb)
-
             self.import_system_cert(nssdb, subsystem, 'storage')
             self.import_system_cert(nssdb, subsystem, 'transport')
 
-            admin_cert = self.load_admin_cert()
-            if admin_cert:
-
-                cert_file = self.mdict.get('pki_admin_cert_path')
-                try:
-                    logger.info('Verifying admin cert in %s', cert_file)
-                    self.instance.verify_cert(admin_cert)
-                except Exception:
-                    raise pki.cli.CLIException('Invalid admin certificate in %s' % cert_file)
-
-                self.import_admin_cert(admin_cert)
-
         if subsystem.name == 'ocsp':
             self.import_ca_signing_cert(nssdb)
-
             self.import_system_cert(nssdb, subsystem, 'signing')
-
-            admin_cert = self.load_admin_cert()
-            if admin_cert:
-
-                cert_file = self.mdict.get('pki_admin_cert_path')
-                try:
-                    logger.info('Verifying admin cert in %s', cert_file)
-                    self.instance.verify_cert(admin_cert)
-                except Exception:
-                    raise pki.cli.CLIException('Invalid admin certificate in %s' % cert_file)
-
-                self.import_admin_cert(admin_cert)
 
         self.import_system_cert(nssdb, subsystem, 'sslserver')
         self.import_system_cert(nssdb, subsystem, 'subsystem')
@@ -2595,6 +2569,22 @@ class PKIDeployer:
         # the correct nicknames.
 
         self.import_cert_chain(nssdb, subsystem)
+
+        # Import admin cert after importing the cert chain so that
+        # it can be verified.
+        if subsystem.name in ['kra', 'ocsp']:
+
+            admin_cert = self.load_admin_cert()
+            if admin_cert:
+
+                cert_file = self.mdict.get('pki_admin_cert_path')
+                try:
+                    logger.info('Verifying admin cert in %s', cert_file)
+                    self.instance.verify_cert(admin_cert)
+                except Exception:
+                    raise pki.cli.CLIException('Invalid admin certificate in %s' % cert_file)
+
+                self.import_admin_cert(admin_cert)
 
     def update_system_certs(self, subsystem):
 
