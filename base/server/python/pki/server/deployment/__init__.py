@@ -2409,6 +2409,11 @@ class PKIDeployer:
     def export_admin_pkcs12(self):
 
         pkcs12_file = self.mdict['pki_client_admin_cert_p12']
+
+        if os.path.exists(pkcs12_file):
+            logger.info('Admin cert already exists in %s', pkcs12_file)
+            return
+
         pkcs12_path = os.path.abspath(pkcs12_file)
         pkcs12_dir = os.path.dirname(pkcs12_path)
 
@@ -2432,7 +2437,6 @@ class PKIDeployer:
 
             pkcs12_password_file = self.mdict['pki_client_pkcs12_password_conf']
 
-            # overwrite existing file
             client_nssdb.export_pkcs12(
                 pkcs12_file,
                 pkcs12_password_file=pkcs12_password_file,
