@@ -52,9 +52,10 @@ jobs:
         run: |
           docker exec pki pki \
               nss-cert-request \
-              --subject "CN=DS Signing Certificate" \
               --ext /usr/share/pki/server/certs/ca_signing.conf \
-              --csr ds_signing.csr
+              --csr ds_signing.csr \
+              "CN=DS Signing Certificate"
+
           docker exec pki pki \
               nss-cert-issue \
               --csr ds_signing.csr \
@@ -72,9 +73,10 @@ jobs:
         run: |
           docker exec pki pki \
               nss-cert-request \
-              --subject "CN=ds.example.com" \
               --ext /usr/share/pki/server/certs/sslserver.conf \
-              --csr ds_server.csr
+              --csr ds_server.csr \
+              CN=ds.example.com
+
           docker exec pki pki \
               nss-cert-issue \
               --issuer Self-Signed-CA \

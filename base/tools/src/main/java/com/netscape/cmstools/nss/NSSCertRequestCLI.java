@@ -35,7 +35,7 @@ public class NSSCertRequestCLI extends CommandCLI {
 
     @Override
     public void printHelp() {
-        formatter.printHelp(getFullName() + " [OPTIONS...]", options);
+        formatter.printHelp(getFullName() + " [OPTIONS...] [subject]", options);
     }
 
     @Override
@@ -88,7 +88,15 @@ public class NSSCertRequestCLI extends CommandCLI {
     @Override
     public void execute(CommandLine cmd) throws Exception {
 
-        String subject = cmd.getOptionValue("subject");
+        String[] cmdArgs = cmd.getArgs();
+
+        String subject;
+        if (cmdArgs.length > 0) {
+            subject = cmdArgs[0];
+        } else {
+            subject = cmd.getOptionValue("subject");
+        }
+
         String keyID = cmd.getOptionValue("key-id");
         String keyType = cmd.getOptionValue("key-type", "RSA");
         String keySize = cmd.getOptionValue("key-size", "2048");

@@ -323,9 +323,9 @@ jobs:
         run: |
           docker exec pki pki \
               nss-cert-request \
-              --subject "uid=testuser" \
               --ext /usr/share/pki/tools/examples/certs/testuser.conf \
-              --csr testuser.csr
+              --csr testuser.csr \
+              uid=testuser
 
           for i in $(seq 1 10); do
               docker exec pki pki \

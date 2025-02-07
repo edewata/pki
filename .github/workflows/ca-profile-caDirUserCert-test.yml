@@ -142,9 +142,10 @@ jobs:
       - name: Check enrollment using pki ca-cert-issue
         run: |
           # generate cert request
-          docker exec pki pki nss-cert-request \
-              --subject "UID=testuser1" \
-              --csr $SHARED/testuser1.csr
+          docker exec pki pki \
+              nss-cert-request \
+              --csr $SHARED/testuser1.csr \
+              UID=testuser1
 
           echo "Secret.123" > password.txt
 
@@ -168,9 +169,10 @@ jobs:
       - name: Check enrollment using XML
         run: |
           # generate cert request
-          docker exec pki pki nss-cert-request \
-              --subject "UID=testuser2" \
-              --csr $SHARED/testuser2.csr
+          docker exec pki pki \
+              nss-cert-request \
+              --csr $SHARED/testuser2.csr \
+              UID=testuser2
 
           # retrieve request template
           docker exec pki curl \
@@ -250,9 +252,10 @@ jobs:
       - name: Check enrollment using JSON
         run: |
           # generate cert request
-          docker exec pki pki nss-cert-request \
-              --subject "UID=testuser3" \
-              --csr $SHARED/testuser3.csr
+          docker exec pki pki \
+              nss-cert-request \
+              --csr $SHARED/testuser3.csr \
+              UID=testuser3
 
           # retrieve request template
           docker exec pki curl \

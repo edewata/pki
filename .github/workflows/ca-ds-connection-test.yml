@@ -89,7 +89,11 @@ jobs:
 
       - name: Create cert request
         run: |
-          docker exec pki pki nss-cert-request --subject "CN=$HOSTNAME" --ext /usr/share/pki/server/certs/sslserver.conf  --csr sslserver.csr
+          docker exec pki pki \
+              nss-cert-request \
+              --ext /usr/share/pki/server/certs/sslserver.conf \
+              --csr sslserver.csr \
+              CN=$HOSTNAME
 
       - name: Test request enrollment
         run: |

@@ -80,8 +80,8 @@ jobs:
               -d /var/lib/pki/pki-tomcat/conf/alias \
               -f /var/lib/pki/pki-tomcat/conf/password.conf \
               nss-cert-request \
-              --subject "CN=CA Issuance Protection" \
-              --csr ca_issuance_protection.csr
+              --csr ca_issuance_protection.csr \
+              "CN=CA Issuance Protection"
 
           # check generated CSR
           docker exec pki openssl req -text -noout -in ca_issuance_protection.csr
@@ -225,9 +225,9 @@ jobs:
           docker exec pki pki \
               nss-cert-request \
               --key-id $KEY_ID \
-              --subject "uid=testuser" \
               --ext /usr/share/pki/tools/examples/certs/testuser.conf \
-              --csr testuser.csr
+              --csr testuser.csr \
+              uid=testuser
 
           # check generated CSR
           docker exec pki openssl req -text -noout -in testuser.csr

@@ -446,9 +446,9 @@ jobs:
         run: |
           docker exec secondary pki \
               nss-cert-request \
-              --subject "uid=testuser" \
               --ext /usr/share/pki/tools/examples/certs/testuser.conf \
-              --csr testuser.csr
+              --csr testuser.csr \
+              uid=testuser
 
           for i in $(seq 1 5); do
               docker exec secondary pki \
@@ -614,9 +614,9 @@ jobs:
         run: |
           docker exec primary pki \
               nss-cert-request \
-              --subject "uid=testuser" \
               --ext /usr/share/pki/tools/examples/certs/testuser.conf \
-              --csr testuser.csr
+              --csr testuser.csr \
+              uid=testuser
 
           docker exec primary pki \
               -n caadmin \

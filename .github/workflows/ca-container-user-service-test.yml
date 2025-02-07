@@ -303,10 +303,11 @@ jobs:
       - name: Create admin cert
         run: |
           # create cert request
-          docker exec -u pkiuser pki pki nss-cert-request \
-              --subject "CN=Administrator" \
+          docker exec -u pkiuser pki pki \
+              nss-cert-request \
               --ext /usr/share/pki/server/certs/admin.conf \
-              --csr /home/pkiuser/admin.csr
+              --csr /home/pkiuser/admin.csr \
+              CN=Administrator
 
           docker exec -u pkiuser pki podman cp /home/pkiuser/admin.csr systemd-pki-ca:/home/pkiuser
 

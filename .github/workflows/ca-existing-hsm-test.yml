@@ -241,9 +241,10 @@ jobs:
         run: |
           docker exec pki pki \
               nss-cert-request \
-              --subject "CN=Administrator" \
               --ext /usr/share/pki/server/certs/admin.conf \
-              --csr /tmp/admin.csr
+              --csr /tmp/admin.csr \
+              CN=Administrator
+
           docker exec pki runuser -u pkiuser -- \
               pki \
               -d /var/lib/pki/pki-tomcat/conf/alias \

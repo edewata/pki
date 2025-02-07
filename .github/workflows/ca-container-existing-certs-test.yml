@@ -53,9 +53,10 @@ jobs:
         run: |
           docker exec client pki \
               nss-cert-request \
-              --subject "CN=CA Signing Certificate" \
               --ext /usr/share/pki/server/certs/ca_signing.conf \
-              --csr $SHARED/certs/ca_signing.csr
+              --csr $SHARED/certs/ca_signing.csr \
+              "CN=CA Signing Certificate"
+
           docker exec client pki \
               nss-cert-issue \
               --csr $SHARED/certs/ca_signing.csr \
@@ -77,9 +78,10 @@ jobs:
         run: |
           docker exec client pki \
               nss-cert-request \
-              --subject "CN=OCSP Signing Certificate" \
               --ext /usr/share/pki/server/certs/ocsp_signing.conf \
-              --csr $SHARED/certs/ca_ocsp_signing.csr
+              --csr $SHARED/certs/ca_ocsp_signing.csr \
+              "CN=OCSP Signing Certificate"
+
           docker exec client pki \
               nss-cert-issue \
               --issuer ca_signing \
@@ -99,9 +101,10 @@ jobs:
         run: |
           docker exec client pki \
               nss-cert-request \
-              --subject "CN=Subsystem Certificate" \
               --ext /usr/share/pki/server/certs/subsystem.conf \
-              --csr $SHARED/certs/subsystem.csr
+              --csr $SHARED/certs/subsystem.csr \
+              "CN=Subsystem Certificate"
+
           docker exec client pki \
               nss-cert-issue \
               --issuer ca_signing \
@@ -121,9 +124,10 @@ jobs:
         run: |
           docker exec client pki \
               nss-cert-request \
-              --subject "CN=ca.example.com" \
               --ext /usr/share/pki/server/certs/sslserver.conf \
-              --csr $SHARED/certs/sslserver.csr
+              --csr $SHARED/certs/sslserver.csr \
+              CN=ca.example.com
+
           docker exec client pki \
               nss-cert-issue \
               --issuer ca_signing \
@@ -335,9 +339,9 @@ jobs:
         run: |
           # create cert request
           docker exec client pki nss-cert-request \
-              --subject "CN=Administrator" \
               --ext /usr/share/pki/server/certs/admin.conf \
-              --csr $SHARED/admin.csr
+              --csr $SHARED/admin.csr \
+              CN=Administrator
 
           docker cp admin.csr ca:.
 
