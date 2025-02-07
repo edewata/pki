@@ -130,9 +130,15 @@ jobs:
 
       - name: Enroll server cert
         run: |
-          docker exec pki pki client-cert-request \
+          docker exec pki pki nss-cert-request \
+              --csr server.csr \
+              cn=server.example.com
+
+          docker exec pki pki \
+              ca-cert-request-submit \
+              --csr-file server.csr \
               --profile caServerCert \
-              cn=server.example.com | tee output
+              | tee output
 
           REQUEST_ID=$(sed -n -e 's/^ *Request ID: *\(.*\)$/\1/p' output)
           echo "REQUEST_ID: $REQUEST_ID"
@@ -145,9 +151,15 @@ jobs:
 
       - name: Create incomplete server cert request
         run: |
-          docker exec pki pki client-cert-request \
+          docker exec pki pki nss-cert-request \
+              --csr server.csr \
+              cn=server.example.com
+
+          docker exec pki pki \
+              ca-cert-request-submit \
+              --csr-file server.csr \
               --profile caServerCert \
-              cn=server.example.com | tee output
+              | tee output
 
           REQUEST_ID=$(sed -n -e 's/^ *Request ID: *\(.*\)$/\1/p' output)
           echo "REQUEST_ID: $REQUEST_ID"
@@ -155,9 +167,15 @@ jobs:
 
       - name: Enroll user cert
         run: |
-          docker exec pki pki client-cert-request \
+          docker exec pki pki nss-cert-request \
+              --csr testuser.csr \
+              uid=testuser
+
+          docker exec pki pki \
+              ca-cert-request-submit \
+              --csr-file testuser.csr \
               --profile caUserCert \
-              uid=testuser | tee output
+              | tee output
 
           REQUEST_ID=$(sed -n -e 's/^ *Request ID: *\(.*\)$/\1/p' output)
           echo "REQUEST_ID: $REQUEST_ID"
@@ -170,9 +188,15 @@ jobs:
 
       - name: Create incomplete user cert request
         run: |
-          docker exec pki pki client-cert-request \
+          docker exec pki pki nss-cert-request \
+              --csr testuser.csr \
+              uid=testuser
+
+          docker exec pki pki \
+              ca-cert-request-submit \
+              --csr-file testuser.csr \
               --profile caUserCert \
-              uid=testuser | tee output
+              | tee output
 
           REQUEST_ID=$(sed -n -e 's/^ *Request ID: *\(.*\)$/\1/p' output)
           echo "REQUEST_ID: $REQUEST_ID"

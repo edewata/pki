@@ -201,7 +201,15 @@ jobs:
       - name: Create user cert
         run: |
           # request user cert
-          docker exec pki pki client-cert-request uid=testuser | tee output
+          docker exec pki pki nss-cert-request \
+              --csr testuser.csr \
+              uid=testuser
+
+          docker exec pki pki \
+              ca-cert-request-submit \
+              --csr-file testuser.csr \
+              --profile caUserCert \
+              | tee output
 
           USER_REQUEST_ID=$(sed -n -e 's/^ *Request ID: *\(.*\)$/\1/p' output)
           echo "USER_REQUEST_ID: $USER_REQUEST_ID"
@@ -234,7 +242,15 @@ jobs:
       - name: Create server cert
         run: |
           # request server cert
-          docker exec pki pki client-cert-request --profile caServerCert cn=test.example.com | tee output
+          docker exec pki pki nss-cert-request \
+              --csr server.csr \
+              cn=test.example.com
+
+          docker exec pki pki \
+              ca-cert-request-submit \
+              --csr-file server.csr \
+              --profile caServerCert \
+              | tee output
 
           SERVER_REQUEST_ID=$(sed -n -e 's/^ *Request ID: *\(.*\)$/\1/p' output)
           echo "SERVER_REQUEST_ID: $SERVER_REQUEST_ID"

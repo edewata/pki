@@ -81,7 +81,14 @@ jobs:
 
       - name: Create test certs
         run: |
-          docker exec pki pki client-cert-request uid=testuser1 | tee output
+          docker exec pki pki nss-cert-request \
+              --csr testuser1.csr \
+              uid=testuser1
+
+          docker exec pki pki ca-cert-request-submit \
+              --csr-file testuser1.csr \
+              --profile caUserCert \
+              | tee output
 
           CERT1_REQUEST_ID=$(sed -n "s/^\s*Request ID:\s*\(\S*\)$/\1/p" output)
           echo "Cert 1 request ID: $CERT1_REQUEST_ID"
@@ -96,7 +103,14 @@ jobs:
           echo "Cert 1 ID: $CERT1_ID"
           echo "$CERT1_ID" > cert1.id
 
-          docker exec pki pki client-cert-request uid=testuser2 | tee output
+          docker exec pki pki nss-cert-request \
+              --csr testuser2.csr \
+              uid=testuser2
+
+          docker exec pki pki ca-cert-request-submit \
+              --csr-file testuser2.csr \
+              --profile caUserCert \
+              | tee output
 
           CERT2_REQUEST_ID=$(sed -n "s/^\s*Request ID:\s*\(\S*\)$/\1/p" output)
           echo "Cert 2 request ID: $CERT2_REQUEST_ID"

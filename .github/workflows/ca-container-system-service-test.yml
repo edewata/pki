@@ -316,9 +316,15 @@ jobs:
 
       - name: Check cert enrollment
         run: |
+          docker exec pki pki nss-cert-request \
+              --csr testuser.csr \
+              uid=testuser
+
           docker exec pki pki \
-              client-cert-request \
-              uid=testuser | tee output
+              ca-cert-request-submit \
+              --csr-file testuser.csr \
+              --profile caUserCert \
+              | tee output
 
           REQUEST_ID=$(sed -n -e 's/^ *Request ID: *\(.*\)$/\1/p' output)
           echo "REQUEST_ID: $REQUEST_ID"

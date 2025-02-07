@@ -174,7 +174,15 @@ jobs:
 
       - name: Enroll user 1 cert
         run: |
-          docker exec pki pki client-cert-request uid=testuser1 | tee output
+          docker exec pki pki nss-cert-request \
+              --csr testuser1.csr \
+              uid=testuser1
+
+          docker exec pki pki \
+              ca-cert-request-submit \
+              --csr-file testuser1.csr \
+              --profile caUserCert \
+              | tee output
 
           REQUEST_ID=$(sed -n -e 's/^ *Request ID: *\(.*\)$/\1/p' output)
           echo "REQUEST_ID: $REQUEST_ID"
@@ -335,7 +343,15 @@ jobs:
 
       - name: Enroll user 2 cert
         run: |
-          docker exec pki pki client-cert-request uid=testuser2 | tee output
+          docker exec pki pki nss-cert-request \
+              --csr testuser2.csr \
+              uid=testuser2
+
+          docker exec pki pki \
+              ca-cert-request-submit \
+              --csr-file testuser2.csr \
+              --profile caUserCert \
+              | tee output
 
           REQUEST_ID=$(sed -n -e 's/^ *Request ID: *\(.*\)$/\1/p' output)
           echo "REQUEST_ID: $REQUEST_ID"
