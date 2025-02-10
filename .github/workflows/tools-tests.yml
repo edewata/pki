@@ -53,6 +53,11 @@ jobs:
     needs: build
     uses: ./.github/workflows/PKCS10Client-test.yml
 
+  CRMFPopClient-test:
+    name: CRMFPopClient
+    needs: build
+    uses: ./.github/workflows/CRMFPopClient-test.yml
+
   pki-pkcs11-test:
     name: PKI PKCS11 CLI
     needs: build
