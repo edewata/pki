@@ -560,9 +560,26 @@ jobs:
           echo kra.example.com > expected
           diff expected actual
 
-      - name: Verify cert key archival
+      - name: Check cert requests before enrollment
         run: |
-          docker exec ca pki ca-cert-transport-export --output-file kra_transport.crt
+          docker exec ca pki \
+              -n caadmin \
+              ca-cert-request-find | tee output
+
+          sed -n "s/^\s*Request ID:\s*\(\S*\)\s*$/\1/p" output | sort > request.ids.before
+
+      - name: Check certs before enrollment
+        run: |
+          docker exec ca pki ca-cert-find | tee output
+
+          sed -n "s/^\s*Serial Number:\s*\(\S*\)\s*$/\1/p" output | sort > cert.ids.before
+
+      - name: Enroll cert with key archival
+        run: |
+          docker exec ca pki \
+              ca-cert-transport-export \
+              --output-file kra_transport.crt
+
           docker exec ca CRMFPopClient \
               -d /root/.dogtag/nssdb \
               -p "" \
@@ -575,6 +592,7 @@ jobs:
 
           REQUEST_ID=$(sed -n "s/^\s*Request ID:\s*\(\S*\)\s*$/\1/p" output)
           echo "Request ID: $REQUEST_ID"
+          echo $REQUEST_ID > request.id
 
           docker exec ca pki \
               -n caadmin \
@@ -583,7 +601,39 @@ jobs:
 
           CERT_ID=$(sed -n "s/^\s*Certificate ID:\s*\(\S*\)\s*$/\1/p" output)
           echo "Cert ID: $CERT_ID"
+          echo $CERT_ID > cert.id
 
+      - name: Check cert requests after enrollment
+        run: |
+          docker exec ca pki \
+              -n caadmin \
+              ca-cert-request-find | tee output
+
+          sed -n "s/^\s*Request ID:\s*\(\S*\)\s*$/\1/p" output | sort > request.ids.after
+
+          cat request.ids.before request.id | sort > expected
+          diff expected request.ids.after
+
+          REQUEST_ID=$(cat request.id)
+          docker exec ca pki \
+              -n caadmin \
+              ca-cert-request-show \
+              $REQUEST_ID
+
+      - name: Check certs after enrollment
+        run: |
+          docker exec ca pki ca-cert-find | tee output
+
+          sed -n "s/^\s*Serial Number:\s*\(\S*\)\s*$/\1/p" output | sort > cert.ids.after
+
+          cat cert.ids.before cert.id | sort > expected
+          diff expected cert.ids.after
+
+          CERT_ID=$(cat cert.id)
+          docker exec ca pki ca-cert-show $CERT_ID
+
+      - name: Check archived key
+        run: |
           docker exec kra pki \
               -n kraadmin \
               kra-key-find \
@@ -591,6 +641,11 @@ jobs:
 
           KEY_ID=$(sed -n "s/^\s*Key ID:\s*\(\S*\)$/\1/p" output)
           echo "Key ID: $KEY_ID"
+
+          docker exec kra pki \
+              -n kraadmin \
+              kra-key-show \
+              $KEY_ID
 
       - name: Remove KRA from KRA container
         run: docker exec kra pkidestroy -s KRA -v
@@ -617,19 +672,3 @@ jobs:
         if: always()
         run: |
           docker exec kra find /var/lib/pki/pki-tomcat/logs/kra -name "debug.*" -exec cat {} \;
-
-      - name: Gather artifacts
-        if: always()
-        run: |
-          tests/bin/ds-artifacts-save.sh cads
-          tests/bin/ds-artifacts-save.sh krads
-          tests/bin/pki-artifacts-save.sh ca
-          tests/bin/pki-artifacts-save.sh kra
-        continue-on-error: true
-
-      - name: Upload artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: kra-existing-ds
-          path: /tmp/artifacts
