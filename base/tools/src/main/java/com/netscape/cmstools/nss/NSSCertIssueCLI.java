@@ -12,11 +12,14 @@ import java.util.Calendar;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
+import org.dogtagpki.cli.CLIException;
 import org.dogtagpki.cli.CommandCLI;
 import org.dogtagpki.nss.NSSDatabase;
 import org.dogtagpki.nss.NSSExtensionGenerator;
+import org.dogtagpki.util.cert.CRMFUtil;
 import org.dogtagpki.util.cert.CertUtil;
 import org.mozilla.jss.CryptoManager;
+import org.mozilla.jss.asn1.SEQUENCE;
 import org.mozilla.jss.netscape.security.pkcs.PKCS10;
 import org.mozilla.jss.netscape.security.x509.Extensions;
 import org.mozilla.jss.netscape.security.x509.X500Name;
@@ -46,6 +49,10 @@ public class NSSCertIssueCLI extends CommandCLI {
 
         option = new Option(null, "csr", true, "Certificate signing request");
         option.setArgName("path");
+        options.addOption(option);
+
+        option = new Option(null, "request-type", true, "Request type: pkcs10 (default), crmf");
+        option.setArgName("type");
         options.addOption(option);
 
         option = new Option(null, "ext", true, "Certificate extensions configuration");
@@ -90,6 +97,7 @@ public class NSSCertIssueCLI extends CommandCLI {
 
         String issuerNickname = cmd.getOptionValue("issuer");
         String csrFile = cmd.getOptionValue("csr");
+        String requestType = cmd.getOptionValue("request-type", "pkcs10");
         String extConf = cmd.getOptionValue("ext");
         String subjectAltName = cmd.getOptionValue("subjectAltName");
         String serialNumber = cmd.getOptionValue("serial");
@@ -119,9 +127,26 @@ public class NSSCertIssueCLI extends CommandCLI {
 
         String csrPEM = new String(Files.readAllBytes(Paths.get(csrFile)));
         byte[] csrBytes = CertUtil.parseCSR(csrPEM);
-        PKCS10 pkcs10 = new PKCS10(csrBytes);
-        X509Key x509Key = pkcs10.getSubjectPublicKeyInfo();
-        X500Name subjectName = pkcs10.getSubjectName();
+
+        PKCS10 pkcs10 = null;
+        SEQUENCE crmfMsgs = null;
+
+        X509Key x509Key = null;
+        X500Name subjectName = null;
+
+        if ("pkcs10".equalsIgnoreCase(requestType)) {
+            pkcs10 = new PKCS10(csrBytes);
+            x509Key = pkcs10.getSubjectPublicKeyInfo();
+            subjectName = pkcs10.getSubjectName();
+
+        } else if ("crmf".equalsIgnoreCase(requestType)) {
+            crmfMsgs = CRMFUtil.parseCRMFMsgs(csrBytes);
+            x509Key = CRMFUtil.getX509KeyFromCRMFMsgs(crmfMsgs);
+            subjectName = CRMFUtil.getSubjectName(crmfMsgs);
+
+        } else {
+            throw new CLIException("Unsupported certificate request type: " + requestType);
+        }
 
         NSSExtensionGenerator generator = new NSSExtensionGenerator();
         Extensions extensions = null;
@@ -134,7 +159,7 @@ public class NSSCertIssueCLI extends CommandCLI {
             generator.setParameter("subjectAltName", subjectAltName);
         }
 
-        extensions = generator.createExtensions(issuer, pkcs10);
+        extensions = generator.createExtensions(issuer, pkcs10, crmfMsgs);
 
         int validityLength;
         int validityUnit;
