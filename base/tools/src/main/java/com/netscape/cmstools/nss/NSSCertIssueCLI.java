@@ -12,16 +12,23 @@ import java.util.Calendar;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
+import org.dogtagpki.cli.CLIException;
 import org.dogtagpki.cli.CommandCLI;
 import org.dogtagpki.nss.NSSDatabase;
 import org.dogtagpki.nss.NSSExtensionGenerator;
 import org.dogtagpki.util.cert.CertUtil;
 import org.mozilla.jss.CryptoManager;
+import org.mozilla.jss.asn1.SEQUENCE;
 import org.mozilla.jss.netscape.security.pkcs.PKCS10;
 import org.mozilla.jss.netscape.security.x509.Extensions;
+import org.mozilla.jss.pkix.crmf.CertReqMsg;
+import org.mozilla.jss.pkix.crmf.CertRequest;
+import org.mozilla.jss.pkix.crmf.CertTemplate;
+import org.mozilla.jss.pkix.primitive.Name;
 
 import com.netscape.certsrv.client.ClientConfig;
 import com.netscape.cmstools.cli.MainCLI;
+import com.netscape.cmsutil.crypto.CryptoUtil;
 
 public class NSSCertIssueCLI extends CommandCLI {
 
@@ -44,6 +51,10 @@ public class NSSCertIssueCLI extends CommandCLI {
 
         option = new Option(null, "csr", true, "Certificate signing request");
         option.setArgName("path");
+        options.addOption(option);
+
+        option = new Option(null, "request-type", true, "Request type: pkcs10 (default), crmf");
+        option.setArgName("type");
         options.addOption(option);
 
         option = new Option(null, "ext", true, "Certificate extensions configuration");
@@ -88,6 +99,7 @@ public class NSSCertIssueCLI extends CommandCLI {
 
         String issuerNickname = cmd.getOptionValue("issuer");
         String csrFile = cmd.getOptionValue("csr");
+        String requestType = cmd.getOptionValue("request-type", "pkcs10");
         String extConf = cmd.getOptionValue("ext");
         String subjectAltName = cmd.getOptionValue("subjectAltName");
         String serialNumber = cmd.getOptionValue("serial");
@@ -117,7 +129,26 @@ public class NSSCertIssueCLI extends CommandCLI {
 
         String csrPEM = new String(Files.readAllBytes(Paths.get(csrFile)));
         byte[] csrBytes = CertUtil.parseCSR(csrPEM);
-        PKCS10 pkcs10 = new PKCS10(csrBytes);
+
+        PKCS10 pkcs10 = null;
+        if ("pkcs10".equalsIgnoreCase(requestType)) {
+            pkcs10 = new PKCS10(csrBytes);
+
+        } else if ("crmf".equalsIgnoreCase(requestType)) {
+            SEQUENCE crmfMsgs = CryptoUtil.parseCRMFMsgs(csrBytes);
+            System.out.println("Subject: " + CryptoUtil.getSubjectName(crmfMsgs));
+
+            CertReqMsg[] msgs = CertUtil.parseCRMF(csrPEM);
+            for (CertReqMsg msg : msgs) {
+                CertRequest request = msg.getCertReq();
+                CertTemplate template = request.getCertTemplate();
+                Name name = template.getSubject();
+                System.out.println("Subject: " + CryptoUtil.getSubjectName(crmfMsgs));
+            }
+
+        } else {
+            throw new CLIException("Unsupported certificate request type: " + requestType);
+        }
 
         NSSExtensionGenerator generator = new NSSExtensionGenerator();
         Extensions extensions = null;
