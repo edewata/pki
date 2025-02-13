@@ -25,11 +25,11 @@ import org.dogtagpki.server.tps.processor.TPSEnrollProcessor;
 import org.dogtagpki.server.tps.processor.TPSPinResetProcessor;
 import org.dogtagpki.server.tps.processor.TPSProcessor;
 import org.dogtagpki.tps.TPSConnection;
+import org.dogtagpki.tps.main.TPSBuffer;
 import org.dogtagpki.tps.main.TPSException;
 import org.dogtagpki.tps.msg.BeginOpMsg;
 import org.dogtagpki.tps.msg.EndOpMsg;
 import org.dogtagpki.tps.msg.TPSMessage;
-import org.dogtagpki.tps.main.TPSBuffer;
 
 
 public class TPSSession {
@@ -100,15 +100,15 @@ public class TPSSession {
 
     public void process() throws IOException {
         EndOpMsg.TPSStatus status = EndOpMsg.TPSStatus.STATUS_NO_ERROR;
-        logger.debug("In TPSSession.process()");
 
         TPSMessage firstMsg = read();
 
         TPSMessage.MsgType msg_type = firstMsg.getType();
         TPSMessage.OpType op_type = firstMsg.getOpType();
+        logger.info("TPSSession: Processing " + msg_type + " " + op_type);
 
         if (msg_type != TPSMessage.MsgType.MSG_BEGIN_OP) {
-            throw new IOException("Wrong first message type read in TPSSession.process!");
+            throw new IOException("Invalid first message type: " + msg_type);
         }
 
         int result = EndOpMsg.RESULT_ERROR;
@@ -129,38 +129,43 @@ public class TPSSession {
                 TPSEnrollProcessor enrollProcessor = new TPSEnrollProcessor(this);
                 enrollProcessor.process(beginOp);
                 break;
+
             case OP_RENEW:
                 break;
+
             case OP_RESET_PIN:
                 result = EndOpMsg.RESULT_GOOD;
                 TPSPinResetProcessor pinResetProcessor = new TPSPinResetProcessor(this);
                 pinResetProcessor.process(beginOp);
                 break;
+
             case OP_UNBLOCK:
                 break;
+
             case OP_UNDEFINED:
                 break;
+
             default:
                 break;
-
             }
+
         } catch (TPSException e) {
             //Get the status from the exception and return it to the client.
-            logger.warn("TPSSession.process: Message processing failed: " + e.getMessage(), e);
+            logger.warn("TPSSession: Message processing failed: " + e.getMessage(), e);
             status = e.getStatus();
             result = EndOpMsg.RESULT_ERROR;
+
         } catch (IOException e) {
-            logger.error("TPSSession.process: IO error happened during processing: " + e.getMessage(), e);
+            logger.error("TPSSession: IO error happened during processing: " + e.getMessage(), e);
             // We get here we are done.
             throw e;
-
         }
+
+        logger.info("TPSSession: Result: " + result);
+        logger.info("TPSSession: Status: " + status);
 
         EndOpMsg endOp = new EndOpMsg(firstMsg.getOpType(), result, status);
         write(endOp);
-
-        logger.debug("TPSSession.process: leaving: result: " + result + " status: " + status);
-
     }
 
     public TokenRecord getTokenRecord() {
@@ -190,7 +195,7 @@ public class TPSSession {
     public TPSBuffer getSelectedCardMgr() {
         return selectedCardMgr;
     }
-    
+
     public void setSelectedCardMgr(TPSBuffer cardMgrBuffer) {
         this.selectedCardMgr = cardMgrBuffer;
     }
