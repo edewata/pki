@@ -55,6 +55,25 @@ jobs:
               -D pki_audit_signing_nickname= \
               -v
 
+          docker exec pki pki-server cert-find
+
+      - name: Update CA configuration
+        run: |
+          docker exec pki dnf install -y xmlstarlet
+
+          # disable access log buffer
+          docker exec pki xmlstarlet edit --inplace \
+              -u "//Valve[@className='org.apache.catalina.valves.AccessLogValve']/@buffered" \
+              -v "false" \
+              -i "//Valve[@className='org.apache.catalina.valves.AccessLogValve' and not(@buffered)]" \
+              -t attr \
+              -n "buffered" \
+              -v "false" \
+              /etc/pki/pki-tomcat/server.xml
+
+          # restart PKI server
+          docker exec pki pki-server restart --wait
+
       - name: Install KRA
         run: |
           docker exec pki pkispawn \
@@ -265,6 +284,22 @@ jobs:
               --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
               --pkcs12-password Secret.123
           docker exec pki pki -n caadmin tps-user-show tpsadmin
+
+      - name: Check CA users
+        run: |
+          docker exec pki pki-server ca-user-find
+
+      - name: Check KRA users
+        run: |
+          docker exec pki pki-server kra-user-find
+
+      - name: Check TKS users
+        run: |
+          docker exec pki pki-server tks-user-find
+
+      - name: Check TPS users
+        run: |
+          docker exec pki pki-server tps-user-find
 
       - name: Check connectors in TPS
         run: |
@@ -604,6 +639,11 @@ jobs:
         if: always()
         run: |
           docker exec pki journalctl -x --no-pager -u pki-tomcatd@pki-tomcat.service
+
+      - name: Check PKI server access log
+        if: always()
+        run: |
+          docker exec pki find /var/log/pki/pki-tomcat -name "localhost_access_log.*" -exec cat {} \;
 
       - name: Check CA debug log
         if: always()

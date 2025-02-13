@@ -15,6 +15,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.zip.DataFormatException;
 
+import org.dogtagpki.server.tps.TPSEngine;
+import org.dogtagpki.server.tps.TPSEngine.ENROLL_MODES;
+import org.dogtagpki.server.tps.TPSEngineConfig;
 import org.dogtagpki.server.tps.TPSSession;
 import org.dogtagpki.server.tps.TPSSubsystem;
 import org.dogtagpki.server.tps.TPSTokenPolicy;
@@ -32,8 +35,6 @@ import org.dogtagpki.server.tps.dbs.ActivityDatabase;
 import org.dogtagpki.server.tps.dbs.TPSCertRecord;
 import org.dogtagpki.server.tps.dbs.TokenCertStatus;
 import org.dogtagpki.server.tps.dbs.TokenRecord;
-import org.dogtagpki.server.tps.TPSEngine;
-import org.dogtagpki.server.tps.TPSEngine.ENROLL_MODES;
 import org.dogtagpki.server.tps.main.AttributeSpec;
 import org.dogtagpki.server.tps.main.ExternalRegAttrs;
 import org.dogtagpki.server.tps.main.ExternalRegCertToRecover;
@@ -45,36 +46,26 @@ import org.dogtagpki.tps.main.TPSBuffer;
 import org.dogtagpki.tps.main.TPSException;
 import org.dogtagpki.tps.main.Util;
 import org.dogtagpki.tps.msg.BeginOpMsg;
-import org.dogtagpki.tps.msg.EndOpMsg;
 import org.dogtagpki.tps.msg.EndOpMsg.TPSStatus;
 import org.mozilla.jss.asn1.InvalidBERException;
 import org.mozilla.jss.crypto.InvalidKeyFormatException;
-import org.mozilla.jss.pkcs11.PK11PubKey;
-import org.mozilla.jss.pkcs11.PK11RSAPublicKey;
-import org.mozilla.jss.pkix.primitive.SubjectPublicKeyInfo;
-
-import com.netscape.certsrv.base.EBaseException;
-import com.netscape.certsrv.base.EPropertyNotFound;
-import org.dogtagpki.server.tps.TPSEngineConfig;
-import com.netscape.certsrv.logging.AuditEvent;
-import com.netscape.certsrv.tps.token.TokenStatus;
-import com.netscape.cmscore.apps.CMS;
-
-import com.netscape.cmscore.security.JssSubsystem;
-
-import org.mozilla.jss.netscape.security.util.Utils;
-
 import org.mozilla.jss.netscape.security.provider.RSAPublicKey;
-
-
 import org.mozilla.jss.netscape.security.util.BigInt;
 import org.mozilla.jss.netscape.security.util.Utils;
 import org.mozilla.jss.netscape.security.x509.RevocationReason;
 import org.mozilla.jss.netscape.security.x509.X509CertImpl;
-
 import org.mozilla.jss.pkcs11.PK11PubKey;
 import org.mozilla.jss.pkcs11.PK11RSAPublicKey;
 import org.mozilla.jss.pkcs11.PKCS11Constants;
+import org.mozilla.jss.pkix.primitive.SubjectPublicKeyInfo;
+
+import com.netscape.certsrv.base.EBaseException;
+import com.netscape.certsrv.base.EPropertyNotFound;
+import com.netscape.certsrv.dbs.certdb.CertId;
+import com.netscape.certsrv.logging.AuditEvent;
+import com.netscape.certsrv.tps.token.TokenStatus;
+import com.netscape.cmscore.apps.CMS;
+import com.netscape.cmscore.security.JssSubsystem;
 
 
 
@@ -109,7 +100,7 @@ public class TPSEnrollProcessor extends TPSProcessor {
         TPSEngine engine = TPSEngine.getInstance();
         TPSSubsystem tps = (TPSSubsystem) engine.getSubsystem(TPSSubsystem.ID);
 
-        TPSTokenPolicy tokenPolicy = null; 
+        TPSTokenPolicy tokenPolicy = null;
         TPSEngineConfig configStore = this.getConfigStore();
         String configName;
 
@@ -134,7 +125,8 @@ public class TPSEnrollProcessor extends TPSProcessor {
 
             throw e;
         }
-        logger.debug(method + " token cuid: " + appletInfo.getCUIDhexStringPlain());
+
+        logger.info("TPSEnrollProcessor: Enrolling token " + appletInfo.getCUIDhexStringPlain());
         boolean isTokenPresent = false;
 
         tokenRecord = isTokenRecordPresent(appletInfo);
@@ -278,16 +270,16 @@ public class TPSEnrollProcessor extends TPSProcessor {
 
                     BaseMappingResolver resolverInst = subsystem.getMappingResolverManager()
                             .getResolverInstance(resolverInstName);
-                    
+
                     // ** G&D 256 Key Rollover Support **
                     // Get the key size on card and pass it in to getResolvedMapping
                     Integer symKeySize = getCardSymKeyLength(appletInfo.getCUIDhexStringPlain());
                     logger.debug(method + " symKeySize on card: " + symKeySize);
-                    
+
                     String keySet = resolverInst.getResolvedMapping(mappingParams, "keySet", symKeySize);
                     setSelectedKeySet(keySet);
                     logger.debug(method + " resolved keySet: " + keySet);
-                    
+
                     // ** Applet and Alg Selection by Token Range Support begin **
                     try {
                         String keyWrapAlg = resolverInst.getResolvedMapping(mappingParams, "keyWrapAlg", symKeySize);
@@ -296,7 +288,7 @@ public class TPSEnrollProcessor extends TPSProcessor {
                     } catch (TPSException e) {
                         logger.debug(method + " OK not to have keyWrapAlg target in token range mapping");
                     }
-                    
+
                     try {
                         String appletVer = resolverInst.getResolvedMapping(mappingParams, "appletVer", symKeySize);
                         setSelectedAppletVer(appletVer);
@@ -436,7 +428,7 @@ public class TPSEnrollProcessor extends TPSProcessor {
             appletInfo = getAppletInfo();
         }
 
-        logger.debug(method + " Finished updating applet if needed.");
+        logger.info("TPSEnrollProcessor: Done updating applet");
 
         //Check and upgrade keys if called for
         SecureChannel channel = checkAndUpgradeSymKeys(appletInfo, tokenRecord);
@@ -650,7 +642,7 @@ public class TPSEnrollProcessor extends TPSProcessor {
          * exception of the retained certs already on token
          */
 
-        logger.debug(method + " updating tokendb with certs.");
+        logger.info("TPSEnrollProcessor: Updating token database with certs");
         try {
             // clean up the cert records used to belong to this token in tokendb;
             // spare the retained certs
@@ -664,7 +656,7 @@ public class TPSEnrollProcessor extends TPSProcessor {
         // transform EnrolledCertsInfo to TPSCertRecords
         ArrayList<TPSCertRecord> certRecords = certsInfo.toTPSCertRecords(tokenRecord.getId(), tokenRecord.getUserID());
 
-        logger.debug(method + " adding certs to token with tdbAddCertificatesForCUID...");
+        logger.info("TPSEnrollProcessor: Adding certs to token " + tokenRecord.getId());
         try {
             tps.tdb.tdbAddCertificatesForCUID(tokenRecord.getId(), certRecords);
             logger.debug(method + " tokendb updated with certs to the cuid so that it reflects what's on the token");
@@ -701,7 +693,7 @@ public class TPSEnrollProcessor extends TPSProcessor {
 
         channel.clearAppletKeySlotData(keyList);
 
-        logger.debug(method + " leaving ...");
+        logger.info("TPSEnrollProcessor: Done enrolling token " + tokenRecord.getId());
 
         statusUpdate(100, "PROGRESS_DONE_ENROLLMENT");
     }
@@ -1459,7 +1451,7 @@ public class TPSEnrollProcessor extends TPSProcessor {
                 TPSBuffer drmDesKey = getDRMDesKeyByProtocol(channel);
                 TPSBuffer drmAesKey = getDRMAesKeyByProtocol(channel);
 
-                
+
                 keyResp = engine.recoverKey(cuid,
                         userid,
                         drmDesKey,drmAesKey,
@@ -2464,7 +2456,7 @@ public class TPSEnrollProcessor extends TPSProcessor {
             throws TPSException, IOException {
 
         TPSEngine engine = TPSEngine.getInstance();
-        TPSSubsystem tps = (TPSSubsystem) engine.getSubsystem(TPSSubsystem.ID); 
+        TPSSubsystem tps = (TPSSubsystem) engine.getSubsystem(TPSSubsystem.ID);
         String auditInfo = null;
         logger.debug("TPSEnrollProcessor.enrollOneCertificate: entering ... mode: " + mode);
 
@@ -2646,8 +2638,8 @@ public class TPSEnrollProcessor extends TPSProcessor {
             parsedPubKey_ba = parsedPubKey.getEncoded();
         }
 
-        // enrollment/recovery begins
-        logger.debug("TPSEnrollProcessor.enrollOneCertificate:: enrollment begins");
+        logger.info("TPSEnrollProcessor: Enrollment/recovery begins");
+
         X509CertImpl x509Cert = null;
         TokenCertStatus certStatus = TokenCertStatus.ACTIVE; // track cert status
         byte[] cert_bytes = null;
@@ -2792,14 +2784,13 @@ public class TPSEnrollProcessor extends TPSProcessor {
                 logger.debug("TPSEnrollProcessor.enrollOneCertificate: retCertB64 base64decode done");
 
                 x509Cert = caEnrollResp.getCert();
-                if (x509Cert != null) {
-                    logger.debug("TPSEnrollProcessor.enrollOneCertificate:: new cert retrieved");
-                } else {
+                if (x509Cert == null) {
                     logger.debug("TPSEnrollProcessor.enrollOneCertificate:: new cert not found");
                     throw new TPSException("TPSEnrollProcessor.enrollOneCertificate: new cert not found",
                             TPSStatus.STATUS_ERROR_MAC_ENROLL_PDU);
                 }
 
+                logger.info("TPSEnrollProcessor: cert serial number: " + new CertId(x509Cert.getSerialNumber()).toHexString());
                 auditEnrollment(userid, "enrollment", aInfo, "success", channel.getKeyInfoData().toHexStringPlain(),
                         x509Cert.getSerialNumber(), caConnID, null);
             } else {
@@ -3076,7 +3067,7 @@ public class TPSEnrollProcessor extends TPSProcessor {
 
         }
 
-        logger.debug("TPSEnrollProcessor.enrollOneCertificate:: enrollment ends");
+        logger.info("TPSEnrollProcessor: Enrollment complete");
 
         if(x509Cert != null && x509Cert.getSerialNumber() != null) {
             tps.tdb.tdbActivity(ActivityDatabase.OP_ENROLLMENT, session.getTokenRecord(), session.getIpAddress(),
@@ -3084,8 +3075,6 @@ public class TPSEnrollProcessor extends TPSProcessor {
         }
 
         statusUpdate(cEnrollInfo.getEndProgressValue(), "PROGRESS_ENROLL_CERT");
-        logger.debug("TPSEnrollProcessor.enrollOneCertificate ends");
-
     }
 
     /*
@@ -3538,18 +3527,18 @@ public class TPSEnrollProcessor extends TPSProcessor {
     public String establishSymKeyWrapAlgSSKeyGen() {
 
         String aesKeyWrapAlg = "KWP";
-      
-        String method = "TPSEnrollProcessor::establishSymKeyWrapAlgSSKeyGen: "; 
+
+        String method = "TPSEnrollProcessor::establishSymKeyWrapAlgSSKeyGen: ";
         // Applet and Alg Selection by Token Range Support - check keyWrapAlg target configuration in token range first
         String selectedAlg = getSelectedKeyWrapAlg();
         if (selectedAlg == null) {  // Applet and Alg Selection by Token Range Support - use aesKeyWrapAlg configured by tokenType
             TPSEngineConfig configStore = this.getConfigStore();
-            
-            // op.enroll.userKey.keyGen.aesKeyWrapAlg 
+
+            // op.enroll.userKey.keyGen.aesKeyWrapAlg
             try {
                 String configValue = TPSEngine.OP_ENROLL_PREFIX + "." + selectedTokenType + "." + TPSEngine.CFG_KEYGEN +
                        "." +  TPSEngine.CFG_AES_KEY_WRAP_ALG;
-    
+
                 logger.debug(method + " configValue . " + configValue);
                 aesKeyWrapAlg = configStore.getString(
                         configValue, "KWP");
@@ -3559,7 +3548,7 @@ public class TPSEnrollProcessor extends TPSProcessor {
                     logger.debug(method + " DES configured per original token based value.");
                     setSelectedKeyWrapAlg(aesKeyWrapAlg);
                 }
-    
+
             } catch (EBaseException e) {
                 //return default
                 return aesKeyWrapAlg;
@@ -3568,8 +3557,8 @@ public class TPSEnrollProcessor extends TPSProcessor {
             aesKeyWrapAlg = selectedAlg;
             logger.debug(method + " using keyWrapAlg configured by token range or token type: " + aesKeyWrapAlg);
         }
-       
-        logger.debug(method + " returning: " + aesKeyWrapAlg); 
+
+        logger.debug(method + " returning: " + aesKeyWrapAlg);
         return aesKeyWrapAlg;
 
     }
@@ -4022,7 +4011,7 @@ public class TPSEnrollProcessor extends TPSProcessor {
 
         TPSEngine engine = TPSEngine.getInstance();
         TPSSubsystem tps = (TPSSubsystem) engine.getSubsystem(TPSSubsystem.ID);
- 
+
         try {
             tps.tdb.tdbHasOtherActiveToken(userid, cuid);
             result = true;
@@ -4073,7 +4062,7 @@ public class TPSEnrollProcessor extends TPSProcessor {
         String method = "TPSEnrollProcessor.getDRMDesKeyByProtocol: ";
         int prot = getProtocol();
         TPSBuffer drmDesKey = null;
-        
+
         logger.debug(method + " protocol: " + prot);
 
         if(prot == 1 || isDesConfigured()) { // ** Applet and Alg Selection by Token Range Support: case of SafeNet SCP03 still using DES
