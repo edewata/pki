@@ -100,6 +100,10 @@ RUN dnf install -y /tmp/RPMS/* \
     && rm -rf /var/cache/dnf \
     && rm -rf /tmp/RPMS
 
+RUN ls -la /home \
+    && chown -R pkiuser.pkiuser /home/pkiuser \
+    && ls -la /home
+
 ################################################################################
 FROM pki-runner AS pki-server
 
