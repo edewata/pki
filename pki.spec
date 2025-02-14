@@ -1198,7 +1198,7 @@ fi
 %mvn_package org.dogtagpki.pki:pki-console        pki-console
 %endif
 
-%if 0%{?fedora} && 0%{?fedora} >= 42
+%if 0%{?fedora}
 # Create a sysusers.d config file
 	
 cat > %{product_id}.sysusers.conf <<EOF
@@ -1514,7 +1514,7 @@ xmlstarlet edit --inplace \
 
 %if %{with server}
 
-%if 0%{?fedora} && 0%{?fedora} >= 42
+%if 0%{?fedora}
 
 install -m0644 -D %{product_id}.sysusers.conf %{buildroot}%{_sysusersdir}/%{product_id}.conf
 %pre -n %{product_id}-server
@@ -1802,7 +1802,7 @@ fi
 %{_mandir}/man8/pki-healthcheck.8.gz
 %{_datadir}/pki/setup/
 %{_datadir}/pki/server/
-%if 0%{?fedora} && 0%{?fedora} >= 42
+%if 0%{?fedora}
 %{_sysusersdir}/%{product_id}.conf
 %endif
 %if %{without maven}
