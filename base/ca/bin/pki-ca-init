@@ -19,17 +19,8 @@ echo "##########################################################################
 if [ -z "$(ls -A /conf 2> /dev/null)" ]
 then
     echo "INFO: Installing default config files"
-    #cp -r /var/lib/pki/pki-tomcat/conf.default/* /conf
+    cp -r /var/lib/pki/pki-tomcat/conf.default/* /conf
 fi
-
-if [ -z "$(ls -A /conf/alias 2> /dev/null)" ]
-then
-    echo "INFO: Creating default NSS database"
-    mkdir -p /conf/alias
-    pki-server nss-create --no-password
-fi
-
-mkdir -p /conf/certs
 
 if [ "$UID" = "0" ]
 then
@@ -289,67 +280,61 @@ pki \
     nss-cert-show \
     "$PKI_SSLSERVER_NICKNAME"
 
-ls -A /conf
-if [ -z "$(ls -A /conf/ca 2> /dev/null)" ]
+echo "################################################################################"
+echo "INFO: Creating CA server"
+
+OPTIONS=()
+
+OPTIONS+=(--conf /conf)
+OPTIONS+=(--logs /logs)
+
+OPTIONS+=(-f /usr/share/pki/server/examples/installation/ca.cfg)
+OPTIONS+=(-s CA)
+
+OPTIONS+=(-D pki_group=root)
+
+OPTIONS+=(-D pki_ds_url=$PKI_DS_URL)
+OPTIONS+=(-D pki_ds_password=$PKI_DS_PASSWORD)
+OPTIONS+=(-D pki_ds_database=userroot)
+OPTIONS+=(-D pki_ds_setup=False)
+OPTIONS+=(-D pki_skip_ds_verify=True)
+OPTIONS+=(-D pki_share_db=True)
+
+OPTIONS+=(-D pki_import_system_certs=False)
+
+OPTIONS+=(-D pki_ca_signing_nickname="$PKI_CA_SIGNING_NICKNAME")
+OPTIONS+=(-D pki_ca_signing_csr_path=/conf/certs/ca_signing.csr)
+
+OPTIONS+=(-D pki_ocsp_signing_nickname="$PKI_OCSP_SIGNING_NICKNAME")
+OPTIONS+=(-D pki_ocsp_signing_csr_path=/conf/certs/ca_ocsp_signing.csr)
+
+OPTIONS+=(-D pki_audit_signing_nickname="$PKI_AUDIT_SIGNING_NICKNAME")
+if [ -f /conf/certs/ca_audit_signing.csr ]
 then
-
-    echo "################################################################################"
-    echo "INFO: Creating CA server"
-
-    OPTIONS=()
-
-    OPTIONS+=(--conf /conf)
-    OPTIONS+=(--logs /logs)
-
-    OPTIONS+=(-f /usr/share/pki/server/examples/installation/ca.cfg)
-    OPTIONS+=(-s CA)
-
-    OPTIONS+=(-D pki_group=root)
-
-    OPTIONS+=(-D pki_ds_url=$PKI_DS_URL)
-    OPTIONS+=(-D pki_ds_password=$PKI_DS_PASSWORD)
-    OPTIONS+=(-D pki_ds_database=userroot)
-    OPTIONS+=(-D pki_ds_setup=False)
-    OPTIONS+=(-D pki_skip_ds_verify=True)
-    OPTIONS+=(-D pki_share_db=True)
-
-    OPTIONS+=(-D pki_import_system_certs=False)
-
-    OPTIONS+=(-D pki_ca_signing_nickname="$PKI_CA_SIGNING_NICKNAME")
-    OPTIONS+=(-D pki_ca_signing_csr_path=/conf/certs/ca_signing.csr)
-
-    OPTIONS+=(-D pki_ocsp_signing_nickname="$PKI_OCSP_SIGNING_NICKNAME")
-    OPTIONS+=(-D pki_ocsp_signing_csr_path=/conf/certs/ca_ocsp_signing.csr)
-
-    OPTIONS+=(-D pki_audit_signing_nickname="$PKI_AUDIT_SIGNING_NICKNAME")
-    if [ -f /conf/certs/ca_audit_signing.csr ]
-    then
-        OPTIONS+=(-D pki_audit_signing_csr_path=/conf/certs/ca_audit_signing.csr)
-    fi
-
-    OPTIONS+=(-D pki_subsystem_nickname="$PKI_SUBSYSTEM_NICKNAME")
-    OPTIONS+=(-D pki_subsystem_csr_path=/conf/certs/subsystem.csr)
-
-    OPTIONS+=(-D pki_sslserver_nickname="$PKI_SSLSERVER_NICKNAME")
-    OPTIONS+=(-D pki_sslserver_csr_path=/conf/certs/sslserver.csr)
-
-    OPTIONS+=(-D pki_admin_setup=False)
-    OPTIONS+=(-D pki_security_domain_setup=False)
-    OPTIONS+=(-D pki_security_manager=False)
-    OPTIONS+=(-D pki_systemd_service_create=False)
-    OPTIONS+=(-D pki_registry_enable=False)
-
-    OPTIONS+=(-v)
-
-    pkispawn "${OPTIONS[@]}"
-
-    echo "################################################################################"
-    echo "INFO: Configuring CA server"
-
-    pki-server ca-config-set internaldb.minConns 0
-    pki-server ca-config-set ca.authorityMonitor.enable false
-
+    OPTIONS+=(-D pki_audit_signing_csr_path=/conf/certs/ca_audit_signing.csr)
 fi
+
+OPTIONS+=(-D pki_subsystem_nickname="$PKI_SUBSYSTEM_NICKNAME")
+OPTIONS+=(-D pki_subsystem_csr_path=/conf/certs/subsystem.csr)
+
+OPTIONS+=(-D pki_sslserver_nickname="$PKI_SSLSERVER_NICKNAME")
+OPTIONS+=(-D pki_sslserver_csr_path=/conf/certs/sslserver.csr)
+
+OPTIONS+=(-D pki_admin_setup=False)
+OPTIONS+=(-D pki_security_domain_setup=False)
+OPTIONS+=(-D pki_security_manager=False)
+OPTIONS+=(-D pki_systemd_service_create=False)
+OPTIONS+=(-D pki_registry_enable=False)
+
+OPTIONS+=(-v)
+
+pkispawn "${OPTIONS[@]}"
+
+echo "################################################################################"
+echo "INFO: Configuring CA server"
+
+pki-server ca-config-set internaldb.minConns 0
+pki-server ca-config-set ca.authorityMonitor.enable false
 
 echo "################################################################################"
 echo "INFO: Updating owners and permissions"
@@ -374,22 +359,23 @@ rm /tmp/subsystem.crt
 rm /tmp/sslserver.crt
 
 echo "################################################################################"
-echo "INFO: Starting CA server"
-
-trap "kill -- -$(ps -o pgid= $PID | grep -o '[0-9]*')" TERM
+echo "INFO: Initializing CA database"
 
 if [ "$UID" = "0" ]; then
     # In Docker the server runs as root user but it will switch
     # into pkiuser (UID=17) that belongs to the root group (GID=0).
-    pki-server run &
-    PID=$!
-    wait $PID
+    pki-server ca-db-init \
+        --create-indexes \
+        --create-vlv \
+        -v
 else
     # In OpenShift/Podman the server runs as a non-root user
     # (with a random UID) that belongs to the root group (GID=0).
     #
     # https://www.redhat.com/en/blog/jupyter-on-openshift-part-6-running-as-an-assigned-user-id
-    pki-server run --as-current-user &
-    PID=$!
-    wait $PID
+    pki-server ca-db-init \
+        --create-indexes \
+        --create-vlv \
+        --as-current-user \
+        -v
 fi

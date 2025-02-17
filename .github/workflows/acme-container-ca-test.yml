@@ -156,6 +156,23 @@ jobs:
       # https://github.com/dogtagpki/pki/wiki/Deploying-CA-Container
       - name: Set up CA container
         run: |
+          # initialize CA database
+          docker run \
+              --name ca-init \
+              --hostname ca.example.com \
+              --network example \
+              --network-alias ca.example.com \
+              -v $PWD/ca/certs:/certs \
+              -v $PWD/ca/conf:/conf \
+              -v $PWD/ca/logs:/logs \
+              -e PKI_DS_URL=ldap://cads.example.com:3389 \
+              -e PKI_DS_PASSWORD=Secret.123 \
+              pki-ca \
+              /usr/share/pki/ca/bin/pki-ca-init
+
+          docker rm ca-init
+
+          # run CA container
           docker run \
               --name ca \
               --hostname ca.example.com \
@@ -184,13 +201,6 @@ jobs:
           docker exec client pki \
               -U https://ca.example.com:8443 \
               info
-
-      # https://github.com/dogtagpki/pki/wiki/Setting-up-CA-Database
-      - name: Initialize CA database
-        run: |
-          docker exec ca pki-server ca-db-init -v
-          docker exec ca pki-server ca-db-index-add -v
-          docker exec ca pki-server ca-db-vlv-add -v
 
       - name: Create admin cert
         run: |
@@ -455,6 +465,17 @@ jobs:
         run: |
           docker logs ca 2>&1
 
+      - name: Check CA server access log
+        if: always()
+        run: |
+          docker exec ca ls -la /logs
+          docker exec ca find /logs -name "localhost_access_log.*" -exec cat {} \;
+
+      - name: Check CA debug log
+        if: always()
+        run: |
+          docker exec ca find /logs/ca -name "debug.*" -exec cat {} \;
+
       - name: Check ACME DS container logs
         if: always()
         run: |
@@ -464,6 +485,17 @@ jobs:
         if: always()
         run: |
           docker logs acme 2>&1
+
+      - name: Check ACME server access log
+        if: always()
+        run: |
+          docker exec acme ls -la /logs
+          docker exec acme find /logs -name "localhost_access_log.*" -exec cat {} \;
+
+      - name: Check ACME debug log
+        if: always()
+        run: |
+          docker exec acme find /logs -name "localhost.*" -exec cat {} \;
 
       - name: Check client container logs
         if: always()

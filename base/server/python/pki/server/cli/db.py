@@ -712,6 +712,9 @@ class SubsystemDBInitCLI(pki.cli.CLI):
               --skip-schema                  Skip DS schema setup.
               --skip-base                    Skip base entry setup.
               --skip-containers              Skip container entries setup.
+              --create-indexes               Create search indexes.
+              --create-vlv                   Create VLV indexes.
+              --as-current-user              Run as current user.
           -v, --verbose                      Run in verbose mode.
               --debug                        Run in debug mode.
               --help                         Show help message.
@@ -745,6 +748,15 @@ class SubsystemDBInitCLI(pki.cli.CLI):
             action='store_true')
         self.parser.add_argument(
             '--skip-containers',
+            action='store_true')
+        self.parser.add_argument(
+            '--create-indexes',
+            action='store_true')
+        self.parser.add_argument(
+            '--create-vlv',
+            action='store_true')
+        self.parser.add_argument(
+            '--as-current-user',
             action='store_true')
         self.parser.add_argument(
             '-v',
@@ -783,6 +795,9 @@ class SubsystemDBInitCLI(pki.cli.CLI):
         skip_schema = args.skip_schema
         skip_base = args.skip_base
         skip_containers = args.skip_containers
+        create_indexes = args.create_indexes
+        create_vlv = args.create_vlv
+        as_current_user = args.as_current_user
 
         instance = pki.server.PKIServerFactory.create(instance_name)
         if not instance.exists():
@@ -803,6 +818,12 @@ class SubsystemDBInitCLI(pki.cli.CLI):
             skip_schema=skip_schema,
             skip_base=skip_base,
             skip_containers=skip_containers)
+
+        if create_indexes:
+            subsystem.add_indexes()
+
+        if create_vlv:
+            subsystem.add_vlv(as_current_user=as_current_user)
 
 
 class SubsystemDBEmptyCLI(pki.cli.CLI):
