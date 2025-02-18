@@ -157,6 +157,23 @@ jobs:
 
       - name: Set up CA container
         run: |
+          # initialize CA database
+          docker run \
+              --name ca-init \
+              --hostname ca.example.com \
+              --network example \
+              --network-alias ca.example.com \
+              -v $PWD/certs:/certs \
+              -v $PWD/conf:/conf \
+              -v $PWD/logs:/logs \
+              -e PKI_DS_URL=ldap://ds.example.com:3389 \
+              -e PKI_DS_PASSWORD=Secret.123 \
+              pki-ca \
+              /usr/share/pki/ca/bin/pki-ca-init
+
+          docker rm ca-init
+
+          # run CA container
           docker run \
               --name ca \
               --hostname ca.example.com \
@@ -425,44 +442,34 @@ jobs:
               ca-user-show \
               admin
 
-      - name: Check DS server systemd journal
-        if: always()
-        run: |
-          docker exec ds journalctl -x --no-pager -u dirsrv@localhost.service
-
       - name: Check DS container logs
         if: always()
         run: |
           docker logs ds
+
+      - name: Check DS server systemd journal
+        if: always()
+        run: |
+          docker exec ds journalctl -x --no-pager -u dirsrv@localhost.service
 
       - name: Check CA container logs
         if: always()
         run: |
           docker logs ca 2>&1
 
+      - name: Check CA server access log
+        if: always()
+        run: |
+          docker exec ca ls -la /logs
+          docker exec ca find /logs -name "localhost_access_log.*" -exec cat {} \;
+
       - name: Check CA debug logs
         if: always()
         run: |
+          docker exec ca ls -la /var/lib/pki/pki-tomcat/logs
           docker exec ca find /var/lib/pki/pki-tomcat/logs/ca -name "debug.*" -exec cat {} \;
 
-      - name: Gather artifacts
+      - name: Check client container logs
         if: always()
         run: |
-          tests/bin/ds-artifacts-save.sh ds
-
-          mkdir -p /tmp/artifacts/ca
-          cp -r certs /tmp/artifacts/ca
-          cp -r conf /tmp/artifacts/ca
-          cp -r logs /tmp/artifacts/ca
-
-          docker logs ca > /tmp/artifacts/ca/container.out 2> /tmp/artifacts/ca/container.err
-
-          mkdir -p /tmp/artifacts/client
-          docker logs client > /tmp/artifacts/client/container.out 2> /tmp/artifacts/client/container.err
-
-      - name: Upload artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ca-container-existing-certs
-          path: /tmp/artifacts
+          docker logs client 2>&1
