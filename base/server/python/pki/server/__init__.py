@@ -848,6 +848,10 @@ grant codeBase "file:%s" {
         # Create /var/lib/pki/<instance>/logs
         self.makedirs(self.logs_dir, exist_ok=exist_ok)
 
+        # Create /var/lib/pki/<instance>/logs/backup
+        backup_dir = os.path.join(self.logs_dir, 'backup')
+        self.makedirs(backup_dir, exist_ok=exist_ok)
+
     def create_libs(self, force=False):  # pylint: disable=W0613
 
         lib_dir = os.path.join(PKIServer.SHARE_DIR, 'server', 'lib')
