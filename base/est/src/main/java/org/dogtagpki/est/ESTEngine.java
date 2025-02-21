@@ -1,10 +1,13 @@
 package org.dogtagpki.est;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.util.Map;
 import java.util.Properties;
-import java.util.logging.Logger;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.logging.LogManager;
 
 import org.apache.catalina.Realm;
 import org.apache.catalina.realm.RealmBase;
@@ -100,15 +103,17 @@ public class ESTEngine {
 
         for (String key : properties.stringPropertyNames()) {
             String value = properties.getProperty(key);
-
             logger.info("- " + key + ": " + value);
-            if (!key.endsWith(".level")) continue;
-
-            String loggerName = key.substring(0, key.length() - 6);
-            java.util.logging.Level level = java.util.logging.Level.parse(value);
-
-            Logger.getLogger(loggerName).setLevel(level);
         }
+
+        LogManager logManager = LogManager.getLogManager();
+        logger.info("Updating " + logManager.getClass().getName());
+
+        // if a param is redefined in the new config, use the new value
+        // otherwise, use the old value
+        Function<String, BiFunction<String, String, String>> mapper =
+                (x) -> ((o, n) -> n == null ? o : n);
+        logManager.updateConfiguration(new FileInputStream(file), mapper);
     }
 
     private void initBackend(String filename) throws Throwable {

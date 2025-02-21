@@ -6,6 +6,7 @@
 package org.dogtagpki.acme.server;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.math.BigInteger;
 import java.net.URL;
@@ -26,8 +27,10 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.logging.Logger;
+import java.util.function.Function;
+import java.util.logging.LogManager;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
@@ -204,15 +207,17 @@ public class ACMEEngine {
 
         for (String key : properties.stringPropertyNames()) {
             String value = properties.getProperty(key);
-
             logger.info("- " + key + ": " + value);
-            if (!key.endsWith(".level")) continue;
-
-            String loggerName = key.substring(0, key.length() - 6);
-            java.util.logging.Level level = java.util.logging.Level.parse(value);
-
-            Logger.getLogger(loggerName).setLevel(level);
         }
+
+        LogManager logManager = LogManager.getLogManager();
+        logger.info("Updating " + logManager.getClass().getName());
+
+        // if a param is redefined in the new config, use the new value
+        // otherwise, use the old value
+        Function<String, BiFunction<String, String, String>> mapper =
+                (x) -> ((o, n) -> n == null ? o : n);
+        logManager.updateConfiguration(new FileInputStream(file), mapper);
     }
 
     public void loadEngineConfig(String filename) throws Exception {

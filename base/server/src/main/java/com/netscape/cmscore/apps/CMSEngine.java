@@ -19,6 +19,7 @@ package com.netscape.cmscore.apps;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.security.Provider;
@@ -35,7 +36,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.Timer;
-import java.util.logging.Logger;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.logging.LogManager;
 
 import javax.servlet.http.HttpServlet;
 
@@ -436,15 +439,17 @@ public class CMSEngine {
 
         for (String key : properties.stringPropertyNames()) {
             String value = properties.getProperty(key);
-
             logger.info("CMSEngine: - " + key + ": " + value);
-            if (!key.endsWith(".level")) continue;
-
-            String loggerName = key.substring(0, key.length() - 6);
-            java.util.logging.Level level = java.util.logging.Level.parse(value);
-
-            Logger.getLogger(loggerName).setLevel(level);
         }
+
+        LogManager logManager = LogManager.getLogManager();
+        logger.info("CMSEngine: Updating " + logManager.getClass().getName());
+
+        // if a param is redefined in the new config, use the new value
+        // otherwise, use the old value
+        Function<String, BiFunction<String, String, String>> mapper =
+                (x) -> ((o, n) -> n == null ? o : n);
+        logManager.updateConfiguration(new FileInputStream(file), mapper);
     }
 
     public void initSubsystemListeners() throws Exception {
