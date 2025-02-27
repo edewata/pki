@@ -344,6 +344,11 @@ jobs:
           
           docker exec pki pki -n caadmin tps-cert-find --token $CUID
 
+      - name: Check testuser1 cert and key
+        run: |
+          docker exec pki pki nss-cert-find
+          docker exec pki pki nss-key-find
+
       - name: Find testuser1 key in KRA
         run: |          
           CUID=$(cat cuid | tr [:lower:] [:upper:])
@@ -396,6 +401,11 @@ jobs:
           diff expected actual
 
           docker exec pki pki -n caadmin tps-cert-find --token $CUID
+
+      - name: Check testuser2 cert and key
+        run: |
+          docker exec pki pki nss-cert-find
+          docker exec pki pki nss-key-find
 
       - name: Find testuser2 key in KRA
         run: |
