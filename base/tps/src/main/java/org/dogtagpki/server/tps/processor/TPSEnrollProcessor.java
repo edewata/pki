@@ -502,14 +502,16 @@ public class TPSEnrollProcessor extends TPSProcessor {
         if (status == TPSStatus.STATUS_NO_ERROR) {
             if (!generateCertificates(certsInfo, channel, appletInfo)) {
                 logger.info(method + "generateCertificates returned false means cert enrollment unsuccessful");
+/*
                 // in case isExternalReg, leave the token alone, do not format
                 if (!isExternalReg) {
                     logger.info(method
                             + "generateCertificates returned false means some certs failed enrollment;  clean up (format) the token");
-                    format(true /*skipAuth*/);
+                    format(true); // skipAuth
                 }
                 tps.tdb.tdbActivity(ActivityDatabase.OP_ENROLLMENT, tokenRecord, session.getIpAddress(), logMsg,
                         "failure");
+*/
                 throw new TPSException("generateCertificates failed", TPSStatus.STATUS_ERROR_MAC_ENROLL_PDU);
             } else {
                 logger.debug(method + "generateCertificates returned true means cert enrollment successful");

@@ -18,6 +18,7 @@
 package org.dogtagpki.server.tps.channel;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.dogtagpki.server.tps.TPSEngine;
 import org.dogtagpki.server.tps.TPSEngineConfig;
@@ -44,11 +45,11 @@ import org.dogtagpki.tps.apdu.LifecycleAPDU;
 import org.dogtagpki.tps.apdu.LoadFileAPDU;
 import org.dogtagpki.tps.apdu.LoadFileAPDUGP211;
 import org.dogtagpki.tps.apdu.PutKeyAPDU;
+import org.dogtagpki.tps.apdu.ReadBufferAPDU;
 import org.dogtagpki.tps.apdu.ReadObjectAPDU;
 import org.dogtagpki.tps.apdu.SetIssuerInfoAPDU;
 import org.dogtagpki.tps.apdu.SetPinAPDU;
 import org.dogtagpki.tps.apdu.WriteObjectAPDU;
-import org.dogtagpki.tps.apdu.ReadBufferAPDU;
 import org.dogtagpki.tps.main.TPSBuffer;
 import org.dogtagpki.tps.main.TPSException;
 import org.dogtagpki.tps.main.Util;
@@ -57,8 +58,6 @@ import org.mozilla.jss.pkcs11.PK11SymKey;
 import org.mozilla.jss.pkcs11.PKCS11Constants;
 
 import com.netscape.certsrv.base.EBaseException;
-
-import java.util.Arrays;
 
 public class SecureChannel {
 
@@ -644,7 +643,7 @@ public class SecureChannel {
         //logger.debug("SecureChannel.computeAPDUMacSCP03: computed MAC: " /* + newMac.toHexString() */);
 
         apdu.setMAC(newMac.substr(0,8));
-        
+
         icv.set(newMac);
     }
 
@@ -769,15 +768,15 @@ public class SecureChannel {
         if (isGP211()) {
             logger.debug("SecureChannel.installLoad: isGP211 is true");
             TPSBuffer cardMgrGP211AIDBuff = new TPSBuffer(TPSEngine.CFG_DEF_CARDMGR_211_INSTANCE_AID);
-            
+
             TPSBuffer aidSubStrBuffer = new TPSBuffer(cardMgrGP211AIDBuff.substr(0,sdAID.size()));
             byte[] defaultAIDtoChk = aidSubStrBuffer.toBytesArray();
-            
+
             // Use default AID unless another AID was already selected
             if (!Arrays.equals(sdAID.toBytesArray(),defaultAIDtoChk))
             {
                 cardMgrGP211AIDBuff = new TPSBuffer(sdAID);
-            } 
+            }
 
             installLoadGP211(packageAID, cardMgrGP211AIDBuff, fileLength);
             return;
@@ -1427,7 +1426,7 @@ public class SecureChannel {
                     TPSStatus.STATUS_ERROR_MAC_ENROLL_PDU);
         }
 
-        logger.debug("SecureChannel.startEnrollment: entering ...");
+        logger.info("SecureChannel.startEnrollment: entering ...");
 
         boolean isECC = TPSEngine.getInstance().isAlgorithmECC(algorithm);
 
@@ -1810,12 +1809,12 @@ public class SecureChannel {
 
     /**
      * ** G&D 256 Key Rollover Support **
-     * This method constructs the APDU for key deletion and sends the request to the card to 
+     * This method constructs the APDU for key deletion and sends the request to the card to
      * delete keys with the given version.
-     *  
+     *
      * @param keyVersion the key version to be deleted
      * @throws TPSException
-     * @throws IOException 
+     * @throws IOException
      *
      */
     public void deleteKeys(byte keyVersion) throws TPSException, IOException {
