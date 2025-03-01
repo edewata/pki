@@ -1349,6 +1349,15 @@ pkgs=base\
 %if %{with maven}
 # install Java binaries
 %mvn_install
+
+# Maven installs pki-tools.jar in /usr/lib/java/pki since it uses JNI
+ls -l %{buildroot}%{_jnidir}/pki
+
+# all other JAR files are installed in /usr/share/java/pki
+ls -l %{buildroot}%{_javadir}/pki
+
+# create link to pki-tools.jar in /usr/share/java/pki
+ln -sf ../../../..%{_jnidir}/pki/pki-tools.jar %{buildroot}%{_javadir}/pki
 %endif
 
 # install PKI console, Javadoc, and native binaries
@@ -1761,9 +1770,15 @@ fi
 %{_mandir}/man1/PKICertImport.1.gz
 %{_mandir}/man1/tpsclient.1.gz
 
+# for CMake build include pki-tools.jar
+# for Maven build it's automatically included
+
 %if %{without maven}
-%{_datadir}/java/pki/pki-tools.jar
+%{_jnidir}/pki/pki-tools.jar
 %endif
+
+# include link to pki-tools.jar
+%{_javadir}/pki/pki-tools.jar
 
 # with base
 %endif
