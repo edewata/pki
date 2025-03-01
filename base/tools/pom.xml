@@ -35,6 +35,18 @@
             </resource>
         </resources>
         <plugins>
+           <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <release>17</release>
+                    <compilerArgs>
+                        <arg>-proc:none</arg>
+                        <arg>-h</arg><arg>${project.build.directory}/include/_jni</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>

@@ -1241,6 +1241,14 @@ export JAVA_HOME=%{java_home}
 # build Java binaries and run unit tests with Maven
 %mvn_build %{!?with_test:-f} -j
 
+pwd
+echo "====="
+ls -l %{_vpath_builddir}
+echo "====="
+ls -l base/tools/target
+echo "====="
+ls -l base/tools/target/include
+
 # create links to Maven-built JAR files for CMake
 mkdir -p %{_vpath_builddir}/dist
 pushd %{_vpath_builddir}/dist
