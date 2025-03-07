@@ -302,6 +302,25 @@ jobs:
           # restart TPS subsystem
           docker exec pki pki-server tps-redeploy --wait
 
+      - name: Check pki tps-client
+        run: |
+          cat > script << EOF
+          op=help
+
+          op=var_set name=ra_host value=pki.example.com
+          op=var_set name=ra_port value=8080
+          op=var_set name=ra_uri value=/tps/tps
+          op=var_list
+
+          op=exit
+          EOF
+
+          cat script | docker exec -i pki pki tps-client
+
+      - name: Check tpsclient
+        run: |
+          cat script | docker exec -i pki tpsclient || true
+
       - name: Add token for testuser1
         run: |
           hexdump -v -n "10" -e '1/1 "%02x"' /dev/urandom > cuid
