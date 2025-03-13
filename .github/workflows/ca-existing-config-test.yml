@@ -1,5 +1,19 @@
 name: CA with existing config
 
+# This test will perform the following:
+# - install CA
+# - remove the CA
+# - reinstall the CA (with the same config)
+# - remove the CA again
+# - install new CA with old admin cert
+# - remove the old admin cert
+# - reinstall the new CA with no admin cert
+# - remove the CA again
+# - install new CA with old admin cert again
+# - remove the new CA and the old admin cert
+# - reinstall the new CA with no admin cert again
+# - remove the CA again
+
 on: workflow_call
 
 env:
@@ -384,7 +398,7 @@ jobs:
               --pkcs12 /root/.dogtag/localhost/ca_admin_cert.p12 \
               --password Secret.123
 
-      - name: Install CA with new config and old admin cert
+      - name: Install new CA old admin cert
         run: |
           rc=0
           docker exec pki pkispawn \
@@ -403,7 +417,7 @@ jobs:
           docker exec pki rm -f /root/.dogtag/localhost/ca_admin.cert
           docker exec pki rm -f /root/.dogtag/localhost/ca_admin_cert.p12
 
-      - name: Install CA with new config and no admin cert
+      - name: Reinstall new CA with no admin cert
         run: |
           docker exec pki pkispawn \
               -f /usr/share/pki/server/examples/installation/ca.cfg \
@@ -459,6 +473,60 @@ jobs:
           [ $rc -ne 0 ]
 
           docker exec pki pki -n caadmin ca-user-show caadmin
+
+      - name: Remove CA again
+        run: |
+          docker exec pki pkidestroy \
+              -i localhost \
+              -s CA \
+              --remove-conf \
+              --remove-logs \
+              -v
+
+      - name: Install new CA with old admin cert again
+        run: |
+          rc=0
+          docker exec pki pkispawn \
+              -f /usr/share/pki/server/examples/installation/ca.cfg \
+              -s CA \
+              -D pki_instance_name=localhost \
+              -D pki_ds_url=ldap://ds.example.com:3389 \
+              -v \
+              || rc=$?
+
+          # pkispawn should fail
+          [ $rc -ne 0 ]
+
+      - name: Remove CA again
+        run: |
+          docker exec pki pkidestroy \
+              -i localhost \
+              -s CA \
+              --remove-conf \
+              --remove-logs \
+              -v \
+              || rc=$?
+
+          # pkidestroy should fail
+          [ $rc -ne 0 ]
+
+          docker exec pki pki-server remove localhost --force
+
+      - name: Remove old admin cert
+        run: |
+          docker exec pki rm -f /root/.dogtag/localhost/ca_admin.cert
+          docker exec pki rm -f /root/.dogtag/localhost/ca_admin_cert.p12
+
+      - name: Reinstall new CA with no admin cert again
+        run: |
+          docker exec pki pkispawn \
+              -f /usr/share/pki/server/examples/installation/ca.cfg \
+              -s CA \
+              -D pki_instance_name=localhost \
+              -D pki_ds_url=ldap://ds.example.com:3389 \
+              -v
+
+          # pkispawn should succeed
 
       - name: Remove CA again
         run: |
