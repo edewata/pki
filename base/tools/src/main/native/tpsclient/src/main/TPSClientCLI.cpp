@@ -193,55 +193,61 @@ Java_com_netscape_cmstools_tps_TPSClientCLI_displayHelp
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_netscape_cmstools_tps_TPSClientCLI_performFormatToken
-(JNIEnv* env, jobject object, jlong client, jobject params, jlong token, jlong connection) {
+(JNIEnv* env, jobject object, jlong client, jobject params, jobject exts, jlong token, jlong connection) {
 
     RA_Client* cclient = (RA_Client*) client;
     NameValueSet* set = convertParams(env, params);
+    NameValueSet* cexts = convertParams(env, exts);
     RA_Token* ctoken = (RA_Token*) token;
     RA_Conn* conn = (RA_Conn*) connection;
 
-    int status = FormatToken(cclient, set, ctoken, conn);
+    int status = FormatToken(cclient, set, cexts, ctoken, conn);
 
     if (status == 0) {
         throwCLIException(env, "Unable to format token");
     }
 
+    // delete cexts;
     delete set;
 }
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_netscape_cmstools_tps_TPSClientCLI_performResetPIN
-(JNIEnv* env, jobject object, jlong client, jobject params, jlong token, jlong connection) {
+(JNIEnv* env, jobject object, jlong client, jobject params, jobject exts, jlong token, jlong connection) {
 
     RA_Client* cclient = (RA_Client*) client;
     NameValueSet* set = convertParams(env, params);
+    NameValueSet* cexts = convertParams(env, exts);
     RA_Token* ctoken = (RA_Token*) token;
     RA_Conn* conn = (RA_Conn*) connection;
 
-    int status = ResetPIN(cclient, set, ctoken, conn);
+    int status = ResetPIN(cclient, set, cexts, ctoken, conn);
 
     if (status == 0) {
         throwCLIException(env, "Unable to reset PIN");
     }
 
+    // delete cexts;
     delete set;
 }
 
 extern "C" JNIEXPORT void JNICALL
 Java_com_netscape_cmstools_tps_TPSClientCLI_performEnrollToken
-(JNIEnv* env, jobject object, jlong client, jobject params, jlong token, jlong connection) {
+(JNIEnv* env, jobject object, jlong client, jobject params, jobject exts, jlong token, jlong connection) {
 
     RA_Client* cclient = (RA_Client*) client;
     NameValueSet* set = convertParams(env, params);
+    NameValueSet* cexts = convertParams(env, exts);
     RA_Token* ctoken = (RA_Token*) token;
     RA_Conn* conn = (RA_Conn*) connection;
 
-    int status = EnrollToken(cclient, set, ctoken, conn);
+    int status = EnrollToken(cclient, set, cexts, ctoken, conn);
 
     if (status == 0) {
         throwCLIException(env, "Unable to enroll token");
     }
 
+    // delete cexts;
     delete set;
 }
 
