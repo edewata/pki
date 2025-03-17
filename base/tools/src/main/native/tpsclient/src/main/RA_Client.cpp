@@ -486,7 +486,11 @@ extern "C"
 {
 #endif
 
-  int FormatToken (RA_Client *client, NameValueSet *params, RA_Token *token, RA_Conn *conn)
+  int FormatToken (
+    RA_Client *client,
+    NameValueSet *params,
+    RA_Token *token,
+    RA_Conn *conn)
   {
     int status;
     NameValueSet *exts = NULL;
