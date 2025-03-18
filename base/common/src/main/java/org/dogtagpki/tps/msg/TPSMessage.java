@@ -31,12 +31,22 @@ public class TPSMessage {
     public static org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(TPSMessage.class);
 
     public enum OpType {
-        OP_ENROLL,
-        OP_UNBLOCK,
-        OP_RESET_PIN,
-        OP_RENEW,
-        OP_FORMAT,
-        OP_UNDEFINED
+        OP_ENROLL(1),
+        OP_UNBLOCK(2),
+        OP_RESET_PIN(3),
+        OP_RENEW(4),
+        OP_FORMAT(5),
+        OP_UNDEFINED(6);
+
+        private final int value;
+
+        OpType(int value) {
+            this.value = value;
+        }
+
+        public int value() {
+            return value;
+        }
     }
 
     public enum MsgType {
@@ -282,7 +292,7 @@ public class TPSMessage {
         return result;
     }
 
-    protected MsgType intToMsgType(int i) {
+    public static MsgType intToMsgType(int i) {
 
         MsgType result = MsgType.MSG_UNDEFINED;
 
