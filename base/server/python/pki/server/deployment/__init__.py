@@ -1755,7 +1755,7 @@ class PKIDeployer:
                 config.str2bool(self.mdict['pki_clone_setup_replication']):
             self.setup_replication(subsystem, master_config)
 
-        # Always create search and VLV indexes since they will not be replicated
+        # Set up search indexes on each replica since they are not replicated
         subsystem.add_indexes()
 
         # When installing PKI replica the DS replication needs to be set up.
@@ -1793,8 +1793,10 @@ class PKIDeployer:
                     config.str2bool(self.mdict['pki_clone_reindex_data']):
                 subsystem.rebuild_indexes()
 
-        subsystem.add_vlv()
-        subsystem.reindex_vlv()
+        if config.str2bool(self.mdict['pki_ds_setup_vlv']):
+            # Set up VLV indexes on each replica since they are not replicated
+            subsystem.add_vlv()
+            subsystem.reindex_vlv()
 
     def setup_replication(self, subsystem, master_config):
 
