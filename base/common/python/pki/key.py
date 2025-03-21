@@ -633,13 +633,28 @@ class KeyClient:
             See KRAClient.list_requests for the valid values of request_state
             and request_type.  Returns a KeyRequestInfoCollection object.
         """
+
+        if self.pki_client:
+            api_path = self.pki_client.get_api_path()
+        else:
+            api_path = 'rest'
+
+        path = '/%s/agent/keyrequests' % api_path
+
+        # in legacy code the PKIConnection object might already have the subsystem name
+        # in newer code the subsystem name needs to be included in the path
+        if not self.connection.subsystem:
+            path = '/kra' + path
+
+        logger.info('Getting KRA key requests from %s', path)
+
         query_params = {'requestState': request_state,
                         'requestType': request_type,
                         'clientKeyID': client_key_id, 'start': start,
                         'pageSize': page_size,
                         'maxResults': max_results, 'maxTime': max_time,
                         'realm': realm}
-        response = self.connection.get(self.key_requests_url, self.headers,
+        response = self.connection.get(path, self.headers,
                                        params=query_params)
 
         json_response = response.json()

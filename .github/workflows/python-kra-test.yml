@@ -262,6 +262,67 @@ jobs:
               --debug
 
       ####################################################################################################
+      # Check key requests
+
+      - name: Check key requests with REST API v2
+        run: |
+          docker exec pki python /usr/share/pki/tests/kra/bin/pki-kra-key-request-find.py \
+              -U https://pki.example.com:8443 \
+              --ca-bundle ca_signing.crt \
+              --client-cert admin.crt \
+              --client-key admin.key \
+              -v
+
+          sleep 1
+
+          # check HTTP methods, paths, protocols, status, and authenticated users
+          docker exec pki find /var/log/pki/pki-tomcat \
+              -name "localhost_access_log.*" \
+              -exec cat {} \; \
+              | tail -4 \
+              | sed -e 's/^.* .* \(.*\) \[.*\] "\(.*\)" \(.*\) .*$/\2 \3 \1/' \
+              | tee output
+
+          # Python API should use REST API v2 by default
+          cat > expected << EOF
+          GET /pki/v2/info HTTP/1.1 200 -
+          GET /kra/v2/account/login HTTP/1.1 200 kraadmin
+          GET /kra/v2/agent/keyrequests HTTP/1.1 200 kraadmin
+          GET /kra/v2/account/logout HTTP/1.1 204 kraadmin
+          EOF
+
+          diff expected output || true
+
+      - name: Check key requests with REST API v1
+        run: |
+          docker exec pki python /usr/share/pki/tests/kra/bin/pki-kra-key-request-find.py \
+              -U https://pki.example.com:8443 \
+              --ca-bundle ca_signing.crt \
+              --client-cert admin.crt \
+              --client-key admin.key \
+              --api v1 \
+              -v
+
+          sleep 1
+
+          # check HTTP methods, paths, protocols, status, and authenticated users
+          docker exec pki find /var/log/pki/pki-tomcat \
+              -name "localhost_access_log.*" \
+              -exec cat {} \; \
+              | tail -3 \
+              | sed -e 's/^.* .* \(.*\) \[.*\] "\(.*\)" \(.*\) .*$/\2 \3 \1/' \
+              | tee output
+
+          # Python API should use REST API v1
+          cat > expected << EOF
+          GET /kra/v1/account/login HTTP/1.1 200 kraadmin
+          GET /kra/v1/agent/keyrequests HTTP/1.1 200 kraadmin
+          GET /kra/v1/account/logout HTTP/1.1 204 kraadmin
+          EOF
+
+          diff expected output || true
+
+      ####################################################################################################
       # Check archived key
 
       - name: Check archived key with REST API v2
