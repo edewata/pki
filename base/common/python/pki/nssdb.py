@@ -339,6 +339,7 @@ class NSSDatabase(object):
 
         if capture_output:
             logger.debug('stdout: %s', stdout)
+            logger.debug('stderr: %s', stderr)
 
         return result
 
@@ -549,7 +550,7 @@ class NSSDatabase(object):
             '-rawlist'
         ]
 
-        result = self.run(cmd, capture_output=True, check=True)
+        result = self.run(cmd, stdout=subprocess.PIPE, check=True)
         output = result.stdout.decode('utf-8')
 
         pattern = re.compile(r' name="%s"' % name)
@@ -641,7 +642,7 @@ class NSSDatabase(object):
         elif logger.isEnabledFor(logging.INFO):
             cmd.append('--verbose')
 
-        result = self.run(cmd, capture_output=True, check=True, text=True)
+        result = self.run(cmd, stdout=subprocess.PIPE, check=True, text=True)
 
         return json.loads(result.stdout)
 
@@ -707,7 +708,7 @@ class NSSDatabase(object):
         elif logger.isEnabledFor(logging.INFO):
             cmd.append('--verbose')
 
-        result = self.run(cmd, capture_output=True, check=True, text=True,
+        result = self.run(cmd, stdout=subprocess.PIPE, check=True, text=True,
                           runas=True)
 
         return json.loads(result.stdout)

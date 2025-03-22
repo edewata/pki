@@ -878,7 +878,6 @@ class KRAConnector:
         return subprocess.run(
             command,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
             check=True,
             universal_newlines=True)
 

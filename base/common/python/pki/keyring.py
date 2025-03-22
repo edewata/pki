@@ -63,8 +63,7 @@ class Keyring:
 
         p = subprocess.Popen(cmd,
                              stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.STDOUT)
+                             stdout=subprocess.PIPE)
 
         return p.communicate(input=password)
 
