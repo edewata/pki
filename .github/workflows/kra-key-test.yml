@@ -1,0 +1,136 @@
+name: KRA key
+
+on: workflow_call
+
+env:
+  DS_IMAGE: ${{ vars.DS_IMAGE || 'quay.io/389ds/dirsrv' }}
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    env:
+      SHARED: /tmp/workdir/pki
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      - name: Retrieve PKI images
+        uses: actions/cache@v4
+        with:
+          key: pki-images-${{ github.sha }}
+          path: pki-images.tar
+
+      - name: Load PKI images
+        run: docker load --input pki-images.tar
+
+      - name: Create network
+        run: docker network create example
+
+      - name: Set up DS container
+        run: |
+          tests/bin/ds-create.sh \
+              --image=${{ env.DS_IMAGE }} \
+              --hostname=ds.example.com \
+              --network=example \
+              --network-alias=ds.example.com \
+              --password=Secret.123 \
+              ds
+
+      - name: Set up PKI container
+        run: |
+          tests/bin/runner-init.sh \
+              --hostname=pki.example.com \
+              --network=example \
+              --network-alias=pki.example.com \
+              pki
+
+      - name: Install CA
+        run: |
+          docker exec pki pkispawn \
+              -f /usr/share/pki/server/examples/installation/ca.cfg \
+              -s CA \
+              -D pki_ds_url=ldap://ds.example.com:3389 \
+              -D pki_audit_signing_nickname= \
+              -v
+
+      - name: Install KRA
+        run: |
+          docker exec pki pkispawn \
+              -f /usr/share/pki/server/examples/installation/kra.cfg \
+              -s KRA \
+              -D pki_ds_url=ldap://ds.example.com:3389 \
+              -D pki_audit_signing_nickname= \
+              -v
+
+      - name: Check CA admin cert
+        run: |
+          docker exec pki pki-server cert-export \
+              --cert-file ca_signing.crt \
+              ca_signing
+
+          docker exec pki pki nss-cert-import \
+              --cert ca_signing.crt \
+              --trust CT,C,C \
+              ca_signing
+
+          docker exec pki pki pkcs12-import \
+              --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
+              --pkcs12-password Secret.123
+
+          docker exec pki pki -n caadmin kra-user-show kraadmin
+
+      # https://github.com/dogtagpki/pki/wiki/Archiving-Key-in-KRA
+      - name: Check archiving secret
+        run: |
+          echo "Secret.123" > secret
+
+          docker exec pki pki -n caadmin kra-key-find
+
+          docker exec pki pki -n caadmin kra-key-archive \
+              --clientKeyID testuser \
+              --input-data $SHARED/secret
+
+          docker exec pki pki -n caadmin kra-key-find
+
+      # https://github.com/dogtagpki/pki/wiki/Retrieving-Archived-Key
+      - name: Check retrieving secret
+        run: |
+          docker exec pki pki -n caadmin kra-key-find \
+              --clientKeyID testuser | tee output
+
+          sed -n 's/^ *Key ID: *\(.*\)$/\1/p' output > key.id
+          KEY_ID=$(cat key.id)
+          echo "KEY_ID: $KEY_ID"
+
+          docker exec pki pki -n caadmin kra-key-retrieve \
+              --keyID $KEY_ID \
+              --output-data $SHARED/secret.retrieved
+
+          diff secret secret.retrieved
+
+      - name: Remove KRA
+        run: docker exec pki pkidestroy -s KRA -v
+
+      - name: Remove CA
+        run: docker exec pki pkidestroy -s CA -v
+
+      - name: Check PKI server systemd journal
+        if: always()
+        run: |
+          docker exec pki journalctl -x --no-pager -u pki-tomcatd@pki-tomcat.service
+
+      - name: Check PKI server access log
+        if: always()
+        run: |
+          docker exec pki find /var/log/pki/pki-tomcat -name "localhost_access_log.*" -exec cat {} \;
+
+      - name: Check CA debug log
+        if: always()
+        run: |
+          docker exec pki find /var/lib/pki/pki-tomcat/logs/ca -name "debug.*" -exec cat {} \;
+
+      - name: Check KRA debug log
+        if: always()
+        run: |
+          docker exec pki find /var/lib/pki/pki-tomcat/logs/kra -name "debug.*" -exec cat {} \;

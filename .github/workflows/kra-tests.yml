@@ -13,6 +13,11 @@ jobs:
     needs: build
     uses: ./.github/workflows/kra-basic-test.yml
 
+  kra-key-test:
+    name: KRA key
+    needs: build
+    uses: ./.github/workflows/kra-key-test.yml
+
   kra-oaep-test:
     name: KRA with RSA OAEP padding
     needs: build
