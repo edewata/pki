@@ -270,18 +270,13 @@ public class KeyProcessor {
         }
     }
 
-    public KeyData retrieveKey(Principal principal, KeyRecoveryRequest data) {
+    public KeyData retrieveKey(Principal principal, KeyRecoveryRequest data) throws Exception {
         if (data == null) {
             auditRetrieveKeyError(principal, null, null, "KeyProcessor: Missing key recovery request", null);
             throw new BadRequestException("Missing key recovery request");
         }
 
-        try {
-            logger.debug("KeyProcessor: Request:\n{}", data.toJSON());
-        } catch (JsonProcessingException e) {
-            auditRetrieveKeyError(principal, null, null, "KeyProcessor: Problem processing key data", null);
-            throw new PKIException(e.getMessage(), e);
-        }
+        logger.info("KeyProcessor: Request:\n{}", data.toJSON());
 
         String auditInfo = "Key.retrieveKey";
 

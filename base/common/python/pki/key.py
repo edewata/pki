@@ -766,10 +766,21 @@ class KeyClient:
         if request is None:
             raise TypeError("Request must be specified")
 
-        url = self.key_requests_url
+        if self.pki_client:
+            api_path = self.pki_client.get_api_path()
+        else:
+            api_path = 'rest'
+
+        path = '/%s/agent/keyrequests' % api_path
+
+        # in legacy code the PKIConnection object might already have the subsystem name
+        # in newer code the subsystem name needs to be included in the path
+        if not self.connection.subsystem:
+            path = '/kra' + path
+
         key_request = json.dumps(request, cls=encoder.CustomTypeEncoder,
                                  sort_keys=True)
-        response = self.connection.post(url, key_request, self.headers)
+        response = self.connection.post(path, key_request, self.headers)
 
         json_response = response.json()
         logger.debug('Response:\n%s', json.dumps(json_response, indent=4))
@@ -1077,10 +1088,21 @@ class KeyClient:
         if data is None:
             raise TypeError("Key Recovery Request must be specified")
 
-        url = self.key_url + '/retrieve'
+        if self.pki_client:
+            api_path = self.pki_client.get_api_path()
+        else:
+            api_path = 'rest'
+
+        path = '/%s/agent/keys/retrieve' % api_path
+
+        # in legacy code the PKIConnection object might already have the subsystem name
+        # in newer code the subsystem name needs to be included in the path
+        if not self.connection.subsystem:
+            path = '/kra' + path
+
         key_request = json.dumps(data, cls=encoder.CustomTypeEncoder,
                                  sort_keys=True)
-        response = self.connection.post(url, key_request, self.headers)
+        response = self.connection.post(path, key_request, self.headers)
 
         json_response = response.json()
         logger.debug('Response:\n%s', json.dumps(json_response, indent=4))

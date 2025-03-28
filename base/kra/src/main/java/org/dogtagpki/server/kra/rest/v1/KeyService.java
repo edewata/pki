@@ -144,7 +144,7 @@ public class KeyService extends SubsystemService implements KeyResource {
             throw new BadRequestException("Missing key recovery request");
         }
 
-        logger.debug("KeyService: Request:\n" + data.toJSON());
+        logger.info("KeyService: Request:\n" + data.toJSON());
 
         auditInfo = "KeyService.retrieveKey";
 
