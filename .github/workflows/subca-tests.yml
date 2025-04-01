@@ -43,6 +43,11 @@ jobs:
     needs: build
     uses: ./.github/workflows/subca-lightweight-test.yml
 
+  subca-lightweight-clone-test:
+    name: Lightweight SubCA clone
+    needs: build
+    uses: ./.github/workflows/subca-lightweight-clone-test.yml
+
   subca-lightweight-hsm-test:
     name: Lightweight SubCA with HSM
     needs: build
