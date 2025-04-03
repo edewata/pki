@@ -9,7 +9,9 @@ jobs:
   # docs/installation/ca/Installing_CA_Clone_with_HSM.md
   test:
     name: Test
-    runs-on: ubuntu-latest
+    # workaround for Podman issue on Ubuntu 24
+    # https://github.com/containers/podman/issues/21683
+    runs-on: ubuntu-22.04
     env:
       SHARED: /tmp/workdir/pki
     steps:
@@ -28,31 +30,303 @@ jobs:
       - name: Create network
         run: docker network create example
 
+      - name: Set up HSM container
+        run: |
+          mkdir -p run
+
+          tests/bin/runner-init.sh \
+              --hostname=hsm.example.com \
+              --network=example \
+              --network-alias=hsm.example.com \
+              --run-dir=$PWD/run \
+              hsm
+
+      - name: Set up SoftHSM in HSM container
+        run: |
+          docker exec hsm dnf install -y softhsm
+          # allow PKI user to access SoftHSM files
+          #docker exec hsm usermod pkiuser -a -G ods
+
+          # create SoftHSM token for PKI server
+          docker exec hsm softhsm2-util \
+              --init-token \
+              --label HSM \
+              --so-pin Secret.HSM \
+              --pin Secret.HSM \
+              --free
+
+          docker exec hsm ls -laR /var/lib/softhsm/tokens
+
+          docker exec hsm softhsm2-util --show-slots
+
+      - name: Set up HSM server in HSM container
+        run: |
+          docker exec hsm dnf install -y gnutls-utils
+          docker exec hsm p11tool --list-tokens
+
+          docker exec hsm dnf install -y p11-kit-server
+          docker exec hsm p11-kit list-tokens "pkcs11:token=HSM" | tee output
+          HSM_URI=$(sed -n 's/^\s*uri:\s*\(.*\)$/\1/p' output)
+          echo "HSM_URI: $HSM_URI"
+
+          # create XDG_RUNTIME_DIR for root user
+          docker exec hsm mkdir -p -m 0777 /run/user/0
+
+          docker exec -e XDG_RUNTIME_DIR=/run/user/0 hsm p11-kit server \
+              --provider /usr/lib64/pkcs11/libsofthsm2.so \
+              $HSM_URI \
+              | tee output
+
+          P11_KIT_SERVER_ADDRESS=$(sed -n 's/^P11_KIT_SERVER_ADDRESS=\(.*\);.*;$/\1/p' output | tee server.address)
+          echo "P11_KIT_SERVER_ADDRESS: $P11_KIT_SERVER_ADDRESS"
+
+          P11_KIT_SERVER_PID=$(sed -n 's/^P11_KIT_SERVER_PID=\(.*\);.*;$/\1/p' output | tee server.pid)
+          echo "P11_KIT_SERVER_PID: $P11_KIT_SERVER_PID"
+
+          docker exec hsm ls -lR /run
+
+      - name: Set up SSH server in HSM container
+        run: |
+          docker exec hsm dnf install -y openssh-server
+
+          docker exec hsm cat /etc/ssh/sshd_config
+
+          docker exec hsm ls -l /etc/ssh/sshd_config.d
+          docker exec hsm rm -f /etc/ssh/sshd_config.d/40-redhat-crypto-policies.conf
+          docker exec hsm rm -f /etc/ssh/sshd_config.d/50-redhat.conf
+
+          # configure SSH to allow root access
+          docker exec -i hsm tee /etc/ssh/sshd_config.d/root-login.conf << EOF
+          PermitRootLogin yes
+          PubkeyAuthentication yes
+          #PasswordAuthentication yes
+          AuthenticationMethods publickey
+          #AuthenticationMethods password
+          EOF
+
+      - name: Start SSH server in HSM container
+        run: |
+          docker exec hsm cat /lib/systemd/system/sshd.service
+          docker exec hsm systemctl start sshd
+
+          docker exec hsm ssh-keygen -f /root/.ssh/id_ed25519 -N ""
+          docker exec hsm cp /root/.ssh/id_ed25519.pub /root/.ssh/authorized_keys
+          docker exec hsm chmod 600 /root/.ssh/authorized_keys
+
+          docker cp hsm:/root/.ssh/id_ed25519 .
+          docker cp hsm:/root/.ssh/id_ed25519.pub .
+
+      - name: Set up HSM container
+        if: false
+        run: |
+          # https://github.com/vegardit/docker-softhsm2-pkcs11-proxy
+          docker run \
+              --name hsm \
+              --network example \
+              --network-alias hsm.example.com \
+              --detach \
+              vegardit/softhsm2-pkcs11-proxy
+
+          docker exec hsm ls -R /var/lib/softhsm
+
+          docker exec hsm ls -la /usr/local/lib | grep libpkcs11-proxy
+          docker cp hsm:/usr/local/lib/libpkcs11-proxy.so .
+
+          docker exec hsm ls /opt
+          docker cp hsm:/opt/test.tls.psk .
+
       - name: Set up primary DS container
         run: |
           tests/bin/ds-create.sh \
               --image=${{ env.DS_IMAGE }} \
               --hostname=primaryds.example.com \
+              --network=example \
+              --network-alias=primaryds.example.com \
               --password=Secret.123 \
               primaryds
 
-      - name: Connect primary DS container to network
-        run: docker network connect example primaryds --alias primaryds.example.com
-
       - name: Set up primary PKI container
         run: |
-          tests/bin/runner-init.sh primary
-        env:
-          HOSTNAME: primary.example.com
+          P11_KIT_SERVER_ADDRESS=$(cat server.address)
+          P11_KIT_SERVER_PID=$(cat server.pid)
 
-      - name: Connect primary PKI container to network
-        run: docker network connect example primary --alias primary.example.com
+          tests/bin/runner-init.sh \
+              --hostname=primary.example.com \
+              --network=example \
+              --network-alias=primary.example.com \
+              --env=PKCS11_PROXY_SOCKET=tls://hsm.example.com:2345 \
+              --env=PKCS11_PROXY_TLS_PSK_FILE=$SHARED/test.tls.psk \
+              --env=P11_KIT_SERVER_ADDRESS=$P11_KIT_SERVER_ADDRESS \
+              --env=P11_KIT_SERVER_PID=$P11_KIT_SERVER_PID \
+              --run-dir=$PWD/run \
+              primary
+
+      - name: Set up SSH client in primary PKI container
+        run: |
+          docker exec primary dnf install -y openssh-clients
+
+          docker exec primary mkdir -p /home/pkiuser/.ssh
+          docker exec primary chmod 700 /home/pkiuser/.ssh
+          docker exec primary chown pkiuser:pkiuser /home/pkiuser/.ssh
+
+          docker cp id_ed25519 primary:/home/pkiuser/.ssh
+          docker exec primary chmod 600 /home/pkiuser/.ssh/id_ed25519
+          docker exec primary chown pkiuser:pkiuser /home/pkiuser/.ssh/id_ed25519
+
+          docker cp id_ed25519.pub primary:/home/pkiuser/.ssh
+          docker exec primary chown pkiuser:pkiuser /home/pkiuser/.ssh/id_ed25519.pub
+
+          docker exec -u pkiuser primary ssh \
+              -o StrictHostKeyChecking=no \
+              root@hsm.example.com \
+              hostname
+
+      - name: Set up SSH tunnel in primary PKI container
+        if: always()
+        run: |
+          P11_KIT_SERVER_ADDRESS=$(cat server.address)
+          REMOTE_PATH=${P11_KIT_SERVER_ADDRESS#*=}
+          echo "REMOTE_PATH: $REMOTE_PATH"
+
+          docker exec primary dnf install -y p11-kit-server
+
+          USER_ID=$(docker exec -u pkiuser primary id -u)
+          echo "USER_ID: $USER_ID"
+
+          XDG_RUNTIME_DIR=/run/user/$USER_ID
+          docker exec primary ls -l /run/user
+          #docker exec primary mkdir -p /run/user/$USER_ID
+
+          echo "Enable login shell"
+          docker exec primary usermod -s /bin/bash pkiuser
+
+          echo "Enable access to systemd journal"
+          docker exec primary usermod -a -G systemd-journal pkiuser
+
+          echo "Enable systemd linger"
+          # https://blog.christophersmart.com/2021/02/20/rootless-podman-containers-under-system-accounts-managed-and-enabled-at-boot-with-systemd/
+          docker exec primary loginctl enable-linger pkiuser
+
+          echo "Enabling p11-kit-client.service"
+          docker exec primary sudo -i -u pkiuser \
+              systemctl --user enable p11-kit-client.service
+
+          docker exec \
+              -e XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR \
+              primary sudo -i -u pkiuser ls -l $XDG_RUNTIME_DIR
+
+          docker exec \
+              -u pkiuser \
+              -e XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR \
+              primary ls -l $XDG_RUNTIME_DIR
+
+          echo "Starting SSH tunnel"
+          docker exec \
+              -e XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR \
+              -d primary sudo -i -u pkiuser ssh \
+              -o StrictHostKeyChecking=no \
+              -R $XDG_RUNTIME_DIR/p11-kit/pkcs11:$REMOTE_PATH \
+              -tt \
+              root@hsm.example.com
+
+      - name: Set up HSM client with p11-kit in primary PKI container
+        if: always()
+        run: |
+          P11_KIT_SERVER_ADDRESS=$(cat server.address)
+          P11_KIT_SERVER_PID=$(cat server.pid)
+
+          docker exec \
+              -u pkiuser \
+              -e XDG_RUNTIME_DIR=/run/user/17 \
+              -e P11_KIT_SERVER_ADDRESS=$P11_KIT_SERVER_ADDRESS \
+              -e P11_KIT_SERVER_PID=$P11_KIT_SERVER_PID \
+              primary p11-kit list-modules
+
+          docker exec \
+              -u pkiuser \
+              -e XDG_RUNTIME_DIR=/run/user/17 \
+              -e P11_KIT_SERVER_ADDRESS=$P11_KIT_SERVER_ADDRESS \
+              -e P11_KIT_SERVER_PID=$P11_KIT_SERVER_PID \
+              primary p11-kit list-tokens \
+              --provider=/usr/lib64/pkcs11/p11-kit-client.so \
+              "pkcs11:token=HSM"
+
+          docker exec \
+              -u pkiuser \
+              -e XDG_RUNTIME_DIR=/run/user/17 \
+              -e P11_KIT_SERVER_ADDRESS=$P11_KIT_SERVER_ADDRESS \
+              -e P11_KIT_SERVER_PID=$P11_KIT_SERVER_PID \
+              primary p11-kit generate-keypair \
+              --provider=/usr/lib64/pkcs11/p11-kit-client.so \
+              --login \
+              --label=MyRSAKey \
+              --type=RSA \
+              --bits=2048 \
+              "pkcs11:token=HSM?pin-value=Secret.HSM"
+
+          docker exec \
+              -u pkiuser \
+              -e XDG_RUNTIME_DIR=/run/user/17 \
+              -e P11_KIT_SERVER_ADDRESS=$P11_KIT_SERVER_ADDRESS \
+              -e P11_KIT_SERVER_PID=$P11_KIT_SERVER_PID \
+              primary p11-kit list-objects \
+              --provider=/usr/lib64/pkcs11/p11-kit-client.so \
+              --login \
+              "pkcs11:token=HSM?pin-value=Secret.HSM"
+
+      - name: Set up HSM client with gnutls-utils in primary PKI container
+        if: always()
+        run: |
+          docker exec primary dnf install -y gnutls-utils
+
+          docker exec \
+              -u pkiuser \
+              -e XDG_RUNTIME_DIR=/run/user/17 \
+              -e P11_KIT_SERVER_ADDRESS=$P11_KIT_SERVER_ADDRESS \
+              -e P11_KIT_SERVER_PID=$P11_KIT_SERVER_PID \
+              primary p11tool \
+              --provider /usr/lib64/pkcs11/p11-kit-client.so \
+              --list-tokens
+
+          docker exec \
+              -u pkiuser \
+              -e XDG_RUNTIME_DIR=/run/user/17 \
+              -e P11_KIT_SERVER_ADDRESS=$P11_KIT_SERVER_ADDRESS \
+              -e P11_KIT_SERVER_PID=$P11_KIT_SERVER_PID \
+              primary p11tool \
+              --provider /usr/lib64/pkcs11/p11-kit-client.so \
+              --generate-privkey=RSA \
+              --login \
+              --bits=1024 \
+              "pkcs11:token=HSM?pin-value=Secret.HSM"
+
+          docker exec \
+              -u pkiuser \
+              -e XDG_RUNTIME_DIR=/run/user/17 \
+              -e P11_KIT_SERVER_ADDRESS=$P11_KIT_SERVER_ADDRESS \
+              -e P11_KIT_SERVER_PID=$P11_KIT_SERVER_PID \
+              primary p11tool \
+              --provider /usr/lib64/pkcs11/p11-kit-client.so \
+              --login \
+              --list-all \
+              "pkcs11:token=HSM?pin-value=Secret.HSM"
+
+      - name: Check HSM from primary PKI container
+        if: false
+        run: |
+          docker cp libpkcs11-proxy.so primary:/usr/local/lib
+
+          docker exec primary pkcs11-tool \
+              --module /usr/local/lib/libpkcs11-proxy.so \
+              --list-slots
 
       - name: Install dependencies in primary PKI container
+        if: false
         run: |
           docker exec primary dnf install -y softhsm
 
       - name: Create SoftHSM token in primary PKI container
+        if: false
         run: |
           # allow PKI user to access SoftHSM files
           docker exec primary usermod pkiuser -a -G ods
@@ -71,13 +345,126 @@ jobs:
           docker exec primary runuser -u pkiuser -- \
               softhsm2-util --show-slots
 
+      - name: Check HSM with p11-kit
+        if: false
+        run: |
+          docker exec primary p11-kit list-tokens "pkcs11:token=HSM"
+          docker exec primary p11-kit list-objects "pkcs11:token=HSM"
+
+          docker exec primary systemd-path user-runtime
+
+      - name: Create PKI server in primary PKI container
+        if: always()
+        run: |
+          P11_KIT_SERVER_ADDRESS=$(cat server.address)
+          P11_KIT_SERVER_PID=$(cat server.pid)
+
+          docker exec primary pki-server create -v
+          docker exec primary pki-server nss-create --password Secret.123 -v
+
+          docker exec primary pki-server password-set \
+              --password Secret.123 \
+              internaldb
+
+          docker exec primary pki-server password-set \
+              --password Secret.HSM \
+              hardware-HSM
+
+          docker exec primary ls -la /etc/pki/pki-tomcat
+          docker exec -i primary tee -a /etc/pki/pki-tomcat/tomcat.conf << EOF
+          XDG_RUNTIME_DIR="/run/user/17"
+          P11_KIT_SERVER_ADDRESS="$P11_KIT_SERVER_ADDRESS"
+          P11_KIT_SERVER_PID="$P11_KIT_SERVER_PID"
+          EOF
+
+          docker exec primary ls -la /etc/sysconfig
+          docker exec -i primary tee -a /etc/sysconfig/pki-tomcat << EOF
+          XDG_RUNTIME_DIR="/run/user/17"
+          P11_KIT_SERVER_ADDRESS="$P11_KIT_SERVER_ADDRESS"
+          P11_KIT_SERVER_PID="$P11_KIT_SERVER_PID"
+          EOF
+
+      - name: Set up HSM client with NSS in primary PKI container
+        if: always()
+        run: |
+          docker exec \
+              -u pkiuser \
+              -e XDG_RUNTIME_DIR=/run/user/17 \
+              -e P11_KIT_SERVER_ADDRESS=$P11_KIT_SERVER_ADDRESS \
+              -e P11_KIT_SERVER_PID=$P11_KIT_SERVER_PID \
+              primary modutil \
+              -dbdir /etc/pki/pki-tomcat/alias \
+              -add p11-kit-client \
+              -libfile /usr/lib64/pkcs11/p11-kit-client.so \
+              -force
+
+          docker exec \
+              -u pkiuser \
+              -e XDG_RUNTIME_DIR=/run/user/17 \
+              -e P11_KIT_SERVER_ADDRESS=$P11_KIT_SERVER_ADDRESS \
+              -e P11_KIT_SERVER_PID=$P11_KIT_SERVER_PID \
+              primary modutil \
+              -dbdir /etc/pki/pki-tomcat/alias \
+              -list
+
+          docker exec \
+              -u pkiuser \
+              -e XDG_RUNTIME_DIR=/run/user/17 \
+              -e P11_KIT_SERVER_ADDRESS=$P11_KIT_SERVER_ADDRESS \
+              -e P11_KIT_SERVER_PID=$P11_KIT_SERVER_PID \
+              primary pki \
+              -d /etc/pki/pki-tomcat/alias \
+              -f /etc/pki/pki-tomcat/password.conf \
+              --token HSM \
+              -v \
+              nss-cert-find
+
+          docker exec \
+              -u pkiuser \
+              -e XDG_RUNTIME_DIR=/run/user/17 \
+              -e P11_KIT_SERVER_ADDRESS=$P11_KIT_SERVER_ADDRESS \
+              -e P11_KIT_SERVER_PID=$P11_KIT_SERVER_PID \
+              primary pki \
+              -d /etc/pki/pki-tomcat/alias \
+              -f /etc/pki/pki-tomcat/password.conf \
+              --token HSM \
+              -v \
+              nss-key-find
+
+          echo "Secret.HSM" | docker exec -i primary tee password.txt
+
+          docker exec \
+              -u pkiuser \
+              -e XDG_RUNTIME_DIR=/run/user/17 \
+              -e P11_KIT_SERVER_ADDRESS=$P11_KIT_SERVER_ADDRESS \
+              -e P11_KIT_SERVER_PID=$P11_KIT_SERVER_PID \
+              primary certutil \
+              -d /etc/pki/pki-tomcat/alias \
+              -f password.txt \
+              -h HSM \
+              -L
+
+          docker exec \
+              -u pkiuser \
+              -e XDG_RUNTIME_DIR=/run/user/17 \
+              -e P11_KIT_SERVER_ADDRESS=$P11_KIT_SERVER_ADDRESS \
+              -e P11_KIT_SERVER_PID=$P11_KIT_SERVER_PID \
+              primary certutil \
+              -d /etc/pki/pki-tomcat/alias \
+              -f password.txt \
+              -h HSM \
+              -K
+
       - name: Install CA in primary PKI container
+        if: always()
         run: |
           docker exec primary pkispawn \
               -f /usr/share/pki/server/examples/installation/ca.cfg \
               -s CA \
               -D pki_ds_url=ldap://primaryds.example.com:3389 \
               -D pki_hsm_enable=True \
+              -D pki_hsm_modulename=p11-kit-client \
+              -D pki_hsm_libfile=/usr/lib64/pkcs11/p11-kit-client.so \
               -D pki_token_name=HSM \
               -D pki_token_password=Secret.HSM \
               -D pki_ca_signing_token=HSM \
@@ -87,7 +474,14 @@ jobs:
               -D pki_sslserver_token=internal \
               -v
 
+      - name: Check HSM with p11-kit
+        if: false
+        run: |
+          docker exec primary p11-kit list-tokens "pkcs11:token=HSM"
+          docker exec primary p11-kit list-objects "pkcs11:token=HSM"
+
       - name: Check system certs in internal token
+        if: always()
         run: |
           # there should be 5 certs
           echo "5" > expected
@@ -98,6 +492,7 @@ jobs:
           diff expected actual
 
       - name: Check system certs in HSM
+        if: always()
         run: |
           # there should be 4 certs
           echo "4" > expected
@@ -120,20 +515,41 @@ jobs:
           tests/bin/ds-create.sh \
               --image=${{ env.DS_IMAGE }} \
               --hostname=secondaryds.example.com \
+              --network=example \
+              --network-alias=secondaryds.example.com \
               --password=Secret.123 \
               secondaryds
 
-      - name: Connect secondary DS container to network
-        run: docker network connect example secondaryds --alias secondaryds.example.com
-
       - name: Set up secondary PKI container
         run: |
-          tests/bin/runner-init.sh secondary
-        env:
-          HOSTNAME: secondary.example.com
+          tests/bin/runner-init.sh \
+              --hostname=secondary.example.com \
+              --network=example \
+              --network-alias=secondary.example.com \
+              --env=PKCS11_PROXY_SOCKET=tls://hsm.example.com:2345 \
+              secondary
 
-      - name: Connect secondary PKI container to network
-        run: docker network connect example secondary --alias secondary.example.com
+      - name: Set up SSH in secondary PKI container
+        run: |
+          docker exec secondary dnf install -y openssh-clients
+
+          docker cp id_ed25519 secondary:/root/.ssh
+          docker cp id_ed25519.pub secondary:/root/.ssh
+          docker exec secondary chmod 600 /root/.ssh/id_ed25519
+
+          docker exec secondary ssh \
+              -o StrictHostKeyChecking=no \
+              root@hsm.example.com \
+              echo "Hello"
+
+      - name: Check HSM from secondary PKI container
+        if: false
+        run: |
+          docker cp libpkcs11-proxy.so secondary:/usr/local/lib
+
+          docker exec secondary pkcs11-tool \
+              --module /usr/local/lib/libpkcs11-proxy.so \
+              --list-slots
 
       - name: Install dependencies in secondary PKI container
         run: |
@@ -274,20 +690,41 @@ jobs:
           tests/bin/ds-create.sh \
               --image=${{ env.DS_IMAGE }} \
               --hostname=tertiaryds.example.com \
+              --network=example \
+              --network-alias=tertiaryds.example.com \
               --password=Secret.123 \
               tertiaryds
 
-      - name: Connect tertiary DS container to network
-        run: docker network connect example tertiaryds --alias tertiaryds.example.com
-
       - name: Set up tertiary PKI container
         run: |
-          tests/bin/runner-init.sh tertiary
-        env:
-          HOSTNAME: tertiary.example.com
+          tests/bin/runner-init.sh \
+              --hostname=tertiary.example.com \
+              --network=example \
+              --network-alias=tertiary.example.com \
+              --env=PKCS11_PROXY_SOCKET=tls://hsm.example.com:2345 \
+              tertiary
 
-      - name: Connect tertiary PKI container to network
-        run: docker network connect example tertiary --alias tertiary.example.com
+      - name: Set up SSH in tertiary PKI container
+        run: |
+          docker exec tertiary dnf install -y openssh-clients
+
+          docker cp id_ed25519 tertiary:/root/.ssh
+          docker cp id_ed25519.pub tertiary:/root/.ssh
+          docker exec tertiary chmod 600 /root/.ssh/id_ed25519
+
+          docker exec tertiary ssh \
+              -o StrictHostKeyChecking=no \
+              root@hsm.example.com \
+              echo "Hello"
+
+      - name: Check HSM from tertiary PKI container
+        if: false
+        run: |
+          docker cp libpkcs11-proxy.so tertiary:/usr/local/lib
+
+          docker exec tertiary pkcs11-tool \
+              --module /usr/local/lib/libpkcs11-proxy.so \
+              --list-slots
 
       - name: Install dependencies in tertiary PKI container
         run: |
@@ -438,20 +875,7 @@ jobs:
       - name: Remove CA from primary PKI container
         run: docker exec primary pkidestroy -s CA -v
 
-      - name: Gather artifacts
+      - name: Check SSH systemd journal
         if: always()
         run: |
-          tests/bin/ds-artifacts-save.sh primaryds
-          tests/bin/pki-artifacts-save.sh primary
-          tests/bin/ds-artifacts-save.sh secondaryds
-          tests/bin/pki-artifacts-save.sh secondary
-          tests/bin/ds-artifacts-save.sh tertiaryds
-          tests/bin/pki-artifacts-save.sh tertiary
-        continue-on-error: true
-
-      - name: Upload artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ca-clone-hsm
-          path: /tmp/artifacts
+          docker exec hsm journalctl -x --no-pager -u sshd.service

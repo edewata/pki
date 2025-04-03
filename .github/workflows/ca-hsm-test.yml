@@ -28,25 +28,53 @@ jobs:
       - name: Create network
         run: docker network create example
 
+      - name: Set up HSM container
+        if: false
+        run: |
+          # https://github.com/vegardit/docker-softhsm2-pkcs11-proxy
+          docker run \
+              --name hsm \
+              --network example \
+              --network-alias hsm.example.com \
+              --detach \
+              vegardit/softhsm2-pkcs11-proxy
+
+          docker exec hsm ls -R /var/lib/softhsm
+
+          docker exec hsm ls -la /usr/local/lib | grep libpkcs11-proxy
+          docker cp hsm:/usr/local/lib/libpkcs11-proxy.so .
+
+          docker exec hsm ls /opt
+          docker cp hsm:/opt/test.tls.psk .
+
       - name: Set up DS container
         run: |
           tests/bin/ds-create.sh \
               --image=${{ env.DS_IMAGE }} \
               --hostname=ds.example.com \
+              --network=example \
+              --network-alias=ds.example.com \
               --password=Secret.123 \
               ds
 
-      - name: Connect DS container to network
-        run: docker network connect example ds --alias ds.example.com
-
       - name: Set up PKI container
         run: |
-          tests/bin/runner-init.sh pki
-        env:
-          HOSTNAME: pki.example.com
+          tests/bin/runner-init.sh \
+              --hostname=pki.example.com \
+              --network=example \
+              --network-alias=pki.example.com \
+              --env=PKCS11_PROXY_SOCKET=tls://hsm.example.com:2345 \
+              --env=PKCS11_PROXY_TLS_PSK_FILE=$SHARED/test.tls.psk \
+              pki
 
-      - name: Connect PKI container to network
-        run: docker network connect example pki --alias pki.example.com
+      - name: Check HSM from PKI container
+        if: false
+        run: |
+          docker cp libpkcs11-proxy.so pki:/usr/local/lib
+
+          docker exec pki pkcs11-tool \
+              --module /usr/local/lib/libpkcs11-proxy.so \
+              --list-slots
 
       - name: Install dependencies
         run: |
@@ -68,6 +96,18 @@ jobs:
 
           docker exec pki ls -laR /var/lib/softhsm/tokens
 
+      - name: Check HSM with p11-kit
+        run: |
+          docker exec pki p11-kit list-tokens "pkcs11:token=HSM" | tee output
+          HSM_URI=$(sed -n 's/^\s*uri:\s*\(.*\)$/\1/p' output)
+          echo "HSM_URI: $HSM_URI"
+
+          docker exec pki p11-kit list-objects --login "pkcs11:token=HSM?pin-value=Secret.HSM"
+
+          docker exec pki systemd-path
+          #HSM_PATH=$(docker exec pki systemd-path user-runtime)
+          #echo "HSM_PATH: $HSM_PATH"
+
       - name: Install CA with HSM
         run: |
           docker exec pki pkispawn \
@@ -84,6 +124,12 @@ jobs:
               -D pki_subsystem_token=HSM \
               -D pki_sslserver_token=internal \
               -v
+
+      - name: Check HSM after installation
+        run: |
+          docker exec pki p11-kit list-objects \
+              --login \
+              "pkcs11:token=HSM?pin-value=Secret.HSM"
 
       - name: Check system certs in internal token
         run: |
@@ -249,17 +295,3 @@ jobs:
         if: always()
         run: |
           docker exec pki find /var/lib/pki/pki-tomcat/logs/ca -name "debug.*" -exec cat {} \;
-
-      - name: Gather artifacts
-        if: always()
-        run: |
-          tests/bin/ds-artifacts-save.sh ds
-          tests/bin/pki-artifacts-save.sh pki
-        continue-on-error: true
-
-      - name: Upload artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ca-hsm
-          path: /tmp/artifacts

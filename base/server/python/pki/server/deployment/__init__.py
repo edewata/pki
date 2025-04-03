@@ -588,6 +588,7 @@ class PKIDeployer:
                 self.mdict['pki_hsm_modulename'] and \
                 self.mdict['pki_hsm_libfile'] and \
                 not nssdb.module_exists(self.mdict['pki_hsm_modulename']):
+
             nssdb.add_module(
                 self.mdict['pki_hsm_modulename'],
                 self.mdict['pki_hsm_libfile'])

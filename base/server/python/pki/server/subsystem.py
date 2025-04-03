@@ -2206,6 +2206,10 @@ class PKISubsystem(object):
             as_current_user=False,
             capture_output=False):
 
+        logger.info('Environment variables:')
+        for name in self.instance.config:
+            logger.info('- %s: %s', name, self.instance.config[name])
+
         java_home = self.instance.config['JAVA_HOME']
         java_opts = self.instance.config['JAVA_OPTS']
 
@@ -2226,7 +2230,11 @@ class PKISubsystem(object):
             # switch to systemd user if different from current user
             username = pwd.getpwuid(os.getuid()).pw_name
             if username != self.instance.user:
-                cmd.extend(['/usr/sbin/runuser', '-u', self.instance.user, '--'])
+                cmd.extend([
+                    '/usr/sbin/runuser',
+                    '-u', self.instance.user,
+                    '--preserve-environment',
+                    '--'])
 
         cmd.extend([java_home + '/bin/java'])
 
@@ -2250,7 +2258,7 @@ class PKISubsystem(object):
 
         cmd.extend(args)
 
-        logger.debug('Command: %s', ' '.join(cmd))
+        logger.info('Command: %s', ' '.join(cmd))
 
         # https://stackoverflow.com/questions/53209127/subprocess-unexpected-keyword-argument-capture-output/53209196
         if capture_output:
@@ -2263,7 +2271,8 @@ class PKISubsystem(object):
                 input=input,
                 stdout=stdout,
                 stderr=stderr,
-                check=True)
+                check=True,
+                env=self.instance.config)
 
         except KeyboardInterrupt:
             logger.debug('Server stopped')

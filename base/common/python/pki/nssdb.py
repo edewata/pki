@@ -560,7 +560,7 @@ class NSSDatabase(object):
             if not line:
                 continue
 
-            logger.info('Output: %s', line)
+            logger.debug('Output: %s', line)
 
             if pattern.search(line):
                 return True
@@ -579,8 +579,6 @@ class NSSDatabase(object):
             '-libfile', library,
             '-force'
         ]
-
-        logger.debug('Command: %s', ' '.join(cmd))
 
         # modutil will generate the following question:
 
