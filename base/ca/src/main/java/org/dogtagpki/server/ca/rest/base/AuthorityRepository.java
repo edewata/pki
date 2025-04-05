@@ -120,10 +120,45 @@ public class AuthorityRepository {
         return cons;
     }
 
-    public Collection<AuthorityRecord> findAuthorityRecords() throws Exception {
+    public Collection<AuthorityRecord> findAuthorityRecords(
+            AuthorityID id,
+            AuthorityID parentID,
+            X500Name dn,
+            X500Name issuerDN) throws Exception {
 
         String baseDN = engine.getAuthorityBaseDN();
         logger.info("AuthorityRepository: Searching " + baseDN);
+
+        List<String> parts = new ArrayList<>();
+        if (id != null) {
+            parts.add("(authorityID=" + id + ")");
+        }
+        if (parentID != null) {
+            parts.add("(authorityParentID=" + parentID + ")");
+        }
+        if (dn != null) {
+            parts.add("(authorityDN=" + dn.toLdapDNString() + ")");
+        }
+        if (issuerDN != null) {
+            parts.add("(authorityParentDN=" + issuerDN.toLdapDNString() + ")");
+        }
+
+        String filter;
+        if (parts.isEmpty()) {
+            filter = "(objectClass=*)";
+
+        } else {
+            StringBuilder sb = new StringBuilder();
+            for (String part : parts) {
+                sb.append(part);
+            }
+            filter = sb.toString();
+
+            if (parts.size() > 1) {
+                filter = "(&" + filter + ")";
+            }
+        }
+        logger.info("AuthorityRepository: - filter: " + filter);
 
         List<AuthorityRecord> records = new ArrayList<>();
 
@@ -135,7 +170,7 @@ public class AuthorityRepository {
             LDAPSearchResults sr = conn.search(
                     baseDN,
                     LDAPConnection.SCOPE_ONE,
-                    "(objectClass=*)",
+                    filter,
                     attrs,
                     false);  // attrs only
 
@@ -394,28 +429,22 @@ public class AuthorityRepository {
     }
 
     public List<AuthorityData> findCAs(
-            final String id,
-            final String parentID,
-            final String dn,
-            final String issuerDN
+            String id,
+            String parentID,
+            String dn,
+            String issuerDN
             ) throws Exception {
 
-        final X500Name x500dn = dn == null ? null : new X500Name(dn);
-        final X500Name x500issuerDN = issuerDN == null ? null : new X500Name(issuerDN);
         logger.info("AuthorityRepository: Getting authorities:");
 
-        return findAuthorityRecords().stream().
+        AuthorityID authorityID = id == null ? null : new AuthorityID(id);
+        AuthorityID authorityParentID = id == null ? null : new AuthorityID(parentID);
+        X500Name authorityDN = dn == null ? null : new X500Name(dn);
+        X500Name authorityParentDN = issuerDN == null ? null : new X500Name(issuerDN);
+
+        return findAuthorityRecords(authorityID, authorityParentID, authorityDN, authorityParentDN).stream().
                 map(this::readAuthorityData).
                 filter(auth -> {
-                    if (id != null && !id.equalsIgnoreCase(auth.getID())) return false;
-                    if (parentID != null && !parentID.equalsIgnoreCase(auth.getParentID())) return false;
-                    try {
-                        if (x500dn != null && !x500dn.equals(new X500Name(auth.getDN()))) return false;
-                        if (x500issuerDN != null && !x500issuerDN.equals(new X500Name(auth.getIssuerDN()))) return false;
-                    } catch (IOException e) {
-                        logger.error("AuthorityRepository: Unable to convert DNs for authority {}", auth.getID());
-                        return false;
-                    }
                     logger.info("AuthorityRepository: - ID: {}", auth.getID());
                     logger.info("AuthorityRepository:   DN: {}", auth.getDN());
                     if (auth.getParentID() != null) {
@@ -693,7 +722,7 @@ public class AuthorityRepository {
             auditParams.put("exception", e.toString());
             audit(ILogger.FAILURE, OpDef.OP_DELETE, authId, auditParams);
             throw new ConflictingOperationException(e.toString());
-        } catch (EBaseException e) {
+        } catch (Exception e) {
             String message = "Error modifying authority: " + e.getMessage();
             logger.error(message, e);
             auditParams.put("exception", e.toString());
