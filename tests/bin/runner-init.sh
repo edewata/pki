@@ -23,6 +23,8 @@ usage() {
     echo "    --hostname=<hostname>    Container hostname"
     echo "    --network=<network>      Container network"
     echo "    --network-alias=<alias>  Container network alias"
+    echo "    --env=<variable>         Environment variable"
+    echo "    --run-dir=<path>         Run directory"
     echo " -v,--verbose                Run in verbose mode."
     echo "    --debug                  Run in debug mode."
     echo "    --help                   Show help message."
@@ -49,6 +51,12 @@ while getopts v-: arg ; do
         network-alias=?*)
             ALIASES+=("$LONG_OPTARG")
             ;;
+        env=?*)
+            ENVS+=("$LONG_OPTARG")
+            ;;
+        run-dir=?*)
+            RUN_DIR+=("$LONG_OPTARG")
+            ;;
         verbose)
             VERBOSE=true
             ;;
@@ -63,7 +71,7 @@ while getopts v-: arg ; do
         '')
             break # "--" terminates argument processing
             ;;
-        suffix* | base-dn*)
+        image* | hostname* | network* | network-alias* | env*)
             echo "ERROR: Missing argument for --$OPTARG option" >&2
             exit 1
             ;;
@@ -103,15 +111,27 @@ if [ "$DEBUG" = true ] ; then
     echo "ALIASES: ${$ALIASES[@]}"
 fi
 
+mkdir -p run
+
 OPTIONS=()
 OPTIONS+=(--name $NAME)
 OPTIONS+=(--hostname $HOSTNAME)
 OPTIONS+=(--tmpfs /tmp)
-OPTIONS+=(--tmpfs /run)
+
+if [ "$RUN_DIR" = "" ]
+then
+    OPTIONS+=(--tmpfs /run)
+fi
+
 OPTIONS+=(-v $GITHUB_WORKSPACE:$SHARED)
 
 # required to run Podman in container
 OPTIONS+=(-v /var/lib/containers:/var/lib/containers)
+
+if [ "$RUN_DIR" != "" ]
+then
+    OPTIONS+=(-v $RUN_DIR:/run)
+fi
 
 OPTIONS+=(-e BUILDUSER_UID=$(id -u))
 OPTIONS+=(-e BUILDUSER_GID=$(id -g))
@@ -120,11 +140,19 @@ OPTIONS+=(-e BUILDUSER=builduser)
 OPTIONS+=(-e GITHUB_ACTIONS=$GITHUB_ACTIONS)
 OPTIONS+=(-e GITHUB_RUN_NUMBER=$GITHUB_RUN_NUMBER)
 OPTIONS+=(-e container=docker)
+
+for ENV in "${ENVS[@]}"
+do
+    OPTIONS+=(--env $ENV)
+done
+
+OPTIONS+=(--expose 22)
 OPTIONS+=(--expose 389)
 OPTIONS+=(--expose 8080)
 OPTIONS+=(--expose 8443)
 OPTIONS+=(--detach)
 OPTIONS+=(--privileged)
+OPTIONS+=(--cap-add AUDIT_WRITE)
 OPTIONS+=(-i)
 
 if [ "$NETWORK" != "" ]

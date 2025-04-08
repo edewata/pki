@@ -85,6 +85,8 @@ COPY --from=pki-builder /root/pki/build/RPMS /root/RPMS/
 ################################################################################
 FROM pki-deps AS pki-runner
 
+# EXPOSE 22
+
 # Import JSS packages
 COPY --from=quay.io/dogtagpki/jss-dist:latest /root/RPMS /tmp/RPMS/
 

@@ -560,7 +560,7 @@ class NSSDatabase(object):
             if not line:
                 continue
 
-            logger.info('Output: %s', line)
+            logger.debug('Output: %s', line)
 
             if pattern.search(line):
                 return True
@@ -579,8 +579,6 @@ class NSSDatabase(object):
             '-libfile', library,
             '-force'
         ]
-
-        logger.debug('Command: %s', ' '.join(cmd))
 
         # modutil will generate the following question:
 
@@ -2006,8 +2004,12 @@ class NSSDatabase(object):
         finally:
             shutil.rmtree(tmpdir)
 
-    def get_cert(self, nickname, token=None, output_format='pem',
-                 output_text=False):
+    def get_cert(
+            self,
+            nickname,
+            token=None,
+            output_format='pem',
+            output_text=False):
 
         logger.debug('NSSDatabase.get_cert(%s) begins', nickname)
 
@@ -2048,7 +2050,7 @@ class NSSDatabase(object):
             if output_format_option:
                 cmd.extend([output_format_option])
 
-            result = self.run(cmd, capture_output=True)
+            result = self.run(cmd, capture_output=True, runas=True)
 
             cert_data = result.stdout
             stderr = result.stderr.decode('utf-8')
