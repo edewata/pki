@@ -1408,7 +1408,6 @@ public class CAEngine extends CMSEngine {
             logger.error("Unable to generate signing certificate: " + e.getMessage(), e);
 
             // something went wrong; delete just-added entry
-            authorityRepository.deleteAuthorityRecord(authorityID);
             deleteAuthorityEntry(authorityID);
 
             throw e;
@@ -1536,12 +1535,11 @@ public class CAEngine extends CMSEngine {
 
     public synchronized void deleteAuthorityEntry(AuthorityID aid) throws EBaseException {
 
-        String nsUniqueId = authorityMonitor.nsUniqueIds.get(aid);
-        if (nsUniqueId != null) {
-            authorityMonitor.deletedNsUniqueIds.add(nsUniqueId);
+        if (authorityMonitor != null) {
+            authorityMonitor.removeCA(aid);
         }
 
-        authorityMonitor.removeCA(aid);
+        authorityRepository.deleteAuthorityRecord(aid);
     }
 
     /**
@@ -2010,7 +2008,6 @@ public class CAEngine extends CMSEngine {
 
         synchronized (ca) {
             revokeAuthority(ca, httpReq);
-            authorityRepository.deleteAuthorityRecord(ca.getAuthorityID());
             deleteAuthorityEntry(ca.getAuthorityID());
             deleteAuthorityNSSDB(ca);
         }

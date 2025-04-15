@@ -86,7 +86,7 @@ public class AuthorityMonitor implements Runnable {
         if (!foundHostCA) {
             logger.debug("AuthorityMonitor: No entry for host authority");
             logger.debug("AuthorityMonitor: Adding entry for host authority");
-            addCA(engine.addHostAuthorityEntry(), engine.getCA());
+            addCA(engine.addHostAuthorityEntry(), engine.getCA(), null, null);
         }
     }
 
@@ -342,7 +342,7 @@ public class AuthorityMonitor implements Runnable {
             logger.info("AuthorityMonitor: - description: " + description);
             hostCA.setAuthorityDescription(description);
 
-            addCA(authorityID, hostCA);
+            addCA(authorityID, hostCA, null, null);
 
             return;
         }
@@ -378,19 +378,25 @@ public class AuthorityMonitor implements Runnable {
 
         try {
             CertificateAuthority ca = engine.createCA(record);
-
-            addCA(authorityID, ca);
-            entryUSNs.put(authorityID, newEntryUSN);
-            nsUniqueIds.put(authorityID, nsUniqueID);
+            addCA(authorityID, ca, newEntryUSN, nsUniqueID);
 
         } catch (Exception e) {
             logger.warn("AuthorityMonitor: Error initializing lightweight CA: " + e.getMessage(), e);
         }
     }
 
-    public void addCA(AuthorityID aid, CertificateAuthority ca) {
+    public void addCA(AuthorityID aid, CertificateAuthority ca, BigInteger entryUSN, String nsUniqueID) {
+
         CAEngine engine = CAEngine.getInstance();
         engine.addCA(aid, ca);
+
+        if (entryUSN != null) {
+            entryUSNs.put(aid, entryUSN);
+        }
+
+        if (nsUniqueID != null) {
+            nsUniqueIds.put(aid, nsUniqueID);
+        }
     }
 
     public void removeCA(AuthorityID aid) {
@@ -399,7 +405,11 @@ public class AuthorityMonitor implements Runnable {
         engine.removeCA(aid);
 
         entryUSNs.remove(aid);
-        nsUniqueIds.remove(aid);
+
+        String nsUniqueId = nsUniqueIds.remove(aid);
+        if (nsUniqueId != null) {
+            deletedNsUniqueIds.add(nsUniqueId);
+        }
     }
 
     /**
