@@ -62,7 +62,7 @@ public final class CASigningUnit extends SigningUnit {
 
     public void init(SigningUnitConfig config, String nickname) throws EBaseException {
 
-        logger.debug("CASigningUnit.init(" + config.getName() + ", " + nickname + ")");
+        logger.info("CASigningUnit.init(" + config.getName() + ", " + nickname + ")");
 
         mConfig = config;
 
@@ -104,9 +104,10 @@ public final class CASigningUnit extends SigningUnit {
                 logger.info("CASigningUnit: Loading cert " + mNickname);
                 mCert = mManager.findCertByNickname(mNickname);
                 CertId certId = new CertId(mCert.getSerialNumber());
-                logger.debug("CASigningUnit: - Serial number: " + certId.toHexString());
+                logger.info("CASigningUnit: - serial number: " + certId.toHexString());
 
             } catch (ObjectNotFoundException e) {
+                logger.error("Certificate not found: " + mNickname + ": " + e.getMessage());
                 throw new CAMissingCertException("Certificate not found: " + mNickname + ": " + e.getMessage(), e);
             }
 
@@ -122,14 +123,14 @@ public final class CASigningUnit extends SigningUnit {
             }
 
             String privateKeyID = "0x" + Utils.HexEncode(mPrivk.getUniqueID());
-            logger.debug("CASigningUnit: - key ID: " + privateKeyID);
+            logger.info("CASigningUnit: - key ID: " + privateKeyID);
 
             mPubk = mCert.getPublicKey();
 
             // get def alg and check if def sign alg is valid for token.
             mDefSigningAlgname = config.getDefaultSigningAlgorithm();
             mDefSigningAlgorithm = checkSigningAlgorithmFromName(mDefSigningAlgname);
-            logger.debug("CASigningUnit: signing algorithm: " + mDefSigningAlgorithm);
+            logger.info("CASigningUnit: signing algorithm: " + mDefSigningAlgorithm);
 
             mInited = true;
 
