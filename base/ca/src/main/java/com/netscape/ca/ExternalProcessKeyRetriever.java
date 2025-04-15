@@ -63,7 +63,7 @@ public class ExternalProcessKeyRetriever implements KeyRetriever {
         for (String hostPort : hostPorts) {
             String host = hostPort.split(":")[0];
             command.push(host);
-            logger.debug("ExternalProcessKeyRetriever: Command: " + command);
+            logger.info("ExternalProcessKeyRetriever: Command: " + command);
 
             ProcessBuilder pb = new ProcessBuilder(command)
                 .redirectError(ProcessBuilder.Redirect.INHERIT);
@@ -73,14 +73,14 @@ public class ExternalProcessKeyRetriever implements KeyRetriever {
                 int exitValue = p.waitFor();
 
                 if (exitValue != 0) {
-                    logger.warn("Unable to retrieve " + nickname + " key from " + host + ": RC=" + exitValue);
+                    logger.warn("Unable to retrieve " + nickname + " key from " + hostPort + ": RC=" + exitValue);
                     continue;
                 }
 
                 return parseResult(p.getInputStream());
 
             } catch (Throwable e) {
-                logger.warn("Unable to retrieve " + nickname + " key from " + host + ": " + e.getMessage(), e);
+                logger.warn("Unable to retrieve " + nickname + " key from " + hostPort + ": " + e.getMessage(), e);
 
             } finally {
                 command.pop();

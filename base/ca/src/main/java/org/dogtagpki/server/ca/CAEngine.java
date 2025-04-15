@@ -1212,6 +1212,7 @@ public class CAEngine extends CMSEngine {
         }
 
         // find existing CA object
+        logger.info("CAEngine: Finding CA " + aid);
         CertificateAuthority ca = authorities.get(aid);
         if (ca != null) {
             // return existing CA object
@@ -1221,6 +1222,7 @@ public class CAEngine extends CMSEngine {
         // find authority record
         AuthorityRecord record;
         try {
+            logger.info("CAEngine: Finding authority record " + aid);
             record = authorityRepository.getAuthorityRecord(aid);
         } catch (Exception e) {
             logger.info("Unable to find authority record: " + e.getMessage(), e);
@@ -1234,6 +1236,7 @@ public class CAEngine extends CMSEngine {
 
         // create CA object from authority record
         try {
+            logger.info("CAEngine: Creating CA " + aid);
             ca = createCA(record);
         } catch (Exception e) {
             logger.info("Unable to create CA: " + e.getMessage(), e);
@@ -1398,7 +1401,8 @@ public class CAEngine extends CMSEngine {
 
             logger.info("CAEngine: Importing " + nickname + " cert into " + token.getName());
             CryptoStore store = token.getCryptoStore();
-            store.importCert(cert.getEncoded(), nickname);
+            org.mozilla.jss.crypto.X509Certificate c = store.importCert(cert.getEncoded(), nickname);
+            logger.info("CAEngine: Cert imported: " + c.getTrustFlags());
 
         } catch (Exception e) {
             logger.error("Unable to generate signing certificate: " + e.getMessage(), e);
@@ -1451,22 +1455,22 @@ public class CAEngine extends CMSEngine {
             // Only the host authority should ever see a
             // null authorityID, e.g. during two-step
             // installation of externally-signed CA.
-            logger.info("CertificateAuthority: Do not start KeyRetriever for host CA");
+            logger.info("CAEngine: Do not start KeyRetriever for host CA");
             return;
         }
 
         if (keyRetrievers.containsKey(authorityID)) {
-            logger.info("CertificateAuthority: KeyRetriever already running for authority " + authorityID);
+            logger.info("CAEngine: KeyRetriever already running for authority " + authorityID);
             return;
         }
 
-        logger.info("CertificateAuthority: Starting KeyRetriever for authority " + authorityID);
+        logger.info("CAEngine: Starting KeyRetriever for authority " + authorityID);
 
         CAEngineConfig engineConfig = getConfig();
 
         String className = engineConfig.getString("features.authority.keyRetrieverClass", null);
         if (className == null) {
-            logger.info("CertificateAuthority: Key retriever not configured");
+            logger.info("CAEngine: Key retriever not configured");
             return;
         }
 

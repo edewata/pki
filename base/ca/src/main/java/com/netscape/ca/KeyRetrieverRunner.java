@@ -67,7 +67,7 @@ public class KeyRetrieverRunner implements Runnable {
             long d = 10000;  // initial delay of 10 seconds
 
             while (!_run()) {
-                logger.debug("Retrying in " + d / 1000 + " seconds");
+                logger.info("KeyRetrieverRunner: Retrying in " + d / 1000 + " seconds");
                 try {
                     Thread.sleep(d);
                 } catch (InterruptedException e) {
@@ -110,7 +110,7 @@ public class KeyRetrieverRunner implements Runnable {
             return false;
         }
 
-        logger.debug("Importing key and cert");
+        logger.info("KeyRetrieverRunner: Importing key and cert for CA " + aid);
         byte[] certBytes = krr.getCertificate();
         byte[] paoData = krr.getPKIArchiveOptions();
 
@@ -133,7 +133,7 @@ public class KeyRetrieverRunner implements Runnable {
             return false;
         }
 
-        logger.debug("Reinitialising SigningUnit");
+        logger.info("KeyRetrieverRunner: Initializing CA " + aid);
 
         /* While we were retrieving the key and cert, the
          * CA instance in the CAEngine might
@@ -144,7 +144,7 @@ public class KeyRetrieverRunner implements Runnable {
             /* We got the key, but the authority has been
              * deleted.  Do not retry.
              */
-            logger.debug("Authority was deleted; returning.");
+            logger.info("KeyRetrieverRunner: Authority was deleted; returning.");
             return true;
         }
 
@@ -154,18 +154,23 @@ public class KeyRetrieverRunner implements Runnable {
             // key replication if initialisation fails again
             // for some reason
             //
-            logger.info("CertificateAuthority: reinitializing signing units in KeyRetrieverRunner");
+            logger.info("KeyRetrieverRunner: Initializing cert signing unit for " + aid);
             engine.initCertSigningUnit(ca);
+
+            logger.info("KeyRetrieverRunner: Initializing CRL signing unit for " + aid);
             engine.initCRLSigningUnit(ca);
+
+            logger.info("KeyRetrieverRunner: Initializing OCSP signing unit for " + aid);
             engine.initOCSPSigningUnit(ca);
+
             initSigUnitSucceeded = true;
 
         } catch (CAMissingCertException e) {
-            logger.warn("CertificateAuthority: CA signing cert not (yet) present in NSS database");
+            logger.warn("CA signing cert not (yet) present in NSS database");
             this.certificateAuthority.signingUnitException = e;
 
         } catch (CAMissingKeyException e) {
-            logger.warn("CertificateAuthority: CA signing key not (yet) present in NSS database");
+            logger.warn("CA signing key not (yet) present in NSS database");
             this.certificateAuthority.signingUnitException = e;
 
         } catch (Throwable e) {
@@ -178,7 +183,7 @@ public class KeyRetrieverRunner implements Runnable {
             return false;
         }
 
-        logger.debug("Adding self to authorityKeyHosts attribute");
+        logger.info("KeyRetrieverRunner: Adding self to authorityKeyHosts attribute");
         try {
             String host = cs.getHostname() + ":" + engine.getEESSLPort();
             engine.addAuthorityKeyHost(ca, host);
