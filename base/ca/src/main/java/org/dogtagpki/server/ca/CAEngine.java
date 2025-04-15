@@ -1803,6 +1803,11 @@ public class CAEngine extends CMSEngine {
         }
 
         CASigningUnit signingUnit = ca.getSigningUnit();
+
+        if (signingUnit == null) {
+            return;
+        }
+
         X509CertImpl caCertImpl = signingUnit.getCertImpl();
         logger.debug("CAEngine: - old serial number: 0x{}", caCertImpl.getSerialNumber().toString(16));
 
