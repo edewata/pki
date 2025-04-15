@@ -221,6 +221,8 @@ public class CAEngine extends CMSEngine {
     protected AuthorityMonitor authorityMonitor;
     protected boolean enableAuthorityMonitor = true;
 
+    protected Map<AuthorityID, KeyRetriever> keyRetrievers = new TreeMap<>();
+
     // is the current KRA-related info authoritative?
     private static boolean kraInfoAuthoritative = false;
 
@@ -1441,7 +1443,7 @@ public class CAEngine extends CMSEngine {
         return ca;
     }
 
-    public void startKeyRetriever(CertificateAuthority ca) throws EBaseException {
+    public synchronized void startKeyRetriever(CertificateAuthority ca) throws EBaseException {
 
         AuthorityID authorityID = ca.getAuthorityID();
 
@@ -1453,7 +1455,7 @@ public class CAEngine extends CMSEngine {
             return;
         }
 
-        if (authorityMonitor.keyRetrievers.containsKey(authorityID)) {
+        if (keyRetrievers.containsKey(authorityID)) {
             logger.info("CertificateAuthority: KeyRetriever already running for authority " + authorityID);
             return;
         }
@@ -1491,14 +1493,15 @@ public class CAEngine extends CMSEngine {
         }
 
         KeyRetrieverRunner runner = new KeyRetrieverRunner(keyRetriever, ca);
-        Thread thread = new Thread(runner, "KeyRetriever-" + authorityID);
-        thread.start();
+        runner.run();
+        //Thread thread = new Thread(runner, "KeyRetriever-" + authorityID);
+        //thread.start();
 
-        authorityMonitor.keyRetrievers.put(authorityID, thread);
+        keyRetrievers.put(authorityID, keyRetriever);
     }
 
-    public void removeKeyRetriever(AuthorityID aid) {
-        authorityMonitor.keyRetrievers.remove(aid);
+    public synchronized void removeKeyRetriever(AuthorityID aid) {
+        keyRetrievers.remove(aid);
     }
 
     public String getAuthorityBaseDN() {
