@@ -128,7 +128,7 @@ public class NSSIssuer extends ACMEIssuer {
 
         Extensions extensions = null;
         if (extGenerator != null) {
-            extensions = extGenerator.createExtensions(issuer, pkcs10);
+            extensions = extGenerator.createExtensions(issuer, pkcs10, null);
         }
 
         X509Certificate cert = nssDatabase.createCertificate(
