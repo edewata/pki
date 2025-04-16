@@ -18,7 +18,6 @@
 
 package org.dogtagpki.server.ca.rest.v1;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.LinkedHashMap;
@@ -30,7 +29,6 @@ import javax.ws.rs.core.Response;
 
 import org.dogtagpki.server.ca.CAEngine;
 import org.dogtagpki.server.ca.rest.base.AuthorityRepository;
-import org.mozilla.jss.netscape.security.util.Utils;
 
 import com.netscape.ca.CertificateAuthority;
 import com.netscape.certsrv.authority.AuthorityData;
@@ -115,49 +113,32 @@ public class AuthorityService extends SubsystemService implements AuthorityResou
 
     @Override
     public Response getCertPEM(String aidString) {
-        byte[] der = (byte[]) getCert(aidString).getEntity();
-        return Response.ok(toPem("CERTIFICATE", der)).build();
+
+        CAEngine engine = CAEngine.getInstance();
+        AuthorityRepository authorityRepository = engine.getAuthorityRepository();
+        String cert = authorityRepository.getPemCert(aidString);
+
+        return Response.ok(cert).build();
     }
 
     @Override
     public Response getChain(String aidString) {
 
-        logger.info("AuthorityService: getting cert chain for authority " + aidString);
-
-        AuthorityID aid = null;
-        if (!AuthorityResource.HOST_AUTHORITY.equals(aidString)) {
-            try {
-                aid = new AuthorityID(aidString);
-            } catch (IllegalArgumentException e) {
-                throw new BadRequestException("Bad AuthorityID: " + aidString);
-            }
-        }
-
         CAEngine engine = CAEngine.getInstance();
-        CertificateAuthority ca = engine.getCA(aid);
+        AuthorityRepository authorityRepository = engine.getAuthorityRepository();
+        byte[] chain = authorityRepository.getBinaryChain(aidString);
 
-        if (ca == null)
-            throw new ResourceNotFoundException("CA \"" + aidString + "\" not found");
-
-        org.mozilla.jss.netscape.security.x509.CertificateChain chain = ca.getCACertChain();
-        if (chain == null)
-            throw new ResourceNotFoundException(
-                "Certificate chain for CA \"" + aidString + "\" not available");
-
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try {
-            chain.encode(out);
-        } catch (IOException e) {
-            throw new PKIException("Error encoding certificate chain: " + e);
-        }
-
-        return Response.ok(out.toByteArray()).build();
+        return Response.ok(chain).build();
     }
 
     @Override
     public Response getChainPEM(String aidString) {
-        byte[] der = (byte[]) getChain(aidString).getEntity();
-        return Response.ok(toPem("PKCS7", der)).build();
+
+        CAEngine engine = CAEngine.getInstance();
+        AuthorityRepository authorityRepository = engine.getAuthorityRepository();
+        String chain = authorityRepository.getPemChain(aidString);
+
+        return Response.ok(chain).build();
     }
 
     @Override
@@ -343,12 +324,6 @@ public class AuthorityService extends SubsystemService implements AuthorityResou
             ca.getAuthorityDescription(),
             ca.isReady()
         );
-    }
-
-    private String toPem(String name, byte[] data) {
-        return "-----BEGIN " + name + "-----\n" +
-                Utils.base64encode(data, true) +
-                "-----END " + name + "-----\n";
     }
 
     private void audit(
