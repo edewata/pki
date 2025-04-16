@@ -21,7 +21,6 @@ package org.dogtagpki.server.ca.rest.v1;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.cert.CertificateEncodingException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -107,34 +106,11 @@ public class AuthorityService extends SubsystemService implements AuthorityResou
     @Override
     public Response getCert(String aidString) {
 
-        logger.info("AuthorityService: getting cert for authority " + aidString);
-
-        AuthorityID aid = null;
-        if (!AuthorityResource.HOST_AUTHORITY.equals(aidString)) {
-            try {
-                aid = new AuthorityID(aidString);
-            } catch (IllegalArgumentException e) {
-                throw new BadRequestException("Bad AuthorityID: " + aidString);
-            }
-        }
-
         CAEngine engine = CAEngine.getInstance();
-        CertificateAuthority ca = engine.getCA(aid);
+        AuthorityRepository authorityRepository = engine.getAuthorityRepository();
+        byte[] cert = authorityRepository.getBinaryCert(aidString);
 
-        if (ca == null)
-            throw new ResourceNotFoundException("CA \"" + aidString + "\" not found");
-
-        org.mozilla.jss.crypto.X509Certificate cert = ca.getCaX509Cert();
-        if (cert == null)
-            throw new ResourceNotFoundException(
-                "Certificate for CA \"" + aidString + "\" not available");
-
-        try {
-            return Response.ok(cert.getEncoded()).build();
-        } catch (CertificateEncodingException e) {
-            // this really is a 500 Internal Server Error
-            throw new PKIException("Error encoding certificate: " + e);
-        }
+        return Response.ok(cert).build();
     }
 
     @Override
