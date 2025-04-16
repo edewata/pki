@@ -21,7 +21,9 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.stream.Collectors;
 
+import org.dogtagpki.util.cert.CRMFUtil;
 import org.dogtagpki.util.cert.CertUtil;
+import org.mozilla.jss.asn1.SEQUENCE;
 import org.mozilla.jss.netscape.security.extensions.AuthInfoAccessExtension;
 import org.mozilla.jss.netscape.security.extensions.ExtendedKeyUsageExtension;
 import org.mozilla.jss.netscape.security.extensions.OCSPNoCheckExtension;
@@ -453,7 +455,37 @@ public class NSSExtensionGenerator {
         return new OCSPNoCheckExtension();
     }
 
-    public SubjectAlternativeNameExtension createSANExtension(PKCS10 pkcs10) throws Exception {
+    public SubjectAlternativeNameExtension createSANExtension(PKCS10 pkcs10, SEQUENCE crmfMsgs) throws Exception {
+
+        X500Name subjectName = null;
+        SubjectAlternativeNameExtension sanExtension = null;
+
+        if (pkcs10 != null) {
+            logger.info("Existing PKCS #10 request:");
+
+            subjectName = pkcs10.getSubjectName();
+            logger.info("- subject: " + subjectName);
+
+            sanExtension = CertUtil.getSANExtension(pkcs10);
+            logger.info("- SAN extension: " + sanExtension);
+        }
+
+        if (crmfMsgs != null) {
+            logger.info("Existing CRMF request:");
+
+            subjectName = CRMFUtil.getSubjectName(crmfMsgs);
+            logger.info("- subject: " + subjectName);
+
+            sanExtension = CRMFUtil.getSANExtension(crmfMsgs);
+            logger.info("- SAN extension: " + sanExtension);
+        }
+
+        return createSANExtension(subjectName, sanExtension);
+    }
+
+    public SubjectAlternativeNameExtension createSANExtension(
+            X500Name subjectName,
+            SubjectAlternativeNameExtension sanExtension) throws Exception {
 
         String subjectAltName = getParameter("subjectAltName");
         if (subjectAltName == null) return null;
@@ -478,14 +510,13 @@ public class NSSExtensionGenerator {
 
             if (option.equals("DNS:request_subject_cn")) {
 
-                if (pkcs10 == null) {
+                if (subjectName == null) {
                     continue;
                 }
 
-                X500Name subjectName = pkcs10.getSubjectName();
-                logger.info("Getting CN from subject name: " + subjectName);
-
+                logger.info("Getting DNS names from subject CN");
                 String cn = CertUtil.getCommonName(subjectName);
+
                 if (cn != null) {
                     cn = cn.toLowerCase();
                     logger.info("- DNS:" + cn);
@@ -497,22 +528,17 @@ public class NSSExtensionGenerator {
 
             if (option.equals("DNS:request_san_ext")) {
 
-                if (pkcs10 == null) {
+                if (sanExtension == null) {
                     continue;
                 }
 
-                logger.info("Getting SAN extension from CSR");
-                SubjectAlternativeNameExtension sanExtension = CertUtil.getSANExtension(pkcs10);
+                logger.info("Getting DNS names from SAN extension");
+                Set<String> names = CertUtil.getDNSNames(sanExtension);
 
-                if (sanExtension != null) {
-                    logger.info("Getting DNS names from SAN extension");
-                    Set<String> names = CertUtil.getDNSNames(sanExtension);
-
-                    for (String name : names) {
-                        name = name.toLowerCase();
-                        logger.info("- DNS:" + name);
-                        dnsNames.add(name);
-                    }
+                for (String name : names) {
+                    name = name.toLowerCase();
+                    logger.info("- DNS:" + name);
+                    dnsNames.add(name);
                 }
 
                 continue;
@@ -604,25 +630,33 @@ public class NSSExtensionGenerator {
      * Create extensions.
      */
     public Extensions createExtensions() throws Exception {
-        return createExtensions(null, null, null);
+        return createExtensions(null, null, null, null);
     }
 
     /**
      * Create extensions with the specified subject key.
      */
     public Extensions createExtensions(X509Key subjectKey) throws Exception {
-        return createExtensions(subjectKey, null, null);
+        return createExtensions(subjectKey, null, null, null);
     }
 
     /**
-     * Create extensions with the specified issuer and request.
+     * Create extensions with the specified issuer and cert request.
      */
     public Extensions createExtensions(
             org.mozilla.jss.crypto.X509Certificate issuer,
-            PKCS10 pkcs10) throws Exception {
+            PKCS10 pkcs10,
+            SEQUENCE crmfMsgs) throws Exception {
 
-        X509Key subjectKey = pkcs10.getSubjectPublicKeyInfo();
-        return createExtensions(subjectKey, issuer, pkcs10);
+        X509Key subjectKey = null;
+
+        if (pkcs10 != null) {
+            subjectKey= pkcs10.getSubjectPublicKeyInfo();
+        } else if (crmfMsgs != null) {
+            subjectKey = CRMFUtil.getX509KeyFromCRMFMsgs(crmfMsgs);
+        }
+
+        return createExtensions(subjectKey, issuer, pkcs10, crmfMsgs);
     }
 
     /**
@@ -631,7 +665,8 @@ public class NSSExtensionGenerator {
     public Extensions createExtensions(
             X509Key subjectKey,
             org.mozilla.jss.crypto.X509Certificate issuer,
-            PKCS10 pkcs10) throws Exception {
+            PKCS10 pkcs10,
+            SEQUENCE crmfMsgs) throws Exception {
 
         Extensions extensions = new Extensions();
 
@@ -675,7 +710,7 @@ public class NSSExtensionGenerator {
             extensions.parseExtension(ocspNoCheckExtension);
         }
 
-        SubjectAlternativeNameExtension sanExtension = createSANExtension(pkcs10);
+        SubjectAlternativeNameExtension sanExtension = createSANExtension(pkcs10, crmfMsgs);
         if (sanExtension != null) {
             extensions.parseExtension(sanExtension);
         }

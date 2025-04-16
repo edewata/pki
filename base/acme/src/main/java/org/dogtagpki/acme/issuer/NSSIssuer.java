@@ -130,7 +130,7 @@ public class NSSIssuer extends ACMEIssuer {
 
         Extensions extensions = null;
         if (extGenerator != null) {
-            extensions = extGenerator.createExtensions(issuer, pkcs10);
+            extensions = extGenerator.createExtensions(issuer, pkcs10, null);
         }
 
         X509Key x509Key = pkcs10.getSubjectPublicKeyInfo();
