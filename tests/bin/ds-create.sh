@@ -254,6 +254,15 @@ docker exec $NAME ldapsearch \
     -b "$SUFFIX"
 
 # allow more time to connect to network
-sleep 5
+# sleep 5
+
+docker ps --format '{{ .Names }} {{ json .Networks }}'
+
+docker inspect $NAME -f "{{json .NetworkSettings.Networks }}"
+
+if [ "$NETWORK" != "" ]
+then
+    docker network inspect $NETWORK
+fi
 
 echo "DS container is ready"
