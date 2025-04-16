@@ -551,7 +551,13 @@ public class AuthorityRepository {
         if (ca == null)
             throw new ResourceNotFoundException("CA \"" + authId + "\" not found");
 
-        org.mozilla.jss.netscape.security.x509.CertificateChain chain = ca.getCACertChain();
+        CASigningUnit signingUnit = ca.getSigningUnit();
+        if (signingUnit == null) {
+            throw new ResourceNotFoundException(
+                    "Certificate chain for CA \"" + authId + "\" not available");
+        }
+
+        org.mozilla.jss.netscape.security.x509.CertificateChain chain = signingUnit.getCertChain();
         if (chain == null)
             throw new ResourceNotFoundException(
                 "Certificate chain for CA \"" + authId + "\" not available");
