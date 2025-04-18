@@ -38,7 +38,7 @@ public class KeyRetrieverRunner implements Runnable {
     public final static org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(KeyRetrieverRunner.class);
 
     private KeyRetriever keyRetriever;
-    private CertificateAuthority certificateAuthority;
+    private CertificateAuthority ca;
     private AuthorityID aid;
     private String nickname;
     private Collection<String> hosts;
@@ -46,7 +46,7 @@ public class KeyRetrieverRunner implements Runnable {
 
     public KeyRetrieverRunner(KeyRetriever keyRetriever, CertificateAuthority certificateAuthority) {
         this.keyRetriever = keyRetriever;
-        this.certificateAuthority = certificateAuthority;
+        this.ca = certificateAuthority;
         this.aid = certificateAuthority.getAuthorityID();
         this.nickname = certificateAuthority.getNickname();
         this.hosts = certificateAuthority.getAuthorityKeyHosts();
@@ -77,7 +77,7 @@ public class KeyRetrieverRunner implements Runnable {
             }
 
         } finally {
-            certificateAuthority.removeKeyRetriever();
+            ca.removeKeyRetriever();
         }
     }
 
@@ -132,20 +132,6 @@ public class KeyRetrieverRunner implements Runnable {
         }
 
         logger.info("KeyRetrieverRunner: Initializing CA " + aid);
-
-        /* While we were retrieving the key and cert, the
-         * CA instance in the CAEngine might
-         * have been replaced, so look it up afresh.
-         */
-        CertificateAuthority ca = engine.getCA(aid);
-        if (ca == null) {
-            /* We got the key, but the authority has been
-             * deleted.  Do not retry.
-             */
-            logger.info("KeyRetrieverRunner: Authority was deleted; returning.");
-            return true;
-        }
-
         boolean initSigUnitSucceeded = false;
         try {
             // re-init signing unit, but avoid triggering
@@ -165,11 +151,11 @@ public class KeyRetrieverRunner implements Runnable {
 
         } catch (CAMissingCertException e) {
             logger.warn("CA signing cert not (yet) present in NSS database");
-            this.certificateAuthority.signingUnitException = e;
+            ca.signingUnitException = e;
 
         } catch (CAMissingKeyException e) {
             logger.warn("CA signing key not (yet) present in NSS database");
-            this.certificateAuthority.signingUnitException = e;
+            ca.signingUnitException = e;
 
         } catch (Throwable e) {
             logger.warn("Caught exception during SigningUnit re-init", e);
