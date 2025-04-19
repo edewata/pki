@@ -361,12 +361,58 @@ public class TPSClientCLI extends CommandCLI {
         }
     }
 
-    public native void performEnrollToken(
+    public void performEnrollToken(
             long client,
             Map<String, String> params,
             Map<String, String> exts,
             long token,
-            long connection) throws Exception;
+            long connection) throws Exception {
+
+        long beginOp = createBeginOpMsg(OpType.OP_ENROLL, exts);
+        sendMsg(connection, beginOp);
+        removeMsg(beginOp);
+
+        boolean done = false;
+        while (!done) {
+            long message = readMsg(connection, token);
+            if (message == 0) break;
+
+            int type = getMsgType(message);
+            MsgType msgType = TPSMessage.intToMsgType(type);
+
+            switch (msgType) {
+            case MSG_LOGIN_REQUEST:
+                handleLoginRequest(client, params, token, connection, message);
+                break;
+            case MSG_EXTENDED_LOGIN_REQUEST:
+                handleExtendedLoginRequest(client, params, token, connection, message);
+                break;
+            case MSG_STATUS_UPDATE_REQUEST:
+                handleStatusUpdateRequest(client, params, token, connection, message);
+                break;
+            case MSG_SECUREID_REQUEST:
+                handleSecureIdRequest(client, params, token, connection, message);
+                break;
+            case MSG_ASQ_REQUEST:
+                handleASQRequest(client, params, token, connection, message);
+                break;
+            case MSG_TOKEN_PDU_REQUEST:
+                handleTokenPDURequest(client, params, token, connection, message);
+                break;
+            case MSG_NEW_PIN_REQUEST:
+                handleNewPinRequest(client, params, token, connection, message);
+                break;
+            case MSG_END_OP:
+                handleEndOp(message);
+                done = false;
+                break;
+            default:
+                throw new CLIException("Invalid message type: " + msgType);
+            }
+
+            removeMsg(message);
+        }
+    }
 
     public void enrollToken(
             long client,
