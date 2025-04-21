@@ -233,7 +233,11 @@ Java_com_netscape_cmstools_tps_TPSClientCLI_sendMsg
     RA_Conn* conn = (RA_Conn*) connection;
     RA_Msg* msg = (RA_Msg*) message;
 
-    conn->SendMsg(msg);
+    int status = conn->SendMsg(msg);
+
+    if (status == 0) {
+        throwCLIException(env, "Unable to send message");
+    }
 }
 
 extern "C" JNIEXPORT jlong JNICALL
@@ -264,7 +268,7 @@ Java_com_netscape_cmstools_tps_TPSClientCLI_removeMsg
     delete msg;
 }
 
-extern "C" JNIEXPORT void JNICALL
+extern "C" JNIEXPORT jlong JNICALL
 Java_com_netscape_cmstools_tps_TPSClientCLI_handleLoginRequest
 (JNIEnv* env, jobject object,
     jlong client,
@@ -274,22 +278,13 @@ Java_com_netscape_cmstools_tps_TPSClientCLI_handleLoginRequest
     jlong message) {
 
     NameValueSet* set = convertParams(env, params);
-    RA_Conn* conn = (RA_Conn*) connection;
 
-    RA_Login_Response_Msg* resp = new RA_Login_Response_Msg(
+    return (jlong) new RA_Login_Response_Msg(
         set->GetValue("uid"),
         set->GetValue("pwd"));
-
-    int status = conn->SendMsg(resp);
-
-    if (status == 0) {
-        throwCLIException(env, "Unable to handle login request");
-    }
-
-    delete resp;
 }
 
-extern "C" JNIEXPORT void JNICALL
+extern "C" JNIEXPORT jlong JNICALL
 Java_com_netscape_cmstools_tps_TPSClientCLI_handleExtendedLoginRequest
 (JNIEnv* env, jobject object,
     jlong client,
@@ -301,7 +296,6 @@ Java_com_netscape_cmstools_tps_TPSClientCLI_handleExtendedLoginRequest
     RA_Client* cclient = (RA_Client*) client;
     NameValueSet* vars = &cclient->m_vars;
     NameValueSet* set = convertParams(env, params);
-    RA_Conn* conn = (RA_Conn*) connection;
 
     AuthParams *auths = new AuthParams();
     auths->SetUID(set->GetValue("uid"));
@@ -319,18 +313,10 @@ Java_com_netscape_cmstools_tps_TPSClientCLI_handleExtendedLoginRequest
         }
     }
 
-    RA_Extended_Login_Response_Msg* resp = new RA_Extended_Login_Response_Msg(auths);
-    int status = conn->SendMsg(resp);
-
-    if (status == 0) {
-        throwCLIException(env, "Unable to handle extended login request");
-    }
-
-    delete resp;
-    delete auths;
+    return (jlong) new RA_Extended_Login_Response_Msg(auths);
 }
 
-extern "C" JNIEXPORT void JNICALL
+extern "C" JNIEXPORT jlong JNICALL
 Java_com_netscape_cmstools_tps_TPSClientCLI_handleStatusUpdateRequest
 (JNIEnv* env, jobject object,
     jlong client,
@@ -339,20 +325,12 @@ Java_com_netscape_cmstools_tps_TPSClientCLI_handleStatusUpdateRequest
     jlong connection,
     jlong message) {
 
-    RA_Conn* conn = (RA_Conn*) connection;
     RA_Status_Update_Request_Msg* msg = (RA_Status_Update_Request_Msg*) message;
 
-    RA_Status_Update_Response_Msg* resp = new RA_Status_Update_Response_Msg(msg->GetStatus());
-    int status = conn->SendMsg(resp);
-
-    if (status == 0) {
-        throwCLIException(env, "Unable to handle status update request");
-    }
-
-    delete resp;
+    return (jlong) new RA_Status_Update_Response_Msg(msg->GetStatus());
 }
 
-extern "C" JNIEXPORT void JNICALL
+extern "C" JNIEXPORT jlong JNICALL
 Java_com_netscape_cmstools_tps_TPSClientCLI_handleSecureIdRequest
 (JNIEnv* env, jobject object,
     jlong client,
@@ -362,22 +340,14 @@ Java_com_netscape_cmstools_tps_TPSClientCLI_handleSecureIdRequest
     jlong message) {
 
     NameValueSet* set = convertParams(env, params);
-    RA_Conn* conn = (RA_Conn*) connection;
     RA_SecureId_Request_Msg* msg = (RA_SecureId_Request_Msg*) message;
 
-    RA_SecureId_Response_Msg* resp = new RA_SecureId_Response_Msg(
+    return (jlong) new RA_SecureId_Response_Msg(
         set->GetValue("secureid_value"),
         set->GetValue("secureid_pin"));
-    int status = conn->SendMsg(resp);
-
-    if (status == 0) {
-        throwCLIException(env, "Unable to handle secure ID request");
-    }
-
-    delete resp;
 }
 
-extern "C" JNIEXPORT void JNICALL
+extern "C" JNIEXPORT jlong JNICALL
 Java_com_netscape_cmstools_tps_TPSClientCLI_handleASQRequest
 (JNIEnv* env, jobject object,
     jlong client,
@@ -387,19 +357,11 @@ Java_com_netscape_cmstools_tps_TPSClientCLI_handleASQRequest
     jlong message) {
 
     NameValueSet* set = convertParams(env, params);
-    RA_Conn* conn = (RA_Conn*) connection;
 
-    RA_ASQ_Response_Msg* resp = new RA_ASQ_Response_Msg(set->GetValue("answer"));
-    int status = conn->SendMsg(resp);
-
-    if (status == 0) {
-        throwCLIException(env, "Unable to handle ASQ request");
-    }
-
-    delete resp;
+    return (jlong) new RA_ASQ_Response_Msg(set->GetValue("answer"));
 }
 
-extern "C" JNIEXPORT void JNICALL
+extern "C" JNIEXPORT jlong JNICALL
 Java_com_netscape_cmstools_tps_TPSClientCLI_handleTokenPDURequest
 (JNIEnv* env, jobject object,
     jlong client,
@@ -412,27 +374,19 @@ Java_com_netscape_cmstools_tps_TPSClientCLI_handleTokenPDURequest
     NameValueSet* vars = &cclient->m_vars;
     NameValueSet* set = convertParams(env, params);
     RA_Token* ctoken = (RA_Token*) token;
-    RA_Conn* conn = (RA_Conn*) connection;
     RA_Token_PDU_Request_Msg* msg = (RA_Token_PDU_Request_Msg*) message;
 
     APDU* apdu = msg->GetAPDU();
     APDU_Response* apdu_resp = ctoken->Process(apdu, vars, set);
 
     if (apdu_resp == NULL) {
-        return;
+        return 0;
     }
 
-    RA_Token_PDU_Response_Msg* resp = new RA_Token_PDU_Response_Msg(apdu_resp);
-    int status = conn->SendMsg(resp);
-
-    if (status == 0) {
-        throwCLIException(env, "Unable to handle token PDU request");
-    }
-
-    delete resp;
+    return (jlong) new RA_Token_PDU_Response_Msg(apdu_resp);
 }
 
-extern "C" JNIEXPORT void JNICALL
+extern "C" JNIEXPORT jlong JNICALL
 Java_com_netscape_cmstools_tps_TPSClientCLI_handleNewPinRequest
 (JNIEnv* env, jobject object,
     jlong client,
@@ -442,19 +396,11 @@ Java_com_netscape_cmstools_tps_TPSClientCLI_handleNewPinRequest
     jlong message) {
 
     NameValueSet* set = convertParams(env, params);
-    RA_Conn* conn = (RA_Conn*) connection;
 
-    RA_New_Pin_Response_Msg* resp = new RA_New_Pin_Response_Msg(set->GetValue("new_pin"));
-    int status = conn->SendMsg(resp);
-
-    if (status == 0) {
-        throwCLIException(env, "Unable to handle new PIN request");
-    }
-
-    delete resp;
+    return (jlong) new RA_New_Pin_Response_Msg(set->GetValue("new_pin"));
 }
 
-extern "C" JNIEXPORT void JNICALL
+extern "C" JNIEXPORT jlong JNICALL
 Java_com_netscape_cmstools_tps_TPSClientCLI_handleEndOp
 (JNIEnv* env, jobject object, jlong message) {
 
@@ -465,6 +411,8 @@ Java_com_netscape_cmstools_tps_TPSClientCLI_handleEndOp
     if (status != 0) {
         throwCLIException(env, "Operation failed");
     }
+
+    return 0;
 }
 
 extern "C" JNIEXPORT void JNICALL

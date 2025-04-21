@@ -87,49 +87,49 @@ public class TPSClientCLI extends CommandCLI {
     public native int getMsgType(long message);
     public native void removeMsg(long message);
 
-    public native void handleLoginRequest(
+    public native long handleLoginRequest(
             long client,
             Map<String, String> params,
             long token,
             long connection,
             long message) throws Exception;
-    public native void handleExtendedLoginRequest(
+    public native long handleExtendedLoginRequest(
             long client,
             Map<String, String> params,
             long token,
             long connection,
             long message) throws Exception;
-    public native void handleStatusUpdateRequest(
+    public native long handleStatusUpdateRequest(
             long client,
             Map<String, String> params,
             long token,
             long connection,
             long message) throws Exception;
-    public native void handleSecureIdRequest(
+    public native long handleSecureIdRequest(
             long client,
             Map<String, String> params,
             long token,
             long connection,
             long message) throws Exception;
-    public native void handleASQRequest(
+    public native long handleASQRequest(
             long client,
             Map<String, String> params,
             long token,
             long connection,
             long message) throws Exception;
-    public native void handleTokenPDURequest(
+    public native long handleTokenPDURequest(
             long client,
             Map<String, String> params,
             long token,
             long connection,
             long message) throws Exception;
-    public native void handleNewPinRequest(
+    public native long handleNewPinRequest(
             long client,
             Map<String, String> params,
             long token,
             long connection,
             long message) throws Exception;
-    public native void handleEndOp(long message) throws Exception;
+    public native long handleEndOp(long message) throws Exception;
 
     public void performOperation(
             long client,
@@ -151,30 +151,31 @@ public class TPSClientCLI extends CommandCLI {
             int type = getMsgType(message);
             MsgType msgType = TPSMessage.intToMsgType(type);
 
+            long response = 0;
             switch (msgType) {
             case MSG_LOGIN_REQUEST:
-                handleLoginRequest(client, params, token, connection, message);
+                response = handleLoginRequest(client, params, token, connection, message);
                 break;
             case MSG_EXTENDED_LOGIN_REQUEST:
-                handleExtendedLoginRequest(client, params, token, connection, message);
+                response = handleExtendedLoginRequest(client, params, token, connection, message);
                 break;
             case MSG_STATUS_UPDATE_REQUEST:
-                handleStatusUpdateRequest(client, params, token, connection, message);
+                response = handleStatusUpdateRequest(client, params, token, connection, message);
                 break;
             case MSG_SECUREID_REQUEST:
-                handleSecureIdRequest(client, params, token, connection, message);
+                response = handleSecureIdRequest(client, params, token, connection, message);
                 break;
             case MSG_ASQ_REQUEST:
-                handleASQRequest(client, params, token, connection, message);
+                response = handleASQRequest(client, params, token, connection, message);
                 break;
             case MSG_TOKEN_PDU_REQUEST:
-                handleTokenPDURequest(client, params, token, connection, message);
+                response = handleTokenPDURequest(client, params, token, connection, message);
                 break;
             case MSG_NEW_PIN_REQUEST:
-                handleNewPinRequest(client, params, token, connection, message);
+                response = handleNewPinRequest(client, params, token, connection, message);
                 break;
             case MSG_END_OP:
-                handleEndOp(message);
+                response = handleEndOp(message);
                 done = false;
                 break;
             default:
@@ -182,6 +183,11 @@ public class TPSClientCLI extends CommandCLI {
             }
 
             removeMsg(message);
+
+            if (response != 0) {
+                sendMsg(connection, response);
+                removeMsg(response);
+            }
         }
     }
 
