@@ -1302,6 +1302,12 @@ class PKIDeployer:
         else:  # random
             subsystem.set_config('dbs.cert.id.length', self.mdict['pki_cert_id_length'])
 
+        subsystem.set_config('dbs.beginReplicaNumber', '1')  # decimal
+        subsystem.set_config('dbs.endReplicaNumber', '100')  # decimal
+        subsystem.set_config('dbs.replicaIncrement', '100')  # decimal
+        subsystem.set_config('dbs.replicaLowWaterMark', '20')  # decimal
+        subsystem.set_config('dbs.replicaCloneTransferNumber', '5')  # decimal
+
         replica_number_range_start = self.mdict.get('pki_replica_number_range_start')
         if replica_number_range_start:
             subsystem.set_config('dbs.beginReplicaNumber', replica_number_range_start)
@@ -1366,6 +1372,12 @@ class PKIDeployer:
 
         else:  # random
             subsystem.set_config('dbs.key.id.length', self.mdict['pki_key_id_length'])
+
+        subsystem.set_config('dbs.beginReplicaNumber', '1')  # decimal
+        subsystem.set_config('dbs.endReplicaNumber', '100')  # decimal
+        subsystem.set_config('dbs.replicaIncrement', '100')  # decimal
+        subsystem.set_config('dbs.replicaLowWaterMark', '20')  # decimal
+        subsystem.set_config('dbs.replicaCloneTransferNumber', '5')  # decimal
 
         if config.str2bool(self.mdict['pki_kra_ephemeral_requests']):
             logger.debug('Setting ephemeral requests to true')
@@ -1756,7 +1768,15 @@ class PKIDeployer:
 
         if config.str2bool(self.mdict['pki_clone']) and \
                 config.str2bool(self.mdict['pki_clone_setup_replication']):
-            self.setup_replication(subsystem, master_config)
+
+            master_id = self.mdict.get('pki_master_id')
+            replica_id = self.mdict.get('pki_replica_id')
+
+            self.setup_replication(
+                subsystem,
+                master_config,
+                master_id,
+                replica_id)
 
         # Set up and rebuild search indexes on each DS instance since indexes
         # are not replicated.
@@ -1778,7 +1798,11 @@ class PKIDeployer:
             subsystem.add_vlv()
             subsystem.reindex_vlv()
 
-    def setup_replication(self, subsystem, master_config):
+    def setup_replication(self,
+            subsystem,
+            master_config,
+            master_id=None,
+            replica_id=None):
 
         logger.info('Setting up replication')
 
@@ -1880,21 +1904,25 @@ class PKIDeployer:
 
         logger.info('Enable replication on master')
 
-        # TODO: provide param to specify the replica ID for the master
+        if not master_id:
+            logger.warn('Missing master ID')
+
         subsystem.enable_replication(
             master_ldap_config,
             master_bind_dn,
             master_bind_password,
-            None)
+            master_id)
 
         logger.info('Enable replication on replica')
 
-        # TODO: provide param to specify the replica ID for the replica
+        if not replica_id:
+            logger.warn('Missing replica ID')
+
         subsystem.enable_replication(
             replica_ldap_config,
             replica_bind_dn,
             replica_bind_password,
-            None)
+            replica_id)
 
         logger.info('Adding master replication agreement')
         logger.info('- replica URL: %s', replica_url)
