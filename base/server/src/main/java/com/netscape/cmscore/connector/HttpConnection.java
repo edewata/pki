@@ -165,7 +165,7 @@ public class HttpConnection {
             int port = target.getPort();
 
             try {
-                logger.debug("HttpConnection: Connecting to " + hostname + ":" + port + " with timeout " + timeout + "s");
+                logger.info("HttpConnection: Connecting to " + hostname + ":" + port);
 
                 mHttpClient.connect(hostname, port, timeout * 1000);
 
@@ -216,7 +216,7 @@ public class HttpConnection {
      */
     public IPKIMessage send(IPKIMessage tomsg) throws EBaseException {
 
-        String url = "https://" + dest.getHost() + ":" + dest.getPort() + mHttpreq.getURI();
+        String url = "https://" + mHttpClient.getHost() + ":" + mHttpClient.getPort() + mHttpreq.getURI();
         logger.info("HttpConnection: Sending request to " + url);
 
         IPKIMessage replymsg = null;
@@ -232,20 +232,20 @@ public class HttpConnection {
         } catch (IOException e) {
             throw new EBaseException(CMS.getUserMessage("CMS_BASE_INVALID_ATTRIBUTE", "Could not encode request"));
         }
-        logger.trace("encoded request");
-        logger.trace("------ " + content.length() + "-----");
-        logger.trace(content);
-        logger.trace("--------------------------");
+        logger.info("encoded request");
+        logger.info("------ " + content.length() + "-----");
+        logger.info(content);
+        logger.info("--------------------------");
         resp = doSend(content);
 
         // decode reply.
         // if reply is bad, error is thrown and request will be resent
         String pcontent = resp.getContent();
 
-        logger.trace("Server returned");
-        logger.trace("-------");
-        logger.trace(pcontent);
-        logger.trace("-------");
+        logger.info("Server returned");
+        logger.info("-------");
+        logger.info(pcontent);
+        logger.info("-------");
         //logger.debug("HttpConnection.send response: " + pcontent);
         if (pcontent != null && !pcontent.equals(""))
             logger.debug("HttpConnection.send response: got content");
@@ -270,7 +270,7 @@ public class HttpConnection {
      */
     public HttpResponse send(String content) throws EBaseException {
 
-        String url = "https://" + dest.getHost() + ":" + dest.getPort() + mHttpreq.getURI();
+        String url = "https://" + mHttpClient.getHost() + ":" + mHttpClient.getPort() + mHttpreq.getURI();
         logger.info("HttpConnection: Sending request to " + url);
 
         // cfu: multi-uri support
@@ -310,8 +310,11 @@ public class HttpConnection {
 
         try {
             if (!mHttpClient.connected()) {
+                logger.info("HttpConnection: Reconnecting to " + mHttpClient.getHost() + ":" + mHttpClient.getPort());
                 connect();
                 reconnected = true;
+            } else {
+                logger.info("HttpConnection: Still connected to " + mHttpClient.getHost() + ":" + mHttpClient.getPort());
             }
 
         } catch (IOException e) {
@@ -331,7 +334,7 @@ public class HttpConnection {
         // if remote closed connection want to reconnect and resend.
         while (resp == null) {
             try {
-                logger.debug("HttpConnection.doSend: sending request");
+                logger.info("HttpConnection: Sending request");
                 resp = mHttpClient.send(mHttpreq);
 
             } catch (IOException e) {
