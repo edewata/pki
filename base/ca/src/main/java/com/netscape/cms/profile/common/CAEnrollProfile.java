@@ -236,6 +236,7 @@ public class CAEnrollProfile extends EnrollProfile {
                     }
 
                     logger.info("CAEnrollProfile: Sending key archival request");
+                    request.printContent();
                     kraConnector.send(request);
 
                     // check response
