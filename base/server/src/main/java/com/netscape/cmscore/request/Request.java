@@ -1048,7 +1048,7 @@ public class Request {
     public void printContent() {
 
         String method = "Request.printContent: ";
-        logger.debug(method + "Content of request: ");
+        logger.info(method + "Content of request: ");
 
         Enumeration<String> ereq = getExtDataKeys();
         while (ereq.hasMoreElements()) {
@@ -1056,9 +1056,9 @@ public class Request {
             String reqVal = getExtDataInString(reqKey);
 
             if (reqVal != null) {
-                logger.debug("  req entry - " + reqKey + ": " + reqVal);
+                logger.info("  req entry - " + reqKey + ": " + reqVal);
             } else {
-                logger.debug("  req entry - " + reqKey + ": no value");
+                logger.info("  req entry - " + reqKey + ": no value");
             }
         }
     }
