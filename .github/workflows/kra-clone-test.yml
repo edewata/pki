@@ -128,6 +128,28 @@ jobs:
 
           diff expected output
 
+      - name: Check KRA connector in primary CA
+        run: |
+          docker exec primary pki-server ca-config-find \
+              | grep ^ca.connector.KRA. \
+              | sort \
+              | tee output
+
+          # exclude transport cert
+          sed -e '/^ca.connector.KRA.transportCert=/d' output > actual
+
+          cat > expected << EOF
+          ca.connector.KRA.enable=true
+          ca.connector.KRA.host=primary.example.com
+          ca.connector.KRA.local=false
+          ca.connector.KRA.nickName=subsystem
+          ca.connector.KRA.port=8443
+          ca.connector.KRA.timeout=30
+          ca.connector.KRA.uri=/kra/agent/kra/connector
+          EOF
+
+          diff expected actual
+
       - name: Set up secondary DS container
         run: |
           tests/bin/ds-create.sh \
@@ -318,6 +340,28 @@ jobs:
           cat > expected << EOF
           nextRange: 1000
           EOF
+
+      - name: Check KRA connector in secondary CA
+        run: |
+          docker exec secondary pki-server ca-config-find \
+              | grep ^ca.connector.KRA. \
+              | sort \
+              | tee output
+
+          # exclude transport cert
+          sed -e '/^ca.connector.KRA.transportCert=/d' output > actual
+
+          cat > expected << EOF
+          ca.connector.KRA.enable=true
+          ca.connector.KRA.host=primary.example.com
+          ca.connector.KRA.local=false
+          ca.connector.KRA.nickName=subsystem
+          ca.connector.KRA.port=8443
+          ca.connector.KRA.timeout=30
+          ca.connector.KRA.uri=/kra/agent/kra/connector
+          EOF
+
+          diff expected actual
 
       - name: Verify KRA admin in secondary PKI container
         run: |
@@ -517,6 +561,28 @@ jobs:
           EOF
 
           diff expected output
+
+      - name: Check KRA connector in tertiary CA
+        run: |
+          docker exec tertiary pki-server ca-config-find \
+              | grep ^ca.connector.KRA. \
+              | sort \
+              | tee output
+
+          # exclude transport cert
+          sed -e '/^ca.connector.KRA.transportCert=/d' output > actual
+
+          cat > expected << EOF
+          ca.connector.KRA.enable=true
+          ca.connector.KRA.host=primary.example.com
+          ca.connector.KRA.local=false
+          ca.connector.KRA.nickName=subsystem
+          ca.connector.KRA.port=8443
+          ca.connector.KRA.timeout=30
+          ca.connector.KRA.uri=/kra/agent/kra/connector
+          EOF
+
+          diff expected actual
 
       - name: Verify KRA admin in tertiary PKI container
         run: |

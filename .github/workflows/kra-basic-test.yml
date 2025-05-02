@@ -55,6 +55,9 @@ jobs:
               -D pki_audit_signing_nickname= \
               -v
 
+          # store orig CS.cfg
+          docker cp pki:/var/lib/pki/pki-tomcat/conf/ca/CS.cfg CA-CS.cfg
+
       - name: Check security domain config in CA
         run: |
           # CA should run security domain service
@@ -316,6 +319,13 @@ jobs:
               --pkcs12-password Secret.123
           docker exec pki pki -n caadmin kra-user-show kraadmin
 
+      - name: Check PKI server base dir after installation
+        run: |
+          docker exec pki diff \
+              $SHARED/CA-CS.cfg \
+              /var/lib/pki/pki-tomcat/conf/ca/CS.cfg \
+              | tee output
+
       - name: Check KRA connector in CA
         run: |
           docker exec pki pki-server ca-config-find | grep ^ca.connector.KRA. | sort | tee output
@@ -351,11 +361,11 @@ jobs:
           docker exec pki pki \
               nss-cert-request \
               --type crmf \
-              --subject UID=testuser \
+              --subject UID=testuser1 \
               --transport kra_transport \
-              --csr testuser.csr
+              --csr testuser1.csr
 
-          docker exec pki cat testuser.csr
+          docker exec pki cat testuser1.csr
 
           # issue cert
           # https://github.com/dogtagpki/pki/wiki/Issuing-Certificates
@@ -365,16 +375,48 @@ jobs:
               ca-cert-issue \
               --request-type crmf \
               --profile caUserCert \
-              --subject UID=testuser \
-              --csr-file testuser.csr \
-              --output-file testuser.crt
+              --subject UID=testuser1 \
+              --csr-file testuser1.csr \
+              --output-file testuser1.crt
 
           # import cert into NSS database
-          docker exec pki pki nss-cert-import --cert testuser.crt testuser
+          docker exec pki pki nss-cert-import --cert testuser1.crt testuser1
 
           # the cert should match the key (trust flags must be u,u,u)
           echo "u,u,u" > expected
-          docker exec pki pki nss-cert-show testuser | tee output
+          docker exec pki pki nss-cert-show testuser1 | tee output
+          sed -n "s/^\s*Trust Flags:\s*\(\S*\)$/\1/p" output > actual
+          diff expected actual
+
+      - name: Check cert enrollment with key archival again
+        run: |
+          # generate key and cert request
+          docker exec pki pki \
+              nss-cert-request \
+              --type crmf \
+              --subject UID=testuser2 \
+              --transport kra_transport \
+              --csr testuser2.csr
+
+          docker exec pki cat testuser2.csr
+
+          # issue cert
+          docker exec pki pki \
+              -u caadmin \
+              -w Secret.123 \
+              ca-cert-issue \
+              --request-type crmf \
+              --profile caUserCert \
+              --subject UID=testuser2 \
+              --csr-file testuser2.csr \
+              --output-file testuser2.crt
+
+          # import cert into NSS database
+          docker exec pki pki nss-cert-import --cert testuser2.crt testuser2
+
+          # the cert should match the key (trust flags must be u,u,u)
+          echo "u,u,u" > expected
+          docker exec pki pki nss-cert-show testuser2 | tee output
           sed -n "s/^\s*Trust Flags:\s*\(\S*\)$/\1/p" output > actual
           diff expected actual
 
@@ -396,8 +438,11 @@ jobs:
               -e '/^ *Modification Time:/d' \
               output
 
-          # there should be 1 key request
+          # there should be 2 key requests
           cat > expected << EOF
+            Type: enrollment
+            Status: complete
+
             Type: enrollment
             Status: complete
           EOF
@@ -420,11 +465,15 @@ jobs:
               -e '/^ *Modification Time:/d' \
               output
 
-          # there should be 1 key
+          # there should be 2 keys
           cat > expected << EOF
             Algorithm: 1.2.840.113549.1.1.1
             Size: 2048
-            Owner: UID=testuser
+            Owner: UID=testuser1
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=testuser2
           EOF
 
           diff expected output
@@ -435,7 +484,7 @@ jobs:
           docker exec pki pki \
               -n caadmin \
               kra-key-find \
-              --owner UID=testuser \
+              --owner UID=testuser1 \
               | tee output
 
           KEY_ID=$(sed -n "s/^\s*Key ID:\s*\(\S*\)$/\1/p" output)
@@ -471,7 +520,7 @@ jobs:
           echo "Key ID: $KEY_ID"
 
           # export cert into Base64-encoded format
-          BASE64_CERT=$(docker exec pki pki nss-cert-export --format DER testuser | base64 --wrap=0)
+          BASE64_CERT=$(docker exec pki pki nss-cert-export --format DER testuser1 | base64 --wrap=0)
           echo "Cert: $BASE64_CERT"
 
           # create retrieval request with key ID, cert, and passphrase
@@ -510,14 +559,14 @@ jobs:
               --password Secret.123
 
           # remove archived cert from NSS database
-          docker exec pki pki -d nssdb nss-cert-del UID=testuser
+          docker exec pki pki -d nssdb nss-cert-del UID=testuser1
 
           # import original cert into NSS database
-          docker exec pki pki -d nssdb nss-cert-import --cert testuser.crt testuser
+          docker exec pki pki -d nssdb nss-cert-import --cert testuser1.crt testuser1
 
           # the original cert should match the archived key (trust flags must be u,u,u)
           echo "u,u,u" > expected
-          docker exec pki pki -d nssdb nss-cert-show testuser | tee output
+          docker exec pki pki -d nssdb nss-cert-show testuser1 | tee output
           sed -n "s/^\s*Trust Flags:\s*\(\S*\)$/\1/p" output > actual
           diff expected actual
 
@@ -541,6 +590,9 @@ jobs:
 
           # there should be 2 key requests
           cat > expected << EOF
+            Type: enrollment
+            Status: complete
+
             Type: enrollment
             Status: complete
 
@@ -570,7 +622,11 @@ jobs:
           cat > expected << EOF
             Algorithm: 1.2.840.113549.1.1.1
             Size: 2048
-            Owner: UID=testuser
+            Owner: UID=testuser1
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=testuser2
           EOF
 
           diff expected output
@@ -593,7 +649,7 @@ jobs:
             Status: inactive
             Algorithm: 1.2.840.113549.1.1.1
             Size: 2048
-            Owner: UID=testuser
+            Owner: UID=testuser1
           EOF
 
           diff expected output
@@ -618,6 +674,9 @@ jobs:
 
           # there should be 2 key requests
           cat > expected << EOF
+            Type: enrollment
+            Status: complete
+
             Type: enrollment
             Status: complete
 
@@ -648,7 +707,11 @@ jobs:
             Status: inactive
             Algorithm: 1.2.840.113549.1.1.1
             Size: 2048
-            Owner: UID=testuser
+            Owner: UID=testuser1
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=testuser2
           EOF
 
           diff expected output
@@ -662,15 +725,15 @@ jobs:
           docker exec pki pki \
               -n caadmin \
               kra-key-archive \
-              --clientKeyID testuser \
+              --clientKeyID testuser1 \
               --transport kra_transport \
               --input-data $SHARED/secret.archived \
               -v
 
           docker exec pki pki -n caadmin kra-key-find | tee output
 
-          # there should be 2 keys
-          echo "2" > expected
+          # there should be 3 keys
+          echo "3" > expected
           grep "^ *Key ID:" output | wc -l > actual
           diff expected actual
 
@@ -678,7 +741,7 @@ jobs:
           docker exec pki pki \
               -n caadmin \
               kra-key-find \
-              --clientKeyID testuser | tee output
+              --clientKeyID testuser1 | tee output
 
           sed -n 's/^ *Key ID: *\(.*\)$/\1/p' output > key.id
 
@@ -700,8 +763,11 @@ jobs:
               -e '/^ *Modification Time:/d' \
               output
 
-          # there should be 3 key requests
+          # there should be 4 key requests
           cat > expected << EOF
+            Type: enrollment
+            Status: complete
+
             Type: enrollment
             Status: complete
 
@@ -730,14 +796,18 @@ jobs:
               -e '/^ *Modification Time:/d' \
               output
 
-          # there should be 2 keys
+          # there should be 3 keys
           cat > expected << EOF
             Status: inactive
             Algorithm: 1.2.840.113549.1.1.1
             Size: 2048
-            Owner: UID=testuser
+            Owner: UID=testuser1
 
-            Client Key ID: testuser
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=testuser2
+
+            Client Key ID: testuser1
             Status: active
             Owner: kraadmin
           EOF
@@ -778,8 +848,11 @@ jobs:
               -e '/^ *Modification Time:/d' \
               output
 
-          # there should be 4 key requests
+          # there should be 5 key requests
           cat > expected << EOF
+            Type: enrollment
+            Status: complete
+
             Type: enrollment
             Status: complete
 
@@ -811,14 +884,18 @@ jobs:
               -e '/^ *Modification Time:/d' \
               output
 
-          # there should be 2 keys
+          # there should be 3 keys
           cat > expected << EOF
             Status: inactive
             Algorithm: 1.2.840.113549.1.1.1
             Size: 2048
-            Owner: UID=testuser
+            Owner: UID=testuser1
 
-            Client Key ID: testuser
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=testuser2
+
+            Client Key ID: testuser1
             Status: active
             Owner: kraadmin
           EOF

@@ -33,26 +33,25 @@ jobs:
           tests/bin/ds-create.sh \
               --image=${{ env.DS_IMAGE }} \
               --hostname=rootcads.example.com \
+              --network=example \
+              --network-alias=rootcads.example.com \
               --password=Secret.123 \
               rootcads
 
-      - name: Connect root CA DS container to network
-        run: docker network connect example rootcads --alias rootcads.example.com
-
       - name: Set up root CA container
         run: |
-          tests/bin/runner-init.sh rootca
-        env:
-          HOSTNAME: rootca.example.com
-
-      - name: Connect root CA container to network
-        run: docker network connect example rootca --alias rootca.example.com
+          tests/bin/runner-init.sh \
+              --hostname=rootca.example.com \
+              --network=example \
+              --network-alias=rootca.example.com \
+              rootca
 
       - name: Install root CA
         run: |
           docker exec rootca pkispawn \
               -f /usr/share/pki/server/examples/installation/ca.cfg \
               -s CA \
+              -D pki_audit_signing_nickname= \
               -D pki_ds_url=ldap://rootcads.example.com:3389 \
               -v
 
@@ -104,20 +103,18 @@ jobs:
           tests/bin/ds-create.sh \
               --image=${{ env.DS_IMAGE }} \
               --hostname=subcads.example.com \
+              --network=example \
+              --network-alias=subcads.example.com \
               --password=Secret.123 \
               subcads
 
-      - name: Connect sub CA DS container to network
-        run: docker network connect example subcads --alias subcads.example.com
-
       - name: Set up sub CA container
         run: |
-          tests/bin/runner-init.sh subca
-        env:
-          HOSTNAME: subca.example.com
-
-      - name: Connect sub CA container to network
-        run: docker network connect example subca --alias subca.example.com
+          tests/bin/runner-init.sh \
+              --hostname=subca.example.com \
+              --network=example \
+              --network-alias=subca.example.com \
+              subca
 
       - name: Install sub CA
         run: |
@@ -125,6 +122,7 @@ jobs:
               -f /usr/share/pki/server/examples/installation/subca.cfg \
               -s CA \
               -D pki_cert_chain_path=${SHARED}/root-ca_signing.crt \
+              -D pki_audit_signing_nickname= \
               -D pki_ds_url=ldap://subcads.example.com:3389 \
               -D pki_security_domain_uri=https://rootca.example.com:8443 \
               -D pki_subordinate_create_new_security_domain=True \
@@ -207,27 +205,27 @@ jobs:
           tests/bin/ds-create.sh \
               --image=${{ env.DS_IMAGE }} \
               --hostname=krads.example.com \
+              --network=example \
+              --network-alias=krads.example.com \
               --password=Secret.123 \
               krads
 
-      - name: Connect KRA DS container to network
-        run: docker network connect example krads --alias krads.example.com
-
       - name: Set up KRA container
         run: |
-          tests/bin/runner-init.sh kra
-        env:
-          HOSTNAME: kra.example.com
-
-      - name: Connect KRA container to network
-        run: docker network connect example kra --alias kra.example.com
+          tests/bin/runner-init.sh \
+              --hostname=kra.example.com \
+              --network=example \
+              --network-alias=kra.example.com \
+              kra
 
       - name: Install KRA
         run: |
           docker exec subca pki-server cert-export \
               --cert-file ${SHARED}/ca_signing.crt \
               ca_signing
+
           docker exec subca cp /root/.dogtag/pki-tomcat/ca_admin.cert ${SHARED}/ca_admin.cert
+
           docker exec kra pkispawn \
               -f /usr/share/pki/server/examples/installation/kra.cfg \
               -s KRA \
@@ -235,6 +233,7 @@ jobs:
               -D pki_issuing_ca_uri=https://subca.example.com:8443 \
               -D pki_cert_chain_nickname=ca_signing \
               -D pki_cert_chain_path=${SHARED}/cert_chain.crt \
+              -D pki_audit_signing_nickname= \
               -D pki_admin_cert_file=${SHARED}/ca_admin.cert \
               -D pki_ds_url=ldap://krads.example.com:3389 \
               -v
@@ -277,9 +276,8 @@ jobs:
       - name: Install banner in KRA container
         run: docker exec kra cp /usr/share/pki/server/examples/banner/banner.txt /var/lib/pki/pki-tomcat/conf
 
-      # TODO: Fix DogtagKRAConnectivityCheck to work without CA
-      # - name: Run PKI healthcheck
-      #   run: docker exec kra pki-healthcheck --failures-only
+      - name: Run PKI healthcheck
+        run: docker exec kra pki-healthcheck --failures-only
 
       - name: Verify KRA admin
         run: |
@@ -304,6 +302,70 @@ jobs:
           echo kra.example.com > expected
           diff expected actual
 
+      - name: Check cert enrollment with key archival
+        run: |
+          # export transport cert
+          docker exec kra pki-server cert-export \
+              --cert-file $SHARED/kra_transport.crt \
+              kra_transport
+
+          # import transport cert
+          docker exec subca pki nss-cert-import \
+              --cert $SHARED/kra_transport.crt \
+              kra_transport
+
+          # generate key and cert request
+          docker exec subca pki \
+              nss-cert-request \
+              --type crmf \
+              --subject UID=testuser1 \
+              --transport kra_transport \
+              --csr testuser1.csr
+
+          # issue cert
+          docker exec subca pki \
+              -u caadmin \
+              -w Secret.123 \
+              --ignore-banner \
+              ca-cert-issue \
+              --request-type crmf \
+              --profile caUserCert \
+              --subject UID=testuser1 \
+              --csr-file testuser1.csr \
+              --output-file testuser1.crt
+
+          docker exec subca openssl x509 \
+              -text \
+              -noout \
+              -in testuser1.crt
+
+      - name: Check cert enrollment with key archival again
+        run: |
+          # generate key and cert request
+          docker exec subca pki \
+              nss-cert-request \
+              --type crmf \
+              --subject UID=testuser2 \
+              --transport kra_transport \
+              --csr testuser2.csr
+
+          # issue cert
+          docker exec subca pki \
+              -u caadmin \
+              -w Secret.123 \
+              --ignore-banner \
+              ca-cert-issue \
+              --request-type crmf \
+              --profile caUserCert \
+              --subject UID=testuser2 \
+              --csr-file testuser2.csr \
+              --output-file testuser2.crt
+
+          docker exec subca openssl x509 \
+              -text \
+              -noout \
+              -in testuser2.crt
+
       - name: Remove KRA
         run: docker exec kra pkidestroy -s KRA -v
 
@@ -313,50 +375,47 @@ jobs:
       - name: Remove root CA
         run: docker exec rootca pkidestroy -s CA -v
 
-      - name: Check PKI server systemd journal in root CA container
+      - name: Check root CA systemd journal
         if: always()
         run: |
           docker exec rootca journalctl -x --no-pager -u pki-tomcatd@pki-tomcat.service
+
+      - name: Check root CA access log
+        if: always()
+        run: |
+          docker exec rootca find /var/log/pki/pki-tomcat -name "localhost_access_log.*" -exec cat {} \;
 
       - name: Check root CA debug log
         if: always()
         run: |
           docker exec rootca find /var/lib/pki/pki-tomcat/logs/ca -name "debug.*" -exec cat {} \;
 
-      - name: Check PKI server systemd journal in sub CA container
+      - name: Check sub CA systemd journal
         if: always()
         run: |
           docker exec subca journalctl -x --no-pager -u pki-tomcatd@pki-tomcat.service
+
+      - name: Check sub CA access log
+        if: always()
+        run: |
+          docker exec subca find /var/log/pki/pki-tomcat -name "localhost_access_log.*" -exec cat {} \;
 
       - name: Check sub CA debug log
         if: always()
         run: |
           docker exec subca find /var/lib/pki/pki-tomcat/logs/ca -name "debug.*" -exec cat {} \;
 
-      - name: Check PKI server systemd journal in KRA container
+      - name: Check KRA systemd journal
         if: always()
         run: |
           docker exec kra journalctl -x --no-pager -u pki-tomcatd@pki-tomcat.service
+
+      - name: Check KRA access log
+        if: always()
+        run: |
+          docker exec kra find /var/log/pki/pki-tomcat -name "localhost_access_log.*" -exec cat {} \;
 
       - name: Check KRA debug log
         if: always()
         run: |
           docker exec kra find /var/lib/pki/pki-tomcat/logs/kra -name "debug.*" -exec cat {} \;
-
-      - name: Gather artifacts
-        if: always()
-        run: |
-          tests/bin/ds-artifacts-save.sh rootcads
-          tests/bin/pki-artifacts-save.sh rootca
-          tests/bin/ds-artifacts-save.sh subcads
-          tests/bin/pki-artifacts-save.sh subca
-          tests/bin/ds-artifacts-save.sh krads
-          tests/bin/pki-artifacts-save.sh kra
-        continue-on-error: true
-
-      - name: Upload artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: kra-separate
-          path: /tmp/artifacts
