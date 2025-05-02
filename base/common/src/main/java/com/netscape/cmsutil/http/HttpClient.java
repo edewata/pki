@@ -26,6 +26,8 @@ import java.io.OutputStreamWriter;
 import java.net.Socket;
 
 import org.mozilla.jss.ssl.SSLCertificateApprovalCallback;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.netscape.cmsutil.net.ISocketFactory;
 
@@ -35,6 +37,9 @@ import com.netscape.cmsutil.net.ISocketFactory;
  * handles only string content.
  */
 public class HttpClient {
+
+    private static Logger logger = LoggerFactory.getLogger(HttpClient.class);
+
     protected ISocketFactory mFactory = null;
 
     protected Socket mSocket = null;
@@ -65,6 +70,8 @@ public class HttpClient {
     public void connect(String host, int port,
             int timeout // milliseconds
             ) throws IOException {
+
+        logger.info("HttpClient: Creating socket for " + host + ":" + port);
 
         mHost = host;
         mPort = Integer.toString(port);
@@ -115,7 +122,7 @@ public class HttpClient {
         try {
             resp.parse(mBufferedReader);
         } catch (IOException e) {
-            // XXX should we disconnect in all cases ?
+            logger.error("HttpClient: Unable to parse response: " + e.getMessage(), e);
             disconnect();
             throw e;
         }
