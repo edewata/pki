@@ -668,6 +668,7 @@ jobs:
               -e PKI_DS_URL=ldap://tpsds.example.com:3389 \
               -e PKI_DS_PASSWORD=Secret.123 \
               -e PKI_AUTHDB_URL=ldap://tpsds.example.com:3389 \
+              -e PKI_AUTHDB_BASEDN=ou=people,dc=example,dc=com \
               --detach \
               pki-tps
 
@@ -791,6 +792,7 @@ jobs:
               --full-name Administrator \
               --type adminType \
               --cert admin.crt \
+              --tps-profiles "All Profiles" \
               admin
 
       - name: Add TPS admin user into TPS groups
@@ -960,10 +962,289 @@ jobs:
               tps-user-show \
               admin
 
-      # TODO:
-      # - set up connectors
-      # - set up shared secret
-      # - test token format and enroll operations
+      - name: Check CA connector in TPS
+        run: |
+          docker exec tps pki-server tps-config-find | grep ^tps.connector.ca1. | tee output
+
+      - name: Check TKS connector in TPS
+        run: |
+          docker exec tps pki-server tps-config-find | grep ^tps.connector.tks1. | tee output
+
+      - name: Check KRA connector in TPS
+        run: |
+          docker exec tps pki-server tps-config-find | grep ^tps.connector.kra1. | tee output
+
+      - name: Check TPS connector in TKS
+        run: |
+          docker exec tks pki-server tks-config-find | grep ^tps. | tee output
+
+      - name: Add TPS subsystem user in TKS
+        run: |
+          docker exec client pki \
+              -U https://tks.example.com:8443 \
+              -n admin \
+              tks-user-add \
+              --fullName "TPS-tps.example.com-8443" \
+              --type agentType \
+              --cert-file $SHARED/tps/certs/subsystem.crt \
+              TPS-tps.example.com-8443
+
+      - name: Add TPS connector in TKS
+        run: |
+          docker exec client pki \
+              -U https://tks.example.com:8443 \
+              -n admin \
+              tks-tpsconnector-add \
+              --host tps.example.com \
+              --port 8443
+
+          # check TPS connector in CS.cfg
+          docker exec tks pki-server tks-config-find | grep ^tps. | sort | tee output
+
+          cat > expected << EOF
+          tps.0.host=tps.example.com
+          tps.0.port=8443
+          tps.0.userid=TPS-tps.example.com-8443
+          tps.list=0
+          EOF
+
+          diff expected output
+
+          # check TPS connector in CS.cfg
+          docker exec client pki \
+              -U https://tks.example.com:8443 \
+              -n admin \
+              tks-tpsconnector-show \
+              --host tps.example.com \
+              --port 8443 \
+              | tee output
+
+          cat > expected << EOF
+          ------------------------------------
+          TPS Connector "tps.example.com:8443"
+          ------------------------------------
+            Connector ID: 0
+            Host: tps.example.com
+            Port: 8443
+            User ID: TPS-tps.example.com-8443
+            Nickname: 
+          EOF
+
+          diff expected output
+
+      - name: Create shared secret in TKS
+        run: |
+          docker exec client pki \
+              -U https://tks.example.com:8443 \
+              -n tps_subsystem \
+              tks-key-create \
+              --output-format json \
+              0 \
+              | tee shared-secret.json
+
+          cat shared-secret.json | docker exec -i tps pki \
+              -d /var/lib/pki/pki-tomcat/conf/alias \
+              -f /var/lib/pki/pki-tomcat/conf/password.conf \
+              nss-key-import \
+              --wrapper subsystem \
+              "TPS-tps.example.com-8443 sharedSecret"
+
+          docker exec tps pki-server tps-config-set \
+              conn.tks1.tksSharedSymKeyName \
+              "TPS-tps.example.com-8443 sharedSecret"
+
+      - name: Set up TPS authentication
+        run: |
+          # import sample TPS users
+          docker exec tps ldapadd \
+              -H ldap://tpsds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -f /usr/share/pki/tps/auth/ds/create.ldif
+          docker exec tps ldapadd \
+              -H ldap://tpsds.example.com:3389 \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -f /usr/share/pki/tps/auth/ds/example.ldif
+
+          # use the sample TPS users
+          docker exec tps pki-server tps-config-set \
+              auths.instance.ldap1.ldap.basedn \
+              ou=people,dc=example,dc=com
+
+          # allow TPS client to work
+          docker exec tps pki-server tps-config-set \
+              channel.scp01.no.le.byte true
+
+          # reset PIN_RESET after PIN reset
+          docker exec tps pki-server tps-config-set \
+              tokendb.defaultPolicy \
+              "RE_ENROLL=YES;RENEW=NO;FORCE_FORMAT=NO;PIN_RESET=NO;RESET_PIN_RESET_TO_NO=YES"
+
+      - name: Restart TPS
+        run: |
+          docker restart tps
+          sleep 10
+
+          docker network reload --all
+
+          # wait for TPS to restart
+          docker exec client curl \
+              --retry 180 \
+              --retry-delay 0 \
+              --retry-connrefused \
+              -s \
+              -k \
+              -o /dev/null \
+              https://tps.example.com:8443
+
+      - name: Check pki tps-client
+        run: |
+          cat > script << EOF
+          op=help
+
+          op=var_set name=ra_host value=tps.example.com
+          op=var_set name=ra_port value=8080
+          op=var_set name=ra_uri value=/tps/tps
+          op=var_list
+
+          op=token_set cuid=ef890c6baf38e41a5cac
+          op=token_set msn=01020304
+          op=token_set app_ver=6FBBC105
+          op=token_set key_info=0101
+          op=token_set major_ver=0
+          op=token_set minor_ver=0
+          op=token_set auth_key=404142434445464748494a4b4c4d4e4f
+          op=token_set mac_key=404142434445464748494a4b4c4d4e4f
+          op=token_set kek_key=404142434445464748494a4b4c4d4e4f
+          op=token_status
+
+          op=exit
+          EOF
+
+          cat script | docker exec -i client pki tps-client
+
+      - name: Add token for testuser1
+        run: |
+          hexdump -v -n "10" -e '1/1 "%02x"' /dev/urandom > cuid
+          CUID=$(cat cuid)
+
+          # allow one-time PIN reset
+          docker exec client pki \
+              -U https://tps.example.com:8443 \
+              -n admin \
+              tps-token-add \
+              --policy "PIN_RESET=YES" \
+              $CUID | tee output
+
+          echo "UNFORMATTED" > expected
+          sed -n 's/\s*Status:\s\+\(\S\+\)\s*/\1/p' output > actual
+          diff expected actual
+
+          docker exec client pki \
+              -U https://tps.example.com:8443 \
+              -n admin \
+              tps-cert-find \
+              --token $CUID
+
+      - name: Format testuser1 token using pki tps-client
+        run: |
+          CUID=$(cat cuid)
+          docker exec client /usr/share/pki/tps/bin/pki-tps-format \
+              --hostname=tps.example.com \
+              --user=testuser1 \
+              --password=Secret.123 \
+              $CUID
+
+          docker exec client pki \
+              -U https://tps.example.com:8443 \
+              -n admin \
+              tps-token-show \
+              $CUID \
+              | tee output
+
+          sed -n 's/\s*Status:\s\+\(\S\+\)\s*/\1/p' output > actual
+
+          echo "FORMATTED" > expected
+          diff expected actual
+
+          docker exec client pki \
+              -U https://tps.example.com:8443 \
+              -n admin \
+              tps-cert-find \
+              --token $CUID
+
+      - name: Enroll testuser1 token using pki tps-client
+        run: |
+          CUID=$(cat cuid)
+          docker exec client /usr/share/pki/tps/bin/pki-tps-enroll \
+              --hostname=tps.example.com \
+              --user=testuser1 \
+              --password=Secret.123 \
+              $CUID
+
+          docker exec client pki \
+              -U https://tps.example.com:8443 \
+              -n admin \
+              tps-token-show \
+              $CUID \
+              | tee output
+
+          sed -n 's/\s*Status:\s\+\(\S\+\)\s*/\1/p' output > actual
+
+          echo "ACTIVE" > expected
+
+          diff expected actual
+
+          docker exec client pki \
+              -U https://tps.example.com:8443 \
+              -n admin \
+              tps-cert-find \
+              --token $CUID
+
+      - name: Reset PIN for testuser1 token using pki tps-client
+        run: |
+          CUID=$(cat cuid)
+          docker exec client /usr/share/pki/tps/bin/pki-tps-pin-reset \
+              --hostname=tps.example.com \
+              --user=testuser1 \
+              --password=Secret.123 \
+              --new-password=Secret.456 \
+              $CUID
+
+          # TODO: validate new PIN
+
+          # PIN_RESET should become NO
+          echo "RE_ENROLL=YES;RENEW=NO;FORCE_FORMAT=NO;PIN_RESET=NO;RESET_PIN_RESET_TO_NO=YES;RENEW_KEEP_OLD_ENC_CERTS=YES" > expected
+
+          docker exec client pki \
+              -U https://tps.example.com:8443 \
+              -n admin \
+              tps-token-show \
+              $CUID \
+              | tee output
+
+          sed -n 's/\s*Policy:\s\+\(\S\+\)\s*/\1/p' output > actual
+
+          diff expected actual
+
+      - name: Find testuser1 key in KRA
+        run: |
+          CUID=$(cat cuid | tr [:lower:] [:upper:])
+          USER="testuser1"
+
+          docker exec client pki \
+              -U https://kra.example.com:8443 \
+              -n admin \
+              kra-key-find \
+              --owner $CUID:$USER \
+              | tee output
+
+          sed -n 's/\s*Owner:\s\+\(\S\+\)\s*/\1/p' output > actual
+
+          echo "$CUID:$USER" > expected
+
+          diff expected actual
 
       - name: Check CA DS server systemd journal
         if: always()
@@ -979,6 +1260,11 @@ jobs:
         if: always()
         run: |
           docker logs ca 2>&1
+
+      - name: Check CA access log
+        if: always()
+        run: |
+          docker exec ca find /var/lib/pki/pki-tomcat/logs -name "localhost_access_log.*" -exec cat {} \;
 
       - name: Check CA debug logs
         if: always()
@@ -1000,6 +1286,11 @@ jobs:
         run: |
           docker logs kra 2>&1
 
+      - name: Check KRA access log
+        if: always()
+        run: |
+          docker exec kra find /var/lib/pki/pki-tomcat/logs -name "localhost_access_log.*" -exec cat {} \;
+
       - name: Check KRA debug logs
         if: always()
         run: |
@@ -1019,6 +1310,11 @@ jobs:
         if: always()
         run: |
           docker logs tks 2>&1
+
+      - name: Check TKS access log
+        if: always()
+        run: |
+          docker exec tks find /var/lib/pki/pki-tomcat/logs -name "localhost_access_log.*" -exec cat {} \;
 
       - name: Check TKS debug logs
         if: always()
@@ -1040,6 +1336,11 @@ jobs:
         run: |
           docker logs tps 2>&1
 
+      - name: Check TPS access log
+        if: always()
+        run: |
+          docker exec tps find /var/lib/pki/pki-tomcat/logs -name "localhost_access_log.*" -exec cat {} \;
+
       - name: Check TPS debug logs
         if: always()
         run: |
@@ -1049,38 +1350,3 @@ jobs:
         if: always()
         run: |
           docker logs client
-
-      - name: Gather artifacts
-        if: always()
-        run: |
-          mkdir -p /tmp/artifacts
-
-          tests/bin/ds-artifacts-save.sh cads
-
-          cp -r ca /tmp/artifacts
-          docker logs ca > /tmp/artifacts/ca/container.out 2> /tmp/artifacts/ca/container.err
-
-          tests/bin/ds-artifacts-save.sh krads
-
-          cp -r kra /tmp/artifacts
-          docker logs kra > /tmp/artifacts/kra/container.out 2> /tmp/artifacts/kra/container.err
-
-          tests/bin/ds-artifacts-save.sh tksds
-
-          cp -r tks /tmp/artifacts
-          docker logs tks > /tmp/artifacts/tks/container.out 2> /tmp/artifacts/tks/container.err
-
-          tests/bin/ds-artifacts-save.sh tpsds
-
-          cp -r tps /tmp/artifacts
-          docker logs tps > /tmp/artifacts/tps/container.out 2> /tmp/artifacts/tps/container.err
-
-          mkdir -p /tmp/artifacts/client
-          docker logs client > /tmp/artifacts/client/container.out 2> /tmp/artifacts/client/container.err
-
-      - name: Upload artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: tps-container
-          path: /tmp/artifacts

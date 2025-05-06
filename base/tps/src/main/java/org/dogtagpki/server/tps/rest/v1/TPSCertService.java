@@ -27,6 +27,7 @@ import java.util.Map;
 
 import javax.ws.rs.core.Response;
 
+import org.apache.commons.lang3.StringUtils;
 import org.dogtagpki.server.tps.TPSEngine;
 import org.dogtagpki.server.tps.TPSSubsystem;
 import org.dogtagpki.server.tps.dbs.TPSCertDatabase;
@@ -123,9 +124,9 @@ public class TPSCertService extends PKIService implements TPSCertResource {
         try {
             List<String> authorizedProfiles = getAuthorizedProfiles();
             if (authorizedProfiles == null) {
-                msg = "authorizedProfiles null";
-                logger.debug(method + msg);
-                throw new PKIException(method + msg);
+                msg = "Missing authorized profiles";
+                logger.error(msg);
+                throw new PKIException(msg);
             }
 
             TPSSubsystem subsystem = (TPSSubsystem) engine.getSubsystem(TPSSubsystem.ID);
@@ -181,9 +182,9 @@ public class TPSCertService extends PKIService implements TPSCertResource {
             TokenDatabase tokenDatabase = subsystem.getTokenDatabase();
             List<String> authorizedProfiles = getAuthorizedProfiles();
             if (authorizedProfiles == null) {
-                msg = "authorizedProfiles null";
-                logger.debug("{}{}", method, msg);
-                throw new PKIException(method + msg);
+                msg = "Missing authorized profiles";
+                logger.error(msg);
+                throw new PKIException(msg);
             }
             int total = 0;
             while (certRecs.hasNext()) {
@@ -228,9 +229,9 @@ public class TPSCertService extends PKIService implements TPSCertResource {
         try {
             List<String> authorizedProfiles = getAuthorizedProfiles();
             if (authorizedProfiles == null) {
-                msg = "authorizedProfiles null";
-                logger.debug(method + msg);
-                throw new PKIException(method + msg);
+                msg = "Missing authorized profiles";
+                logger.error(msg);
+                throw new PKIException(msg);
             }
 
             TPSSubsystem subsystem = (TPSSubsystem) engine.getSubsystem(TPSSubsystem.ID);
@@ -251,13 +252,14 @@ public class TPSCertService extends PKIService implements TPSCertResource {
     /*
      * returns a list of TPS profiles allowed for the current user
      */
-    List<String> getAuthorizedProfiles()
-           throws Exception {
-        String method = "TokenService.getAuthorizedProfiles: ";
+    List<String> getAuthorizedProfiles() throws Exception {
 
         PKIPrincipal pkiPrincipal = (PKIPrincipal) servletRequest.getUserPrincipal();
         User user = pkiPrincipal.getUser();
 
-        return user.getTpsProfiles();
+        List<String> authorizedProfiles = user.getTpsProfiles();
+        logger.info("TPSCertService: authorized profiles: " + StringUtils.join(authorizedProfiles, ", "));
+
+        return authorizedProfiles;
     }
 }
