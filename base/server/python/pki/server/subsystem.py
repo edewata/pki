@@ -2818,7 +2818,8 @@ class TPSSubsystem(PKISubsystem):
             connector['type'] = 'TKS'
 
         else:
-            connector['type'] = None
+            # connector doesn't exist
+            return None
 
         connector['enabled'] = self.config.get('tps.connector.%s.enable' % connector_id)
 
