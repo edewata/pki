@@ -1,0 +1,224 @@
+name: Ollama
+
+on: workflow_call
+#on: [push, pull_request]
+
+env:
+  DS_IMAGE: ${{ vars.DS_IMAGE || 'quay.io/389ds/dirsrv' }}
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    env:
+      SHARED: /tmp/workdir/pki
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install jq
+          pip install uv uvenv
+
+      - name: Install Ollama
+        run: curl -fsSL https://ollama.com/install.sh | sh
+
+      - name: Check Ollama
+        if: false
+        run: ollama list
+
+      - name: Run llama3.2
+        run: |
+          #ollama pull llama3.2
+          #ollama serve
+          ollama run llama3.2
+
+      - name: Run Ollama container
+        if: false
+        run: |
+          docker run \
+              -d \
+              -v ollama:/root/.ollama \
+              -p 11434:11434 \
+              --name ollama \
+              ollama/ollama
+
+      - name: Run llama3.2
+        if: false
+        run: |
+          docker exec ollama ollama run llama3.2 
+
+      #- name: Install Go
+      #  uses: actions/setup-go@v5
+
+      - name: Install MCPHost
+        run: |
+          go version
+          GOPATH=$(go env GOPATH)
+          echo $GOPATH
+          mkdir -p $GOPATH/src/github.com/mark3labs
+
+          cd $GOPATH/src/github.com/mark3labs
+          git clone https://github.com/mark3labs/mcphost.git
+
+          cd mcphost
+          go install
+
+          ls -la $GOPATH
+          ls -la $GOPATH/bin
+          ls -la $GOPATH/pkg
+
+      - name: Clone mcp-server-bash repository
+        uses: actions/checkout@v4
+        with:
+          repository: antonum/mcp-server-bash
+          path: mcp-server-bash
+
+      - name: Configure mcp-server-bash
+        working-directory: mcp-server-bash
+        run: |
+          ls -la
+          cat > mcp.json << EOF
+          {
+            "mcpServers": {
+              "math": {
+                "command": "/home/runner/work/pki/pki/mcp-server-bash/mcp_add.sh",
+                "args": []
+              }
+            }
+          }
+          EOF
+
+      - name: Run mcp_add.sh
+        working-directory: mcp-server-bash
+        run: |
+          cat > mcp_add.sh << EOF
+          #!/bin/bash
+
+          echo "Starting mcp_add.sh" >> /home/runner/work/pki/pki/mcp-server-bash/requests.log
+
+          while read -r line; do
+              echo $line >> /home/runner/work/pki/pki/mcp-server-bash/requests.log
+              method=$(echo "$line" | jq -r '.method')
+              id=$(echo "$line" | jq -r '.id')
+
+              if [[ "$method" == "initialize" ]]; then
+                  echo '{"jsonrpc":"2.0","id":'"$id"',"result":{"protocolVersion":"2024-11-05","capabilities":{"experimental":{},"prompts":{"listChanged":false},"resources":{"subscribe":false,"listChanged":false},"tools":{"listChanged":false}},"serverInfo":{"name":"math","version":"0.0.1"}}}'
+    
+              elif [[ "$method" == "notifications/initialized" ]]; then
+                  : #do nothing
+    
+              elif [[ "$method" == "tools/list" ]]; then
+                  echo '{"jsonrpc":"2.0","id":'"$id"',"result":{"tools":[{"name":"addition","description":"addition of two numbers.\n\nArgs:\n    num1, num2\n","inputSchema":{"properties":{"num1":{"title":"Number1","type":"string"},"num2":{"title":"Number2","type":"string"}},"required":["num1", "num2"],"type":"object"}}]}}'
+    
+              elif [[ "$method" == "resources/list" ]]; then
+                  echo '{"jsonrpc":"2.0","id":'"$id"',"result":{"resources":[]}}'
+
+              elif [[ "$method" == "prompts/list" ]]; then
+                  echo '{"jsonrpc":"2.0","id":'"$id"',"result":{"prompts":[]}}'
+
+              elif [[ "$method" == "tools/call" ]]; then
+                  #{"method":"tools/call","params":{"name":"addition","arguments":{"num1":"1","num2":"2"}},"jsonrpc":"2.0","id":20}
+                  tool_method=$(echo "$line" | jq -r '.params.name')
+                  num1=$(echo "$line" | jq -r '.params.arguments.num1')
+                  num2=$(echo "$line" | jq -r '.params.arguments.num2')
+                  sum=$((num1 + num2))
+                  echo '{"jsonrpc":"2.0","id":'"$id"',"result":{"content":[{"type":"text","text":"\n sum of two numbers is '"$sum"'"}],"isError":false}}'
+    
+              else
+                  echo '{"jsonrpc":"2.0","id":'"$id"',"error":{"code":-32601,"message":"Method not found"}}'
+              fi
+          done || break
+          EOF
+
+          chmod +x mcp_add.sh
+
+      - name: Run mcp-server-bash
+        working-directory: mcp-server-bash
+        run: |
+          GOPATH=$(go env GOPATH)
+          $GOPATH/bin/mcphost -m ollama:llama3.2:latest --config mcp.json --debug
+
+      - name: Run mcp-server-bash
+        if: always()
+        working-directory: mcp-server-bash
+        run: |
+          cat requests.log
+
+      - name: Clone mcp-cli repository
+        uses: actions/checkout@v4
+        with:
+          repository: chrishayuk/mcp-cli
+          path: mcp-cli
+
+      - name: Install mcp-cli
+        working-directory: mcp-cli
+        run: |
+          #pip install -e ".[cli,dev]"
+
+          uv sync --reinstall
+          #uv install chuk-mcp-time-server chuk-mcp-echo-server
+          uv run mcp-cli --help
+
+      - name: Configure mcp-cli
+        working-directory: mcp-cli
+        run: |
+          cat > server_config.json << EOF
+          {
+            "mcpServers": {
+              "time": {
+                "command": "uvenv",
+                "args": [ "run", "chuk-mcp-time-server"]
+              },
+              "echo": {
+                "command": "uvenv",
+                "args": [ "run", "chuk-mcp-echo-server"]
+              }
+            }
+          }
+          EOF
+
+      - name: Run mcp-cli provider
+        working-directory: mcp-cli
+        run: |
+          uv run mcp-cli provider --help
+          uv run mcp-cli provider list
+          uv run mcp-cli provider config
+
+      - name: Run mcp-cli servers
+        working-directory: mcp-cli
+        run: |
+          uv run mcp-cli servers --help
+
+      - name: Run mcp-cli resources
+        working-directory: mcp-cli
+        run: |
+          uv run mcp-cli resources --help
+
+      - name: Run mcp-cli prompts
+        working-directory: mcp-cli
+        run: |
+          uv run mcp-cli prompts --help
+
+      - name: Run mcp-cli tools
+        #working-directory: mcp-cli
+        run: |
+          uv run mcp-cli tools --help
+          uv run mcp-cli tools list {} --server time
+
+      - name: Clone PKI repository
+        uses: actions/checkout@v4
+
+      - name: Retrieve PKI images
+        uses: actions/cache@v4
+        with:
+          key: pki-images-${{ github.sha }}
+          path: pki-images.tar
+
+      - name: Load PKI images
+        run: docker load --input pki-images.tar
+
+      - name: Set up runner container
+        run: |
+          tests/bin/runner-init.sh \
+              --hostname=pki.example.com \
+              pki
