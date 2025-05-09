@@ -71,3 +71,8 @@ jobs:
   update-version-test:
     name: Update Version
     uses: ./.github/workflows/update-version-test.yml
+
+  ramalama-test:
+    name: RamaLama
+    needs: build
+    uses: ./.github/workflows/ramalama-test.yml
