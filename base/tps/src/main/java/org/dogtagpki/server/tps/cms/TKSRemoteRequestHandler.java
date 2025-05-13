@@ -21,16 +21,15 @@ package org.dogtagpki.server.tps.cms;
 import java.util.Hashtable;
 
 import org.dogtagpki.server.connector.IRemoteRequest;
-import org.dogtagpki.server.tps.TPSConfig;
 import org.dogtagpki.server.tps.TPSEngine;
 import org.dogtagpki.server.tps.TPSEngineConfig;
-
 import org.dogtagpki.server.tps.TPSSubsystem;
 import org.dogtagpki.server.tps.channel.SecureChannel;
 import org.dogtagpki.tps.main.TPSBuffer;
 import org.dogtagpki.tps.main.Util;
 
 import com.netscape.certsrv.base.EBaseException;
+import com.netscape.certsrv.base.PKIException;
 import com.netscape.cmscore.connector.HttpConnector;
 import com.netscape.cmsutil.http.HttpResponse;
 
@@ -323,7 +322,7 @@ public class TKSRemoteRequestHandler extends RemoteRequestHandler
 
         //logger.debug(method + " request to TKS: " + requestString);
         logger.debug(method + " sending request to TKS...");
-        
+
         HttpResponse resp =
                 conn.send("computeSessionKey",
                         requestString
@@ -429,7 +428,7 @@ public class TKSRemoteRequestHandler extends RemoteRequestHandler
                 logger.debug(method + " got IRemoteRequest.TKS_RESPONSE_KeyCheck");
                 response.put(IRemoteRequest.TKS_RESPONSE_KeyCheck, Util.specialDecode(value));
             }
-            
+
             // Applet and Alg Selection by Token Range Support - begin
             value = (String) response.get(IRemoteRequest.TKS_RESPONSE_KeyCheck_Des);
 
@@ -669,14 +668,14 @@ public class TKSRemoteRequestHandler extends RemoteRequestHandler
         if (wrappedDekSessionKey != null) { // We have secure channel protocol 02 trying to upgrade the key set.
             command += "&" + IRemoteRequest.WRAPPED_DEK_SESSION_KEY + "=" + Util.specialURLEncode(wrappedDekSessionKey);
         }
-        
+
         // ** G&D 256 Key Rollover Support **
         // include oldKeySet name in the request TKS if provided
         if (oldKeySet != null) {
             command += "&" + IRemoteRequest.TOKEN_OLD_KEYSET + "=" + oldKeySet;
         }
-        logger.debug("TKSRemoteRequestHandler: createKeySetData(): request to TKS: " + command); 
-        
+        logger.debug("TKSRemoteRequestHandler: createKeySetData(): request to TKS: " + command);
+
         HttpResponse resp =
                 conn.send("createKeySetData",
                         command);
@@ -752,8 +751,12 @@ public class TKSRemoteRequestHandler extends RemoteRequestHandler
         TPSEngine engine = TPSEngine.getInstance();
         TPSSubsystem subsystem =
                 (TPSSubsystem)  engine.getSubsystem(TPSSubsystem.ID);
-        HttpConnector conn =
-                (HttpConnector) subsystem.getConnectionManager().getConnector(connid);
+
+        HttpConnector conn = (HttpConnector) subsystem.getConnectionManager().getConnector(connid);
+        if (conn == null) {
+            throw new PKIException("Missing TKS connection: " + connid);
+        }
+
         HttpResponse resp =
                 conn.send("computeRandomData",
                         IRemoteRequest.TOKEN_DATA_NUM_BYTES + "=" + dataSize);
