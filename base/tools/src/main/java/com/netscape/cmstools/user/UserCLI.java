@@ -85,7 +85,7 @@ public class UserCLI extends CLI {
     }
 
     public static void printUser(UserData userData) {
-        System.out.println("  User ID: " + userData.getID());
+        System.out.println("  User ID: " + userData.getUserID());
 
         String fullName = userData.getFullName();
         if (!StringUtils.isEmpty(fullName))
