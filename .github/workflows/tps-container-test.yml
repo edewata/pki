@@ -34,7 +34,27 @@ jobs:
         run: docker load --input pki-images.tar
 
       - name: Create network
-        run: docker network create example
+        run: |
+          docker network create example
+          ip addr
+          ifconfig
+          cat /etc/hosts
+          cat /etc/resolv.conf
+          ps -ef | grep slirp
+
+      - name: Run dns-proxy-server
+        if: false
+        run: |
+          #mkdir -p /opt/dns-proxy-server/conf
+          #    -v /opt/dns-proxy-server/conf:/app/conf \
+          docker run \
+              --hostname dns.example.com \
+              --name dns-proxy-server \
+              -p 5380:5380 \
+              -v /var/run/docker.sock:/var/run/docker.sock \
+              -v /etc/resolv.conf:/etc/resolv.conf \
+              --rm \
+              defreitas/dns-proxy-server
 
       - name: Create shared folders
         run: |
@@ -55,14 +75,19 @@ jobs:
         run: |
           tests/bin/runner-init.sh \
               --hostname=client.example.com \
+              --network=bridge \
               --network=example \
               client
+
+          docker inspect client
+          #nslookup client.example.com
 
       - name: Set up CA container
         run: |
           docker run \
               --name ca \
               --hostname ca.example.com \
+              --network bridge \
               --network example \
               --network-alias ca.example.com \
               -v $PWD/ca/certs:/certs \
@@ -70,18 +95,24 @@ jobs:
               -v $PWD/ca/logs:/logs \
               -e PKI_DS_URL=ldap://cads.example.com:3389 \
               -e PKI_DS_PASSWORD=Secret.123 \
+              -p 8443:8443 \
               --detach \
               pki-ca
 
+          CA_IP=$(docker inspect ca -f '{{ .NetworkSettings.Networks.example.IPAddress }}')
+          echo "CA IP: $CA_IP"
+
+          #nslookup ca.example.com
+
           # wait for CA to start
-          docker exec client curl \
+          podman unshare --rootless-netns curl \
               --retry 180 \
               --retry-delay 0 \
               --retry-connrefused \
               -s \
               -k \
               -o /dev/null \
-              https://ca.example.com:8443
+              https://$CA_IP:8443
 
       - name: Check CA info
         run: |
@@ -105,6 +136,7 @@ jobs:
           tests/bin/ds-create.sh \
               --image=${{ env.DS_IMAGE }} \
               --hostname=cads.example.com \
+              --network=bridge \
               --network=example \
               --network-alias=cads.example.com \
               --password=Secret.123 \
@@ -411,12 +443,9 @@ jobs:
       - name: Restart CA
         run: |
           docker restart ca
-          sleep 10
-
-          docker network reload --all
 
           # wait for CA to restart
-          docker exec client curl \
+          curl \
               --retry 180 \
               --retry-delay 0 \
               --retry-connrefused \

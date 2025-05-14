@@ -44,7 +44,7 @@ while getopts v-: arg ; do
             HOSTNAME="$LONG_OPTARG"
             ;;
         network=?*)
-            NETWORK="$LONG_OPTARG"
+            NETWORKS+=("$LONG_OPTARG")
             ;;
         network-alias=?*)
             ALIASES+=("$LONG_OPTARG")
@@ -99,7 +99,7 @@ if [ "$DEBUG" = true ] ; then
     echo "NAME: $NAME"
     echo "IMAGE: $IMAGE"
     echo "HOSTNAME: $HOSTNAME"
-    echo "NETWORK: $NETWORK"
+    echo "NETWORKS: ${NETWORKS[@]}"
     echo "ALIASES: ${$ALIASES[@]}"
 fi
 
@@ -127,10 +127,10 @@ OPTIONS+=(--detach)
 OPTIONS+=(--privileged)
 OPTIONS+=(-i)
 
-if [ "$NETWORK" != "" ]
-then
+for NETWORK in "${NETWORKS[@]}"
+do
     OPTIONS+=(--network $NETWORK)
-fi
+done
 
 for ALIAS in "${ALIASES[@]}"
 do
