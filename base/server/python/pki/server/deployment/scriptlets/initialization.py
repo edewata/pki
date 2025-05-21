@@ -163,9 +163,6 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             if not deployer.configuration_file.skip_configuration:
                 deployer.configuration_file.confirm_data_exists('pki_ds_password')
 
-            # if secure DS connection is required, verify parameters
-            deployer.configuration_file.verify_ds_secure_connection_data()
-
     def destroy(self, deployer):
 
         instance = self.instance

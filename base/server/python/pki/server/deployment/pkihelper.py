@@ -577,19 +577,6 @@ class ConfigurationFile:
         trans.finish()
         return
 
-    def verify_ds_secure_connection_data(self):
-
-        ds_url = self.deployer.get_ds_url()
-
-        # Check to see if a secure connection is being used for the DS
-        if ds_url.scheme == 'ldaps':
-            # Verify existence of a local PEM file containing a
-            # directory server CA certificate
-            self.confirm_file_exists("pki_ds_secure_connection_ca_pem_file")
-            # Verify existence of a nickname for this
-            # directory server CA certificate
-            self.confirm_data_exists("pki_ds_secure_connection_ca_nickname")
-
     def verify_command_matches_configuration_file(self):
         # Silently verify that the command-line parameters match the values
         # that are present in the corresponding configuration file
