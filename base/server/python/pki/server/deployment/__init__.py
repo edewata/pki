@@ -1395,22 +1395,21 @@ class PKIDeployer:
 
     def configure_internal_database(self, subsystem):
 
+        logger.info('Configuring %s database', subsystem.type)
         ds_url = self.get_ds_url()
 
-        if not ds_url:
-            return
+        if ds_url:
+            if ds_url.scheme == 'ldaps':
+                subsystem.set_config('internaldb.ldapconn.secureConn', 'true')
 
-        if ds_url.scheme == 'ldaps':
-            subsystem.set_config('internaldb.ldapconn.secureConn', 'true')
+            elif ds_url.scheme == 'ldap':
+                subsystem.set_config('internaldb.ldapconn.secureConn', 'false')
 
-        elif ds_url.scheme == 'ldap':
-            subsystem.set_config('internaldb.ldapconn.secureConn', 'false')
+            else:
+                raise Exception('Unsupported protocol: %s' % ds_url.scheme)
 
-        else:
-            raise Exception('Unsupported protocol: %s' % ds_url.scheme)
-
-        subsystem.set_config('internaldb.ldapconn.host', ds_url.hostname)
-        subsystem.set_config('internaldb.ldapconn.port', ds_url.port)
+            subsystem.set_config('internaldb.ldapconn.host', ds_url.hostname)
+            subsystem.set_config('internaldb.ldapconn.port', ds_url.port)
 
         subsystem.set_config('internaldb.ldapauth.bindDN', self.mdict['pki_ds_bind_dn'])
         subsystem.set_config('internaldb.basedn', self.mdict['pki_ds_base_dn'])
@@ -2434,6 +2433,7 @@ class PKIDeployer:
     def get_ds_url(self):
 
         ds_url = self.mdict.get('pki_ds_url')
+        logger.info('pki_ds_url: %s', ds_url)
 
         if ds_url is None:
 
@@ -2451,6 +2451,10 @@ class PKIDeployer:
 
             ds_url = ds_protocol + '://' + ds_hostname + ':' + ds_port
 
+        elif ds_url == '':
+            return None
+
+        logger.info('DS URL: %s', ds_url)
         return urllib.parse.urlparse(ds_url)
 
     def ds_connect(self, ds_url):

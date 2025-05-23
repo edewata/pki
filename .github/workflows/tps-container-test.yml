@@ -68,8 +68,6 @@ jobs:
               -v $PWD/ca/certs:/certs \
               -v $PWD/ca/conf:/conf \
               -v $PWD/ca/logs:/logs \
-              -e PKI_DS_URL=ldap://cads.example.com:3389 \
-              -e PKI_DS_PASSWORD=Secret.123 \
               --detach \
               pki-ca
 
@@ -113,6 +111,23 @@ jobs:
       # https://github.com/dogtagpki/pki/wiki/Setting-up-CA-Database
       - name: Initialize CA database
         run: |
+          docker exec ca pki-server ca-db-config-mod \
+              --secure false \
+              --hostname cads.example.com \
+              --port 3389
+          #docker exec ca pki-server ca-config-set \
+          #    internaldb.ldapconn.secureConn \
+          #    false
+          #docker exec ca pki-server ca-config-set \
+          #    internaldb.ldapconn.host \
+          #    cads.example.com
+          #docker exec ca pki-server ca-config-set \
+          #    internaldb.ldapconn.port \
+          #    3389
+          docker exec ca pki-server password-set \
+              --password Secret.123 \
+              internaldb
+
           docker exec ca pki-server ca-db-init -v
           docker exec ca pki-server ca-db-index-add -v
           docker exec ca pki-server ca-db-index-rebuild -v
@@ -198,14 +213,6 @@ jobs:
         run: |
           docker exec ca pki-server ca-user-role-add admin "Administrators"
           docker exec ca pki-server ca-user-role-add admin "Certificate Manager Agents"
-
-      - name: Check CA admin user
-        run: |
-          docker exec client pki \
-              -U https://ca.example.com:8443 \
-              -n admin \
-              ca-user-show \
-              admin
 
       - name: Create KRA storage cert
         run: |
@@ -323,8 +330,6 @@ jobs:
               -v $PWD/kra/certs:/certs \
               -v $PWD/kra/conf:/conf \
               -v $PWD/kra/logs:/logs \
-              -e PKI_DS_URL=ldap://krads.example.com:3389 \
-              -e PKI_DS_PASSWORD=Secret.123 \
               --detach \
               pki-kra
 
@@ -339,6 +344,12 @@ jobs:
               -o /dev/null \
               https://kra.example.com:8443
 
+      - name: Check KRA info
+        run: |
+          docker exec client pki \
+              -U https://kra.example.com:8443 \
+              info
+
       - name: Set up KRA DS container
         run: |
           tests/bin/ds-create.sh \
@@ -352,6 +363,23 @@ jobs:
       # https://github.com/dogtagpki/pki/wiki/Setting-up-KRA-Database
       - name: Set up KRA database
         run: |
+          docker exec kra pki-server kra-db-config-mod \
+              --secure false \
+              --hostname krads.example.com \
+              --port 3389
+          #docker exec kra pki-server kra-config-set \
+          #    internaldb.ldapconn.secureConn \
+          #    false
+          #docker exec kra pki-server kra-config-set \
+          #    internaldb.ldapconn.host \
+          #    krads.example.com
+          #docker exec kra pki-server kra-config-set \
+          #    internaldb.ldapconn.port \
+          #    3389
+          docker exec kra pki-server password-set \
+              --password Secret.123 \
+              internaldb
+
           docker exec kra pki-server kra-db-init -v
           docker exec kra pki-server kra-db-index-add -v
           docker exec kra pki-server kra-db-index-rebuild  -v
@@ -371,14 +399,6 @@ jobs:
         run: |
           docker exec kra pki-server kra-user-role-add admin "Administrators"
           docker exec kra pki-server kra-user-role-add admin "Data Recovery Manager Agents"
-
-      - name: Check KRA admin user
-        run: |
-          docker exec client pki \
-              -U https://kra.example.com:8443 \
-              -n admin \
-              kra-user-show \
-              admin
 
       # https://github.com/dogtagpki/pki/wiki/Setting-up-Subsystem-User
       - name: Add CA subsystem user in KRA
@@ -402,23 +422,6 @@ jobs:
              --nickname subsystem \
              --transport-cert kra_transport.crt \
              KRA
-
-      - name: Restart CA
-        run: |
-          docker restart ca
-          sleep 10
-
-          docker network reload --all
-
-          # wait for CA to restart
-          docker exec client curl \
-              --retry 180 \
-              --retry-delay 0 \
-              --retry-connrefused \
-              -s \
-              -k \
-              -o /dev/null \
-              https://ca.example.com:8443
 
       - name: Create TKS subsystem cert
         run: |
@@ -496,8 +499,6 @@ jobs:
               -v $PWD/tks/certs:/certs \
               -v $PWD/tks/conf:/conf \
               -v $PWD/tks/logs:/logs \
-              -e PKI_DS_URL=ldap://tksds.example.com:3389 \
-              -e PKI_DS_PASSWORD=Secret.123 \
               --detach \
               pki-tks
 
@@ -512,6 +513,12 @@ jobs:
               -o /dev/null \
               https://tks.example.com:8443
 
+      - name: Check TKS info
+        run: |
+          docker exec client pki \
+              -U https://tks.example.com:8443 \
+              info
+
       - name: Set up TKS DS container
         run: |
           tests/bin/ds-create.sh \
@@ -525,6 +532,23 @@ jobs:
       # https://github.com/dogtagpki/pki/wiki/Setting-up-TKS-Database
       - name: Set up TKS database
         run: |
+          docker exec tks pki-server tks-db-config-mod \
+              --secure false \
+              --hostname tksds.example.com \
+              --port 3389
+          #docker exec tks pki-server tks-config-set \
+          #    internaldb.ldapconn.secureConn \
+          #    false
+          #docker exec tks pki-server tks-config-set \
+          #    internaldb.ldapconn.host \
+          #    tksds.example.com
+          #docker exec tks pki-server tks-config-set \
+          #    internaldb.ldapconn.port \
+          #    3389
+          docker exec tks pki-server password-set \
+              --password Secret.123 \
+              internaldb
+
           docker exec tks pki-server tks-db-init -v
           docker exec tks pki-server tks-db-index-add -v
           docker exec tks pki-server tks-db-index-rebuild  -v
@@ -544,14 +568,6 @@ jobs:
         run: |
           docker exec tks pki-server tks-user-role-add admin "Administrators"
           docker exec tks pki-server tks-user-role-add admin "Token Key Service Manager Agents"
-
-      - name: Check TKS admin user
-        run: |
-          docker exec client pki \
-              -U https://tks.example.com:8443 \
-              -n admin \
-              tks-user-show \
-              admin
 
       - name: Import KRA transport cert into TKS
         run: |
@@ -584,23 +600,6 @@ jobs:
              --nickname "TPS-tps.example.com-8443 sharedSecret" \
              --uid TPS-tps.example.com-8443 \
              0
-
-      - name: Restart TKS
-        run: |
-          docker restart tks
-          sleep 10
-
-          docker network reload --all
-
-          # wait for TKS to restart
-          docker exec client curl \
-              --retry 180 \
-              --retry-delay 0 \
-              --retry-connrefused \
-              -s \
-              -k \
-              -o /dev/null \
-              https://tks.example.com:8443
 
       - name: Check TPS connector in TKS after restart
         run: |
@@ -801,9 +800,18 @@ jobs:
               --password=Secret.123 \
               tpsds
 
-      # https://github.com/dogtagpki/pki/wiki/Setting-up-TKS-Database
+      # https://github.com/dogtagpki/pki/wiki/Setting-up-TPS-Database
       - name: Set up TPS database
         run: |
+          docker exec tps pki-server tps-db-config-mod \
+              --secure false \
+              --hostname tpsds.example.com \
+              --port 3389
+
+          docker exec tps pki-server password-set \
+              --password Secret.123 \
+              internaldb
+
           docker exec tps pki-server tps-db-init -v
           docker exec tps pki-server tps-db-index-add -v
           docker exec tps pki-server tps-db-index-rebuild  -v
@@ -975,6 +983,81 @@ jobs:
           docker exec tps pki-server tps-config-set \
               tokendb.defaultPolicy \
               "RE_ENROLL=YES;RENEW=NO;FORCE_FORMAT=NO;PIN_RESET=NO;RESET_PIN_RESET_TO_NO=YES"
+
+      - name: Restart CA
+        run: |
+          docker restart ca
+          sleep 10
+
+          docker network reload --all
+
+          # wait for CA to restart
+          docker exec client curl \
+              --retry 180 \
+              --retry-delay 0 \
+              --retry-connrefused \
+              -s \
+              -k \
+              -o /dev/null \
+              https://ca.example.com:8443
+
+      - name: Check CA admin user
+        run: |
+          docker exec client pki \
+              -U https://ca.example.com:8443 \
+              -n admin \
+              ca-user-show \
+              admin
+
+      - name: Restart KRA
+        run: |
+          docker restart kra
+          sleep 10
+
+          docker network reload --all
+
+          # wait for KRA to restart
+          docker exec client curl \
+              --retry 180 \
+              --retry-delay 0 \
+              --retry-connrefused \
+              -s \
+              -k \
+              -o /dev/null \
+              https://kra.example.com:8443
+
+      - name: Check KRA admin user
+        run: |
+          docker exec client pki \
+              -U https://kra.example.com:8443 \
+              -n admin \
+              kra-user-show \
+              admin
+
+      - name: Restart TKS
+        run: |
+          docker restart tks
+          sleep 10
+
+          docker network reload --all
+
+          # wait for TKS to restart
+          docker exec client curl \
+              --retry 180 \
+              --retry-delay 0 \
+              --retry-connrefused \
+              -s \
+              -k \
+              -o /dev/null \
+              https://tks.example.com:8443
+
+      - name: Check TKS admin user
+        run: |
+          docker exec client pki \
+              -U https://tks.example.com:8443 \
+              -n admin \
+              tks-user-show \
+              admin
 
       - name: Restart TPS
         run: |
