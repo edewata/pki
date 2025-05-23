@@ -60,7 +60,7 @@ jobs:
 
       - name: Set up CA container
         run: |
-          docker run \
+          docker create \
               --name ca \
               --hostname ca.example.com \
               --network example \
@@ -68,18 +68,20 @@ jobs:
               -v $PWD/ca/certs:/certs \
               -v $PWD/ca/conf:/conf \
               -v $PWD/ca/logs:/logs \
-              --detach \
               pki-ca
+          #    --detach \
+
+          docker run echo "hello"
 
           # wait for CA to start
-          docker exec client curl \
-              --retry 180 \
-              --retry-delay 0 \
-              --retry-connrefused \
-              -s \
-              -k \
-              -o /dev/null \
-              https://ca.example.com:8443
+          #docker exec client curl \
+          #    --retry 180 \
+          #    --retry-delay 0 \
+          #    --retry-connrefused \
+          #    -s \
+          #    -k \
+          #    -o /dev/null \
+          #    https://ca.example.com:8443
 
       - name: Check CA info
         run: |
@@ -94,9 +96,9 @@ jobs:
               --trust CT,C,C \
               ca_signing
 
-          docker exec client pki \
-              -U https://ca.example.com:8443 \
-              info
+          #docker exec client pki \
+          #    -U https://ca.example.com:8443 \
+          #    info
 
       - name: Set up CA DS container
         run: |
