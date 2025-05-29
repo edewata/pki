@@ -34,20 +34,18 @@ jobs:
           tests/bin/ds-create.sh \
               --image=${{ env.DS_IMAGE }} \
               --hostname=ds.example.com \
+              --network=example \
+              --network-alias=ds.example.com \
               --password=Secret.123 \
               ds
 
-      - name: Connect DS container to network
-        run: docker network connect example ds --alias ds.example.com
-
       - name: Set up PKI container
         run: |
-          tests/bin/runner-init.sh pki
-        env:
-          HOSTNAME: pki.example.com
-
-      - name: Connect PKI container to network
-        run: docker network connect example pki --alias pki.example.com
+          tests/bin/runner-init.sh \
+              --hostname=pki.example.com \
+              --network=example \
+              --network-alias=pki.example.com \
+              pki
 
       - name: Configure short-lived SSL server cert profile
         run: |
@@ -121,6 +119,14 @@ jobs:
           docker exec pki certutil \
               -K -d /var/lib/pki/pki-tomcat/conf/alias \
               -f $SHARED/password.txt | tee keys.orig
+
+      - name: Check system certs
+        run: |
+          docker exec pki pki-server cert-show ca_signing
+          docker exec pki pki-server cert-show ca_ocsp_signing
+          docker exec pki pki-server cert-show ca_audit_signing
+          docker exec pki pki-server cert-show subsystem
+          docker exec pki pki-server cert-show sslserver
 
       - name: Run PKI healthcheck
         run: |
@@ -407,6 +413,14 @@ jobs:
               -f $SHARED/password.txt | tee keys.after
           diff keys.orig keys.after
 
+      - name: Check system certs after renewal
+        run: |
+          docker exec pki pki-server cert-show ca_signing
+          docker exec pki pki-server cert-show ca_ocsp_signing
+          docker exec pki pki-server cert-show ca_audit_signing
+          docker exec pki pki-server cert-show subsystem
+          docker exec pki pki-server cert-show sslserver
+
       - name: Run PKI healthcheck
         run: |
           # healthcheck should not fail
@@ -422,10 +436,25 @@ jobs:
           # pkidestroy should not fail
           docker exec pki pkidestroy -s CA -v
 
+      - name: Check DS server systemd journal
+        if: always()
+        run: |
+          docker exec ds journalctl -x --no-pager -u dirsrv@localhost.service
+
+      - name: Check DS container logs
+        if: always()
+        run: |
+          docker logs ds
+
       - name: Check PKI server systemd journal
         if: always()
         run: |
           docker exec pki journalctl -x --no-pager -u pki-tomcatd@pki-tomcat.service
+
+      - name: Check PKI server access log
+        if: always()
+        run: |
+          docker exec pki find /var/log/pki/pki-tomcat -name "localhost_access_log.*" -exec cat {} \;
 
       - name: Check CA debug log
         if: always()
