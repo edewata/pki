@@ -6,6 +6,9 @@ SCRIPT_PATH=$(readlink -f "$0")
 SCRIPT_NAME=$(basename "$SCRIPT_PATH")
 SCRIPT_DIR=$(dirname "$SCRIPT_PATH")
 
+LDAP_PORT=3389
+LDAPS_PORT=3636
+
 SUFFIX=
 BASE_DN=
 
@@ -20,6 +23,8 @@ usage() {
     echo "    --hostname=<hostname>    Container hostname"
     echo "    --network=<network>      Container network"
     echo "    --network-alias=<alias>  Container network alias"
+    echo "    --ldap-port=<port>       LDAP port (default: $LDAP_PORT)"
+    echo "    --ldaps-port=<port>      LDAPS port (default: $LDAPS_PORT)"
     echo "    --password=<password>    Directory Manager password"
     echo "    --suffix=<DN>            Suffix (default: dc=example,dc=com)"
     echo "    --base-dn=<DN>           Base DN (default: dc=pki,dc=example,dc=com)"
@@ -48,6 +53,12 @@ while getopts v-: arg ; do
             ;;
         network-alias=?*)
             ALIAS="$LONG_OPTARG"
+            ;;
+        ldap-port=?*)
+            LDAP_PORT="$LONG_OPTARG"
+            ;;
+        ldaps-port=?*)
+            LDAPS_PORT="$LONG_OPTARG"
             ;;
         password=?*)
             PASSWORD="$LONG_OPTARG"
@@ -114,8 +125,8 @@ create_server() {
 
     docker exec $NAME sed -i \
         -e "s/;instance_name = .*/instance_name = localhost/g" \
-        -e "s/;port = .*/port = 3389/g" \
-        -e "s/;secure_port = .*/secure_port = 3636/g" \
+        -e "s/;port = .*/port = $LDAP_PORT/g" \
+        -e "s/;secure_port = .*/secure_port = $LDAPS_PORT/g" \
         -e "s/;root_password = .*/root_password = $PASSWORD/g" \
         -e "s/;suffix = .*/suffix = $SUFFIX/g" \
         -e "s/;self_sign_cert = .*/self_sign_cert = False/g" \
@@ -138,8 +149,8 @@ create_container() {
     OPTIONS+=(-v $NAME-data:/data)
     OPTIONS+=(-v $GITHUB_WORKSPACE:$SHARED)
     OPTIONS+=(-e DS_DM_PASSWORD=$PASSWORD)
-    OPTIONS+=(-p 3389)
-    OPTIONS+=(-p 3636)
+    OPTIONS+=(-p $LDAP_PORT:3389)
+    OPTIONS+=(-p $LDAPS_PORT:3636)
 
     if [ "$NETWORK" != "" ]
     then
@@ -180,7 +191,7 @@ add_base_entries() {
     BASE_DC=$(echo "$BASE_DN" | sed 's/^dc=\([^,]*\),.*$/\1/')
 
     docker exec -i $NAME ldapadd \
-        -H ldap://$HOSTNAME:3389 \
+        -H ldap://$HOSTNAME:$LDAP_PORT \
         -D "cn=Directory Manager" \
         -w $PASSWORD \
         -x > /dev/null << EOF
@@ -247,7 +258,7 @@ fi
 add_base_entries
 
 docker exec $NAME ldapsearch \
-    -H ldap://$HOSTNAME:3389 \
+    -H ldap://$HOSTNAME:$LDAP_PORT \
     -D "cn=Directory Manager" \
     -w $PASSWORD \
     -x \
