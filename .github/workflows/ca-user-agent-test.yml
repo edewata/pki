@@ -1,0 +1,256 @@
+name: CA agent
+
+on: workflow_call
+
+env:
+  DS_IMAGE: ${{ vars.DS_IMAGE || 'quay.io/389ds/dirsrv' }}
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    env:
+      SHARED: /tmp/workdir/pki
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      - name: Retrieve PKI images
+        uses: actions/cache@v4
+        with:
+          key: pki-images-${{ github.sha }}
+          path: pki-images.tar
+
+      - name: Load PKI images
+        run: docker load --input pki-images.tar
+
+      - name: Create network
+        run: docker network create example
+
+      - name: Set up DS container
+        run: |
+          tests/bin/ds-create.sh \
+              --image=${{ env.DS_IMAGE }} \
+              --hostname=ds.example.com \
+              --network=example \
+              --network-alias=ds.example.com \
+              --password=Secret.123 \
+              ds
+
+      - name: Set up PKI container
+        run: |
+          tests/bin/runner-init.sh \
+              --hostname=pki.example.com \
+              --network=example \
+              --network-alias=pki.example.com \
+              pki
+
+      - name: Install CA
+        run: |
+          docker exec pki pkispawn \
+              -f /usr/share/pki/server/examples/installation/ca.cfg \
+              -s CA \
+              -D pki_ds_url=ldap://ds.example.com:3389 \
+              -v
+
+      - name: Install CA admin cert
+        run: |
+          docker exec pki pki-server cert-export \
+              --cert-file ca_signing.crt \
+              ca_signing
+
+          docker exec pki pki nss-cert-import \
+              --cert ca_signing.crt \
+              --trust CT,C,C \
+              ca_signing
+
+          docker exec pki pki pkcs12-import \
+              --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
+              --password Secret.123
+
+      - name: Create CA agent 1 cert
+        run: |
+          docker exec pki pki nss-cert-request \
+              --subject "uid=agent1" \
+              --ext /usr/share/pki/tools/examples/certs/testuser.conf \
+              --csr agent1.csr
+
+          docker exec pki pki \
+              -n caadmin \
+              ca-cert-issue \
+              --profile caUserCert \
+              --csr-file agent1.csr \
+              --output-file agent1.crt
+
+          docker exec pki pki nss-cert-import \
+              --cert agent1.crt \
+              agent1
+
+      - name: Create CA agent 2 cert
+        run: |
+          docker exec pki pki nss-cert-request \
+              --subject "uid=agent2" \
+              --ext /usr/share/pki/tools/examples/certs/testuser.conf \
+              --csr agent2.csr
+
+          docker exec pki pki \
+              -n caadmin \
+              ca-cert-issue \
+              --profile caUserCert \
+              --csr-file agent2.csr \
+              --output-file agent2.crt
+
+          docker exec pki pki nss-cert-import \
+              --cert agent2.crt \
+              agent2
+
+      - name: Add CA agent 1 user using pki ca-user-add
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              ca-user-add \
+              --full-name "Örjan Äke" \
+              --type agentType \
+              --password Secret.123 \
+              --cert-file agent1.crt \
+              agent1
+
+          docker exec pki pki -n caadmin ca-user-membership-add \
+              agent1 \
+              "Certificate Manager Agents"
+
+      - name: Add CA agent 2 user using pki-server ca-user-add
+        run: |
+          docker exec pki pki-server ca-user-add \
+              --full-name "鄧麗君" \
+              --type agentType \
+              --password Secret.123 \
+              --cert agent2.crt \
+              agent2
+
+          docker exec pki pki-server ca-user-role-add \
+              agent2 \
+              "Certificate Manager Agents"
+
+      - name: Check CA agent 1 user using pki ca-user-show
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              ca-user-show \
+              agent1 | tee output
+
+          cat > expected << EOF
+          -------------
+          User "agent1"
+          -------------
+            User ID: agent1
+            Full name: Örjan Äke
+            Type: agentType
+          EOF
+
+          diff expected output
+
+      - name: Check CA agent 2 user using pki-server ca-user-show
+        run: |
+          docker exec pki pki-server ca-user-show \
+              agent2 | tee output
+
+          cat > expected << EOF
+            User ID: agent2
+            Full Name: 鄧麗君
+            Type: agentType
+          EOF
+
+          diff expected output
+
+      - name: Check CA agent 1 password
+        run: |
+          # wrong password should not work
+          docker exec pki pki \
+              -u agent1 \
+              -w wrong \
+              ca-cert-request-find \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          cat > expected << EOF
+          UnauthorizedException: 
+          EOF
+
+          diff expected stderr
+
+          # correct password should work
+          docker exec pki pki \
+              -u agent1 \
+              -w Secret.123 \
+              ca-cert-request-find
+
+      - name: Check CA agent 2 password
+        run: |
+          # wrong password should not work
+          docker exec pki pki \
+              -u agent2 \
+              -w wrong \
+              ca-cert-request-find \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          cat > expected << EOF
+          UnauthorizedException: 
+          EOF
+
+          diff expected stderr
+
+          # correct password should work
+          docker exec pki pki \
+              -u agent2 \
+              -w Secret.123 \
+              ca-cert-request-find
+
+      - name: Check CA agent role
+        run: |
+          # drop CA agent role
+          docker exec pki pki-server ca-user-role-del agent2 "Certificate Manager Agents"
+
+          # authz should not work
+          docker exec pki pki \
+              -n agent2 \
+              ca-user-find \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          cat > expected << EOF
+          ForbiddenException: Authorization Error
+          EOF
+
+          diff expected stderr
+
+          # restore CA agent role
+          docker exec pki pki-server ca-user-role-add agent2 "Certificate Manager Agents"
+
+          docker exec pki pki -n agent2 ca-cert-request-find
+
+      - name: Remove CA
+        run: docker exec pki pkidestroy -s CA -v
+
+      - name: Check DS server systemd journal
+        if: always()
+        run: |
+          docker exec ds journalctl -x --no-pager -u dirsrv@localhost.service
+
+      - name: Check DS container logs
+        if: always()
+        run: |
+          docker logs ds
+
+      - name: Check PKI server systemd journal
+        if: always()
+        run: |
+          docker exec pki journalctl -x --no-pager -u pki-tomcatd@pki-tomcat.service
+
+      - name: Check PKI server access log
+        if: always()
+        run: |
+          docker exec pki find /var/log/pki/pki-tomcat -name "localhost_access_log.*" -exec cat {} \;
+
+      - name: Check CA debug log
+        if: always()
+        run: |
+          docker exec pki find /var/lib/pki/pki-tomcat/logs/ca -name "debug.*" -exec cat {} \;

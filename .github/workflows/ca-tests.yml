@@ -68,6 +68,11 @@ jobs:
     needs: build
     uses: ./.github/workflows/ca-ds-connection-test.yml
 
+  ca-secure-ds-test:
+    name: CA with secure DS
+    needs: build
+    uses: ./.github/workflows/ca-secure-ds-test.yml
+
   ca-rsnv1-test:
     name: CA with RSNv1
     needs: build
@@ -88,7 +93,12 @@ jobs:
     needs: build
     uses: ./.github/workflows/ca-pruning-test.yml
 
-  ca-admin-user-test:
-    name: CA admin user
+  ca-user-admin-test:
+    name: CA admin
     needs: build
-    uses: ./.github/workflows/ca-admin-user-test.yml
+    uses: ./.github/workflows/ca-user-admin-test.yml
+
+  ca-user-agent-test:
+    name: CA agent
+    needs: build
+    uses: ./.github/workflows/ca-user-agent-test.yml

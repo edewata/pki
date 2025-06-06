@@ -269,9 +269,11 @@ public class PKIClient implements AutoCloseable {
                     .build();
         }
 
+        byte[] bytes = marshall(object).getBytes("UTF-8");
+
         return EntityBuilder.create()
-                .setText(marshall(object))
                 .setContentType(ContentType.create(defaultMimeType))
+                .setBinary(bytes)
                 .build();
     }
 
