@@ -131,8 +131,8 @@ public class OCSPServlet extends CMSServlet {
             return;
         }
 
-        logger.debug("OCSPServlet: Servlet Path: " + httpReq.getServletPath());
-        logger.debug("OCSPServlet: RequestURI: " + httpReq.getRequestURI());
+        logger.info("OCSPServlet: Servlet Path: " + httpReq.getServletPath());
+        logger.info("OCSPServlet: RequestURI: " + httpReq.getRequestURI());
 
         String pathInfo = httpReq.getPathInfo();
         if (pathInfo != null && pathInfo.indexOf('%') != -1) {
@@ -191,7 +191,7 @@ public class OCSPServlet extends CMSServlet {
 
             } else {
 
-                logger.debug("OCSPServlet: Processing GET request");
+                logger.info("OCSPServlet: Processing GET request");
 
                 if ((pathInfo == null) ||
                         (pathInfo.equals("")) ||
@@ -217,7 +217,7 @@ public class OCSPServlet extends CMSServlet {
                                        + "empty or malformed");
                 }
 
-                logger.debug("OCSPServlet: decoding request");
+                logger.info("OCSPServlet: decoding request");
                 ocspReq = (OCSPRequest) reqTemplate.decode(is);
 
                 if (logger.isDebugEnabled()) {
@@ -232,14 +232,14 @@ public class OCSPServlet extends CMSServlet {
 
                 TBSRequest tbsReq = ocspReq.getTBSRequest();
 
-                logger.debug("OCSPServlet: Cert status requests:");
+                logger.info("OCSPServlet: Cert status requests:");
                 for (int i = 0; i < tbsReq.getRequestCount(); i++) {
                     com.netscape.cmsutil.ocsp.Request req = tbsReq.getRequestAt(i);
                     CertId certID = new CertId(req.getCertID().getSerialNumber());
-                    logger.debug("OCSPServlet: - " + certID.toHexString());
+                    logger.info("OCSPServlet: - " + certID.toHexString());
                 }
 
-                logger.debug("OCSPServlet: validating request");
+                logger.info("OCSPServlet: Validating request");
                 response = validate(ocspReq);
 
                 if (response == null) {

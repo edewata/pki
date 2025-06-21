@@ -1100,7 +1100,7 @@ public class CertificateAuthority extends Subsystem implements IAuthority, IOCSP
 
     public OCSPResponse validate(TBSRequest tbsReq)throws EBaseException {
 
-        logger.debug("CertificateAuthority: validating OCSP request");
+        logger.info("CertificateAuthority: Processing OCSP request");
 
         mNumOCSPRequest++;
         StatsSubsystem statsSub = (StatsSubsystem) engine.getSubsystem(StatsSubsystem.ID);
@@ -1121,11 +1121,7 @@ public class CertificateAuthority extends Subsystem implements IAuthority, IOCSP
 
             for (int i = 0; i < tbsReq.getRequestCount(); i++) {
                 Request req = tbsReq.getRequestAt(i);
-                CertID certID = req.getCertID();
-                logger.info("CertificateAuthority: Checking cert 0x{} status", certID.getSerialNumber().toString(16));
-
                 SingleResponse sr = processRequest(req);
-
                 singleResponses.addElement(sr);
             }
 
@@ -1264,6 +1260,8 @@ public class CertificateAuthority extends Subsystem implements IAuthority, IOCSP
 
     public SingleResponse getCertStatusFromDB(Request request) {
 
+        logger.info("CertificateAuthority: Getting cert status from database");
+
         CertID certID = request.getCertID();
         INTEGER serialNumber = certID.getSerialNumber();
         CertStatus certStatus = null;
@@ -1310,11 +1308,12 @@ public class CertificateAuthority extends Subsystem implements IAuthority, IOCSP
         return new SingleResponse(certID, certStatus, thisUpdate, null);
     }
 
-    public SingleResponse getCertStatusFromCRL(Request request) throws EBaseException {
+    public SingleResponse getCertStatusFromCRLCache(Request request) throws EBaseException {
 
         boolean ocspUseCache = mConfig.getOCSPUseCache();
 
         if (!ocspUseCache) {
+            logger.info("CertificateAuthority: OCSP cache is disabled");
             return null;
         }
 
@@ -1323,10 +1322,11 @@ public class CertificateAuthority extends Subsystem implements IAuthority, IOCSP
         CRLIssuingPoint crlIssuingPoint = engine.getCRLIssuingPoint(issuingPointId);
 
         if (!crlIssuingPoint.isCRLCacheEnabled()) {
+            logger.info("CertificateAuthority: CRL cache is disabled");
             return null;
         }
 
-        // only do this if cache is enabled
+        logger.info("CertificateAuthority: Getting cert status from CRL cache");
 
         CertID certID = request.getCertID();
         INTEGER serialNumber = certID.getSerialNumber();
@@ -1359,14 +1359,12 @@ public class CertificateAuthority extends Subsystem implements IAuthority, IOCSP
 
     public SingleResponse processRequest(Request req) throws EBaseException {
 
-        String name = "CertificateAuthority: processRequest: ";
+        CertID cid = req.getCertID();
+        INTEGER serialNo = cid.getSerialNumber();
+        logger.info("CertificateAuthority: Processing OCSP request for cert 0x" + serialNo.toString(16));
 
         X509CertImpl caCert = mSigningUnit.getCertImpl();
         X509Key key = (X509Key) caCert.getPublicKey();
-
-        CertID cid = req.getCertID();
-        INTEGER serialNo = cid.getSerialNumber();
-        logger.debug( name + "for cert 0x" + serialNo.toString(16));
 
         byte[] nameHash = null;
         byte[] keyHash = null;
@@ -1390,13 +1388,14 @@ public class CertificateAuthority extends Subsystem implements IAuthority, IOCSP
             return new SingleResponse(cid, new UnknownInfo(), thisUpdate, null);
         }
 
-        SingleResponse response = getCertStatusFromCRL(req);
+        SingleResponse response = getCertStatusFromCRLCache(req);
 
-        if (response != null) {
-            return response;
+        if (response == null) {
+            response = getCertStatusFromDB(req);
         }
 
-        return getCertStatusFromDB(req);
+        logger.info("CertificateAuthority: Status: {}", response.getCertStatus().getClass().getSimpleName());
+        return response;
     }
 
     /**
