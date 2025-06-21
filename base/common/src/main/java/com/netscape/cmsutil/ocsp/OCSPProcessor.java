@@ -146,6 +146,8 @@ public class OCSPProcessor {
             httpPost.setEntity(requestEntity);
 
             HttpResponse response = client.execute(httpPost);
+            logger.info("Status: " + response.getStatusLine());
+
             HttpEntity responseEntity = response.getEntity();
 
             try (InputStream is = responseEntity.getContent()) {
@@ -159,9 +161,9 @@ public class OCSPProcessor {
                 // construct OCSP response
 
                 byte[] responseData = buffer.toByteArray();
-
                 logger.info("Response Length: " + responseData.length);
                 logger.info("Response:\n" + Utils.base64encode(responseData, true));
+                logger.info("Response:\n" + new String(responseData));
 
                 return (OCSPResponse)OCSPResponse.getTemplate().decode(
                         new ByteArrayInputStream(responseData));

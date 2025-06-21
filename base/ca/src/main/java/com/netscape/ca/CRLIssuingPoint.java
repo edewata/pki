@@ -2315,9 +2315,9 @@ public class CRLIssuingPoint {
             }
         }
 
-        logger.debug("CRLIssuingPoint: - CRL certs: " + mCRLCerts.size());
-        logger.debug("CRLIssuingPoint: - revoked certs: " + mRevokedCerts.size());
-        logger.debug("CRLIssuingPoint: - unrevoked certs: " + mUnrevokedCerts.size());
+        logger.info("CRLIssuingPoint: - CRL certs: " + mCRLCerts.size());
+        logger.info("CRLIssuingPoint: - revoked certs: " + mRevokedCerts.size());
+        logger.info("CRLIssuingPoint: - unrevoked certs: " + mUnrevokedCerts.size());
     }
 
     /**
@@ -2341,14 +2341,15 @@ public class CRLIssuingPoint {
                                String requestId) {
 
         CertId certID = new CertId(serialNumber);
-        logger.info("CRLIssuingPoint: Adding revoked cert " + certID.toHexString());
 
         CertRecordProcessor cp = new CertRecordProcessor(mCRLCerts, this, mAllowExtensions);
         boolean includeCert = cp.checkRevokedCertExtensions(revokedCert.getExtensions());
+        logger.info("CRLIssuingPoint: Include revoked cert " + certID.toHexString() + ": " + includeCert);
 
         if (mEnable && mEnableCRLCache && includeCert) {
             updateRevokedCert(REVOKED_CERT, serialNumber, revokedCert, requestId);
 
+            logger.info("CRLIssuingPoint: Cache update interval: " + mCacheUpdateInterval);
             if (mCacheUpdateInterval == 0) {
                 try {
                     mCRLRepository.updateRevokedCerts(mId, mRevokedCerts, mUnrevokedCerts);
@@ -2540,18 +2541,27 @@ public class CRLIssuingPoint {
             boolean includeExpiredCerts) {
         Date revocationDate = null;
 
+        logger.info("CRLIssuingPoint: CRL cache:");
+        for (BigInteger key : mCRLCerts.keySet()) {
+            logger.info("CRLIssuingPoint: - " + new CertId(key).toHexString());
+        }
+
         if (mCRLCerts.containsKey(serialNumber)) {
+            logger.info("CRLIssuingPoint: Cert revoked in full CRL cache");
             revocationDate = mCRLCerts.get(serialNumber).getRevocationDate();
         }
 
         if (checkDeltaCache && isDeltaCRLEnabled()) {
             if (mUnrevokedCerts.containsKey(serialNumber)) {
+                logger.info("CRLIssuingPoint: Cert unrevoked in delta CRL cache");
                 revocationDate = null;
             }
             if (mRevokedCerts.containsKey(serialNumber)) {
+                logger.info("CRLIssuingPoint: Cert revoked in delta CRL cache");
                 revocationDate = mRevokedCerts.get(serialNumber).getRevocationDate();
             }
             if (!includeExpiredCerts && mExpiredCerts.containsKey(serialNumber)) {
+                logger.info("CRLIssuingPoint: Cert expired in delta CRL cache");
                 revocationDate = null;
             }
         }

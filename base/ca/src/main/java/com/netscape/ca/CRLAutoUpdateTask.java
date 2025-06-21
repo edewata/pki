@@ -97,6 +97,8 @@ public class CRLAutoUpdateTask implements Runnable {
                       ))
                   )) {
 
+                logger.info("CRLAutoUpdateTask: Running auto update task");
+
                 synchronized (ip) {
                     long delay = 0;
                     long delay2 = 0;
@@ -107,6 +109,7 @@ public class CRLAutoUpdateTask implements Runnable {
                     );
 
                     if (ip.mInitialized == CRLIssuingPointStatus.NotInitialized) {
+                        logger.info("CRLAutoUpdateTask: Initializing CRL");
                         ip.initCRL();
                     }
 
@@ -129,6 +132,8 @@ public class CRLAutoUpdateTask implements Runnable {
                         }
                     }
 
+                    logger.info("CRLAutoUpdateTask: Delay: " + delay);
+
                     if (delay > 0) {
                         try {
                             ip.wait(delay);
@@ -147,7 +152,7 @@ public class CRLAutoUpdateTask implements Runnable {
                             handleUnexpectedFailure(loopCounter, timeOfUnexpectedFailure);
                         }
 
-                        logger.debug("CRLAutoUpdateTask: Before CRL generation");
+                        logger.info("CRLAutoUpdateTask: Before CRL generation");
                         try {
                             if (doCacheUpdate) {
                                 logger.info("CRLAutoUpdateTask: Updating CRL cache");
@@ -159,7 +164,7 @@ public class CRLAutoUpdateTask implements Runnable {
 
                             // reset if no exception
                             if (unexpectedFailure) {
-                                logger.debug("CRLAutoUpdateTask: reset unexpectedFailure values if no exception");
+                                logger.info("CRLAutoUpdateTask: Reset unexpectedFailure values if no exception");
                                 unexpectedFailure = false;
                                 timeOfUnexpectedFailure = 0;
                                 loopCounter = 0;
@@ -175,12 +180,12 @@ public class CRLAutoUpdateTask implements Runnable {
                         // db is down.
 
                         if (ip.mDoLastAutoUpdate) {
-                            logger.debug("CRLAutoUpdateTask: mDoLastAutoUpdate set to false");
+                            logger.info("CRLAutoUpdateTask: mDoLastAutoUpdate set to false");
                             ip.mDoLastAutoUpdate = false;
                         }
 
                         if (ip.mDoManualUpdate) {
-                            logger.debug("CRLAutoUpdateTask: mDoManualUpdate set to false");
+                            logger.info("CRLAutoUpdateTask: mDoManualUpdate set to false");
                             ip.mDoManualUpdate = false;
                             ip.mSignatureAlgorithmForManualUpdate = null;
                         }
@@ -192,7 +197,7 @@ public class CRLAutoUpdateTask implements Runnable {
             logger.error("CRLAutoUpdateTask: " + e.getMessage(), e);
         }
 
-        logger.debug("CRLAutoUpdateTask: out of the while loop");
+        logger.info("CRLAutoUpdateTask: Shutting down auto update task");
         ip.mUpdateThread = null;
     }
 }

@@ -184,10 +184,13 @@ public class CertRecordProcessor extends ElementProcessor<CertRecord> {
 
     public boolean checkRevokedCertExtensions(CRLExtensions crlExtensions) {
 
+        logger.info("CertRecordProcessor: Checking revoked cert extensions");
+
         // For now just check the onlySomeReason CRL IssuingDistributionPoint extension
         boolean includeCert = true;
 
         if ((crlExtensions == null) || (!allowExtensions)) {
+            logger.info("CertRecordProcessor: No extensions / extensions not allowed => true");
             return includeCert;
         }
 
@@ -196,11 +199,13 @@ public class CertRecordProcessor extends ElementProcessor<CertRecord> {
         // If the CRLIssuingDistPointExtension is not available or
         // if onlySomeReasons does not apply, bail.
         if (!inited) {
+            logger.info("CertRecordProcessor: CRL IDP extension not initialized => true");
             return includeCert;
         }
 
         // Check the onlySomeReasonsExtension
         includeCert = checkOnlySomeReasonsExtension(crlExtensions);
+        logger.info("CertRecordProcessor: onlySomeReasonsExtension => " + includeCert);
 
         return includeCert;
     }
@@ -224,10 +229,11 @@ public class CertRecordProcessor extends ElementProcessor<CertRecord> {
         RevokedCertificate newRevokedCert = new RevokedCertImpl(serialNumber, revocationDate, entryExt);
 
         boolean includeCert = checkRevokedCertExtensions(crlExts);
-
         if (includeCert) {
-            logger.info("CertRecordProcessor: Adding cert {} into CRL", certID.toHexString()); //NOSONAR
+            logger.info("CertRecordProcessor: Include cert {}", certID.toHexString()); //NOSONAR
             crlCerts.put(serialNumber, newRevokedCert);
+        } else {
+            logger.info("CertRecordProcessor: Skip cert {}", certID.toHexString()); //NOSONAR
         }
     }
 }
