@@ -353,7 +353,8 @@ jobs:
           # get CS.cfg from primary CA after cloning
           docker cp primary:/var/lib/pki/pki-tomcat/conf/ca/CS.cfg CS.cfg.primary.after
 
-          docker exec primary pki-server ca-config-find | grep ca.crl.MasterCRL
+          docker exec primary pki-server ca-config-find \
+              | grep -e ca.crl.MasterCRL -e ca.ocspUseCache
 
           # normalize expected result:
           # - remove params that cannot be compared
@@ -382,7 +383,8 @@ jobs:
           # get CS.cfg from secondary CA
           docker cp secondary:/var/lib/pki/pki-tomcat/conf/ca/CS.cfg CS.cfg.secondary
 
-          docker exec secondary pki-server ca-config-find | grep ca.crl.MasterCRL
+          docker exec secondary pki-server ca-config-find \
+              | grep -e ca.crl.MasterCRL -e ca.ocspUseCache
 
           # normalize expected result:
           # - remove params that cannot be compared
@@ -631,7 +633,8 @@ jobs:
           # get CS.cfg from secondary CA after cloning
           docker cp secondary:/var/lib/pki/pki-tomcat/conf/ca/CS.cfg CS.cfg.secondary.after
 
-          docker exec secondary pki-server ca-config-find | grep ca.crl.MasterCRL
+          docker exec secondary pki-server ca-config-find \
+              | grep -e ca.crl.MasterCRL -e ca.ocspUseCache
 
           # normalize expected result:
           # - remove params that cannot be compared
@@ -658,7 +661,8 @@ jobs:
           # get CS.cfg from tertiary CA
           docker cp tertiary:/var/lib/pki/pki-tomcat/conf/ca/CS.cfg CS.cfg.tertiary
 
-          docker exec tertiary pki-server ca-config-find | grep ca.crl.MasterCRL
+          docker exec tertiary pki-server ca-config-find \
+              | grep -e ca.crl.MasterCRL -e ca.ocspUseCache
 
           # normalize expected result:
           # - remove params that cannot be compared
@@ -1030,6 +1034,295 @@ jobs:
           EOF
 
           diff expected actual
+
+      - name: Disable CRL cache in primary CA
+        run: |
+          docker exec primary pki-server ca-config-set ca.crl.MasterCRL.enable true
+
+          # configure CRL to update every 3 minutes
+          docker exec primary pki-server ca-config-set ca.crl.MasterCRL.enableCRLUpdates false
+          docker exec primary pki-server ca-config-set ca.crl.MasterCRL.enableDailyUpdates false
+          docker exec primary pki-server ca-config-set ca.crl.MasterCRL.enableUpdateInterval false
+          docker exec primary pki-server ca-config-set ca.crl.MasterCRL.autoUpdateInterval 5
+
+          docker exec primary pki-server ca-config-set ca.crl.MasterCRL.enableCRLCache true
+          docker exec primary pki-server ca-config-set ca.crl.MasterCRL.cacheUpdateInterval 5
+          #docker exec primary pki-server ca-config-set ca.crl.MasterCRL.enableCacheRecovery true
+          #docker exec primary pki-server ca-config-set ca.crl.MasterCRL.enableCacheTesting false
+
+          #docker exec primary pki-server ca-config-set ca.certStatusUpdateInterval 60
+          #docker exec primary pki-server ca-config-unset ca.listenToCloneModifications
+
+          docker exec primary pki-server ca-config-set ca.ocspUseCache true
+          docker exec primary pki-server ca-config-set ca.ocspUseCacheIssuingPointId MasterCRL
+
+          docker exec primary pki-server restart --wait
+
+      - name: Disable CRL cache in secondary CA
+        run: |
+          docker exec secondary pki-server ca-config-set ca.crl.MasterCRL.enable true
+
+          # configure CRL to update every 3 minutes
+          docker exec secondary pki-server ca-config-set ca.crl.MasterCRL.enableCRLUpdates false
+          docker exec secondary pki-server ca-config-set ca.crl.MasterCRL.enableDailyUpdates false
+          docker exec secondary pki-server ca-config-set ca.crl.MasterCRL.enableUpdateInterval false
+          docker exec secondary pki-server ca-config-set ca.crl.MasterCRL.autoUpdateInterval 5
+
+          docker exec secondary pki-server ca-config-set ca.crl.MasterCRL.enableCRLCache true
+          docker exec secondary pki-server ca-config-set ca.crl.MasterCRL.cacheUpdateInterval 5
+          #docker exec secondary pki-server ca-config-set ca.crl.MasterCRL.enableCacheRecovery true
+          #docker exec secondary pki-server ca-config-set ca.crl.MasterCRL.enableCacheTesting false
+
+          #docker exec secondary pki-server ca-config-set ca.certStatusUpdateInterval 60
+          #docker exec secondary pki-server ca-config-unset ca.listenToCloneModifications
+
+          docker exec secondary pki-server ca-config-set ca.ocspUseCache true
+          docker exec secondary pki-server ca-config-set ca.ocspUseCacheIssuingPointId MasterCRL
+
+          docker exec secondary pki-server restart --wait
+
+      - name: Disable CRL cache in tertiary CA
+        run: |
+          docker exec tertiary pki-server ca-config-set ca.crl.MasterCRL.enable true
+
+          # configure CRL to update every 3 minutes
+          docker exec tertiary pki-server ca-config-set ca.crl.MasterCRL.enableCRLUpdates false
+          docker exec tertiary pki-server ca-config-set ca.crl.MasterCRL.enableDailyUpdates false
+          docker exec tertiary pki-server ca-config-set ca.crl.MasterCRL.enableUpdateInterval false
+          docker exec tertiary pki-server ca-config-set ca.crl.MasterCRL.autoUpdateInterval 5
+
+          docker exec tertiary pki-server ca-config-set ca.crl.MasterCRL.enableCRLCache true
+          docker exec tertiary pki-server ca-config-set ca.crl.MasterCRL.cacheUpdateInterval 5
+          #docker exec tertiary pki-server ca-config-set ca.crl.MasterCRL.enableCacheRecovery true
+          #docker exec tertiary pki-server ca-config-set ca.crl.MasterCRL.enableCacheTesting false
+
+          #docker exec tertiary pki-server ca-config-set ca.certStatusUpdateInterval 60
+          #docker exec tertiary pki-server ca-config-unset ca.listenToCloneModifications
+
+          docker exec tertiary pki-server ca-config-set ca.ocspUseCache true
+          docker exec tertiary pki-server ca-config-set ca.ocspUseCacheIssuingPointId MasterCRL
+
+          docker exec tertiary pki-server restart --wait
+
+      - name: Check initial cert status in primary OCSP
+        run: |
+          CERT_ID=$(cat cert.id)
+
+          docker exec client pki \
+              -U http://primary.example.com:8080 \
+              ocsp-cert-verify \
+              --path /ca/ocsp \
+              --ca-cert ca_signing \
+              $CERT_ID \
+              | tee output
+
+          sed -n "/^\s*Status:/p" output > actual
+
+          # cert status should be good
+          cat > expected << EOF
+            Status: Good
+          EOF
+
+          diff expected actual
+
+      - name: Check initial cert status in secondary OCSP
+        run: |
+          CERT_ID=$(cat cert.id)
+
+          docker exec client pki \
+              -U http://secondary.example.com:8080 \
+              ocsp-cert-verify \
+              --path /ca/ocsp \
+              --ca-cert ca_signing \
+              $CERT_ID \
+              | tee output
+
+          sed -n "/^\s*Status:/p" output > actual
+
+          # cert status should be good
+          cat > expected << EOF
+            Status: Good
+          EOF
+
+          diff expected actual
+
+      - name: Check initial cert status in tertiary OCSP
+        run: |
+          CERT_ID=$(cat cert.id)
+
+          docker exec client pki \
+              -U http://tertiary.example.com:8080 \
+              ocsp-cert-verify \
+              --path /ca/ocsp \
+              --ca-cert ca_signing \
+              $CERT_ID \
+              | tee output
+
+          sed -n "/^\s*Status:/p" output > actual
+
+          # cert status should be good
+          cat > expected << EOF
+            Status: Good
+          EOF
+
+          diff expected actual
+
+      - name: Revoke cert in primary CA
+        run: |
+          CERT_ID=$(cat cert.id)
+
+          docker exec client pki \
+              -U https://primary.example.com:8443 \
+              -n caadmin \
+              ca-cert-hold \
+              --force \
+              $CERT_ID
+
+      - name: Check cert status after revocation in primary OCSP
+        run: |
+          CERT_ID=$(cat cert.id)
+
+          docker exec client pki \
+              -U http://primary.example.com:8080 \
+              ocsp-cert-verify \
+              --path /ca/ocsp \
+              --ca-cert ca_signing \
+              $CERT_ID \
+              | tee output
+
+          sed -n "/^\s*Status:/p" output > actual
+
+          # cert status should be good
+          cat > expected << EOF
+            Status: Good
+          EOF
+
+          diff expected actual || true
+
+      - name: Check cert status after revocation in secondary OCSP
+        run: |
+          CERT_ID=$(cat cert.id)
+
+          docker exec client pki \
+              -U http://secondary.example.com:8080 \
+              ocsp-cert-verify \
+              --path /ca/ocsp \
+              --ca-cert ca_signing \
+              $CERT_ID \
+              | tee output
+
+          sed -n "/^\s*Status:/p" output > actual
+
+          # cert status should be good
+          cat > expected << EOF
+            Status: Good
+          EOF
+
+          diff expected actual || true
+
+      - name: Check cert status after revocation in tertiary OCSP
+        run: |
+          CERT_ID=$(cat cert.id)
+
+          docker exec client pki \
+              -U http://tertiary.example.com:8080 \
+              ocsp-cert-verify \
+              --path /ca/ocsp \
+              --ca-cert ca_signing \
+              $CERT_ID \
+              | tee output
+
+          sed -n "/^\s*Status:/p" output > actual
+
+          # cert status should be good
+          cat > expected << EOF
+            Status: Good
+          EOF
+
+          diff expected actual || true
+
+      - name: Update CRL cache
+        run: |
+          #docker exec client pki \
+          #    -U https://primary.example.com:8443 \
+          #    -n caadmin \
+          #    ca-crl-update
+
+          #docker exec client pki \
+          #    -U https://secondary.example.com:8443 \
+          #    -n caadmin \
+          #    ca-crl-update
+
+          #docker exec client pki \
+          #    -U https://tertiary.example.com:8443 \
+          #    -n caadmin \
+          #    ca-crl-update
+
+          # wait 8 minutes for CRL update
+          sleep 480
+
+      - name: Check cert status after cache expiration in primary OCSP
+        run: |
+          CERT_ID=$(cat cert.id)
+
+          docker exec client pki \
+              -U http://primary.example.com:8080 \
+              ocsp-cert-verify \
+              --path /ca/ocsp \
+              --ca-cert ca_signing \
+              $CERT_ID \
+              | tee output
+
+          sed -n "/^\s*Status:/p" output > actual
+
+          # cert status should be revoked
+          cat > expected << EOF
+            Status: Revoked
+          EOF
+
+          diff expected actual || true
+
+      - name: Check cert status after cache expiration in secondary OCSP
+        run: |
+          CERT_ID=$(cat cert.id)
+
+          docker exec client pki \
+              -U http://secondary.example.com:8080 \
+              ocsp-cert-verify \
+              --path /ca/ocsp \
+              --ca-cert ca_signing \
+              $CERT_ID \
+              | tee output
+
+          sed -n "/^\s*Status:/p" output > actual
+
+          # cert status should be revoked
+          cat > expected << EOF
+            Status: Revoked
+          EOF
+
+          diff expected actual || true
+
+      - name: Check cert status after cache expiration in tertiary OCSP
+        run: |
+          CERT_ID=$(cat cert.id)
+
+          docker exec client pki \
+              -U http://tertiary.example.com:8080 \
+              ocsp-cert-verify \
+              --path /ca/ocsp \
+              --ca-cert ca_signing \
+              $CERT_ID \
+              | tee output
+
+          sed -n "/^\s*Status:/p" output > actual
+
+          # cert status should be revoked
+          cat > expected << EOF
+            Status: Revoked
+          EOF
+
+          diff expected actual || true
 
       - name: Remove CA from tertiary PKI container
         run: |
