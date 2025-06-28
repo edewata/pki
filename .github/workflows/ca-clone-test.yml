@@ -806,6 +806,30 @@ jobs:
               -U https://tertiary.example.com:8443 \
               ca-cert-find
 
+      - name: Update CRL configuration in primary CA
+        run: |
+          docker exec primary pki-server ca-crl-ip-mod -D enableUpdateInterval=false MasterCRL
+
+          docker exec primary pki-server ca-crl-ip-show MasterCRL
+
+          docker exec primary pki-server restart --wait
+
+      - name: Update CRL configuration in secondary CA
+        run: |
+          docker exec secondary pki-server ca-crl-ip-mod -D enableUpdateInterval=false MasterCRL
+
+          docker exec secondary pki-server ca-crl-ip-show MasterCRL
+
+          docker exec secondary pki-server restart --wait
+
+      - name: Update CRL configuration in tertiary CA
+        run: |
+          docker exec tertiary pki-server ca-crl-ip-mod -D enableUpdateInterval=false MasterCRL
+
+          docker exec tertiary pki-server ca-crl-ip-show MasterCRL
+
+          docker exec tertiary pki-server restart --wait
+
       - name: Enroll cert in primary CA
         run: |
           docker exec client pki nss-cert-request \
@@ -837,6 +861,9 @@ jobs:
         run: |
           CERT_ID=$(cat cert.id)
 
+          docker exec primary pki-server ca-crl-record-show MasterCRL
+          docker exec primary pki-server ca-crl-record-cert-find MasterCRL
+
           docker exec client pki \
               -U http://primary.example.com:8080 \
               ocsp-cert-verify \
@@ -858,6 +885,9 @@ jobs:
         run: |
           CERT_ID=$(cat cert.id)
 
+          docker exec secondary pki-server ca-crl-record-show MasterCRL
+          docker exec secondary pki-server ca-crl-record-cert-find MasterCRL
+
           docker exec client pki \
               -U http://secondary.example.com:8080 \
               ocsp-cert-verify \
@@ -878,6 +908,9 @@ jobs:
       - name: Check initial cert status in tertiary OCSP
         run: |
           CERT_ID=$(cat cert.id)
+
+          docker exec tertiary pki-server ca-crl-record-show MasterCRL
+          docker exec tertiary pki-server ca-crl-record-cert-find MasterCRL
 
           docker exec client pki \
               -U http://tertiary.example.com:8080 \
@@ -911,6 +944,24 @@ jobs:
         run: |
           CERT_ID=$(cat cert.id)
 
+          docker exec primary pki-server ca-crl-record-show MasterCRL | tee output
+
+          sed -n \
+              -e '/^\s*CRL Number:/p' \
+              -e '/^\s*CRL Size:/p' \
+              output > actual
+
+          cat > expected << EOF
+            CRL Number: 0x1
+            CRL Size: 0
+          EOF
+
+          diff expected actual
+
+          docker exec primary pki-server ca-crl-record-cert-find MasterCRL | tee output
+
+          diff /dev/null output
+
           docker exec client pki \
               -U http://primary.example.com:8080 \
               ocsp-cert-verify \
@@ -932,6 +983,24 @@ jobs:
         run: |
           CERT_ID=$(cat cert.id)
 
+          docker exec secondary pki-server ca-crl-record-show MasterCRL | tee output
+
+          sed -n \
+              -e '/^\s*CRL Number:/p' \
+              -e '/^\s*CRL Size:/p' \
+              output > actual
+
+          cat > expected << EOF
+            CRL Number: 0x1
+            CRL Size: 0
+          EOF
+
+          diff expected actual
+
+          docker exec secondary pki-server ca-crl-record-cert-find MasterCRL | tee output
+
+          diff /dev/null output
+
           docker exec client pki \
               -U http://secondary.example.com:8080 \
               ocsp-cert-verify \
@@ -952,6 +1021,191 @@ jobs:
       - name: Check revoked cert in tertiary OCSP
         run: |
           CERT_ID=$(cat cert.id)
+
+          docker exec tertiary pki-server ca-crl-record-show MasterCRL | tee output
+
+          sed -n \
+              -e '/^\s*CRL Number:/p' \
+              -e '/^\s*CRL Size:/p' \
+              output > actual
+
+          cat > expected << EOF
+            CRL Number: 0x1
+            CRL Size: 0
+          EOF
+
+          diff expected actual
+
+          docker exec tertiary pki-server ca-crl-record-cert-find MasterCRL | tee output
+
+          diff /dev/null output
+
+          docker exec client pki \
+              -U http://tertiary.example.com:8080 \
+              ocsp-cert-verify \
+              --path /ca/ocsp \
+              --ca-cert ca_signing \
+              $CERT_ID \
+              | tee output
+
+          sed -n "/^\s*Status:/p" output > actual
+
+          # cert status should be revoked
+          cat > expected << EOF
+            Status: Revoked
+          EOF
+
+          diff expected actual
+
+      - name: Update CRL record
+        run: |
+          docker exec client pki \
+              -U https://primary.example.com:8443 \
+              -n caadmin \
+              ca-crl-update
+
+          #docker exec client pki \
+          #    -U https://secondary.example.com:8443 \
+          #    -n caadmin \
+          #    ca-crl-update
+
+          #docker exec client pki \
+          #    -U https://tertiary.example.com:8443 \
+          #    -n caadmin \
+          #    ca-crl-update
+
+      - name: Check revoked cert in primary OCSP
+        run: |
+          CERT_ID=$(cat cert.id)
+
+          docker exec primary pki-server ca-crl-record-show MasterCRL | tee output
+
+          sed -n \
+              -e '/^\s*CRL Number:/p' \
+              -e '/^\s*CRL Size:/p' \
+              output > actual
+
+          cat > expected << EOF
+            CRL Number: 0x2
+            CRL Size: 1
+          EOF
+
+          diff expected actual
+
+          docker exec primary pki-server ca-crl-record-cert-find MasterCRL | tee output
+
+          sed -n \
+              -e '/^\s*Serial Number:/p' \
+              -e '/^\s*Reason:/p' \
+              output > actual
+
+          CERT_ID=$(cat cert.id)
+          cat > expected << EOF
+            Serial Number: $CERT_ID
+            Reason: CERTIFICATE_HOLD
+          EOF
+
+          diff expected actual
+
+          docker exec client pki \
+              -U http://primary.example.com:8080 \
+              ocsp-cert-verify \
+              --path /ca/ocsp \
+              --ca-cert ca_signing \
+              $CERT_ID \
+              | tee output
+
+          sed -n "/^\s*Status:/p" output > actual
+
+          # cert status should be revoked
+          cat > expected << EOF
+            Status: Revoked
+          EOF
+
+          diff expected actual
+
+      - name: Check revoked cert in secondary OCSP
+        run: |
+          CERT_ID=$(cat cert.id)
+
+          docker exec secondary pki-server ca-crl-record-show MasterCRL | tee output
+
+          sed -n \
+              -e '/^\s*CRL Number:/p' \
+              -e '/^\s*CRL Size:/p' \
+              output > actual
+
+          cat > expected << EOF
+            CRL Number: 0x2
+            CRL Size: 1
+          EOF
+
+          diff expected actual
+
+          docker exec secondary pki-server ca-crl-record-cert-find MasterCRL | tee output
+
+          sed -n \
+              -e '/^\s*Serial Number:/p' \
+              -e '/^\s*Reason:/p' \
+              output > actual
+
+          CERT_ID=$(cat cert.id)
+          cat > expected << EOF
+            Serial Number: $CERT_ID
+            Reason: CERTIFICATE_HOLD
+          EOF
+
+          diff expected actual
+
+          docker exec client pki \
+              -U http://secondary.example.com:8080 \
+              ocsp-cert-verify \
+              --path /ca/ocsp \
+              --ca-cert ca_signing \
+              $CERT_ID \
+              | tee output
+
+          sed -n "/^\s*Status:/p" output > actual
+
+          # cert status should be revoked
+          cat > expected << EOF
+            Status: Revoked
+          EOF
+
+          diff expected actual
+
+      - name: Check revoked cert in tertiary OCSP
+        run: |
+          CERT_ID=$(cat cert.id)
+
+          docker exec tertiary pki-server ca-crl-record-show MasterCRL | tee output
+
+          sed -n \
+              -e '/^\s*CRL Number:/p' \
+              -e '/^\s*CRL Size:/p' \
+              output > actual
+
+          cat > expected << EOF
+            CRL Number: 0x2
+            CRL Size: 1
+          EOF
+
+          diff expected actual
+
+          docker exec tertiary pki-server ca-crl-record-cert-find MasterCRL | tee output
+
+          sed -n \
+              -e '/^\s*Serial Number:/p' \
+              -e '/^\s*Reason:/p' \
+              output > actual
+
+          CERT_ID=$(cat cert.id)
+          cat > expected << EOF
+            Serial Number: $CERT_ID
+            Reason: CERTIFICATE_HOLD
+          EOF
+
+          diff expected actual
 
           docker exec client pki \
               -U http://tertiary.example.com:8080 \
@@ -981,9 +1235,38 @@ jobs:
               --force \
               $CERT_ID
 
-      - name: Check good cert in primary OCSP
+      - name: Check unrevoked cert in primary OCSP
         run: |
           CERT_ID=$(cat cert.id)
+
+          docker exec primary pki-server ca-crl-record-show MasterCRL | tee output
+
+          sed -n \
+              -e '/^\s*CRL Number:/p' \
+              -e '/^\s*CRL Size:/p' \
+              output > actual
+
+          cat > expected << EOF
+            CRL Number: 0x2
+            CRL Size: 1
+          EOF
+
+          diff expected actual
+
+          docker exec primary pki-server ca-crl-record-cert-find MasterCRL | tee output
+
+          sed -n \
+              -e '/^\s*Serial Number:/p' \
+              -e '/^\s*Reason:/p' \
+              output > actual
+
+          CERT_ID=$(cat cert.id)
+          cat > expected << EOF
+            Serial Number: $CERT_ID
+            Reason: CERTIFICATE_HOLD
+          EOF
+
+          diff expected actual
 
           docker exec client pki \
               -U http://primary.example.com:8080 \
@@ -1002,9 +1285,38 @@ jobs:
 
           diff expected actual
 
-      - name: Check good cert in secondary OCSP
+      - name: Check unrevoked cert in secondary OCSP
         run: |
           CERT_ID=$(cat cert.id)
+
+          docker exec secondary pki-server ca-crl-record-show MasterCRL | tee output
+
+          sed -n \
+              -e '/^\s*CRL Number:/p' \
+              -e '/^\s*CRL Size:/p' \
+              output > actual
+
+          cat > expected << EOF
+            CRL Number: 0x2
+            CRL Size: 1
+          EOF
+
+          diff expected actual
+
+          docker exec secondary pki-server ca-crl-record-cert-find MasterCRL | tee output
+
+          sed -n \
+              -e '/^\s*Serial Number:/p' \
+              -e '/^\s*Reason:/p' \
+              output > actual
+
+          CERT_ID=$(cat cert.id)
+          cat > expected << EOF
+            Serial Number: $CERT_ID
+            Reason: CERTIFICATE_HOLD
+          EOF
+
+          diff expected actual
 
           docker exec client pki \
               -U http://secondary.example.com:8080 \
@@ -1023,9 +1335,172 @@ jobs:
 
           diff expected actual
 
-      - name: Check good cert in tertiary OCSP
+      - name: Check unrevoked cert in tertiary OCSP
         run: |
           CERT_ID=$(cat cert.id)
+
+          docker exec tertiary pki-server ca-crl-record-show MasterCRL | tee output
+
+          sed -n \
+              -e '/^\s*CRL Number:/p' \
+              -e '/^\s*CRL Size:/p' \
+              output > actual
+
+          cat > expected << EOF
+            CRL Number: 0x2
+            CRL Size: 1
+          EOF
+
+          diff expected actual
+
+          docker exec tertiary pki-server ca-crl-record-cert-find MasterCRL | tee output
+
+          sed -n \
+              -e '/^\s*Serial Number:/p' \
+              -e '/^\s*Reason:/p' \
+              output > actual
+
+          CERT_ID=$(cat cert.id)
+          cat > expected << EOF
+            Serial Number: $CERT_ID
+            Reason: CERTIFICATE_HOLD
+          EOF
+
+          diff expected actual
+
+          docker exec client pki \
+              -U http://tertiary.example.com:8080 \
+              ocsp-cert-verify \
+              --path /ca/ocsp \
+              --ca-cert ca_signing \
+              $CERT_ID \
+              | tee output
+
+          sed -n "/^\s*Status:/p" output > actual
+
+          # cert status should be good
+          cat > expected << EOF
+            Status: Good
+          EOF
+
+          diff expected actual
+
+      - name: Update CRL record
+        run: |
+          docker exec client pki \
+              -U https://primary.example.com:8443 \
+              -n caadmin \
+              ca-crl-update
+
+          #docker exec client pki \
+          #    -U https://secondary.example.com:8443 \
+          #    -n caadmin \
+          #    ca-crl-update
+
+          #docker exec client pki \
+          #    -U https://tertiary.example.com:8443 \
+          #    -n caadmin \
+          #    ca-crl-update
+
+      - name: Check unrevoked cert in primary OCSP
+        run: |
+          CERT_ID=$(cat cert.id)
+
+          docker exec primary pki-server ca-crl-record-show MasterCRL | tee output
+
+          sed -n \
+              -e '/^\s*CRL Number:/p' \
+              -e '/^\s*CRL Size:/p' \
+              output > actual
+
+          cat > expected << EOF
+            CRL Number: 0x3
+            CRL Size: 0
+          EOF
+
+          diff expected actual
+
+          docker exec primary pki-server ca-crl-record-cert-find MasterCRL | tee output
+
+          diff /dev/null output
+
+          docker exec client pki \
+              -U http://primary.example.com:8080 \
+              ocsp-cert-verify \
+              --path /ca/ocsp \
+              --ca-cert ca_signing \
+              $CERT_ID \
+              | tee output
+
+          sed -n "/^\s*Status:/p" output > actual
+
+          # cert status should be good
+          cat > expected << EOF
+            Status: Good
+          EOF
+
+          diff expected actual
+
+      - name: Check unrevoked cert in secondary OCSP
+        run: |
+          CERT_ID=$(cat cert.id)
+
+          docker exec secondary pki-server ca-crl-record-show MasterCRL | tee output
+
+          sed -n \
+              -e '/^\s*CRL Number:/p' \
+              -e '/^\s*CRL Size:/p' \
+              output > actual
+
+          cat > expected << EOF
+            CRL Number: 0x3
+            CRL Size: 0
+          EOF
+
+          diff expected actual
+
+          docker exec secondary pki-server ca-crl-record-cert-find MasterCRL | tee output
+
+          diff /dev/null output
+
+          docker exec client pki \
+              -U http://secondary.example.com:8080 \
+              ocsp-cert-verify \
+              --path /ca/ocsp \
+              --ca-cert ca_signing \
+              $CERT_ID \
+              | tee output
+
+          sed -n "/^\s*Status:/p" output > actual
+
+          # cert status should be good
+          cat > expected << EOF
+            Status: Good
+          EOF
+
+          diff expected actual
+
+      - name: Check unrevoked cert in tertiary OCSP
+        run: |
+          CERT_ID=$(cat cert.id)
+
+          docker exec tertiary pki-server ca-crl-record-show MasterCRL | tee output
+
+          sed -n \
+              -e '/^\s*CRL Number:/p' \
+              -e '/^\s*CRL Size:/p' \
+              output > actual
+
+          cat > expected << EOF
+            CRL Number: 0x3
+            CRL Size: 0
+          EOF
+
+          diff expected actual
+
+          docker exec tertiary pki-server ca-crl-record-cert-find MasterCRL | tee output
+
+          diff /dev/null output
 
           docker exec client pki \
               -U http://tertiary.example.com:8080 \
