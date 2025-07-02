@@ -474,16 +474,15 @@ jobs:
         run: |
           docker cp kra/certs/kra_transport.crt ca:.
 
+          docker exec ca pki-server cert-import \
+             --input kra_transport.crt \
+             --nickname kra_transport
+
           docker exec ca pki-server ca-connector-add \
              --url https://kra.example.com:8443 \
              --nickname subsystem \
-             --transport-cert kra_transport.crt \
+             --transport-nickname kra_transport \
              KRA
-
-          TRANSPORT_CERT=$(openssl x509 \
-              -in kra/certs/kra_transport.crt \
-              -outform der \
-              | base64 --wrap=0)
 
           docker exec ca pki-server ca-config-find | grep ^ca\.connector.KRA\. | tee output
 
@@ -495,7 +494,7 @@ jobs:
           ca.connector.KRA.nickName=subsystem
           ca.connector.KRA.port=8443
           ca.connector.KRA.timeout=30
-          ca.connector.KRA.transportCert=$TRANSPORT_CERT
+          ca.connector.KRA.transportCertNickname=kra_transport
           ca.connector.KRA.uri=/kra/agent/kra/connector
           EOF
 
