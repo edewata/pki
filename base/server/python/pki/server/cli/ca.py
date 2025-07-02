@@ -1610,6 +1610,10 @@ class CAConnectorCLI(pki.cli.CLI):
         nickname = connector.get('nickname')
         print('  Nickname: {}'.format(nickname))
 
+        transport_nickname = connector.get('transportCertNickname')
+        if transport_nickname:
+            print('  Transport Nickname: {}'.format(transport_nickname))
+
         if not show_all:
             return
 
@@ -1641,7 +1645,7 @@ class CAConnectorCLI(pki.cli.CLI):
 
         certRevocationCheck = connector.get('certRevocationCheck')
         if certRevocationCheck:
-            print('  Cert Revocation Rheck: {}'.format(certRevocationCheck))
+            print('  Cert Revocation Check: {}'.format(certRevocationCheck))
 
 
 class CAConnectorFindCLI(pki.cli.CLI):
@@ -1749,6 +1753,7 @@ class CAConnectorAddCLI(pki.cli.CLI):
             action='append')
         self.parser.add_argument('--nickname')
         self.parser.add_argument('--transport-cert')
+        self.parser.add_argument('--transport-nickname')
         self.parser.add_argument(
             '-v',
             '--verbose',
@@ -1766,13 +1771,14 @@ class CAConnectorAddCLI(pki.cli.CLI):
     def print_help(self):
         print('Usage: pki-server ca-connector-add [OPTIONS] <connector ID>')
         print()
-        print('  -i, --instance <instance ID>       Instance ID (default: pki-tomcat)')
-        print('      --url <URL>                    Subsystem URL')
-        print('      --nickname <nickname>          Certificate nickname')
-        print('      --transport-cert <path>        Transport certificate')
-        print('  -v, --verbose                      Run in verbose mode.')
-        print('      --debug                        Run in debug mode.')
-        print('      --help                         Show help message.')
+        print('  -i, --instance <instance ID>         Instance ID (default: pki-tomcat)')
+        print('      --url <URL>                      Subsystem URL')
+        print('      --nickname <nickname>            Certificate nickname')
+        print('      --transport-cert <path>          Transport certificate')
+        print('      --transport-nickname <nickname>  Transport certificate nickname')
+        print('  -v, --verbose                        Run in verbose mode.')
+        print('      --debug                          Run in debug mode.')
+        print('      --help                           Show help message.')
         print()
 
     def execute(self, argv, args=None):
@@ -1801,9 +1807,12 @@ class CAConnectorAddCLI(pki.cli.CLI):
             urls.append(urllib.parse.urlparse(url))
 
         nickname = args.nickname
+        transport_cert = None
+        transport_nickname = args.transport_nickname
 
-        with open(args.transport_cert, 'r', encoding='utf-8') as f:
-            transport_cert = f.read()
+        if args.transport_cert:
+            with open(args.transport_cert, 'r', encoding='utf-8') as f:
+                transport_cert = f.read()
 
         instance = pki.server.PKIServerFactory.create(instance_name)
         if not instance.exists():
@@ -1822,7 +1831,8 @@ class CAConnectorAddCLI(pki.cli.CLI):
             connector_id=connector_id,
             urls=urls,
             nickname=nickname,
-            transport_cert=transport_cert)
+            transport_cert=transport_cert,
+            transport_nickname=transport_nickname)
 
         subsystem.save()
 
