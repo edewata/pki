@@ -2812,7 +2812,8 @@ class CASubsystem(PKISubsystem):
             connector_id,
             urls,
             nickname,
-            transport_cert,
+            transport_cert=None,
+            transport_nickname=None,
             timeout=30):
 
         self.set_config('ca.connector.%s.enable' % connector_id, 'true')
@@ -2832,8 +2833,14 @@ class CASubsystem(PKISubsystem):
 
         self.set_config('ca.connector.%s.nickName' % connector_id, nickname)
 
-        b64_cert = pki.nssdb.convert_cert(transport_cert, 'PEM', 'BASE64')
-        self.set_config('ca.connector.%s.transportCert' % connector_id, b64_cert)
+        if transport_cert:
+            b64_cert = pki.nssdb.convert_cert(transport_cert, 'PEM', 'BASE64')
+            self.set_config('ca.connector.%s.transportCert' % connector_id, b64_cert)
+
+        if transport_nickname:
+            self.set_config(
+                'ca.connector.%s.transportCertNickname' % connector_id,
+                transport_nickname)
 
         self.set_config('ca.connector.%s.uri' % connector_id, '/kra/agent/kra/connector')
         self.set_config('ca.connector.%s.timeout' % connector_id, timeout)
