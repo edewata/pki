@@ -1,4 +1,4 @@
-name: CA clone
+name: Basic CA clone with SSNv1
 # This test will perform the following operations:
 # - create a primary CA and DS
 # - clone the primary CA and DS into a secondary CA and DS
@@ -90,6 +90,38 @@ jobs:
               | sort \
               | tee primaryds.schema
 
+      - name: Check initial request range config in primary CA
+        if: always()
+        run: |
+          tests/ca/bin/ca-request-range-config.sh primary | tee output
+
+          # request range should be 1 - 10000000 decimal
+          cat > expected << EOF
+          dbs.beginRequestNumber=1
+          dbs.endRequestNumber=10000000
+          dbs.requestCloneTransferNumber=10000
+          dbs.requestIncrement=10000000
+          dbs.requestLowWaterMark=2000000
+          EOF
+
+          diff expected output
+
+      - name: Check initial cert range config in primary CA
+        if: always()
+        run: |
+          tests/ca/bin/ca-cert-range-config.sh primary | tee output
+
+          # cert range should be 1 - 10000000 hex
+          cat > expected << EOF
+          dbs.beginSerialNumber=1
+          dbs.endSerialNumber=10000000
+          dbs.serialCloneTransferNumber=10000
+          dbs.serialIncrement=10000000
+          dbs.serialLowWaterMark=2000000
+          EOF
+
+          diff expected output
+
       - name: Check initial replica range config in primary CA
         if: always()
         run: |
@@ -104,7 +136,7 @@ jobs:
           dbs.replicaLowWaterMark=20
           EOF
 
-          diff expected output || true
+          diff expected output
 
       - name: Check initial CA replica range objects
         if: always()
@@ -125,7 +157,7 @@ jobs:
           nextRange: 1000
           EOF
 
-          diff expected output || true
+          diff expected output
 
       - name: Check primary CA server status
         run: |
@@ -212,7 +244,6 @@ jobs:
       # docs/installation/ca/installing-ca-clone.adoc
       - name: Install CA in secondary PKI container
         run: |
-          # get CS.cfg from primary CA before cloning
           docker cp primary:/var/lib/pki/pki-tomcat/conf/ca/CS.cfg CS.cfg.primary
 
           docker exec primary pki-server ca-clone-prepare \
@@ -286,7 +317,7 @@ jobs:
               -o ldif_wrap=no \
               -LLL
 
-      - name: Check replica object on primary DS
+      - name: Check CA replica object on primary DS
         if: always()
         run: |
           docker exec primaryds ldapsearch \
@@ -360,26 +391,18 @@ jobs:
           docker exec primary pki-server ca-config-find | grep ca.crl.MasterCRL
 
           # normalize expected result:
-          # - remove params that cannot be compared
           # - set dbs.enableSerialManagement to true (automatically enabled when cloned)
-          sed -e '/^dbs.beginReplicaNumber=/d' \
-              -e '/^dbs.endReplicaNumber=/d' \
-              -e '/^dbs.nextBeginReplicaNumber=/d' \
-              -e '/^dbs.nextEndReplicaNumber=/d' \
-              -e 's/^\(dbs.enableSerialManagement\)=.*$/\1=true/' \
+          sed -e 's/^\(dbs.enableSerialManagement\)=.*$/\1=true/' \
+              -e 's/^\(dbs.endRequestNumber\)=.*$/\1=9990000/' \
+              -e 's/^\(dbs.endSerialNumber\)=.*$/\1=fff0000/' \
+              -e 's/^\(dbs.endReplicaNumber\)=.*$/\1=95/' \
               CS.cfg.primary \
               | sort > expected
 
           # normalize actual result:
-          # - remove params that cannot be compared
-          sed -e '/^dbs.beginReplicaNumber=/d' \
-              -e '/^dbs.endReplicaNumber=/d' \
-              -e '/^dbs.nextBeginReplicaNumber=/d' \
-              -e '/^dbs.nextEndReplicaNumber=/d' \
-              CS.cfg.primary.after \
-              | sort > actual
+          sort CS.cfg.primary.after > actual
 
-          diff expected actual || true
+          diff expected actual
 
       - name: Check CS.cfg in secondary CA
         run: |
@@ -396,36 +419,103 @@ jobs:
           # - set ca.crl.MasterCRL.enableCRLUpdates to false (automatically disabled in the clone)
           # - add params for the clone
           sed -e '/^installDate=/d' \
-              -e '/^dbs.beginReplicaNumber=/d' \
-              -e '/^dbs.endReplicaNumber=/d' \
-              -e '/^dbs.nextBeginReplicaNumber=/d' \
-              -e '/^dbs.nextEndReplicaNumber=/d' \
-              -e '/^ca.sslserver.cert=/d' \
-              -e '/^ca.sslserver.certreq=/d' \
               -e 's/primary.example.com/secondary.example.com/' \
               -e 's/primaryds.example.com/secondaryds.example.com/' \
               -e 's/^\(ca.crl.MasterCRL.enableCRLCache\)=.*$/\1=false/' \
               -e 's/^\(ca.crl.MasterCRL.enableCRLUpdates\)=.*$/\1=false/' \
+              -e 's/^\(dbs.enableSerialManagement\)=.*$/\1=true/' \
+              -e 's/^\(dbs.beginRequestNumber\)=.*$/\1=9990001/' \
+              -e 's/^\(dbs.beginSerialNumber\)=.*$/\1=fff0001/' \
+              -e 's/^\(dbs.beginReplicaNumber\)=.*$/\1=98/' \
+              -e 's/^\(dbs.endRequestNumber\)=.*$/\1=10000000/' \
+              -e 's/^\(dbs.endSerialNumber\)=.*$/\1=10000000/' \
+              -e 's/^\(dbs.endReplicaNumber\)=.*$/\1=100/' \
               -e '$ a ca.certStatusUpdateInterval=0' \
               -e '$ a ca.listenToCloneModifications=false' \
               -e '$ a master.ca.agent.host=primary.example.com' \
               -e '$ a master.ca.agent.port=8443' \
+              -e '$ a dbs.nextBeginRequestNumber=10000001' \
+              -e '$ a dbs.nextBeginSerialNumber=10000001' \
+              -e '$ a dbs.nextEndRequestNumber=20000000' \
+              -e '$ a dbs.nextEndSerialNumber=20000000' \
               CS.cfg.primary.after \
               | sort > expected
 
           # normalize actual result:
           # - remove params that cannot be compared
           sed -e '/^installDate=/d' \
-              -e '/^dbs.beginReplicaNumber=/d' \
-              -e '/^dbs.endReplicaNumber=/d' \
-              -e '/^dbs.nextBeginReplicaNumber=/d' \
-              -e '/^dbs.nextEndReplicaNumber=/d' \
-              -e '/^ca.sslserver.cert=/d' \
-              -e '/^ca.sslserver.certreq=/d' \
               CS.cfg.secondary \
               | sort > actual
 
-          diff expected actual || true
+          diff expected actual
+
+      - name: Check request range config in primary CA after cloning
+        if: always()
+        run: |
+          tests/ca/bin/ca-request-range-config.sh primary | tee output
+
+          # request range should be 1 - 10000000 decimal
+          cat > expected << EOF
+          dbs.beginRequestNumber=1
+          dbs.endRequestNumber=9990000
+          dbs.requestCloneTransferNumber=10000
+          dbs.requestIncrement=10000000
+          dbs.requestLowWaterMark=2000000
+          EOF
+
+          diff expected output
+
+      - name: Check request range config in secondary CA
+        if: always()
+        run: |
+          tests/ca/bin/ca-request-range-config.sh secondary | tee output
+
+          # request range should be 1 - 10000000 decimal
+          cat > expected << EOF
+          dbs.beginRequestNumber=9990001
+          dbs.endRequestNumber=10000000
+          dbs.nextBeginRequestNumber=10000001
+          dbs.nextEndRequestNumber=20000000
+          dbs.requestCloneTransferNumber=10000
+          dbs.requestIncrement=10000000
+          dbs.requestLowWaterMark=2000000
+          EOF
+
+          diff expected output
+
+      - name: Check cert range config in primary CA after cloning
+        if: always()
+        run: |
+          tests/ca/bin/ca-cert-range-config.sh primary | tee output
+
+          # cert range should be 1 - 10000000 hex
+          cat > expected << EOF
+          dbs.beginSerialNumber=1
+          dbs.endSerialNumber=fff0000
+          dbs.serialCloneTransferNumber=10000
+          dbs.serialIncrement=10000000
+          dbs.serialLowWaterMark=2000000
+          EOF
+
+          diff expected output
+
+      - name: Check cert range config in secondary CA
+        if: always()
+        run: |
+          tests/ca/bin/ca-cert-range-config.sh secondary | tee output
+
+          # cert range should be 1 - 10000000 hex
+          cat > expected << EOF
+          dbs.beginSerialNumber=fff0001
+          dbs.endSerialNumber=10000000
+          dbs.nextBeginSerialNumber=10000001
+          dbs.nextEndSerialNumber=20000000
+          dbs.serialCloneTransferNumber=10000
+          dbs.serialIncrement=10000000
+          dbs.serialLowWaterMark=2000000
+          EOF
+
+          diff expected output
 
       - name: Check replica range config in primary CA after cloning
         if: always()
@@ -442,7 +532,7 @@ jobs:
           dbs.replicaLowWaterMark=20
           EOF
 
-          diff expected output || true
+          diff expected output
 
       - name: Check replica range config in secondary CA
         if: always()
@@ -460,7 +550,7 @@ jobs:
           dbs.replicaLowWaterMark=20
           EOF
 
-          diff expected output || true
+          diff expected output
 
       - name: Check CA replica range objects
         if: always()
@@ -480,7 +570,7 @@ jobs:
           nextRange: 1000
           EOF
 
-          diff expected output || true
+          diff expected output
 
       - name: Check admin cert for secondary CA
         run: |
@@ -617,7 +707,7 @@ jobs:
           echo "1095" > expected
           sed -n 's/^nsDS5ReplicaId:\s*\(\S\+\)\s*$/\1/p' output > actual
 
-          diff expected actual || true
+          diff expected actual
 
       - name: Check CA replication agreement on tertiary DS
         if: always()
@@ -641,23 +731,23 @@ jobs:
 
           # normalize expected result:
           # - remove params that cannot be compared
-          sed -e '/^dbs.beginReplicaNumber=/d' \
-              -e '/^dbs.endReplicaNumber=/d' \
-              -e '/^dbs.nextBeginReplicaNumber=/d' \
-              -e '/^dbs.nextEndReplicaNumber=/d' \
+          sed -e '/^dbs.nextBeginRequestNumber=/d' \
+              -e '/^dbs.nextBeginSerialNumber=/d' \
+              -e '/^dbs.nextEndRequestNumber=/d' \
+              -e '/^dbs.nextEndSerialNumber=/d' \
+              -e 's/^\(dbs.beginRequestNumber\)=.*$/\1=10000001/' \
+              -e 's/^\(dbs.beginSerialNumber\)=.*$/\1=10000001/' \
+              -e 's/^\(dbs.endRequestNumber\)=.*$/\1=20000000/' \
+              -e 's/^\(dbs.endSerialNumber\)=.*$/\1=20000000/' \
+              -e '$ a dbs.nextBeginReplicaNumber=1000' \
+              -e '$ a dbs.nextEndReplicaNumber=1094' \
               CS.cfg.secondary \
               | sort > expected
 
           # normalize actual result:
-          # - remove params that cannot be compared
-          sed -e '/^dbs.beginReplicaNumber=/d' \
-              -e '/^dbs.endReplicaNumber=/d' \
-              -e '/^dbs.nextBeginReplicaNumber=/d' \
-              -e '/^dbs.nextEndReplicaNumber=/d' \
-              CS.cfg.secondary.after \
-              | sort > actual
+          sort CS.cfg.secondary.after > actual
 
-          diff expected actual || true
+          diff expected actual
 
       - name: Check CS.cfg in tertiary CA
         run: |
@@ -672,31 +762,99 @@ jobs:
           # - replace secondaryds.example.com with tertiaryds.example.com
           # - set master.ca.agent.host to secondary.example.com
           sed -e '/^installDate=/d' \
-              -e '/^dbs.beginReplicaNumber=/d' \
-              -e '/^dbs.endReplicaNumber=/d' \
               -e '/^dbs.nextBeginReplicaNumber=/d' \
               -e '/^dbs.nextEndReplicaNumber=/d' \
-              -e '/^ca.sslserver.cert=/d' \
-              -e '/^ca.sslserver.certreq=/d' \
               -e 's/secondary.example.com/tertiary.example.com/' \
               -e 's/secondaryds.example.com/tertiaryds.example.com/' \
               -e 's/^\(master.ca.agent.host\)=.*$/\1=secondary.example.com/' \
+              -e 's/^\(dbs.beginRequestNumber\)=.*$/\1=9990001/' \
+              -e 's/^\(dbs.beginSerialNumber\)=.*$/\1=fff0001/' \
+              -e 's/^\(dbs.beginReplicaNumber\)=.*$/\1=1096/' \
+              -e 's/^\(dbs.endRequestNumber\)=.*$/\1=10000000/' \
+              -e 's/^\(dbs.endSerialNumber\)=.*$/\1=10000000/' \
+              -e 's/^\(dbs.endReplicaNumber\)=.*$/\1=1099/' \
+              -e '$ a dbs.nextBeginRequestNumber=20000001' \
+              -e '$ a dbs.nextBeginSerialNumber=278435457' \
+              -e '$ a dbs.nextEndRequestNumber=30000000' \
+              -e '$ a dbs.nextEndSerialNumber=288435456' \
               CS.cfg.secondary.after \
               | sort > expected
 
           # normalize actual result:
           # - remove params that cannot be compared
           sed -e '/^installDate=/d' \
-              -e '/^dbs.beginReplicaNumber=/d' \
-              -e '/^dbs.endReplicaNumber=/d' \
-              -e '/^dbs.nextBeginReplicaNumber=/d' \
-              -e '/^dbs.nextEndReplicaNumber=/d' \
-              -e '/^ca.sslserver.cert=/d' \
-              -e '/^ca.sslserver.certreq=/d' \
               CS.cfg.tertiary \
               | sort > actual
 
-          diff expected actual || true
+          diff expected actual
+
+      - name: Check request range config in secondary CA after cloning
+        if: always()
+        run: |
+          tests/ca/bin/ca-request-range-config.sh secondary | tee output
+
+          # request range should be 1 - 10000000 decimal
+          cat > expected << EOF
+          dbs.beginRequestNumber=10000001
+          dbs.endRequestNumber=20000000
+          dbs.requestCloneTransferNumber=10000
+          dbs.requestIncrement=10000000
+          dbs.requestLowWaterMark=2000000
+          EOF
+
+          diff expected output
+
+      - name: Check request range config in tertiary CA
+        if: always()
+        run: |
+          tests/ca/bin/ca-request-range-config.sh tertiary | tee output
+
+          # request range should be 1 - 10000000 decimal
+          cat > expected << EOF
+          dbs.beginRequestNumber=9990001
+          dbs.endRequestNumber=10000000
+          dbs.nextBeginRequestNumber=20000001
+          dbs.nextEndRequestNumber=30000000
+          dbs.requestCloneTransferNumber=10000
+          dbs.requestIncrement=10000000
+          dbs.requestLowWaterMark=2000000
+          EOF
+
+          diff expected output
+
+      - name: Check cert range config in secondary CA after cloning
+        if: always()
+        run: |
+          tests/ca/bin/ca-cert-range-config.sh secondary | tee output
+
+          # cert range should be 1 - 10000000 hex
+          cat > expected << EOF
+          dbs.beginSerialNumber=10000001
+          dbs.endSerialNumber=20000000
+          dbs.serialCloneTransferNumber=10000
+          dbs.serialIncrement=10000000
+          dbs.serialLowWaterMark=2000000
+          EOF
+
+          diff expected output
+
+      - name: Check cert range config in tertiary CA
+        if: always()
+        run: |
+          tests/ca/bin/ca-cert-range-config.sh tertiary | tee output
+
+          # cert range should be 1 - 10000000 hex
+          cat > expected << EOF
+          dbs.beginSerialNumber=fff0001
+          dbs.endSerialNumber=10000000
+          dbs.nextBeginSerialNumber=278435457
+          dbs.nextEndSerialNumber=288435456
+          dbs.serialCloneTransferNumber=10000
+          dbs.serialIncrement=10000000
+          dbs.serialLowWaterMark=2000000
+          EOF
+
+          diff expected output
 
       - name: Check replica range config in secondary CA after cloning
         if: always()
@@ -717,7 +875,7 @@ jobs:
           dbs.replicaLowWaterMark=20
           EOF
 
-          diff expected output || true
+          diff expected output
 
       - name: Check replica range config in tertiary CA
         if: always()
@@ -735,7 +893,7 @@ jobs:
           dbs.replicaLowWaterMark=20
           EOF
 
-          diff expected output || true
+          diff expected output
 
       - name: Check CA replica range objects
         if: always()
@@ -751,7 +909,7 @@ jobs:
 
           EOF
 
-          diff expected output || true
+          diff expected output
 
       - name: Check CA replica next range
         if: always()
@@ -763,7 +921,7 @@ jobs:
           nextRange: 1100
           EOF
 
-          diff expected output || true
+          diff expected output
 
       - name: Check admin cert for tertiary CA
         run: |

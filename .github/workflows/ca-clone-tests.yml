@@ -38,6 +38,11 @@ jobs:
     needs: build
     uses: ./.github/workflows/ca-clone-ssnv1-test.yml
 
+  ca-clone-ssnv1-basic-test:
+    name: Basic CA clone with SSNv1
+    needs: build
+    uses: ./.github/workflows/ca-clone-ssnv1-basic-test.yml
+
   ca-clone-ssnv2-test:
     name: CA clone with SSNv2
     needs: build
