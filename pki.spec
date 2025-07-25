@@ -101,8 +101,8 @@ ExcludeArch: i686
 # Use external build dependencies unless --without build_deps is specified.
 %bcond_without build_deps
 
-# Use bundled runtime dependencies unless --with runtime_deps is specified.
-%bcond_with runtime_deps
+# Use external runtime dependencies unless --without runtime_deps is specified.
+%bcond_without runtime_deps
 
 # Build with Maven unless --without maven is specified.
 %bcond_without maven
