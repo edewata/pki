@@ -20,6 +20,7 @@ package com.netscape.cms.profile.common;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -74,11 +75,12 @@ import com.netscape.cmsutil.crypto.CryptoUtil;
  * profile.
  *
  * @author cfu - Server-Side Keygen Enrollment implementation
- * @version $Revision$, $Date$
  */
 public class CAEnrollProfile extends EnrollProfile {
 
     public static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(CAEnrollProfile.class);
+
+    public static final String DEFAULT_TRANSPORT_CERT_NICKNAME = "KRA Transport Certificate";
 
     public CAEnrollProfile() {
     }
@@ -547,7 +549,7 @@ public class CAEnrollProfile extends EnrollProfile {
 
         String p12passwd = request.getExtDataInString("serverSideKeygenP12Passwd");
 
-        org.mozilla.jss.crypto.X509Certificate transCert = null;
+        X509Certificate transCert = null;
 
         CAEngine engine = CAEngine.getInstance();
         CertificateAuthority ca = engine.getCA();
@@ -557,7 +559,7 @@ public class CAEnrollProfile extends EnrollProfile {
 
         try {
             CryptoManager cm = CryptoManager.getInstance();
-            String transportNickname = kraConnectorConfig.getString("transportCertNickname", "KRA Transport Certificate");
+            String transportNickname = kraConnectorConfig.getString("transportCertNickname", DEFAULT_TRANSPORT_CERT_NICKNAME);
             transCert = cm.findCertByNickname(transportNickname);
         } catch (Exception e) {
             logger.error(method + "'KRA transport certificate' not found in nssdb; need to be manually setup for Server-Side keygen enrollment");

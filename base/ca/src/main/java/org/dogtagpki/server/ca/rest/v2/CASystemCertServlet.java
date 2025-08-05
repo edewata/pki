@@ -6,12 +6,13 @@
 package org.dogtagpki.server.ca.rest.v2;
 
 import java.io.PrintWriter;
+import java.security.cert.X509Certificate;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.mozilla.jss.crypto.X509Certificate;
+import org.mozilla.jss.CryptoManager;
 import org.mozilla.jss.netscape.security.pkcs.ContentInfo;
 import org.mozilla.jss.netscape.security.pkcs.PKCS7;
 import org.mozilla.jss.netscape.security.pkcs.SignerInfo;
@@ -69,6 +70,9 @@ public class CASystemCertServlet extends CAServlet {
 
     @WebAction(method = HttpMethod.GET, paths = {"transport"})
     public void getTransportCert(HttpServletRequest request, HttpServletResponse response) throws Exception {
+
+        logger.info("CASystemCertServlet: Getting transport cert");
+
         KRAConnectorProcessor processor = new KRAConnectorProcessor(request.getLocale());
         processor.setCMSEngine(engine);
         processor.init();
@@ -76,8 +80,21 @@ public class CASystemCertServlet extends CAServlet {
         KRAConnectorInfo info = processor.getConnectorInfo();
 
         String encodedCert = info.getTransportCert();
-        byte[] bytes = Utils.base64decode(encodedCert);
-        X509CertImpl cert = new X509CertImpl(bytes);
+        logger.info("CASystemCertServlet: transport cert: " + encodedCert);
+
+        X509Certificate cert;
+        if (encodedCert != null) {
+            byte[] bytes = Utils.base64decode(encodedCert);
+            cert = new X509CertImpl(bytes);
+        } else {
+            String nickname = info.getTransportCertNickname();
+            logger.info("CASystemCertServlet: transport cert nickname: " + nickname);
+
+            CryptoManager manager = CryptoManager.getInstance();
+            cert = manager.findCertByNickname(nickname);
+        }
+
+        logger.info("CASystemCertServlet: Generating cert chain");
         java.security.cert.X509Certificate[] certChain = engine.getCertChain(cert);
 
         PKCS7 pkcs7 = new PKCS7(new AlgorithmId[0],

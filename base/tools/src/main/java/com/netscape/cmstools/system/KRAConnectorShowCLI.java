@@ -45,13 +45,21 @@ public class KRAConnectorShowCLI extends CommandCLI {
         System.out.println("Local: " + info.getLocal());
         System.out.println("Timeout: " + info.getTimeout());
         System.out.println("URI: " + info.getUri());
-        System.out.println("Transport Cert: \n");
-        String transportCert = info.getTransportCert();
-        int i = 0;
-        for (i = 0; i < transportCert.length() / 64; i++) {
-            System.out.println(transportCert.substring(i * 64, (i * 64) + 64));
+
+        String transportCertNickname = info.getTransportCertNickname();
+        if (transportCertNickname != null) {
+            System.out.println("Transport Cert Nickname: " + transportCertNickname);
         }
-        System.out.println(transportCert.substring(i * 64));
-        System.out.println();
+
+        String transportCert = info.getTransportCert();
+        if (transportCert != null) {
+            System.out.println("Transport Cert: \n");
+            int i = 0;
+            for (i = 0; i < transportCert.length() / 64; i++) {
+                System.out.println(transportCert.substring(i * 64, (i * 64) + 64));
+            }
+            System.out.println(transportCert.substring(i * 64));
+            System.out.println();
+        }
     }
 }

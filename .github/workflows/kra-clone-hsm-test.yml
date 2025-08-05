@@ -209,11 +209,11 @@ jobs:
 
       - name: Check system certs in internal token
         run: |
-          # there should be 4 certs
+          # there should be 5 certs
           # NOTE: ideally it should match the
           # primary CA, but it works fine as is
           # TODO: investigate the discrepancy
-          echo "4" > expected
+          echo "5" > expected
           docker exec secondary pki \
               -d /var/lib/pki/pki-tomcat/conf/alias \
               nss-cert-find | tee output
@@ -423,11 +423,11 @@ jobs:
 
       - name: Check system certs in internal token
         run: |
-          # there should be 4 certs
+          # there should be 5 certs
           # NOTE: ideally it should match the
           # primary CA, but it works fine as is
           # TODO: investigate the discrepancy
-          echo "4" > expected
+          echo "5" > expected
           docker exec tertiary pki \
               -d /var/lib/pki/pki-tomcat/conf/alias \
               nss-cert-find | tee output

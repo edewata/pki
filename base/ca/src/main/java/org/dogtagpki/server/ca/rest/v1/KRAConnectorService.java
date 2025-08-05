@@ -50,7 +50,7 @@ public class KRAConnectorService extends PKIService implements KRAConnectorResou
 
             processor.addConnector(info);
             return createNoContentResponse();
-        } catch (EBaseException e) {
+        } catch (Exception e) {
             String message = "Unable to add KRA connector: " + e.getMessage();
             logger.error(message, e);
             throw new PKIException(message, e);

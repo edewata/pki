@@ -1444,6 +1444,63 @@ class PKIDeployer:
         logger.info('Requesting ranges from %s master', subsystem.type)
         subsystem.request_ranges(master_url, session_id=self.install_token.token)
 
+    def import_ca_transport_cert(self, subsystem, master_url, master_properties):
+
+        host = master_properties.get('ca.connector.KRA.host')
+        if not host:
+            # KRA connector not configured
+            return
+
+        nssdb = subsystem.instance.open_nssdb()
+        try:
+            # CAEnrollProfile.DEFAULT_TRANSPORT_CERT_NICKNAME
+            transport_cert_nickname = master_properties.get(
+                'ca.connector.KRA.transportCertNickname',
+                'KRA Transport Certificate')
+
+            master_properties['ca.connector.KRA.transportCertNickname'] = \
+                transport_cert_nickname
+
+            logger.info('Getting transport cert from NSS database')
+            nssdb_transport_cert = nssdb.get_cert(
+                nickname=transport_cert_nickname,
+                output_format='base64')
+
+            logger.info('NSS transport cert: %s', nssdb_transport_cert)
+
+            if nssdb_transport_cert:
+                # transport cert already exists in NSS database
+                logger.info('Removing transport cert from CS.cfg')
+                master_properties.pop('ca.connector.KRA.transportCert', None)
+                return
+
+            # transport cert doesn't exist in NSS database
+            # -> get from master
+            master_transport_cert = master_properties.get('ca.connector.KRA.transportCert')
+
+            if not master_transport_cert:
+                logger.info('Retrieving transport cert from %s', master_url)
+                master_transport_cert = self.get_ca_transport_cert(master_url)
+                master_transport_cert = pki.nssdb.convert_cert(
+                    master_transport_cert, 'pem', 'base64')
+
+            logger.info('Master transport cert: %s', master_transport_cert)
+
+            if not master_transport_cert:
+                raise Exception('Missing transport certificate')
+
+            logger.info('Importing transport cert as %s', transport_cert_nickname)
+            nssdb.add_cert(
+                nickname=transport_cert_nickname,
+                cert_data=master_transport_cert,
+                cert_format='base64')
+
+            logger.info('Removing transport cert from CS.cfg')
+            master_properties.pop('ca.connector.KRA.transportCert', None)
+
+        finally:
+            nssdb.close()
+
     def import_master_config(self, subsystem):
 
         master_url = self.mdict['pki_clone_uri']
@@ -1494,6 +1551,12 @@ class PKIDeployer:
             session_id=self.install_token.token)
 
         master_properties = master_config['Properties']
+
+        if subsystem.name == 'ca':
+            self.import_ca_transport_cert(
+                subsystem,
+                master_url,
+                master_properties)
 
         if config.str2bool(self.mdict['pki_ds_setup']):
 
@@ -4432,6 +4495,29 @@ class PKIDeployer:
 
         finally:
             shutil.rmtree(tmpdir)
+
+    def get_ca_transport_cert(self, ca_url):
+
+        cmd = [
+            'pki',
+            '-d', self.instance.nssdb_dir,
+            '-f', self.instance.password_conf,
+            '-U', ca_url,
+            '--ignore-banner',
+            '--skip-revocation-check',
+            'ca-cert-transport-export'
+        ]
+
+        if logger.isEnabledFor(logging.DEBUG):
+            cmd.append('--debug')
+
+        elif logger.isEnabledFor(logging.INFO):
+            cmd.append('--verbose')
+
+        logger.debug('Command: %s', ' '.join(cmd))
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, check=True)
+
+        return result.stdout.decode()
 
     def get_kra_transport_cert(self):
 

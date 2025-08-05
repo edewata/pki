@@ -64,7 +64,7 @@ public class KRAConnectorServlet extends CAServlet {
             processor.setCMSEngine(engine);
             processor.init();
             processor.addConnector(connector);
-        } catch (EBaseException e) {
+        } catch (Exception e) {
             String message = "Unable to add KRA connector: " + e.getMessage();
             logger.error(message, e);
             throw new PKIException(message, e);
