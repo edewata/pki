@@ -75,15 +75,6 @@ jobs:
 
       - name: Check KRA connector in CA
         run: |
-          docker exec pki pki-server cert-export \
-              --cert-file $SHARED/kra_transport.crt \
-              kra_transport
-
-          TRANSPORT_CERT=$(openssl x509 \
-              -in kra_transport.crt \
-              -outform der \
-              | base64 --wrap=0)
-
           docker exec pki pki-server ca-config-find | grep ^ca\.connector.KRA\. | tee output
 
           # KRA connector should be configured
@@ -94,7 +85,7 @@ jobs:
           ca.connector.KRA.nickName=subsystem
           ca.connector.KRA.port=8443
           ca.connector.KRA.timeout=30
-          ca.connector.KRA.transportCert=$TRANSPORT_CERT
+          ca.connector.KRA.transportCertNickname=kra_transport
           ca.connector.KRA.uri=/kra/agent/kra/connector
           EOF
 
@@ -158,16 +149,7 @@ jobs:
               -n caadmin \
               ca-cert-request-approve \
               --force \
-              $REQUEST_ID \
-              > >(tee stdout) 2> >(tee stderr >&2) || true
-
-          # approval is currently failing:
-          # https://github.com/dogtagpki/pki/issues/5037
-          cat > expected << EOF
-          PKIException: Server Internal Error: KRA Transport Certificate needs to be imported into the CA nssdb for Server-Side Keygen Enrollment
-          EOF
-
-          diff expected stderr
+              $REQUEST_ID
 
       - name: Submit request with short password
         run: |
@@ -257,16 +239,7 @@ jobs:
               -n caadmin \
               ca-cert-request-approve \
               --force \
-              $REQUEST_ID \
-              > >(tee stdout) 2> >(tee stderr >&2) || true
-
-          # approval is currently failing:
-          # https://github.com/dogtagpki/pki/issues/5037
-          cat > expected << EOF
-          PKIException: Server Internal Error: KRA Transport Certificate needs to be imported into the CA nssdb for Server-Side Keygen Enrollment
-          EOF
-
-          diff expected stderr
+              $REQUEST_ID
 
       - name: Remove KRA
         run: docker exec pki pkidestroy -s KRA -v

@@ -426,6 +426,7 @@ jobs:
           {
               "host": "kra.example.com",
               "port": "8443",
+              "transportCertNickname": "kra_transport",
               "transportCert": "$TRANSPORT_CERT"
           }
           EOF
@@ -447,7 +448,7 @@ jobs:
           ca.connector.KRA.nickName=subsystem
           ca.connector.KRA.port=8443
           ca.connector.KRA.timeout=30
-          ca.connector.KRA.transportCert=$TRANSPORT_CERT
+          ca.connector.KRA.transportCertNickname=kra_transport
           ca.connector.KRA.uri=/kra/agent/kra/connector
           EOF
 

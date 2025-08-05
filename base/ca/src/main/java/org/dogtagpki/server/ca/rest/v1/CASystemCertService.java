@@ -18,11 +18,13 @@
 
 package org.dogtagpki.server.ca.rest.v1;
 
+import java.security.cert.X509Certificate;
+
 import javax.ws.rs.core.Response;
 
 import org.dogtagpki.ca.CASystemCertResource;
 import org.dogtagpki.server.ca.CAEngine;
-import org.mozilla.jss.crypto.X509Certificate;
+import org.mozilla.jss.CryptoManager;
 import org.mozilla.jss.netscape.security.pkcs.ContentInfo;
 import org.mozilla.jss.netscape.security.pkcs.PKCS7;
 import org.mozilla.jss.netscape.security.pkcs.SignerInfo;
@@ -68,6 +70,8 @@ public class CASystemCertService extends PKIService implements CASystemCertResou
     @Override
     public Response getTransportCert() throws Exception {
 
+        logger.info("CASystemCertService: Getting transport cert");
+
         CAEngine engine = CAEngine.getInstance();
 
         KRAConnectorProcessor processor = new KRAConnectorProcessor(getLocale(headers));
@@ -77,8 +81,22 @@ public class CASystemCertService extends PKIService implements CASystemCertResou
         KRAConnectorInfo info = processor.getConnectorInfo();
 
         String encodedCert = info.getTransportCert();
-        byte[] bytes = Utils.base64decode(encodedCert);
-        X509CertImpl cert = new X509CertImpl(bytes);
+        logger.info("CASystemCertService: transport cert: " + encodedCert);
+
+        X509Certificate cert;
+        if (encodedCert != null) {
+            byte[] bytes = Utils.base64decode(encodedCert);
+            cert = new X509CertImpl(bytes);
+        } else {
+            String nickname = info.getTransportCertNickname();
+            logger.info("CASystemCertService: transport cert nickname: " + nickname);
+
+            CryptoManager manager = CryptoManager.getInstance();
+            cert = manager.findCertByNickname(nickname);
+            cert = new X509CertImpl(cert.getEncoded());
+        }
+
+        logger.info("CASystemCertService: Generating cert chain");
         java.security.cert.X509Certificate[] certChain = engine.getCertChain(cert);
 
         PKCS7 pkcs7 = new PKCS7(new AlgorithmId[0],

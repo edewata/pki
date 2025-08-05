@@ -1563,10 +1563,15 @@ class CAClonePrepareCLI(pki.cli.CLI):
             with open(pkcs12_password_file, 'wb') as f:
                 f.write(pkcs12_password)
 
+            logger.info('Exporting subsystem cert')
             subsystem.export_system_cert(
                 'subsystem', pkcs12_file, pkcs12_password_file, no_key=no_key)
+
+            logger.info('Exporting CA signing cert')
             subsystem.export_system_cert(
                 'signing', pkcs12_file, pkcs12_password_file, no_key=no_key, append=True)
+
+            logger.info('Exporting CA OCSP signing cert')
             subsystem.export_system_cert(
                 'ocsp_signing', pkcs12_file, pkcs12_password_file, no_key=no_key, append=True)
 
@@ -1575,12 +1580,29 @@ class CAClonePrepareCLI(pki.cli.CLI):
 
             # export audit signing cert if available (i.e. has nickname)
             if cert['nickname']:
+                logger.info('Exporting CA audit signing cert')
                 subsystem.export_system_cert(
                     'audit_signing',
                     pkcs12_file,
                     pkcs12_password_file,
                     no_key=no_key,
                     append=True)
+
+            transport_cert_nickname = subsystem.config.get(
+                'ca.connector.KRA.transportCertNickname')
+
+            if transport_cert_nickname:
+                logger.info('Exporting KRA connector transport cert')
+                nssdb = subsystem.instance.open_nssdb()
+                try:
+                    nssdb.export_pkcs12(
+                        pkcs12_file=pkcs12_file,
+                        pkcs12_password_file=pkcs12_password_file,
+                        nicknames=[transport_cert_nickname],
+                        include_key=not no_key,
+                        append=True)
+                finally:
+                    nssdb.close()
 
             instance.export_external_certs(
                 pkcs12_file, pkcs12_password_file, append=True)

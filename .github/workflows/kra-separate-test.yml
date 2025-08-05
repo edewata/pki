@@ -299,15 +299,6 @@ jobs:
 
       - name: Verify KRA connector in sub CA
         run: |
-          docker exec kra pki-server cert-export \
-              --cert-file $SHARED/kra_transport.crt \
-              kra_transport
-
-          TRANSPORT_CERT=$(openssl x509 \
-              -in kra_transport.crt \
-              -outform der \
-              | base64 --wrap=0)
-
           docker exec subca pki-server ca-config-find | grep ^ca\.connector.KRA\. | tee output
 
           # KRA connector should be configured
@@ -318,7 +309,7 @@ jobs:
           ca.connector.KRA.nickName=subsystem
           ca.connector.KRA.port=8443
           ca.connector.KRA.timeout=30
-          ca.connector.KRA.transportCert=$TRANSPORT_CERT
+          ca.connector.KRA.transportCertNickname=kra_transport
           ca.connector.KRA.uri=/kra/agent/kra/connector
           EOF
 
