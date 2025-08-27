@@ -1178,6 +1178,7 @@ class PKISubsystem(object):
             skip_schema=False,
             skip_base=False,
             skip_containers=False,
+            skip_reindex=False,
             as_current_user=False):
 
         cmd = [self.name + '-db-init']
@@ -3313,9 +3314,25 @@ class ACMESubsystem(PKISubsystem):
             skip_schema=False,
             skip_base=False,
             skip_containers=False,
+            skip_reindex=False,
             as_current_user=False):
 
         cmd = [self.name + '-database-init']
+
+        if skip_reindex:
+            cmd.append('--skip-reindex')
+
+        if logger.isEnabledFor(logging.DEBUG):
+            cmd.append('--debug')
+
+        elif logger.isEnabledFor(logging.INFO):
+            cmd.append('--verbose')
+
+        self.run(cmd)
+
+    def rebuild_indexes(self):
+
+        cmd = [self.name + '-database-index-rebuild']
 
         if logger.isEnabledFor(logging.DEBUG):
             cmd.append('--debug')
