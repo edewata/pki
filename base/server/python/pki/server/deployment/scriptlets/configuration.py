@@ -222,6 +222,3 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
 
                 logger.info('Waiting for %s subsystem', subsystem.type)
                 subsystem.wait_for_startup(deployer.startup_timeout, deployer.request_timeout)
-
-    def destroy(self, deployer):
-        pass

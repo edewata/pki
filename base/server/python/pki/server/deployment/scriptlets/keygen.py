@@ -48,6 +48,3 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
 
         if (external or standalone) and step_one:
             deployer.generate_system_cert_requests(subsystem)
-
-    def destroy(self, deployer):
-        pass

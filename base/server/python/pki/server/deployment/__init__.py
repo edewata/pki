@@ -5819,22 +5819,7 @@ class PKIDeployer:
         scriptlet.instance = self.instance
         scriptlet.destroy(self)
 
-        scriptlet = pki.server.deployment.scriptlets.configuration.PkiScriptlet()
-        scriptlet.deployer = self
-        scriptlet.instance = self.instance
-        scriptlet.destroy(self)
-
-        scriptlet = pki.server.deployment.scriptlets.keygen.PkiScriptlet()
-        scriptlet.deployer = self
-        scriptlet.instance = self.instance
-        scriptlet.destroy(self)
-
         scriptlet = pki.server.deployment.scriptlets.subsystem_layout.PkiScriptlet()
-        scriptlet.deployer = self
-        scriptlet.instance = self.instance
-        scriptlet.destroy(self)
-
-        scriptlet = pki.server.deployment.scriptlets.security_databases.PkiScriptlet()
         scriptlet.deployer = self
         scriptlet.instance = self.instance
         scriptlet.destroy(self)
@@ -5845,11 +5830,6 @@ class PKIDeployer:
         scriptlet.destroy(self)
 
         scriptlet = pki.server.deployment.scriptlets.selinux_setup.PkiScriptlet()
-        scriptlet.deployer = self
-        scriptlet.instance = self.instance
-        scriptlet.destroy(self)
-
-        scriptlet = pki.server.deployment.scriptlets.infrastructure_layout.PkiScriptlet()
         scriptlet.deployer = self
         scriptlet.instance = self.instance
         scriptlet.destroy(self)

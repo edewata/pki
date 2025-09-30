@@ -48,6 +48,3 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         for s in sections:
             for k in sensitive_parameters:
                 deployer.user_config.remove_option(s, k)
-
-    def destroy(self, deployer):
-        pass
