@@ -1552,6 +1552,8 @@ class PKIDeployer:
 
         logger.info('Initializing database')
 
+        ldap_backend = self.mdict.get('pki_ds_database')
+
         # In most cases, we want to replicate the schema and therefore not add it here.
         # We provide this option though in case the clone already has schema
         # and we want to replicate back to the master.
@@ -1575,6 +1577,7 @@ class PKIDeployer:
         skip_containers = config.str2bool(self.mdict['pki_clone'])
 
         subsystem.init_database(
+            ldap_backend=ldap_backend,
             skip_schema=skip_schema,
             skip_base=skip_base,
             skip_containers=skip_containers)
@@ -5513,6 +5516,8 @@ class PKIDeployer:
             return
 
         self.setup_acme_certs(subsystem)
+
+        subsystem.init_database()
 
         self.instance.start(
             wait=True,

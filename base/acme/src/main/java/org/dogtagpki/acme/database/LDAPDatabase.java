@@ -47,11 +47,13 @@ import netscape.ldap.LDAPException;
 import netscape.ldap.LDAPModification;
 import netscape.ldap.LDAPModificationSet;
 import netscape.ldap.LDAPSearchResults;
+import netscape.ldap.util.DN;
 import netscape.ldap.util.LDIF;
 import netscape.ldap.util.LDIFAttributeContent;
 import netscape.ldap.util.LDIFContent;
 import netscape.ldap.util.LDIFModifyContent;
 import netscape.ldap.util.LDIFRecord;
+import netscape.ldap.util.RDN;
 
 /**
  * LDAP database plugin for ACME service.
@@ -357,6 +359,10 @@ public class LDAPDatabase extends ACMEDatabase {
     }
 
     public void createIndexes(LDAPConnection connection) throws Exception {
+        createIndexes(connection, "userroot");
+    }
+
+    public void createIndexes(LDAPConnection connection, String backend) throws Exception {
 
         logger.info("Creating ACME indexes");
 
@@ -366,6 +372,13 @@ public class LDAPDatabase extends ACMEDatabase {
         while (true) {
             LDIFRecord record = ldif.nextRecord();
             if (record == null) break;
+
+            DN dn = new DN(record.getDN());
+            logger.info("- " + dn);
+
+            for (RDN rdn : dn.getRDNs()) {
+                logger.info("  - " + rdn);
+            }
 
             importLDIFRecord(connection, record);
         }
@@ -450,11 +463,15 @@ public class LDAPDatabase extends ACMEDatabase {
     }
 
     public void createIndexes() throws Exception {
+        createIndexes("userroot");
+    }
+
+    public void createIndexes(String backend) throws Exception {
 
         LDAPConnection connection = null;
         try {
             connection = connFactory.getConn();
-            createIndexes(connection);
+            createIndexes(connection, backend);
 
         } finally {
             if (connection != null) connection.disconnect();

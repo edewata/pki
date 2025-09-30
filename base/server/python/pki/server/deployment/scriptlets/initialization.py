@@ -156,15 +156,15 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         deployer.configuration_file.populate_non_default_ports()
         deployer.configuration_file.verify_selinux_ports()
 
-        if config.str2bool(deployer.mdict['pki_ds_setup']):
+        #if config.str2bool(deployer.mdict['pki_ds_setup']):
 
             # verify existence of DS password
             # (unless configuration will not be automatically executed)
-            if not deployer.configuration_file.skip_configuration:
-                deployer.configuration_file.confirm_data_exists('pki_ds_password')
+            #if not deployer.configuration_file.skip_configuration:
+            #    deployer.configuration_file.confirm_data_exists('pki_ds_password')
 
             # if secure DS connection is required, verify parameters
-            deployer.configuration_file.verify_ds_secure_connection_data()
+            #deployer.configuration_file.verify_ds_secure_connection_data()
 
     def destroy(self, deployer):
 

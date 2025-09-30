@@ -609,6 +609,8 @@ class ACMEDatabaseInitCLI(pki.cli.CLI):
             '--instance',
             default='pki-tomcat')
         self.parser.add_argument(
+            '--ldap-backend')
+        self.parser.add_argument(
             '--skip-reindex',
             action='store_true')
         self.parser.add_argument(
@@ -656,6 +658,7 @@ class ACMEDatabaseInitCLI(pki.cli.CLI):
                             (subsystem_name.upper(), instance_name))
 
         subsystem.init_database(
+            ldap_backend=args.ldap_backend,
             skip_reindex=args.skip_reindex)
 
 

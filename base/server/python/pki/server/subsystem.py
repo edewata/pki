@@ -1175,6 +1175,7 @@ class PKISubsystem(object):
     # pylint: disable=W0613
     def init_database(
             self,
+            ldap_backend=None,
             skip_config=False,
             skip_schema=False,
             skip_base=False,
@@ -3365,6 +3366,7 @@ class ACMESubsystem(PKISubsystem):
 
     def init_database(
             self,
+            ldap_backend=None,
             skip_config=False,
             skip_schema=False,
             skip_base=False,
@@ -3373,6 +3375,9 @@ class ACMESubsystem(PKISubsystem):
             as_current_user=False):
 
         cmd = [self.name + '-database-init']
+
+        if ldap_backend:
+            cmd.append('--ldap-backend')
 
         if skip_reindex:
             cmd.append('--skip-reindex')

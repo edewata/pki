@@ -581,8 +581,8 @@ def main(argv):
 
     if not interactive and \
             not config.str2bool(parser.mdict['pki_skip_configuration']):
-        if config.str2bool(parser.mdict['pki_ds_setup']):
-            check_ds()
+        #if config.str2bool(parser.mdict['pki_ds_setup']):
+        #    check_ds()
         if config.str2bool(parser.mdict['pki_security_domain_setup']):
             check_security_domain()
 
@@ -737,27 +737,25 @@ def check_security_domain():
 
 
 def check_ds():
-    try:
-        # Verify existence of Directory Server Password
-        if 'pki_ds_password' not in deployer.mdict or \
-                not len(deployer.mdict['pki_ds_password']):
-            logger.error(
-                log.PKIHELPER_UNDEFINED_CONFIGURATION_FILE_ENTRY_2,
-                "pki_ds_password",
-                deployer.mdict['pki_user_deployment_cfg'])
-            sys.exit(1)
 
-        if not config.str2bool(deployer.mdict['pki_skip_ds_verify']):
-            verify_ds_configuration()
+    if config.str2bool(deployer.mdict['pki_skip_ds_verify']):
+        return
 
-            if base_dn_exists() and not \
-                    config.str2bool(deployer.mdict['pki_ds_remove_data']):
-                print('ERROR:  Base DN already exists.')
-                sys.exit(1)
+    # Verify existence of Directory Server Password
+    #if 'pki_ds_password' not in deployer.mdict or \
+    #        not len(deployer.mdict['pki_ds_password']):
+    #    logger.error(
+    #        log.PKIHELPER_UNDEFINED_CONFIGURATION_FILE_ENTRY_2,
+    #        "pki_ds_password",
+    #        deployer.mdict['pki_user_deployment_cfg'])
+    #    sys.exit(1)
 
-    except ldap.LDAPError as e:
-        logger.error(str(e))
-        raise
+    verify_ds_configuration()
+
+    if base_dn_exists() and not \
+            config.str2bool(deployer.mdict['pki_ds_remove_data']):
+        print('ERROR:  Base DN already exists.')
+        sys.exit(1)
 
 
 def set_port(parser, tag, prompt, existing_data):

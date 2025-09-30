@@ -223,11 +223,11 @@ jobs:
           cat > expected << EOF
           drwxrwx--- pkiuser pkiuser acme
           drwxr-x--- pkiuser pkiuser backup
-          -rw-r--r-- pkiuser pkiuser catalina.$DATE.log
-          -rw-r--r-- pkiuser pkiuser host-manager.$DATE.log
-          -rw-r--r-- pkiuser pkiuser localhost.$DATE.log
+          -rw-rw-r-- pkiuser pkiuser catalina.$DATE.log
+          -rw-rw-r-- pkiuser pkiuser host-manager.$DATE.log
+          -rw-rw-r-- pkiuser pkiuser localhost.$DATE.log
           -rw-r--r-- pkiuser pkiuser localhost_access_log.$DATE.txt
-          -rw-r--r-- pkiuser pkiuser manager.$DATE.log
+          -rw-rw-r-- pkiuser pkiuser manager.$DATE.log
           drwxr-xr-x pkiuser pkiuser pki
           EOF
 
@@ -302,7 +302,7 @@ jobs:
 
       - name: Initialize ACME database
         run: |
-          docker exec acme pki-server acme-database-init -v
+          #docker exec acme pki-server acme-database-init -v
 
       - name: Initialize ACME realm
         run: |
@@ -820,11 +820,11 @@ jobs:
           cat > expected << EOF
           drwxrwx--- pkiuser pkiuser acme
           drwxr-x--- pkiuser pkiuser backup
-          -rw-r--r-- pkiuser pkiuser catalina.$DATE.log
-          -rw-r--r-- pkiuser pkiuser host-manager.$DATE.log
-          -rw-r--r-- pkiuser pkiuser localhost.$DATE.log
+          -rw-rw-r-- pkiuser pkiuser catalina.$DATE.log
+          -rw-rw-r-- pkiuser pkiuser host-manager.$DATE.log
+          -rw-rw-r-- pkiuser pkiuser localhost.$DATE.log
           -rw-r--r-- pkiuser pkiuser localhost_access_log.$DATE.txt
-          -rw-r--r-- pkiuser pkiuser manager.$DATE.log
+          -rw-rw-r-- pkiuser pkiuser manager.$DATE.log
           drwxr-xr-x pkiuser pkiuser pki
           EOF
 

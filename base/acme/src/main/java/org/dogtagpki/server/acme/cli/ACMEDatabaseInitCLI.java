@@ -37,6 +37,7 @@ public class ACMEDatabaseInitCLI extends SubsystemCLI {
 
     @Override
     public void createOptions() {
+        options.addOption(null, "ldap-backend", true, "LDAP Backend");
         options.addOption(null, "skip-reindex", false, "Skip database reindex.");
 
         options.addOption("v", "verbose", false, "Run in verbose mode.");
@@ -83,7 +84,9 @@ public class ACMEDatabaseInitCLI extends SubsystemCLI {
                 // perform LDAP-specific database initialization
 
                 ldapDatabase.importSchema();
-                ldapDatabase.createIndexes();
+
+                String ldapBackend = cmd.getOptionValue("ldap-backend");
+                ldapDatabase.createIndexes(ldapBackend);
 
                 if (!cmd.hasOption("skip-reindex")) {
                     ldapDatabase.rebuildIndexes();
