@@ -5834,11 +5834,6 @@ class PKIDeployer:
         scriptlet.instance = self.instance
         scriptlet.destroy(self)
 
-        scriptlet = pki.server.deployment.scriptlets.finalization.PkiScriptlet()
-        scriptlet.deployer = self
-        scriptlet.instance = self.instance
-        scriptlet.destroy(self)
-
         scriptlet = pki.server.deployment.scriptlets.fapolicy_setup.PkiScriptlet()
         scriptlet.deployer = self
         scriptlet.instance = self.instance

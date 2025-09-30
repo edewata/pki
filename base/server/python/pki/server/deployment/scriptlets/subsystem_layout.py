@@ -316,7 +316,11 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         logger.info('Undeploying /%s web application', subsystem_name)
 
         subsystem = instance.get_subsystem(subsystem_name)
-        subsystem.disable(force=deployer.force)
+        subsystem.disable(
+            force=deployer.force,
+            wait=True,
+            max_wait=deployer.startup_timeout,
+            timeout=deployer.request_timeout)
 
         logger.info('Removing %s subsystem', deployer.subsystem_type)
 

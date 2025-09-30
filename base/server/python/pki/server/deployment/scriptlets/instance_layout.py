@@ -224,6 +224,14 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
             deployer.write_systemd_overrides()
             deployer.systemd.daemon_reload()
 
+            # Optionally, programmatically 'enable' the configured PKI instance
+            # to be started upon system boot (default is True)
+
+            if not config.str2bool(deployer.mdict['pki_enable_on_system_boot']):
+                instance.disable()
+            else:
+                instance.enable()
+
             # Link /etc/systemd/system/pki-tomcatd.target.wants/pki-tomcatd@<instance>.service
             # to /lib/systemd/system/pki-tomcatd@.service
 
@@ -244,11 +252,20 @@ class PkiScriptlet(pkiscriptlet.AbstractBasePkiScriptlet):
         if instance.get_subsystems():
             return
 
+        logger.info('Stopping PKI server')
+        instance.stop(
+            wait=True,
+            max_wait=deployer.startup_timeout,
+            timeout=deployer.request_timeout)
+
+        logger.info('Disabling PKI server')
+        instance.disable()
+
         logger.info('Removing %s instance', instance.name)
 
-        logger.info('Removing %s', deployer.systemd.systemd_link)
-        pki.util.unlink(link=deployer.systemd.systemd_link,
-                        force=deployer.force)
+        #logger.info('Removing %s', deployer.systemd.systemd_link)
+        #pki.util.unlink(link=deployer.systemd.systemd_link,
+        #                force=deployer.force)
 
         if os.path.exists(deployer.systemd.base_override_dir):
             logger.info('Removing %s', deployer.systemd.base_override_dir)

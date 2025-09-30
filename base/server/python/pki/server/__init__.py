@@ -1252,6 +1252,10 @@ grant codeBase "file:%s" {
             'localhost',
             webapp_id + '.xml')
 
+        if not os.path.exists(context_xml):
+            logger.info('%s web application is not deployed', webapp_id)
+            return
+
         logger.info('Removing %s', context_xml)
         pki.util.remove(context_xml, force=force)
 
