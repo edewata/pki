@@ -5749,8 +5749,7 @@ class PKIDeployer:
         nssdb.add_cert(nickname=nickname, cert_data=cert_pem)
         return system_cert
 
-    def spawn(self):
-        print('Installing ' + self.subsystem_type + ' into ' + self.instance.base_dir + '.')
+    def spawn_instance(self):
 
         scriptlet = pki.server.deployment.scriptlets.initialization.PkiScriptlet()
         scriptlet.deployer = self
@@ -5767,9 +5766,7 @@ class PKIDeployer:
         scriptlet.instance = self.instance
         scriptlet.spawn(self)
 
-        if self.subsystem_type == 'ACME':
-            self.spawn_acme()
-            return
+    def spawn_subsystem(self):
 
         scriptlet = pki.server.deployment.scriptlets.subsystem_layout.PkiScriptlet()
         scriptlet.deployer = self
@@ -5805,6 +5802,16 @@ class PKIDeployer:
         scriptlet.deployer = self
         scriptlet.instance = self.instance
         scriptlet.spawn(self)
+
+    def spawn(self):
+        print('Installing ' + self.subsystem_type + ' into ' + self.instance.base_dir + '.')
+
+        self.spawn_instance()
+
+        if self.subsystem_type == 'ACME':
+            self.spawn_acme()
+        else:
+            self.spawn_subsystem()
 
     def destroy(self):
 
