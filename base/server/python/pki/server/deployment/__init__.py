@@ -763,7 +763,7 @@ class PKIDeployer:
 
             pki_ca_crt_path = os.path.join(self.instance.nssdb_dir, 'ca.crt')
 
-            cmd_export_ca = [
+            cmd = [
                 'openssl', 'pkcs12',
                 '-nomacver',
                 '-in', pki_clone_pkcs12_path,
@@ -773,8 +773,9 @@ class PKIDeployer:
                 '-passin', 'pass:' + pki_clone_pkcs12_password
             ]
 
+            logger.info('Command: %s', ' '.join(cmd))
             res_ca = subprocess.check_output(
-                cmd_export_ca,
+                cmd,
                 stderr=subprocess.STDOUT).decode('utf-8')
 
             logger.debug('Result of CA certificate export: %s', res_ca)
@@ -3772,7 +3773,7 @@ class PKIDeployer:
             elif logger.isEnabledFor(logging.INFO):
                 cmd.append('--verbose')
 
-            logger.debug('Command: %s', ' '.join(cmd))
+            logger.info('Command: %s', ' '.join(cmd))
             output = subprocess.check_output(cmd)
 
             return output.decode()
@@ -4262,7 +4263,7 @@ class PKIDeployer:
                 '--pkcs12-password-file', password_file
             ]
 
-            logger.debug('Command: %s', ' '.join(cmd))
+            logger.info('Command: %s', ' '.join(cmd))
             subprocess.run(cmd, check=True)
 
         finally:
@@ -4401,7 +4402,7 @@ class PKIDeployer:
             elif logger.isEnabledFor(logging.INFO):
                 cmd.append('--verbose')
 
-            logger.debug('Command: %s', ' '.join(cmd))
+            logger.info('Command: %s', ' '.join(cmd))
             subprocess.check_call(cmd)
 
         finally:
@@ -4427,7 +4428,7 @@ class PKIDeployer:
         elif logger.isEnabledFor(logging.INFO):
             cmd.append('--verbose')
 
-        logger.debug('Command: %s', ' '.join(cmd))
+        logger.info('Command: %s', ' '.join(cmd))
         output = subprocess.check_output(cmd)
 
         return output.decode()
@@ -4501,7 +4502,7 @@ class PKIDeployer:
             elif logger.isEnabledFor(logging.INFO):
                 cmd.append('--verbose')
 
-            logger.debug('Command: %s', ' '.join(cmd))
+            logger.info('Command: %s', ' '.join(cmd))
             subprocess.check_call(cmd)
 
         finally:
@@ -4545,7 +4546,7 @@ class PKIDeployer:
             elif logger.isEnabledFor(logging.INFO):
                 cmd.append('--verbose')
 
-            logger.debug('Command: %s', ' '.join(cmd))
+            logger.info('Command: %s', ' '.join(cmd))
             subprocess.check_call(cmd)
 
         finally:
@@ -4571,7 +4572,7 @@ class PKIDeployer:
         elif logger.isEnabledFor(logging.INFO):
             cmd.append('--verbose')
 
-        logger.debug('Command: %s', ' '.join(cmd))
+        logger.info('Command: %s', ' '.join(cmd))
         result = subprocess.run(cmd, stdout=subprocess.PIPE, check=True)
 
         return result.stdout.decode()
@@ -4614,7 +4615,7 @@ class PKIDeployer:
             elif logger.isEnabledFor(logging.INFO):
                 cmd.append('--verbose')
 
-            logger.debug('Command: %s', ' '.join(cmd))
+            logger.info('Command: %s', ' '.join(cmd))
 
             # don't use text param to support Python 3.6
             # https://stackoverflow.com/questions/52663518/python-subprocess-popen-doesnt-take-text-argument
@@ -4655,7 +4656,7 @@ class PKIDeployer:
             '--port', https_port
         ]
 
-        logger.debug('Command: %s', ' '.join(cmd))
+        logger.info('Command: %s', ' '.join(cmd))
         result = subprocess.run(cmd, stdout=subprocess.PIPE, check=False)
 
         if result.returncode == 0:
@@ -4691,7 +4692,7 @@ class PKIDeployer:
             '--output-format', 'json'
         ]
 
-        logger.debug('Command: %s', ' '.join(cmd))
+        logger.info('Command: %s', ' '.join(cmd))
         result = subprocess.run(cmd, stdout=subprocess.PIPE, check=False)
 
         if result.returncode == 0:
@@ -4721,7 +4722,7 @@ class PKIDeployer:
             'tks-key-export', tps_connector_id
         ]
 
-        logger.debug('Command: %s', ' '.join(cmd))
+        logger.info('Command: %s', ' '.join(cmd))
         result = subprocess.run(cmd, stdout=subprocess.PIPE, check=False)
 
         if result.returncode == 0:
@@ -4752,7 +4753,7 @@ class PKIDeployer:
             '--output-format', 'json'
         ]
 
-        logger.debug('Command: %s', ' '.join(cmd))
+        logger.info('Command: %s', ' '.join(cmd))
         result = subprocess.run(cmd, stdout=subprocess.PIPE, check=False)
 
         if result.returncode == 0:
@@ -4783,7 +4784,7 @@ class PKIDeployer:
             '--output-format', 'json'
         ]
 
-        logger.debug('Command: %s', ' '.join(cmd))
+        logger.info('Command: %s', ' '.join(cmd))
         result = subprocess.run(cmd, stdout=subprocess.PIPE, check=False)
 
         if result.returncode == 0:
@@ -4809,7 +4810,7 @@ class PKIDeployer:
             '--wrapper', nickname
         ]
 
-        logger.debug('Command: %s', ' '.join(cmd))
+        logger.info('Command: %s', ' '.join(cmd))
 
         # don't use text param to support Python 3.6
         # https://stackoverflow.com/questions/52663518/python-subprocess-popen-doesnt-take-text-argument

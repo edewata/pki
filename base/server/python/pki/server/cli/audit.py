@@ -941,7 +941,7 @@ class AuditFileVerifyCLI(pki.cli.CLI):
                 '-n', signing_cert['nickname'],
                 '-a', file_list])
 
-            logger.debug('Command: %s', ' '.join(cmd))
+            logger.info('Command: %s', ' '.join(cmd))
 
             subprocess.call(cmd)
 
