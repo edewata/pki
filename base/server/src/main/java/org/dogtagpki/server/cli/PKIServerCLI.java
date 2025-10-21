@@ -18,6 +18,9 @@
 
 package org.dogtagpki.server.cli;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
 import javax.ws.rs.ProcessingException;
 
 import org.apache.commons.cli.CommandLine;
@@ -65,6 +68,12 @@ public class PKIServerCLI extends CLI {
         options.addOption("v", "verbose", false, "Run in verbose mode.");
         options.addOption(null, "debug", false, "Run in debug mode.");
         options.addOption(null, "help", false, "Show help message.");
+        options.addOption(null, "version", false, "Show version number.");
+    }
+
+    public void printVersion() {
+        Package pkg = PKIServerCLI.class.getPackage();
+        System.out.println("PKI Server Command-Line Interface " + pkg.getImplementationVersion());
     }
 
     @Override
@@ -74,6 +83,58 @@ public class PKIServerCLI extends CLI {
         System.out.println();
 
         super.printHelp();
+    }
+
+    public void execute(BufferedReader in, boolean shell) throws Exception {
+
+        if (shell) {
+            printVersion();
+        }
+
+        while (true) {
+
+            if (shell) {
+                System.err.print("pki-server> ");
+                System.err.flush();
+            }
+
+            String line = in.readLine();
+
+            if (line == null) {
+                break;
+            }
+
+            String[] args = parseLine(line);
+
+            if (args.length == 0) {
+                // skip blank line
+                continue;
+            }
+
+            String command = args[0];
+            // logger.info("Sub-command: " + subCommand);
+
+            if (command.startsWith("#")) {
+                // skip comment
+                continue;
+
+            } else if (command.equalsIgnoreCase("exit")) {
+                // exit shell
+                break;
+            }
+
+            try {
+                super.execute(args);
+            } catch (Exception e) {
+                if (shell) {
+                    // in shell mode show error but don't exit
+                    handleException(e);
+                } else {
+                    // in batch mode exit on error
+                    throw e;
+                }
+            }
+        }
     }
 
     @Override
@@ -88,8 +149,44 @@ public class PKIServerCLI extends CLI {
             PKILogger.setLevel(LogLevel.INFO);
         }
 
+        if (cmd.hasOption("version")) {
+            printVersion();
+            return;
+        }
+
+        if (cmd.hasOption("help")) {
+            printHelp();
+            return;
+        }
+
         String[] cmdArgs = cmd.getArgs();
-        logger.debug("Command: " + String.join(" ", cmdArgs));
+
+        if (cmdArgs.length == 0) {
+            // execute commands in shell mode (with prompts)
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(System.in))) {
+                execute(in, true);
+            }
+            return;
+
+        } else if (cmdArgs.length == 1 && cmdArgs[0].equals("-")) {
+            // execute commands in batch mode (without prompts)
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(System.in))) {
+                execute(in, false);
+            }
+            return;
+        }
+
+        // run a single command
+
+        if (logger.isDebugEnabled()) {
+            StringBuilder sb = new StringBuilder("Command:");
+            for (String arg : cmdArgs) {
+                if (arg.contains(" ")) arg = "\"" + arg + "\"";
+                sb.append(" ");
+                sb.append(arg);
+            }
+            logger.debug(sb.toString());
+        }
 
         super.execute(cmdArgs);
     }

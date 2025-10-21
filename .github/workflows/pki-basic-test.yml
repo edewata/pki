@@ -33,7 +33,6 @@ jobs:
 
       - name: Check pki CLI help message
         run: |
-          docker exec pki pki
           docker exec pki pki --help
 
           # TODO: validate output
@@ -68,3 +67,23 @@ jobs:
           docker exec pki pki nss --help
 
           # TODO: validate output
+
+      - name: Check pki CLI in shell mode (with prompts)
+        run: |
+          docker exec -i pki pki << EOF | tee output
+          # get server info
+          info
+
+          # create a key
+          nss-key-create
+          EOF
+
+      - name: Check pki CLI in batch mode (without prompts)
+        run: |
+          docker exec -i pki pki - << EOF | tee output
+          # get server info
+          info
+
+          # create a key
+          nss-key-create
+          EOF

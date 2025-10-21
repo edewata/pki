@@ -661,25 +661,96 @@ public class MainCLI extends CLI {
         return client;
     }
 
+    public void execute(BufferedReader in, boolean shell) throws Exception {
+
+        if (shell) {
+            printVersion();
+        }
+
+        while (true) {
+
+            if (shell) {
+                System.err.print("pki> ");
+                System.err.flush();
+            }
+
+            String line = in.readLine();
+
+            if (line == null) {
+                break;
+            }
+
+            String[] args = parseLine(line);
+
+            if (args.length == 0) {
+                // skip blank line
+                continue;
+            }
+
+            String command = args[0];
+            // logger.info("Sub-command: " + subCommand);
+
+            if (command.startsWith("#")) {
+                // skip comment
+                continue;
+
+            } else if (command.equalsIgnoreCase("exit")) {
+                // exit shell
+                break;
+            }
+
+            try {
+                super.execute(args);
+            } catch (Exception e) {
+                if (shell) {
+                    // in shell mode show error but don't exit
+                    handleException(e);
+                } else {
+                    // in batch mode exit on error
+                    throw e;
+                }
+            }
+        }
+    }
+
     @Override
     public void execute(String[] args) throws Exception {
 
+        // parse options and args
+        // stop at the first unrecognized option
         CommandLine cmd = parser.parse(options, args, true);
 
         String[] cmdArgs = cmd.getArgs();
+        // System.out.println("Command args: [" + String.join(", ", cmdArgs) + "]");
 
         if (cmd.hasOption("version")) {
             printVersion();
             return;
         }
 
-        if (cmdArgs.length == 0 || cmd.hasOption("help")) {
-            // Print 'pki' usage
+        if (cmd.hasOption("help")) {
             printHelp();
             return;
         }
 
         parseOptions(cmd);
+
+        if (cmdArgs.length == 0) {
+            // execute commands in shell mode (with prompts)
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(System.in))) {
+                execute(in, true);
+            }
+            return;
+
+        } else if (cmdArgs.length == 1 && cmdArgs[0].equals("-")) {
+            // execute commands in batch mode (without prompts)
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(System.in))) {
+                execute(in, false);
+            }
+            return;
+        }
+
+        // run a single command
 
         if (logger.isDebugEnabled()) {
             StringBuilder sb = new StringBuilder("Command:");
