@@ -33,7 +33,6 @@ jobs:
 
       - name: Check pki CLI help message
         run: |
-          docker exec pki pki
           docker exec pki pki --help
 
           # TODO: validate output
@@ -50,6 +49,17 @@ jobs:
               > >(tee stdout) 2> >(tee stderr >&2) || true
 
           # TODO: validate output
+
+      - name: Check pki CLI shell
+        run: |
+          docker exec -i pki pki << EOF
+          # list all certs
+          nss-cert-find
+
+          # list all keys
+          nss-key-find
+          exit
+          EOF
 
       - name: Check pki CLI with wrong sub-command
         run: |

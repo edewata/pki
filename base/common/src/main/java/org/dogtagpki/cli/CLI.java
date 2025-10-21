@@ -345,11 +345,6 @@ public class CLI {
             System.arraycopy(args, 1, moduleArgs, 0, args.length-1);
         }
 
-        // Add default options to all command modules
-        module.options.addOption("v", "verbose", false, "Run in verbose mode.");
-        module.options.addOption(null, "debug", false, "Run in debug mode.");
-        module.options.addOption(null, "help", false, "Show help message.");
-
         module.execute(moduleArgs);
     }
 

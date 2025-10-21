@@ -30,12 +30,14 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.core.Response;
@@ -661,25 +663,156 @@ public class MainCLI extends CLI {
         return client;
     }
 
+    /**
+     * Parse a command line into an array of tokens.
+     *
+     * For example:
+     *   nss-cert-request --subject "CN=Certificate Authority"
+     * should be parsed into:
+     *   ["nss-cert-request", "--subject", "CN=Certificate Authority"]
+     */
+    public String[] parseLine(String line) throws Exception {
+
+        List<String> tokens = new ArrayList<>();
+        StringBuilder token = null;
+        boolean quotedString = false;
+
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+
+            if (token == null) { // not parsing token
+
+                if (c == '"') { // found opening quote
+                    // start parsing token
+                    token = new StringBuilder();
+                    quotedString = true;
+
+                } else if (c == ' ') { // found delimiters
+                    // discard delimiters
+
+                } else {
+                    // start parsing token
+                    token = new StringBuilder();
+                    // add char into token
+                    token.append(c);
+                }
+
+            } else { // parsing token
+
+                if (c == '"') { // found closing quote
+                    // store current token
+                    tokens.add(token.toString());
+                    token = null;
+                    quotedString = false;
+
+                } else if (c == ' ') { // found delimiter
+                    if (quotedString) {
+                        // add delimiter into current token
+                        token.append(c);
+                    } else {
+                        // store current token
+                        tokens.add(token.toString());
+                        token = null;
+                    }
+
+                } else {
+                    // add char into current token
+                    token.append(c);
+                }
+            }
+        }
+
+        if (token != null) {
+            // store remaining token
+            tokens.add(token.toString());
+        }
+
+        return tokens.toArray(new String[tokens.size()]);
+    }
+
     @Override
     public void execute(String[] args) throws Exception {
 
+        // System.out.println("Main args: [" + String.join(", ", args) + "]");
+
+        // parse options and args
+        // stop at the first unrecognized option
         CommandLine cmd = parser.parse(options, args, true);
 
         String[] cmdArgs = cmd.getArgs();
+        // System.out.println("Command args: [" + String.join(", ", cmdArgs) + "]");
 
         if (cmd.hasOption("version")) {
             printVersion();
             return;
         }
 
-        if (cmdArgs.length == 0 || cmd.hasOption("help")) {
-            // Print 'pki' usage
+        if (cmd.hasOption("help")) {
             printHelp();
             return;
         }
 
         parseOptions(cmd);
+
+        if (cmdArgs.length == 0) {
+
+            // enter shell mode
+
+            printVersion();
+            Scanner scanner = new Scanner(System.in);
+
+            while (true) {
+
+                System.err.print("pki> ");
+                System.err.flush();
+
+                if (!scanner.hasNextLine()) {
+                    break;
+                }
+
+                String line = scanner.nextLine();
+                // logger.info("Line: " + line);
+
+                String[] subArgs = parseLine(line);
+                // logger.info("Sub-args: [" + String.join(", ", subArgs) + "]");
+                if (subArgs.length == 0) {
+                    // skip blank line
+                    continue;
+                }
+
+                String subCommand = subArgs[0];
+                // logger.info("Sub-command: " + subCommand);
+
+                if (subCommand.startsWith("#")) {
+                    // skip comment
+                    continue;
+
+                } else if (subCommand.equalsIgnoreCase("exit")) {
+                    // exit shell
+                    break;
+                }
+
+                /*
+                CLIModule subModule = findModule(subCommand);
+                CommandCLI subCli = (CommandCLI) subModule.getCLI();
+
+                String[] subCmdArgs = Arrays.copyOfRange(subArgs, 1, subArgs.length);
+                logger.info("Sub-command Args: [" + String.join(", ", subCmdArgs) + "]");
+
+                CommandLine subCmd = parser.parse(subCli.options, subCmdArgs);
+                subCli.execute(subCmd);
+                */
+                try {
+                    super.execute(subArgs);
+                } catch (Exception e) {
+                    handleException(e);
+                }
+            }
+
+            scanner.close();
+
+            return;
+        }
 
         if (logger.isDebugEnabled()) {
             StringBuilder sb = new StringBuilder("Command:");
