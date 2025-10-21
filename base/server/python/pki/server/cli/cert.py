@@ -1485,7 +1485,7 @@ class CertFixCLI(pki.cli.CLI):
                     ['-s', 'base', '-b', basedn, '1.1']
 
                 try:
-                    logger.debug('Command: %s', ' '.join(cmd))
+                    logger.info('Command: %s', ' '.join(cmd))
                     subprocess.run(cmd, env=CertFixCLI.LDAP_ENV, check=True)
                 except subprocess.CalledProcessError:
                     logger.error("Failed to connect/authenticate to LDAP at '%s'", ldap_url)
@@ -1554,7 +1554,7 @@ class CertFixCLI(pki.cli.CLI):
                             '-out', der_file.name,
                         ]
 
-                        logger.debug('Command: %s', ' '.join(cmd))
+                        logger.info('Command: %s', ' '.join(cmd))
                         subprocess.run(cmd, env=CertFixCLI.LDAP_ENV, check=True)
 
                         input_ldif = CertFixCLI.UPDATE_CERT_TEMPLATE \
@@ -1567,7 +1567,7 @@ class CertFixCLI(pki.cli.CLI):
                                 ldap_conn_args(ldap_url, use_ldapi, dm_pass_file) + \
                                 ['-f', ldif_file]
 
-                            logger.debug('Command: %s', ' '.join(cmd))
+                            logger.info('Command: %s', ' '.join(cmd))
                             subprocess.run(cmd, env=CertFixCLI.LDAP_ENV, check=True)
 
             # 10. Bring up the server
@@ -1748,7 +1748,7 @@ def update_password(ldap_url, use_ldapi, dm_pass_file, user_dn, user_password):
             ldap_conn_args(ldap_url, use_ldapi, dm_pass_file) + \
             ['-f', ldif_file]
 
-        logger.debug('Command: %s', ' '.join(cmd))
+        logger.info('Command: %s', ' '.join(cmd))
         subprocess.run(cmd, env=CertFixCLI.LDAP_ENV, check=True)
 
 

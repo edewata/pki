@@ -451,7 +451,7 @@ class PKISubsystem(object):
             fullname
         ])
 
-        logger.debug('Command: %s', ' '.join(cmd))
+        logger.info('Command: %s', ' '.join(cmd))
 
         # don't use capture_output and text params to support Python 3.6
         # https://stackoverflow.com/questions/53209127/subprocess-unexpected-keyword-argument-capture-output/53209196
@@ -536,7 +536,7 @@ class PKISubsystem(object):
                 nickname
             ])
 
-            logger.debug('Command: %s', ' '.join(cmd))
+            logger.info('Command: %s', ' '.join(cmd))
 
             subprocess.check_call(cmd)
 
@@ -895,7 +895,7 @@ class PKISubsystem(object):
                 '.'
             ]
 
-            logger.debug('Command: %s', ' '.join(cmd))
+            logger.info('Command: %s', ' '.join(cmd))
 
             subprocess.check_output(
                 cmd,
@@ -1021,7 +1021,7 @@ class PKISubsystem(object):
                 '-text'
             ]
 
-            logger.debug('Command: %s', ' '.join(cmd))
+            logger.info('Command: %s', ' '.join(cmd))
             cert_info = subprocess.check_output(cmd).decode('utf-8')
 
         finally:
@@ -1157,7 +1157,7 @@ class PKISubsystem(object):
             '-c'
         ]
 
-        logger.debug('Command: %s', ' '.join(cmd))
+        logger.info('Command: %s', ' '.join(cmd))
         subprocess.check_call(cmd)
 
     def create_database(self):
@@ -1528,7 +1528,7 @@ class PKISubsystem(object):
             elif logger.isEnabledFor(logging.INFO):
                 cmd.append('--verbose')
 
-            logger.debug('Command: %s', ' '.join(cmd))
+            logger.info('Command: %s', ' '.join(cmd))
             output = subprocess.check_output(cmd)
 
             return json.loads(output.decode())
@@ -1639,7 +1639,7 @@ class PKISubsystem(object):
             elif logger.isEnabledFor(logging.INFO):
                 cmd.append('--verbose')
 
-            logger.debug('Command: %s', ' '.join(cmd))
+            logger.info('Command: %s', ' '.join(cmd))
             output = subprocess.check_output(cmd)
 
             return json.loads(output.decode())
@@ -1826,7 +1826,7 @@ class PKISubsystem(object):
 
             cmd.append(host_id)
 
-            logger.debug('Command: %s', ' '.join(cmd))
+            logger.info('Command: %s', ' '.join(cmd))
             subprocess.check_call(cmd)
 
         finally:
@@ -1863,7 +1863,7 @@ class PKISubsystem(object):
 
         cmd.append(host_id)
 
-        logger.debug('Command: %s', ' '.join(cmd))
+        logger.info('Command: %s', ' '.join(cmd))
         subprocess.check_call(cmd)
 
     def add_group(self, group_id=None, description=None, as_current_user=False):
@@ -2323,7 +2323,7 @@ class PKISubsystem(object):
 
         cmd.extend(args)
 
-        logger.debug('Command: %s', ' '.join(cmd))
+        logger.info('Command: %s', ' '.join(cmd))
 
         # https://stackoverflow.com/questions/53209127/subprocess-unexpected-keyword-argument-capture-output/53209196
         if capture_output:

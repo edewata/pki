@@ -219,7 +219,7 @@ class PKIInstance(pki.server.PKIServer):
 
                 cmd.append(instance_id)
 
-                logger.debug('Command: %s', ' '.join(cmd))
+                logger.info('Command: %s', ' '.join(cmd))
                 subprocess.run(cmd, env=self.config, check=True)
 
             if not skip_migration:
@@ -234,13 +234,13 @@ class PKIInstance(pki.server.PKIServer):
 
                 cmd.append(instance_id)
 
-                logger.debug('Command: %s', ' '.join(cmd))
+                logger.info('Command: %s', ' '.join(cmd))
                 subprocess.run(cmd, env=self.config, check=True)
 
             # run pkidaemon start <instance>
             cmd = prefix + ['/usr/bin/pkidaemon', 'start', instance_id]
 
-            logger.debug('Command: %s', ' '.join(cmd))
+            logger.info('Command: %s', ' '.join(cmd))
             subprocess.run(cmd, env=self.config, check=True)
 
         return super().execute(
@@ -273,7 +273,7 @@ class PKIInstance(pki.server.PKIServer):
             'dependency:resolve'
         ]
 
-        logger.debug('Command: %s', ' '.join(cmd))
+        logger.info('Command: %s', ' '.join(cmd))
         subprocess.check_call(cmd)
 
         repo_dir = '%s/.m2/repository' % pathlib.Path.home()
@@ -543,7 +543,7 @@ class PKIInstance(pki.server.PKIServer):
                     nickname
                 ])
 
-                logger.debug('Command: %s', ' '.join(cmd))
+                logger.info('Command: %s', ' '.join(cmd))
 
                 subprocess.check_call(cmd)
 
@@ -802,7 +802,7 @@ class PKIInstance(pki.server.PKIServer):
         elif logger.isEnabledFor(logging.INFO):
             cmd.append('--verbose')
 
-        logger.debug('Command: %s', ' '.join(cmd))
+        logger.info('Command: %s', ' '.join(cmd))
 
         subprocess.check_call(cmd)
 
@@ -899,7 +899,7 @@ class PKIInstance(pki.server.PKIServer):
             elif logger.isEnabledFor(logging.INFO):
                 cmd.append('--verbose')
 
-            logger.debug('Command: %s', ' '.join(cmd))
+            logger.info('Command: %s', ' '.join(cmd))
 
             subprocess.check_call(cmd)
 

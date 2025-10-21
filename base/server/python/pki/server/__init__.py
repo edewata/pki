@@ -111,8 +111,9 @@ class Tomcat(object):
 
     @classmethod
     def get_version(cls):
-        # run "tomcat version"
-        output = subprocess.check_output([Tomcat.EXECUTABLE, 'version'])
+        cmd = [Tomcat.EXECUTABLE, 'version']
+        logger.info('Command: %s', ' '.join(cmd))
+        output = subprocess.check_output(cmd)
         output = output.decode('utf-8')
 
         # find "Server version: Apache Tomcat/<version>"
@@ -328,7 +329,7 @@ class PKIServer(object):
 
     def is_active(self):
         cmd = ['systemctl', '--quiet', 'is-active', '%s.service' % self.service_name]
-        logger.debug('Command: %s', ' '.join(cmd))
+        logger.info('Command: %s', ' '.join(cmd))
         rc = subprocess.call(cmd)
         return rc == 0
 
@@ -485,7 +486,7 @@ grant codeBase "file:%s" {
     def start(self, wait=False, max_wait=60, timeout=None):
 
         cmd = ['systemctl', 'start', '%s.service' % self.service_name]
-        logger.debug('Command: %s', ' '.join(cmd))
+        logger.info('Command: %s', ' '.join(cmd))
         subprocess.check_call(cmd)
 
         if not wait:
@@ -525,7 +526,7 @@ grant codeBase "file:%s" {
     def stop(self, wait=False, max_wait=60, timeout=None):
 
         cmd = ['systemctl', 'stop', '%s.service' % self.service_name]
-        logger.debug('Command: %s', ' '.join(cmd))
+        logger.info('Command: %s', ' '.join(cmd))
         subprocess.check_call(cmd)
 
         if not wait:
@@ -571,12 +572,12 @@ grant codeBase "file:%s" {
 
     def enable(self):
         cmd = ['systemctl', 'enable', '%s.service' % self.service_name]
-        logger.debug('Command: %s', ' '.join(cmd))
+        logger.info('Command: %s', ' '.join(cmd))
         subprocess.check_call(cmd)
 
     def disable(self):
         cmd = ['systemctl', 'disable', '%s.service' % self.service_name]
-        logger.debug('Command: %s', ' '.join(cmd))
+        logger.info('Command: %s', ' '.join(cmd))
         subprocess.check_call(cmd)
 
     def run(self, command='start',
@@ -693,7 +694,7 @@ grant codeBase "file:%s" {
 
         cmd.extend(['org.apache.catalina.startup.Bootstrap', command])
 
-        logger.debug('Command: %s', ' '.join(cmd))
+        logger.info('Command: %s', ' '.join(cmd))
 
         return subprocess.Popen(cmd, env=self.config)
 
@@ -1771,7 +1772,7 @@ grant codeBase "file:%s" {
 
             cmd.append(folder)
 
-            logger.debug('Command: %s', ' '.join(cmd))
+            logger.info('Command: %s', ' '.join(cmd))
             subprocess.run(cmd, check=True)
 
     def restart_fapolicy_daemon(self):
@@ -1779,12 +1780,20 @@ grant codeBase "file:%s" {
         Helper function to restart the fapolicyd after the rules are updated.
         '''
 
-        stat = subprocess.call(['systemctl', 'is-active', '--quiet', 'fapolicyd'])
+        cmd = ['systemctl', 'is-active', '--quiet', 'fapolicyd']
+
+        logger.info('Command: %s', ' '.join(cmd))
+        stat = subprocess.call(cmd)
+
         if stat != 0:
             return
 
         logger.info('Restarting fapolicy daemon')
-        subprocess.call(['systemctl', 'restart', '--quiet', 'fapolicyd'])
+
+        cmd = ['systemctl', 'restart', '--quiet', 'fapolicyd']
+
+        logger.info('Command: %s', ' '.join(cmd))
+        subprocess.call(cmd)
 
     def install_fapolicy_rules(self):
 
@@ -1962,12 +1971,14 @@ grant codeBase "file:%s" {
             cmd_generate_ca.extend(['-passin', 'pass:' + client_nssdb_pass])
 
         # Generate temp_auth_p12 file
+        logger.info('Command: %s', ' '.join(cmd_generate_pk12))
         res_pk12 = subprocess.check_output(cmd_generate_pk12,
                                            stderr=subprocess.STDOUT).decode('utf-8')
         logger.debug('Result of pk12 generation: %s', res_pk12)
 
         # Use temp_auth_p12 generated in previous step to
         # to generate temp_auth_cert PEM file
+        logger.info('Command: %s', ' '.join(cmd_generate_pem))
         res_pem = subprocess.check_output(cmd_generate_pem,
                                           stderr=subprocess.STDOUT).decode('utf-8')
         logger.debug('Result of pem generation: %s', res_pem)
@@ -1981,6 +1992,7 @@ grant codeBase "file:%s" {
 
         # Export the CA each time. This ensures it is always up to date when
         # trying to connect.
+        logger.info('Command: %s', ' '.join(cmd_generate_ca))
         res_ca = subprocess.check_output(cmd_generate_ca,
                                          stderr=subprocess.STDOUT).decode('utf-8')
         logger.debug('Result of CA generation: %s', res_ca)

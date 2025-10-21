@@ -103,7 +103,7 @@ class Identity:
                 command = ["/usr/sbin/groupadd", pki_group]
 
         try:
-            logger.debug('Command: %s', ' '.join(command))
+            logger.info('Command: %s', ' '.join(command))
             with open(os.devnull, "w", encoding='utf-8') as fnull:
                 subprocess.check_call(command, stdout=fnull, stderr=fnull, close_fds=True)
 
@@ -173,7 +173,7 @@ class Identity:
                            pki_user]
 
         try:
-            logger.debug('Command: %s', ' '.join(command))
+            logger.info('Command: %s', ' '.join(command))
             with open(os.devnull, "w", encoding='utf-8') as fnull:
                 subprocess.check_call(command, stdout=fnull, stderr=fnull, close_fds=True)
 
@@ -262,11 +262,11 @@ class Identity:
 
     def add_user_to_group(self, pki_user, pki_group):
         if not self.is_user_a_member_of_group(pki_user, pki_group):
-            command = ["usermod", "-a", "-G", pki_group, pki_user]
+            cmd = ["usermod", "-a", "-G", pki_group, pki_user]
             try:
-                # Execute this "usermod" command.
+                logger.info('Command: %s', ' '.join(cmd))
                 with open(os.devnull, "w", encoding='utf-8') as fnull:
-                    subprocess.check_call(command, stdout=fnull, stderr=fnull,
+                    subprocess.check_call(cmd, stdout=fnull, stderr=fnull,
                                           close_fds=True)
             except subprocess.CalledProcessError as exc:
                 logger.error(log.PKI_SUBPROCESS_ERROR_1, exc)
@@ -722,7 +722,7 @@ class HSM:
             command = [config.PKI_HSM_NCIPHER_EXE, "restart"]
 
             # Display this "nCipher" HSM command
-            logger.debug(log.PKIHELPER_NCIPHER_RESTART_1, ' '.join(command))
+            logger.info(log.PKIHELPER_NCIPHER_RESTART_1, ' '.join(command))
             # Execute this "nCipher" HSM command
             subprocess.check_call(command)
         except subprocess.CalledProcessError as exc:
@@ -820,7 +820,7 @@ class KRAConnector:
                     '--port', str(kraport)
                 ]
 
-                logger.debug('Command: %s', ' '.join(cmd))
+                logger.info('Command: %s', ' '.join(cmd))
 
                 # don't use capture_output and text params to support Python 3.6
                 # https://stackoverflow.com/questions/53209127/subprocess-unexpected-keyword-argument-capture-output/53209196
@@ -912,7 +912,7 @@ class TPSConnector:
                 '--port', str(tpsport)
             ]
 
-            logger.debug('Command: %s', ' '.join(cmd))
+            logger.info('Command: %s', ' '.join(cmd))
 
             result = subprocess.run(
                 cmd,
@@ -992,12 +992,10 @@ class Systemd(object):
 
         """
         try:
-            # Compose this "systemd" execution management lifecycle command
-            command = ["systemctl", "daemon-reload"]
-            # Display this "systemd" execution management lifecycle command
-            logger.debug('Command: %s', ' '.join(command))
-            # Execute this "systemd" execution management lifecycle command
-            subprocess.check_call(command)
+            cmd = ['systemctl', 'daemon-reload']
+
+            logger.info('Command: %s', ' '.join(cmd))
+            subprocess.check_call(cmd)
         except subprocess.CalledProcessError as exc:
             logger.error(log.PKI_SUBPROCESS_ERROR_1, exc)
             if critical_failure:
