@@ -284,12 +284,13 @@ jobs:
       # https://github.com/dogtagpki/pki/wiki/Setting-up-CA-Database
       - name: Initialize CA database
         run: |
-          docker exec -u pkiuser pki podman exec systemd-pki-ca \
-              pki-server ca-db-init -v
-          docker exec -u pkiuser pki podman exec systemd-pki-ca \
-              pki-server ca-db-index-add -v
-          docker exec -u pkiuser pki podman exec systemd-pki-ca \
-              pki-server ca-db-index-rebuild -v
+          docker exec -u pkiuser -i pki \
+              podman exec -i systemd-pki-ca \
+                  pki-server - << EOF
+          ca-db-init -v
+          ca-db-index-add -v
+          ca-db-index-rebuild -v
+          EOF
 
       - name: Create admin cert
         run: |

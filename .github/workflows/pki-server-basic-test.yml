@@ -33,7 +33,6 @@ jobs:
 
       - name: Check pki-server CLI help message
         run: |
-          docker exec pki pki-server
           docker exec pki pki-server --help
 
       - name: Check pki-server CLI version

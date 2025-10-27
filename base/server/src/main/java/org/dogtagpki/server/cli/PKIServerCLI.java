@@ -18,6 +18,9 @@
 
 package org.dogtagpki.server.cli;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
 import javax.ws.rs.ProcessingException;
 
 import org.apache.commons.cli.CommandLine;
@@ -65,6 +68,20 @@ public class PKIServerCLI extends CLI {
         options.addOption("v", "verbose", false, "Run in verbose mode.");
         options.addOption(null, "debug", false, "Run in debug mode.");
         options.addOption(null, "help", false, "Show help message.");
+        options.addOption(null, "version", false, "Show version number.");
+    }
+
+    public void printVersion() {
+        Package pkg = PKIServerCLI.class.getPackage();
+        System.out.println("PKI Server Command-Line Interface " + pkg.getImplementationVersion());
+    }
+
+    public void printHelp() throws Exception {
+
+        formatter.printHelp(name + " [OPTIONS..] [command] [ARGS..]", options);
+        System.out.println();
+
+        super.printHelp();
     }
 
     @Override
@@ -80,15 +97,6 @@ public class PKIServerCLI extends CLI {
         }
 
         return cmd;
-    }
-
-    @Override
-    public void printHelp() throws Exception {
-
-        formatter.printHelp(name + " [OPTIONS..] <command> [ARGS..]", options);
-        System.out.println();
-
-        super.printHelp();
     }
 
     @Override
@@ -117,7 +125,33 @@ public class PKIServerCLI extends CLI {
         CommandLine cmd = parseOptions(args);
 
         String[] cmdArgs = cmd.getArgs();
-        logger.debug("Command: " + String.join(" ", cmdArgs));
+
+        if (cmdArgs.length == 0) {
+            // execute commands in shell mode (with prompts)
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(System.in))) {
+                executeCommands(in, true);
+            }
+            return;
+
+        } else if (cmdArgs.length == 1 && cmdArgs[0].equals("-")) {
+            // execute commands in batch mode (without prompts)
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(System.in))) {
+                executeCommands(in, false);
+            }
+            return;
+        }
+
+        // run a single command
+
+        if (logger.isDebugEnabled()) {
+            StringBuilder sb = new StringBuilder("Command:");
+            for (String arg : cmdArgs) {
+                if (arg.contains(" ")) arg = "\"" + arg + "\"";
+                sb.append(" ");
+                sb.append(arg);
+            }
+            logger.debug(sb.toString());
+        }
 
         executeCommand(cmdArgs);
     }
