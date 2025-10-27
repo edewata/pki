@@ -111,6 +111,18 @@ jobs:
               -n caadmin \
               ca-user-find
 
+      - name: Check pki-server CLI in shell mode (with prompts)
+        run: |
+          docker exec -i ca pki-server << EOF | tee output
+          ca-user-find
+          EOF
+
+      - name: Check pki-server CLI in batch mode (without prompts)
+        run: |
+          docker exec -i ca pki-server - << EOF | tee output
+          ca-user-find
+          EOF
+
       - name: Check CA security domain
         run: |
           docker exec ca pki-server ca-config-find | grep ^securitydomain. | sort | tee actual

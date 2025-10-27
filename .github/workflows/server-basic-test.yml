@@ -75,7 +75,6 @@ jobs:
 
       - name: Check pki-server CLI help message
         run: |
-          docker exec pki pki-server
           docker exec pki pki-server --help
 
           # TODO: validate output
@@ -244,6 +243,18 @@ jobs:
               -k \
               -o /dev/null \
               http://pki.example.com:8080
+
+      - name: Check pki-server CLI in shell mode (with prompts)
+        run: |
+          docker exec -i pki pki-server << EOF | tee output
+          exit
+          EOF
+
+      - name: Check pki-server CLI in batch mode (without prompts)
+        run: |
+          docker exec -i pki pki-server - << EOF | tee output
+          exit
+          EOF
 
       - name: Stop pki-tomcat server
         run: |
