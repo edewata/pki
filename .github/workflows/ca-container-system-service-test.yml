@@ -251,12 +251,13 @@ jobs:
       # https://github.com/dogtagpki/pki/wiki/Setting-up-CA-Database
       - name: Initialize CA database
         run: |
-          docker exec pki podman exec systemd-pki-ca \
-              pki-server ca-db-init -v
-          docker exec pki podman exec systemd-pki-ca \
-              pki-server ca-db-index-add -v
-          docker exec pki podman exec systemd-pki-ca \
-              pki-server ca-db-index-rebuild -v
+          docker exec -i pki \
+              podman exec -i systemd-pki-ca \
+                  pki-server - << EOF
+          ca-db-init -v
+          ca-db-index-add -v
+          ca-db-index-rebuild -v
+          EOF
 
       - name: Create admin cert
         run: |
@@ -285,19 +286,20 @@ jobs:
       # https://github.com/dogtagpki/pki/wiki/Setting-up-CA-Admin-User
       - name: Add CA admin user
         run: |
+          docker exec -i pki \
+              podman exec -i systemd-pki-ca \
+                  pki-server - << EOF
           # create CA admin user
-          docker exec pki podman exec systemd-pki-ca \
-              pki-server ca-user-add \
+          ca-user-add \
               --full-name Administrator \
               --type adminType \
               --cert /home/pkiuser/admin.crt \
               admin
 
-          # add CA admin user into CA groups
-          docker exec pki podman exec systemd-pki-ca \
-              pki-server ca-user-role-add admin "Administrators"
-          docker exec pki podman exec systemd-pki-ca \
-              pki-server ca-user-role-add admin "Certificate Manager Agents"
+          # set up CA admin roles
+          ca-user-role-add admin "Administrators"
+          ca-user-role-add admin "Certificate Manager Agents"
+          EOF
 
       - name: Check CA admin user
         run: |

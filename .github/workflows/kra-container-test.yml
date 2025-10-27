@@ -186,16 +186,19 @@ jobs:
       # https://github.com/dogtagpki/pki/wiki/Setting-up-CA-Admin-User
       - name: Add CA admin user
         run: |
-          docker exec ca pki-server ca-user-add \
+          docker exec -i ca pki-server - << EOF
+          ca-user-add \
               --full-name Administrator \
               --type adminType \
+              admin
+
+          ca-user-cert-add \
               --cert admin.crt \
               admin
 
-      - name: Add CA admin user into CA groups
-        run: |
-          docker exec ca pki-server ca-user-role-add admin "Administrators"
-          docker exec ca pki-server ca-user-role-add admin "Certificate Manager Agents"
+          ca-user-role-add admin "Administrators"
+          ca-user-role-add admin "Certificate Manager Agents"
+          EOF
 
       - name: Check CA admin user
         run: |
@@ -459,16 +462,19 @@ jobs:
         run: |
           docker cp admin.crt kra:.
 
-          docker exec kra pki-server kra-user-add \
+          docker exec -i kra pki-server - << EOF
+          kra-user-add \
               --full-name Administrator \
               --type adminType \
+              admin
+
+          kra-user-cert-add \
               --cert admin.crt \
               admin
 
-      - name: Add KRA admin user into KRA groups
-        run: |
-          docker exec kra pki-server kra-user-role-add admin "Administrators"
-          docker exec kra pki-server kra-user-role-add admin "Data Recovery Manager Agents"
+          kra-user-role-add admin "Administrators"
+          kra-user-role-add admin "Data Recovery Manager Agents"
+          EOF
 
       - name: Check KRA admin user
         run: |
@@ -482,15 +488,19 @@ jobs:
       - name: Add CA subsystem user in KRA
         run: |
           cp ca/conf/certs/subsystem.crt kra/conf/certs/ca_subsystem.crt
-          docker exec kra pki-server kra-user-add \
+
+          docker exec -i kra pki-server - << EOF
+          kra-user-add \
               --full-name CA-ca.example.com-8443 \
               --type agentType \
+              CA-ca.example.com-8443
+
+          kra-user-cert-add \
               --cert /conf/certs/ca_subsystem.crt \
               CA-ca.example.com-8443
 
-      - name: Assign roles to CA subsystem user
-        run: |
-          docker exec kra pki-server kra-user-role-add CA-ca.example.com-8443 "Trusted Managers"
+          kra-user-role-add CA-ca.example.com-8443 "Trusted Managers"
+          EOF
 
       - name: Configure KRA connector in CA
         run: |

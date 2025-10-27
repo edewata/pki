@@ -204,11 +204,16 @@ jobs:
       # https://github.com/dogtagpki/pki/wiki/Setting-up-CA-Database
       - name: Initialize CA database
         run: |
-          docker exec ca pki-server ca-db-init -v
-          docker exec ca pki-server ca-db-index-add -v
+          docker exec -i ca pki-server - << EOF
+          # initialize CA database
+          ca-db-init -v
+
+          # create LMDB indexes
+          ca-db-index-add -v
 
           # LMDB indexes must be rebuilt
-          docker exec ca pki-server ca-db-index-rebuild -v
+          ca-db-index-rebuild -v
+          EOF
 
       - name: Create admin cert
         run: |
@@ -233,16 +238,18 @@ jobs:
       # https://github.com/dogtagpki/pki/wiki/Setting-up-CA-Admin-User
       - name: Add CA admin user
         run: |
+          docker exec -i ca pki-server - << EOF
           # create CA admin user
-          docker exec ca pki-server ca-user-add \
+          ca-user-add \
               --full-name Administrator \
               --type adminType \
               --password Secret.123 \
               admin
 
           # set up CA admin roles
-          docker exec ca pki-server ca-user-role-add admin "Administrators"
-          docker exec ca pki-server ca-user-role-add admin "Certificate Manager Agents"
+          ca-user-role-add admin "Administrators"
+          ca-user-role-add admin "Certificate Manager Agents"
+          EOF
 
       - name: Check CA admin user
         run: |
