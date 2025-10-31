@@ -388,7 +388,6 @@ jobs:
           # TODO: review permissions
           cat > expected << EOF
           drwxr-x--- tomcat tomcat backup
-          -rw-r--r-- tomcat tomcat catalina.$DATE.log
           -rw-r--r-- tomcat tomcat localhost_access_log.$DATE.txt
           EOF
 
@@ -468,7 +467,6 @@ jobs:
           # TODO: review permissions
           cat > expected << EOF
           drwxr-x--- tomcat tomcat backup
-          -rw-r--r-- tomcat tomcat catalina.$DATE.log
           -rw-r--r-- tomcat tomcat localhost_access_log.$DATE.txt
           EOF
 

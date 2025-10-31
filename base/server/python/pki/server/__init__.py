@@ -1568,7 +1568,7 @@ grant codeBase "file:%s" {
             return password
 
         except (subprocess.CalledProcessError, ValueError) as e:
-            logger.info('Password unavailable in Keyring:', e)
+            logger.exception('Password unavailable in Keyring:', e)
 
         try:
             # prompt for password if not found and terminal is available
@@ -1602,7 +1602,7 @@ grant codeBase "file:%s" {
             return password
 
         except (subprocess.CalledProcessError, ValueError) as e:
-            logger.info('Password unavailable in Keyring:', e)
+            logger.exception('Password unavailable in Keyring:', e)
 
         try:
             # prompt for password if not found and terminal is available
