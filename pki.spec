@@ -218,11 +218,12 @@ BuildRequires:    xmlstarlet
 %endif
 
 %if 0%{?fedora} >= %{fedora_cutoff} || 0%{?rhel} >= 10
-BuildRequires:     tomcat-lib >= 1:10.1.36
+BuildRequires:     tomcat-lib <= 1:10.1.43
 BuildRequires:     tomcat-jakartaee-migration
 %else
 BuildRequires:     tomcat-lib >= 9.0
 %endif
+
 
 BuildRequires:     pki-resteasy-core                 >= 3.0.26
 BuildRequires:     pki-resteasy-client               >= 3.0.26
@@ -268,10 +269,10 @@ BuildRequires:    mvn(org.jboss.resteasy:resteasy-servlet-initializer)
 
 %if 0%{?fedora} >= %{fedora_cutoff} || 0%{?rhel} >= 10
 
-BuildRequires:    mvn(org.apache.tomcat:tomcat-catalina) >= 10.1.36
-BuildRequires:    mvn(org.apache.tomcat:tomcat-servlet-api) >= 10.1.36
-BuildRequires:    mvn(org.apache.tomcat:tomcat-jaspic-api) >= 10.1.36
-BuildRequires:    mvn(org.apache.tomcat:tomcat-util-scan) >= 10.0.36
+BuildRequires:    mvn(org.apache.tomcat:tomcat-catalina) <= 10.1.43
+BuildRequires:    mvn(org.apache.tomcat:tomcat-servlet-api) <= 10.1.43
+BuildRequires:    mvn(org.apache.tomcat:tomcat-jaspic-api) <= 10.1.43
+BuildRequires:    mvn(org.apache.tomcat:tomcat-util-scan) <= 10.1.43
 
 %else
 
@@ -700,7 +701,7 @@ Provides:         bundled(resteasy-servlet-initializer)
 %endif
 
 %if 0%{?fedora} >= %{fedora_cutoff} || 0%{?rhel} >= 10
-Requires:         tomcat >= 1:10.1.36
+Requires:         tomcat <= 1:10.1.43
 %else
 Requires:         tomcat >= 9.0
 %endif
