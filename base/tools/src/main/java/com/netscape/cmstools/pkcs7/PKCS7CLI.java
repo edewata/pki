@@ -26,9 +26,9 @@ public class PKCS7CLI extends CLI {
 
     public MainCLI mainCLI;
 
-    public PKCS7CLI(MainCLI mainCLI) {
-        super("pkcs7", "PKCS #7 utilities", mainCLI);
-        this.mainCLI = mainCLI;
+    public PKCS7CLI(CLI parent) {
+        super("pkcs7", "PKCS #7 utilities", parent);
+        this.mainCLI = (MainCLI) parent;
 
         addModule(new PKCS7CertCLI(this));
         addModule(new PKCS7ImportCLI(this));
