@@ -18,6 +18,8 @@
 
 package com.netscape.cmstools.tps;
 
+import org.dogtagpki.cli.CLI;
+
 import com.netscape.certsrv.client.PKIClient;
 import com.netscape.certsrv.client.SubsystemClient;
 import com.netscape.certsrv.tps.TPSClient;
@@ -43,8 +45,8 @@ public class TPSCLI extends SubsystemCLI {
 
     public TPSClient tpsClient;
 
-    public TPSCLI(MainCLI mainCLI) {
-        super("tps", "TPS management commands", mainCLI);
+    public TPSCLI(CLI parent) {
+        super("tps", "TPS management commands", parent);
 
         addModule(new ActivityCLI(this));
         addModule(new AuditCLI(this));

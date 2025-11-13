@@ -14,8 +14,8 @@ import com.netscape.cmstools.cli.MainCLI;
  */
 public class ACMECLI extends CLI {
 
-    public ACMECLI(MainCLI mainCLI) {
-        super("acme", "ACME management commands", mainCLI);
+    public ACMECLI(CLI parent) {
+        super("acme", "ACME management commands", parent);
 
         addModule(new ACMEInfoCLI(this));
         addModule(new ACMEEnableCLI(this));

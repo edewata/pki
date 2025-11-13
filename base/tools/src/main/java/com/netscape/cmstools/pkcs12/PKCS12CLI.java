@@ -29,9 +29,9 @@ public class PKCS12CLI extends CLI {
 
     public MainCLI mainCLI;
 
-    public PKCS12CLI(MainCLI mainCLI) {
-        super("pkcs12", "PKCS #12 utilities", mainCLI);
-        this.mainCLI = mainCLI;
+    public PKCS12CLI(CLI parent) {
+        super("pkcs12", "PKCS #12 utilities", parent);
+        this.mainCLI = (MainCLI) parent;
 
         addModule(new PKCS12CertCLI(this));
         addModule(new PKCS12ExportCLI(this));

@@ -18,11 +18,12 @@
 
 package com.netscape.cmstools.ca;
 
+import org.dogtagpki.cli.CLI;
+
 import com.netscape.certsrv.ca.CAClient;
 import com.netscape.certsrv.client.PKIClient;
 import com.netscape.certsrv.client.SubsystemClient;
 import com.netscape.cmstools.authority.AuthorityCLI;
-import com.netscape.cmstools.cli.MainCLI;
 import com.netscape.cmstools.cli.SubsystemCLI;
 import com.netscape.cmstools.config.ConfigCLI;
 import com.netscape.cmstools.feature.FeatureCLI;
@@ -43,8 +44,8 @@ public class CACLI extends SubsystemCLI {
 
     public CAClient caClient;
 
-    public CACLI(MainCLI mainCLI) {
-        super("ca", "CA management commands", mainCLI);
+    public CACLI(CLI parent) {
+        super("ca", "CA management commands", parent);
 
         addModule(new AuthorityCLI(this));
         addModule(new AuditCLI(this));

@@ -31,9 +31,9 @@ public class ClientCLI extends CLI {
 
     public MainCLI mainCLI;
 
-    public ClientCLI(MainCLI mainCLI) {
-        super("client", "Client management commands", mainCLI);
-        this.mainCLI = mainCLI;
+    public ClientCLI(CLI parent) {
+        super("client", "Client management commands", parent);
+        this.mainCLI = (MainCLI) parent;
 
         addModule(new ClientInitCLI(this));
         addModule(new ClientCertFindCLI(this));

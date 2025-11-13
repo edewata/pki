@@ -31,10 +31,10 @@ public class SubsystemCLI extends CLI {
 
     public MainCLI mainCLI;
 
-    public SubsystemCLI(String name, String description, MainCLI mainCLI) {
-        super(name, description, mainCLI);
+    public SubsystemCLI(String name, String description, CLI parent) {
+        super(name, description, parent);
 
-        this.mainCLI = mainCLI;
+        this.mainCLI = (MainCLI) parent;
     }
 
     @Override

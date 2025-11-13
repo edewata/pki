@@ -16,9 +16,9 @@ public class NSSCLI extends CLI {
 
     public MainCLI mainCLI;
 
-    public NSSCLI(MainCLI mainCLI) {
-        super("nss", "NSS management commands", mainCLI);
-        this.mainCLI = mainCLI;
+    public NSSCLI(CLI parent) {
+        super("nss", "NSS management commands", parent);
+        this.mainCLI = (MainCLI) parent;
 
         addModule(new NSSCreateCLI(this));
         addModule(new NSSRemoveCLI(this));
