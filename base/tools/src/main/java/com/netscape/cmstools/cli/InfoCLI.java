@@ -7,6 +7,7 @@ package com.netscape.cmstools.cli;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.lang3.StringUtils;
+import org.dogtagpki.cli.CLI;
 import org.dogtagpki.cli.CommandCLI;
 import org.dogtagpki.common.Info;
 
@@ -15,8 +16,8 @@ import com.netscape.certsrv.client.PKIClient;
 
 public class InfoCLI extends CommandCLI {
 
-    public InfoCLI(MainCLI mainCLI) {
-        super("info", "Display server info", mainCLI);
+    public InfoCLI(CLI parent) {
+        super("info", "Display server info", parent);
     }
 
     @Override

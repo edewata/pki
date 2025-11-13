@@ -32,9 +32,9 @@ public class HelpCLI extends CommandCLI {
 
     MainCLI mainCLI;
 
-    public HelpCLI(MainCLI parent) {
+    public HelpCLI(CLI parent) {
         super("help", "Show help messages", parent);
-        mainCLI = parent;
+        mainCLI = (MainCLI) parent;
     }
 
     @Override

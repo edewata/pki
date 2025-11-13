@@ -66,18 +66,6 @@ import com.netscape.certsrv.ca.CAClient;
 import com.netscape.certsrv.client.ClientConfig;
 import com.netscape.certsrv.client.PKICertificateApprovalCallback;
 import com.netscape.certsrv.client.PKIClient;
-import com.netscape.cmstools.acme.ACMECLI;
-import com.netscape.cmstools.ca.CACLI;
-import com.netscape.cmstools.client.ClientCLI;
-import com.netscape.cmstools.kra.KRACLI;
-import com.netscape.cmstools.nss.NSSCLI;
-import com.netscape.cmstools.ocsp.OCSPCLI;
-import com.netscape.cmstools.pkcs11.PKCS11CLI;
-import com.netscape.cmstools.pkcs12.PKCS12CLI;
-import com.netscape.cmstools.pkcs7.PKCS7CLI;
-import com.netscape.cmstools.system.SecurityDomainCLI;
-import com.netscape.cmstools.tks.TKSCLI;
-import com.netscape.cmstools.tps.TPSCLI;
 import com.netscape.cmsutil.crypto.CryptoUtil;
 import com.netscape.cmsutil.password.PlainPasswordFile;
 
@@ -104,24 +92,24 @@ public class MainCLI extends CLI {
     public MainCLI() throws Exception {
         super("pki", "PKI command-line interface");
 
-        addModule(new HelpCLI(this));
+        addModule("help", "com.netscape.cmstools.cli.HelpCLI");
 
-        addModule(new ClientCLI(this));
-        addModule(new NSSCLI(this));
+        addModule("client", "com.netscape.cmstools.client.ClientCLI");
+        addModule("nss", "com.netscape.cmstools.nss.NSSCLI");
 
-        addModule(new InfoCLI(this));
-        addModule(new SecurityDomainCLI(this));
+        addModule("info", "com.netscape.cmstools.cli.InfoCLI");
+        addModule("securitydomain", "com.netscape.cmstools.system.SecurityDomainCLI");
 
-        addModule(new ACMECLI(this));
-        addModule(new CACLI(this));
-        addModule(new KRACLI(this));
-        addModule(new OCSPCLI(this));
-        addModule(new TKSCLI(this));
-        addModule(new TPSCLI(this));
+        addModule("acme", "com.netscape.cmstools.acme.ACMECLI");
+        addModule("ca", "com.netscape.cmstools.ca.CACLI");
+        addModule("kra", "com.netscape.cmstools.kra.KRACLI");
+        addModule("ocsp", "com.netscape.cmstools.ocsp.OCSPCLI");
+        addModule("tks", "com.netscape.cmstools.tks.TKSCLI");
+        addModule("tps", "com.netscape.cmstools.tps.TPSCLI");
 
-        addModule(new PKCS7CLI(this));
-        addModule(new PKCS11CLI(this));
-        addModule(new PKCS12CLI(this));
+        addModule("pkcs7", "com.netscape.cmstools.pkcs7.PKCS7CLI");
+        addModule("pkcs11", "com.netscape.cmstools.pkcs11.PKCS11CLI");
+        addModule("pkcs12", "com.netscape.cmstools.pkcs12.PKCS12CLI");
 
         createOptions();
     }

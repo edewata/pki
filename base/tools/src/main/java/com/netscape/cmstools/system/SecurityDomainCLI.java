@@ -35,9 +35,9 @@ public class SecurityDomainCLI extends CLI {
     public MainCLI mainCLI;
     public SecurityDomainClient securityDomainClient;
 
-    public SecurityDomainCLI(MainCLI mainCLI) {
-        super("securitydomain", "Security domain commands", mainCLI);
-        this.mainCLI = mainCLI;
+    public SecurityDomainCLI(CLI parent) {
+        super("securitydomain", "Security domain commands", parent);
+        this.mainCLI = (MainCLI) parent;
 
         addModule(new SecurityDomainJoinCLI(this));
         addModule(new SecurityDomainLeaveCLI(this));

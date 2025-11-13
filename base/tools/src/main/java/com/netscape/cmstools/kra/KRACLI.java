@@ -18,10 +18,11 @@
 
 package com.netscape.cmstools.kra;
 
+import org.dogtagpki.cli.CLI;
+
 import com.netscape.certsrv.client.PKIClient;
 import com.netscape.certsrv.client.SubsystemClient;
 import com.netscape.certsrv.kra.KRAClient;
-import com.netscape.cmstools.cli.MainCLI;
 import com.netscape.cmstools.cli.SubsystemCLI;
 import com.netscape.cmstools.config.ConfigCLI;
 import com.netscape.cmstools.group.GroupCLI;
@@ -40,8 +41,8 @@ public class KRACLI extends SubsystemCLI {
 
     public KRAClient kraClient;
 
-    public KRACLI(MainCLI mainCLI) {
-        super("kra", "KRA management commands", mainCLI);
+    public KRACLI(CLI parent) {
+        super("kra", "KRA management commands", parent);
 
         addModule(new AuditCLI(this));
         addModule(new KRACertCLI(this));
