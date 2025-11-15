@@ -19,6 +19,8 @@
 package com.netscape.cmstools.ca;
 
 import java.io.FileOutputStream;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
@@ -29,6 +31,8 @@ import org.mozilla.jss.netscape.security.util.Cert;
 import org.mozilla.jss.netscape.security.util.Utils;
 
 import com.netscape.certsrv.cert.CertData;
+import com.netscape.certsrv.client.ClientConfig;
+import com.netscape.certsrv.client.PKICertificateApprovalCallback;
 import com.netscape.certsrv.client.PKIClient;
 import com.netscape.cmstools.cli.MainCLI;
 
@@ -53,7 +57,25 @@ public class CACertSigningExportCLI extends CommandCLI {
 
     @Override
     public void createOptions() {
-        Option option = new Option(null, "output-format", true, "Output format: PEM (default), DER");
+        Option option = new Option("U", true, "Server URL");
+        option.setArgName("uri");
+        options.addOption(option);
+
+        option = new Option(null, "skip-revocation-check", false, "Do not perform revocation check");
+        options.addOption(option);
+
+        option = new Option(null, "reject-cert-status", true, "Comma-separated list of rejected certificate validity statuses");
+        option.setArgName("list");
+        options.addOption(option);
+
+        option = new Option(null, "ignore-cert-status", true, "Comma-separated list of ignored certificate validity statuses");
+        option.setArgName("list");
+        options.addOption(option);
+
+        option = new Option(null, "ignore-banner", false, "Ignore access banner");
+        options.addOption(option);
+
+        option = new Option(null, "output-format", true, "Output format: PEM (default), DER");
         option.setArgName("format");
         options.addOption(option);
 
@@ -70,7 +92,39 @@ public class CACertSigningExportCLI extends CommandCLI {
         MainCLI mainCLI = (MainCLI) getRoot();
         mainCLI.init();
 
-        PKIClient client = getClient();
+        PKIClient client;
+
+        String serverURL = cmd.getOptionValue("U");
+        if (serverURL != null) {
+            // create new PKIClient
+
+            ClientConfig config = new ClientConfig(mainCLI.config);
+            config.setServerURL(serverURL);
+
+            boolean skipRevocationCheck = cmd.hasOption("skip-revocation-check");
+            config.setCertRevocationVerify(!skipRevocationCheck);
+
+            String list = cmd.getOptionValue("reject-cert-status");
+            Collection<Integer> rejectedCertStatuses = new ArrayList<>();
+            mainCLI.convertCertStatusList(list, rejectedCertStatuses);
+
+            list = cmd.getOptionValue("ignore-cert-status");
+            Collection<Integer> ignoredCertStatuses = new ArrayList<>();
+            mainCLI.convertCertStatusList(list, ignoredCertStatuses);
+
+            PKICertificateApprovalCallback callback = new PKICertificateApprovalCallback();
+            callback.reject(rejectedCertStatuses);
+            callback.ignore(ignoredCertStatuses);
+
+            boolean ignoreBanner = cmd.hasOption("ignore-banner");
+
+            client = mainCLI.connect(config, callback, ignoreBanner);
+
+        } else {
+            // use shared PKIClient
+            client = mainCLI.getClient();
+        }
+
         CASystemCertClient certClient = new CASystemCertClient(client, "ca");
         CertData certData = certClient.getSigningCert();
 

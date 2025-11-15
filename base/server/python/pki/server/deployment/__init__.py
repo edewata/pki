@@ -3735,9 +3735,7 @@ class PKIDeployer:
             cmd = [
                 'pki',
                 '-d', self.instance.nssdb_dir,
-                '-f', self.instance.password_conf,
-                '-U', url,
-                '--skip-revocation-check'
+                '-f', self.instance.password_conf
             ]
 
             if credentials:
@@ -3754,8 +3752,10 @@ class PKIDeployer:
                     cmd.extend(['-w', password])
 
             cmd.extend([
-                '--ignore-banner',
                 'ca-cert-issue',
+                '-U', url,
+                '--skip-revocation-check',
+                '--ignore-banner',
                 '--request-type', request_type,
                 '--csr-file', request_file,
                 '--profile', profile
@@ -4428,11 +4428,11 @@ class PKIDeployer:
             'pki',
             '-d', self.instance.nssdb_dir,
             '-f', self.instance.password_conf,
+            'ca-cert-signing-export',
             '-U', ca_url,
+            '--skip-revocation-check',
             '--ignore-cert-status', 'UNTRUSTED_ISSUER,UNKNOWN_ISSUER',
             '--ignore-banner',
-            '--skip-revocation-check',
-            'ca-cert-signing-export',
             '--pkcs7'
         ]
 
@@ -4453,10 +4453,10 @@ class PKIDeployer:
             'pki',
             '-d', self.instance.nssdb_dir,
             '-f', self.instance.password_conf,
+            'ca-cert-subsystem-export',
             '-U', ca_url,
-            '--ignore-banner',
             '--skip-revocation-check',
-            'ca-cert-subsystem-export'
+            '--ignore-banner'
         ]
 
         if logger.isEnabledFor(logging.DEBUG):
@@ -4499,10 +4499,10 @@ class PKIDeployer:
                 'pki',
                 '-d', self.instance.nssdb_dir,
                 '-f', self.instance.password_conf,
-                '-U', ca_url,
-                '--ignore-banner',
-                '--skip-revocation-check',
                 'ca-kraconnector-add',
+                '-U', ca_url,
+                '--skip-revocation-check',
+                '--ignore-banner',
                 '--url', kra_url,
                 '--subsystem-cert', subsystem_cert_file,
                 '--transport-cert', transport_cert_file,

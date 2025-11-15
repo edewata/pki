@@ -52,11 +52,13 @@ public class TKSCLI extends SubsystemCLI {
     }
 
     @Override
-    public SubsystemClient getSubsystemClient() throws Exception {
+    public SubsystemClient getSubsystemClient(PKIClient client) throws Exception {
 
         if (tksClient != null) return tksClient;
 
-        PKIClient client = getClient();
+        if (client == null) {
+            client = getClient();
+        }
         tksClient = new TKSClient(client);
 
         return tksClient;

@@ -14,6 +14,8 @@ import org.apache.commons.cli.Option;
 import org.dogtagpki.cli.CommandCLI;
 
 import com.netscape.certsrv.ca.CAClient;
+import com.netscape.certsrv.client.ClientConfig;
+import com.netscape.certsrv.client.PKICertificateApprovalCallback;
 import com.netscape.certsrv.client.PKIClient;
 import com.netscape.cmstools.cli.MainCLI;
 
@@ -33,8 +35,17 @@ public class PublisherOCSPAddCLI extends CommandCLI {
 
     @Override
     public void createOptions() {
+        Option option = new Option("U", true, "Server URL");
+        option.setArgName("uri");
+        options.addOption(option);
 
-        Option option = new Option(null, "url", true, "Publisher URL");
+        option = new Option(null, "skip-revocation-check", false, "Do not perform revocation check");
+        options.addOption(option);
+
+        option = new Option(null, "ignore-banner", false, "Ignore access banner");
+        options.addOption(option);
+
+        option = new Option(null, "url", true, "Publisher URL");
         option.setArgName("URL");
         options.addOption(option);
 
@@ -53,8 +64,6 @@ public class PublisherOCSPAddCLI extends CommandCLI {
 
     @Override
     public void execute(CommandLine cmd) throws Exception {
-
-        String[] cmdArgs = cmd.getArgs();
 
         String publisherURL = cmd.getOptionValue("url");
         if (publisherURL == null) {
@@ -86,9 +95,29 @@ public class PublisherOCSPAddCLI extends CommandCLI {
         MainCLI mainCLI = (MainCLI) getRoot();
         mainCLI.init();
 
-        PKIClient client = mainCLI.getClient();
-        CAClient caClient = new CAClient(client);
+        PKIClient client;
 
+        String serverURL = cmd.getOptionValue("U");
+        if (serverURL != null) {
+            // create new PKIClient
+
+            ClientConfig config = new ClientConfig(mainCLI.config);
+            config.setServerURL(serverURL);
+
+            boolean skipRevocationCheck = cmd.hasOption("skip-revocation-check");
+            config.setCertRevocationVerify(!skipRevocationCheck);
+
+            PKICertificateApprovalCallback callback = new PKICertificateApprovalCallback();
+            boolean ignoreBanner = cmd.hasOption("ignore-banner");
+
+            client = mainCLI.connect(config, callback, ignoreBanner);
+
+        } else {
+            // use shared PKIClient
+            client = mainCLI.getClient();
+        }
+
+        CAClient caClient = new CAClient(client);
         caClient.addOCSPPublisher(url, subsystemCert, sessionID);
     }
 }

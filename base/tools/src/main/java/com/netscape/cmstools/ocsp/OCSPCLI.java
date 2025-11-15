@@ -50,11 +50,13 @@ public class OCSPCLI extends SubsystemCLI {
     }
 
     @Override
-    public SubsystemClient getSubsystemClient() throws Exception {
+    public SubsystemClient getSubsystemClient(PKIClient client) throws Exception {
 
         if (ocspClient != null) return ocspClient;
 
-        PKIClient client = getClient();
+        if (client == null) {
+            client = getClient();
+        }
         ocspClient = new OCSPClient(client);
 
         return ocspClient;

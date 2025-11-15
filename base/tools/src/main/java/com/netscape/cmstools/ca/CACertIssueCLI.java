@@ -35,6 +35,9 @@ import com.netscape.certsrv.cert.CertEnrollmentRequest;
 import com.netscape.certsrv.cert.CertRequestInfo;
 import com.netscape.certsrv.cert.CertRequestInfos;
 import com.netscape.certsrv.cert.CertReviewResponse;
+import com.netscape.certsrv.client.ClientConfig;
+import com.netscape.certsrv.client.PKICertificateApprovalCallback;
+import com.netscape.certsrv.client.PKIClient;
 import com.netscape.certsrv.dbs.certdb.CertId;
 import com.netscape.certsrv.profile.ProfileAttribute;
 import com.netscape.certsrv.profile.ProfileInput;
@@ -58,8 +61,17 @@ public class CACertIssueCLI extends CommandCLI {
 
     @Override
     public void createOptions() {
+        Option option = new Option("U", true, "Server URL");
+        option.setArgName("uri");
+        options.addOption(option);
 
-        Option option = new Option(null, "issuer-id", true, "Authority ID (host authority if omitted)");
+        option = new Option(null, "skip-revocation-check", false, "Do not perform revocation check");
+        options.addOption(option);
+
+        option = new Option(null, "ignore-banner", false, "Ignore access banner");
+        options.addOption(option);
+
+        option = new Option(null, "issuer-id", true, "Authority ID (host authority if omitted)");
         option.setArgName("ID");
         options.addOption(option);
 
@@ -483,7 +495,29 @@ public class CACertIssueCLI extends CommandCLI {
         MainCLI mainCLI = (MainCLI) getRoot();
         mainCLI.init();
 
-        CACertClient certClient = certCLI.getCertClient();
+        PKIClient client;
+
+        String serverURL = cmd.getOptionValue("U");
+        if (serverURL != null) {
+            // create new PKIClient
+
+            ClientConfig config = new ClientConfig(mainCLI.config);
+            config.setServerURL(serverURL);
+
+            boolean skipRevocationCheck = cmd.hasOption("skip-revocation-check");
+            config.setCertRevocationVerify(!skipRevocationCheck);
+
+            PKICertificateApprovalCallback callback = new PKICertificateApprovalCallback();
+            boolean ignoreBanner = cmd.hasOption("ignore-banner");
+
+            client = mainCLI.connect(config, callback, ignoreBanner);
+
+        } else {
+            // use shared PKIClient
+            client = mainCLI.getClient();
+        }
+
+        CACertClient certClient = new CACertClient(client, "ca");;
 
         String installToken = cmd.getOptionValue("install-token");
         String sessionID;

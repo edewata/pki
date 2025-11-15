@@ -68,11 +68,13 @@ public class TPSCLI extends SubsystemCLI {
     }
 
     @Override
-    public SubsystemClient getSubsystemClient() throws Exception {
+    public SubsystemClient getSubsystemClient(PKIClient client) throws Exception {
 
         if (tpsClient != null) return tpsClient;
 
-        PKIClient client = getClient();
+        if (client == null) {
+            client = getClient();
+        }
         tpsClient = new TPSClient(client);
 
         return tpsClient;
