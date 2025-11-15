@@ -104,16 +104,10 @@ public class MainCLI extends CLI {
     public MainCLI() throws Exception {
         super("pki", "PKI command-line interface");
 
-        createOptions();
-
         addModule(new HelpCLI(this));
 
-        addModule(new NSSCLI(this));
-        addModule(new PKCS7CLI(this));
-        addModule(new PKCS11CLI(this));
-        addModule(new PKCS12CLI(this));
-
         addModule(new ClientCLI(this));
+        addModule(new NSSCLI(this));
 
         addModule(new InfoCLI(this));
         addModule(new SecurityDomainCLI(this));
@@ -124,6 +118,12 @@ public class MainCLI extends CLI {
         addModule(new OCSPCLI(this));
         addModule(new TKSCLI(this));
         addModule(new TPSCLI(this));
+
+        addModule(new PKCS7CLI(this));
+        addModule(new PKCS11CLI(this));
+        addModule(new PKCS12CLI(this));
+
+        createOptions();
     }
 
     @Override

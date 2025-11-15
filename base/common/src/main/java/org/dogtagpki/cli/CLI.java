@@ -29,7 +29,6 @@ import java.util.Map;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.lang3.StringUtils;
 
@@ -66,20 +65,6 @@ public class CLI {
         this.name = name;
         this.description = description;
         this.parent = parent;
-
-        if (parent != null) {
-            // inherit parent's options
-            for (Option option : parent.options.getOptions()) {
-                String opt = option.getOpt();
-
-                Option existingOption = options.getOption(opt);
-                if (existingOption != null) {
-                    throw new RuntimeException("Conflicting options: " + opt);
-                }
-
-                options.addOption(option);
-            }
-        }
     }
 
     public String getName() {
