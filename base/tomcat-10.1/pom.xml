@@ -31,7 +31,7 @@
         <dependency>
             <groupId>org.apache.tomcat</groupId>
             <artifactId>tomcat-jaspic-api</artifactId>
-            <version>10.1.36</version>
+            <version>10.1.49</version>
         </dependency>
 
         <dependency>
