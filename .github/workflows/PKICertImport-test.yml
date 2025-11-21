@@ -26,11 +26,16 @@ jobs:
 
       - name: Set up runner container
         run: |
-          tests/bin/runner-init.sh pki
-        env:
-          HOSTNAME: pki.example.com
+          tests/bin/runner-init.sh \
+              --hostname=pki.example.com \
+              pki
+
+      - name: Check test scripts
+        run: |
+          docker exec pki ls -la /usr/share/pki/tests/util/bin
 
       - name: Run PKICertImport test
+        if: always()
         run: |
           # With new crypto policy in fedora SHA1 signature is not included in the default policy
           # so the exported p12, having sha1 signature are not accepted.
@@ -38,3 +43,23 @@ jobs:
           # the following line enable SHA1 so PKICertImport can import p12 files. 
           # docker exec pki update-crypto-policies --set DEFAULT:SHA1
           docker exec pki bash /usr/share/pki/tests/util/bin/test_PKICertImport.bash
+
+      - name: Run test_chain_fail_no_root.sh
+        if: always()
+        run: |
+          docker exec pki bash /usr/share/pki/tests/util/bin/test_chain_fail_no_root.sh
+
+      - name: Run test_chain_import.sh
+        if: always()
+        run: |
+          docker exec pki bash /usr/share/pki/tests/util/bin/test_chain_import.sh
+
+      - name: Run test_leaf_import.sh
+        if: always()
+        run: |
+          docker exec pki bash /usr/share/pki/tests/util/bin/test_leaf_import.sh
+
+      - name: Run test_leaf_fail_no_root.sh
+        if: always()
+        run: |
+          docker exec pki bash /usr/share/pki/tests/util/bin/test_leaf_fail_no_root.sh
