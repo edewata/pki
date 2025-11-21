@@ -126,7 +126,7 @@ public class TKSCertTransportImportCLI extends SubsystemCommandCLI {
         MainCLI mainCLI = (MainCLI) getRoot();
         mainCLI.init();
 
-        PKIClient client = mainCLI.getClient();
+        PKIClient client = subsystemCLI.getPKIClient(cmd);
         TKSClient tksClient = new TKSClient(client);
         tksClient.importTransportCert(uri, nickname, b64cert, sessionID);
     }

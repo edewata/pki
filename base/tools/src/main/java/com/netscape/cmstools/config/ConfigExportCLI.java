@@ -84,7 +84,7 @@ public class ConfigExportCLI extends SubsystemCommandCLI {
         MainCLI mainCLI = (MainCLI) getRoot();
         mainCLI.init();
 
-        PKIClient client = mainCLI.getClient();
+        PKIClient client = subsystemCLI.getPKIClient(cmd);
         ConfigClient configClient = configCLI.getConfigClient(client);
         ConfigData config = configClient.getConfig(names, substores, sessionID);
 

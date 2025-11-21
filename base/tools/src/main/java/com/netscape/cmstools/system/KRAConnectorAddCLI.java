@@ -121,7 +121,7 @@ public class KRAConnectorAddCLI extends SubsystemCommandCLI {
         MainCLI mainCLI = (MainCLI) getRoot();
         mainCLI.init();
 
-        PKIClient client = mainCLI.getClient();
+        PKIClient client = subsystemCLI.getPKIClient(cmd);
         KRAConnectorClient kraConnectorClient = kraConnectorCLI.getKRAConnectorClient(client);
 
         if (inputFile != null) {

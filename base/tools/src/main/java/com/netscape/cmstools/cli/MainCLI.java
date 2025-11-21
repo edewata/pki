@@ -612,20 +612,12 @@ public class MainCLI extends CLI {
         return callback;
     }
 
-    public PKIClient getClient() throws Exception {
+    public PKIClient createClient(
+            ClientConfig config,
+            SSLCertificateApprovalCallback callback,
+            boolean ignoreBanner) throws Exception {
 
-        if (client != null) return client;
-
-        logger.info("Connecting to " + config.getServerURL());
-
-        SSLCertificateApprovalCallback callback = createCertApprovalCallback();
-        client = new PKIClient(config, apiVersion, callback);
-
-        if (output != null) {
-            File file = new File(output);
-            file.mkdirs();
-            client.setOutput(file);
-        }
+        PKIClient client = new PKIClient(config, apiVersion, callback);
 
         try {
             Info info = client.getInfo();
@@ -657,6 +649,24 @@ public class MainCLI extends CLI {
                 throw e;
             }
             logger.warn("Unable to get server info: " + e.getMessage());
+        }
+
+        return client;
+    }
+
+    public PKIClient getClient() throws Exception {
+
+        if (client != null) return client;
+
+        logger.info("Connecting to " + config.getServerURL());
+
+        SSLCertificateApprovalCallback callback = createCertApprovalCallback();
+        client = createClient(config, callback, ignoreBanner);
+
+        if (output != null) {
+            File file = new File(output);
+            file.mkdirs();
+            client.setOutput(file);
         }
 
         return client;

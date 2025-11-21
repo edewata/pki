@@ -5,6 +5,7 @@
 //
 package com.netscape.cmstools.cli;
 
+import org.apache.commons.cli.Option;
 import org.dogtagpki.cli.CLI;
 import org.dogtagpki.cli.CommandCLI;
 
@@ -37,6 +38,45 @@ public class SubsystemCommandCLI extends CommandCLI {
                 cli = cli.parent;
             }
         }
+    }
+
+    public void createOptions() {
+
+        super.createOptions();
+
+        Option option = new Option("U", true, "Server URL");
+        option.setArgName("uri");
+        options.addOption(option);
+
+        option = new Option("n", true, "Nickname for client certificate authentication");
+        option.setArgName("nickname");
+        options.addOption(option);
+
+        option = new Option("u", true, "Username for basic authentication");
+        option.setArgName("username");
+        options.addOption(option);
+
+        option = new Option("w", true, "Password for basic authentication");
+        option.setArgName("password");
+        options.addOption(option);
+
+        option = new Option("W", true, "Password file for basic authentication");
+        option.setArgName("passwordfile");
+        options.addOption(option);
+
+        option = new Option(null, "skip-revocation-check", false, "Do not perform revocation check");
+        options.addOption(option);
+
+        option = new Option(null, "reject-cert-status", true, "Comma-separated list of rejected certificate validity statuses");
+        option.setArgName("list");
+        options.addOption(option);
+
+        option = new Option(null, "ignore-cert-status", true, "Comma-separated list of ignored certificate validity statuses");
+        option.setArgName("list");
+        options.addOption(option);
+
+        option = new Option(null, "ignore-banner", false, "Ignore access banner");
+        options.addOption(option);
     }
 
     @Override

@@ -18,6 +18,8 @@ import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
 import org.dogtagpki.cli.CommandCLI;
 
+import com.netscape.certsrv.client.ClientConfig;
+import com.netscape.certsrv.client.PKICertificateApprovalCallback;
 import com.netscape.certsrv.client.PKIClient;
 import com.netscape.cmstools.cli.MainCLI;
 import com.netscape.cmsutil.xml.XMLObject;
@@ -44,7 +46,17 @@ public class SecurityDomainJoinCLI extends CommandCLI {
 
         super.createOptions();
 
-        Option option = new Option(null, "session", true, "Session ID");
+        Option option = new Option("U", true, "Server URL");
+        option.setArgName("uri");
+        options.addOption(option);
+
+        option = new Option(null, "skip-revocation-check", false, "Do not perform revocation check");
+        options.addOption(option);
+
+        option = new Option(null, "ignore-banner", false, "Ignore access banner");
+        options.addOption(option);
+
+        option = new Option(null, "session", true, "Session ID");
         option.setArgName("ID");
         options.addOption(option);
 
@@ -132,7 +144,28 @@ public class SecurityDomainJoinCLI extends CommandCLI {
         MainCLI mainCLI = (MainCLI) getRoot();
         mainCLI.init();
 
-        PKIClient client = mainCLI.getClient();
+        PKIClient client;
+
+        String serverURL = cmd.getOptionValue("U");
+        if (serverURL != null) {
+            // create new PKIClient
+
+            ClientConfig config = new ClientConfig(mainCLI.config);
+            config.setServerURL(serverURL);
+
+            boolean skipRevocationCheck = cmd.hasOption("skip-revocation-check");
+            config.setCertRevocationVerify(!skipRevocationCheck);
+
+            PKICertificateApprovalCallback callback = new PKICertificateApprovalCallback();
+            boolean ignoreBanner = cmd.hasOption("ignore-banner");
+
+            client = mainCLI.createClient(config, callback, ignoreBanner);
+
+        } else {
+            // use shared PKIClient
+            client = mainCLI.getClient();
+        }
+
         String response = client.post("ca/admin/ca/updateDomainXML", content, String.class);
 
         if (StringUtils.isEmpty(response)) {

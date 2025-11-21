@@ -56,7 +56,7 @@ public class TKSKeyReplaceCLI extends SubsystemCommandCLI {
         MainCLI mainCLI = (MainCLI) getRoot();
         mainCLI.init();
 
-        PKIClient client = mainCLI.getClient();
+        PKIClient client = subsystemCLI.getPKIClient(cmd);
         SubsystemClient subsystemClient = subsystemCLI.getSubsystemClient(client);
         TPSConnectorClient tpsConnectorClient = new TPSConnectorClient(subsystemClient);
         KeyData keyData = tpsConnectorClient.replaceSharedSecret(keyID);
