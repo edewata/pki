@@ -494,7 +494,7 @@ public class MainCLI extends CLI {
         return cmd;
     }
 
-    public void convertCertStatusList(String list, Collection<Integer> statuses) throws Exception {
+    public static void convertCertStatusList(String list, Collection<Integer> statuses) throws Exception {
 
         if (list == null) return;
 
@@ -617,20 +617,12 @@ public class MainCLI extends CLI {
         return callback;
     }
 
-    public PKIClient getPKIClient() throws Exception {
+    public PKIClient createPKIClient(
+            ClientConfig config,
+            SSLCertificateApprovalCallback callback,
+            boolean ignoreBanner) throws Exception {
 
-        if (client != null) return client;
-
-        logger.info("Connecting to " + config.getServerURL());
-
-        SSLCertificateApprovalCallback callback = createCertApprovalCallback();
-        client = new PKIClient(config, apiVersion, callback);
-
-        if (output != null) {
-            File file = new File(output);
-            file.mkdirs();
-            client.setOutput(file);
-        }
+        PKIClient client = new PKIClient(config, apiVersion, callback);
 
         try {
             Info info = client.getInfo();
@@ -662,6 +654,24 @@ public class MainCLI extends CLI {
                 throw e;
             }
             logger.warn("Unable to get server info: " + e.getMessage());
+        }
+
+        return client;
+    }
+
+    public PKIClient getPKIClient() throws Exception {
+
+        if (client != null) return client;
+
+        logger.info("Connecting to " + config.getServerURL());
+
+        SSLCertificateApprovalCallback callback = createCertApprovalCallback();
+        client = createPKIClient(config, callback, ignoreBanner);
+
+        if (output != null) {
+            File file = new File(output);
+            file.mkdirs();
+            client.setOutput(file);
         }
 
         return client;
