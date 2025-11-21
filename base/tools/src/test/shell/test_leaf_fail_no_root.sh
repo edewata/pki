@@ -366,66 +366,7 @@ function generate_certificates() {
     create_certificate "$db" "$CERTPATH/$SSL_EXT" "$CERTPATH/$P_SELF_SERVER" "$S_SELF_SERVER" "$SELF_SERVER" "$pass"
 }
 
-function test_cert_import_root() {
-    local db="test_cert_import_server"
-    echo -n "$db... "
-
-    create_nssdb "$db" || __d "Unable to create nssdb: $db"
-
-    certutil_contains_cert "$db" "$CA_ROOT" && __d "$db should not contain $CA_ROOT"
-    pci_cert "$db" "$CA_ROOT" "$P_CA_ROOT" ca
-    certutil_contains_cert "$db" "$CA_ROOT" || __d "$db should contain $CA_ROOT"
-
-    certutil_contains_cert "$db" "$COMP_ROOT" && __d "$db should not contain $COMP_ROOT"
-    pci_cert "$db" "$COMP_ROOT" "$P_COMP_ROOT" ca
-    certutil_contains_cert "$db" "$COMP_ROOT" || __d "$db should contain $COMP_ROOT"
-
-    echo "pass"
-}
-
-function test_cert_import_server() {
-    local db="${FUNCNAME[0]}"
-    echo -n "$db... "
-
-    create_nssdb "$db" root sub
-    certutil_contains_cert "$db" "$CA_ROOT" || __d "$db should contain $CA_ROOT"
-    certutil_contains_cert "$db" "$CA_SUB" || __d "$db should contain $CA_SUB"
-
-    certutil_contains_cert "$db" "$CA_SERVER" && __d "$db should not contain $CA_SERVER"
-    pci_cert "$db" "$CA_SERVER" "$P_CA_SERVER" server
-    certutil_contains_cert "$db" "$CA_SERVER" || __d "$db should contain $CA_SERVER"
-
-    certutil_contains_cert "$db" "$CA_SUB_SERVER_A" && __d "$db should not contain $CA_SUB_SERVER_A"
-    pci_cert "$db" "$CA_SUB_SERVER_A" "$P_CA_SUB_SERVER_A" server
-    certutil_contains_cert "$db" "$CA_SUB_SERVER_A" || __d "$db should contain $CA_SUB_SERVER_A"
-
-    certutil_contains_cert "$db" "$CA_SUB_SERVER_B" && __d "$db should not contain $CA_SUB_SERVER_B"
-    pci_cert "$db" "$CA_SUB_SERVER_B" "$P_CA_SUB_SERVER_B" server
-    certutil_contains_cert "$db" "$CA_SUB_SERVER_B" || __d "$db should contain $CA_SUB_SERVER_B"
-
-    echo "pass"
-}
-
-function test_cert_missing_intermediate() {
-    local db="${FUNCNAME[0]}"
-    echo -n "$db... "
-
-    create_nssdb "$db" root
-    certutil_contains_cert "$db" "$CA_ROOT" || __d "$db should contain $CA_ROOT"
-    certutil_contains_cert "$db" "$CA_SUB" && __d "$db should not contain $CA_SUB"
-
-    certutil_contains_cert "$db" "$CA_SUB_SERVER_A" && __d "$db should not contain $CA_SUB_SERVER_A"
-    pci_cert "$db" "$CA_SUB_SERVER_A" "$P_CA_SUB_SERVER_A" server
-    certutil_contains_cert "$db" "$CA_SUB_SERVER_A" && __d "$db should not contain $CA_SUB_SERVER_A"
-
-    certutil_contains_cert "$db" "$CA_SUB_SERVER_B" && __d "$db should not contain $CA_SUB_SERVER_B"
-    pci_cert "$db" "$CA_SUB_SERVER_B" "$P_CA_SUB_SERVER_B" server
-    certutil_contains_cert "$db" "$CA_SUB_SERVER_B" && __d "$db should not contain $CA_SUB_SERVER_B"
-
-    echo "pass"
-}
-
-function test_chain_unsafe_trust_then_verify() {
+function test_leaf_fail_no_root() {
     local db="${FUNCNAME[0]}"
     echo -n "$db... "
 
@@ -433,15 +374,20 @@ function test_chain_unsafe_trust_then_verify() {
     certutil_contains_cert "$db" "$CA_ROOT" && __d "$db should not contain $CA_ROOT"
     certutil_contains_cert "$db" "$CA_SUB" && __d "$db should not contain $CA_SUB"
 
+    certutil_contains_cert "$db" "$CA_SERVER" && __d "$db should not contain $CA_SERVER"
+    pci_leaf "$db" "$CA_SERVER" "$P_CA_SERVER" server && __d "Unexpected success for $CA_SERVER"
+    certutil_contains_cert "$db" "$CA_SERVER" && __d "$db should not contain $CA_SERVER"
+
     certutil_contains_cert "$db" "$CA_SUB_SERVER_A" && __d "$db should not contain $CA_SUB_SERVER_A"
-    pci_chain "$db" "$CA_SUB_SERVER_A" "$P_CA_SUB_SERVER_A" server ca --unsafe-trust-then-verify || __d "Unexpected error with import operation for $CA_SUB_SERVER_A"
+    pci_leaf "$db" "$CA_SUB_SERVER_A" "$P_CA_SUB_SERVER_A" server && __d "Unexpected success for $CA_SUB_SERVER_A"
+    certutil_contains_cert "$db" "$CA_SUB_SERVER_A" && __d "$db should not contain $CA_SUB_SERVER_A"
 
-    certutil_contains_cert "$db" "$CA_ROOT" || __d "$db should contain $CA_ROOT"
-    certutil_contains_cert "$db" "$CA_SUB" || __d "$db should contain $CA_SUB"
-    certutil_contains_cert "$db" "$CA_SUB_SERVER_A" || __d "$db should contain $CA_SUB_SERVER_A"
+    certutil_contains_cert "$db" "$CA_SUB_SERVER_B" && __d "$db should not contain $CA_SUB_SERVER_B"
+    pci_leaf "$db" "$CA_SUB_SERVER_B" "$P_CA_SUB_SERVER_B" server && __d "Unexpected success for $CA_SUB_SERVER_B"
+    certutil_contains_cert "$db" "$CA_SUB_SERVER_B" && __d "$db should not contain $CA_SUB_SERVER_B"
 
-    certutil_contains_num_certs "$db" 3 || __d "$db should contain three certificates but contained:" "$(certutil_contains_num_certs "$db"; echo $?)"
-    certutil_contains_num_keys "$db" 1 || __d "$db should contain one key but contained:" "$(certutil_contains_num_keys "$db"; echo $?)"
+    certutil_contains_num_certs "$db" 0 || __d "$db should contain no certificates but contained:" "$(certutil_contains_num_certs "$db"; echo $?)"
+    certutil_contains_num_keys "$db" 0 || __d "$db should contain no keys but contained:" "$(certutil_contains_num_keys "$db"; echo $?)"
 
     echo "pass"
 }
@@ -449,11 +395,7 @@ function test_chain_unsafe_trust_then_verify() {
 function main() {
     time (
         generate_certificates || exit "$Z"
-        test_cert_import_root || exit $?
-        test_cert_import_server || exit $?
-        test_cert_missing_intermediate || exit $?
-
-        test_chain_unsafe_trust_then_verify || exit $?
+        test_leaf_fail_no_root || exit $?
     )
 }
 
