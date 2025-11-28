@@ -16,24 +16,22 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
-import org.dogtagpki.cli.CommandCLI;
 
 import com.netscape.certsrv.client.PKIClient;
 import com.netscape.cmstools.cli.MainCLI;
+import com.netscape.cmstools.cli.SubsystemCommandCLI;
 import com.netscape.cmsutil.xml.XMLObject;
 
 /**
  * @author Endi S. Dewata
- * @deprecated Replaced by SDJoinCLI.
  */
-@Deprecated
-public class SecurityDomainJoinCLI extends CommandCLI {
+public class SDJoinCLI extends SubsystemCommandCLI {
 
-    public SecurityDomainCLI securityDomainCLI;
+    public SDCLI sdCLI;
 
-    public SecurityDomainJoinCLI(SecurityDomainCLI securityDomainCLI) {
-        super("join", "Join security domain", securityDomainCLI);
-        this.securityDomainCLI = securityDomainCLI;
+    public SDJoinCLI(SDCLI sdCLI) {
+        super("join", "Join security domain", sdCLI);
+        this.sdCLI = sdCLI;
     }
 
     @Override
@@ -76,8 +74,6 @@ public class SecurityDomainJoinCLI extends CommandCLI {
 
     @Override
     public void execute(CommandLine cmd) throws Exception {
-
-        logger.warn("The pki " + getFullName() + " has been deprecated. Use pki ca-sd-join instead.");
 
         String[] cmdArgs = cmd.getArgs();
 
@@ -136,7 +132,7 @@ public class SecurityDomainJoinCLI extends CommandCLI {
         MainCLI mainCLI = (MainCLI) getRoot();
         mainCLI.init();
 
-        PKIClient client = mainCLI.getPKIClient();
+        PKIClient client = getPKIClient();
         String response = client.post("ca/admin/ca/updateDomainXML", content, String.class);
 
         if (StringUtils.isEmpty(response)) {
