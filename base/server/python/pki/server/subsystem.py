@@ -1162,7 +1162,10 @@ class PKISubsystem(object):
 
     def create_database(self):
 
-        cmd = [self.name + '-db-create']
+        cmd = [
+            'pki-server',
+            self.name + '-db-create'
+        ]
 
         if logger.isEnabledFor(logging.DEBUG):
             cmd.append('--debug')
@@ -1170,7 +1173,10 @@ class PKISubsystem(object):
         elif logger.isEnabledFor(logging.INFO):
             cmd.append('--verbose')
 
-        self.run(cmd)
+        #self.run(cmd)
+        logger.debug('Command: %s', ' '.join(cmd))
+
+        subprocess.check_call(cmd)
 
     # pylint: disable=W0613
     def init_database(
@@ -1183,7 +1189,10 @@ class PKISubsystem(object):
             skip_reindex=False,
             as_current_user=False):
 
-        cmd = [self.name + '-db-init']
+        cmd = [
+            'pki-server',
+            self.name + '-db-init'
+        ]
 
         if skip_config:
             cmd.append('--skip-config')
@@ -1203,7 +1212,10 @@ class PKISubsystem(object):
         elif logger.isEnabledFor(logging.INFO):
             cmd.append('--verbose')
 
-        self.run(cmd, as_current_user=as_current_user)
+        #self.run(cmd, as_current_user=as_current_user)
+        logger.debug('Command: %s', ' '.join(cmd))
+
+        subprocess.check_call(cmd)
 
     def add_indexes(self):
 
@@ -1247,7 +1259,10 @@ class PKISubsystem(object):
 
     def remove_database(self, force=False, as_current_user=False):
 
-        cmd = [self.name + '-db-remove']
+        cmd = [
+            'pki-server',
+            self.name + '-db-remove'
+        ]
 
         if force:
             cmd.append('--force')
@@ -1258,7 +1273,10 @@ class PKISubsystem(object):
         elif logger.isEnabledFor(logging.INFO):
             cmd.append('--verbose')
 
-        self.run(cmd, as_current_user=as_current_user)
+        #self.run(cmd, as_current_user=as_current_user)
+        logger.debug('Command: %s', ' '.join(cmd))
+
+        subprocess.check_call(cmd)
 
     def grant_database_access(
             self,
