@@ -223,7 +223,6 @@ class SubsystemDBCLI(pki.cli.CLI):
         self.add_module(SubsystemDBCreateCLI(self))
         self.add_module(SubsystemDBInitCLI(self))
         self.add_module(SubsystemDBEmptyCLI(self))
-        self.add_module(SubsystemDBRemoveCLI(self))
         self.add_module(SubsystemDBUpgradeCLI(self))
 
         self.add_module(SubsystemDBAccessCLI(self))

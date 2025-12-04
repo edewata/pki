@@ -1247,10 +1247,10 @@ class PKISubsystem(object):
 
     def remove_database(self, force=False, as_current_user=False):
 
-        cmd = [self.name + '-db-remove']
-
-        if force:
-            cmd.append('--force')
+        cmd = [
+            'pki-server',
+            '-i', self.instance.name
+        ]
 
         if logger.isEnabledFor(logging.DEBUG):
             cmd.append('--debug')
@@ -1258,7 +1258,13 @@ class PKISubsystem(object):
         elif logger.isEnabledFor(logging.INFO):
             cmd.append('--verbose')
 
-        self.run(cmd, as_current_user=as_current_user)
+        cmd.append(self.name + '-db-remove')
+
+        if force:
+            cmd.append('--force')
+
+        logger.debug('Command: %s', ' '.join(cmd))
+        subprocess.check_call(cmd)
 
     def grant_database_access(
             self,
