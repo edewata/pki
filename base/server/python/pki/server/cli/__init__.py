@@ -60,7 +60,8 @@ logger = logging.getLogger(__name__)
 
 JAVA_COMMANDS = [
     r'.*-db-create$',
-    r'.*-db-remove$'
+    r'.*-db-remove$',
+    r'.*-db-init$'
 ]
 
 

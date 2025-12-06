@@ -220,7 +220,6 @@ class SubsystemDBCLI(pki.cli.CLI):
         self.parent = parent
         self.add_module(SubsystemDBConfigCLI(self))
         self.add_module(SubsystemDBInfoCLI(self))
-        self.add_module(SubsystemDBInitCLI(self))
         self.add_module(SubsystemDBEmptyCLI(self))
         self.add_module(SubsystemDBUpgradeCLI(self))
 
