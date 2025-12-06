@@ -1162,7 +1162,10 @@ class PKISubsystem(object):
 
     def create_database(self):
 
-        cmd = [self.name + '-db-create']
+        cmd = [
+            'pki-server',
+            '-i', self.instance.name
+        ]
 
         if logger.isEnabledFor(logging.DEBUG):
             cmd.append('--debug')
@@ -1170,7 +1173,10 @@ class PKISubsystem(object):
         elif logger.isEnabledFor(logging.INFO):
             cmd.append('--verbose')
 
-        self.run(cmd)
+        cmd.append(self.name + '-db-create')
+
+        logger.debug('Command: %s', ' '.join(cmd))
+        subprocess.check_call(cmd)
 
     # pylint: disable=W0613
     def init_database(
