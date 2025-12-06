@@ -55,7 +55,20 @@ jobs:
               -s CA \
               -D pki_ds_url=ldap://ds.example.com:3389 \
               -D pki_enable_access_log=False \
-              -v
+              --debug \
+              > >(tee stdout) 2> >(tee stderr >&2)
+
+      - name: Check for warnings
+        if: always()
+        run: |
+          sed -n '/^WARNING:/p' stderr | tee output
+          wc -l output
+
+      - name: Check external commands
+        if: always()
+        run: |
+          sed -n '/^DEBUG: Command:/p' stderr | tee output
+          wc -l output
 
       - name: Check system cert keys
         run: |
