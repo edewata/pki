@@ -46,6 +46,22 @@ jobs:
               --network-alias=pki.example.com \
               pki
 
+      - name: Check pki files
+        run: |
+          docker exec pki ls -l /usr/share/pki
+
+      - name: Check pki lib
+        run: |
+          docker exec pki ls -l /usr/share/pki/lib
+
+      - name: Check pki server lib
+        run: |
+          docker exec pki ls -l /usr/share/pki/server/lib
+
+      - name: Check pki server common lib
+        run: |
+          docker exec pki ls -l /usr/share/pki/server/common/lib
+
       - name: Check pki CLI help messages
         run: |
           docker exec pki pki info --help
