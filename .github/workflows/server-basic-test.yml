@@ -59,6 +59,15 @@ jobs:
                   -e 's/^\(\S*\) *\S* *\(\S*\) *\(\S*\) *\S* *\S* *\S* *\S* *\(.*\)$/\1 \2 \3 \4/' \
               | tee output
 
+      - name: Check PKI server lib dir
+        run: |
+          # check file types, owners, and permissions
+          docker exec pki ls -l /usr/share/pki/server/lib \
+              | sed \
+                  -e '/^total/d' \
+                  -e 's/^\(\S*\) *\S* *\(\S*\) *\(\S*\) *\S* *\S* *\S* *\S* *\(.*\)$/\1 \2 \3 \4/' \
+              | tee output
+
       - name: Check PKI server common lib dir
         run: |
           # check file types, owners, and permissions
@@ -68,10 +77,19 @@ jobs:
                   -e 's/^\(\S*\) *\S* *\(\S*\) *\(\S*\) *\S* *\S* *\S* *\S* *\(.*\)$/\1 \2 \3 \4/' \
               | tee output
 
-      - name: Check PKI server lib dir
+      - name: Check CA lib dir
         run: |
           # check file types, owners, and permissions
-          docker exec pki ls -l /usr/share/pki/server/lib \
+          docker exec pki ls -l /usr/share/pki/ca/webapps/ca/WEB-INF/lib \
+              | sed \
+                  -e '/^total/d' \
+                  -e 's/^\(\S*\) *\S* *\(\S*\) *\(\S*\) *\S* *\S* *\S* *\S* *\(.*\)$/\1 \2 \3 \4/' \
+              | tee output
+
+      - name: Check KRA lib dir
+        run: |
+          # check file types, owners, and permissions
+          docker exec pki ls -l /usr/share/pki/kra/webapps/kra/WEB-INF/lib \
               | sed \
                   -e '/^total/d' \
                   -e 's/^\(\S*\) *\S* *\(\S*\) *\(\S*\) *\S* *\S* *\S* *\S* *\(.*\)$/\1 \2 \3 \4/' \

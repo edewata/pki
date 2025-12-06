@@ -50,6 +50,31 @@ jobs:
           FEDORA_VERSION=$(docker exec pki sed -n 's/^VERSION_ID=//p' /etc/os-release)
           echo "FEDORA_VERSION=$FEDORA_VERSION" >> $GITHUB_ENV
 
+      - name: Check resteasy lib
+        if: always()
+        run: |
+          docker exec pki ls -l /usr/share/java
+
+      - name: Check pki files
+        if: always()
+        run: |
+          docker exec pki ls -l /usr/share/pki
+
+      - name: Check pki lib
+        if: always()
+        run: |
+          docker exec pki ls -l /usr/share/pki/lib
+
+      - name: Check pki server lib
+        if: always()
+        run: |
+          docker exec pki ls -l /usr/share/pki/server/lib
+
+      - name: Check pki server common lib
+        if: always()
+        run: |
+          docker exec pki ls -l /usr/share/pki/server/common/lib
+
       - name: Check pki CLI help messages
         run: |
           docker exec pki pki info --help
@@ -94,6 +119,7 @@ jobs:
           wc -l output
 
       - name: Check PKI server base dir after installation
+        if: always()
         run: |
           # check file types, owners, and permissions
           docker exec pki ls -l /var/lib/pki/pki-tomcat \
@@ -119,6 +145,7 @@ jobs:
           diff expected output
 
       - name: Check PKI server conf dir after installation
+        if: always()
         run: |
           # check file types, owners, and permissions
           docker exec pki ls -l /etc/pki/pki-tomcat \
@@ -142,6 +169,26 @@ jobs:
           -rw-rw---- pkiuser pkiuser serverCertNick.conf
           -rw-rw---- pkiuser pkiuser tomcat.conf
           lrwxrwxrwx pkiuser pkiuser web.xml -> /etc/tomcat/web.xml
+          EOF
+
+          diff expected output
+
+      - name: Check PKI server NSS database dir after installation
+        if: always()
+        run: |
+          # check file types, owners, and permissions
+          docker exec pki ls -l /etc/pki/pki-tomcat/alias \
+              | sed \
+                  -e '/^total/d' \
+                  -e 's/^\(\S*\) *\S* *\(\S*\) *\(\S*\) *\S* *\S* *\S* *\S* *\(.*\)$/\1 \2 \3 \4/' \
+              | tee output
+
+          # TODO: review permissions
+          cat > expected << EOF
+          -rw-r--r-- pkiuser pkiuser ca.crt
+          -rw------- pkiuser pkiuser cert9.db
+          -rw------- pkiuser pkiuser key4.db
+          -rw------- pkiuser pkiuser pkcs11.txt
           EOF
 
           diff expected output
@@ -206,6 +253,7 @@ jobs:
           diff expected output
 
       - name: Check CA base dir
+        if: always()
         run: |
           # check file types, owners, and permissions
           docker exec pki ls -l /var/lib/pki/pki-tomcat/ca \
@@ -227,6 +275,7 @@ jobs:
           diff expected output
 
       - name: Check CA conf dir
+        if: always()
         run: |
           # check file types, owners, and permissions
           docker exec pki ls -l /var/lib/pki/pki-tomcat/conf/ca \
@@ -404,6 +453,7 @@ jobs:
 
           # issue audit signing cert
           docker exec pki pki \
+              --debug \
               -n caadmin \
               ca-cert-issue \
               --profile caAuditSigningCert \
