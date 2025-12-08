@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.math.BigInteger;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyPair;
@@ -90,6 +91,24 @@ public class CACertCreateCLI extends CommandCLI {
         option.setArgName("ID");
         options.addOption(option);
 
+        option = new Option(null, "request-format", true, "Certificate request format: pkcs10 (default), crmf");
+        option.setArgName("format");
+        options.addOption(option);
+
+        option = new Option(null, "csr", true, "CSR path");
+        option.setArgName("path");
+        options.addOption(option);
+
+        option = new Option(null, "csr-format", true, "CSR format: PEM (default), DER");
+        option.setArgName("format");
+        options.addOption(option);
+
+        option = new Option(null, "dns-names", true, "Comma-separated list of DNS names");
+        option.setArgName("names");
+        options.addOption(option);
+
+        options.addOption(null, "adjust-validity", false, "Adjust validity");
+
         option = new Option(null, "profile", true, "Bootstrap profile path");
         option.setArgName("path");
         options.addOption(option);
@@ -125,15 +144,49 @@ public class CACertCreateCLI extends CommandCLI {
         option = new Option(null, "cert", true, "Certificate path");
         option.setArgName("path");
         options.addOption(option);
+
+        options.addOption(null, "import-cert", false, "Import certificate into CA database.");
     }
 
     @Override
     public void execute(CommandLine cmd) throws Exception {
 
-        String requestID = cmd.getOptionValue("request");
-        if (requestID == null) {
-            throw new CLIException("Missing request ID");
+        String value = cmd.getOptionValue("request");
+        RequestId requestID = null;
+        if (value != null) {
+            requestID = new RequestId(value);
         }
+
+        String requestFormat = cmd.getOptionValue("request-format", "pkcs10");
+
+        String csrPath = cmd.getOptionValue("csr");
+        String csrFormat = cmd.getOptionValue("csr-format");
+
+        // load CSR if provided
+        byte[] csrBytes = null;
+        if (csrPath != null) {
+            logger.info("Importing " + csrPath);
+            csrBytes = Files.readAllBytes(Paths.get(csrPath));
+
+            if (csrFormat == null || "PEM".equalsIgnoreCase(csrFormat)) {
+                csrBytes = CertUtil.parseCSR(new String(csrBytes));
+
+            } else if ("DER".equalsIgnoreCase(csrFormat)) {
+                // nothing to do
+
+            } else {
+                throw new Exception("Unsupported CSR format: " + csrFormat);
+            }
+        }
+
+        value = cmd.getOptionValue("dns-names");
+        String[] dnsNames = null;
+        if (value != null) {
+            dnsNames = value.split(",");
+        }
+
+        value = cmd.getOptionValue("adjust-validity", "false");
+        boolean adjustValidity = Boolean.parseBoolean(value);
 
         String profilePath = cmd.getOptionValue("profile");
         if (profilePath == null) {
@@ -206,10 +259,42 @@ public class CACertCreateCLI extends CommandCLI {
         dbSubsystem.init(dbConfig, ldapConfig, passwordStore);
 
         try {
+            // import CSR if provided
+            if (csrBytes != null) {
+                CertRequestRepository requestRepository = new CertRequestRepository(secureRandom, dbSubsystem);
+                requestRepository.init();
+
+                // generate request ID if not provided
+                if (requestID == null) {
+                    if (requestRepository.getIDGenerator() != IDGenerator.RANDOM) {
+                        throw new CLIException("Unable to generate random request ID");
+                    }
+                    requestID = requestRepository.createRequestID();
+                }
+
+                Request request = requestRepository.createRequest(requestID, "enrollment");
+
+                requestRepository.updateRequest(
+                        request,
+                        requestFormat,
+                        csrBytes,
+                        dnsNames);
+
+                requestRepository.updateRequest(
+                        request,
+                        profileConfig.getString("id"),
+                        profileConfig.getString("profileIDMapping"),
+                        profileConfig.getString("profileSetIDMapping"),
+                        adjustValidity);
+
+                requestRepository.updateRequest(request);
+            }
+
+            // create cert
             CertRequestRepository requestRepository = new CertRequestRepository(secureRandom, dbSubsystem);
             requestRepository.init();
 
-            Request requestRecord = requestRepository.readRequest(new RequestId(requestID));
+            Request requestRecord = requestRepository.readRequest(requestID);
             if (requestRecord == null) {
                 throw new CLIException("Certificate request not found: " + requestID);
             }

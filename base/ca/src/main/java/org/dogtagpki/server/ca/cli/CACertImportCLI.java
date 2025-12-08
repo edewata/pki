@@ -15,9 +15,11 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.io.IOUtils;
 import org.dogtagpki.cli.CLI;
+import org.dogtagpki.cli.CLIException;
 import org.dogtagpki.cli.CommandCLI;
 import org.dogtagpki.jss.tomcat.TomcatJSS;
 import org.dogtagpki.server.ca.CAEngineConfig;
+import org.dogtagpki.util.cert.CertUtil;
 import org.mozilla.jss.netscape.security.util.Cert;
 import org.mozilla.jss.netscape.security.x509.X509CertImpl;
 import org.slf4j.Logger;
@@ -33,6 +35,7 @@ import com.netscape.cmscore.base.FileConfigStorage;
 import com.netscape.cmscore.dbs.CertRecord;
 import com.netscape.cmscore.dbs.CertificateRepository;
 import com.netscape.cmscore.dbs.DBSubsystem;
+import com.netscape.cmscore.dbs.Repository.IDGenerator;
 import com.netscape.cmscore.ldapconn.LDAPAuthenticationConfig;
 import com.netscape.cmscore.ldapconn.LDAPConfig;
 import com.netscape.cmscore.ldapconn.LDAPConnectionConfig;
@@ -77,6 +80,24 @@ public class CACertImportCLI extends CommandCLI {
         option = new Option(null, "request", true, "Request ID");
         option.setArgName("ID");
         options.addOption(option);
+
+        option = new Option(null, "request-format", true, "Certificate request format: pkcs10 (default), crmf");
+        option.setArgName("format");
+        options.addOption(option);
+
+        option = new Option(null, "csr", true, "CSR path");
+        option.setArgName("path");
+        options.addOption(option);
+
+        option = new Option(null, "csr-format", true, "CSR format: PEM (default), DER");
+        option.setArgName("format");
+        options.addOption(option);
+
+        option = new Option(null, "dns-names", true, "Comma-separated list of DNS names");
+        option.setArgName("names");
+        options.addOption(option);
+
+        options.addOption(null, "adjust-validity", false, "Adjust validity");
     }
 
     @Override
@@ -93,38 +114,71 @@ public class CACertImportCLI extends CommandCLI {
             throw new Exception("Missing bootstrap profile path");
         }
 
-        if (!cmd.hasOption("request")) {
-            throw new Exception("Missing request ID");
+        String value = cmd.getOptionValue("request");
+        RequestId requestID = null;
+        if (value != null) {
+            requestID = new RequestId(value);
         }
+
+        String requestFormat = cmd.getOptionValue("request-format", "pkcs10");
+
+        String csrPath = cmd.getOptionValue("csr");
+        String csrFormat = cmd.getOptionValue("csr-format");
+
+        value = cmd.getOptionValue("dns-names");
+        String[] dnsNames = null;
+        if (value != null) {
+            dnsNames = value.split(",");
+        }
+
+        value = cmd.getOptionValue("adjust-validity", "false");
+        boolean adjustValidity = Boolean.parseBoolean(value);
 
         // initialize JSS in pki-server CLI
         TomcatJSS tomcatjss = TomcatJSS.getInstance();
         tomcatjss.loadConfig();
         tomcatjss.init();
 
-        // load input certificate
-        byte[] bytes;
+        // load CSR if provided
+        byte[] csrBytes = null;
+        if (csrPath != null) {
+            logger.info("Importing " + csrPath);
+            csrBytes = Files.readAllBytes(Paths.get(csrPath));
+
+            if (csrFormat == null || "PEM".equalsIgnoreCase(csrFormat)) {
+                csrBytes = CertUtil.parseCSR(new String(csrBytes));
+
+            } else if ("DER".equalsIgnoreCase(csrFormat)) {
+                // nothing to do
+
+            } else {
+                throw new Exception("Unsupported CSR format: " + csrFormat);
+            }
+        }
+
+        // load certificate
+        byte[] certBytes;
         if (certPath == null) {
             // read from standard input
-            bytes = IOUtils.toByteArray(System.in);
+            certBytes = IOUtils.toByteArray(System.in);
 
         } else {
             // read from file
-            bytes = Files.readAllBytes(Paths.get(certPath));
+            certBytes = Files.readAllBytes(Paths.get(certPath));
         }
 
         if (certFormat == null || "PEM".equalsIgnoreCase(certFormat)) {
-            bytes = Cert.parseCertificate(new String(bytes));
+            certBytes = Cert.parseCertificate(new String(certBytes));
 
         } else if ("DER".equalsIgnoreCase(certFormat)) {
             // nothing to do
 
         } else {
-            throw new Exception("Unsupported format: " + certFormat);
+            throw new Exception("Unsupported certificate format: " + certFormat);
         }
 
         // must be done after JSS initialization for RSA/PSS
-        X509CertImpl cert = new X509CertImpl(bytes);
+        X509CertImpl cert = new X509CertImpl(certBytes);
 
         String instanceDir = CMS.getInstanceDir();
 
@@ -177,9 +231,39 @@ public class CACertImportCLI extends CommandCLI {
         dbSubsystem.setSocketFactory(socketFactory);
         dbSubsystem.init(dbConfig, ldapConfig, passwordStore);
 
-        RequestId requestID = new RequestId(cmd.getOptionValue("request"));
-
         try {
+            // import CSR if provided
+            if (csrBytes != null) {
+                CertRequestRepository requestRepository = new CertRequestRepository(secureRandom, dbSubsystem);
+                requestRepository.init();
+
+                // generate request ID if not provided
+                if (requestID == null) {
+                    if (requestRepository.getIDGenerator() != IDGenerator.RANDOM) {
+                        throw new CLIException("Unable to generate random request ID");
+                    }
+                    requestID = requestRepository.createRequestID();
+                }
+
+                Request request = requestRepository.createRequest(requestID, "enrollment");
+
+                requestRepository.updateRequest(
+                        request,
+                        requestFormat,
+                        csrBytes,
+                        dnsNames);
+
+                requestRepository.updateRequest(
+                        request,
+                        profileConfig.getString("id"),
+                        profileConfig.getString("profileIDMapping"),
+                        profileConfig.getString("profileSetIDMapping"),
+                        adjustValidity);
+
+                requestRepository.updateRequest(request);
+            }
+
+            // import cert
             CertificateRepository certificateRepository = new CertificateRepository(secureRandom, dbSubsystem);
             certificateRepository.init();
 
