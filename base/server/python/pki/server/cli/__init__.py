@@ -93,7 +93,8 @@ JAVA_COMMANDS = [
     r'[^-]*-sd-type-add$',
     r'[^-]*-sd-subsystem-find$',
     r'[^-]*-sd-subsystem-add$',
-    r'[^-]*-sd-subsystem-del$'
+    r'[^-]*-sd-subsystem-del$',
+    r'[^-]*-range-update$'
 ]
 
 
