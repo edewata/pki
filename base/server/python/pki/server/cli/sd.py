@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class SDCLI(pki.cli.CLI):
 
     def __init__(self):
-        super().__init__('sd', 'Security domain management commands')
+        super().__init__('sd', 'Security domain management commands', deprecated=True)
 
         self.add_module(SDCreateCLI())
         self.add_module(SDTypeCLI())
@@ -27,7 +27,7 @@ class SDCLI(pki.cli.CLI):
 class SDCreateCLI(pki.cli.CLI):
 
     def __init__(self):
-        super().__init__('create', 'Create security domain')
+        super().__init__('create', 'Create security domain', deprecated=True)
 
     def create_parser(self, subparsers=None):
 
@@ -61,6 +61,10 @@ class SDCreateCLI(pki.cli.CLI):
         print()
 
     def execute(self, argv, args=None):
+
+        logger.warning(
+            'The pki-server sd-create has been deprecated. '
+            'Use pki-server ca-sd-create instead.')
 
         if not args:
             args = self.parser.parse_args(args=argv)
@@ -96,7 +100,7 @@ class SDCreateCLI(pki.cli.CLI):
 class SDTypeCLI(pki.cli.CLI):
 
     def __init__(self):
-        super().__init__('type', 'Security domain subsystem type management commands')
+        super().__init__('type', 'Security domain subsystem type management commands', deprecated=True)
 
         self.add_module(SDTypeAddCLI())
 
@@ -104,7 +108,7 @@ class SDTypeCLI(pki.cli.CLI):
 class SDTypeAddCLI(pki.cli.CLI):
 
     def __init__(self):
-        super().__init__('add', 'Add subsystem type to security domain')
+        super().__init__('add', 'Add subsystem type to security domain', deprecated=True)
 
     def create_parser(self, subparsers=None):
 
@@ -139,6 +143,10 @@ class SDTypeAddCLI(pki.cli.CLI):
         print()
 
     def execute(self, argv, args=None):
+
+        logger.warning(
+            'The pki-server sd-type-add has been deprecated. '
+            'Use pki-server ca-sd-type-add instead.')
 
         if not args:
             args = self.parser.parse_args(args=argv)
@@ -176,7 +184,7 @@ class SDTypeAddCLI(pki.cli.CLI):
 class SDSubsystemCLI(pki.cli.CLI):
 
     def __init__(self):
-        super().__init__('subsystem', 'Security domain subsystem management commands')
+        super().__init__('subsystem', 'Security domain subsystem management commands', deprecated=True)
 
         self.add_module(SDSubsystemFindCLI())
         self.add_module(SDSubsystemAddCLI())
@@ -186,7 +194,7 @@ class SDSubsystemCLI(pki.cli.CLI):
 class SDSubsystemFindCLI(pki.cli.CLI):
 
     def __init__(self):
-        super().__init__('find', 'Find security domain subsystems')
+        super().__init__('find', 'Find security domain subsystems', deprecated=True)
 
     def create_parser(self, subparsers=None):
 
@@ -218,6 +226,10 @@ class SDSubsystemFindCLI(pki.cli.CLI):
         print()
 
     def execute(self, argv, args=None):
+
+        logger.warning(
+            'The pki-server sd-subsystem-find has been deprecated. '
+            'Use pki-server ca-sd-subsystem-find instead.')
 
         if not args:
             args = self.parser.parse_args(args=argv)
@@ -252,7 +264,7 @@ class SDSubsystemFindCLI(pki.cli.CLI):
 class SDSubsystemAddCLI(pki.cli.CLI):
 
     def __init__(self):
-        super().__init__('add', 'Add security domain subsystem')
+        super().__init__('add', 'Add security domain subsystem', deprecated=True)
 
     def create_parser(self, subparsers=None):
 
@@ -305,6 +317,10 @@ class SDSubsystemAddCLI(pki.cli.CLI):
         print()
 
     def execute(self, argv, args=None):
+
+        logger.warning(
+            'The pki-server sd-subsystem-add has been deprecated. '
+            'Use pki-server ca-sd-subsystem-add instead.')
 
         if not args:
             args = self.parser.parse_args(args=argv)
@@ -366,7 +382,7 @@ class SDSubsystemAddCLI(pki.cli.CLI):
 class SDSubsystemRemoveCLI(pki.cli.CLI):
 
     def __init__(self):
-        super().__init__('del', 'Remove security domain subsystem')
+        super().__init__('del', 'Remove security domain subsystem', deprecated=True)
 
     def create_parser(self, subparsers=None):
 
@@ -402,6 +418,10 @@ class SDSubsystemRemoveCLI(pki.cli.CLI):
 
     def execute(self, argv, args=None):
 
+        logger.warning(
+            'The pki-server sd-subsystem-del has been deprecated. '
+            'Use pki-server ca-sd-subsystem-del instead.')
+
         if not args:
             args = self.parser.parse_args(args=argv)
 
@@ -434,3 +454,243 @@ class SDSubsystemRemoveCLI(pki.cli.CLI):
             sys.exit(1)
 
         subsystem.remove_security_domain_subsystem(subsystem_id)
+
+
+class SubsystemSDCLI(pki.cli.CLI):
+
+    def __init__(self, parent):
+        super().__init__('sd', 'Security domain management commands')
+        self.parent = parent
+
+        self.add_module(SubsystemSDCreateCLI(self))
+        self.add_module(SubsystemSDTypeCLI(self))
+        self.add_module(SubsystemSDSubsystemCLI(self))
+
+
+class SubsystemSDCreateCLI(pki.cli.CLI):
+
+    def __init__(self, parent):
+        super().__init__('create', 'Create security domain')
+        self.parent = parent
+
+    def create_parser(self, subparsers=None):
+
+        self.parser = argparse.ArgumentParser(
+            self.get_full_name(),
+            add_help=False)
+        self.parser.add_argument(
+            '-i',
+            '--instance',
+            default='pki-tomcat')
+        self.parser.add_argument('--name')
+        self.parser.add_argument(
+            '-v',
+            '--verbose',
+            action='store_true')
+        self.parser.add_argument(
+            '--debug',
+            action='store_true')
+        self.parser.add_argument(
+            '--help',
+            action='store_true')
+
+    def print_help(self):
+        print('Usage: pki-server %s-sd-create [OPTIONS]' % self.parent.parent.name)
+        print()
+        print('  -i, --instance <instance ID>       Instance ID (default: pki-tomcat)')
+        print('      --name <name>                  Security domain name')
+        print('  -v, --verbose                      Run in verbose mode.')
+        print('      --debug                        Run in debug mode.')
+        print('      --help                         Show help message.')
+        print()
+
+
+class SubsystemSDTypeCLI(pki.cli.CLI):
+
+    def __init__(self, parent):
+        super().__init__('type', 'Security domain subsystem type management commands')
+        self.parent = parent
+
+        self.add_module(SubsystemSDTypeAddCLI(self))
+
+
+class SubsystemSDTypeAddCLI(pki.cli.CLI):
+
+    def __init__(self, parent):
+        super().__init__('add', 'Add subsystem type to security domain')
+        self.parent = parent
+
+    def create_parser(self, subparsers=None):
+
+        self.parser = argparse.ArgumentParser(
+            self.get_full_name(),
+            add_help=False)
+        self.parser.add_argument(
+            '-i',
+            '--instance',
+            default='pki-tomcat')
+        self.parser.add_argument(
+            '-v',
+            '--verbose',
+            action='store_true')
+        self.parser.add_argument(
+            '--debug',
+            action='store_true')
+        self.parser.add_argument(
+            '--help',
+            action='store_true')
+        self.parser.add_argument(
+            'subsystem_type',
+            nargs='?')
+
+    def print_help(self):
+        print('Usage: pki-server %s-sd-type-add [OPTIONS] <subsystem_type>' % self.parent.parent.parent.name)
+        print()
+        print('  -i, --instance <instance ID>       Instance ID (default: pki-tomcat)')
+        print('  -v, --verbose                      Run in verbose mode.')
+        print('      --debug                        Run in debug mode.')
+        print('      --help                         Show help message.')
+        print()
+
+
+class SubsystemSDSubsystemCLI(pki.cli.CLI):
+
+    def __init__(self, parent):
+        super().__init__('subsystem', 'Security domain subsystem management commands')
+        self.parent = parent
+
+        self.add_module(SubsystemSDSubsystemFindCLI(self))
+        self.add_module(SubsystemSDSubsystemAddCLI(self))
+        self.add_module(SubsystemSDSubsystemRemoveCLI(self))
+
+
+class SubsystemSDSubsystemFindCLI(pki.cli.CLI):
+
+    def __init__(self, parent):
+        super().__init__('find', 'Find security domain subsystems')
+        self.parent = parent
+
+    def create_parser(self, subparsers=None):
+
+        self.parser = argparse.ArgumentParser(
+            self.get_full_name(),
+            add_help=False)
+        self.parser.add_argument(
+            '-i',
+            '--instance',
+            default='pki-tomcat')
+        self.parser.add_argument(
+            '-v',
+            '--verbose',
+            action='store_true')
+        self.parser.add_argument(
+            '--debug',
+            action='store_true')
+        self.parser.add_argument(
+            '--help',
+            action='store_true')
+
+    def print_help(self):
+        print('Usage: pki-server %s-sd-subsystem-find [OPTIONS]' % self.parent.parent.parent.name)
+        print()
+        print('  -i, --instance <instance ID>       Instance ID (default: pki-tomcat)')
+        print('  -v, --verbose                      Run in verbose mode.')
+        print('      --debug                        Run in debug mode.')
+        print('      --help                         Show help message.')
+        print()
+
+
+class SubsystemSDSubsystemAddCLI(pki.cli.CLI):
+
+    def __init__(self, parent):
+        super().__init__('add', 'Add security domain subsystem')
+        self.parent = parent
+
+    def create_parser(self, subparsers=None):
+
+        self.parser = argparse.ArgumentParser(
+            self.get_full_name(),
+            add_help=False)
+        self.parser.add_argument(
+            '-i',
+            '--instance',
+            default='pki-tomcat')
+        self.parser.add_argument('--subsystem')
+        self.parser.add_argument('--hostname')
+        self.parser.add_argument('--unsecure-port')
+        self.parser.add_argument(
+            '--secure-port',
+            default='8443')
+        self.parser.add_argument(
+            '--domain-manager',
+            action='store_true')
+        self.parser.add_argument(
+            '--clone',
+            action='store_true')
+        self.parser.add_argument(
+            '-v',
+            '--verbose',
+            action='store_true')
+        self.parser.add_argument(
+            '--debug',
+            action='store_true')
+        self.parser.add_argument(
+            '--help',
+            action='store_true')
+        self.parser.add_argument(
+            'subsystem_id',
+            nargs='?')
+
+    def print_help(self):
+        print('Usage: pki-server %s-sd-subsystem-add [OPTIONS] <subsystem ID>' % self.parent.parent.parent.name)
+        print()
+        print('  -i, --instance <instance ID>       Instance ID (default: pki-tomcat)')
+        print('      --subsystem <type>             Subsystem type')
+        print('      --hostname <hostname>          Hostname')
+        print('      --unsecure-port <port>         Unsecure port')
+        print('      --secure-port <port>           Secure port (default: 8443)')
+        print('      --domain-manager               Domain manager')
+        print('      --clone                        Clone')
+        print('  -v, --verbose                      Run in verbose mode.')
+        print('      --debug                        Run in debug mode.')
+        print('      --help                         Show help message.')
+        print()
+
+
+class SubsystemSDSubsystemRemoveCLI(pki.cli.CLI):
+
+    def __init__(self, parent):
+        super().__init__('del', 'Remove security domain subsystem')
+        self.parent = parent
+
+    def create_parser(self, subparsers=None):
+
+        self.parser = argparse.ArgumentParser(
+            self.get_full_name(),
+            add_help=False)
+        self.parser.add_argument(
+            '-i',
+            '--instance',
+            default='pki-tomcat')
+        self.parser.add_argument(
+            '-v',
+            '--verbose',
+            action='store_true')
+        self.parser.add_argument(
+            '--debug',
+            action='store_true')
+        self.parser.add_argument(
+            '--help',
+            action='store_true')
+        self.parser.add_argument(
+            'subsystem_id',
+            nargs='?')
+
+    def print_help(self):
+        print('Usage: pki-server %s-sd-subsystem-del [OPTIONS] <subsystem ID>' % self.parent.parent.parent.name)
+        print()
+        print('  -i, --instance <instance ID>       Instance ID (default: pki-tomcat)')
+        print('  -v, --verbose                      Run in verbose mode.')
+        print('      --debug                        Run in debug mode.')
+        print('      --help                         Show help message.')
+        print()

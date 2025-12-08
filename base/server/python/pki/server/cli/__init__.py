@@ -88,7 +88,12 @@ JAVA_COMMANDS = [
     r'ca-cert-find$',
     r'ca-cert-create$',
     r'ca-cert-import$',
-    r'ca-cert-del$'
+    r'ca-cert-del$',
+    r'[^-]*-sd-create$',
+    r'[^-]*-sd-type-add$',
+    r'[^-]*-sd-subsystem-find$',
+    r'[^-]*-sd-subsystem-add$',
+    r'[^-]*-sd-subsystem-del$'
 ]
 
 
