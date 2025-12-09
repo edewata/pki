@@ -2533,7 +2533,11 @@ class CASubsystem(PKISubsystem):
         TODO: It should also work with file-based profile database.
         '''
 
-        cmd = [self.name + '-profile-import']
+        cmd = [
+            'pki-server',
+            '-i', self.instance.name,
+            self.name + '-profile-import'
+        ]
 
         if input_folder:
             cmd.extend(['--input-folder', input_folder])
@@ -2544,7 +2548,8 @@ class CASubsystem(PKISubsystem):
         elif logger.isEnabledFor(logging.INFO):
             cmd.append('--verbose')
 
-        self.run(cmd, as_current_user=as_current_user)
+        logger.debug('Command: %s', ' '.join(cmd))
+        subprocess.check_call(cmd)
 
     def find_certs(
             self,
