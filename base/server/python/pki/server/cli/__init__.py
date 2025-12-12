@@ -71,6 +71,7 @@ JAVA_COMMANDS = [
     r'[^-]*-db-access-grant$',
     r'[^-]*-db-access-revoke$',
     r'[^-]*-db-repl-enable$',
+    r'[^-]*-db-repl-agmt-add$',
     r'[^-]*-user-find$',
     r'[^-]*-user-show$',
     r'[^-]*-user-add$',
