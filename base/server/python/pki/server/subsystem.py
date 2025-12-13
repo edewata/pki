@@ -1434,7 +1434,11 @@ class PKISubsystem(object):
             pki.util.store_properties(ldap_config_file, ldap_config)
             self.instance.chown(tmpdir)
 
-            cmd = [self.name + '-db-repl-agmt-init']
+            cmd = [
+                'pki-server',
+                '-i', self.instance.name,
+                self.name + '-db-repl-agmt-init'
+            ]
 
             if ldap_config_file:
                 cmd.extend(['--ldap-config', ldap_config_file])
@@ -1447,7 +1451,8 @@ class PKISubsystem(object):
 
             cmd.append(name)
 
-            self.run(cmd)
+            logger.debug('Command: %s', ' '.join(cmd))
+            subprocess.check_call(cmd)
 
         finally:
             shutil.rmtree(tmpdir)
