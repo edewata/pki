@@ -20,22 +20,20 @@
 # All rights reserved.
 #
 
-from __future__ import absolute_import
 import base64
 import binascii
+import datetime
+import grp
 import json
 import logging
 import os
+import pwd
 import re
 import shutil
+import six
 import stat
 import subprocess
 import tempfile
-import datetime
-import grp
-import pwd
-
-import six
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -46,6 +44,7 @@ except ImportError:
     selinux = None
 
 import pki
+import pki.cli
 
 PRIVATE_KEY_HEADER = '-----BEGIN PRIVATE KEY-----'
 PRIVATE_KEY_FOOTER = '-----END PRIVATE KEY-----'
@@ -240,7 +239,7 @@ def normalize_token(token):
     return token
 
 
-class NSSDatabase(object):
+class NSSDatabase:
 
     def __init__(self, directory=None,
                  token=None,
@@ -251,7 +250,8 @@ class NSSDatabase(object):
                  passwords=None,
                  password_conf=None,
                  user=None,
-                 group=None):
+                 group=None,
+                 engine=None):
         self.user = user
         self.group = group
 
@@ -299,6 +299,8 @@ class NSSDatabase(object):
 
         self.passwords = passwords
         self.password_conf = password_conf
+
+        self.engine = engine
 
     def run(self,
             cmd,
