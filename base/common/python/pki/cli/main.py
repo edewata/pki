@@ -84,6 +84,7 @@ class PKICLI(pki.cli.CLI):
         self.ignore_cert_status = False
         self.ignore_banner = False
         self.skip_revocation_check = False
+        self.temp_dir = None
         self.exit_on_error = False
 
         self.extra_commands = JAVA_COMMANDS.copy()
@@ -131,6 +132,8 @@ class PKICLI(pki.cli.CLI):
         self.parser.add_argument(
             '--skip-revocation-check',
             action='store_true')
+        self.parser.add_argument('--tmp')
+
         self.parser.add_argument(
             '-e',
             '--exit-on-error',
@@ -202,6 +205,7 @@ class PKICLI(pki.cli.CLI):
               'certificate validity statuses')
         print('      --ignore-banner            Ignore banner')
         print('      --skip-revocation-check    Do not perform revocation check')
+        print('      --tmp <path>               Temporary directory')
         print('  -e, --exit-on-error            Exit on error.')
         print()
         print('  -v, --verbose                  Run in verbose mode.')
@@ -330,6 +334,9 @@ class PKICLI(pki.cli.CLI):
         if self.skip_revocation_check:
             cmd.extend(['--skip-revocation-check'])
 
+        if self.temp_dir:
+            cmd.extend(['--tmp', self.temp_dir])
+
         if self.exit_on_error:
             cmd.extend(['--exit-on-error'])
 
@@ -407,6 +414,7 @@ class PKICLI(pki.cli.CLI):
         self.ignore_cert_status = args.ignore_cert_status
         self.ignore_banner = args.ignore_banner
         self.skip_revocation_check = args.skip_revocation_check
+        self.temp_dir = args.tmp
         self.exit_on_error = args.exit_on_error
 
         command = None

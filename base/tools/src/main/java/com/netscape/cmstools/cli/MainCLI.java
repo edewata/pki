@@ -253,6 +253,10 @@ public class MainCLI extends CLI {
         option.setArgName("format");
         options.addOption(option);
 
+        option = new Option(null, "tmp", true, "Temporary directory");
+        option.setArgName("path");
+        options.addOption(option);
+
         options.addOption("e", "exit-on-error", false, "Exit on error.");
 
         options.addOption("v", "verbose", false, "Run in verbose mode.");
@@ -502,6 +506,7 @@ public class MainCLI extends CLI {
         config.setCertRevocationVerify(!cmd.hasOption("skip-revocation-check"));
         optionsParsed = true;
 
+        tempDir = cmd.getOptionValue("tmp");
         exitOnError = cmd.hasOption("e");
 
         return cmd;

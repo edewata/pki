@@ -21,8 +21,15 @@
 
 import argparse
 import collections
+import grp
 import logging
+import os
+import pwd
+import shutil
 from six import itervalues
+import subprocess
+import tempfile
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -243,4 +250,114 @@ class CLI(object):
 
 class CLIException(Exception):
 
-    pass
+    def __init__(self, message, code=-1):
+        super().__init__(message)
+
+        self.code = code
+
+
+class CLIEngine:
+
+    def __init__(
+            self,
+            directory,
+            password_conf,
+            user=None,
+            group=None):
+
+        self.directory = directory
+        self.password_conf = password_conf
+        self.user = user
+        self.group = group
+
+        self.temp_dir = tempfile.mkdtemp()
+
+        if user:
+            self.uid = pwd.getpwnam(user).pw_uid
+            if group:
+                self.gid = grp.getgrnam(group).gr_gid
+            else:
+                self.gid = pwd.getpwnam(user).pw_gid
+        else:
+            self.uid = os.geteuid()
+            self.gid = os.getegid()
+
+        if os.geteuid() == 0 and self.user:
+            os.chown(self.temp_dir, self.uid, self.gid)
+
+        self.command_id = 0
+
+        cmd = []
+
+        if self.user:
+            cmd.extend(['/usr/sbin/runuser', '-u', self.user, '--'])
+
+        cmd.extend([
+            'pki',
+            '-d', self.directory
+        ])
+
+        if self.password_conf:
+            cmd.extend(['-f', self.password_conf])
+
+        cmd.extend([
+            '--tmp', self.temp_dir,
+            '-'   # batch mode (no prompts)
+        ])
+
+        logger.debug('Command: %s', ' '.join(cmd))
+        self.process = subprocess.Popen(
+            cmd,
+            stdin=subprocess.PIPE)
+
+    def execute(self, cmd):
+
+        tokens = []
+        for token in cmd:
+            if ' ' in token:
+                tokens.append('"' + token + '"')
+            else:
+                tokens.append(token)
+
+        line = ' '.join(tokens)
+
+        logger.debug('Command: pki> %s', line)
+
+        self.process.stdin.write(line.encode('utf-8'))
+        self.process.stdin.write('\n'.encode('utf-8'))
+        self.process.stdin.flush()
+
+        if line == 'exit':
+            # don't wait for RC file
+            return
+
+        # wait for RC file
+        rc_file = os.path.join(self.temp_dir, 'cmd-%d.rc' % self.command_id)
+        logger.debug('Python RC file: %s', rc_file)
+
+        self.command_id = self.command_id + 1
+
+        counter = 0
+        while not os.path.exists(rc_file) and counter <= 60:
+            logger.debug('Waiting for RC file for %ds', counter)
+            time.sleep(1)
+            counter = counter + 1
+
+        with open(rc_file, 'r', encoding='utf-8') as f:
+            parts = f.read().split(':', 1)
+
+        rc = int(parts[0])
+        logger.debug('RC: %d', rc)
+
+        if len(parts) > 1:
+            message = parts[1]
+        else:
+            message = None
+        logger.debug('Message: %s', message)
+
+        if rc:
+            raise CLIException(message, code=rc)
+
+    def close(self):
+        self.execute(['exit'])
+        shutil.rmtree(self.temp_dir)
