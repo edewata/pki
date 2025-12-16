@@ -50,7 +50,9 @@ public class NSSCertCLI extends CLI {
     }
 
     public static void printCertInfo(NSSCertInfo cert) throws Exception {
-        printCertInfo(cert, new PrintWriter(System.out));
+        try (PrintWriter out = new PrintWriter(System.out)) {
+            printCertInfo(cert, out);
+        }
     }
 
     public static void printCertInfo(NSSCertInfo cert, PrintWriter out) throws Exception {

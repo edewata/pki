@@ -5,6 +5,8 @@
 //
 package com.netscape.cmstools.nss;
 
+import java.io.PrintWriter;
+
 import org.dogtagpki.cli.CLI;
 
 import com.netscape.certsrv.dbs.keydb.KeyId;
@@ -23,18 +25,24 @@ public class NSSKeyCLI extends CLI {
     }
 
     public static void printKeyInfo(KeyInfo keyInfo) throws Exception {
+        try (PrintWriter out = new PrintWriter(System.out)) {
+            printKeyInfo(keyInfo, out);
+        }
+    }
+
+    public static void printKeyInfo(KeyInfo keyInfo, PrintWriter out) throws Exception {
 
         KeyId keyID = keyInfo.getKeyId();
         if (keyID != null) {
-            System.out.println("  Key ID: " + keyID.toHexString());
+            out.println("  Key ID: " + keyID.toHexString());
         }
 
         String nickname = keyInfo.getNickname();
         if (nickname != null) {
-            System.out.println("  Nickname: " + nickname);
+            out.println("  Nickname: " + nickname);
         }
 
-        System.out.println("  Type: " + keyInfo.getType());
-        System.out.println("  Algorithm: " + keyInfo.getAlgorithm());
+        out.println("  Type: " + keyInfo.getType());
+        out.println("  Algorithm: " + keyInfo.getAlgorithm());
     }
 }

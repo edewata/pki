@@ -20,22 +20,20 @@
 # All rights reserved.
 #
 
-from __future__ import absolute_import
 import base64
 import binascii
+import datetime
+import grp
 import json
 import logging
 import os
+import pwd
 import re
 import shutil
+import six
 import stat
 import subprocess
 import tempfile
-import datetime
-import grp
-import pwd
-
-import six
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -46,6 +44,7 @@ except ImportError:
     selinux = None
 
 import pki
+import pki.cli
 
 PRIVATE_KEY_HEADER = '-----BEGIN PRIVATE KEY-----'
 PRIVATE_KEY_FOOTER = '-----END PRIVATE KEY-----'
@@ -240,7 +239,7 @@ def normalize_token(token):
     return token
 
 
-class NSSDatabase(object):
+class NSSDatabase:
 
     def __init__(self, directory=None,
                  token=None,
@@ -251,7 +250,8 @@ class NSSDatabase(object):
                  passwords=None,
                  password_conf=None,
                  user=None,
-                 group=None):
+                 group=None,
+                 engine=None):
         self.user = user
         self.group = group
 
@@ -299,6 +299,8 @@ class NSSDatabase(object):
 
         self.passwords = passwords
         self.password_conf = password_conf
+
+        self.engine = engine
 
     def run(self,
             cmd,
@@ -656,54 +658,71 @@ class NSSDatabase(object):
             op_flags=None,
             op_flags_mask=None):
 
-        cmd = [
-            'pki',
-            '-d', self.directory
-        ]
+        tmpdir = self.create_tmpdir()
+        try:
+            key_file = os.path.join(self.tmpdir, 'key.json')
 
-        if self.password_conf:
-            cmd.extend(['-f', self.password_conf])
+            cmd = []
 
-        token = self.get_effective_token(token)
-        if token:
-            cmd.extend(['--token', token])
+            if not self.engine:
+                cmd.extend([
+                    'pki',
+                    '-d', self.directory
+                ])
 
-        cmd.extend([
-            'nss-key-create',
-            '--output-format', 'json'
-        ])
+                if self.password_conf:
+                    cmd.extend(['-f', self.password_conf])
 
-        if key_type:
-            cmd.extend(['--key-type', key_type])
+            cmd.append('nss-key-create')
 
-        if key_size:
-            cmd.extend(['--key-size', key_size])
+            token = self.get_effective_token(token)
+            if token:
+                cmd.extend(['--token', token])
 
-        if key_wrap:
-            cmd.append('--key-wrap')
+            cmd.extend([
+                '--output-file', key_file,
+                '--output-format', 'json'
+            ])
 
-        if curve:
-            cmd.extend(['--curve', curve])
+            if key_type:
+                cmd.extend(['--key-type', key_type])
 
-        if ssl_ecdh:
-            cmd.append('--ssl-ecdh')
+            if key_size:
+                cmd.extend(['--key-size', key_size])
 
-        if op_flags:
-            cmd.extend(['--op-flags', op_flags])
+            if key_wrap:
+                cmd.append('--key-wrap')
 
-        if op_flags_mask:
-            cmd.extend(['--op-flags-mask', op_flags_mask])
+            if curve:
+                cmd.extend(['--curve', curve])
 
-        if logger.isEnabledFor(logging.DEBUG):
-            cmd.append('--debug')
+            if ssl_ecdh:
+                cmd.append('--ssl-ecdh')
 
-        elif logger.isEnabledFor(logging.INFO):
-            cmd.append('--verbose')
+            if op_flags:
+                cmd.extend(['--op-flags', op_flags])
 
-        result = self.run(cmd, stdout=subprocess.PIPE, check=True, text=True,
-                          runas=True)
+            if op_flags_mask:
+                cmd.extend(['--op-flags-mask', op_flags_mask])
 
-        return json.loads(result.stdout)
+            if logger.isEnabledFor(logging.DEBUG):
+                cmd.append('--debug')
+
+            elif logger.isEnabledFor(logging.INFO):
+                cmd.append('--verbose')
+
+            if self.engine:
+                self.engine.execute(cmd)
+            else:
+                self.run(cmd, check=True)
+
+            with open(key_file, 'r', encoding='utf-8') as f:
+                output = f.read()
+
+        finally:
+            shutil.rmtree(tmpdir)
+
+        return json.loads(output)
 
     def add_cert(
             self,
@@ -808,44 +827,73 @@ class NSSDatabase(object):
         In the future this will replace add_cert().
         '''
 
-        if cert_file and not cert_data:
-            with open(cert_file, 'r', encoding='utf-8') as f:
-                cert_data = f.read()
+        tmpdir = tempfile.mkdtemp()
 
-        cert_data = convert_cert(cert_data, cert_format, 'pem')
+        try:
+            # if cert_file and not cert_data:
+            #     with open(cert_file, 'r', encoding='utf-8') as f:
+            #         cert_data = f.read()
 
-        cmd = [
-            'pki',
-            '-d', self.directory
-        ]
+            # cert_data = convert_cert(cert_data, cert_format, 'pem')
 
-        if self.password_conf:
-            cmd.extend(['-f', self.password_conf])
+            if cert_data and not cert_file:
+                cert_data = convert_cert(cert_data, cert_format, 'pem')
+                if self.engine:
+                    cert_file = os.path.join(self.engine.temp_dir, 'cert.crt')
+                else:
+                    cert_file = os.path.join(tmpdir, 'cert.crt')
 
-        elif self.password_file:
-            cmd.extend(['-C', self.password_file])
+                with open(cert_file, 'w', encoding='utf-8') as f:
+                     f.write(cert_data)
 
-        token = self.get_effective_token(token)
-        if token:
-            cmd.extend(['--token', token])
+                if os.geteuid() == 0 and self.user:
+                    os.chown(cert_file, self.uid, self.gid)
 
-        cmd.extend([
-            'nss-cert-import',
-            '--format', 'PEM'
-        ])
+            token = self.get_effective_token(token)
 
-        if trust_attributes:
-            cmd.extend(['--trust', trust_attributes])
+            if token:
+                fullname = token + ':' + nickname
+            else:
+                fullname = nickname
 
-        if logger.isEnabledFor(logging.DEBUG):
-            cmd.append('--debug')
+            cmd = []
 
-        elif logger.isEnabledFor(logging.INFO):
-            cmd.append('--verbose')
+            if not self.engine:
+                cmd = [
+                    'pki',
+                    '-d', self.directory
+                ]
 
-        cmd.append(nickname)
+                if self.password_conf:
+                    cmd.extend(['-f', self.password_conf])
 
-        self.run(cmd, input=cert_data, text=True, check=True, runas=runas)
+                elif self.password_file:
+                    cmd.extend(['-C', self.password_file])
+
+            cmd.extend([
+                'nss-cert-import',
+                '--cert', cert_file,
+                '--format', 'PEM'
+            ])
+
+            if trust_attributes:
+                cmd.extend(['--trust', trust_attributes])
+
+            if logger.isEnabledFor(logging.DEBUG):
+                cmd.append('--debug')
+
+            elif logger.isEnabledFor(logging.INFO):
+                cmd.append('--verbose')
+
+            cmd.append(fullname)
+
+            if self.engine:
+                self.engine.execute(cmd)
+            else:
+                self.run(cmd, check=True)
+
+        finally:
+            shutil.rmtree(tmpdir)
 
     def add_ca_cert(
             self,
@@ -1543,24 +1591,30 @@ class NSSDatabase(object):
                 ext_conf = os.path.join(tmpdir, 'request.conf')
                 pki.util.store_properties(ext_conf, exts)
 
-            cmd = [
-                'pki',
-                '-d', self.directory
-            ]
+            cmd = []
+
+            if not self.engine:
+                cmd.extend([
+                    'pki',
+                    '-d', self.directory
+                ])
+
+                if self.password_conf:
+                    cmd.extend(['-f', self.password_conf])
+                else:
+                    password_file = self.get_password_file(self.tmpdir, token)
+                    cmd.extend(['-C', password_file])
+
+            cmd.append('nss-cert-request')
 
             token = self.get_effective_token(token)
             if token:
                 cmd.extend(['--token', token])
 
-            if self.password_conf:
-                cmd.extend(['-f', self.password_conf])
-            else:
-                password_file = self.get_password_file(self.tmpdir, token)
-                cmd.extend(['-C', password_file])
-
-            cmd.extend(['nss-cert-request'])
-            cmd.extend(['--subject', subject_dn])
-            cmd.extend(['--csr', request_file])
+            cmd.extend([
+                '--subject', subject_dn,
+                '--csr', request_file
+            ])
 
             if key_id is None and cka_id is not None:
                 key_id = '0x' + cka_id
@@ -1598,7 +1652,10 @@ class NSSDatabase(object):
             elif logger.isEnabledFor(logging.INFO):
                 cmd.append('--verbose')
 
-            self.run(cmd, check=True, runas=True)
+            if self.engine:
+                self.engine.execute(cmd)
+            else:
+                self.run(cmd, check=True)
 
         finally:
             shutil.rmtree(tmpdir)
@@ -1903,50 +1960,79 @@ class NSSDatabase(object):
         """
         logger.debug('NSSDatabase.get_trust(%s)', nickname)
 
+        rc = 0
+        stdout = None
+        stderr = None
+
         tmpdir = self.create_tmpdir()
         try:
             token = self.get_effective_token(token)
             password_file = self.get_password_file(tmpdir, token)
-            cmd = [
-                'pki',
-                '-d', self.directory
-            ]
+            output_file = os.path.join(tmpdir, 'cert.txt')
+
             fullname = nickname
 
             if token:
                 fullname = token + ':' + fullname
 
-            if self.password_conf:
-                cmd.extend(['-f', self.password_conf])
+            cmd = []
 
-            elif password_file:
-                cmd.extend(['-C', password_file])
+            if not self.engine:
+                cmd.extend([
+                    'pki',
+                    '-d', self.directory
+                ])
+
+                if self.password_conf:
+                    cmd.extend(['-f', self.password_conf])
+
+                elif password_file:
+                    cmd.extend(['-C', password_file])
 
             cmd.extend([
                 'nss-cert-show',
+                '--output-file', output_file,
                 fullname
             ])
 
-            result = self.run(cmd, capture_output=True)
+            if self.engine:
+                self.engine.execute(cmd)
+            else:
+                self.run(cmd, check=True)
+
+            if os.path.exists(output_file):
+                with open(output_file, 'r', encoding='utf-8') as f:
+                    stdout = f.read()
+
+        except pki.cli.CLIException as e:
+            rc = e.code
+
+        except subprocess.CalledProcessError as e:
+            rc = e.returncode
 
         finally:
             shutil.rmtree(tmpdir)
 
-        stdout = result.stdout.decode()
-        stderr = result.stderr.decode()
+        #rc = result.returncode
+        #stdout = result.stdout.decode()
+        #stderr = result.stderr.decode()
 
-        if stderr:
-            logger.error('stderr : %s', stderr)
+        if rc == 1:
+            return None
 
-            # TODO: use RC instead of text to determine missing cert
-            if re.search('^ERROR: Certificate not found: ', stderr, re.MULTILINE):
-                # cert not found -> return None
-                return None
+        elif rc > 1:
+        #if stderr:
+        #    logger.error('stderr : %s', stderr)
 
-            raise Exception('Unable to get certificate %s: %s' % (fullname, stderr.strip()))
+        #    # TODO: use RC instead of text to determine missing cert
+        #    if re.search('^ERROR: Certificate not found: ', stderr, re.MULTILINE):
+        #        # cert not found -> return None
+        #        return None
 
-        if result.returncode != 0:
-            raise Exception('Unable to get certificate %s: rc=%s' % (fullname, result.returncode))
+        #    raise Exception('Unable to get certificate %s: %s' % (fullname, stderr.strip()))
+
+        #if rc != 0:
+            raise Exception('Unable to get certificate %s: rc=%s' % (fullname, rc))
 
         # TODO: use JSON instead of text to get cert trust
         re_compile = re.compile(r'^\s*Trust Flags:\s*(\S+)\s*$', re.MULTILINE)
@@ -2019,57 +2105,88 @@ class NSSDatabase(object):
         else:
             raise Exception('Unsupported output format: %s' % output_format)
 
+        rc = 0
+        cert_data = None
+        stderr = None
+
         tmpdir = self.create_tmpdir()
         try:
             token = self.get_effective_token(token)
-            password_file = self.get_password_file(tmpdir, token)
-
-            cmd = [
-                'pki',
-                '-d', self.directory
-            ]
+            cert_file = os.path.join(tmpdir, 'cert.crt')
 
             fullname = nickname
 
             if token:
                 fullname = token + ':' + fullname
 
-            if self.password_conf:
-                cmd.extend(['-f', self.password_conf])
+            cmd = []
 
-            elif password_file:
-                cmd.extend(['-C', password_file])
+            if not self.engine:
+                cmd.extend([
+                    'pki',
+                    '-d', self.directory
+                ])
+
+                if self.password_conf:
+                    cmd.extend(['-f', self.password_conf])
 
             cmd.extend([
                 'nss-cert-export',
-                '--format', output_format_option,
-                fullname
+                '--output-file', cert_file,
+                '--format', output_format_option
             ])
 
-            result = self.run(cmd, capture_output=True)
+            if logger.isEnabledFor(logging.DEBUG):
+                cmd.append('--debug')
+
+            elif logger.isEnabledFor(logging.INFO):
+                cmd.append('--verbose')
+
+            cmd.append(fullname)
+
+            if self.engine:
+                self.engine.execute(cmd)
+            else:
+                self.run(cmd, check=True)
+
+            if os.path.exists(cert_file):
+                with open(cert_file, 'rb') as f:
+                    cert_data = f.read()
+
+        except pki.cli.CLIException as e:
+            rc = e.code
+
+        except subprocess.CalledProcessError as e:
+            rc = e.returncode
 
         finally:
             shutil.rmtree(tmpdir)
 
-        cert_data = result.stdout
-        stderr = result.stderr.decode('utf-8')
+        #cert_data = result.stdout
+        #stderr = result.stderr.decode('utf-8')
 
-        if stderr:
-            logger.debug('stderr:\n%s', stderr)
+        if rc == 1:
+            return None
 
-            # TODO: use RC instead of text to determine missing cert
-            if re.search('^ERROR: Certificate not found: ', stderr, re.MULTILINE):
-                # cert not found -> return None
-                return None
+        elif rc > 1:
+        #if stderr:
+        #    logger.debug('stderr:\n%s', stderr)
 
-            # otherwise, raise exception
-            raise Exception('Unable to get certificate %s: %s' % (fullname, stderr.strip()))
+        #    # TODO: use RC instead of text to determine missing cert
+        #    if re.search('^ERROR: Certificate not found: ', stderr, re.MULTILINE):
+        #        # cert not found -> return None
+        #        return None
+
+        #    # otherwise, raise exception
+            # raise Exception('Unable to get certificate %s: %s' % (fullname, stderr.strip()))
+            raise Exception('Unable to get certificate %s' % fullname)
 
         if not cert_data:
             raise Exception('Unable to get certificate %s: Missing data' % fullname)
+            return
 
-        if result.returncode != 0:
-            raise Exception('Unable to get certificate %s: rc=%s' % (fullname, result.returncode))
+        #if result.returncode != 0:
+        #    raise Exception('Unable to get certificate %s: rc=%s' % (fullname, result.returncode))
 
         if output_format == 'base64':
             # convert to base-64
@@ -2134,40 +2251,57 @@ class NSSDatabase(object):
             cert_file=None,
             cert_format='PEM'):
 
-        if cert_file and not cert_data:
-            with open(cert_file, 'r', encoding='utf-8') as f:
-                cert_data = f.read()
+        tmpdir = self.create_tmpdir()
 
-        if cert_data:
-            cert_data = convert_cert(cert_data, cert_format, 'PEM')
+        try:
+            # if cert_file and not cert_data:
+            #     with open(cert_file, 'r', encoding='utf-8') as f:
+            #         cert_data = f.read()
 
-        cmd = [
-            'pki',
-            '-d', self.directory,
-            '-f', self.password_conf
-        ]
+            # if cert_data:
+            #     cert_data = convert_cert(cert_data, cert_format, 'PEM')
 
-        token = self.get_effective_token(token)
+            if cert_data and not cert_file:
+                cert_data = convert_cert(cert_data, cert_format, 'PEM')
+                cert_file = os.path.join(tmpdir, 'cert.crt')
+                with open(cert_file, 'w', encoding='utf-8') as f:
+                     f.write(cert_data)
 
-        if token:
-            cmd.extend(['--token', token])
+            cmd = []
 
-        cmd.append('nss-cert-verify')
+            if not self.engine:
+                cmd.extend([
+                    'pki',
+                    '-d', self.directory,
+                    '-f', self.password_conf
+                ])
 
-        if nickname:
-            if token:
-                fullname = token + ':' + nickname
+            cmd.append('nss-cert-verify')
+
+            if cert_data:
+                cmd.extend(['--cert', cert_file])
+
+            if logger.isEnabledFor(logging.DEBUG):
+                cmd.append('--debug')
+
+            elif logger.isEnabledFor(logging.INFO):
+                cmd.append('--verbose')
+
+            if nickname:
+                token = self.get_effective_token(token)
+                if token:
+                    fullname = token + ':' + nickname
+                else:
+                    fullname = nickname
+                cmd.append(fullname)
+
+            if self.engine:
+                self.engine.execute(cmd)
             else:
-                fullname = nickname
-            cmd.append(fullname)
+                self.run(cmd, check=True)
 
-        if logger.isEnabledFor(logging.DEBUG):
-            cmd.append('--debug')
-
-        elif logger.isEnabledFor(logging.INFO):
-            cmd.append('--verbose')
-
-        self.run(cmd, input=cert_data, text=True, check=True, runas=True)
+        finally:
+            shutil.rmtree(tmpdir)
 
     @staticmethod
     def convert_time_to_millis(date):
