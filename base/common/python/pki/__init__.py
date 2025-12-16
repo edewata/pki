@@ -21,9 +21,6 @@
 """
 This module contains top-level classes and functions used by the Dogtag project.
 """
-from __future__ import absolute_import
-from __future__ import print_function
-
 from functools import wraps
 import cryptography.x509
 import json
@@ -32,12 +29,11 @@ import logging
 import os
 import random
 import re
+import requests
+import six
 import string
 import subprocess
 import sys
-
-import requests
-import six
 
 
 CONF_DIR = '/etc/pki'
