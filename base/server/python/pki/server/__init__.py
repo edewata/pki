@@ -170,6 +170,8 @@ class PKIServer(object):
         self.passwords = {}
         self.subsystems = {}
 
+        self.engine = None
+
     def __repr__(self):
         return self.name
 
@@ -1079,6 +1081,14 @@ grant codeBase "file:%s" {
         self.chown(self.nssdb_dir)
 
     def open_nssdb(self, token=pki.nssdb.INTERNAL_TOKEN_NAME):
+
+        if not self.engine:
+            self.engine = pki.cli.CLIEngine(
+                directory=self.nssdb_dir,
+                password_conf=self.password_conf,
+                user=self.user,
+                group=self.group)
+
         return pki.nssdb.NSSDatabase(
             directory=self.nssdb_dir,
             token=token,
@@ -1087,7 +1097,8 @@ grant codeBase "file:%s" {
             passwords=self.passwords,
             password_conf=self.password_conf,
             user=self.user,
-            group=self.group)
+            group=self.group,
+            engine=self.engine)
 
     def get_webapp(self, webapp_id):
         '''

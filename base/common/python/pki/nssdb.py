@@ -22,17 +22,18 @@
 
 import base64
 import binascii
+import datetime
+import grp
 import json
 import logging
 import os
+import pwd
 import re
 import shutil
+import six
 import stat
 import subprocess
 import tempfile
-import datetime
-import grp
-import pwd
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -43,6 +44,7 @@ except ImportError:
     selinux = None
 
 import pki
+import pki.cli
 
 PRIVATE_KEY_HEADER = '-----BEGIN PRIVATE KEY-----'
 PRIVATE_KEY_FOOTER = '-----END PRIVATE KEY-----'
@@ -248,7 +250,8 @@ class NSSDatabase:
                  passwords=None,
                  password_conf=None,
                  user=None,
-                 group=None):
+                 group=None,
+                 engine=None):
         self.user = user
         self.group = group
 
@@ -300,6 +303,8 @@ class NSSDatabase:
         else:
             self.password_conf = None
 
+        self.engine = engine
+
     def run(self,
             cmd,
             input=None,  # pylint: disable=W0622
@@ -337,6 +342,29 @@ class NSSDatabase:
             universal_newlines=text)
 
         return result
+
+    def run_pki(self, cmd):
+
+        if self.engine:
+            # run command in shell/batch mode
+            self.engine.execute(cmd)
+            return None
+
+        # run a single command
+        prefix = [
+            'pki',
+            '-d', self.directory
+        ]
+
+        if self.password_conf:
+            prefix.extend(['-f', self.password_conf])
+
+        elif self.password_file:
+            prefix.extend(['-C', self.password_file])
+
+        cmd = prefix + cmd
+
+        self.run(cmd, check=True)
 
     def create(self, enable_trust_policy=False):
 

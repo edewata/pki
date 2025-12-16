@@ -20,6 +20,9 @@ package org.dogtagpki.cli;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -55,7 +58,10 @@ public class CLI {
     public Options options = new Options();
     public Map<String, CLIModule> modules = new LinkedHashMap<>();
 
+    public String tempDir;
     public boolean exitOnError;
+
+    public int cmdCounter;
 
     public CLI(String name, String description) {
         this(name, description, null);
@@ -370,17 +376,59 @@ public class CLI {
                 break;
             }
 
+            Path rcFile = null;
+            Path stdoutFile = null;
+            Path stderrFile = null;
+
+            if (tempDir != null) {
+                rcFile = Paths.get(tempDir, "cmd-" + cmdCounter + ".rc");
+                logger.debug("Command " + cmdCounter + " RC file: " + rcFile);
+
+                stdoutFile = Paths.get(tempDir, "cmd-" + cmdCounter + ".stdout");
+                logger.debug("Command " + cmdCounter + " stdout file: " + stdoutFile);
+                //System.out = new PrintStream(new FileOutputStream(stdoutFile.toFile()));
+
+                stderrFile = Paths.get(tempDir, "cmd-" + cmdCounter + ".stderr");
+                logger.debug("Command " + cmdCounter + " stderr file: " + stderrFile);
+                //System.err = new PrintStream(new FileOutputStream(stderrFile.toFile()));
+            }
+
             try {
                 executeCommand(args);
+
+                if (tempDir != null) {
+                    Files.writeString(rcFile, "0");
+                }
+
             } catch (Exception e) {
                 if (shell) {
                     handleException(e);
+                }
+
+                int rc;
+                if (e instanceof CLIException cliException) {
+                    rc = cliException.getCode();
+                } else {
+                    rc = -1;
+                }
+                String message = e.getClass().getSimpleName() + ": " + e.getMessage();
+
+                logger.debug(message + " (rc=" + rc + ")");
+                StringBuilder sb = new StringBuilder();
+                sb.append(rc);
+                sb.append(":");
+                sb.append(message);
+
+                if (tempDir != null) {
+                    Files.writeString(rcFile, sb.toString());
                 }
 
                 if (exitOnError) {
                     throw e;
                 }
             }
+
+            cmdCounter++;
         }
     }
 
