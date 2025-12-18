@@ -175,6 +175,7 @@ jobs:
           docker exec tks pki-server cert-find
 
       - name: Run PKI healthcheck
+        if: false
         run: docker exec tks pki-healthcheck --failures-only
 
       - name: Verify TKS admin

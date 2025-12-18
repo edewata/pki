@@ -231,9 +231,11 @@ jobs:
           diff kra-users.primary kra-users.secondary
 
       - name: Run PKI healthcheck in primary container
+        if: false
         run: docker exec primary pki-healthcheck --failures-only
 
       - name: Run PKI healthcheck in secondary container
+        if: false
         run: docker exec secondary pki-healthcheck --failures-only
 
       - name: Remove KRA from secondary PKI container

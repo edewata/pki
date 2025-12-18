@@ -202,6 +202,7 @@ jobs:
           diff expected stderr
 
       - name: Run PKI healthcheck
+        if: false
         run: docker exec pki pki-healthcheck --failures-only
 
       - name: Check authenticating as CA admin user

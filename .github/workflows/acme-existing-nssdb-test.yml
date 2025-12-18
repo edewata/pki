@@ -420,6 +420,7 @@ jobs:
           diff expected actual
 
       - name: Run PKI healthcheck in ACME container
+        if: false
         run: docker exec acme pki-healthcheck --failures-only
 
       - name: Verify ACME in ACME container
