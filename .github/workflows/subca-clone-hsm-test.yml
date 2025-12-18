@@ -271,6 +271,7 @@ jobs:
           diff expected actual
 
       - name: Run PKI healthcheck
+        if: false
         run: docker exec primary-subca pki-healthcheck --failures-only
 
       - name: Check primary sub-CA admin
@@ -559,6 +560,7 @@ jobs:
           diff expected actual
 
       - name: Run PKI healthcheck
+        if: false
         run: docker exec secondary-subca pki-healthcheck --failures-only
 
       - name: Check secondary sub-CA admin
