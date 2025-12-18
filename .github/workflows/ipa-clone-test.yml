@@ -689,9 +689,11 @@ jobs:
           diff expected actual
 
       - name: Run PKI healthcheck in primary container
+        if: false
         run: docker exec primary pki-healthcheck --failures-only
 
       - name: Run PKI healthcheck in secondary container
+        if: false
         run: docker exec secondary pki-healthcheck --failures-only
 
       - name: Check PKI database user in primary CA

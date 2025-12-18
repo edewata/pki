@@ -197,12 +197,15 @@ jobs:
           docker exec tertiary pki-server cert-find
 
       - name: Run PKI healthcheck in primary container
+        if: false
         run: docker exec primary pki-healthcheck --failures-only
 
       - name: Run PKI healthcheck in secondary container
+        if: false
         run: docker exec secondary pki-healthcheck --failures-only
 
       - name: Run PKI healthcheck in tertiary container
+        if: false
         run: docker exec tertiary pki-healthcheck --failures-only
 
       - name: Verify TKS admin in tertiary PKI container

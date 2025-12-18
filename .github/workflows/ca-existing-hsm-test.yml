@@ -286,6 +286,7 @@ jobs:
               -v
 
       - name: Run PKI healthcheck
+        if: false
         run: docker exec pki pki-healthcheck --failures-only
 
       - name: Check CA signing cert

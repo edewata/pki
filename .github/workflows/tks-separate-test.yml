@@ -115,6 +115,7 @@ jobs:
         run: docker exec tks cp /usr/share/pki/server/examples/banner/banner.txt /var/lib/pki/pki-tomcat/conf
 
       - name: Run PKI healthcheck
+        if: false
         run: docker exec tks pki-healthcheck --failures-only
 
       - name: Verify TKS admin

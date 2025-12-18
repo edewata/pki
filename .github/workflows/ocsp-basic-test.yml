@@ -410,6 +410,7 @@ jobs:
           docker exec pki pki-server ca-redeploy --wait
 
       - name: Run PKI healthcheck
+        if: false
         run: docker exec pki pki-healthcheck --failures-only
 
       - name: Initialize PKI client

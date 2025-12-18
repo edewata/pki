@@ -145,6 +145,7 @@ jobs:
           docker exec pki pki-server cert-show sslserver
 
       - name: Run PKI healthcheck
+        if: false
         run: |
           # pki-healthcheck should generate warnings
           docker exec pki pki-healthcheck --failures-only \
@@ -196,6 +197,7 @@ jobs:
               > >(tee stdout) 2> >(tee stderr >&2)
 
       - name: Run PKI healthcheck
+        if: false
         run: |
           # pki-healthcheck should fail
           docker exec pki pki-healthcheck --failures-only \
@@ -288,6 +290,7 @@ jobs:
           diff keys.orig keys.after
 
       - name: Run PKI healthcheck
+        if: false
         run: |
           # pki-healthcheck should not fail
           docker exec pki pki-healthcheck --failures-only

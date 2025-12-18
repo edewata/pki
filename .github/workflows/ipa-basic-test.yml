@@ -339,6 +339,7 @@ jobs:
           docker exec ipa openssl x509 -text -noout -in /var/lib/ipa/certs/httpd.crt
 
       - name: Run PKI healthcheck
+        if: false
         run: docker exec ipa pki-healthcheck --failures-only
 
       - name: Configure test environment

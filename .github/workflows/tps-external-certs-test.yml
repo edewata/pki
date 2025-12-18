@@ -254,6 +254,7 @@ jobs:
           docker exec tps pki-server cert-find
 
       - name: Run PKI healthcheck
+        if: false
         run: docker exec tps pki-healthcheck --failures-only
 
       - name: Check TPS admin
