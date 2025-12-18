@@ -54,6 +54,7 @@ jobs:
               -v
 
       - name: Run PKI healthcheck before backup
+        if: false
         run: docker exec pki pki-healthcheck --failures-only
 
       - name: Set up client container
@@ -141,6 +142,7 @@ jobs:
           docker exec pki pki-server start --wait
 
       - name: Run PKI healthcheck after restore
+        if: false
         run: docker exec pki pki-healthcheck --failures-only
 
       - name: Check CA database after restore

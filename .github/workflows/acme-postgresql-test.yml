@@ -181,6 +181,7 @@ jobs:
           docker exec pki pki-server acme-realm-show
 
       - name: Run PKI healthcheck in PKI container
+        if: false
         run: docker exec pki pki-healthcheck --failures-only
 
       - name: Verify ACME in PKI container

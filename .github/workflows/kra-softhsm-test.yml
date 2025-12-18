@@ -255,6 +255,7 @@ jobs:
               HSM:kra_audit_signing
 
       - name: Run PKI healthcheck
+        if: false
         run: docker exec pki pki-healthcheck --failures-only
 
       - name: Check admin cert

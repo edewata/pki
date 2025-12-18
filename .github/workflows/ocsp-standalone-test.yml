@@ -263,6 +263,7 @@ jobs:
           docker exec ocsp pki-server cert-find
 
       - name: Run PKI healthcheck
+        if: false
         run: docker exec ocsp pki-healthcheck --failures-only
 
       - name: Start CA

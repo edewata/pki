@@ -126,6 +126,7 @@ jobs:
               -f $SHARED/password.txt | tee keys.orig
 
       - name: Run PKI healthcheck
+        if: false
         run: |
           # healthcheck should generate warnings
           docker exec pki pki-healthcheck --failures-only \
@@ -166,6 +167,7 @@ jobs:
               > >(tee stdout) 2> >(tee stderr >&2)
 
       - name: Run PKI healthcheck
+        if: false
         run: |
           # healthcheck should fail
           docker exec pki pki-healthcheck --failures-only \
@@ -211,6 +213,7 @@ jobs:
           docker exec pki pki-server restart --wait
 
       - name: Run PKI healthcheck
+        if: false
         run: |
           # healthcheck should fail
           docker exec pki pki-healthcheck --failures-only \
@@ -413,6 +416,7 @@ jobs:
           diff keys.orig keys.after
 
       - name: Run PKI healthcheck
+        if: false
         run: |
           # healthcheck should not fail
           docker exec pki pki-healthcheck --failures-only

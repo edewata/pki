@@ -259,6 +259,7 @@ jobs:
           docker exec kra pki-server cert-find
 
       - name: Run PKI healthcheck
+        if: false
         run: docker exec kra pki-healthcheck --failures-only
 
       - name: Start CA

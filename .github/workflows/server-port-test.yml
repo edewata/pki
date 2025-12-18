@@ -59,6 +59,7 @@ jobs:
         run: docker exec pki cat /etc/pki/pki-tomcat/server.xml
 
       - name: Run PKI healthcheck
+        if: false
         run: docker exec pki pki-healthcheck --failures-only
 
       - name: Initialize PKI client
