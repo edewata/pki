@@ -1583,24 +1583,16 @@ class NSSDatabase:
                 ext_conf = os.path.join(tmpdir, 'request.conf')
                 pki.util.store_properties(ext_conf, exts)
 
-            cmd = [
-                'pki',
-                '-d', self.directory
-            ]
+            cmd = ['nss-cert-request']
 
             token = self.get_effective_token(token)
             if token:
                 cmd.extend(['--token', token])
 
-            if self.password_conf:
-                cmd.extend(['-f', self.password_conf])
-            else:
-                password_file = self.get_password_file(self.tmpdir, token)
-                cmd.extend(['-C', password_file])
-
-            cmd.extend(['nss-cert-request'])
-            cmd.extend(['--subject', subject_dn])
-            cmd.extend(['--csr', request_file])
+            cmd.extend([
+                '--subject', subject_dn,
+                '--csr', request_file
+            ])
 
             if key_id is None and cka_id is not None:
                 key_id = '0x' + cka_id
@@ -1638,7 +1630,7 @@ class NSSDatabase:
             elif logger.isEnabledFor(logging.INFO):
                 cmd.append('--verbose')
 
-            self.run(cmd, check=True, runas=True)
+            self.run_pki(cmd)
 
         finally:
             shutil.rmtree(tmpdir)
