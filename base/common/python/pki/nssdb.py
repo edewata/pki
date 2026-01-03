@@ -1928,50 +1928,63 @@ class NSSDatabase:
         """
         logger.debug('NSSDatabase.get_trust(%s)', nickname)
 
+        rc = 0
+        stdout = None
+        stderr = None
+
         tmpdir = self.create_tmpdir()
         try:
             token = self.get_effective_token(token)
             password_file = self.get_password_file(tmpdir, token)
+            output_file = os.path.join(tmpdir, 'cert.txt')
+
             cmd = [
-                'pki',
-                '-d', self.directory
+                'nss-cert-show',
+                '--output-file', output_file
             ]
-            fullname = nickname
 
             if token:
-                fullname = token + ':' + fullname
+                fullname = token + ':' + nickname
+            else:
+                fullname = nickname
 
-            if self.password_conf:
-                cmd.extend(['-f', self.password_conf])
+            cmd.append(fullname)
 
-            elif password_file:
-                cmd.extend(['-C', password_file])
+            self.run_pki(cmd)
 
-            cmd.extend([
-                'nss-cert-show',
-                fullname
-            ])
+            if os.path.exists(output_file):
+                with open(output_file, 'r', encoding='utf-8') as f:
+                    stdout = f.read()
 
-            result = self.run(cmd, capture_output=True)
+        except pki.cli.CLIException as e:
+            rc = e.code
+
+        except subprocess.CalledProcessError as e:
+            rc = e.returncode
 
         finally:
             shutil.rmtree(tmpdir)
 
-        stdout = result.stdout.decode()
-        stderr = result.stderr.decode()
+        #rc = result.returncode
+        #stdout = result.stdout.decode()
+        #stderr = result.stderr.decode()
 
-        if stderr:
-            logger.error('stderr : %s', stderr)
+        if rc == 1:
+            return None
 
-            # TODO: use RC instead of text to determine missing cert
-            if re.search('^ERROR: Certificate not found: ', stderr, re.MULTILINE):
-                # cert not found -> return None
-                return None
+        elif rc > 1:
+        #if stderr:
+        #    logger.error('stderr : %s', stderr)
 
-            raise Exception('Unable to get certificate %s: %s' % (fullname, stderr.strip()))
+        #    # TODO: use RC instead of text to determine missing cert
+        #    if re.search('^ERROR: Certificate not found: ', stderr, re.MULTILINE):
+        #        # cert not found -> return None
+        #        return None
 
-        if result.returncode != 0:
-            raise Exception('Unable to get certificate %s: rc=%s' % (fullname, result.returncode))
+        #    raise Exception('Unable to get certificate %s: %s' % (fullname, stderr.strip()))
+
+        #if rc != 0:
+            raise Exception('Unable to get certificate %s: rc=%s' % (fullname, rc))
 
         # TODO: use JSON instead of text to get cert trust
         re_compile = re.compile(r'^\s*Trust Flags:\s*(\S+)\s*$', re.MULTILINE)
