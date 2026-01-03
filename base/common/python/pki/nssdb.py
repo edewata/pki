@@ -2261,43 +2261,60 @@ class NSSDatabase:
             cert_format='PEM',
             cert_usage=None):
 
-        if cert_file and not cert_data:
-            with open(cert_file, 'r', encoding='utf-8') as f:
-                cert_data = f.read()
+        tmpdir = self.create_tmpdir()
 
-        if cert_data:
-            cert_data = convert_cert(cert_data, cert_format, 'PEM')
+        try:
+            # if cert_file and not cert_data:
+            #     with open(cert_file, 'r', encoding='utf-8') as f:
+            #         cert_data = f.read()
 
-        cmd = [
-            'pki',
-            '-d', self.directory,
-            '-f', self.password_conf
-        ]
+            # if cert_data:
+            #     cert_data = convert_cert(cert_data, cert_format, 'PEM')
 
-        token = self.get_effective_token(token)
+            if cert_data and not cert_file:
+                cert_data = convert_cert(cert_data, cert_format, 'PEM')
+                cert_file = os.path.join(tmpdir, 'cert.crt')
+                with open(cert_file, 'w', encoding='utf-8') as f:
+                     f.write(cert_data)
 
-        if token:
-            cmd.extend(['--token', token])
+            cmd = []
 
-        cmd.append('nss-cert-verify')
+            if not self.engine:
+                cmd.extend([
+                    'pki',
+                    '-d', self.directory,
+                    '-f', self.password_conf
+                ])
 
-        if cert_usage:
-            cmd.extend(['--cert-usage', cert_usage])
+            cmd.append('nss-cert-verify')
 
-        if logger.isEnabledFor(logging.DEBUG):
-            cmd.append('--debug')
+            if cert_data:
+                cmd.extend(['--cert', cert_file])
 
-        elif logger.isEnabledFor(logging.INFO):
-            cmd.append('--verbose')
+            if cert_usage:
+                cmd.extend(['--cert-usage', cert_usage])
 
-        if nickname:
-            if token:
-                fullname = token + ':' + nickname
+            if logger.isEnabledFor(logging.DEBUG):
+                cmd.append('--debug')
+
+            elif logger.isEnabledFor(logging.INFO):
+                cmd.append('--verbose')
+
+            if nickname:
+                token = self.get_effective_token(token)
+                if token:
+                    fullname = token + ':' + nickname
+                else:
+                    fullname = nickname
+                cmd.append(fullname)
+
+            if self.engine:
+                self.engine.execute(cmd)
             else:
-                fullname = nickname
-            cmd.append(fullname)
+                self.run(cmd, check=True)
 
-        self.run(cmd, input=cert_data, text=True, check=True, runas=True)
+        finally:
+            shutil.rmtree(tmpdir)
 
     @staticmethod
     def convert_time_to_millis(date):
