@@ -681,54 +681,57 @@ class NSSDatabase:
             op_flags=None,
             op_flags_mask=None):
 
-        cmd = [
-            'pki',
-            '-d', self.directory
-        ]
+        tmpdir = self.create_tmpdir()
+        try:
+            key_file = os.path.join(self.tmpdir, 'key.json')
 
-        if self.password_conf:
-            cmd.extend(['-f', self.password_conf])
+            cmd = ['nss-key-create']
 
-        token = self.get_effective_token(token)
-        if token:
-            cmd.extend(['--token', token])
+            token = self.get_effective_token(token)
+            if token:
+                cmd.extend(['--token', token])
 
-        cmd.extend([
-            'nss-key-create',
-            '--output-format', 'json'
-        ])
+            cmd.extend([
+                '--output-file', key_file,
+                '--output-format', 'json'
+            ])
 
-        if key_type:
-            cmd.extend(['--key-type', key_type])
+            if key_type:
+                cmd.extend(['--key-type', key_type])
 
-        if key_size:
-            cmd.extend(['--key-size', key_size])
+            if key_size:
+                cmd.extend(['--key-size', key_size])
 
-        if key_wrap:
-            cmd.append('--key-wrap')
+            if key_wrap:
+                cmd.append('--key-wrap')
 
-        if curve:
-            cmd.extend(['--curve', curve])
+            if curve:
+                cmd.extend(['--curve', curve])
 
-        if ssl_ecdh:
-            cmd.append('--ssl-ecdh')
+            if ssl_ecdh:
+                cmd.append('--ssl-ecdh')
 
-        if op_flags:
-            cmd.extend(['--op-flags', op_flags])
+            if op_flags:
+                cmd.extend(['--op-flags', op_flags])
 
-        if op_flags_mask:
-            cmd.extend(['--op-flags-mask', op_flags_mask])
+            if op_flags_mask:
+                cmd.extend(['--op-flags-mask', op_flags_mask])
 
-        if logger.isEnabledFor(logging.DEBUG):
-            cmd.append('--debug')
+            if logger.isEnabledFor(logging.DEBUG):
+                cmd.append('--debug')
 
-        elif logger.isEnabledFor(logging.INFO):
-            cmd.append('--verbose')
+            elif logger.isEnabledFor(logging.INFO):
+                cmd.append('--verbose')
 
-        result = self.run(cmd, stdout=subprocess.PIPE, check=True, text=True,
-                          runas=True)
+            self.run_pki(cmd)
 
-        return json.loads(result.stdout)
+            with open(key_file, 'r', encoding='utf-8') as f:
+                output = f.read()
+
+        finally:
+            shutil.rmtree(tmpdir)
+
+        return json.loads(output)
 
     def add_cert(
             self,
