@@ -943,21 +943,19 @@ class NSSDatabase:
 
     def modify_cert(self, nickname, trust_attributes):
 
+        cmd = [
+            'nss-cert-mod',
+            '--trust-flags', trust_attributes
+        ]
+
         if self.token:
             fullname = self.token + ':' + nickname
         else:
             fullname = nickname
 
-        cmd = [
-            'pki',
-            '-d', self.directory,
-            '-f', self.password_conf,
-            'nss-cert-mod',
-            '--trust-flags', trust_attributes,
-            fullname
-        ]
+        cmd.append(fullname)
 
-        self.run(cmd, check=True)
+        self.run_pki(cmd)
 
     def create_noise(self, noise_file, size=2048, key_type='rsa'):
         # Under EC keys, key_size parameter is actually the name of a curve.
