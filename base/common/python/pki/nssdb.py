@@ -836,44 +836,56 @@ class NSSDatabase:
         In the future this will replace add_cert().
         '''
 
-        if cert_file and not cert_data:
-            with open(cert_file, 'r', encoding='utf-8') as f:
-                cert_data = f.read()
+        tmpdir = tempfile.mkdtemp()
 
-        cert_data = convert_cert(cert_data, cert_format, 'pem')
+        try:
+            # if cert_file and not cert_data:
+            #     with open(cert_file, 'r', encoding='utf-8') as f:
+            #         cert_data = f.read()
 
-        cmd = [
-            'pki',
-            '-d', self.directory
-        ]
+            # cert_data = convert_cert(cert_data, cert_format, 'pem')
 
-        if self.password_conf:
-            cmd.extend(['-f', self.password_conf])
+            if cert_data and not cert_file:
+                cert_data = convert_cert(cert_data, cert_format, 'pem')
+                if self.engine:
+                    cert_file = os.path.join(self.engine.temp_dir, 'cert.crt')
+                else:
+                    cert_file = os.path.join(tmpdir, 'cert.crt')
 
-        elif self.password_file:
-            cmd.extend(['-C', self.password_file])
+                with open(cert_file, 'w', encoding='utf-8') as f:
+                     f.write(cert_data)
 
-        token = self.get_effective_token(token)
-        if token:
-            cmd.extend(['--token', token])
+                if os.geteuid() == 0 and self.user:
+                    os.chown(cert_file, self.uid, self.gid)
 
-        cmd.extend([
-            'nss-cert-import',
-            '--format', 'PEM'
-        ])
+            token = self.get_effective_token(token)
 
-        if trust_attributes:
-            cmd.extend(['--trust', trust_attributes])
+            if token:
+                fullname = token + ':' + nickname
+            else:
+                fullname = nickname
 
-        if logger.isEnabledFor(logging.DEBUG):
-            cmd.append('--debug')
+            cmd = [
+                'nss-cert-import',
+                '--cert', cert_file,
+                '--format', 'PEM'
+            ]
 
-        elif logger.isEnabledFor(logging.INFO):
-            cmd.append('--verbose')
+            if trust_attributes:
+                cmd.extend(['--trust', trust_attributes])
 
-        cmd.append(nickname)
+            if logger.isEnabledFor(logging.DEBUG):
+                cmd.append('--debug')
 
-        self.run(cmd, input=cert_data, text=True, check=True, runas=runas)
+            elif logger.isEnabledFor(logging.INFO):
+                cmd.append('--verbose')
+
+            cmd.append(fullname)
+
+            self.run_pki(cmd)
+
+        finally:
+            shutil.rmtree(tmpdir)
 
     def add_ca_cert(
             self,
