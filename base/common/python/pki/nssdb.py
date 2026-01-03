@@ -658,54 +658,71 @@ class NSSDatabase:
             op_flags=None,
             op_flags_mask=None):
 
-        cmd = [
-            'pki',
-            '-d', self.directory
-        ]
+        tmpdir = self.create_tmpdir()
+        try:
+            key_file = os.path.join(self.tmpdir, 'key.json')
 
-        if self.password_conf:
-            cmd.extend(['-f', self.password_conf])
+            cmd = []
 
-        token = self.get_effective_token(token)
-        if token:
-            cmd.extend(['--token', token])
+            if not self.engine:
+                cmd.extend([
+                    'pki',
+                    '-d', self.directory
+                ])
 
-        cmd.extend([
-            'nss-key-create',
-            '--output-format', 'json'
-        ])
+                if self.password_conf:
+                    cmd.extend(['-f', self.password_conf])
 
-        if key_type:
-            cmd.extend(['--key-type', key_type])
+            cmd.append('nss-key-create')
 
-        if key_size:
-            cmd.extend(['--key-size', key_size])
+            token = self.get_effective_token(token)
+            if token:
+                cmd.extend(['--token', token])
 
-        if key_wrap:
-            cmd.append('--key-wrap')
+            cmd.extend([
+                '--output-file', key_file,
+                '--output-format', 'json'
+            ])
 
-        if curve:
-            cmd.extend(['--curve', curve])
+            if key_type:
+                cmd.extend(['--key-type', key_type])
 
-        if ssl_ecdh:
-            cmd.append('--ssl-ecdh')
+            if key_size:
+                cmd.extend(['--key-size', key_size])
 
-        if op_flags:
-            cmd.extend(['--op-flags', op_flags])
+            if key_wrap:
+                cmd.append('--key-wrap')
 
-        if op_flags_mask:
-            cmd.extend(['--op-flags-mask', op_flags_mask])
+            if curve:
+                cmd.extend(['--curve', curve])
 
-        if logger.isEnabledFor(logging.DEBUG):
-            cmd.append('--debug')
+            if ssl_ecdh:
+                cmd.append('--ssl-ecdh')
 
-        elif logger.isEnabledFor(logging.INFO):
-            cmd.append('--verbose')
+            if op_flags:
+                cmd.extend(['--op-flags', op_flags])
 
-        result = self.run(cmd, stdout=subprocess.PIPE, check=True, text=True,
-                          runas=True)
+            if op_flags_mask:
+                cmd.extend(['--op-flags-mask', op_flags_mask])
 
-        return json.loads(result.stdout)
+            if logger.isEnabledFor(logging.DEBUG):
+                cmd.append('--debug')
+
+            elif logger.isEnabledFor(logging.INFO):
+                cmd.append('--verbose')
+
+            if self.engine:
+                self.engine.execute(cmd)
+            else:
+                self.run(cmd, check=True)
+
+            with open(key_file, 'r', encoding='utf-8') as f:
+                output = f.read()
+
+        finally:
+            shutil.rmtree(tmpdir)
+
+        return json.loads(output)
 
     def add_cert(
             self,
