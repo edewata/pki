@@ -2044,57 +2044,74 @@ class NSSDatabase:
         else:
             raise Exception('Unsupported output format: %s' % output_format)
 
+        rc = 0
+        cert_data = None
+        stderr = None
+
         tmpdir = self.create_tmpdir()
         try:
             token = self.get_effective_token(token)
-            password_file = self.get_password_file(tmpdir, token)
+            cert_file = os.path.join(tmpdir, 'cert.crt')
 
             cmd = [
-                'pki',
-                '-d', self.directory
+                'nss-cert-export',
+                '--output-file', cert_file,
+                '--format', output_format_option
             ]
 
-            fullname = nickname
+            if logger.isEnabledFor(logging.DEBUG):
+                cmd.append('--debug')
+
+            elif logger.isEnabledFor(logging.INFO):
+                cmd.append('--verbose')
 
             if token:
-                fullname = token + ':' + fullname
+                fullname = token + ':' + nickname
+            else:
+                fullname = nickname
 
-            if self.password_conf:
-                cmd.extend(['-f', self.password_conf])
+            cmd.append(fullname)
 
-            elif password_file:
-                cmd.extend(['-C', password_file])
+            self.run_pki(cmd)
 
-            cmd.extend([
-                'nss-cert-export',
-                '--format', output_format_option,
-                fullname
-            ])
+            if os.path.exists(cert_file):
+                with open(cert_file, 'rb') as f:
+                    cert_data = f.read()
 
-            result = self.run(cmd, capture_output=True)
+        except pki.cli.CLIException as e:
+            rc = e.code
+
+        except subprocess.CalledProcessError as e:
+            rc = e.returncode
 
         finally:
             shutil.rmtree(tmpdir)
 
-        cert_data = result.stdout
-        stderr = result.stderr.decode('utf-8')
+        #cert_data = result.stdout
+        #stderr = result.stderr.decode('utf-8')
 
-        if stderr:
-            logger.debug('stderr:\n%s', stderr)
+        if rc == 1:
+            return None
 
-            # TODO: use RC instead of text to determine missing cert
-            if re.search('^ERROR: Certificate not found: ', stderr, re.MULTILINE):
-                # cert not found -> return None
-                return None
+        elif rc > 1:
+        #if stderr:
+        #    logger.debug('stderr:\n%s', stderr)
 
-            # otherwise, raise exception
-            raise Exception('Unable to get certificate %s: %s' % (fullname, stderr.strip()))
+        #    # TODO: use RC instead of text to determine missing cert
+        #    if re.search('^ERROR: Certificate not found: ', stderr, re.MULTILINE):
+        #        # cert not found -> return None
+        #        return None
+
+        #    # otherwise, raise exception
+            # raise Exception('Unable to get certificate %s: %s' % (fullname, stderr.strip()))
+            raise Exception('Unable to get certificate %s' % fullname)
 
         if not cert_data:
             raise Exception('Unable to get certificate %s: Missing data' % fullname)
+            return
 
-        if result.returncode != 0:
-            raise Exception('Unable to get certificate %s: rc=%s' % (fullname, result.returncode))
+        #if result.returncode != 0:
+        #    raise Exception('Unable to get certificate %s: rc=%s' % (fullname, result.returncode))
 
         if output_format == 'base64':
             # convert to base-64
