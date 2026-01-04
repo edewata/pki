@@ -2325,18 +2325,19 @@ class NSSDatabase:
                             output_file,
                             include_chain=False,
                             output_format=None):
-        cmd = []
-        if not self.engine:
-            cmd.extend([
-                'pki',
-                '-d', self.directory
-            ])
+        cmd = [
+            'pki',
+            '-d', self.directory
+        ]
 
-            if self.password_file:
-                cmd.extend(['-C', self.password_file])
+        if self.password_file:
+            cmd.extend(['-C', self.password_file])
 
-            if self.token:
-                cmd.extend(['--token', self.token])
+        if self.token:
+            cmd.extend(['--token', self.token])
+            fullname = self.token + ':' + nickname
+        else:
+            fullname = nickname
 
         cmd.extend([
             'nss-cert-export',
@@ -2355,17 +2356,9 @@ class NSSDatabase:
         elif logger.isEnabledFor(logging.INFO):
             cmd.append('--verbose')
 
-        if self.token:
-            fullname = self.token + ':' + nickname
-        else:
-            fullname = nickname
-
         cmd.append(fullname)
 
-        if self.engine:
-            self.engine.execute(cmd)
-        else:
-            self.run(cmd, check=True)
+        self.run(cmd, check=True)
 
     def export_cert(self,
                     nickname,
