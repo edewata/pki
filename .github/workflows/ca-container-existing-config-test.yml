@@ -266,6 +266,7 @@ jobs:
           drwxrwxrwx root backup
           drwxrwxrwx root ca
           -rw-rw-rw- root localhost_access_log.$DATE.txt
+          drwxrwxrwx root pki
           EOF
 
           diff expected output
