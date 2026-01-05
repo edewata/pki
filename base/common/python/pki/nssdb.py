@@ -2696,42 +2696,57 @@ class NSSDatabase:
 
         logger.debug('NSSDatabase.import_pkcs7()')
 
-        cmd = ['pki', '-d', self.directory]
+        tmpdir = self.create_tmpdir()
 
-        if self.password_conf:
-            cmd.extend(['-f', self.password_conf])
+        try:
+            if pkcs7_data and not pkcs7_file:
+                pkcs7_file = os.path.join(self.tmpdir, 'input.p7')
+                with open(pkcs7_file, 'w', encoding='utf-8') as f:
+                    f.write(pkcs7_data)
 
-        elif self.internal_password_file:
-            cmd.extend(['-C', self.internal_password_file])
+            cmd = []
 
-        token = self.get_effective_token(token)
+            if not self.engine:
+                cmd.extend([
+                    'pki',
+                    '-d', self.directory
+                ])
 
-        if token:
-            cmd.extend(['--token', token])
+                if self.password_conf:
+                    cmd.extend(['-f', self.password_conf])
 
-        cmd.extend(['pkcs7-import'])
+                elif self.internal_password_file:
+                    cmd.extend(['-C', self.internal_password_file])
 
-        if pkcs7_file:
+            cmd.extend(['pkcs7-import'])
+
+            # token = self.get_effective_token(token)
+
+            # always import cert chain into internal token
+            # if token:
+            #     cmd.extend(['--token', token])
+
             cmd.extend(['--pkcs7', pkcs7_file])
 
-        if trust_attributes:
-            cmd.extend(['--trust', trust_attributes])
+            if trust_attributes:
+                cmd.extend(['--trust', trust_attributes])
 
-        if logger.isEnabledFor(logging.DEBUG):
-            cmd.append('--debug')
+            if logger.isEnabledFor(logging.DEBUG):
+                cmd.append('--debug')
 
-        elif logger.isEnabledFor(logging.INFO):
-            cmd.append('--verbose')
+            elif logger.isEnabledFor(logging.INFO):
+                cmd.append('--verbose')
 
-        if nickname:
-            cmd.append(nickname)
+            if nickname:
+                cmd.append(nickname)
 
-        if pkcs7_data:
-            data = pkcs7_data.encode('utf-8')
-        else:
-            data = None
+            if self.engine:
+                self.engine.execute(cmd)
+            else:
+                self.run(cmd, check=True)
 
-        self.run(cmd, input=data, check=True)
+        finally:
+            shutil.rmtree(tmpdir)
 
     def export_pkcs7(
             self,
