@@ -1902,16 +1902,26 @@ class PKISubsystem(object):
             install_token=None):
 
         tmpdir = tempfile.mkdtemp()
+        self.instance.chown(tmpdir)
+
+        nssdb = self.instance.open_nssdb()
         try:
             if not install_token:
                 install_token = os.path.join(tmpdir, 'install-token')
                 with open(install_token, 'w', encoding='utf-8') as f:
                     f.write(session_id)
+                self.instance.chown(install_token)
 
-            cmd = [
-                'pki',
-                '-d', self.instance.nssdb_dir,
-                '-f', self.instance.password_conf,
+            cmd = []
+
+            if not nssdb.engine:
+                cmd.extend([
+                    'pki',
+                    '-d', self.instance.nssdb_dir,
+                    '-f', self.instance.password_conf,
+                ])
+
+            cmd.extend([
                 'ca-sd-join',
                 '-U', sd_url,
                 '--skip-revocation-check',
@@ -1920,7 +1930,7 @@ class PKISubsystem(object):
                 '--type', self.type,
                 '--hostname', hostname,
                 '--secure-port', secure_port,
-            ]
+            ])
 
             if unsecure_port is not None:
                 cmd.extend(['--unsecure-port', unsecure_port])
@@ -1939,10 +1949,14 @@ class PKISubsystem(object):
 
             cmd.append(host_id)
 
-            logger.debug('Command: %s', ' '.join(cmd))
-            subprocess.check_call(cmd)
+            if nssdb.engine:
+                nssdb.engine.execute(cmd)
+            else:
+                logger.debug('Command: %s', ' '.join(cmd))
+                subprocess.check_call(cmd)
 
         finally:
+            nssdb.close()
             shutil.rmtree(tmpdir)
 
     def leave_security_domain(
