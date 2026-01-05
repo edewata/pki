@@ -4424,28 +4424,52 @@ class PKIDeployer:
 
     def get_ca_signing_cert(self, ca_url):
 
-        cmd = [
-            'pki',
-            '-d', self.instance.nssdb_dir,
-            '-f', self.instance.password_conf,
-            'ca-cert-signing-export',
-            '-U', ca_url,
-            '--skip-revocation-check',
-            '--ignore-cert-status', 'UNTRUSTED_ISSUER,UNKNOWN_ISSUER',
-            '--ignore-banner',
-            '--pkcs7'
-        ]
+        tmpdir = tempfile.mkdtemp(dir=self.instance.temp_dir)
+        self.instance.chown(tmpdir)
 
-        if logger.isEnabledFor(logging.DEBUG):
-            cmd.append('--debug')
+        nssdb = self.instance.open_nssdb()
+        try:
+            output_file = os.path.join(tmpdir, 'output.p7b')
 
-        elif logger.isEnabledFor(logging.INFO):
-            cmd.append('--verbose')
+            cmd = []
 
-        logger.debug('Command: %s', ' '.join(cmd))
-        output = subprocess.check_output(cmd)
+            if not nssdb.engine:
+                cmd.extend([
+                    'pki',
+                    '-d', self.instance.nssdb_dir,
+                    '-f', self.instance.password_conf
+                ])
 
-        return output.decode()
+            cmd.extend([
+                'ca-cert-signing-export',
+                '-U', ca_url,
+                '--skip-revocation-check',
+                '--ignore-cert-status', 'UNTRUSTED_ISSUER,UNKNOWN_ISSUER',
+                '--ignore-banner',
+                '--output-file', output_file,
+                '--pkcs7'
+            ])
+
+            if logger.isEnabledFor(logging.DEBUG):
+                cmd.append('--debug')
+
+            elif logger.isEnabledFor(logging.INFO):
+                cmd.append('--verbose')
+
+            if nssdb.engine:
+                nssdb.engine.execute(cmd)
+            else:
+                logger.debug('Command: %s', ' '.join(cmd))
+                subprocess.check_call(cmd)
+
+            with open(output_file, 'r', encoding='utf-8') as f:
+                ca_signing_chain = f.read()
+
+            return ca_signing_chain
+
+        finally:
+            nssdb.close()
+            shutil.rmtree(tmpdir)
 
     def get_ca_subsystem_cert(self, ca_url):
 
