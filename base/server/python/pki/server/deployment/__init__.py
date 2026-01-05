@@ -3719,6 +3719,9 @@ class PKIDeployer:
             credentials=None):
 
         tmpdir = tempfile.mkdtemp()
+        self.instance.chown(tmpdir)
+
+        nssdb = self.instance.open_nssdb()
         try:
             if request_format != 'pem':
                 request_data = pki.nssdb.convert_csr(request_data, request_format, 'pem')
@@ -3732,13 +3735,21 @@ class PKIDeployer:
                 with open(install_token, 'w', encoding='utf-8') as f:
                     f.write(self.install_token.token)
 
-            cmd = [
-                'pki',
-                '-d', self.instance.nssdb_dir,
-                '-f', self.instance.password_conf,
+            output_file = os.path.join(tmpdir, 'output.crt')
+
+            cmd = []
+
+            if not nssdb.engine:
+                cmd.extend([
+                    'pki',
+                    '-d', self.instance.nssdb_dir,
+                    '-f', self.instance.password_conf
+                ])
+
+            cmd.extend([
                 'ca-cert-issue',
                 '-U', url,
-            ]
+            ])
 
             if credentials:
                 nickname = credentials.get('nickname')
@@ -3773,7 +3784,10 @@ class PKIDeployer:
             if self.install_token:
                 cmd.extend(['--install-token', install_token])
 
-            cmd.extend(['--output-format', 'PEM'])
+            cmd.extend([
+                '--output-file', output_file,
+                '--output-format', 'PEM'
+            ])
 
             if logger.isEnabledFor(logging.DEBUG):
                 cmd.append('--debug')
@@ -3781,12 +3795,19 @@ class PKIDeployer:
             elif logger.isEnabledFor(logging.INFO):
                 cmd.append('--verbose')
 
-            logger.debug('Command: %s', ' '.join(cmd))
-            output = subprocess.check_output(cmd)
+            if nssdb.engine:
+                nssdb.engine.execute(cmd)
+            else:
+                logger.debug('Command: %s', ' '.join(cmd))
+                subprocess.check_call(cmd)
 
-            return output.decode()
+            with open(output_file, 'r', encoding='utf-8') as f:
+                cert = f.read()
+
+            return cert
 
         finally:
+            nssdb.close()
             shutil.rmtree(tmpdir)
 
     def create_admin_csr(self, subsystem):
