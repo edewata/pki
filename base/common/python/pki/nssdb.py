@@ -2328,18 +2328,16 @@ class NSSDatabase:
             output_file=None,
             output_format=None):
 
-        cmd = []
-        if not self.engine:
-            cmd.extend([
-                'pki',
-                '-d', self.directory
-            ])
+        cmd = [
+            'pki',
+            '-d', self.directory
+        ]
 
-            if self.password_conf:
-                cmd.extend(['-f', self.password_conf])
+        if self.password_conf:
+            cmd.extend(['-f', self.password_conf])
 
-            elif self.password_file:
-                cmd.extend(['-C', self.password_file])
+        elif self.password_file:
+            cmd.extend(['-C', self.password_file])
 
         cmd.append('nss-cert-export')
 
@@ -2367,10 +2365,7 @@ class NSSDatabase:
 
         cmd.append(fullname)
 
-        if self.engine:
-            self.engine.execute(cmd)
-        else:
-            self.run(cmd, check=True)
+        self.run(cmd, check=True)
 
     def export_cert(self,
                     nickname,
