@@ -4527,35 +4527,23 @@ class PKIDeployer:
         transport_nickname = transport_cert_info.get('nickname')
 
         tmpdir = tempfile.mkdtemp()
-        self.instance.chown(tmpdir)
-
-        nssdb = self.instance.open_nssdb()
         try:
             subsystem_cert_file = os.path.join(tmpdir, 'subsystem.crt')
             with open(subsystem_cert_file, 'w', encoding='utf-8') as f:
                 f.write(subsystem_cert)
-            self.instance.chown(subsystem_cert_file)
 
             transport_cert_file = os.path.join(tmpdir, 'transport.crt')
             with open(transport_cert_file, 'w', encoding='utf-8') as f:
                 f.write(transport_cert)
-            self.instance.chown(transport_cert_file)
 
             install_token = os.path.join(tmpdir, 'install-token')
             with open(install_token, 'w', encoding='utf-8') as f:
                 f.write(self.install_token.token)
-            self.instance.chown(install_token)
 
-            cmd = []
-
-            if not nssdb.engine:
-                cmd.extend([
-                    'pki',
-                    '-d', self.instance.nssdb_dir,
-                    '-f', self.instance.password_conf,
-                ])
-
-            cmd.extend([
+            cmd = [
+                'pki',
+                '-d', self.instance.nssdb_dir,
+                '-f', self.instance.password_conf,
                 'ca-kraconnector-add',
                 '-U', ca_url,
                 '--skip-revocation-check',
@@ -4565,7 +4553,7 @@ class PKIDeployer:
                 '--transport-cert', transport_cert_file,
                 '--transport-nickname', transport_nickname,
                 '--install-token', install_token
-            ])
+            ]
 
             if logger.isEnabledFor(logging.DEBUG):
                 cmd.append('--debug')
@@ -4573,14 +4561,10 @@ class PKIDeployer:
             elif logger.isEnabledFor(logging.INFO):
                 cmd.append('--verbose')
 
-            if nssdb.engine:
-                nssdb.engine.execute(cmd)
-            else:
-                logger.debug('Command: %s', ' '.join(cmd))
-                subprocess.check_call(cmd)
+            logger.debug('Command: %s', ' '.join(cmd))
+            subprocess.check_call(cmd)
 
         finally:
-            nssdb.close()
             shutil.rmtree(tmpdir)
 
     def add_ocsp_publisher(self, subsystem, ca_url):
