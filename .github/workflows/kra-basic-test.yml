@@ -1372,3 +1372,8 @@ jobs:
         if: always()
         run: |
           docker exec pki find /var/lib/pki/pki-tomcat/logs/kra -name "debug.*" -exec cat {} \;
+
+      - name: Check core dump
+        if: always()
+        run: |
+          docker exec pki find /tmp/ -name "hs_err_pid*.log" -exec cat {} \;
