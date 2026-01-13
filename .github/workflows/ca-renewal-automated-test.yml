@@ -245,7 +245,7 @@ jobs:
               --ldap-url ldap://ds.example.com:3389 \
               --dm-password Secret.123 \
               --agent-uid caadmin \
-              -v
+              --debug
 
       - name: Check CA database config after renewal
         run: |
