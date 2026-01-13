@@ -107,6 +107,8 @@ public class MainCLI extends CLI {
 
         addModule(new HelpCLI(this));
 
+        addModule(new PasswordCLI(this));
+
         addModule(new ClientCLI(this));
         addModule(new NSSCLI(this));
 
