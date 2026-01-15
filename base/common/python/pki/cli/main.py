@@ -58,6 +58,8 @@ class PKICLI(pki.cli.CLI):
 
         self.properties = {}
 
+        self.runas_user = None
+
         self.nss_database = None
         self.nss_password = None
         self.nss_password_file = None
@@ -92,6 +94,8 @@ class PKICLI(pki.cli.CLI):
         self.parser = argparse.ArgumentParser(
             prog=self.name,
             add_help=False)
+
+        self.parser.add_argument('--runas_user')
 
         # keep this option for backward compatibility
         # TODO: remove this option in the future
@@ -160,6 +164,7 @@ class PKICLI(pki.cli.CLI):
         print('Usage: pki [OPTIONS]')
 
         print()
+        print('      --runas-user <user>        Run as user')
         print('      --client-type <type>       DEPRECATED: PKI client type')
         print('   -D <name>=<value>             System propery')
 
@@ -230,6 +235,9 @@ class PKICLI(pki.cli.CLI):
         self.set_nss_default_db_type()
 
         cmd = []
+
+        if self.runas_user:
+            cmd.extend(['/usr/sbin/runuser', '-u', self.runas_user, '--'])
 
         java_home = os.getenv('JAVA_HOME')
         cmd.extend([java_home + '/bin/java'])
@@ -362,6 +370,8 @@ class PKICLI(pki.cli.CLI):
 
         elif args.verbose:
             logging.getLogger().setLevel(logging.INFO)
+
+        self.runas_user = args.runas_user
 
         if args.client_type:
             logger.warning(
