@@ -287,15 +287,12 @@ class CLIEngine:
 
         self.command_id = 0
 
-        cmd = []
+        cmd = ['pki']
 
         if self.user:
-            cmd.extend(['/usr/sbin/runuser', '-u', self.user, '--'])
+            cmd.extend(['--runas-user', self.user])
 
-        cmd.extend([
-            'pki',
-            '-d', self.directory
-        ])
+        cmd.extend(['-d', self.directory])
 
         if self.password_conf:
             cmd.extend(['-f', self.password_conf])
