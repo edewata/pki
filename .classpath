@@ -28,7 +28,6 @@
 	<classpathentry kind="var" path="M2_REPO/commons-cli/commons-cli/1.4/commons-cli-1.4.jar"/>
 	<classpathentry kind="var" path="M2_REPO/commons-codec/commons-codec/1.15/commons-codec-1.15.jar"/>
 	<classpathentry kind="var" path="M2_REPO/commons-io/commons-io/2.11.0/commons-io-2.11.0.jar"/>
-	<classpathentry kind="var" path="M2_REPO/commons-logging/commons-logging/1.2/commons-logging-1.2.jar"/>
 	<classpathentry kind="var" path="M2_REPO/commons-net/commons-net/3.6/commons-net-3.6.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/apache/httpcomponents/httpcore/4.4.16/httpcore-4.4.16.jar"/>

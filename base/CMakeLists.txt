@@ -92,13 +92,6 @@ find_file(COMMONS_LANG3_JAR
         /usr/share/java
 )
 
-find_file(COMMONS_LOGGING_JAR
-    NAMES
-        commons-logging.jar
-    PATHS
-        /usr/share/java
-)
-
 find_file(COMMONS_NET_JAR
     NAMES
         commons-net.jar

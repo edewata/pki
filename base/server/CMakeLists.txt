@@ -154,7 +154,6 @@ add_custom_command(
     COMMAND ln -sf ../../../lib/commons-codec.jar common/lib/commons-codec.jar
     COMMAND ln -sf ../../../lib/commons-io.jar common/lib/commons-io.jar
     COMMAND ln -sf ../../../lib/commons-lang3.jar common/lib/commons-lang3.jar
-    COMMAND ln -sf ../../../lib/commons-logging.jar common/lib/commons-logging.jar
     COMMAND ln -sf ../../../lib/commons-net.jar common/lib/commons-net.jar
     COMMAND ln -sf ../../../lib/httpclient.jar common/lib/httpclient.jar
     COMMAND ln -sf ../../../lib/httpcore.jar common/lib/httpcore.jar

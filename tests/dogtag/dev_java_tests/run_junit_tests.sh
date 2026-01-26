@@ -43,7 +43,6 @@ run_dev_junit_tests() {
     CLASSPATH=$CLASSPATH:/usr/share/java/resteasy/resteasy-jackson-provider.jar
     CLASSPATH=$CLASSPATH:/usr/share/java/apache-commons-cli.jar
     CLASSPATH=$CLASSPATH:/usr/share/java/apache-commons-codec.jar
-    CLASSPATH=$CLASSPATH:/usr/share/java/apache-commons-logging.jar
     CLASSPATH=$CLASSPATH:/usr/share/java/commons-codec.jar
     CLASSPATH=$CLASSPATH:/usr/share/java/jaxb-api/jakarta.xml.bind-api.jar
     CLASSPATH=$CLASSPATH:/usr/share/java/jakarta-activation/jakarta.activation.jar
