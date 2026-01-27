@@ -347,7 +347,7 @@ public class MainCLI extends CLI {
             config.setServerURL(uri);
 
             SSLCertificateApprovalCallback callback = createCertApprovalCallback();
-            client = new PKIClient(config, callback);
+            client = createPKIClient(config, callback, apiVersion, ignoreBanner, httpOutput);
             caClient = new CAClient(client);
         }
 
