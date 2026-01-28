@@ -15,7 +15,7 @@
 """
 import threading
 import argparse
-from pki.client import PKIConnection
+from pki.client import PKIClient
 from pki.cert import CertClient
 from timeit import default_timer as timer
 import sys
@@ -78,14 +78,16 @@ if __name__ == "__main__":
     clients = []
 
     for nth in range(number_of_clients):
-        # Create a PKIConnection object that stores the details of the CA.
-        connection = PKIConnection('https', args.hostname, args.port, cert_paths=args.ca_cert_path)
+        # Create a PKIClient object that stores the details of the CA.
+        pki_client = PKIClient(
+            'https://' + args.hostname + ':' + args.port,
+            ca_bundle=args.ca_cert_path)
 
         # The pem file used for authentication. Created from a p12 file using the
         # command -
         # openssl pkcs12 -in <p12_file_path> -out /tmp/auth.pem -nodes
-        connection.set_authentication_cert(args.client_cert)
-        client = TestClient( connection, sub_list[nth], number_of_tests_per_client)
+        pki_client.set_client_auth(args.client_cert)
+        client = TestClient(pki_client.connection, sub_list[nth], number_of_tests_per_client)
         clients.append(client)
 
     start = timer()

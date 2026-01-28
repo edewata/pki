@@ -2748,7 +2748,8 @@ class PKIDeployer:
         self.sd_client = pki.client.PKIClient(
             url=sd_url,
             trust_env=False,
-            ca_bundle=ca_cert)
+            ca_bundle=ca_cert,
+            verify=False)
 
         return self.sd_client
 

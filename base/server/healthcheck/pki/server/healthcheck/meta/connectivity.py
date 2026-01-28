@@ -122,13 +122,15 @@ class DogtagKRAConnectivityCheck(MetaPlugin):
 
                 # Make a plain HTTPS GET to retrieve KRA transport cert, to test that
                 # the server is up AND is able to respond back
-                connection = pki.client.PKIConnection(
-                    protocol='https',
-                    hostname='localhost',
-                    port=https_port,
+                server_url = 'https://localhost:' + https_port
+
+                pki_client = pki.client.PKIClient(
+                    url=server_url,
                     verify=False)
 
-                system_cert_client = pki.systemcert.SystemCertClient(connection)
+                kra_client = pki.kra.KRAClient(pki_client)
+
+                system_cert_client = pki.systemcert.SystemCertClient(kra_client)
 
                 # This gets the KRA cert from CS.cfg via REST API. In future, the system
                 # certs will be moved into LDAP. This means that even if LDAP is down

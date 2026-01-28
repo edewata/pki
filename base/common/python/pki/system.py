@@ -247,7 +247,7 @@ class SecurityDomainClient(object):
 
             logger.warning(
                 '%s:%s: The PKIConnection parameter in SecurityDomainClient.__init__() '
-                'has been deprecated. Provide SubsystemClient instead.',
+                'has been deprecated. Provide PKIClient instead.',
                 inspect.stack()[1].filename, inspect.stack()[1].lineno)
 
             self.subsystem_client = None
