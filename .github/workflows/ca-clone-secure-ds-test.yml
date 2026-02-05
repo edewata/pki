@@ -451,10 +451,21 @@ jobs:
           diff expected output
 
       - name: Run PKI healthcheck in primary PKI container
-        run: docker exec primary pki-healthcheck --failures-only
+        run: |
+          cat > healthcheck.conf << EOF
+          [default]
+          timeout = 30
+          EOF
+
+          docker exec primary pki-healthcheck \
+              --config $SHARED/healthcheck.conf \
+              --failures-only
 
       - name: Run PKI healthcheck in secondary PKI container
-        run: docker exec secondary pki-healthcheck --failures-only
+        run: |
+          docker exec secondary pki-healthcheck \
+              --config $SHARED/healthcheck.conf \
+              --failures-only
 
       - name: Verify DS connection in secondary PKI container
         run: |

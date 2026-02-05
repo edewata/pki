@@ -146,8 +146,15 @@ jobs:
 
       - name: Run PKI healthcheck
         run: |
+          cat > healthcheck.conf << EOF
+          [default]
+          timeout = 30
+          EOF
+
           # pki-healthcheck should generate warnings
-          docker exec pki pki-healthcheck --failures-only \
+          docker exec pki pki-healthcheck \
+              --config $SHARED/healthcheck.conf \
+              --failures-only \
               > >(tee stdout) 2> >(tee stderr >&2) || true
 
           cat > expected << EOF
@@ -198,7 +205,9 @@ jobs:
       - name: Run PKI healthcheck
         run: |
           # pki-healthcheck should fail
-          docker exec pki pki-healthcheck --failures-only \
+          docker exec pki pki-healthcheck \
+              --config $SHARED/healthcheck.conf \
+              --failures-only \
               > >(tee stdout) 2> >(tee stderr >&2) || true
 
           cat > expected << EOF
@@ -290,7 +299,9 @@ jobs:
       - name: Run PKI healthcheck
         run: |
           # pki-healthcheck should not fail
-          docker exec pki pki-healthcheck --failures-only
+          docker exec pki pki-healthcheck \
+              --config $SHARED/healthcheck.conf \
+              --failures-only
 
       - name: Check CA admin
         run: |

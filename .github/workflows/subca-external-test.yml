@@ -110,7 +110,15 @@ jobs:
           docker exec pki /usr/share/pki/tests/ca/bin/test-ms-subca-signing-cert-ext.sh ca_signing.crt
 
       - name: Run PKI healthcheck
-        run: docker exec pki pki-healthcheck --failures-only
+        run: |
+          cat > healthcheck.conf << EOF
+          [default]
+          timeout = 30
+          EOF
+
+          docker exec pki pki-healthcheck \
+              --config $SHARED/healthcheck.conf \
+              --failures-only
 
       - name: Verify CA admin
         run: |

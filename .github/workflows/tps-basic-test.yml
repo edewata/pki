@@ -338,7 +338,23 @@ jobs:
           docker exec pki openssl x509 -text -noout -in /root/.dogtag/pki-tomcat/ca_admin.cert
 
       - name: Run PKI healthcheck
-        run: docker exec pki pki-healthcheck --failures-only
+        run: |
+          cat > healthcheck.conf << EOF
+          [default]
+          timeout = 30
+          EOF
+
+          docker exec pki pki-healthcheck \
+              --config $SHARED/healthcheck.conf \
+              --failures-only \
+              --debug \
+              > >(tee stdout) 2> >(tee stderr >&2)
+
+      - name: Check external commands
+        if: always()
+        run: |
+          sed -n '/^Command:/p' stderr | tee output
+          wc -l output
 
       - name: Check TPS admin
         run: |

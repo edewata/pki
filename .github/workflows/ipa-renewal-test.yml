@@ -216,7 +216,14 @@ jobs:
 
       - name: Run PKI healthcheck
         run: |
-          docker exec ipa pki-healthcheck --failures-only \
+          cat > healthcheck.conf << EOF
+          [default]
+          timeout = 30
+          EOF
+
+          docker exec ipa pki-healthcheck \
+              --config $SHARED/healthcheck.conf \
+              --failures-only \
               > >(tee stdout) 2> >(tee stderr >&2) || true
 
           cat > expected << EOF
@@ -284,7 +291,9 @@ jobs:
 
       - name: Run PKI healthcheck after renewal
         run: |
-          docker exec ipa pki-healthcheck --failures-only \
+          docker exec ipa pki-healthcheck \
+              --config $SHARED/healthcheck.conf \
+              --failures-only \
               > >(tee stdout) 2> >(tee stderr >&2) || true
 
           diff /dev/null stderr

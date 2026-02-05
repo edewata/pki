@@ -290,9 +290,18 @@ jobs:
       - name: Install banner in KRA container
         run: docker exec kra cp /usr/share/pki/server/examples/banner/banner.txt /var/lib/pki/pki-tomcat/conf
 
-      # TODO: Fix DogtagKRAConnectivityCheck to work without CA
-      # - name: Run PKI healthcheck
-      #   run: docker exec kra pki-healthcheck --failures-only
+      - name: Run PKI healthcheck
+        run: |
+          cat > healthcheck.conf << EOF
+          [default]
+          timeout = 30
+          EOF
+
+          # TODO: Fix DogtagKRAConnectivityCheck to work without CA
+          docker exec kra pki-healthcheck \
+              --config $SHARED/healthcheck.conf \
+              --failures-only \
+              --debug || true
 
       - name: Verify KRA admin
         run: |

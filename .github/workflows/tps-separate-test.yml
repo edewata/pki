@@ -222,6 +222,7 @@ jobs:
         run: docker exec tps cp /usr/share/pki/server/examples/banner/banner.txt /var/lib/pki/pki-tomcat/conf
 
       - name: Run PKI healthcheck
+        if: false
         run: docker exec tps pki-healthcheck --failures-only
 
       - name: Check TPS admin

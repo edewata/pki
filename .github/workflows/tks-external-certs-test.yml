@@ -175,7 +175,15 @@ jobs:
           docker exec tks pki-server cert-find
 
       - name: Run PKI healthcheck
-        run: docker exec tks pki-healthcheck --failures-only
+        run: |
+          cat > healthcheck.conf << EOF
+          [default]
+          timeout = 30
+          EOF
+
+          docker exec tks pki-healthcheck \
+              --config $SHARED/healthcheck.conf \
+              --failures-only
 
       - name: Verify TKS admin
         run: |

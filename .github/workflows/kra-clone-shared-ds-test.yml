@@ -231,10 +231,21 @@ jobs:
           diff kra-users.primary kra-users.secondary
 
       - name: Run PKI healthcheck in primary container
-        run: docker exec primary pki-healthcheck --failures-only
+        run: |
+          cat > healthcheck.conf << EOF
+          [default]
+          timeout = 30
+          EOF
+
+          docker exec primary pki-healthcheck \
+              --config $SHARED/healthcheck.conf \
+              --failures-only
 
       - name: Run PKI healthcheck in secondary container
-        run: docker exec secondary pki-healthcheck --failures-only
+        run: |
+          docker exec secondary pki-healthcheck \
+              --config $SHARED/healthcheck.conf \
+              --failures-only
 
       - name: Remove KRA from secondary PKI container
         run: docker exec secondary pkidestroy -s KRA -v

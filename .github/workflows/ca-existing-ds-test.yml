@@ -318,7 +318,15 @@ jobs:
               -v
 
       - name: Run PKI healthcheck
-        run: docker exec pki pki-healthcheck --failures-only
+        run: |
+          cat > healthcheck.conf << EOF
+          [default]
+          timeout = 30
+          EOF
+
+          docker exec pki pki-healthcheck \
+              --config $SHARED/healthcheck.conf \
+              --failures-only
 
       - name: Check CA admin user
         run: |

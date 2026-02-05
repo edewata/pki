@@ -198,7 +198,15 @@ jobs:
           diff expected actual
 
       - name: Run PKI healthcheck
-        run: docker exec ipa pki-healthcheck --failures-only
+        run: |
+          cat > healthcheck.conf << EOF
+          [default]
+          timeout = 30
+          EOF
+
+          docker exec ipa pki-healthcheck \
+              --config $SHARED/healthcheck.conf \
+              --failures-only
 
       - name: Configure test environment
         run: |

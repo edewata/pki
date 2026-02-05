@@ -431,10 +431,21 @@ jobs:
           diff expected actual
 
       - name: Run PKI healthcheck in CA container
-        run: docker exec ca pki-healthcheck --failures-only
+        run: |
+          cat > healthcheck.conf << EOF
+          [default]
+          timeout = 30
+          EOF
+
+          docker exec ca pki-healthcheck \
+              --config $SHARED/healthcheck.conf \
+              --failures-only
 
       - name: Run PKI healthcheck in ACME container
-        run: docker exec acme pki-healthcheck --failures-only
+        run: |
+           docker exec acme pki-healthcheck \
+              --config $SHARED/healthcheck.conf \
+              --failures-only
 
       - name: Verify ACME in ACME container
         run: |

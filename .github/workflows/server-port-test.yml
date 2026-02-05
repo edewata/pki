@@ -59,7 +59,15 @@ jobs:
         run: docker exec pki cat /etc/pki/pki-tomcat/server.xml
 
       - name: Run PKI healthcheck
-        run: docker exec pki pki-healthcheck --failures-only
+        run: |
+          cat > healthcheck.conf << EOF
+          [default]
+          timeout = 30
+          EOF
+
+          docker exec pki pki-healthcheck \
+              --config $SHARED/healthcheck.conf \
+              --failures-only
 
       - name: Initialize PKI client
         run: |

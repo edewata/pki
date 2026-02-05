@@ -263,7 +263,15 @@ jobs:
           docker exec ocsp pki-server cert-find
 
       - name: Run PKI healthcheck
-        run: docker exec ocsp pki-healthcheck --failures-only
+        run: |
+          cat > healthcheck.conf << EOF
+          [default]
+          timeout = 30
+          EOF
+
+          docker exec ocsp pki-healthcheck \
+              --config $SHARED/healthcheck.conf \
+              --failures-only
 
       - name: Start CA
         run: |

@@ -181,7 +181,15 @@ jobs:
           docker exec pki pki-server acme-realm-show
 
       - name: Run PKI healthcheck in PKI container
-        run: docker exec pki pki-healthcheck --failures-only
+        run: |
+          cat > healthcheck.conf << EOF
+          [default]
+          timeout = 30
+          EOF
+
+          docker exec pki pki-healthcheck \
+              --config $SHARED/healthcheck.conf \
+              --failures-only
 
       - name: Verify ACME in PKI container
         run: docker exec pki pki acme-info
