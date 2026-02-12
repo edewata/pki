@@ -239,7 +239,6 @@ BuildRequires:    tomcat-jakartaee-migration
 
 BuildRequires:    %{vendor_id}-jss >= 5.10
 
-BuildRequires:    mvn(org.apache.httpcomponents:httpclient)
 BuildRequires:    mvn(xml-apis:xml-apis)
 BuildRequires:    mvn(xml-resolver:xml-resolver)
 BuildRequires:    mvn(org.junit.jupiter:junit-jupiter-api)
@@ -251,6 +250,9 @@ BuildRequires:    mvn(commons-io:commons-io)
 BuildRequires:    mvn(org.apache.commons:commons-lang3)
 BuildRequires:    mvn(commons-logging:commons-logging)
 BuildRequires:    mvn(commons-net:commons-net)
+
+BuildRequires:    mvn(org.apache.httpcomponents:httpclient)
+BuildRequires:    mvn(org.apache.httpcomponents:httpcore)
 
 BuildRequires:    mvn(org.slf4j:slf4j-api)
 BuildRequires:    mvn(org.slf4j:slf4j-jdk14)
@@ -587,7 +589,6 @@ Obsoletes:        %{product_id}-base-java < %{version}-%{release}
 Provides:         %{product_id}-base-java = %{version}-%{release}
 
 Requires:         %{java_headless}
-Requires:         mvn(org.apache.httpcomponents:httpclient)
 
 %if %{with runtime_deps}
 Requires:         mvn(commons-cli:commons-cli)
@@ -596,6 +597,9 @@ Requires:         mvn(commons-io:commons-io)
 Requires:         mvn(org.apache.commons:commons-lang3)
 Requires:         mvn(commons-logging:commons-logging)
 Requires:         mvn(commons-net:commons-net)
+
+Requires:         mvn(org.apache.httpcomponents:httpclient)
+Requires:         mvn(org.apache.httpcomponents:httpcore)
 
 Requires:         mvn(org.slf4j:slf4j-api)
 Requires:         mvn(org.slf4j:slf4j-jdk14)
@@ -623,6 +627,9 @@ Provides:         bundled(apache-commons-io)
 Provides:         bundled(apache-commons-lang3)
 Provides:         bundled(apache-commons-logging)
 Provides:         bundled(apache-commons-net)
+
+Provides:         bundled(httpcomponents-client)
+Provides:         bundled(httpcomponents-core)
 
 Provides:         bundled(slf4j)
 Provides:         bundled(slf4j-jdk14)
@@ -1168,6 +1175,18 @@ then
     cp /usr/share/java/slf4j/slf4j-jdk14.jar \
         slf4j-jdk14-$SLF4J_VERSION.jar
 
+    HTTPCLIENT_VERSION=$(rpm -q httpcomponents-client | sed -n 's/^httpcomponents-client-\([^-]*\)-.*$/\1/p')
+    echo "HTTPCLIENT_VERSION: $HTTPCLIENT_VERSION"
+
+    cp /usr/share/java/httpcomponents/httpclient.jar \
+        httpclient-$HTTPCLIENT_VERSION.jar
+
+    HTTPCORE_VERSION=$(rpm -q httpcomponents-core | sed -n 's/^httpcomponents-core-\([^-]*\)-.*$/\1/p')
+    echo "HTTPCORE_VERSION: $HTTPCORE_VERSION"
+
+    cp /usr/share/java/httpcomponents/httpcore.jar \
+        httpcore-$HTTPCORE_VERSION.jar
+
     JAKARTA_ACTIVATION_API_VERSION=$(rpm -q jakarta-activation | sed -n 's/^jakarta-activation-\([^-]*\)-.*$/\1/p')
     echo "JAKARTA_ACTIVATION_API_VERSION: $JAKARTA_ACTIVATION_API_VERSION"
 
@@ -1585,6 +1604,7 @@ xmlstarlet edit --inplace \
     -d "//_:dependency[_:groupId='org.apache.commons']" \
     -d "//_:dependency[_:groupId='commons-logging']" \
     -d "//_:dependency[_:groupId='commons-net']" \
+    -d "//_:dependency[_:groupId='org.apache.httpcomponents']" \
     -d "//_:dependency[_:groupId='org.slf4j']" \
     -d "//_:dependency[_:groupId='jakarta.activation']" \
     -d "//_:dependency[_:groupId='jakarta.annotation']" \
@@ -1608,6 +1628,7 @@ xmlstarlet edit --inplace \
     -d "//_:dependency[_:groupId='org.apache.commons']" \
     -d "//_:dependency[_:groupId='commons-logging']" \
     -d "//_:dependency[_:groupId='commons-net']" \
+    -d "//_:dependency[_:groupId='org.apache.httpcomponents']" \
     -d "//_:dependency[_:groupId='org.slf4j']" \
     -d "//_:dependency[_:groupId='jakarta.activation']" \
     -d "//_:dependency[_:groupId='jakarta.annotation']" \
@@ -1630,6 +1651,7 @@ xmlstarlet edit --inplace \
     -d "//_:dependency[_:groupId='org.apache.commons']" \
     -d "//_:dependency[_:groupId='commons-logging']" \
     -d "//_:dependency[_:groupId='commons-net']" \
+    -d "//_:dependency[_:groupId='org.apache.httpcomponents']" \
     -d "//_:dependency[_:groupId='org.slf4j']" \
     -d "//_:dependency[_:groupId='jakarta.activation']" \
     -d "//_:dependency[_:groupId='jakarta.annotation']" \
@@ -1653,6 +1675,7 @@ xmlstarlet edit --inplace \
     -d "//_:dependency[_:groupId='org.apache.commons']" \
     -d "//_:dependency[_:groupId='commons-logging']" \
     -d "//_:dependency[_:groupId='commons-net']" \
+    -d "//_:dependency[_:groupId='org.apache.httpcomponents']" \
     -d "//_:dependency[_:groupId='org.slf4j']" \
     -d "//_:dependency[_:groupId='jakarta.activation']" \
     -d "//_:dependency[_:groupId='jakarta.annotation']" \
@@ -1676,6 +1699,7 @@ xmlstarlet edit --inplace \
     -d "//_:dependency[_:groupId='org.apache.commons']" \
     -d "//_:dependency[_:groupId='commons-logging']" \
     -d "//_:dependency[_:groupId='commons-net']" \
+    -d "//_:dependency[_:groupId='org.apache.httpcomponents']" \
     -d "//_:dependency[_:groupId='org.slf4j']" \
     -d "//_:dependency[_:groupId='jakarta.activation']" \
     -d "//_:dependency[_:groupId='jakarta.annotation']" \
@@ -1699,6 +1723,7 @@ xmlstarlet edit --inplace \
     -d "//_:dependency[_:groupId='org.apache.commons']" \
     -d "//_:dependency[_:groupId='commons-logging']" \
     -d "//_:dependency[_:groupId='commons-net']" \
+    -d "//_:dependency[_:groupId='org.apache.httpcomponents']" \
     -d "//_:dependency[_:groupId='org.slf4j']" \
     -d "//_:dependency[_:groupId='jakarta.activation']" \
     -d "//_:dependency[_:groupId='jakarta.annotation']" \
@@ -1722,6 +1747,7 @@ xmlstarlet edit --inplace \
     -d "//_:dependency[_:groupId='org.apache.commons']" \
     -d "//_:dependency[_:groupId='commons-logging']" \
     -d "//_:dependency[_:groupId='commons-net']" \
+    -d "//_:dependency[_:groupId='org.apache.httpcomponents']" \
     -d "//_:dependency[_:groupId='org.slf4j']" \
     -d "//_:dependency[_:groupId='jakarta.activation']" \
     -d "//_:dependency[_:groupId='jakarta.annotation']" \
@@ -1745,6 +1771,7 @@ xmlstarlet edit --inplace \
     -d "//_:dependency[_:groupId='org.apache.commons']" \
     -d "//_:dependency[_:groupId='commons-logging']" \
     -d "//_:dependency[_:groupId='commons-net']" \
+    -d "//_:dependency[_:groupId='org.apache.httpcomponents']" \
     -d "//_:dependency[_:groupId='org.slf4j']" \
     -d "//_:dependency[_:groupId='jakarta.activation']" \
     -d "//_:dependency[_:groupId='jakarta.annotation']" \
@@ -1768,6 +1795,7 @@ xmlstarlet edit --inplace \
     -d "//_:dependency[_:groupId='org.apache.commons']" \
     -d "//_:dependency[_:groupId='commons-logging']" \
     -d "//_:dependency[_:groupId='commons-net']" \
+    -d "//_:dependency[_:groupId='org.apache.httpcomponents']" \
     -d "//_:dependency[_:groupId='org.slf4j']" \
     -d "//_:dependency[_:groupId='jakarta.activation']" \
     -d "//_:dependency[_:groupId='jakarta.annotation']" \
@@ -1791,6 +1819,7 @@ xmlstarlet edit --inplace \
     -d "//_:dependency[_:groupId='org.apache.commons']" \
     -d "//_:dependency[_:groupId='commons-logging']" \
     -d "//_:dependency[_:groupId='commons-net']" \
+    -d "//_:dependency[_:groupId='org.apache.httpcomponents']" \
     -d "//_:dependency[_:groupId='org.slf4j']" \
     -d "//_:dependency[_:groupId='jakarta.activation']" \
     -d "//_:dependency[_:groupId='jakarta.annotation']" \
@@ -1814,6 +1843,7 @@ xmlstarlet edit --inplace \
     -d "//_:dependency[_:groupId='org.apache.commons']" \
     -d "//_:dependency[_:groupId='commons-logging']" \
     -d "//_:dependency[_:groupId='commons-net']" \
+    -d "//_:dependency[_:groupId='org.apache.httpcomponents']" \
     -d "//_:dependency[_:groupId='org.slf4j']" \
     -d "//_:dependency[_:groupId='jakarta.activation']" \
     -d "//_:dependency[_:groupId='jakarta.annotation']" \
