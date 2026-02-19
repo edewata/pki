@@ -109,9 +109,6 @@ def run_test(protocol, hostname, port, client_cert, certdb_dir,
     # for NSS db, this must be done after importing the transport cert
     crypto.initialize()
 
-    # set transport cert into keyclient
-    keyclient.set_transport_cert(transport_nick)
-
     # Test 2: Get key request info
     print("Now getting key request")
     try:
