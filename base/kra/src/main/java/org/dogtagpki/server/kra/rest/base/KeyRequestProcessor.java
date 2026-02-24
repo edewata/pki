@@ -113,6 +113,7 @@ public class KeyRequestProcessor {
         ASYMKEY_GEN_ALGORITHMS = new HashMap<>();
         ASYMKEY_GEN_ALGORITHMS.put(KeyRequestResource.RSA_ALGORITHM, KeyPairAlgorithm.RSA);
         ASYMKEY_GEN_ALGORITHMS.put(KeyRequestResource.DSA_ALGORITHM, KeyPairAlgorithm.DSA);
+        ASYMKEY_GEN_ALGORITHMS.put(KeyRequestResource.EC_ALGORITHM, KeyPairAlgorithm.EC);
     }
     private static final String ATTR_SERIALNO = "serialNumber";
 
@@ -767,7 +768,7 @@ public class KeyRequestProcessor {
     private KeyRequestResponse submitGenerateSymKeyRequest(SymKeyGenerationRequest data, String userName, String baseUrl) throws EBaseException {
         String clientKeyId = data.getClientKeyId();
         String algName = data.getKeyAlgorithm();
-        Integer keySize = data.getKeySize();
+        String keySize = data.getKeySize();
         List<String> usages = data.getUsages();
         String transWrappedSessionKey = data.getTransWrappedSessionKey();
         String realm = data.getRealm();
@@ -781,25 +782,12 @@ public class KeyRequestProcessor {
             throw new BadRequestException("Can not archive already active existing key!");
         }
 
-        if (keySize == null) {
-            keySize = Integer.valueOf(0);
-        }
-
-        if (StringUtils.isBlank(algName)) {
-            if (keySize.intValue() != 0) {
-                throw new BadRequestException(
-                        "Invalid request.  Must specify key algorithm if size is specified");
-            }
-            algName = KeyRequestResource.AES_ALGORITHM;
-            keySize = Integer.valueOf(128);
-        }
-
         KeyGenAlgorithm alg = SYMKEY_GEN_ALGORITHMS.get(algName);
         if (alg == null) {
             throw new BadRequestException("Invalid Algorithm");
         }
 
-        if (!alg.isValidStrength(keySize.intValue())) {
+        if (!alg.isValidStrength(Integer.parseInt(keySize))) {
             throw new BadRequestException("Invalid key size for this algorithm");
         }
 
@@ -832,7 +820,7 @@ public class KeyRequestProcessor {
     private KeyRequestResponse submitGenerateAsymKeyRequest(AsymKeyGenerationRequest data, String userName, String baseUrl) throws EBaseException {
         String clientKeyId = data.getClientKeyId();
         String algName = data.getKeyAlgorithm();
-        Integer keySize = data.getKeySize();
+        String keySize = data.getKeySize();
         List<String> usages = data.getUsages();
         String transWrappedSessionKey = data.getTransWrappedSessionKey();
         String realm = data.getRealm();
@@ -844,11 +832,6 @@ public class KeyRequestProcessor {
         boolean keyExists = keyExists(clientKeyId, "active");
         if (keyExists) {
             throw new BadRequestException("Cannot archive already active existing key!");
-        }
-
-        if (StringUtils.isBlank(algName) && keySize.intValue() != 0) {
-            throw new BadRequestException(
-                    "Invalid request.  Must specify key algorithm if size is specified");
         }
 
         KeyPairAlgorithm alg = ASYMKEY_GEN_ALGORITHMS.get(algName);
@@ -864,7 +847,7 @@ public class KeyRequestProcessor {
         } else {
             //Validate key size
             if (algName.equalsIgnoreCase(KeyRequestResource.RSA_ALGORITHM)) {
-                int size = keySize;
+                int size = Integer.parseInt(keySize);
                 int minSize = cs.getInteger("keys.rsa.min.size", 256);
                 int maxSize = cs.getInteger("keys.rsa.max.size", 8192);
                 if (minSize > maxSize) {

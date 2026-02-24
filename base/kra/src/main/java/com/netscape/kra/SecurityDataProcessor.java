@@ -792,7 +792,7 @@ public class SecurityDataProcessor {
                     storageUnit.unwrap(
                             keyRecord.getPrivateKeyData(),
                             KeyRequestService.SYMKEY_TYPES.get(keyRecord.getAlgorithm()),
-                            keyRecord.getKeySize(),
+                            Integer.parseInt(keyRecord.getKeySize()),
                             keyRecord.getWrappingParams(storageUnit.getOldWrappingParams()));
             return symKey;
         } catch (Exception e) {

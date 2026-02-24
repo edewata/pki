@@ -12,6 +12,7 @@ import cryptography.hazmat.backends
 import cryptography.hazmat.primitives.padding
 import cryptography.x509
 
+import pki.cli
 import pki.kra
 import pki.account
 import pki.client
@@ -41,6 +42,11 @@ parser.add_argument(
     '--api',
     help='API version: v1, v2',
     dest='api_version')
+parser.add_argument(
+    '--data-type',
+    help='Data type: blob (default), symmetric, asymmetric',
+    default='blob',
+    dest='data_type')
 parser.add_argument(
     '--client-key-id',
     help='Client key ID',
@@ -72,6 +78,15 @@ if args.debug:
 
 elif args.verbose:
     logging.getLogger().setLevel(logging.INFO)
+
+if args.data_type == 'blob':
+    data_type = pki.key.KeyClient.PASS_PHRASE_TYPE
+elif args.data_type == 'symmetric':
+    data_type = pki.key.KeyClient.SYMMETRIC_KEY_TYPE
+elif args.data_type == 'asymmetric':
+    data_type = pki.key.KeyClient.ASYMMETRIC_KEY_TYPE
+else:
+    raise pki.cli.CLIException('Invalid data type: %s' % args.data_type)
 
 with open(args.transport, 'rb') as f:
     transport_pem = f.read()
@@ -121,7 +136,7 @@ algorithm_oid = pki.crypto.AES_128_CBC_OID
 
 key_client.archive_encrypted_data(
     args.client_key_id,
-    pki.key.KeyClient.PASS_PHRASE_TYPE,
+    data_type,
     encrypted_data,
     wrapped_session_key,
     algorithm_oid=algorithm_oid,

@@ -95,36 +95,12 @@ public class AsymKeyGenService implements IService {
 
         String algorithm = request.getExtDataInString(Request.KEY_GEN_ALGORITHM);
 
-        String keySizeStr = request.getExtDataInString(Request.KEY_GEN_SIZE);
-        int keySize = 2048;
+        String keySize = request.getExtDataInString(Request.KEY_GEN_SIZE);
         boolean isEC = false;
         String errmsg ="";
 
         if (algorithm.toUpperCase().equals("EC")) {
             isEC = true;
-            switch (keySizeStr) {
-               case "nistp256":
-                    keySize = 256;
-                    break;
-                case "nistp384":
-                    keySize = 384;
-                    break;
-                case "nistp521":
-                    keySize = 521;
-                    break;
-                default:
-                    logger.debug(method + "unknown EC key curve name: " + keySizeStr);
-                    errmsg = "unknown EC key curve name: " + keySizeStr;
-                    auditor.log(new ServerSideKeygenEnrollKeygenProcessedEvent(
-                        auditSubjectID,
-                        "Failure",
-                        request.getRequestId(),
-                        clientKeyId,
-                        errmsg));
-                    throw new EBaseException("Errors in ServerSideKeygenEnroll generating Asymmetric key: " + errmsg);
-            }
-        } else {
-            keySize = Integer.valueOf(keySizeStr);
         }
 
         String realm = request.getRealm();
@@ -185,8 +161,8 @@ public class AsymKeyGenService implements IService {
         try {
             kp = kra.generateKeyPair(
                     algorithm.toUpperCase(),
-                    keySize,
-                    isEC? keySizeStr:null, // keyCurve for ECC
+                    isEC ? null : Integer.parseInt(keySize),
+                    isEC ? keySize : null, // keyCurve for ECC
                     null, // PQG not yet supported
                     usageList,
                     true /* temporary */

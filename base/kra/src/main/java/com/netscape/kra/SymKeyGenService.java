@@ -103,8 +103,7 @@ public class SymKeyGenService implements IService {
                 Arrays.asList(StringUtils.split(usageStr, ",")));
         logger.info("SymKeyGenService: - usages: " + usages);
 
-        String keySizeStr = request.getExtDataInString(Request.KEY_GEN_SIZE);
-        int keySize = Integer.parseInt(keySizeStr);
+        String keySize = request.getExtDataInString(Request.KEY_GEN_SIZE);
         logger.info("SymKeyGenService: - key size: " + keySize);
 
         String owner = request.getExtDataInString(Request.ATTR_REQUEST_OWNER);
@@ -115,7 +114,7 @@ public class SymKeyGenService implements IService {
         String auditSubjectID = owner;
 
         //Check here even though restful layer checks for this.
-        if (algorithm == null || clientKeyId == null || keySize <= 0) {
+        if (algorithm == null || clientKeyId == null || keySize == null) {
             logger.error("SymKeyGenService: Missing client key ID or algorithm or invalid key size");
             auditor.log(new SymKeyGenerationProcessedEvent(
                     auditSubjectID,
@@ -177,7 +176,8 @@ public class SymKeyGenService implements IService {
         logger.info("SymKeyGenService: Generating symmetric key");
         SymmetricKey sk = null;
         try {
-            sk = CryptoUtil.generateKey(token, kgAlg, keySize, keyUsages, true);
+            int size = Integer.parseInt(keySize);
+            sk = CryptoUtil.generateKey(token, kgAlg, size, keyUsages, true);
             logger.debug("SymKeyGenService: session key generated on slot: " + token.getName());
         } catch (Exception e) {
             String message = "Unable to generate symmetric key: " + e.getMessage();

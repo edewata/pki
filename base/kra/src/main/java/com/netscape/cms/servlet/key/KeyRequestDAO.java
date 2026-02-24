@@ -93,6 +93,7 @@ public class KeyRequestDAO extends CMSRequestDAO {
         ASYMKEY_GEN_ALGORITHMS = new HashMap<>();
         ASYMKEY_GEN_ALGORITHMS.put(KeyRequestResource.RSA_ALGORITHM, KeyPairAlgorithm.RSA);
         ASYMKEY_GEN_ALGORITHMS.put(KeyRequestResource.DSA_ALGORITHM, KeyPairAlgorithm.DSA);
+        ASYMKEY_GEN_ALGORITHMS.put(KeyRequestResource.EC_ALGORITHM, KeyPairAlgorithm.EC);
     }
 
     private static String REQUEST_ARCHIVE_OPTIONS = Request.REQUEST_ARCHIVE_OPTIONS;
@@ -436,7 +437,7 @@ public class KeyRequestDAO extends CMSRequestDAO {
             throws EBaseException {
         String clientKeyId = data.getClientKeyId();
         String algName = data.getKeyAlgorithm();
-        Integer keySize = data.getKeySize();
+        String keySize = data.getKeySize();
         List<String> usages = data.getUsages();
         String transWrappedSessionKey = data.getTransWrappedSessionKey();
         String realm = data.getRealm();
@@ -450,25 +451,12 @@ public class KeyRequestDAO extends CMSRequestDAO {
             throw new BadRequestException("Can not archive already active existing key!");
         }
 
-        if (keySize == null) {
-            keySize = Integer.valueOf(0);
-        }
-
-        if (StringUtils.isBlank(algName)) {
-            if (keySize.intValue() != 0) {
-                throw new BadRequestException(
-                        "Invalid request.  Must specify key algorithm if size is specified");
-            }
-            algName = KeyRequestResource.AES_ALGORITHM;
-            keySize = Integer.valueOf(128);
-        }
-
         KeyGenAlgorithm alg = SYMKEY_GEN_ALGORITHMS.get(algName);
         if (alg == null) {
             throw new BadRequestException("Invalid Algorithm");
         }
 
-        if (!alg.isValidStrength(keySize.intValue())) {
+        if (!alg.isValidStrength(Integer.parseInt(keySize))) {
             throw new BadRequestException("Invalid key size for this algorithm");
         }
 
@@ -504,7 +492,7 @@ public class KeyRequestDAO extends CMSRequestDAO {
             throws EBaseException {
         String clientKeyId = data.getClientKeyId();
         String algName = data.getKeyAlgorithm();
-        Integer keySize = data.getKeySize();
+        String keySize = data.getKeySize();
         List<String> usages = data.getUsages();
         String transWrappedSessionKey = data.getTransWrappedSessionKey();
         String realm = data.getRealm();
@@ -521,13 +509,6 @@ public class KeyRequestDAO extends CMSRequestDAO {
             throw new BadRequestException("Cannot archive already active existing key!");
         }
 
-        if (StringUtils.isBlank(algName)) {
-            if (keySize.intValue() != 0) {
-                throw new BadRequestException(
-                        "Invalid request.  Must specify key algorithm if size is specified");
-            }
-        }
-
         KeyPairAlgorithm alg = ASYMKEY_GEN_ALGORITHMS.get(algName);
         if (alg == null) {
             throw new BadRequestException("Unsupported algorithm specified.");
@@ -541,7 +522,7 @@ public class KeyRequestDAO extends CMSRequestDAO {
         } else {
             //Validate key size
             if (algName.equalsIgnoreCase(KeyRequestResource.RSA_ALGORITHM)) {
-                int size = Integer.valueOf(keySize);
+                int size = Integer.parseInt(keySize);
                 int minSize = Integer.valueOf(cs.getInteger("keys.rsa.min.size", 256));
                 int maxSize = Integer.valueOf(cs.getInteger("keys.rsa.max.size", 8192));
                 if (minSize > maxSize) {

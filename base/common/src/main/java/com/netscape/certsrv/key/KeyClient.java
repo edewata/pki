@@ -454,7 +454,7 @@ public class KeyClient extends Client {
                     KeyWrapAlgorithm.fromString(data.getWrapAlgorithm()),
                     data.getNonceData(),
                     data.getAlgorithm(),
-                    data.getSize());
+                    Integer.parseInt(data.getSize()));
         } else {
             // private key in asymmetric key pair
 
@@ -942,8 +942,13 @@ public class KeyClient extends Client {
      * @return a KeyRequestResponse which contains a KeyRequestInfo
      *         object that describes the URL for the request and generated key.
      */
-    public KeyRequestResponse generateSymmetricKey(String clientKeyId, String keyAlgorithm, int keySize,
-            List<String> usages, String transWrappedSessionKey, String realm) throws Exception {
+    public KeyRequestResponse generateSymmetricKey(
+            String clientKeyId,
+            String keyAlgorithm,
+            String keySize,
+            List<String> usages,
+            String transWrappedSessionKey,
+            String realm) throws Exception {
         if (clientKeyId == null) {
             throw new IllegalArgumentException("Client Key Identifier must be specified.");
         }
@@ -959,20 +964,13 @@ public class KeyClient extends Client {
         SymKeyGenerationRequest data = new SymKeyGenerationRequest();
         data.setClientKeyId(clientKeyId);
         data.setKeyAlgorithm(keyAlgorithm);
-        data.setKeySize(Integer.valueOf(keySize));
+        data.setKeySize(keySize);
         data.setUsages(usages);
         data.setTransWrappedSessionKey(transWrappedSessionKey);
 
         data.setRealm(realm);
 
         return submitRequest(data);
-    }
-
-    /* old method signature for backwards compatibility */
-    @Deprecated
-    public KeyRequestResponse generateSymmetricKey(String clientKeyId, String keyAlgorithm, int keySize,
-            List<String> usages, String transWrappedSessionKey) throws Exception {
-        return generateSymmetricKey(clientKeyId, keyAlgorithm, keySize, usages, transWrappedSessionKey, null);
     }
 
     /**
@@ -986,8 +984,13 @@ public class KeyClient extends Client {
      *        KRA transport key
      * @param realm  -- authorization realm
      */
-    public KeyRequestResponse generateAsymmetricKey(String clientKeyId, String keyAlgorithm, int keySize,
-            List<String> usages, byte[] transWrappedSessionKey, String realm) throws Exception {
+    public KeyRequestResponse generateAsymmetricKey(
+            String clientKeyId,
+            String keyAlgorithm,
+            String keySize,
+            List<String> usages,
+            byte[] transWrappedSessionKey,
+            String realm) throws Exception {
 
         if (clientKeyId == null) {
             throw new IllegalArgumentException("Client Key Identifier must be specified.");
@@ -1002,8 +1005,10 @@ public class KeyClient extends Client {
                 }
             }
         }
-        if (!(keyAlgorithm.equals(KeyRequestResource.RSA_ALGORITHM) || keyAlgorithm
-                .equals(KeyRequestResource.DSA_ALGORITHM))) {
+
+        if (!(keyAlgorithm.equals(KeyRequestResource.RSA_ALGORITHM)
+                || keyAlgorithm.equals(KeyRequestResource.DSA_ALGORITHM)
+                || keyAlgorithm.equals(KeyRequestResource.EC_ALGORITHM))) {
             throw new IllegalArgumentException("Unsupported algorithm specified.");
         }
 
@@ -1014,15 +1019,17 @@ public class KeyClient extends Client {
          * For DSA, JSS accepts key sizes 512, 768, 1024 only, when there are no p,q,g params specified.
          */
         if (keyAlgorithm.equals(KeyRequestResource.RSA_ALGORITHM)) {
-            if (keySize >= 256) {
-                if ((keySize - 256) % 16 != 0) {
+            int size = Integer.parseInt(keySize);
+            if (size >= 256) {
+                if ((size - 256) % 16 != 0) {
                     throw new IllegalArgumentException("Invalid key size specified.");
                 }
             } else {
                 throw new IllegalArgumentException("Invalid key size specified.");
             }
         } else if (keyAlgorithm.equals(KeyRequestResource.DSA_ALGORITHM)) {
-            if (keySize != 512 && keySize != 768 && keySize != 1024) {
+            int size = Integer.parseInt(keySize);
+            if (size != 512 && size != 768 && size != 1024) {
                 throw new IllegalArgumentException("Invalid key size specified.");
             }
         }
@@ -1039,12 +1046,5 @@ public class KeyClient extends Client {
         data.setRealm(realm);
 
         return submitRequest(data);
-    }
-
-    /* old method signature for backwards compatibility */
-    @Deprecated
-    public KeyRequestResponse generateAsymmetricKey(String clientKeyId, String keyAlgorithm, int keySize,
-            List<String> usages, byte[] transWrappedSessionKey) throws Exception {
-        return generateAsymmetricKey(clientKeyId, keyAlgorithm, keySize, usages, transWrappedSessionKey, null);
     }
 }

@@ -43,7 +43,7 @@ public class KeyData implements JSONSerializer {
 
     String algorithm;
 
-    Integer size;
+    String size;
 
     String additionalWrappedPrivateData;
     // Optionally used for importing a shared secret from TKS to TPS
@@ -133,14 +133,14 @@ public class KeyData implements JSONSerializer {
     /**
      * @return the size
      */
-    public Integer getSize() {
+    public String getSize() {
         return size;
     }
 
     /**
      * @param size the size to set
      */
-    public void setSize(Integer size) {
+    public void setSize(String size) {
         this.size = size;
     }
 

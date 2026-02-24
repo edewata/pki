@@ -80,12 +80,8 @@ public class KeyGenerationRequest extends RESTMessage {
     /**
      * @return the keySize
      */
-    public Integer getKeySize() {
-        try {
-            return Integer.valueOf(attributes.get(KEY_SIZE));
-        } catch (NumberFormatException e) {
-            return null;
-        }
+    public String getKeySize() {
+        return attributes.get(KEY_SIZE);
     }
 
     /**
@@ -93,6 +89,10 @@ public class KeyGenerationRequest extends RESTMessage {
      */
     public void setKeySize(Integer keySize) {
         attributes.put(KEY_SIZE, keySize.toString());
+    }
+
+    public void setKeySize(String keySize) {
+        attributes.put(KEY_SIZE, keySize);
     }
 
     /**

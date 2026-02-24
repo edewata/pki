@@ -404,7 +404,7 @@ public class KeyService extends SubsystemService implements KeyResource {
             keyData.setAlgorithm(algorithm);
         }
 
-        Integer keySize = rec.getKeySize();
+        String keySize = rec.getKeySize();
         if (keySize != null) {
             keyData.setSize(keySize);
         }

@@ -85,12 +85,12 @@ public class KeyRecordParser {
 
         rarg.addStringValue(OUT_PUBLIC_KEY,
                 pp.toHexString(rec.getPublicKeyData(), 0, 20));
-        Integer keySize = rec.getKeySize();
+        String keySize = rec.getKeySize();
 
         if (keySize == null) {
             rarg.addIntegerValue(OUT_KEY_LEN, 512);
         } else {
-            rarg.addIntegerValue(OUT_KEY_LEN, keySize.intValue());
+            rarg.addIntegerValue(OUT_KEY_LEN, Integer.parseInt(keySize));
         }
 
         // handles EC

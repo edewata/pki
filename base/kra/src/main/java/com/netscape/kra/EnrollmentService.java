@@ -458,7 +458,7 @@ public class EnrollmentService implements IService {
                 try {
                     RSAPublicKey rsaPublicKey = new RSAPublicKey(publicKeyData);
 
-                    rec.setKeySize(Integer.valueOf(rsaPublicKey.getKeySize()));
+                    rec.setKeySize("" + rsaPublicKey.getKeySize());
                 } catch (InvalidKeyException e) {
 
                     auditor.log(SecurityDataArchivalProcessedEvent.createFailureEvent(
@@ -504,7 +504,7 @@ public class EnrollmentService implements IService {
 
                 rec.set(KeyRecord.ATTR_META_INFO, metaInfo);
                 // key size does not apply to EC;
-                rec.setKeySize(-1);
+                rec.setKeySize(oidDescription);
             }
 
             // if record already has a serial number, yell out.

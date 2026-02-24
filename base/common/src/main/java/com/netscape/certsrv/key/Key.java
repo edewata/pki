@@ -32,7 +32,7 @@ public class Key implements JSONSerializer {
 
     private String algorithm;
 
-    private Integer size;
+    private String size;
 
     private byte[] data;
 
@@ -97,11 +97,11 @@ public class Key implements JSONSerializer {
         this.algorithm = algorithm;
     }
 
-    public Integer getSize() {
+    public String getSize() {
         return size;
     }
 
-    public void setSize(Integer size) {
+    public void setSize(String size) {
         this.size = size;
     }
 

@@ -34,8 +34,12 @@ public class KRAKeyGenerateCLI extends SubsystemCommandCLI {
 
         super.createOptions();
 
-        Option option = new Option(null, "key-algorithm", true,
-                "Algorithm to be used to create a key.\nValid values: AES, DES, DES3, RC2, RC4, DESede, RSA, DSA");
+        Option option = new Option(
+                null,
+                "key-algorithm",
+                true,
+                "Algorithm to be used to create a key.\n" +
+                "Valid values: AES, DES, DES3, RC2, RC4, DESede, RSA, DSA, EC");
         option.setArgName("algorithm");
         options.addOption(option);
 
@@ -43,15 +47,23 @@ public class KRAKeyGenerateCLI extends SubsystemCommandCLI {
                 null,
                 "key-size",
                 true,
-                "Size of the key to be generated.\nThis is required for AES, RC2 and RC4.\n"
-                        + "Valid values for AES: 128, 192. 256.\nValid values for RC2: 8-128.\n Valid values for RC4: Any positive integer."
-                        + "\n Valid values for DSA: 512, 768, 1024.\nValid values for RSA: 256 + (16*n), n= [0-496]");
+                "Size of the key to be generated.\n" +
+                "This is required for AES, RC2 and RC4.\n" +
+                "Valid values for AES: 128, 192, 256.\n" +
+                "Valid values for RC2: 8-128.\n" +
+                "Valid values for RC4: Any positive integer.\n" +
+                "Valid values for DSA: 512, 768, 1024.\n" +
+                "Valid values for RSA: 256 + (16*n), n=[0-496]");
         option.setArgName("size");
         options.addOption(option);
 
-        option = new Option(null, "usages", true, "Comma separated list of usages."
-                + "\nValid values: wrap, unwrap, sign, verify, encrypt, decrypt."
-                + "\nAdditional usages for RSA and DSA type keys: derive, sign_recover, verify_recover.");
+        option = new Option(
+                null,
+                "usages",
+                true,
+                "Comma separated list of usages.\n" +
+                "Valid values: wrap, unwrap, sign, verify, encrypt, decrypt.\n" +
+                "Additional usages for RSA and DSA type keys: derive, sign_recover, verify_recover.");
         option.setArgName("list of usages");
         options.addOption(option);
 
@@ -96,17 +108,11 @@ public class KRAKeyGenerateCLI extends SubsystemCommandCLI {
             case KeyRequestResource.RC2_ALGORITHM:
             case KeyRequestResource.RSA_ALGORITHM:
             case KeyRequestResource.DSA_ALGORITHM:
+            case KeyRequestResource.EC_ALGORITHM:
                 throw new Exception("Key size must be specified for the algorithm used.");
             default:
                 throw new Exception("Algorithm not supported.");
             }
-        }
-
-        int size = 0;
-        try {
-            size = Integer.parseInt(keySize);
-        } catch (NumberFormatException e) {
-            throw new Exception("Key size must be an integer.", e);
         }
 
         List<String> usages = null;
@@ -130,12 +136,13 @@ public class KRAKeyGenerateCLI extends SubsystemCommandCLI {
         case KeyRequestResource.AES_ALGORITHM:
         case KeyRequestResource.RC2_ALGORITHM:
             response = keyClient.generateSymmetricKey(
-                    clientKeyId, keyAlgorithm, size, usages, null, realm);
+                    clientKeyId, keyAlgorithm, keySize, usages, null, realm);
             break;
         case KeyRequestResource.RSA_ALGORITHM:
         case KeyRequestResource.DSA_ALGORITHM:
+        case KeyRequestResource.EC_ALGORITHM:
             response = keyClient.generateAsymmetricKey(
-                    clientKeyId, keyAlgorithm, size, usages, null, realm);
+                    clientKeyId, keyAlgorithm, keySize, usages, null, realm);
             break;
         default:
             throw new Exception("Algorithm not supported.");

@@ -16,7 +16,6 @@
 // All rights reserved.
 // --- END COPYRIGHT BLOCK ---
 package com.netscape.kra;
-import java.util.Arrays;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FilterOutputStream;
@@ -27,7 +26,8 @@ import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.SecureRandom;
 
-import org.dogtagpki.tps.main.TPSBuffer;
+import org.dogtagpki.server.kra.KRAEngine;
+import org.dogtagpki.server.kra.KRAEngineConfig;
 import org.mozilla.jss.asn1.ASN1Util;
 import org.mozilla.jss.crypto.CryptoToken;
 import org.mozilla.jss.crypto.EncryptionAlgorithm;
@@ -36,45 +36,33 @@ import org.mozilla.jss.crypto.KeyGenAlgorithm;
 import org.mozilla.jss.crypto.KeyWrapAlgorithm;
 import org.mozilla.jss.crypto.PrivateKey;
 import org.mozilla.jss.crypto.SymmetricKey;
-import org.mozilla.jss.crypto.KeyPairAlgorithm;
+import org.mozilla.jss.netscape.security.provider.RSAPublicKey;
+import org.mozilla.jss.netscape.security.util.Utils;
+import org.mozilla.jss.netscape.security.util.WrappingParams;
 import org.mozilla.jss.pkcs11.PK11SymKey;
 import org.mozilla.jss.pkix.crmf.PKIArchiveOptions;
 import org.mozilla.jss.util.Base64OutputStream;
 
-import org.dogtagpki.server.kra.KRAEngine;
-import org.dogtagpki.server.kra.KRAEngineConfig;
-
 import com.netscape.certsrv.base.EBaseException;
 import com.netscape.certsrv.base.MetaInfo;
 import com.netscape.certsrv.base.SessionContext;
-import com.netscape.cmscore.dbs.KeyRecord;
-import com.netscape.cmscore.dbs.KeyRepository;
-
 import com.netscape.certsrv.dbs.keydb.KeyId;
 import com.netscape.certsrv.logging.ILogger;
-import com.netscape.certsrv.logging.LogEvent;
 import com.netscape.certsrv.logging.event.SecurityDataArchivalProcessedEvent;
 import com.netscape.certsrv.logging.event.SecurityDataArchivalRequestEvent;
 import com.netscape.certsrv.logging.event.SecurityDataExportEvent;
 import com.netscape.certsrv.logging.event.ServerSideKeyGenEvent;
 import com.netscape.certsrv.logging.event.ServerSideKeyGenProcessedEvent;
-
-import com.netscape.cmscore.logging.Auditor;
-import com.netscape.cmscore.request.Request;
-
 import com.netscape.certsrv.request.IService;
 import com.netscape.certsrv.request.RequestId;
 import com.netscape.certsrv.security.IStorageKeyUnit;
-import com.netscape.cms.logging.Logger;
-import com.netscape.cms.logging.SignedAuditLogger;
 import com.netscape.cms.servlet.key.KeyRecordParser;
 import com.netscape.cmscore.dbs.KeyRecord;
+import com.netscape.cmscore.dbs.KeyRepository;
+import com.netscape.cmscore.logging.Auditor;
+import com.netscape.cmscore.request.Request;
 import com.netscape.cmscore.security.JssSubsystem;
 import com.netscape.cmsutil.crypto.CryptoUtil;
-
-import org.mozilla.jss.netscape.security.util.Utils;
-import org.mozilla.jss.netscape.security.provider.RSAPublicKey;
-import org.mozilla.jss.netscape.security.util.WrappingParams;
 
 /**
  * A class representing keygen/archival request procesor for requests
@@ -175,7 +163,7 @@ public class NetkeyKeygenService implements IService {
             throws EBaseException {
         String auditSubjectID = null;
         byte[] wrapped_des_key;
-        byte[] wrapped_aes_key = null; 
+        byte[] wrapped_aes_key = null;
         String method = "NetkeyKeygenService: serviceRequest: ";
 
         byte iv[] = { 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1 };
@@ -281,16 +269,17 @@ public class NetkeyKeygenService implements IService {
 
         /* for EC, keysize is ignored, only key curve is used */
         String rKeysize = "2048";
-        int keysize = 2048;
+        String keysize;
         String rKeycurve = "nistp256";
+        boolean isEC = false;
         if (rKeytype.equals("EC")) {
-            rKeycurve = request.getExtDataInString(Request.NETKEY_ATTR_KEY_EC_CURVE);
-            if ((rKeycurve == null) || (rKeycurve.equals(""))) {
-                rKeycurve = "nistp256";
+            keysize = request.getExtDataInString(Request.NETKEY_ATTR_KEY_EC_CURVE);
+            if ((keysize == null) || (keysize.equals(""))) {
+                keysize = "nistp256";
             }
+            isEC = true;
         } else {
-            rKeysize = request.getExtDataInString(Request.NETKEY_ATTR_KEY_SIZE);
-            keysize = Integer.parseInt(rKeysize);
+            keysize = request.getExtDataInString(Request.NETKEY_ATTR_KEY_SIZE);
         }
 
         // get the token for generating user keys
@@ -333,8 +322,8 @@ public class NetkeyKeygenService implements IService {
             logger.debug("NetkeyKeygenService: about to generate key pair");
 
             keypair = mKRA.generateKeyPair(rKeytype /* rKeytype: "RSA" or "EC" */,
-                keysize /*Integer.parseInt(len)*/,
-                rKeycurve /* for "EC" only */,
+                isEC ? null : Integer.parseInt(keysize)  /*Integer.parseInt(len)*/,
+                isEC ? keysize : null /* for "EC" only */,
                 null /*pqgParams*/,
                 null /* usageList*/);
 
@@ -393,7 +382,7 @@ public class NetkeyKeygenService implements IService {
                     logger.debug("NetkeyKeygenService: got private key");
                 }
 
-                // unwrap the DES or AES key 
+                // unwrap the DES or AES key
 		// If we are given an AES key, use it, otherwise use DES if it's the only one offered.
                 PK11SymKey sk = null;
 
@@ -419,7 +408,7 @@ public class NetkeyKeygenService implements IService {
                     }
                  }
                 // 3 wrapping should be done in HSM
-                // wrap private key with session key 
+                // wrap private key with session key
                 logger.debug("NetkeyKeygenService: wrapper token=" + keygenToken.getName());
                 logger.debug("NetkeyKeygenService: key transport key is on slot: " + sk.getOwningToken().getName());
 
@@ -428,7 +417,7 @@ public class NetkeyKeygenService implements IService {
                     //Here we recomment to use AES KWP because it's the only common AES key wrap to be supoprted on hsm, nss, and soon the coolkey applet.
 		    //But now we are going to make it configurable to AES CBC based on interest in doing so. KWP is the one that is assured to work
 		    //with the applet and nss / hsm envorinments. CBC can be chosen at the admin's discretion.
-                   
+
                     if(aesKeyWrapAlg != null && "CBC".equalsIgnoreCase(aesKeyWrapAlg)) {
                     // We want CBC
                         logger.debug(method + " TPS has selected CBC for AES key wrap method.");
@@ -437,7 +426,7 @@ public class NetkeyKeygenService implements IService {
                         algParam =  aesCBCAlgParam;
                         iv_s = org.mozilla.jss.netscape.security.util.Utils.SpecialEncode(iv_cbc);
 
-                    } else { 
+                    } else {
                         symWrapAlg = KeyWrapAlgorithm.AES_KEY_WRAP_PAD_KWP;
 		        algParam =  null;
                         iv_s = org.mozilla.jss.netscape.security.util.Utils.SpecialEncode(iv);
@@ -556,7 +545,7 @@ public class NetkeyKeygenService implements IService {
                     if (rKeytype.equals("RSA")) {
                         try {
                             RSAPublicKey rsaPublicKey = new RSAPublicKey(publicKeyData);
-                            rec.setKeySize(Integer.valueOf(rsaPublicKey.getKeySize()));
+                            rec.setKeySize("" + rsaPublicKey.getKeySize());
 
                         } catch (InvalidKeyException e) {
                             request.setExtData(Request.RESULT, Integer.valueOf(11));
@@ -594,7 +583,7 @@ public class NetkeyKeygenService implements IService {
 
                         rec.set(KeyRecord.ATTR_META_INFO, metaInfo);
                         // key size does not apply to EC;
-                        rec.setKeySize(-1);
+                        rec.setKeySize(oidDescription);
                     }
 
                     //??

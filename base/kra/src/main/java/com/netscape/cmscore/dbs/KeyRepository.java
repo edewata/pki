@@ -68,7 +68,7 @@ public class KeyRepository extends Repository {
         try {
             this.mRadix = dbc.getInteger(PROP_KEY_ID_RADIX, HEX);
             logger.debug("KeyRepository: number radix {}", this.mRadix);
-            
+
         } catch (EBaseException ex) {
             logger.debug("KeyRepository: error reading number radix config, using default {} for ", HEX);
         }
@@ -125,7 +125,7 @@ public class KeyRepository extends Repository {
         }
         if (!reg.isAttributeRegistered(KeyRecord.ATTR_KEY_SIZE)) {
             reg.registerAttribute(KeyRecord.ATTR_KEY_SIZE, new
-                    IntegerMapper(KeyDBSchema.LDAP_ATTR_KEY_SIZE));
+                    StringMapper(KeyDBSchema.LDAP_ATTR_KEY_SIZE));
         }
         if (!reg.isAttributeRegistered(KeyRecord.ATTR_OWNER_NAME)) {
             reg.registerAttribute(KeyRecord.ATTR_OWNER_NAME, new

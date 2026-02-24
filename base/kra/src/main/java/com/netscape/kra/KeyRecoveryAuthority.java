@@ -142,8 +142,7 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
     protected Hashtable<String, Credential[]> mAutoRecovery = new Hashtable<>();
     protected boolean mAutoRecoveryOn = false;
     protected int mRecoveryIDCounter = 0;
-    protected Hashtable<String, Hashtable<String, Object>> mRecoveryParams =
-            new Hashtable<>();
+    protected Hashtable<String, Hashtable<String, Object>> mRecoveryParams = new Hashtable<>();
     protected org.mozilla.jss.crypto.X509Certificate mJssCert = null;
     protected CryptoToken mKeygenToken = null;
 
@@ -161,6 +160,7 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
     public KeyStatusUpdateTask keyStatusUpdateTask;
 
     private final static String SIGNED_AUDIT_AGENT_DELIMITER = ", ";
+
     /**
      * Constructs an escrow authority.
      * <P>
@@ -246,7 +246,7 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
             logger.warn("KeyRecoveryAuthority: " + e.getMessage(), e);
             if (logflag) {
                 logger.warn(CMS.getLogMessage("CMSCORE_KRA_ENTROPY_ERROR",
-                                e.getMessage()));
+                        e.getMessage()));
             }
         }
         long end = System.currentTimeMillis();
@@ -259,7 +259,7 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
                     duration + ")");
             if (logflag) {
                 logger.warn(CMS.getLogMessage("CMSCORE_KRA_ENTROPY_BLOCKED_WARNING",
-                                "" + (int) duration));
+                        "" + (int) duration));
             }
         }
         logger.debug("KeyRecoveryAuthority returning ");
@@ -336,18 +336,17 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
         // retrieve the authority name from transport cert
         try {
             mJssCert = mTransportKeyUnit.getCertificate();
-            X509CertImpl certImpl = new
-                    X509CertImpl(mJssCert.getEncoded());
+            X509CertImpl certImpl = new X509CertImpl(mJssCert.getEncoded());
 
             mName = certImpl.getSubjectName();
         } catch (CertificateEncodingException e) {
             logger.error("KeyRecoveryAuthority: " + e.getMessage(), e);
             throw new EBaseException(CMS.getUserMessage("CMS_BASE_LOAD_FAILED",
-                        "transport cert " + e.toString()));
+                    "transport cert " + e.toString()));
         } catch (CertificateException e) {
             logger.error("KeyRecoveryAuthority: " + e.getMessage(), e);
             throw new EBaseException(CMS.getUserMessage("CMS_BASE_LOAD_FAILED",
-                        "transport cert " + e.toString()));
+                    "transport cert " + e.toString()));
         }
 
         // read transport key from storage key
@@ -430,12 +429,12 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
         startKeyStatusUpdate();
 
         // init request scheduler if configured
-        String schedulerClass =
-                mConfig.getString("requestSchedulerClass", null);
+        String schedulerClass = mConfig.getString("requestSchedulerClass", null);
 
         if (schedulerClass != null) {
             try {
-                RequestScheduler scheduler = (RequestScheduler) Class.forName(schedulerClass).getDeclaredConstructor().newInstance();
+                RequestScheduler scheduler = (RequestScheduler) Class.forName(schedulerClass).getDeclaredConstructor()
+                        .newInstance();
 
                 requestQueue.setRequestScheduler(scheduler);
             } catch (Exception e) {
@@ -886,18 +885,18 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
             r = requestRepository.createRequest(KRAService.ENROLLMENT);
 
             auditor.log(SecurityDataArchivalRequestEvent.createSuccessEvent(
-                        auditSubjectID,
-                        auditRequesterID,
-                        r.getRequestId(),
-                        null));
+                    auditSubjectID,
+                    auditRequesterID,
+                    r.getRequestId(),
+                    null));
 
         } catch (EBaseException eAudit1) {
             auditor.log(SecurityDataArchivalRequestEvent.createFailureEvent(
-                        auditSubjectID,
-                        auditRequesterID,
-                        null /* requestId */,
-                        null /*clientKeyId */,
-                        eAudit1));
+                    auditSubjectID,
+                    auditRequesterID,
+                    null /* requestId */,
+                    null /*clientKeyId */,
+                    eAudit1));
             throw eAudit1;
         }
 
@@ -972,11 +971,11 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
 
             // store a message in the signed audit log file
             auditor.log(new SecurityDataRecoveryEvent(
-                        auditSubjectID,
-                        ILogger.SUCCESS,
-                        auditRecoveryID,
-                        null,
-                        auditPublicKey));
+                    auditSubjectID,
+                    ILogger.SUCCESS,
+                    auditRecoveryID,
+                    null,
+                    auditPublicKey));
         } catch (EBaseException eAudit1) {
             // store a message in the signed audit log file
             auditor.log(new SecurityDataRecoveryEvent(
@@ -1074,10 +1073,9 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
                 }
                 count++;
             }
-            int agentsRequired =
-                    (r.getRequestType().equals(Request.SECURITY_DATA_RECOVERY_REQUEST)) ?
-                            getNoOfRequiredSecurityDataRecoveryAgents() :
-                            getNoOfRequiredAgents();
+            int agentsRequired = (r.getRequestType().equals(Request.SECURITY_DATA_RECOVERY_REQUEST))
+                    ? getNoOfRequiredSecurityDataRecoveryAgents()
+                    : getNoOfRequiredAgents();
 
             // note: if count==1 and required agents is 1, it's good to add
             // and it'd look like "agent1,agent1" - that's the only duplicate allowed
@@ -1092,7 +1090,8 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
                 requestRepository.updateRequest(r);
             }
         } else { // no approvingAgents existing, can't be async recovery
-            logger.debug("addAgentAsyncKeyRecovery: no approvingAgents in request. Async recovery request not initiated?");
+            logger.debug(
+                    "addAgentAsyncKeyRecovery: no approvingAgents in request. Async recovery request not initiated?");
         }
     }
 
@@ -1163,19 +1162,19 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
 
             // store a message in the signed audit log file
             auditor.log(new SecurityDataRecoveryEvent(
-                        auditSubjectID,
-                        ILogger.SUCCESS,
-                        auditRecoveryID,
-                        new KeyId(kid),
-                        auditPublicKey));
+                    auditSubjectID,
+                    ILogger.SUCCESS,
+                    auditRecoveryID,
+                    new KeyId(kid),
+                    auditPublicKey));
         } catch (EBaseException eAudit1) {
             // store a message in the signed audit log file
             auditor.log(new SecurityDataRecoveryEvent(
-                        auditSubjectID,
-                        ILogger.FAILURE,
-                        auditRecoveryID,
-                        new KeyId(kid),
-                        auditPublicKey));
+                    auditSubjectID,
+                    ILogger.FAILURE,
+                    auditRecoveryID,
+                    new KeyId(kid),
+                    auditPublicKey));
 
             throw eAudit1;
         }
@@ -1193,24 +1192,24 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
                 auditAgents = auditAgents(creds);
 
                 auditor.log(new SecurityDataRecoveryProcessedEvent(
-                            auditSubjectID,
-                            ILogger.SUCCESS,
-                            auditRecoveryID,
-                            new KeyId(kid),
-                            null,
-                            auditAgents));
+                        auditSubjectID,
+                        ILogger.SUCCESS,
+                        auditRecoveryID,
+                        new KeyId(kid),
+                        null,
+                        auditAgents));
 
                 destroyVolatileRequest(r.getRequestId());
 
                 return pkcs12;
             }
             auditor.log(new SecurityDataRecoveryProcessedEvent(
-                        auditSubjectID,
-                        ILogger.FAILURE,
-                        auditRecoveryID,
-                        new KeyId(kid),
-                        r.getExtDataInString(Request.ERROR),
-                        auditAgents));
+                    auditSubjectID,
+                    ILogger.FAILURE,
+                    auditRecoveryID,
+                    new KeyId(kid),
+                    r.getExtDataInString(Request.ERROR),
+                    auditAgents));
 
             throw new EBaseException(r.getExtDataInString(Request.ERROR));
         } catch (EBaseException eAudit1) {
@@ -1263,7 +1262,7 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
 
         auditAgents = r.getExtDataInString(Request.ATTR_APPROVE_AGENTS);
         BigInteger serialNumber = r.getExtDataInBigInteger("serialNumber");
-        keyID = serialNumber != null? new KeyId(serialNumber) : null;
+        keyID = serialNumber != null ? new KeyId(serialNumber) : null;
 
         // set transient parameters
         params = createVolatileRequest(r.getRequestId());
@@ -1283,12 +1282,12 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
                         RecoveryService.ATTR_PKCS12);
 
                 auditor.log(new SecurityDataRecoveryProcessedEvent(
-                            auditSubjectID,
-                            ILogger.SUCCESS,
-                            auditRecoveryID,
-                            keyID,
-                            null,
-                            auditAgents));
+                        auditSubjectID,
+                        ILogger.SUCCESS,
+                        auditRecoveryID,
+                        keyID,
+                        null,
+                        auditAgents));
 
                 destroyVolatileRequest(r.getRequestId());
 
@@ -1351,19 +1350,20 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
      * Process synchronous archival and recovery requests
      *
      * (TODO(alee): should we do this in a separate thread?
+     *
      * @throws EBaseException
      */
     public void processSynchronousRequest(Request request) throws EBaseException {
         SecurityDataProcessor processor = new SecurityDataProcessor(this);
-        switch(request.getRequestType()){
-            case Request.SECURITY_DATA_ENROLLMENT_REQUEST:
-                processor.archive(request);
-                break;
-            case Request.SECURITY_DATA_RECOVERY_REQUEST:
-                processor.recover(request);
-                break;
-            default:
-                throw new EBaseException("Unsupported synchronous request type: " + request.getRequestType());
+        switch (request.getRequestType()) {
+        case Request.SECURITY_DATA_ENROLLMENT_REQUEST:
+            processor.archive(request);
+            break;
+        case Request.SECURITY_DATA_RECOVERY_REQUEST:
+            processor.recover(request);
+            break;
+        default:
+            throw new EBaseException("Unsupported synchronous request type: " + request.getRequestType());
         }
     }
 
@@ -1406,8 +1406,7 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
      * @return executed request
      * @exception EBaseException failed to recover key
      */
-    public Request recoverKey(Credential creds[], CertificateChain
-            encryptionChain, X509CertImpl signingCert,
+    public Request recoverKey(Credential creds[], CertificateChain encryptionChain, X509CertImpl signingCert,
             X509CertImpl transportCert,
             X500Name ownerName) throws EBaseException {
 
@@ -1542,12 +1541,12 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
             nc = mConfig.getSubStore(PROP_NOTIFY_SUBSTORE, ConfigStore.class);
             if (nc != null && nc.size() > 0) {
                 // Initialize Request In Queue notification listener
-                String requestInQListenerClassName =
-                        nc.getString("certificateIssuedListenerClassName",
-                                KRARequestInQListener.class.getName());
+                String requestInQListenerClassName = nc.getString("certificateIssuedListenerClassName",
+                        KRARequestInQListener.class.getName());
 
                 try {
-                    mReqInQListener = (RequestListener) Class.forName(requestInQListenerClassName).getDeclaredConstructor().newInstance();
+                    mReqInQListener = (RequestListener) Class.forName(requestInQListenerClassName)
+                            .getDeclaredConstructor().newInstance();
                     mReqInQListener.setCMSEngine(engine);
                     mReqInQListener.init(nc);
                 } catch (Exception e1) {
@@ -1594,8 +1593,7 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
     }
     */
 
-    public Hashtable<String, Hashtable<String, Object>> mVolatileRequests =
-            new Hashtable<>();
+    public Hashtable<String, Hashtable<String, Object>> mVolatileRequests = new Hashtable<>();
 
     /**
      * Creates a request object to store attributes that
@@ -1655,8 +1653,7 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
         SessionContext auditContext = SessionContext.getExistingContext();
 
         if (auditContext != null) {
-            subjectID = (String)
-                    auditContext.get(SessionContext.USER_ID);
+            subjectID = (String) auditContext.get(SessionContext.USER_ID);
 
             if (subjectID != null) {
                 subjectID = subjectID.trim();
@@ -1687,8 +1684,7 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
         SessionContext auditContext = SessionContext.getExistingContext();
 
         if (auditContext != null) {
-            requesterID = (String)
-                    auditContext.get(SessionContext.REQUESTER_ID);
+            requesterID = (String) auditContext.get(SessionContext.REQUESTER_ID);
 
             if (requesterID != null) {
                 requesterID = requesterID.trim();
@@ -1840,12 +1836,12 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
      * @return key pair
      * @throws EBaseException
      */
-    public KeyPair generateKeyPair(String alg, int keySize, String keyCurve,
+    public KeyPair generateKeyPair(String alg, Integer keySize, String keyCurve,
             PQGParams pqg, KeyPairGeneratorSpi.Usage[] usageList) throws EBaseException {
         return generateKeyPair(alg, keySize, keyCurve, pqg, usageList, false);
     }
 
-    public KeyPair generateKeyPair(String alg, int keySize, String keyCurve,
+    public KeyPair generateKeyPair(String alg, Integer keySize, String keyCurve,
             PQGParams pqg, KeyPairGeneratorSpi.Usage[] usageList, boolean temp) throws EBaseException {
         KeyPairAlgorithm kpAlg = null;
 
@@ -1862,12 +1858,12 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
             return kp;
         } catch (InvalidParameterException e) {
             throw new EBaseException(CMS.getUserMessage("CMS_BASE_INVALID_KEYSIZE_PARAMS",
-                        "" + keySize));
+                    "" + keySize));
         } catch (PQGParamGenException e) {
             throw new EBaseException(CMS.getUserMessage("CMS_BASE_PQG_GEN_FAILED"));
         } catch (NoSuchAlgorithmException e) {
             throw new EBaseException(CMS.getUserMessage("CMS_BASE_ALG_NOT_SUPPORTED",
-                        kpAlg.toString()));
+                    kpAlg.toString()));
         } catch (TokenException e) {
             throw new EBaseException(CMS.getUserMessage("CMS_BASE_TOKEN_ERROR_1", e.toString()));
         } catch (InvalidAlgorithmParameterException e) {
@@ -1876,14 +1872,15 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
     }
 
     public KeyPair generateKeyPair(
-            KeyPairAlgorithm kpAlg, int keySize, String keyCurve, PQGParams pqg,
-            KeyPairGeneratorSpi.Usage[] usageList )
+            KeyPairAlgorithm kpAlg, Integer keySize, String keyCurve, PQGParams pqg,
+            KeyPairGeneratorSpi.Usage[] usageList)
             throws NoSuchAlgorithmException, TokenException, InvalidAlgorithmParameterException,
             InvalidParameterException, PQGParamGenException {
         return generateKeyPair(kpAlg, keySize, keyCurve, pqg, usageList, true);
     }
+
     public KeyPair generateKeyPair(
-            KeyPairAlgorithm kpAlg, int keySize, String keyCurve, PQGParams pqg,
+            KeyPairAlgorithm kpAlg, Integer keySize, String keyCurve, PQGParams pqg,
             KeyPairGeneratorSpi.Usage[] usageList, boolean temp)
             throws NoSuchAlgorithmException, TokenException, InvalidAlgorithmParameterException,
             InvalidParameterException, PQGParamGenException {
@@ -1925,7 +1922,7 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
                         ep = true;
                     } else
                         tp = true;
-                    }
+                }
             } catch (Exception e) {
                 logger.warn("NetkeyKeygenService: kgConfig.getBoolean failed: " + e.getMessage(), e);
                 // by default, let nethsm work
@@ -1957,7 +1954,7 @@ public class KeyRecoveryAuthority extends Subsystem implements IAuthority {
                         ep /* extractable */,
                         null,
                         CryptoUtil.ECDH_USAGES_MASK);
-                logger.debug("NetkeyKeygenService: after key pair generation" );
+                logger.debug("NetkeyKeygenService: after key pair generation");
             } catch (Exception e) {
                 logger.warn("NetkeyKeygenService: key pair generation with exception: " + e.getMessage(), e);
             }

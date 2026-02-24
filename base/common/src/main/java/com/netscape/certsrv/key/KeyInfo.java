@@ -46,7 +46,7 @@ public class KeyInfo implements JSONSerializer {
     protected String type;
     protected String algorithm;
 
-    protected Integer size;
+    protected String size;
 
     protected String ownerName;
 
@@ -128,11 +128,11 @@ public class KeyInfo implements JSONSerializer {
         this.algorithm = algorithm;
     }
 
-    public Integer getSize() {
+    public String getSize() {
         return size;
     }
 
-    public void setSize(Integer size) {
+    public void setSize(String size) {
         this.size = size;
     }
 

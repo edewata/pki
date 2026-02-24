@@ -74,7 +74,7 @@ public class KeyRecord extends DBRecord {
     private String mAlgorithm = null;
     private byte mPrivateKey[] = null;
     private byte mPublicKey[] = null;
-    private Integer mSize = null;
+    private String mSize = null;
     private String mOwnerName = null;
     private Date mDatesOfRecovery[] = null;
     private Date mCreateTime = null;
@@ -143,7 +143,7 @@ public class KeyRecord extends DBRecord {
         } else if (name.equalsIgnoreCase(ATTR_ID)) {
             mSerialNo = (BigInteger) object;
         } else if (name.equalsIgnoreCase(ATTR_KEY_SIZE)) {
-            mSize = (Integer) object;
+            mSize = (String) object;
         } else if (name.equalsIgnoreCase(ATTR_OWNER_NAME)) {
             mOwnerName = (String) object;
         } else if (name.equalsIgnoreCase(ATTR_ALGORITHM)) {
@@ -313,7 +313,7 @@ public class KeyRecord extends DBRecord {
      * @return key size
      * @exception EBaseException failed to retrieve key size
      */
-    public Integer getKeySize() throws EBaseException {
+    public String getKeySize() throws EBaseException {
         return mSize;
     }
 
@@ -330,7 +330,7 @@ public class KeyRecord extends DBRecord {
      * Sets key size.
      * <P>
      */
-    public void setKeySize(Integer keySize) throws EBaseException {
+    public void setKeySize(String keySize) throws EBaseException {
         mSize = keySize;
     }
 

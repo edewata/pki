@@ -4,6 +4,7 @@ name: Basic KRA
 # - install KRA
 # - generate AES key
 # - generate RSA key
+# - generate EC key
 # - enroll cert with key archival
 # - retrieve cert key
 # - deactivate cert key
@@ -77,8 +78,21 @@ jobs:
           docker exec pki pki kra
           docker exec pki pki kra --help
 
+          docker exec pki pki kra-key-template-find --help
+          docker exec pki pki kra-key-template-show --help
+
+          docker exec pki pki kra-key-request-find --help
+          docker exec pki pki kra-key-request-show --help
+          docker exec pki pki kra-key-request-review --help
+
           docker exec pki pki kra-key-find --help
           docker exec pki pki kra-key-show --help
+          docker exec pki pki kra-key-mod --help
+
+          docker exec pki pki kra-key-generate --help
+          docker exec pki pki kra-key-archive --help
+          docker exec pki pki kra-key-retrieve --help
+          docker exec pki pki kra-key-recover --help
 
       - name: Install CA
         run: |
@@ -805,41 +819,36 @@ jobs:
 
           diff expected actual
 
-      - name: Enroll cert with key archival
+      - name: Generate EC key
         run: |
-          # generate key and cert request
-          # https://github.com/dogtagpki/pki/wiki/Generating-Certificate-Request-with-PKI-NSS
           docker exec pki pki \
-              nss-cert-request \
-              --type crmf \
-              --subject UID=testuser \
-              --transport kra_transport \
-              --csr testuser.csr
+              -n caadmin \
+              kra-key-generate \
+              --key-algorithm EC \
+              --key-size nistp521 \
+              test-ec-keygen \
+              | tee output
 
-          docker exec pki cat testuser.csr
+          # normalize output
+          sed \
+              -e '/-----/d' \
+              -e '/Key generation request info/d' \
+              -e '/^ *Request ID:/d' \
+              -e '/^ *Key ID:/d' \
+              -e '/^ *Creation Time:/d' \
+              -e '/^ *Modification Time:/d' \
+              output > actual
 
-          # issue cert
-          # https://github.com/dogtagpki/pki/wiki/Issuing-Certificates
-          docker exec pki pki \
-              -u caadmin \
-              -w Secret.123 \
-              ca-cert-issue \
-              --request-type crmf \
-              --profile caUserCert \
-              --subject UID=testuser \
-              --csr-file testuser.csr \
-              --output-file testuser.crt
+          cat > expected << EOF
+            Type: asymkeyGenRequest
+            Status: complete
+          EOF
 
-          # import cert into NSS database
-          docker exec pki pki nss-cert-import --cert testuser.crt testuser
-
-          # the cert should match the key (trust flags must be u,u,u)
-          echo "u,u,u" > expected
-          docker exec pki pki nss-cert-show testuser | tee output
-          sed -n "s/^\s*Trust Flags:\s*\(\S*\)$/\1/p" output > actual
           diff expected actual
 
-      - name: Check key requests after enrollment
+          sed -n 's/^ *Key ID: *\(.*\)$/\1/p' output > test-rsa-keygen.key_id
+
+      - name: Check key requests after EC key generation
         run: |
           docker exec pki pki \
               -n caadmin \
@@ -865,13 +874,13 @@ jobs:
             Type: asymkeyGenRequest
             Status: complete
 
-            Type: enrollment
+            Type: asymkeyGenRequest
             Status: complete
           EOF
 
           diff expected actual
 
-      - name: Check keys after enrollment
+      - name: Check keys after EC key generation
         run: |
           docker exec pki pki \
               -n caadmin \
@@ -903,6 +912,121 @@ jobs:
             Size: 2048
             Owner: kraadmin
 
+            Client Key ID: test-ec-keygen
+            Status: active
+            Algorithm: EC
+            Size: nistp521
+            Owner: kraadmin
+          EOF
+
+          diff expected actual
+
+      - name: Enroll RSA cert with key archival
+        run: |
+          # generate key and cert request
+          # https://github.com/dogtagpki/pki/wiki/Generating-Certificate-Request-with-PKI-NSS
+          docker exec pki pki nss-cert-request \
+              --type crmf \
+              --subject UID=testuser \
+              --transport kra_transport \
+              --csr testuser.csr
+
+          docker exec pki cat testuser.csr
+
+          # issue cert
+          # https://github.com/dogtagpki/pki/wiki/Issuing-Certificates
+          docker exec pki pki \
+              -u caadmin \
+              -w Secret.123 \
+              ca-cert-issue \
+              --request-type crmf \
+              --profile caUserCert \
+              --subject UID=testuser \
+              --csr-file testuser.csr \
+              --output-file testuser.crt
+
+          # import cert into NSS database
+          docker exec pki pki nss-cert-import --cert testuser.crt testuser
+
+          # the cert should match the key (trust flags must be u,u,u)
+          echo "u,u,u" > expected
+          docker exec pki pki nss-cert-show testuser | tee output
+          sed -n "s/^\s*Trust Flags:\s*\(\S*\)$/\1/p" output > actual
+          diff expected actual
+
+      - name: Check key requests after RSA cert enrollment
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-request-find \
+              | tee output
+
+          # normalize output
+          sed \
+              -e '/-----/d' \
+              -e '/entries matched/d' \
+              -e '/Number of entries returned/d' \
+              -e '/^ *Request ID:/d' \
+              -e '/^ *Key ID:/d' \
+              -e '/^ *Creation Time:/d' \
+              -e '/^ *Modification Time:/d' \
+              output > actual
+
+          # there should be 4 key requests
+          cat > expected << EOF
+            Type: symkeyGenRequest
+            Status: complete
+
+            Type: asymkeyGenRequest
+            Status: complete
+
+            Type: asymkeyGenRequest
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+          EOF
+
+          diff expected actual
+
+      - name: Check keys after RSA cert enrollment
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-find \
+              | tee output
+
+          # normalize output
+          sed \
+              -e '/-----/d' \
+              -e '/key(s) matched/d' \
+              -e '/Number of entries returned/d' \
+              -e '/^ *Request ID:/d' \
+              -e '/^ *Key ID:/d' \
+              -e '/^ *Creation Time:/d' \
+              -e '/^ *Modification Time:/d' \
+              output > actual
+
+          # there should be 4 keys
+          cat > expected << EOF
+            Client Key ID: test-aes-keygen
+            Status: active
+            Algorithm: AES
+            Size: 256
+            Owner: kraadmin
+
+            Client Key ID: test-rsa-keygen
+            Status: active
+            Algorithm: RSA
+            Size: 2048
+            Owner: kraadmin
+
+            Client Key ID: test-ec-keygen
+            Status: active
+            Algorithm: EC
+            Size: nistp521
+            Owner: kraadmin
+
             Algorithm: 1.2.840.113549.1.1.1
             Size: 2048
             Owner: UID=testuser
@@ -910,7 +1034,7 @@ jobs:
 
           diff expected actual
 
-      - name: Check archived cert key
+      - name: Check archived RSA cert key
         run: |
           # find archived key by owner
           docker exec pki pki \
@@ -946,7 +1070,7 @@ jobs:
           sed -n 's/^metaInfo:\s*payloadWrapAlgorithm:\(.*\)$/\1/p' output > actual
           diff expected actual
 
-      - name: Retrieve cert key
+      - name: Retrieve RSA cert key
         run: |
           KEY_ID=$(cat cert.key_id)
           echo "Key ID: $KEY_ID"
@@ -1020,9 +1144,12 @@ jobs:
               -e '/^ *Modification Time:/d' \
               output > actual
 
-          # there should be 4 key requests
+          # there should be 5 key requests
           cat > expected << EOF
             Type: symkeyGenRequest
+            Status: complete
+
+            Type: asymkeyGenRequest
             Status: complete
 
             Type: asymkeyGenRequest
@@ -1055,7 +1182,7 @@ jobs:
               -e '/^ *Modification Time:/d' \
               output > actual
 
-          # there should be 3 keys
+          # there should be 4 keys
           cat > expected << EOF
             Client Key ID: test-aes-keygen
             Status: active
@@ -1067,6 +1194,12 @@ jobs:
             Status: active
             Algorithm: RSA
             Size: 2048
+            Owner: kraadmin
+
+            Client Key ID: test-ec-keygen
+            Status: active
+            Algorithm: EC
+            Size: nistp521
             Owner: kraadmin
 
             Algorithm: 1.2.840.113549.1.1.1
@@ -1117,9 +1250,12 @@ jobs:
               -e '/^ *Modification Time:/d' \
               output > actual
 
-          # there should be 4 key requests
+          # there should be 5 key requests
           cat > expected << EOF
             Type: symkeyGenRequest
+            Status: complete
+
+            Type: asymkeyGenRequest
             Status: complete
 
             Type: asymkeyGenRequest
@@ -1152,7 +1288,7 @@ jobs:
               -e '/^ *Modification Time:/d' \
               output > actual
 
-          # there should be 3 keys
+          # there should be 4 keys
           cat > expected << EOF
             Client Key ID: test-aes-keygen
             Status: active
@@ -1164,6 +1300,12 @@ jobs:
             Status: active
             Algorithm: RSA
             Size: 2048
+            Owner: kraadmin
+
+            Client Key ID: test-ec-keygen
+            Status: active
+            Algorithm: EC
+            Size: nistp521
             Owner: kraadmin
 
             Status: inactive
@@ -1214,9 +1356,12 @@ jobs:
               -e '/^ *Modification Time:/d' \
               output > actual
 
-          # there should be 5 key requests
+          # there should be 6 key requests
           cat > expected << EOF
             Type: symkeyGenRequest
+            Status: complete
+
+            Type: asymkeyGenRequest
             Status: complete
 
             Type: asymkeyGenRequest
@@ -1252,7 +1397,7 @@ jobs:
               -e '/^ *Modification Time:/d' \
               output > actual
 
-          # there should be 4 keys
+          # there should be 5 keys
           cat > expected << EOF
             Client Key ID: test-aes-keygen
             Status: active
@@ -1264,6 +1409,12 @@ jobs:
             Status: active
             Algorithm: RSA
             Size: 2048
+            Owner: kraadmin
+
+            Client Key ID: test-ec-keygen
+            Status: active
+            Algorithm: EC
+            Size: nistp521
             Owner: kraadmin
 
             Status: inactive
@@ -1312,9 +1463,12 @@ jobs:
               -e '/^ *Modification Time:/d' \
               output > actual
 
-          # there should be 6 key requests
+          # there should be 7 key requests
           cat > expected << EOF
             Type: symkeyGenRequest
+            Status: complete
+
+            Type: asymkeyGenRequest
             Status: complete
 
             Type: asymkeyGenRequest
@@ -1353,7 +1507,7 @@ jobs:
               -e '/^ *Modification Time:/d' \
               output > actual
 
-          # there should be 4 keys
+          # there should be 5 keys
           cat > expected << EOF
             Client Key ID: test-aes-keygen
             Status: active
@@ -1365,6 +1519,12 @@ jobs:
             Status: active
             Algorithm: RSA
             Size: 2048
+            Owner: kraadmin
+
+            Client Key ID: test-ec-keygen
+            Status: active
+            Algorithm: EC
+            Size: nistp521
             Owner: kraadmin
 
             Status: inactive
