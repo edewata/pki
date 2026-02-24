@@ -27,10 +27,6 @@ import inspect
 import logging
 
 import six
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.ciphers import (
-    algorithms, modes
-)
 
 # encryption algorithms OIDs
 DES_EDE3_CBC_OID = "{1 2 840 113549 3 7}"
@@ -57,14 +53,6 @@ class CryptoProvider(six.with_metaclass(abc.ABCMeta, object)):
     def initialize(self):
         """ Initialization code """
 
-    @abc.abstractmethod
-    def get_supported_algorithm_keyset(self):
-        """ returns highest supported algorithm keyset """
-
-    @abc.abstractmethod
-    def set_algorithm_keyset(self, level):
-        """ sets required keyset """
-
 
 class CryptographyCryptoProvider(CryptoProvider):
     """
@@ -75,7 +63,7 @@ class CryptographyCryptoProvider(CryptoProvider):
     """
 
     def __init__(self, transport_cert_nick=None, transport_cert=None,
-                 backend=default_backend()):
+                 backend=None):
         """ Initialize python-cryptography
         """
         super(CryptographyCryptoProvider, self).__init__()
@@ -92,36 +80,14 @@ class CryptographyCryptoProvider(CryptoProvider):
                 'is no longer used.',
                 inspect.stack()[1].filename, inspect.stack()[1].lineno)
 
-        # default to AES
-        self.encrypt_alg = algorithms.AES
-        self.encrypt_mode = modes.CBC
-        self.encrypt_size = 128
-        self.backend = backend
+        if backend:
+            logger.warning(
+                '%s:%s: The backend parameter in CryptographyCryptoProvider.__init__() '
+                'is no longer used.',
+                inspect.stack()[1].filename, inspect.stack()[1].lineno)
 
     def initialize(self):
         """
         Any operations here that need to be performed before crypto
         operations.
         """
-
-    def get_supported_algorithm_keyset(self):
-        """ returns highest supported algorithm keyset """
-        return 1
-
-    def set_algorithm_keyset(self, level):
-        """ sets required keyset """
-        if level > 1:
-            raise ValueError("Invalid keyset")
-        elif level == 1:
-            self.encrypt_alg = algorithms.AES
-            self.encrypt_mode = modes.CBC
-            self.encrypt_size = 128
-        elif level == 0:
-            # note that 3DES keys are actually 192 bits long, even
-            # though only 168 bits are used internally.  See
-            # https://tools.ietf.org/html/rfc4949
-            # Using 168 here will cause python-cryptography key verification
-            # checks to fail.
-            self.encrypt_alg = algorithms.TripleDES
-            self.encrypt_mode = modes.CBC
-            self.encrypt_size = 192
