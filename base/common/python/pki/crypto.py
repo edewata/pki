@@ -67,10 +67,6 @@ class CryptoProvider(six.with_metaclass(abc.ABCMeta, object)):
         """ sets required keyset """
 
     @abc.abstractmethod
-    def generate_nonce_iv(self, mechanism):
-        """ Create a random initialization vector """
-
-    @abc.abstractmethod
     def generate_symmetric_key(self, mechanism=None, size=0):
         """ Generate and return a symmetric key """
 
@@ -139,10 +135,6 @@ class CryptographyCryptoProvider(CryptoProvider):
             self.encrypt_alg = algorithms.TripleDES
             self.encrypt_mode = modes.CBC
             self.encrypt_size = 192
-
-    def generate_nonce_iv(self, mechanism='AES'):
-        """ Create a random initialization vector """
-        return os.urandom(self.encrypt_alg.block_size // 8)
 
     def generate_symmetric_key(self, mechanism=None, size=0):
         """ Returns a symmetric key.

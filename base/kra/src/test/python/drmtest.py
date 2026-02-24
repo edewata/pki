@@ -33,6 +33,7 @@ See drmtest.readme.txt.
 """
 
 import argparse
+import os
 import random
 import shutil
 import string
@@ -256,7 +257,7 @@ def run_test(protocol, hostname, port, client_cert, certdb_dir,
     print("key to archive: " + key1)
     client_key_id = "Vek #4" + time.strftime('%c')
 
-    nonce_iv = crypto.generate_nonce_iv()
+    nonce_iv = os.urandom(crypto.encrypt_alg.block_size // 8)
 
     padder = PKCS7(crypto.encrypt_alg.block_size).padder()
     padded_data = padder.update(b64decode(key1)) + padder.finalize()
