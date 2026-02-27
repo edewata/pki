@@ -160,6 +160,9 @@ public class ClientCertImportCLI extends CommandCLI {
         // load the certificate
         if (certPath != null) {
 
+            logger.warn("The --cert option has been deprecated. Use the following command instead:");
+            logger.warn("  $ pki nss-cert-import --cert <filename>");
+
             logger.info("Importing certificate from " + certPath);
 
             if (nickname == null) {
