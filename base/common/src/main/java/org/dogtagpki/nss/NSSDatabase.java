@@ -99,7 +99,7 @@ import org.mozilla.jss.netscape.security.x509.X500Name;
 import org.mozilla.jss.netscape.security.x509.X509CertImpl;
 import org.mozilla.jss.netscape.security.x509.X509CertInfo;
 import org.mozilla.jss.netscape.security.x509.X509Key;
-import org.mozilla.jss.pkcs11.PK11Cert;
+import org.mozilla.jss.pkcs11.KeyType;
 import org.mozilla.jss.pkcs11.PK11ECPrivateKey;
 import org.mozilla.jss.pkcs11.PK11PrivKey;
 import org.mozilla.jss.pkcs11.PK11PubKey;
@@ -110,7 +110,6 @@ import org.mozilla.jss.pkix.primitive.Name;
 
 import com.netscape.cmsutil.crypto.CryptoUtil;
 import com.netscape.cmsutil.password.PasswordStore;
-import org.mozilla.jss.pkcs11.KeyType;
 
 /**
  * @author Endi S. Dewata
@@ -325,11 +324,42 @@ public class NSSDatabase {
             X509Certificate cert,
             String trustFlags) throws Exception {
 
-        byte[] bytes = cert.getEncoded();
-        CryptoManager manager = CryptoManager.getInstance();
-        org.mozilla.jss.crypto.X509Certificate jssCert = manager.importCACertPackage(bytes);
+        return addCertificate(null, null, cert, trustFlags);
+    }
 
-        if (trustFlags != null) CryptoUtil.setTrustFlags(jssCert, trustFlags);
+    public org.mozilla.jss.crypto.X509Certificate addCertificate(
+            String nickname,
+            X509Certificate cert,
+            String trustFlags) throws Exception {
+
+        return addCertificate(null, nickname, cert, trustFlags);
+    }
+
+    public org.mozilla.jss.crypto.X509Certificate addCertificate(
+            String tokenName,
+            String nickname,
+            X509Certificate cert,
+            String trustFlags) throws Exception {
+
+        tokenName = tokenName == null ? CryptoUtil.INTERNAL_TOKEN_NAME : tokenName;
+
+        CryptoToken token = CryptoUtil.getKeyStorageToken(tokenName);
+        CryptoStore store = token.getCryptoStore();
+
+        byte[] bytes = cert.getEncoded();
+        org.mozilla.jss.crypto.X509Certificate jssCert;
+
+        if (nickname == null) {
+            logger.debug("Importing cert into " + tokenName + " token");
+            CryptoManager manager = CryptoManager.getInstance();
+            jssCert = manager.importCACertPackage(bytes);
+
+        } else {
+            logger.debug("Importing cert " + nickname + " into " + tokenName + " token");
+            jssCert = store.importCert(bytes, nickname);
+        }
+
+        if (trustFlags != null) jssCert.setTrustFlags(trustFlags);
 
         return jssCert;
     }
@@ -343,38 +373,6 @@ public class NSSDatabase {
         X509CertImpl cert = new X509CertImpl(bytes);
 
         return addCertificate(cert, trustFlags);
-    }
-
-    public org.mozilla.jss.crypto.X509Certificate addCertificate(
-            String nickname,
-            X509CertImpl certImpl,
-            String trustFlags) throws Exception {
-
-        return addCertificate(null, nickname, certImpl, trustFlags);
-    }
-
-    public org.mozilla.jss.crypto.X509Certificate addCertificate(
-            String tokenName,
-            String nickname,
-            X509CertImpl certImpl,
-            String trustFlags) throws Exception {
-
-        tokenName = tokenName == null ? CryptoUtil.INTERNAL_TOKEN_NAME : tokenName;
-        logger.debug("Importing cert " + nickname + " into " + tokenName + " token");
-
-        CryptoToken token = CryptoUtil.getKeyStorageToken(tokenName);
-        CryptoStore store = token.getCryptoStore();
-
-        org.mozilla.jss.crypto.X509Certificate cert = store.importCert(
-                certImpl.getEncoded(),
-                nickname);
-
-        if (trustFlags != null) {
-            PK11Cert pk11Cert = (PK11Cert) cert;
-            pk11Cert.setTrustFlags(trustFlags);
-        }
-
-        return cert;
     }
 
     public void addPEMCertificate(
@@ -1050,7 +1048,6 @@ public class NSSDatabase {
                 extractable,
                 null,
                 null);
-        
     }
 
     public KeyPair createMLDSAKeyPair(
