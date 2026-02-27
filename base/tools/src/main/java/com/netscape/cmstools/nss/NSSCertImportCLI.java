@@ -7,13 +7,15 @@ package com.netscape.cmstools.nss;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.cert.X509Certificate;
+import java.util.List;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.io.IOUtils;
 import org.dogtagpki.cli.CommandCLI;
 import org.dogtagpki.nss.NSSDatabase;
-import org.mozilla.jss.netscape.security.util.Cert;
+import org.mozilla.jss.netscape.security.x509.CertificateChain;
 import org.mozilla.jss.netscape.security.x509.X509CertImpl;
 
 import com.netscape.certsrv.client.ClientConfig;
@@ -71,7 +73,7 @@ public class NSSCertImportCLI extends CommandCLI {
         MainCLI mainCLI = (MainCLI) getRoot();
         mainCLI.init();
 
-        // load input certificate
+        // load input data
         byte[] bytes;
         if (filename == null) {
             // read from standard input
@@ -82,26 +84,42 @@ public class NSSCertImportCLI extends CommandCLI {
             bytes = Files.readAllBytes(Paths.get(filename));
         }
 
+        // load cert chain
+        CertificateChain chain;
         if (format == null || "PEM".equalsIgnoreCase(format)) {
-            bytes = Cert.parseCertificate(new String(bytes));
+            // load a single PEM cert or multiple PEM certs
+            chain = CertificateChain.fromPEMString(new String(bytes));
 
         } else if ("DER".equalsIgnoreCase(format)) {
-            // nothing to do
+            // load a single DER cert
+            X509CertImpl cert = new X509CertImpl(bytes);
+            chain = new CertificateChain(cert);
 
         } else {
             throw new Exception("Unsupported format: " + format);
         }
 
-        // must be done after JSS initialization for RSA/PSS
-        X509CertImpl cert = new X509CertImpl(bytes);
+        // sort cert chain from root to leaf
+        chain.sort();
+        List<X509Certificate> certs = chain.getCertificates();
+        int size = certs.size();
 
         ClientConfig clientConfig = mainCLI.getConfig();
-
         NSSDatabase nssdb = mainCLI.getNSSDatabase();
 
         if (nickname == null) {
-            nssdb.addCertificate(cert, trustFlags);
+            // import all certs without nickname
+            for (int i = 0; i < size - 1; i++) {
+                X509Certificate cert = certs.get(i);
+                nssdb.addCertificate(cert, trustFlags);
+            }
             return;
+        }
+
+        // import non-leaf certs without nickname
+        for (int i = 0; i < size - 1; i++) {
+            X509Certificate cert = certs.get(i);
+            nssdb.addCertificate(cert, trustFlags);
         }
 
         String tokenName = null;
@@ -116,6 +134,8 @@ public class NSSCertImportCLI extends CommandCLI {
             nickname = nickname.substring(i + 1);
         }
 
+        // import leaf cert with nickname
+        X509Certificate cert = certs.get(size - 1);
         nssdb.addCertificate(tokenName, nickname, cert, trustFlags);
     }
 }
