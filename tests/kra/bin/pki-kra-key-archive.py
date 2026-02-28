@@ -105,7 +105,7 @@ account_client.login()
 key_client = pki.key.KeyClient(kra_client)
 
 nonce_iv = os.urandom(crypto.encrypt_alg.block_size // 8)
-session_key = crypto.generate_session_key()
+session_key = os.urandom(crypto.encrypt_size // 8)
 
 padder = PKCS7(crypto.encrypt_alg.block_size).padder()
 padded_data = padder.update(input_data) + padder.finalize()

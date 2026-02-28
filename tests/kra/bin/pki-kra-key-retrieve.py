@@ -106,7 +106,7 @@ result = key_client.list_keys(client_key_id=args.client_key_id)
 key_info = result.key_infos[0]
 key_id = key_info.get_key_id()
 
-session_key = crypto.generate_session_key()
+session_key = os.urandom(crypto.encrypt_size // 8)
 
 wrapped_session_key = transport_cert.public_key().encrypt(
     session_key,

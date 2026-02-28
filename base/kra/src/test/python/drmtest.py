@@ -161,7 +161,7 @@ def run_test(protocol, hostname, port, client_cert, certdb_dir,
 
     # Test 6: Barbican_decode() - Retrieve while providing
     # trans_wrapped_session_key
-    session_key = crypto.generate_session_key()
+    session_key = os.urandom(crypto.encrypt_size // 8)
 
     wrapped_session_key = transport_cert.public_key().encrypt(
         session_key,

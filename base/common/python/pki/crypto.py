@@ -25,7 +25,6 @@ from __future__ import absolute_import
 import abc
 import inspect
 import logging
-import os
 
 import six
 from cryptography.hazmat.backends import default_backend
@@ -65,15 +64,6 @@ class CryptoProvider(six.with_metaclass(abc.ABCMeta, object)):
     @abc.abstractmethod
     def set_algorithm_keyset(self, level):
         """ sets required keyset """
-
-    @abc.abstractmethod
-    def generate_symmetric_key(self, mechanism=None, size=0):
-        """ Generate and return a symmetric key """
-
-    @abc.abstractmethod
-    def generate_session_key(self):
-        """ Generate a session key to be used for wrapping data to the DRM
-        This must return a 3DES 168 bit key """
 
 
 class CryptographyCryptoProvider(CryptoProvider):
@@ -135,15 +125,3 @@ class CryptographyCryptoProvider(CryptoProvider):
             self.encrypt_alg = algorithms.TripleDES
             self.encrypt_mode = modes.CBC
             self.encrypt_size = 192
-
-    def generate_symmetric_key(self, mechanism=None, size=0):
-        """ Returns a symmetric key.
-        """
-        if mechanism is None:
-            size = self.encrypt_size // 8
-        return os.urandom(size)
-
-    def generate_session_key(self):
-        """ Returns a session key to be used when wrapping secrets for the DRM.
-        """
-        return self.generate_symmetric_key()
