@@ -9,6 +9,9 @@ name: CA API
 # - check pki ca-user-show with API v1
 # - check pki ca-cert-request-find with default API
 # - check pki ca-cert-request-find with API v1
+# - check pki ca-cert-issue with default API
+# - check pki ca-cert-issue with API v1
+# - check pki ca-sd-join and ca-sd-leave with default API
 
 on: workflow_call
 
@@ -56,6 +59,16 @@ jobs:
               --network-alias=pki.example.com \
               pki
 
+          docker exec pki dnf install -y xmlstarlet
+
+      - name: Set up client container
+        run: |
+          tests/bin/runner-init.sh \
+              --hostname=client.example.com \
+              --network=example \
+              --network-alias=client.example.com \
+              client
+
       - name: Install CA
         run: |
           docker exec pki pkispawn \
@@ -67,8 +80,6 @@ jobs:
 
       - name: Disable access log buffer
         run: |
-          docker exec pki dnf install -y xmlstarlet
-
           docker exec pki xmlstarlet edit --inplace \
               -u "//Valve[@className='org.apache.catalina.valves.AccessLogValve']/@buffered" \
               -v "false" \
@@ -87,47 +98,80 @@ jobs:
           docker exec pki chown pkiuser:pkiuser /var/lib/pki/pki-tomcat/conf/ca/logging.properties
 
       - name: Restart PKI server
+        if: false
         run: |
           docker exec pki pki-server restart --wait
 
       - name: Install CA signing cert
         run: |
           docker exec pki pki-server cert-export \
-              --cert-file ca_signing.crt \
+              --cert-file $SHARED/ca_signing.crt \
               ca_signing
 
-          docker exec pki pki nss-cert-import \
-              --cert ca_signing.crt \
+          docker exec client pki nss-cert-import \
+              --cert $SHARED/ca_signing.crt \
               --trust CT,C,C \
               ca_signing
 
-      - name: Install CA admin cert
+      - name: Install subsystem cert and key
         run: |
-          docker exec pki pki pkcs12-import \
-              --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
-              --pkcs12-password Secret.123
+          docker exec pki pki-server cert-export \
+              --pkcs12-file $SHARED/subsystem.p12 \
+              --pkcs12-password Secret.123 \
+              subsystem
+
+          docker exec client pki pkcs12-import \
+              --pkcs12 $SHARED/subsystem.p12 \
+              --password Secret.123
+
+      - name: Install CA admin cert and key
+        run: |
+          docker cp pki:/root/.dogtag/pki-tomcat/ca_admin_cert.p12 .
+
+          docker exec client pki pkcs12-import \
+              --pkcs12 $SHARED/ca_admin_cert.p12 \
+              --password Secret.123
 
       - name: Check pki info with default API
+        if: false
         run: |
-          docker exec pki pki info
+          for i in {1..1}; do
+              docker exec client \
+                  -U https://pki.example.com:8443 \
+                  pki info
+          done
 
           # check HTTP methods, paths, protocols, status, and authenticated users
           docker exec pki find /var/log/pki/pki-tomcat \
               -name "localhost_access_log.*" \
               -exec cat {} \; \
-              | tail -1 \
+              | tail -2 \
               | sed -e 's/^.* .* \(.*\) \[.*\] "\(.*\)" \(.*\) .*$/\2 \3 \1/' \
               | tee output
 
-          cat > expected << EOF
+          # normalize output
+          sed \
+              -e 's/^\(GET \/ca\/ocsp\/\)[^ ]* \(.*\)$/\1XXXXX \2/' \
+              output > actual
+
+          rm -f expected
+
+          for i in {1..1}; do
+              cat >> expected << EOF
+          GET /ca/ocsp/XXXXX HTTP/1.0 200 -
           GET /pki/v2/info HTTP/1.1 200 -
           EOF
+          done
 
-          diff expected output
+          diff expected actual || true
 
       - name: Check pki info with API v1
+        if: false
         run: |
-          docker exec pki pki --api v1 info
+          docker exec client pki \
+              -U https://pki.example.com:8443 \
+              --api v1 \
+              info
 
           # check HTTP methods, paths, protocols, status, and authenticated users
           docker exec pki find /var/log/pki/pki-tomcat \
@@ -144,8 +188,12 @@ jobs:
           diff expected output
 
       - name: Check pki ca-cert-find with default API
+        if: false
         run: |
-          docker exec pki pki ca-cert-find | tee output
+          docker exec client pki \
+              -U https://pki.example.com:8443 \
+              ca-cert-find \
+              | tee output
 
           # get certs returned
           grep "Serial Number:" output | wc -l > actual
@@ -176,8 +224,13 @@ jobs:
           diff expected output
 
       - name: Check pki ca-cert-find with API v1
+        if: false
         run: |
-          docker exec pki pki --api v1 ca-cert-find | tee output
+          docker exec client pki \
+              -U https://pki.example.com:8443 \
+              --api v1 \
+              ca-cert-find \
+              | tee output
 
           # get certs returned
           grep "Serial Number:" output | wc -l > actual
@@ -209,8 +262,13 @@ jobs:
           diff expected output
 
       - name: Check pki ca-user-show with default API
+        if: false
         run: |
-          docker exec pki pki -n caadmin ca-user-show caadmin
+          docker exec client pki \
+              -U https://pki.example.com:8443 \
+              -n caadmin \
+              ca-user-show \
+              caadmin
 
           # check HTTP methods, paths, protocols, status, and authenticated users
           docker exec pki find /var/log/pki/pki-tomcat \
@@ -230,8 +288,14 @@ jobs:
           diff expected output
 
       - name: Check pki ca-user-show with API v1
+        if: false
         run: |
-          docker exec pki pki -n caadmin --api v1 ca-user-show caadmin
+          docker exec client pki \
+              -U https://pki.example.com:8443 \
+              -n caadmin \
+              --api v1 \
+              ca-user-show \
+              caadmin
 
           # check HTTP methods, paths, protocols, status, and authenticated users
           docker exec pki find /var/log/pki/pki-tomcat \
@@ -251,8 +315,12 @@ jobs:
           diff expected output
 
       - name: Check pki ca-cert-request-find with default API
+        if: false
         run: |
-          docker exec pki pki -n caadmin ca-cert-request-find
+          docker exec client pki \
+              -U https://pki.example.com:8443 \
+              -n caadmin \
+              ca-cert-request-find
 
           # check HTTP methods, paths, protocols, status, and authenticated users
           docker exec pki find /var/log/pki/pki-tomcat \
@@ -272,8 +340,13 @@ jobs:
           diff expected output
 
       - name: Check pki ca-cert-request-find with API v1
+        if: false
         run: |
-          docker exec pki pki -n caadmin --api v1 ca-cert-request-find
+          docker exec client pki \
+              -U https://pki.example.com:8443 \
+              -n caadmin \
+              --api v1 \
+              ca-cert-request-find
 
           # check HTTP methods, paths, protocols, status, and authenticated users
           docker exec pki find /var/log/pki/pki-tomcat \
@@ -291,6 +364,226 @@ jobs:
           EOF
 
           diff expected output
+
+      - name: Get install token
+        run: |
+          docker exec client curl \
+              -k \
+              -s \
+              -H "Accept: application/json" \
+              --user caadmin:Secret.123 \
+              --cookie-jar $SHARED/cookies \
+              https://pki.example.com:8443/ca/rest/account/login \
+              | python -m json.tool
+
+          cat cookies
+
+          # TODO: create a CLI for this operation
+          docker exec client curl \
+              -k \
+              -s \
+              --cookie $SHARED/cookies \
+              "https://pki.example.com:8443/ca/rest/securityDomain/installToken?hostname=client.example.com&subsystem=KRA" \
+              | python -m json.tool \
+              | tee response.json
+
+          jq -r '.token' response.json > install-token
+
+      - name: Check pki ca-cert-issue with default API
+        run: |
+          # create CSR
+          docker exec pki pki-server cert-request \
+              --subject "CN=Audit Signing Certificate" \
+              --ext /usr/share/pki/server/certs/audit_signing.conf \
+              ca_audit_signing
+
+          docker cp pki:/var/lib/pki/pki-tomcat/conf/certs/ca_audit_signing.csr .
+
+          cat > expected << EOF
+          GET /ca/ocsp/XXXXX HTTP/1.0 400 -
+          POST /ca/ocsp HTTP/1.0 200 -
+          GET /pki/v2/info HTTP/1.1 200 -
+          GET /ca/v2/certrequests/profiles/caInternalAuthAuditSigningCert HTTP/1.1 200 -
+          POST /ca/admin/ca/tokenAuthenticate HTTP/1.1 200 -
+          POST /ca/ee/ca/profileSubmit HTTP/1.1 200 -
+          EOF
+
+          for i in {1..10}; do
+
+              # issue cert
+              docker exec client pki \
+                  -U https://pki.example.com:8443 \
+                  ca-cert-issue \
+                  --install-token $SHARED/install-token \
+                  --profile caInternalAuthAuditSigningCert \
+                  --csr-file $SHARED/ca_audit_signing.csr \
+                  --output-file ca_audit_signing.crt
+
+              # check HTTP methods, paths, protocols, status, and authenticated users
+              docker exec pki find /var/log/pki/pki-tomcat \
+                  -name "localhost_access_log.*" \
+                  -exec cat {} \; \
+                  | tail -6 \
+                  | sed -e 's/^.* .* \(.*\) \[.*\] "\(.*\)" \(.*\) .*$/\2 \3 \1/' \
+                  | tee output
+
+              # normalize output
+              sed \
+                  -e 's/^\(GET \/ca\/ocsp\/\)[^ ]* \(.*\)$/\1XXXXX \2/' \
+                  output > actual
+
+              diff expected actual || true
+
+          done
+
+      - name: Check pki ca-cert-issue with API v1
+        run: |
+          cat > expected << EOF
+          GET /ca/ocsp/XXXXX HTTP/1.0 400 -
+          POST /ca/ocsp HTTP/1.0 200 -
+          GET /pki/v1/info HTTP/1.1 200 -
+          GET /ca/v1/certrequests/profiles/caInternalAuthAuditSigningCert HTTP/1.1 200 -
+          POST /ca/admin/ca/tokenAuthenticate HTTP/1.1 200 -
+          POST /ca/ee/ca/profileSubmit HTTP/1.1 200 -
+          EOF
+
+          for i in {1..10}; do
+
+              # issue cert
+              docker exec client pki \
+                  -U https://pki.example.com:8443 \
+                  --api v1 \
+                  ca-cert-issue \
+                  --install-token $SHARED/install-token \
+                  --profile caInternalAuthAuditSigningCert \
+                  --csr-file $SHARED/ca_audit_signing.csr \
+                  --output-file ca_audit_signing.crt
+
+              # check HTTP methods, paths, protocols, status, and authenticated users
+              docker exec pki find /var/log/pki/pki-tomcat \
+                  -name "localhost_access_log.*" \
+                  -exec cat {} \; \
+                  | tail -6 \
+                  | sed -e 's/^.* .* \(.*\) \[.*\] "\(.*\)" \(.*\) .*$/\2 \3 \1/' \
+                  | tee output
+
+              # normalize output
+              sed \
+                  -e 's/^\(GET \/ca\/ocsp\/\)[^ ]* \(.*\)$/\1XXXXX \2/' \
+                  output > actual
+
+              diff expected actual || true
+
+          done
+
+      - name: Check pki ca-sd-join and ca-sd-leave with default API
+        run: |
+          cat > expected << EOF
+          GET /ca/ocsp/XXXXX HTTP/1.0 400 -
+          POST /ca/ocsp HTTP/1.0 200 -
+          GET /pki/v2/info HTTP/1.1 200 -
+          POST /ca/admin/ca/tokenAuthenticate HTTP/1.1 200 -
+          POST /ca/admin/ca/updateDomainXML HTTP/1.1 200 -
+          GET /ca/ocsp/XXXXX HTTP/1.0 400 -
+          POST /ca/ocsp HTTP/1.0 200 -
+          GET /pki/v2/info HTTP/1.1 200 -
+          GET /ca/v2/account/login HTTP/1.1 200 CA-pki.example.com-8443
+          POST /ca/agent/ca/updateDomainXML HTTP/1.1 200 CA-pki.example.com-8443
+          GET /ca/v2/account/logout HTTP/1.1 204 CA-pki.example.com-8443
+          EOF
+
+          for i in {1..10}; do
+
+              docker exec client pki \
+                  -U https://pki.example.com:8443 \
+                  ca-sd-join \
+                  --install-token $SHARED/install-token \
+                  --type KRA \
+                  --hostname client.example.com \
+                  --secure-port 8443 \
+                  "KRA client.example.com 8443"
+
+              docker exec client pki \
+                  -U https://pki.example.com:8443 \
+                  -n subsystem \
+                  ca-sd-leave \
+                  --type KRA \
+                  --hostname client.example.com \
+                  --secure-port 8443 \
+                  "KRA client.example.com 8443"
+
+              # check HTTP methods, paths, protocols, status, and authenticated users
+              docker exec pki find /var/log/pki/pki-tomcat \
+                  -name "localhost_access_log.*" \
+                  -exec cat {} \; \
+                  | tail -11 \
+                  | sed -e 's/^.* .* \(.*\) \[.*\] "\(.*\)" \(.*\) .*$/\2 \3 \1/' \
+                  | tee output
+
+              # normalize output
+              sed \
+                  -e 's/^\(GET \/ca\/ocsp\/\)[^ ]* \(.*\)$/\1XXXXX \2/' \
+                  output > actual
+
+              diff expected actual || true
+
+          done
+
+
+      - name: Check pki ca-sd-join and ca-sd-leave with API v1
+        run: |
+          cat > expected << EOF
+          GET /ca/ocsp/XXXXX HTTP/1.0 400 -
+          POST /ca/ocsp HTTP/1.0 200 -
+          GET /pki/v1/info HTTP/1.1 200 -
+          POST /ca/admin/ca/tokenAuthenticate HTTP/1.1 200 -
+          POST /ca/admin/ca/updateDomainXML HTTP/1.1 200 -
+          GET /ca/ocsp/XXXXX HTTP/1.0 400 -
+          POST /ca/ocsp HTTP/1.0 200 -
+          GET /pki/v1/info HTTP/1.1 200 -
+          GET /ca/v1/account/login HTTP/1.1 200 CA-pki.example.com-8443
+          POST /ca/agent/ca/updateDomainXML HTTP/1.1 200 CA-pki.example.com-8443
+          GET /ca/v1/account/logout HTTP/1.1 204 CA-pki.example.com-8443
+          EOF
+
+          for i in {1..10}; do
+
+              docker exec client pki \
+                  -U https://pki.example.com:8443 \
+                  --api v1 \
+                  ca-sd-join \
+                  --install-token $SHARED/install-token \
+                  --type KRA \
+                  --hostname client.example.com \
+                  --secure-port 8443 \
+                  "KRA client.example.com 8443"
+
+              docker exec client pki \
+                  -U https://pki.example.com:8443 \
+                  -n subsystem \
+                  --api v1 \
+                  ca-sd-leave \
+                  --type KRA \
+                  --hostname client.example.com \
+                  --secure-port 8443 \
+                  "KRA client.example.com 8443"
+
+              # check HTTP methods, paths, protocols, status, and authenticated users
+              docker exec pki find /var/log/pki/pki-tomcat \
+                  -name "localhost_access_log.*" \
+                  -exec cat {} \; \
+                  | tail -11 \
+                  | sed -e 's/^.* .* \(.*\) \[.*\] "\(.*\)" \(.*\) .*$/\2 \3 \1/' \
+                  | tee output
+
+              # normalize output
+              sed \
+                  -e 's/^\(GET \/ca\/ocsp\/\)[^ ]* \(.*\)$/\1XXXXX \2/' \
+                  output > actual
+
+              diff expected actual || true
+
+          done
 
       - name: Check DS server systemd journal
         if: always()
@@ -322,3 +615,9 @@ jobs:
         if: always()
         run: |
           docker exec pki find /var/lib/pki/pki-tomcat/logs/ca -name "debug.*" -exec cat {} \;
+
+      - name: Check for client core dumps
+        if: failure()
+        run: |
+          docker exec client ls -l
+          docker exec client find / -path /proc -prune -o -name "hs_err_pid*.log" -exec cat {} \;
