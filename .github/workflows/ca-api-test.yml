@@ -9,6 +9,8 @@ name: CA API
 # - check pki ca-user-show with API v1
 # - check pki ca-cert-request-find with default API
 # - check pki ca-cert-request-find with API v1
+# - get install token
+# - join security domain
 
 on: workflow_call
 
@@ -109,21 +111,33 @@ jobs:
 
       - name: Check pki info with default API
         run: |
-          docker exec pki pki info
+          for i in {1..50}; do
+              docker exec pki pki info
+          done
 
           # check HTTP methods, paths, protocols, status, and authenticated users
           docker exec pki find /var/log/pki/pki-tomcat \
               -name "localhost_access_log.*" \
               -exec cat {} \; \
-              | tail -1 \
+              | tail -100 \
               | sed -e 's/^.* .* \(.*\) \[.*\] "\(.*\)" \(.*\) .*$/\2 \3 \1/' \
               | tee output
 
-          cat > expected << EOF
+          # normalize output
+          sed \
+              -e 's/^\(GET \/ca\/ocsp\/\)[^ ]* \(.*\)$/\1XXXXX \2/' \
+              output > actual
+
+          rm -f expected
+
+          for i in {1..50}; do
+              cat >> expected << EOF
+          GET /ca/ocsp/XXXXX HTTP/1.0 200 -
           GET /pki/v2/info HTTP/1.1 200 -
           EOF
+          done
 
-          diff expected output
+          diff expected actual || true
 
       - name: Check pki info with API v1
         run: |
@@ -291,6 +305,57 @@ jobs:
           EOF
 
           diff expected output
+
+      - name: Get install token
+        run: |
+          docker exec pki curl \
+              -k \
+              -s \
+              -H "Accept: application/json" \
+              --user caadmin:Secret.123 \
+              --cookie-jar cookies \
+              https://pki.example.com:8443/ca/rest/account/login \
+              | python -m json.tool
+
+          # TODO: create a CLI for this operation
+          docker exec pki curl \
+              -k \
+              -s \
+              --cookie cookies \
+              "https://pki.example.com:8443/ca/rest/securityDomain/installToken?hostname=pki.example.com&subsystem=KRA" \
+              | python -m json.tool \
+              | tee response.json
+
+          jq -r '.token' response.json > install-token
+
+      - name: Check pki ca-sd-join with default API
+        run: |
+          docker exec pki dnf install -y jq
+
+          for i in {1..50}; do
+
+              docker exec pki pki \
+                  --debug \
+                  -d /etc/pki/pki-tomcat/alias \
+                  -f /etc/pki/pki-tomcat/password.conf \
+                  ca-sd-join \
+                  --install-token $SHARED/install-token \
+                  --type KRA \
+                  --hostname pki.example.com \
+                  --secure-port 8443 \
+                  "KRA pki.example.com 8443"
+
+              docker exec pki pki \
+                  --debug \
+                  -d /etc/pki/pki-tomcat/alias \
+                  -f /etc/pki/pki-tomcat/password.conf \
+                  -n subsystem \
+                  ca-sd-leave \
+                  --type KRA \
+                  --hostname pki.example.com \
+                  --secure-port 8443 \
+                  "KRA pki.example.com 8443"
+          done
 
       - name: Check DS server systemd journal
         if: always()
