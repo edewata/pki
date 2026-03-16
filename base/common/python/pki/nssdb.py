@@ -337,9 +337,6 @@ class NSSDatabase:
             check=check,
             universal_newlines=text)
 
-        if capture_output:
-            logger.debug('stdout:\n%s', result.stdout)
-
         return result
 
     def create(self, enable_trust_policy=False):
@@ -1950,7 +1947,7 @@ class NSSDatabase:
         stderr = result.stderr.decode()
 
         if stderr:
-            logger.error('stderr : %s', stderr)
+            logger.error('stderr:\n%s', stderr)
 
             # TODO: use RC instead of text to determine missing cert
             if re.search('^ERROR: Certificate not found: ', stderr, re.MULTILINE):
@@ -2076,7 +2073,7 @@ class NSSDatabase:
         finally:
             shutil.rmtree(tmpdir)
 
-        cert_data = result.stdout
+        stdout = result.stdout
         stderr = result.stderr.decode('utf-8')
 
         if stderr:
@@ -2090,7 +2087,7 @@ class NSSDatabase:
             # otherwise, raise exception
             raise Exception('Unable to get certificate {}: {}'.format(fullname, stderr.strip()))
 
-        if not cert_data:
+        if not stdout:
             raise Exception('Unable to get certificate %s: Missing data' % fullname)
 
         if result.returncode != 0:
@@ -2099,7 +2096,12 @@ class NSSDatabase:
 
         if output_format == 'base64':
             # convert to base-64
-            cert_data = base64.b64encode(cert_data).decode('utf-8')
+            cert_data = base64.b64encode(stdout).decode('utf-8')
+            logger.debug('stdout:\n%s', cert_data)
+        else:
+            # PEM or pretty-print
+            cert_data = stdout
+            logger.debug('stdout:\n%s', cert_data.decode('utf-8'))
 
         if output_text and not isinstance(cert_data, str):
             # convert to text
