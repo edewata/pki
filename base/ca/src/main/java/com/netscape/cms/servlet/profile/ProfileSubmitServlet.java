@@ -127,6 +127,9 @@ public class ProfileSubmitServlet extends ProfileServlet {
 
     @Override
     public void process(CMSRequest cmsReq) throws EBaseException {
+
+        logger.info("ProfileSubmitServlet: Processing request");
+
         HttpServletRequest request = cmsReq.getHttpReq();
         HttpServletResponse response = cmsReq.getHttpResp();
         boolean xmlOutput = getXMLOutput(request);
@@ -193,7 +196,9 @@ public class ProfileSubmitServlet extends ProfileServlet {
         }
 
         if (xmlOutput) {
+            logger.info("ProfileSubmitServlet: Returning XML response");
             xmlOutput(response, profile, locale, reqs);
+
         } else {
             ArgList outputlist = new ArgList();
             for (int k = 0; k < reqs.length; k++) {
@@ -201,8 +206,6 @@ public class ProfileSubmitServlet extends ProfileServlet {
                 setOutputIntoArgs(profile, outputlist, locale, reqs[k]);
                 args.set(ARG_OUTPUT_LIST, outputlist);
             }
-
-            logger.debug("ProfileSubmitServlet: done serving");
 
             ArgList requestlist = new ArgList();
 
@@ -218,18 +221,15 @@ public class ProfileSubmitServlet extends ProfileServlet {
             args.set(ARG_ERROR_REASON, "");
 
             try {
-                //logger.debug("ProfileSubmitServlet: p12 output process begins");
                 String p12Str = reqs[0].getExtDataInString("req_issued_p12");
                 if (p12Str == null) {
+                    logger.info("ProfileSubmitServlet: Returning HTML page");
                     // not server-side keygen
-                    // logger.debug("ProfileProcessServlet:cfu: no p12; not server-side keygen");
                     outputTemplate(request, response, args);
                 } else {
-                    // found pkcs12 blob
-                    //logger.debug("ProfileProcessServlet: found p12 " /* + p12Str*/);
-                    byte[] p12blob = null;
+                    logger.info("ProfileSubmitServlet: Returning PKCS #12 data");
+                    byte[] p12blob = Utils.base64decode(p12Str);
                     HttpServletResponse p12_response = cmsReq.getHttpResp();
-                    p12blob = Utils.base64decode(p12Str);
                     OutputStream bos = p12_response.getOutputStream();
                     p12_response.setContentType("application/x-pkcs12");
                     p12_response.setContentLength(p12blob.length);
@@ -239,7 +239,7 @@ public class ProfileSubmitServlet extends ProfileServlet {
                     bos.close();
                 }
             } catch (IOException e) {
-                logger.debug(e.getMessage());
+                logger.error("Unable to generate response: " + e.getMessage(), e);
                 setError(args, e.getMessage(), request, response);
                 return;
             }

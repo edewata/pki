@@ -424,6 +424,8 @@ public abstract class CMSServlet extends HttpServlet {
             HttpServletResponse httpResp)
             throws ServletException, IOException {
 
+        logger.info(getClass().getSimpleName() + ": Servicing request");
+
         CMSEngine engine = getCMSEngine();
         EngineConfig cs = engine.getConfig();
 
