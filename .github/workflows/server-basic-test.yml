@@ -370,6 +370,11 @@ jobs:
         run: |
           docker exec pki cat /etc/pki/pki-tomcat/tomcat.conf
 
+      - name: Check /etc/sysconfig/pki/tomcat/pki-tomcat/pki-tomcat
+        if: always()
+        run: |
+          docker exec pki cat /etc/sysconfig/pki/tomcat/pki-tomcat/pki-tomcat
+
       - name: Check PKI server conf/Catalina/localhost dir after installation
         run: |
           # check file types, owners, and permissions

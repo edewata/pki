@@ -105,7 +105,7 @@ public class NSSKeyFindCLI extends CommandCLI {
             CryptoStore cryptoStore = token.getCryptoStore();
 
             privateKeys = Arrays.asList(cryptoStore.getPrivateKeys());
-            logger.info("Private keys: " + privateKeys);
+            logger.info("Private keys: " + privateKeys.size());
 
             symmetricKeys = new ArrayList<>();
             String nicknames = SessionKey.ListSymmetricKeys(tokenName);

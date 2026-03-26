@@ -43,6 +43,16 @@ jobs:
     needs: build
     uses: ./.github/workflows/server-https-nss-test.yml
 
+  server-https-softhsm-test:
+    name: HTTPS connector with SoftHSM
+    needs: build
+    uses: ./.github/workflows/server-https-softhsm-test.yml
+
+  server-https-kryoptic-test:
+    name: HTTPS connector with Kryoptic
+    needs: build
+    uses: ./.github/workflows/server-https-kryoptic-test.yml
+
   server-backup-test:
     name: Server backup
     needs: build

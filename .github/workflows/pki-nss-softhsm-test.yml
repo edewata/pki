@@ -1,4 +1,21 @@
 name: PKI NSS CLI with SoftHSM
+# This test will perform the following operations:
+# - install SoftHSM
+# - create SoftHSM token
+# - create CA signing key
+# - create CA signing CSR
+# - issue CA signing cert
+# - import CA signing cert
+# - create SSL server CSR
+# - issue SSL server cert
+# - import SSL server cert
+# - remove SSL server cert
+# - create new SSL server CSR
+# - issue new SSL server cert
+# - import new SSL server cert
+# - modify SSL server cert trust flags
+# - remove new SSL server cert and key
+# - remove SoftHSM token
 
 on: workflow_call
 
@@ -31,15 +48,38 @@ jobs:
               --hostname=pki.example.com \
               pki
 
-          docker exec pki dnf install -y softhsm opensc
+      - name: Install SoftHSM
+        run: |
+          docker exec pki dnf install -y softhsm
+          docker exec pki rpm -ql softhsm
+          docker exec pki cat /usr/share/p11-kit/modules/softhsm2.module
 
+      - name: Check SoftHSM using OpenSC
+        run: |
+          docker exec pki dnf install -y opensc
+
+          docker exec pki pkcs11-tool \
+              --module /usr/lib64/pkcs11/libsofthsm2.so \
+              --show-info
+
+          docker exec pki pkcs11-tool \
+              --module /usr/lib64/pkcs11/libsofthsm2.so \
+              --list-slots
+
+      - name: Check SoftHSM using NSS
+        run: |
+          docker exec pki modutil -nocertdb -list
+
+      # https://github.com/dogtagpki/pki/wiki/SoftHSM
       - name: Create SoftHSM token
         run: |
-          docker exec pki softhsm2-util --init-token \
+          docker exec pki softhsm2-util \
+              --init-token \
               --label HSM \
               --so-pin Secret.HSM \
               --pin Secret.HSM \
               --free
+
           docker exec pki softhsm2-util --show-slots
 
           docker exec pki pkcs11-tool \
@@ -93,7 +133,7 @@ jobs:
           docker exec pki pki \
               --debug \
               --token HSM \
-               -f $SHARED/password.conf \
+              -f $SHARED/password.conf \
               nss-key-show \
               --key-id-file $SHARED/ca_signing_key_id
 
@@ -389,7 +429,7 @@ jobs:
               -f $SHARED/password.txt \
               -h HSM
 
-      - name: Issue new  SSL server cert
+      - name: Issue new SSL server cert
         run: |
           docker exec pki pki \
               --token HSM \

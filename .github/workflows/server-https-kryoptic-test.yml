@@ -1,0 +1,324 @@
+name: HTTPS connector with Kryoptic
+# This test will perform the following operations:
+# - create Kryoptic token
+# - create PKI server
+# - create CA signing cert
+# - create SSL server cert
+# - create HTTPS connector
+# - create HTTPS connection
+# - remove PKI server
+# - remove Kryoptic token
+
+on: workflow_call
+
+env:
+  DS_IMAGE: ${{ vars.DS_IMAGE || 'quay.io/389ds/dirsrv' }}
+
+jobs:
+  # docs/admin/server/Configuring-HTTPS-Connector-with-NSS-Database.adoc
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    env:
+      SHARED: /tmp/workdir/pki
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install xmlstarlet
+
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      - name: Retrieve PKI images
+        uses: actions/cache@v4
+        with:
+          key: pki-images-${{ github.sha }}
+          path: pki-images.tar
+
+      - name: Load PKI images
+        run: docker load --input pki-images.tar
+
+      - name: Create network
+        run: docker network create example
+
+      - name: Set up server container
+        run: |
+          tests/bin/runner-init.sh \
+              --hostname=pki.example.com \
+              --network=example \
+              --network-alias=pki.example.com \
+              pki
+
+      - name: Install Kryoptic and OpenSC
+        run: |
+          docker exec pki dnf install -y kryoptic opensc
+
+      - name: Create Kryoptic token
+        run: |
+          # configure token
+          docker exec pki runuser -u pkiuser -- \
+              mkdir -p /home/pkiuser/.config/kryoptic
+
+          docker exec -i pki runuser -u pkiuser -- \
+              tee /home/pkiuser/.config/kryoptic/token.conf << EOF
+          [[slots]]
+          slot = 1
+          dbtype = "sqlite"
+          dbargs = "/home/pkiuser/.config/kryoptic/token.sql"
+          EOF
+
+          docker exec pki runuser -u pkiuser -- \
+              pkcs11-tool \
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
+              --list-slots
+
+          # initialize token and SO PIN
+          docker exec pki runuser -u pkiuser -- \
+              pkcs11-tool \
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
+              --label HSM \
+              --so-pin Secret.HSM \
+              --init-token
+
+          # initialize user PIN
+          docker exec pki runuser -u pkiuser -- \
+              pkcs11-tool \
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
+              --login \
+              --login-type so \
+              --so-pin Secret.HSM \
+              --pin Secret.HSM \
+              --init-pin
+
+          docker exec pki runuser -u pkiuser -- \
+              pkcs11-tool \
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
+              --list-slots
+
+          docker exec pki runuser -u pkiuser -- \
+              modutil -nocertdb -list
+
+      - name: Create PKI server
+        run: |
+          docker exec pki pki-server create -v
+          docker exec pki pki-server nss-create --no-password
+          docker exec pki pki-server password-set "hardware-HSM" --password "Secret.HSM"
+
+      - name: Check PKI server base dir
+        run: |
+          # check file types, owners, and permissions
+          docker exec pki ls -l /var/lib/pki/pki-tomcat \
+              | sed \
+                  -e '/^total/d' \
+                  -e 's/^\(\S*\) *\S* *\(\S*\) *\(\S*\) *\S* *\S* *\S* *\S* *\(.*\)$/\1 \2 \3 \4/' \
+              | tee output
+
+      - name: Check PKI server conf dir
+        run: |
+          # check file types, owners, and permissions
+          docker exec pki ls -l /etc/pki/pki-tomcat \
+              | sed \
+                  -e '/^total/d' \
+                  -e 's/^\(\S*\) *\S* *\(\S*\) *\(\S*\) *\S* *\S* *\S* *\S* *\(.*\)$/\1 \2 \3 \4/' \
+              | tee output
+
+      - name: Check pki-tomcat server.xml
+        if: always()
+        run: |
+          docker exec pki cat /etc/pki/pki-tomcat/server.xml
+
+      - name: Check pki-tomcat tomcat.conf
+        if: always()
+        run: |
+          docker exec pki cat /etc/pki/pki-tomcat/tomcat.conf
+
+      - name: Check /etc/sysconfig/pki/tomcat/pki-tomcat/pki-tomcat
+        if: always()
+        run: |
+          docker exec pki cat /etc/sysconfig/pki/tomcat/pki-tomcat/pki-tomcat
+
+      - name: Create CA signing cert
+        run: |
+          # generate CA signing CSR
+          docker exec pki runuser -u pkiuser -- \
+              pki \
+              -d /var/lib/pki/pki-tomcat/alias \
+              -f /var/lib/pki/pki-tomcat/conf/password.conf \
+              --token HSM \
+              nss-cert-request \
+              --subject "CN=CA Signing Certificate" \
+              --ext /usr/share/pki/server/certs/ca_signing.conf \
+              --csr /home/pkiuser/ca_signing.csr
+
+          # create CA signing cert
+          docker exec pki runuser -u pkiuser -- \
+              pki \
+              -d /var/lib/pki/pki-tomcat/alias \
+              -f /var/lib/pki/pki-tomcat/conf/password.conf \
+              --token HSM \
+              nss-cert-issue \
+              --csr /home/pkiuser/ca_signing.csr \
+              --ext /usr/share/pki/server/certs/ca_signing.conf \
+              --cert /home/pkiuser/ca_signing.crt
+
+          # check CA signing cert
+          docker cp pki:/home/pkiuser/ca_signing.crt .
+          openssl x509 -text -noout -in ca_signing.crt
+
+          # import CA signing cert
+          docker exec pki runuser -u pkiuser -- \
+              pki \
+              -d /var/lib/pki/pki-tomcat/alias \
+              -f /var/lib/pki/pki-tomcat/conf/password.conf \
+              nss-cert-import \
+              --cert /home/pkiuser/ca_signing.crt \
+              --trust CT,C,C \
+              HSM:ca_signing
+
+          # check CA signing cert
+          docker exec pki runuser -u pkiuser -- \
+              pki \
+              -d /var/lib/pki/pki-tomcat/alias \
+              -f /var/lib/pki/pki-tomcat/conf/password.conf \
+              nss-cert-show \
+              HSM:ca_signing
+
+      - name: Create SSL server cert
+        run: |
+          # generate SSL server CSR
+          docker exec pki runuser -u pkiuser -- \
+              pki \
+              -d /var/lib/pki/pki-tomcat/alias \
+              -f /var/lib/pki/pki-tomcat/conf/password.conf \
+              --token HSM \
+              nss-cert-request \
+              --subject "CN=pki.example.com" \
+              --ext /usr/share/pki/server/certs/sslserver.conf \
+              --csr /home/pkiuser/sslserver.csr
+
+          # issue SSL server cert
+          docker exec pki runuser -u pkiuser -- \
+              pki \
+              -d /var/lib/pki/pki-tomcat/alias \
+              -f /var/lib/pki/pki-tomcat/conf/password.conf \
+              --token HSM \
+              nss-cert-issue \
+              --issuer HSM:ca_signing \
+              --csr /home/pkiuser/sslserver.csr \
+              --ext /usr/share/pki/server/certs/sslserver.conf \
+              --cert /home/pkiuser/sslserver.crt
+
+          # check SSL server cert
+          docker cp pki:/home/pkiuser/sslserver.crt .
+          openssl x509 -text -noout -in sslserver.crt
+
+          # import SSL server cert
+          docker exec pki runuser -u pkiuser -- \
+              pki \
+              -d /var/lib/pki/pki-tomcat/alias \
+              -f /var/lib/pki/pki-tomcat/conf/password.conf \
+              nss-cert-import \
+              --cert /home/pkiuser/sslserver.crt \
+              HSM:sslserver
+
+      - name: Create HTTPS connector
+        run: |
+          docker exec pki pki-server jss-enable
+          docker exec pki pki-server http-connector-add \
+              --port 8443 \
+              --scheme https \
+              --secure true \
+              --sslEnabled true \
+              --sslProtocol SSL \
+              --sslImpl org.dogtagpki.jss.tomcat.JSSImplementation \
+              Secure
+          docker exec pki pki-server http-connector-cert-add \
+              --keyAlias HSM:sslserver \
+              --keystoreType pkcs11 \
+              --keystoreProvider Mozilla-JSS
+
+      - name: Deploy webapps
+        run: |
+          docker exec pki pki-server webapp-deploy \
+              --descriptor /usr/share/pki/server/conf/Catalina/localhost/ROOT.xml \
+              ROOT
+
+          docker exec pki pki-server webapp-deploy \
+              --descriptor /usr/share/pki/server/conf/Catalina/localhost/pki.xml \
+              pki
+
+      - name: Start PKI server
+        run: |
+          docker exec pki ls -la /home/pkiuser/.config/kryoptic
+          docker exec pki pki-server start
+
+      - name: Set up client container
+        run: |
+          tests/bin/runner-init.sh \
+              --hostname=client.example.com \
+              --network=example \
+              --network-alias=client.example.com \
+              client
+
+      - name: Import CA signing cert
+        run: |
+          docker exec client pki \
+              nss-cert-import \
+              --cert $SHARED/ca_signing.crt \
+              --trust CT,C,C \
+              ca_signing
+
+      - name: Wait for PKI server to start
+        run: |
+          docker exec client curl \
+              --retry 60 \
+              --retry-delay 0 \
+              --retry-connrefused \
+              -s \
+              -k \
+              -o /dev/null \
+              https://pki.example.com:8443
+
+      - name: Check PKI CLI with already trusted server cert
+        run: |
+          VERSION=$(
+              xmlstarlet sel -t -v '/_:project/_:version' pom.xml \
+              | sed 's/^\(.*\)-SNAPSHOT/\1/'
+          )
+
+          # run PKI CLI with correct hostname
+          docker exec client pki \
+              -U https://pki.example.com:8443 \
+              info \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          # check stdout
+          cat > expected << EOF
+            Server URL: https://pki.example.com:8443
+            Server Name: Dogtag Certificate System
+            Server Version: $VERSION
+          EOF
+
+          diff expected stdout
+
+          # check stderr
+          diff /dev/null stderr
+
+      - name: Stop PKI server
+        run: |
+          docker exec pki pki-server stop --wait -v
+
+      - name: Remove PKI server
+        run: |
+          docker exec pki pki-server remove -v
+
+      - name: Remove Kryoptic token
+        run: |
+          docker exec pki runuser -u pkiuser -- \
+              rm -rf /home/pkiuser/.config/kryoptic
+
+      - name: Check PKI server systemd journal
+        if: always()
+        run: |
+          docker exec pki journalctl -x --no-pager -u pki-tomcatd@pki-tomcat.service

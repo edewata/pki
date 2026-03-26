@@ -101,7 +101,7 @@ public class NSSKeyShowCLI extends CommandCLI {
 
             // TODO: implement cryptoStore.getPrivateKey(keyID)
             PrivateKey[] privateKeys = cryptoStore.getPrivateKeys();
-            logger.info("Private keys: " + privateKeys);
+            logger.info("Private keys: " + privateKeys.length);
 
             for (PrivateKey privateKey : privateKeys) {
 
