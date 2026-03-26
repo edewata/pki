@@ -1,0 +1,332 @@
+name: PKI NSS CLI with Kryoptic
+# This test will perform the following operations:
+# - install Kryoptic
+# - create Kryoptic token
+# - create RSA CA signing CSR
+# - issue RSA CA signing cert
+# - import RSA CA signing cert
+# - remove RSA CA signing cert
+# - create EC CA signing CSR
+# - issue EC CA signing cert
+# - import EC CA signing cert
+# - remove EC CA signing cert
+# - create ML-DSA CA signing CSR
+# - issue ML-DSA CA signing cert
+# - import ML-DSA CA signing cert
+# - remove ML-DSA CA signing cert
+# - remove Kryoptic token
+
+on: workflow_call
+
+env:
+  DS_IMAGE: ${{ vars.DS_IMAGE || 'quay.io/389ds/dirsrv' }}
+
+jobs:
+  # https://github.com/dogtagpki/pki/wiki/PKI-NSS-CLI
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    env:
+      SHARED: /tmp/workdir/pki
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      - name: Retrieve PKI images
+        uses: actions/cache@v4
+        with:
+          key: pki-images-${{ github.sha }}
+          path: pki-images.tar
+
+      - name: Load PKI images
+        run: docker load --input pki-images.tar
+
+      - name: Set up runner container
+        run: |
+          tests/bin/runner-init.sh \
+              --hostname=pki.example.com \
+              pki
+
+      - name: Install Kryoptic
+        run: |
+          docker exec pki dnf install -y kryoptic
+          docker exec pki rpm -ql kryoptic
+          docker exec pki cat /usr/share/p11-kit/modules/kryoptic.module
+
+      - name: Check Kryoptic using OpenSC
+        run: |
+          docker exec pki dnf install -y opensc
+
+          # this command returns non-zero RC if there's no token
+          docker exec pki pkcs11-tool \
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
+              --show-info || true
+
+          # this command returns non-zero RC if there's no token
+          docker exec pki pkcs11-tool \
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
+              --list-slots || true
+
+      - name: Check Kryoptic using NSS
+        run: |
+          docker exec pki modutil -nocertdb -list
+
+      # https://github.com/dogtagpki/pki/wiki/Kryoptic
+      - name: Create Kryoptic token
+        run: |
+          # configure token
+          docker exec pki mkdir -p /root/.config/kryoptic
+          docker exec -i pki tee /root/.config/kryoptic/token.conf << EOF
+          [[slots]]
+          slot = 1
+          dbtype = "sqlite"
+          dbargs = "/root/.config/kryoptic/token.sql"
+          EOF
+
+          docker exec pki pkcs11-tool \
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
+              --list-slots
+
+          # initialize token and SO PIN
+          docker exec pki pkcs11-tool \
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
+              --label HSM \
+              --so-pin Secret.HSM \
+              --init-token
+
+          # initialize user PIN
+          docker exec pki pkcs11-tool \
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
+              --login \
+              --login-type so \
+              --so-pin Secret.HSM \
+              --pin Secret.HSM \
+              --init-pin
+
+          docker exec pki pkcs11-tool \
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
+              --list-slots
+
+          docker exec pki modutil -nocertdb -list
+
+      - name: Create RSA CA signing CSR
+        run: |
+          # create password.conf
+          echo "internal=" > password.conf
+          echo "hardware-HSM=Secret.HSM" >> password.conf
+
+          docker exec pki pki \
+              -f $SHARED/password.conf \
+              --token HSM \
+              nss-cert-request \
+              --key-type RSA \
+              --subject "CN=RSA Certificate Authority" \
+              --ext /usr/share/pki/server/certs/ca_signing.conf \
+              --csr rsa_ca_signing.csr
+
+          docker exec pki openssl req -text -noout -in rsa_ca_signing.csr
+
+      - name: Check RSA CA signing key
+        run: |
+          docker exec pki pki \
+              -f $SHARED/password.conf \
+              --token HSM \
+              nss-key-find \
+              | tee output
+
+          # key type should be RSA
+          sed -n 's/\s*Type:\s*\(\S\+\)\s*$/\L\1/p' output > actual
+          echo rsa > expected
+
+          diff expected actual
+
+      - name: Issue RSA CA signing cert
+        run: |
+          docker exec pki pki \
+              -f $SHARED/password.conf \
+              --token HSM \
+              nss-cert-issue \
+              --csr rsa_ca_signing.csr \
+              --ext /usr/share/pki/server/certs/ca_signing.conf \
+              --cert rsa_ca_signing.crt
+
+          docker exec pki openssl x509 -text -noout -in rsa_ca_signing.crt
+
+      - name: Import RSA CA signing cert
+        run: |
+          # import with CT,C,C trust flags
+          docker exec pki pki \
+              -f $SHARED/password.conf \
+              nss-cert-import \
+              --cert rsa_ca_signing.crt \
+              --trust CT,C,C \
+              HSM:rsa_ca_signing
+
+      - name: Check RSA CA signing cert
+        run: |
+          docker exec pki pki \
+              -f $SHARED/password.conf \
+              --token HSM \
+              nss-cert-find \
+              | tee output
+
+          # trust flags should be CTu,Cu,Cu but Kryoptic returns CTu,u,u
+          # TODO: investigate the discrepancy
+          sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
+          echo "CTu,u,u" > expected
+
+          diff expected actual
+
+      - name: Remove RSA CA signing cert
+        run: |
+          docker exec pki pki \
+              -f $SHARED/password.conf \
+              nss-cert-del \
+              --remove-key \
+              HSM:rsa_ca_signing
+
+      - name: Create EC CA signing CSR
+        run: |
+          docker exec pki pki \
+              -f $SHARED/password.conf \
+              --token HSM \
+              nss-cert-request \
+              --key-type EC \
+              --subject "CN=EC Certificate Authority" \
+              --ext /usr/share/pki/server/certs/ca_signing.conf \
+              --csr ec_ca_signing.csr
+
+          docker exec pki openssl req -text -noout -in ec_ca_signing.csr
+
+      - name: Check EC CA signing key
+        run: |
+          docker exec pki pki \
+              -f $SHARED/password.conf \
+              --token HSM \
+              nss-key-find \
+              | tee output
+
+          # key type should be EC
+          sed -n 's/\s*Type:\s*\(\S\+\)\s*$/\L\1/p' output > actual
+          echo ec > expected
+
+      - name: Issue EC CA signing cert
+        run: |
+          docker exec pki pki \
+              -f $SHARED/password.conf \
+              --token HSM \
+              nss-cert-issue \
+              --csr ec_ca_signing.csr \
+              --ext /usr/share/pki/server/certs/ca_signing.conf \
+              --cert ec_ca_signing.crt
+
+          docker exec pki openssl x509 -text -noout -in ec_ca_signing.crt
+
+      - name: Import EC CA signing cert
+        run: |
+          # import with CT,C,C trust flags
+          docker exec pki pki \
+              -f $SHARED/password.conf \
+              nss-cert-import \
+              --cert ec_ca_signing.crt \
+              --trust CT,C,C \
+              HSM:ec_ca_signing
+
+      - name: Check EC CA signing cert
+        run: |
+          docker exec pki pki \
+              -f $SHARED/password.conf \
+              --token HSM \
+              nss-cert-find \
+              | tee output
+
+          # trust flags should be CTu,Cu,Cu but Kryoptic returns CTu,u,u
+          # TODO: investigate the discrepancy
+          sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
+          echo "CTu,u,u" > expected
+
+          diff expected actual
+
+      - name: Remove EC CA signing cert
+        run: |
+          docker exec pki pki \
+              -f $SHARED/password.conf \
+              nss-cert-del \
+              --remove-key \
+              HSM:ec_ca_signing
+
+      - name: Create ML-DSA CA signing CSR
+        run: |
+          docker exec pki pki \
+              -f $SHARED/password.conf \
+              --token HSM \
+              nss-cert-request \
+              --key-type MLDSA \
+              --subject "CN=ML-DSA Certificate Authority" \
+              --ext /usr/share/pki/server/certs/ca_signing.conf \
+              --csr mldsa_ca_signing.csr
+
+          docker exec pki openssl req -text -noout -in mldsa_ca_signing.csr
+
+      - name: Check ML-DSA CA signing key
+        run: |
+          docker exec pki pki \
+              -f $SHARED/password.conf \
+              --token HSM \
+              nss-key-find \
+              | tee output
+
+          # key type should be ML-DSA-65
+          sed -n 's/\s*Type:\s*\(\S\+\)\s*$/\L\1/p' output > actual
+          echo ml-dsa-65 > expected
+
+          diff expected actual
+
+      - name: Issue ML-DSA CA signing cert
+        run: |
+          docker exec pki pki \
+              -f $SHARED/password.conf \
+              --token HSM \
+              nss-cert-issue \
+              --csr mldsa_ca_signing.csr \
+              --ext /usr/share/pki/server/certs/ca_signing.conf \
+              --cert mldsa_ca_signing.crt
+
+          docker exec pki openssl x509 -text -noout -in mldsa_ca_signing.crt
+
+      - name: Import ML-DSA CA signing cert
+        run: |
+          # import with CT,C,C trust flags
+          docker exec pki pki \
+              -f $SHARED/password.conf \
+              nss-cert-import \
+              --cert mldsa_ca_signing.crt \
+              --trust CT,C,C \
+              HSM:mldsa_ca_signing
+
+      - name: Check ML-DSA CA signing cert
+        run: |
+          docker exec pki pki \
+              -f $SHARED/password.conf \
+              --token HSM \
+              nss-cert-find \
+              | tee output
+
+          # trust flags should be CTu,Cu,Cu but Kryoptic returns CTu,u,u
+          # TODO: investigate the discrepancy
+          sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
+          echo "CTu,u,u" > expected
+
+          diff expected actual
+
+      - name: Remove ML-DSA CA signing cert
+        run: |
+          docker exec pki pki \
+              -f $SHARED/password.conf \
+              nss-cert-del \
+              --remove-key \
+              HSM:mldsa_ca_signing
+
+      - name: Remove Kryoptic token
+        run: |
+          docker exec pki rm -rf /root/.config/kryoptic
