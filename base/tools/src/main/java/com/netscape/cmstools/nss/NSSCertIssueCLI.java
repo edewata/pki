@@ -75,7 +75,7 @@ public class NSSCertIssueCLI extends CommandCLI {
         option.setArgName("unit");
         options.addOption(option);
 
-        option = new Option(null, "hash", true, "Hash algorithm (default is SHA256)");
+        option = new Option(null, "hash", true, "Hash algorithm (default is SHA256 for RSA and EC key)");
         option.setArgName("hash");
         options.addOption(option);
 
@@ -99,7 +99,7 @@ public class NSSCertIssueCLI extends CommandCLI {
         String monthsValid = cmd.getOptionValue("months-valid");
         String validityLengthStr = cmd.getOptionValue("validity-length", "3");
         String validityUnitStr = cmd.getOptionValue("validity-unit", "month");
-        String hash = cmd.getOptionValue("hash", "SHA256");
+        String hash = cmd.getOptionValue("hash");
 
         if (csrFile == null) {
             throw new Exception("Missing certificate signing request");
@@ -123,8 +123,14 @@ public class NSSCertIssueCLI extends CommandCLI {
         String csrPEM = new String(Files.readAllBytes(Paths.get(csrFile)));
         byte[] csrBytes = CertUtil.parseCSR(csrPEM);
         PKCS10 pkcs10 = new PKCS10(csrBytes);
+
         X509Key x509Key = pkcs10.getSubjectPublicKeyInfo();
-        X500Name subjectName = pkcs10.getSubjectName();
+        String keyAlgorithm = x509Key.getAlgorithm();
+
+        if (hash == null && ("RSA".equals(keyAlgorithm) || "EC".equals(keyAlgorithm))) {
+            // by default use SHA256 for RSA and EC keys
+            hash = "SHA256";
+        }
 
         NSSExtensionGenerator generator = new NSSExtensionGenerator();
         Extensions extensions = null;
@@ -153,6 +159,7 @@ public class NSSCertIssueCLI extends CommandCLI {
         }
 
         String tokenName = clientConfig.getTokenName();
+        X500Name subjectName = pkcs10.getSubjectName();
 
         X509Certificate cert = nssdb.createCertificate(
                 tokenName,

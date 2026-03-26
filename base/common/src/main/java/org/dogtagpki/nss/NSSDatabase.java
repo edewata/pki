@@ -99,6 +99,7 @@ import org.mozilla.jss.netscape.security.x509.X500Name;
 import org.mozilla.jss.netscape.security.x509.X509CertImpl;
 import org.mozilla.jss.netscape.security.x509.X509CertInfo;
 import org.mozilla.jss.netscape.security.x509.X509Key;
+import org.mozilla.jss.pkcs11.KeyType;
 import org.mozilla.jss.pkcs11.PK11Cert;
 import org.mozilla.jss.pkcs11.PK11ECPrivateKey;
 import org.mozilla.jss.pkcs11.PK11PrivKey;
@@ -110,7 +111,6 @@ import org.mozilla.jss.pkix.primitive.Name;
 
 import com.netscape.cmsutil.crypto.CryptoUtil;
 import com.netscape.cmsutil.password.PasswordStore;
-import org.mozilla.jss.pkcs11.KeyType;
 
 /**
  * @author Endi S. Dewata
@@ -1050,7 +1050,6 @@ public class NSSDatabase {
                 extractable,
                 null,
                 null);
-        
     }
 
     public KeyPair createMLDSAKeyPair(
@@ -1388,12 +1387,12 @@ public class NSSDatabase {
         Date notAfterDate = calendar.getTime();
         logger.debug("NSSDatabase: - not after: " + notAfterDate);
 
-        if (hash == null) {
-            hash = "SHA256";
-        }
         logger.debug("NSSDatabase: - hash algorithm: " + hash);
 
-        String keyAlgorithm = hash + "with" + x509Key.getAlgorithm();
+        String keyAlgorithm = x509Key.getAlgorithm();
+        if (hash != null) {
+            keyAlgorithm = hash + "with" + keyAlgorithm;
+        }
         logger.debug("NSSDatabase: - key algorithm: " + keyAlgorithm);
 
         // convert Extensions into CertificateExtensions
@@ -1451,8 +1450,13 @@ public class NSSDatabase {
             logger.debug("NSSDatabase: - private key: " + Utils.HexEncode(privateKey.getUniqueID()));
         }
 
-        logger.debug("NSSDatabase: Private key algorithm: " + privateKey.getAlgorithm());
-        String signingAlgorithm = hash + "with" + privateKey.getAlgorithm();
+        String privateKeyAlgorithm = privateKey.getAlgorithm();
+        logger.debug("NSSDatabase: Private key algorithm: " + privateKeyAlgorithm);
+
+        String signingAlgorithm = privateKeyAlgorithm;
+        if (hash != null) {
+            signingAlgorithm = hash + "with" + privateKeyAlgorithm;
+        }
         logger.debug("NSSDatabase: Signing algorithm: " + signingAlgorithm);
 
         return CryptoUtil.signCert(privateKey, info, signingAlgorithm);

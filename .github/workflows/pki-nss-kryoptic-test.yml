@@ -1,7 +1,7 @@
-name: PKI NSS CLI with SoftHSM
+name: PKI NSS CLI with Kryoptic
 # This test will perform the following operations:
-# - install SoftHSM
-# - create SoftHSM token
+# - install Kryoptic
+# - create Kryoptic token
 # - create CA signing key
 # - create CA signing CSR with existing key
 # - issue self-signed CA signing cert
@@ -15,7 +15,7 @@ name: PKI NSS CLI with SoftHSM
 # - import audit signing cert
 # - remove audit signing cert and key
 # - remove CA signing cert and key
-# - remove SoftHSM token
+# - remove Kryoptic token
 
 on: workflow_call
 
@@ -48,50 +48,69 @@ jobs:
               --hostname=pki.example.com \
               pki
 
-      - name: Install SoftHSM
+      - name: Install Kryoptic
         run: |
           # install OpenDNSSEC to ensure no conflicts
           # https://github.com/dogtagpki/pki/issues/5045
-          docker exec pki dnf install -y softhsm opensc opendnssec
+          docker exec pki dnf install -y kryoptic opensc opendnssec
+
+          docker exec pki rpm -ql kryoptic
+          docker exec pki cat /usr/share/p11-kit/modules/kryoptic.module
 
           # check with OpenSC
+          # NOTE: the command fails if there's no token
           docker exec pki pkcs11-tool \
-              --module /usr/lib64/pkcs11/libsofthsm2.so \
-              --show-info
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
+              --show-info || true
 
           # check with OpenSC
+          # NOTE: the command fails if there's no token
           docker exec pki pkcs11-tool \
-              --module /usr/lib64/pkcs11/libsofthsm2.so \
-              --list-slots
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
+              --list-slots || true
 
           # check with NSS
           docker exec pki modutil -nocertdb -list
 
-      #https://github.com/dogtagpki/pki/wiki/SoftHSM
-      - name: Create SoftHSM token
+      # https://github.com/dogtagpki/pki/wiki/Kryoptic
+      - name: Create Kryoptic token
         run: |
           # create password file for HSM
           echo "Secret.HSM" > password.hsm
 
-          # initialize token, SO PIN, and user PIN
-          docker exec pki softhsm2-util \
-              --init-token \
+          # configure token
+          docker exec pki mkdir -p /root/.config/kryoptic
+          docker exec -i pki tee /root/.config/kryoptic/token.conf << EOF
+          [[slots]]
+          slot = 1
+          dbtype = "sqlite"
+          dbargs = "/root/.config/kryoptic/token.sql"
+          EOF
+
+          # check with OpenSC
+          docker exec pki pkcs11-tool \
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
+              --list-slots
+
+          # initialize token and SO PIN
+          docker exec pki pkcs11-tool \
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
               --label HSM \
               --so-pin $(cat password.hsm) \
+              --init-token
+
+          # initialize user PIN
+          docker exec pki pkcs11-tool \
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
+              --login \
+              --login-type so \
+              --so-pin $(cat password.hsm) \
               --pin $(cat password.hsm) \
-              --free
-
-          # check with SoftHSM
-          docker exec pki softhsm2-util --show-slots
+              --init-pin
 
           # check with OpenSC
           docker exec pki pkcs11-tool \
-              --module /usr/lib64/pkcs11/libsofthsm2.so \
-              --show-info
-
-          # check with OpenSC
-          docker exec pki pkcs11-tool \
-              --module /usr/lib64/pkcs11/libsofthsm2.so \
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
               --list-slots
 
           # check with NSS
@@ -229,7 +248,7 @@ jobs:
               --token HSM \
               nss-cert-request \
               --key-id-file $SHARED/ca_signing.key-id \
-              --subject "CN=Certificate Authority" \
+              --subject "CN=RSA Certificate Authority" \
               --ext /usr/share/pki/server/certs/ca_signing.conf \
               --csr ca_signing.csr
 
@@ -249,10 +268,10 @@ jobs:
       - name: Import CA signing cert
         run: |
           # this command doesn't prompt for a password but it requires
-          # the passwords to the internal token and HSM in order to
-          # import the cert with the proper trust flags
+          # the HSM password in order to import the cert
           docker exec pki pki \
-              -f $SHARED/password.conf \
+              -C $SHARED/password.hsm \
+              --token HSM \
               nss-cert-import \
               --cert ca_signing.crt \
               --trust "CT,C,C" \
@@ -265,24 +284,21 @@ jobs:
               -f $SHARED/password.txt \
               | tee output
 
-          # trust flags should be CT,C,C
-          echo "CT,C,C" > expected
+          # cert should not exist
           sed -n 's/^ca_signing\s*\(\S\+\)\s*$/\1/p' output > actual
 
-          diff expected actual
+          diff /dev/null actual
 
-          # check cert with nickname
           docker exec pki pki \
               -f $SHARED/password.conf \
               nss-cert-show \
               ca_signing \
-              | tee output
+              > >(tee stdout) 2> >(tee stderr >&2) || true
 
-          # trust flags should be CT,C,C
-          echo "CT,C,C" > expected
-          sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
+          # cert should not exist
+          echo "ERROR: Certificate not found: ca_signing" > expected
 
-          diff expected actual
+          diff expected stderr
 
       - name: Check CA signing cert in HSM
         run: |
@@ -293,12 +309,12 @@ jobs:
               | tee output
 
           # trust flags should be CTu,Cu,Cu
-          echo "CTu,Cu,Cu" > expected
+          # but Kryoptic only stores the SSL trust flags
+          echo "CTu,u,u" > expected
           sed -n 's/^HSM:ca_signing\s*\(\S\+\)\s*$/\1/p' output > actual
 
           diff expected actual
 
-          # check cert with nickname
           docker exec pki pki \
               -f $SHARED/password.conf \
               nss-cert-show \
@@ -306,7 +322,8 @@ jobs:
               | tee output
 
           # trust flags should be CTu,Cu,Cu
-          echo "CTu,Cu,Cu" > expected
+          # but Kryoptic only stores the SSL trust flags
+          echo "CTu,u,u" > expected
           sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
 
           diff expected actual
@@ -337,8 +354,11 @@ jobs:
 
       - name: Import SSL server cert
         run: |
-          # this command doesn't prompt for a password
+          # this command doesn't prompt for a password but it requires
+          # the HSM password in order to import the cert
           docker exec pki pki \
+              -C $SHARED/password.hsm \
+              --token HSM \
               nss-cert-import \
               --cert sslserver.crt \
               HSM:sslserver
@@ -374,22 +394,20 @@ jobs:
               -d /root/.dogtag/nssdb \
               | tee output
 
-          # trust flags should be ,,
-          echo ",," > expected
+          # cert should not exist
           sed -n 's/^sslserver\s*\(\S\+\)\s*$/\1/p' output > actual
 
-          diff expected actual
+          diff /dev/null actual
 
           docker exec pki pki \
               nss-cert-show \
               sslserver \
-              | tee output
+              > >(tee stdout) 2> >(tee stderr >&2) || true
 
-          # trust flags should be ,,
-          echo ",," > expected
-          sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
+          # cert should not exist
+          echo "ERROR: Certificate not found: sslserver" > expected
 
-          diff expected actual
+          diff expected stderr
 
       - name: Check SSL server cert in HSM
         run: |
@@ -418,20 +436,27 @@ jobs:
 
       - name: Remove SSL server cert from internal token
         run: |
-          cat password.txt | docker exec -i pki pki \
+          docker exec pki pki \
               nss-cert-del \
               sslserver \
-              --remove-key
+              --remove-key \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          # cert should not exist
+          cat > expected << EOF
+          ERROR: Certificate not found: sslserver
+          EOF
+
+          diff expected stderr
 
           docker exec pki certutil -L \
               -d /root/.dogtag/nssdb \
               | tee output
 
           # cert should not exist
-          echo "ca_signing CT,C,C" > expected
           sed -n -e '1,4d' -e 's/^\(.*\S\)\s\+\(\S\+\)\s*$/\1 \2/p' output > actual
 
-          diff expected actual
+          diff /dev/null actual
 
           docker exec pki certutil -K \
               -d /root/.dogtag/nssdb \
@@ -442,30 +467,6 @@ jobs:
           sed -n 's/^<.*>\s\+\S\+\s\+\S\+\s\+\(.*\)$/\1/p' output | sort > actual
 
           diff /dev/null actual
-
-          docker exec pki pki \
-              nss-cert-show \
-              sslserver \
-              > >(tee stdout) 2> >(tee stderr >&2) || true
-
-          # cert should not exist
-          cat > expected << EOF
-          ERROR: Certificate not found: sslserver
-          EOF
-
-          diff expected stderr
-
-          docker exec pki pki \
-              nss-cert-export \
-              sslserver \
-              > >(tee stdout) 2> >(tee stderr >&2) || true
-
-          # cert should not exist
-          cat > expected << EOF
-          ERROR: Certificate not found: sslserver
-          EOF
-
-          diff expected stderr
 
       - name: Remove SSL server cert and key from HSM
         run: |
@@ -481,7 +482,7 @@ jobs:
               | tee output
 
           # cert should be removed
-          echo "HSM:ca_signing CTu,Cu,Cu" > expected
+          echo "HSM:ca_signing CTu,u,u" > expected
           sed -n -e '1,4d' -e 's/^\(.*\S\)\s\+\(\S\+\)\s*$/\1 \2/p' output > actual
           diff expected actual
 
@@ -547,8 +548,11 @@ jobs:
 
       - name: Import audit signing cert
         run: |
-          # this command doesn't prompt for a password
+          # this command doesn't prompt for a password but it requires
+          # the HSM password in order to import the cert
           docker exec pki pki \
+              -C $SHARED/password.hsm \
+              --token HSM \
               nss-cert-import \
               --cert audit_signing.crt \
               HSM:audit_signing
@@ -605,13 +609,11 @@ jobs:
 
       - name: Modify audit signing cert trust flags
         run: |
-          # this command requires the passwords to the internal token
-          # and HSM in order to set the trust flags properly
-          #    --token HSM \
-          docker exec pki pki \
-              -f $SHARED/password.conf \
+          # this command currently doesn't work:
+          # https://github.com/latchset/kryoptic/issues/445
+          cat password.hsm | docker exec -i pki pki \
               nss-cert-mod \
-              --trust-flags ",,P" \
+              --trust-flags "u,u,P" \
               HSM:audit_signing
 
       - name: Check audit signing cert trust flags in internal token
@@ -621,23 +623,21 @@ jobs:
               -f $SHARED/password.txt \
               | tee output
 
-          # trust flags should be be ,,P
-          echo ",,P" > expected
+          # cert should not exist
           sed -n 's/^audit_signing\s*\(\S\+\)\s*$/\1/p' output > actual
 
-          diff expected actual
+          diff /dev/null actual
 
           docker exec pki pki \
               -f $SHARED/password.conf \
               nss-cert-show \
               audit_signing \
-              | tee output
+              > >(tee stdout) 2> >(tee stderr >&2) || true
 
-          # trust flags should be ,,P
-          echo ",,P" > expected
-          sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
+          # cert should not exist
+          echo "ERROR: Certificate not found: audit_signing" > expected
 
-          diff expected actual
+          diff expected stderr
 
       - name: Check audit signing cert trust flags in HSM
         run: |
@@ -648,10 +648,11 @@ jobs:
               | tee output
 
           # trust flags should be u,u,Pu
+          # https://github.com/latchset/kryoptic/issues/445
           echo "u,u,Pu" > expected
           sed -n 's/^HSM:audit_signing\s*\(\S\+\)\s*$/\1/p' output > actual
 
-          diff expected actual
+          diff expected actual || true
 
           docker exec pki pki \
               -f $SHARED/password.conf \
@@ -660,28 +661,34 @@ jobs:
               | tee output
 
           # trust flags should be u,u,Pu
+          # https://github.com/latchset/kryoptic/issues/445
           echo "u,u,Pu" > expected
           sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
 
-          diff expected actual
+          diff expected actual || true
 
       - name: Remove audit signing cert from internal token
         run: |
-          # this command doesn't prompt for a password
-          docker exec pki pki \
-              nss-cert-del \
-              audit_signing
+          docker exec pki pki nss-cert-del \
+              audit_signing \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          # cert should not exist
+          cat > expected << EOF
+          ERROR: Certificate not found: audit_signing
+          EOF
+
+          diff expected stderr
 
           docker exec pki certutil -L \
               -d /root/.dogtag/nssdb \
               -f $SHARED/password.txt \
               | tee output
 
-          # cert should be removed
-          echo "ca_signing CT,C,C" > expected
+          # cert should not exist
           sed -n -e '1,4d' -e 's/^\(.*\S\)\s\+\(\S\+\)\s*$/\1 \2/p' output > actual
 
-          diff expected actual
+          diff /dev/null actual
 
       - name: Remove audit signing cert and key from HSM
         run: |
@@ -698,7 +705,7 @@ jobs:
               | tee output
 
           # cert should be removed
-          echo "HSM:ca_signing CTu,Cu,Cu" > expected
+          echo "HSM:ca_signing CTu,u,u" > expected
           sed -n -e '1,4d' -e 's/^\(.*\S\)\s\+\(\S\+\)\s*$/\1 \2/p' output > actual
 
           diff expected actual
@@ -717,17 +724,23 @@ jobs:
 
       - name: Remove CA signing cert from internal token
         run: |
-          # this command doesn't prompt for a password
-          docker exec pki pki \
-              nss-cert-del \
-              ca_signing
+          docker exec pki pki nss-cert-del \
+              ca_signing \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          # cert should not exist
+          cat > expected << EOF
+          ERROR: Certificate not found: ca_signing
+          EOF
+
+          diff expected stderr
 
           docker exec pki certutil -L \
               -d /root/.dogtag/nssdb \
               -f $SHARED/password.txt \
               | tee output
 
-          # cert should be removed
+          # cert should not exist
           sed -n -e '1,4d' -e 's/^\(.*\S\)\s\+\(\S\+\)\s*$/\1 \2/p' output > actual
 
           diff /dev/null actual
@@ -780,6 +793,6 @@ jobs:
 
           diff /dev/null actual
 
-      - name: Remove SoftHSM token
+      - name: Remove Kryoptic token
         run: |
-          docker exec pki softhsm2-util --delete-token --token HSM
+          docker exec pki rm -rf /root/.config/kryoptic
