@@ -105,39 +105,6 @@ jobs:
           docker exec pki pki-server nss-create --no-password
           docker exec pki pki-server password-set "hardware-HSM" --password "Secret.HSM"
 
-      - name: Check PKI server base dir
-        run: |
-          # check file types, owners, and permissions
-          docker exec pki ls -l /var/lib/pki/pki-tomcat \
-              | sed \
-                  -e '/^total/d' \
-                  -e 's/^\(\S*\) *\S* *\(\S*\) *\(\S*\) *\S* *\S* *\S* *\S* *\(.*\)$/\1 \2 \3 \4/' \
-              | tee output
-
-      - name: Check PKI server conf dir
-        run: |
-          # check file types, owners, and permissions
-          docker exec pki ls -l /etc/pki/pki-tomcat \
-              | sed \
-                  -e '/^total/d' \
-                  -e 's/^\(\S*\) *\S* *\(\S*\) *\(\S*\) *\S* *\S* *\S* *\S* *\(.*\)$/\1 \2 \3 \4/' \
-              | tee output
-
-      - name: Check pki-tomcat server.xml
-        if: always()
-        run: |
-          docker exec pki cat /etc/pki/pki-tomcat/server.xml
-
-      - name: Check pki-tomcat tomcat.conf
-        if: always()
-        run: |
-          docker exec pki cat /etc/pki/pki-tomcat/tomcat.conf
-
-      - name: Check /etc/sysconfig/pki/tomcat/pki-tomcat/pki-tomcat
-        if: always()
-        run: |
-          docker exec pki cat /etc/sysconfig/pki/tomcat/pki-tomcat/pki-tomcat
-
       - name: Create CA signing cert
         run: |
           # generate CA signing CSR

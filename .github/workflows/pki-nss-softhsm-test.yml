@@ -138,12 +138,12 @@ jobs:
               --key-id-file $SHARED/ca_signing_key_id
 
           # check key with password prompt
-          #echo -n Secret.HSM | docker exec -i pki pki \
-          #    --debug \
-          #    --token HSM \
-          #    -C - \
-          #    nss-key-show \
-          #    --key-id-file $SHARED/ca_signing_key_id
+          echo -n Secret.HSM | docker exec -i pki pki \
+              --debug \
+              --token HSM \
+              -C - \
+              nss-key-show \
+              --key-id-file $SHARED/ca_signing_key_id
 
       - name: Check CA signing key in HSM
         run: |

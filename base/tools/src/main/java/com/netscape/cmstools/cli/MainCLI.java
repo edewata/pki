@@ -55,6 +55,7 @@ import org.mozilla.jss.NotInitializedException;
 import org.mozilla.jss.crypto.CryptoToken;
 import org.mozilla.jss.ssl.SSLCertificateApprovalCallback;
 import org.mozilla.jss.ssl.SSLSocket;
+import org.mozilla.jss.util.ConsolePasswordCallback;
 import org.mozilla.jss.util.IncorrectPasswordException;
 import org.mozilla.jss.util.NullPasswordCallback;
 import org.mozilla.jss.util.Password;
@@ -595,7 +596,7 @@ public class MainCLI extends CLI {
 
             } finally {
                 if (nssPasswordCallback instanceof Password password) {
-                    //password.clear();
+                    password.clear();
                 }
             }
 
