@@ -35,6 +35,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.MissingArgumentException;
@@ -57,6 +58,7 @@ import org.mozilla.jss.ssl.SSLSocket;
 import org.mozilla.jss.util.IncorrectPasswordException;
 import org.mozilla.jss.util.NullPasswordCallback;
 import org.mozilla.jss.util.Password;
+import org.mozilla.jss.util.PasswordCallback;
 
 import com.netscape.certsrv.base.ClientConnectionException;
 import com.netscape.certsrv.base.PKIException;
@@ -86,6 +88,7 @@ public class MainCLI extends CLI {
 
     public ClientConfig config = new ClientConfig();
 
+    PasswordCallback nssPasswordCallback;
     NSSDatabase nssdb;
     String apiVersion;
 
@@ -311,9 +314,15 @@ public class MainCLI extends CLI {
 
     public String promptForPassword(String prompt) throws IOException {
         char[] password = null;
-        Console console = System.console();
         System.out.print(prompt);
-        password = console.readPassword();
+        Console console = System.console();
+        if (console == null) {
+            try (Scanner scanner = new Scanner(System.in)) {
+                password = scanner.nextLine().toCharArray();
+            }
+        } else {
+            password = console.readPassword();
+        }
         return new String(password);
     }
 
@@ -440,12 +449,24 @@ public class MainCLI extends CLI {
         config.setCertNickname(certNickname);
 
         if (nssPassword != null) {
+            logger.info("Loading inline NSS password: [" + nssPassword + "]");
             config.setNSSPassword(nssPassword);
+            nssPasswordCallback = new Password(nssPassword.toCharArray());;
 
         } else if (nssPasswordFile != null) {
-            logger.info("Loading NSS password from " + nssPasswordFile);
-            nssPassword = loadPassword(nssPasswordFile);
-            config.setNSSPassword(nssPassword);
+
+            if ("-".equals(nssPasswordFile)) {
+                logger.info("Loading NSS password from console");
+                nssPassword = promptForPassword("Enter NSS Password: ");
+                config.setNSSPassword(nssPassword);
+                nssPasswordCallback = new Password(nssPassword.toCharArray());;
+
+            } else {
+                logger.info("Loading NSS password from " + nssPasswordFile);
+                nssPassword = loadPassword(nssPasswordFile);
+                config.setNSSPassword(nssPassword);
+                nssPasswordCallback = new Password(nssPassword.toCharArray());;
+            }
 
         } else if (nssPasswordConfig != null) {
             logger.info("Loading NSS password configuration from " + nssPasswordConfig);
@@ -554,30 +575,32 @@ public class MainCLI extends CLI {
             throw new Exception("NSS has not been initialized", e);
         }
 
-        // If password is specified, use password to access security token
-        if (config.getNSSPassword() != null) {
+        // if NSS password is specified, use it to log in to the specified token
+        if (nssPasswordCallback != null) {
+
+            manager.setPasswordCallback(nssPasswordCallback);
 
             String tokenName = config.getTokenName();
             tokenName = tokenName == null ? CryptoUtil.INTERNAL_TOKEN_NAME : tokenName;
 
             logger.debug("Logging into " + tokenName + " token");
-
             CryptoToken token = CryptoUtil.getKeyStorageToken(tokenName);
-            Password password = new Password(config.getNSSPassword().toCharArray());
 
             try {
-                token.login(password);
+                token.login(nssPasswordCallback);
 
             } catch (IncorrectPasswordException e) {
                 // The original exception doesn't contain a message.
                 throw new Exception("Incorrect password for " + tokenName + " token", e);
 
             } finally {
-                password.clear();
+                if (nssPasswordCallback instanceof Password password) {
+                    //password.clear();
+                }
             }
 
         } else {
-
+            // if NSS password configuration is specified, use it to log in to all tokens
             Map<String, String> passwords = config.getNSSPasswords();
 
             for (String tokenName : passwords.keySet()) {
@@ -597,6 +620,7 @@ public class MainCLI extends CLI {
                     password.clear();
                 }
             }
+
             manager.setPasswordCallback(new NullPasswordCallback());
             Enumeration<CryptoToken> externalTokens = CryptoUtil.getExternalTokens();
             while (externalTokens!=null && externalTokens.hasMoreElements()) {

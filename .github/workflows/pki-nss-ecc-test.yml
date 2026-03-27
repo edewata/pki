@@ -101,11 +101,11 @@ jobs:
               --key-id-file $SHARED/ca_signing.key-id
 
           # with password prompt
-          #echo -n Secret.123 | docker exec -i pki pki \
-          #    --debug \
-          #    -C - \
-          #    nss-key-show \
-          #    --key-id-file $SHARED/ca_signing.key-id
+          echo -n Secret.123 | docker exec -i pki pki \
+              --debug \
+              -C - \
+              nss-key-show \
+              --key-id-file $SHARED/ca_signing.key-id
 
       # https://github.com/dogtagpki/pki/wiki/Generating-CA-Signing-CSR-with-PKI-NSS
       - name: Create CA signing CSR
