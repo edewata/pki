@@ -33,10 +33,10 @@ jobs:
     needs: build
     uses: ./.github/workflows/pki-nss-aes-test.yml
 
-  pki-nss-hsm-test:
-    name: PKI NSS CLI with HSM
+  pki-nss-softhsm-test:
+    name: PKI NSS CLI with SoftHSM
     needs: build
-    uses: ./.github/workflows/pki-nss-hsm-test.yml
+    uses: ./.github/workflows/pki-nss-softhsm-test.yml
 
   pki-nss-exts-test:
     name: PKI NSS CLI with Extensions
