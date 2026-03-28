@@ -230,6 +230,12 @@ jobs:
 
           docker exec pki pki nss-cert-show --cert-file ca_signing.crt
 
+          docker exec pki pki \
+              -f $SHARED/password.conf \
+              nss-cert-verify \
+              --cert-usage SSLCA \
+              ca_signing
+
       - name: Verify CA signing cert in HSM
         run: |
           echo "CTu,Cu,Cu" > expected
@@ -264,6 +270,12 @@ jobs:
               -f $SHARED/password.conf \
               nss-cert-show \
               --cert-file ca_signing.crt
+
+          docker exec pki pki \
+              -f $SHARED/password.conf \
+              nss-cert-verify \
+              --cert-usage SSLCA \
+              HSM:ca_signing
 
       # https://github.com/dogtagpki/pki/wiki/Generating-SSL-Server-CSR-with-PKI-NSS
       - name: Create SSL server cert request with key in HSM
@@ -357,6 +369,12 @@ jobs:
 
           # get key ID
           sed -n 's/\s*Key ID:\s*\(\S\+\)\s*$/\L\1/p' output > sslserver_key_id
+
+          docker exec pki pki \
+              -f $SHARED/password.conf \
+              nss-cert-verify \
+              --cert-usage SSLServer \
+              HSM:sslserver
 
       - name: Delete SSL server cert but keep the key
         run: |

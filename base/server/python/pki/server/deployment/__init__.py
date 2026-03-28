@@ -3508,6 +3508,15 @@ class PKIDeployer:
             logger.info('Storing %s cert request', tag)
             self.instance.store_cert_request(cert_id, system_cert)
 
+        if subsystem.type == 'CA' and tag == 'signing':
+            trust_attributes = 'CTu,Cu,Cu'
+
+        elif tag == 'audit_signing':
+            trust_attributes = 'u,u,Pu'
+
+        else:
+            trust_attributes = None
+
         if request.systemCert.type == 'remote':
 
             if cert_info:
@@ -3576,7 +3585,8 @@ class PKIDeployer:
                 nickname=request.systemCert.nickname,
                 cert_data=system_cert['data'],
                 cert_format='base64',
-                token=request.systemCert.token)
+                token=request.systemCert.token,
+                trust_attributes=trust_attributes)
 
             return
 
@@ -3613,7 +3623,8 @@ class PKIDeployer:
                 nickname=request.systemCert.nickname,
                 cert_data=system_cert['data'],
                 cert_format='base64',
-                token=request.systemCert.token)
+                token=request.systemCert.token,
+                trust_attributes=trust_attributes)
 
         if config.str2bool(self.mdict['pki_ds_setup']):
             # import cert into CA database
@@ -3666,33 +3677,33 @@ class PKIDeployer:
 
             self.setup_system_cert(nssdb, subsystem, tag, system_cert, request)
 
-        if subsystem.type == 'CA':
+        #if subsystem.type == 'CA':
 
-            logger.info('Setting up CA signing cert trust flags')
+        #    logger.info('Setting up CA signing cert trust flags')
 
-            token = self.mdict['pki_ca_signing_token']
-            if pki.nssdb.internal_token(token):
-                full_name = self.mdict['pki_ca_signing_nickname']
-            else:
-                full_name = token + ':' + self.mdict['pki_ca_signing_nickname']
+        #    token = self.mdict['pki_ca_signing_token']
+        #    if pki.nssdb.internal_token(token):
+        #        full_name = self.mdict['pki_ca_signing_nickname']
+        #    else:
+        #        full_name = token + ':' + self.mdict['pki_ca_signing_nickname']
 
-            nssdb.modify_cert(
-                nickname=full_name,
-                trust_attributes='CTu,Cu,Cu')
+        #    nssdb.modify_cert(
+        #        nickname=full_name,
+        #        trust_attributes='CTu,Cu,Cu')
 
-        if audit_signing_nickname:
+        #if audit_signing_nickname:
 
-            logger.info('Setting up %s audit signing cert trust flags', subsystem.type)
+        #    logger.info('Setting up %s audit signing cert trust flags', subsystem.type)
 
-            token = self.mdict['pki_audit_signing_token']
-            if pki.nssdb.internal_token(token):
-                full_name = audit_signing_nickname
-            else:
-                full_name = token + ':' + audit_signing_nickname
+        #    token = self.mdict['pki_audit_signing_token']
+        #    if pki.nssdb.internal_token(token):
+        #        full_name = audit_signing_nickname
+        #    else:
+        #        full_name = token + ':' + audit_signing_nickname
 
-            nssdb.modify_cert(
-                nickname=full_name,
-                trust_attributes='u,u,Pu')
+        #    nssdb.modify_cert(
+        #        nickname=full_name,
+        #        trust_attributes='u,u,Pu')
 
         # update NSS database owner
         self.instance.chown(self.instance.nssdb_dir)

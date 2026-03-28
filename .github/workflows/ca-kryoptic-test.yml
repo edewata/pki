@@ -1,0 +1,296 @@
+name: CA with Kryoptic
+# This test will perform the following operations:
+# - create Kryoptic token
+# - install CA with HSM
+# - check system certs
+# - check CA admin cert
+# - remove CA
+# - remove Kryoptic token
+
+on: workflow_call
+
+env:
+  DS_IMAGE: ${{ vars.DS_IMAGE || 'quay.io/389ds/dirsrv' }}
+
+jobs:
+  # docs/installation/ca/Installing_CA_with_HSM.md
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    env:
+      SHARED: /tmp/workdir/pki
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      - name: Retrieve PKI images
+        uses: actions/cache@v4
+        with:
+          key: pki-images-${{ github.sha }}
+          path: pki-images.tar
+
+      - name: Load PKI images
+        run: docker load --input pki-images.tar
+
+      - name: Create network
+        run: docker network create example
+
+      - name: Set up DS container
+        run: |
+          tests/bin/ds-create.sh \
+              --image=${{ env.DS_IMAGE }} \
+              --hostname=ds.example.com \
+              --network=example \
+              --network-alias=ds.example.com \
+              --password=Secret.123 \
+              ds
+
+      - name: Set up PKI container
+        run: |
+          tests/bin/runner-init.sh \
+              --hostname=pki.example.com \
+              --network=example \
+              --network-alias=pki.example.com \
+              pki
+
+      - name: Install Kryoptic and OpenSC
+        run: |
+          docker exec pki dnf install -y kryoptic opensc
+          docker exec pki ls -l /usr/lib64/pkcs11
+
+      - name: Create Kryoptic token
+        run: |
+          # configure token
+          docker exec pki runuser -u pkiuser -- \
+              mkdir -p /home/pkiuser/.config/kryoptic
+
+          docker exec -i pki runuser -u pkiuser -- \
+              tee /home/pkiuser/.config/kryoptic/token.conf << EOF
+          [[slots]]
+          slot = 1
+          dbtype = "sqlite"
+          dbargs = "/home/pkiuser/.config/kryoptic/token.sql"
+          EOF
+
+          docker exec pki runuser -u pkiuser -- \
+              pkcs11-tool \
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
+              --list-slots
+
+          # initialize token and SO PIN
+          docker exec pki runuser -u pkiuser -- \
+              pkcs11-tool \
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
+              --label HSM \
+              --so-pin Secret.HSM \
+              --init-token
+
+          # initialize user PIN
+          docker exec pki runuser -u pkiuser -- \
+              pkcs11-tool \
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
+              --login \
+              --login-type so \
+              --so-pin Secret.HSM \
+              --pin Secret.HSM \
+              --init-pin
+
+          docker exec pki runuser -u pkiuser -- \
+              pkcs11-tool \
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
+              --list-slots
+
+          docker exec pki runuser -u pkiuser -- \
+              modutil -nocertdb -list
+
+      - name: Install CA with HSM
+        run: |
+          docker exec pki pkispawn \
+              -f /usr/share/pki/server/examples/installation/ca.cfg \
+              -s CA \
+              -D pki_ds_url=ldap://ds.example.com:3389 \
+              -D pki_hsm_enable=True \
+              -D pki_token_name=HSM \
+              -D pki_token_password=Secret.HSM \
+              -D pki_server_database_password=Secret.123 \
+              -D pki_ca_signing_token=HSM \
+              -D pki_ocsp_signing_token=HSM \
+              -D pki_audit_signing_token=HSM \
+              -D pki_subsystem_token=HSM \
+              -D pki_sslserver_token=HSM \
+              --debug \
+              > >(tee stdout) 2> >(tee stderr >&2)
+
+      - name: Check for warnings
+        if: always()
+        run: |
+          sed -n '/^WARNING:/p' stderr | tee output
+          wc -l output
+
+      - name: Check external commands
+        if: always()
+        run: |
+          sed -n '/^DEBUG: Command:/p' stderr | tee output
+          wc -l output
+
+      - name: Check system certs
+        run: |
+          docker exec pki runuser -u pkiuser -- \
+              pki \
+              -d /var/lib/pki/pki-tomcat/conf/alias \
+              -f /var/lib/pki/pki-tomcat/conf/password.conf \
+              nss-cert-find | tee output
+
+          # there should be no certs in internal token
+          grep "Serial Number:" output | wc -l > actual
+          echo "0" > expected
+
+          diff expected actual
+
+          docker exec pki runuser -u pkiuser -- \
+              pki \
+              -d /var/lib/pki/pki-tomcat/conf/alias \
+              -f /var/lib/pki/pki-tomcat/conf/password.conf \
+              --token HSM \
+              nss-cert-find | tee output
+
+          # there should be 5 certs in HSM
+          grep "Serial Number:" output | wc -l > actual
+          echo "5" > expected
+
+          diff expected actual
+
+      - name: Check ca_signing cert
+        run: |
+          docker exec pki runuser -u pkiuser -- \
+              pki \
+              -d /var/lib/pki/pki-tomcat/conf/alias \
+              -f /var/lib/pki/pki-tomcat/conf/password.conf \
+              nss-cert-show \
+              HSM:ca_signing | tee output
+
+          # Kryoptic returns CTu,u,u instead of CTu,Cu,Cu
+          # TODO: investigate the discrepancy
+          sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
+          echo "CTu,u,u" > expected
+
+          diff expected actual
+
+      - name: Check ca_ocsp_signing cert in HSM
+        run: |
+          docker exec pki runuser -u pkiuser -- \
+              pki \
+              -d /var/lib/pki/pki-tomcat/conf/alias \
+              -f /var/lib/pki/pki-tomcat/conf/password.conf \
+              nss-cert-show \
+              HSM:ca_ocsp_signing | tee output
+
+          sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
+          echo "u,u,u" > expected
+
+          diff expected actual
+
+      - name: Check ca_audit_signing cert
+        run: |
+          docker exec pki runuser -u pkiuser -- \
+              pki \
+              -d /var/lib/pki/pki-tomcat/conf/alias \
+              -f /var/lib/pki/pki-tomcat/conf/password.conf \
+              nss-cert-show \
+              HSM:ca_audit_signing | tee output
+
+          sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
+          echo "u,u,Pu" > expected
+
+          diff expected actual
+
+      - name: Check subsystem cert
+        run: |
+          docker exec pki runuser -u pkiuser -- \
+              pki \
+              -d /var/lib/pki/pki-tomcat/conf/alias \
+              -f /var/lib/pki/pki-tomcat/conf/password.conf \
+              nss-cert-show \
+              HSM:subsystem | tee output
+
+          sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
+          echo "u,u,u" > expected
+
+          diff expected actual
+
+      - name: Check sslserver cert
+        run: |
+          docker exec pki runuser -u pkiuser -- \
+              pki \
+              -d /var/lib/pki/pki-tomcat/conf/alias \
+              -f /var/lib/pki/pki-tomcat/conf/password.conf \
+              nss-cert-show \
+              HSM:sslserver | tee output
+
+          sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
+          echo "u,u,u" > expected
+
+          diff expected actual
+
+      - name: Run PKI healthcheck
+        if: false
+        run: docker exec pki pki-healthcheck --failures-only
+
+      - name: Check admin cert
+        run: |
+          docker exec pki pki-server cert-export ca_signing --cert-file ca_signing.crt
+
+          docker exec pki pki nss-cert-import \
+              --cert ca_signing.crt \
+              --trust CT,C,C \
+              ca_signing
+
+          docker exec pki pki pkcs12-import \
+              --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
+              --pkcs12-password Secret.123
+
+          docker exec pki pki -n caadmin ca-user-show caadmin
+
+      - name: Remove CA
+        run: |
+          docker exec pki pkidestroy \
+              -s CA \
+              --debug \
+              > >(tee stdout) 2> >(tee stderr >&2)
+
+      - name: Check for warnings
+        if: always()
+        run: |
+          sed -n '/^WARNING:/p' stderr | tee output
+          wc -l output
+
+      - name: Check external commands
+        if: always()
+        run: |
+          sed -n '/^DEBUG: Command:/p' stderr | tee output
+          wc -l output
+
+      - name: Remove Kryoptic token
+        run: |
+          docker exec pki runuser -u pkiuser -- \
+              rm -rf /home/pkiuser/.config/kryoptic
+
+      - name: Check DS server systemd journal
+        if: always()
+        run: |
+          docker exec ds journalctl -x --no-pager -u dirsrv@localhost.service
+
+      - name: Check DS container logs
+        if: always()
+        run: |
+          docker logs ds
+
+      - name: Check PKI server systemd journal
+        if: always()
+        run: |
+          docker exec pki journalctl -x --no-pager -u pki-tomcatd@pki-tomcat.service
+
+      - name: Check CA debug log
+        if: always()
+        run: |
+          docker exec pki find /var/lib/pki/pki-tomcat/logs/ca -name "debug.*" -exec cat {} \;

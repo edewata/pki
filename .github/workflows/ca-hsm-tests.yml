@@ -1,0 +1,24 @@
+name: CA HSM Tests
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: Waiting for build
+    uses: ./.github/workflows/wait-for-build.yml
+    secrets: inherit
+
+  ca-kryoptic-test:
+    name: CA with Kryoptic
+    needs: build
+    uses: ./.github/workflows/ca-kryoptic-test.yml
+
+  ca-softhsm-test:
+    name: CA with SoftHSM
+    needs: build
+    uses: ./.github/workflows/ca-softhsm-test.yml
+
+  ca-softhsm-operation-test:
+    name: CA with SoftHSM and custom operation key flags
+    needs: build
+    uses: ./.github/workflows/ca-softhsm-operation-test.yml

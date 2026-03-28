@@ -119,6 +119,8 @@ jobs:
 
           docker exec pki pki nss-cert-show --cert-file ca_signing.crt
 
+          docker exec pki pki nss-cert-verify --cert-usage SSLCA ca_signing
+
       # https://github.com/dogtagpki/pki/wiki/Generating-SSL-Server-CSR-with-PKI-NSS
       - name: Create SSL server cert request with new RSA key
         run: |
@@ -160,6 +162,8 @@ jobs:
           docker exec pki pki nss-cert-show sslserver | tee output
           sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
           diff actual expected
+
+          docker exec pki pki nss-cert-verify --cert-usage SSLServer sslserver
 
       - name: Verify key type
         run: |

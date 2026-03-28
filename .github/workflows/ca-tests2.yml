@@ -83,11 +83,6 @@ jobs:
     needs: build
     uses: ./.github/workflows/ca-notification-request-test.yml
 
-  ca-hsm-operation-test:
-    name: CA with HSM and custom operation key flags
-    needs: build
-    uses: ./.github/workflows/ca-hsm-operation-test.yml
-
   ca-nuxwdog-test:
     name: CA with Nuxwdog
     needs: build

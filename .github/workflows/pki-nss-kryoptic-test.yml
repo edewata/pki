@@ -177,6 +177,12 @@ jobs:
 
           diff expected actual
 
+          docker exec pki pki \
+              -f $SHARED/password.conf \
+              nss-cert-verify \
+              --cert-usage SSLCA \
+              HSM:rsa_ca_signing
+
       - name: Remove RSA CA signing cert
         run: |
           docker exec pki pki \
