@@ -921,7 +921,7 @@ class NSSDatabase:
             fullname
         ])
 
-        self.run(cmd, check=True)
+        self.run(cmd, check=True, runas=True)
 
     def create_noise(self, noise_file, size=2048, key_type='rsa'):
         # Under EC keys, key_size parameter is actually the name of a curve.
@@ -1941,7 +1941,7 @@ class NSSDatabase:
                 fullname
             ])
 
-            result = self.run(cmd, capture_output=True)
+            result = self.run(cmd, capture_output=True, runas=True)
 
         finally:
             shutil.rmtree(tmpdir)
@@ -2071,7 +2071,7 @@ class NSSDatabase:
                 fullname
             ])
 
-            result = self.run(cmd, capture_output=True)
+            result = self.run(cmd, capture_output=True, runas=True)
 
         finally:
             shutil.rmtree(tmpdir)
