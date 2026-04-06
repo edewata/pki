@@ -33,13 +33,17 @@ jobs:
 
       - name: Create HSM token
         run: |
-          docker exec pki dnf install -y softhsm
+          docker exec pki dnf install -y softhsm opendnssec
+
           docker exec pki softhsm2-util --init-token \
               --label HSM \
               --so-pin Secret.HSM \
               --pin Secret.HSM \
               --free
+
           docker exec pki softhsm2-util --show-slots
+
+          docker exec pki modutil -nocertdb -list
 
           # create password.conf
           echo "internal=" > password.conf
