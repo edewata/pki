@@ -72,7 +72,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          docker exec pki dnf install -y softhsm
+          docker exec pki dnf install -y softhsm opendnssec
 
       - name: Create SoftHSM token
         run: |
@@ -89,6 +89,8 @@ jobs:
               --free
 
           docker exec pki ls -laR /var/lib/softhsm/tokens
+
+          docker exec pki modutil -nocertdb -list
 
       - name: Install subordinate CA (step 1)
         run: |
