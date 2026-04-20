@@ -1,4 +1,4 @@
-name: PKI NSS CLI with HSM
+name: PKI NSS CLI with SoftHSM
 
 on: workflow_call
 
@@ -31,7 +31,7 @@ jobs:
               --hostname=pki.example.com \
               pki
 
-      - name: Create HSM token
+      - name: Create SoftHSM token
         run: |
           docker exec pki dnf install -y softhsm opendnssec
 
@@ -568,5 +568,5 @@ jobs:
 
           diff expected stderr
 
-      - name: Remove HSM token
+      - name: Remove SoftHSM token
         run: docker exec pki softhsm2-util --delete-token --token HSM
