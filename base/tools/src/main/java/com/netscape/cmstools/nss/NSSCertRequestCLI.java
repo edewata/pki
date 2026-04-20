@@ -5,7 +5,9 @@
 //
 package com.netscape.cmstools.nss;
 
+import java.io.FileWriter;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.KeyPair;
 
@@ -25,8 +27,10 @@ import org.mozilla.jss.crypto.KeyWrapAlgorithm;
 import org.mozilla.jss.crypto.SignatureAlgorithm;
 import org.mozilla.jss.crypto.X509Certificate;
 import org.mozilla.jss.netscape.security.pkcs.PKCS10;
+import org.mozilla.jss.netscape.security.util.Utils;
 import org.mozilla.jss.netscape.security.x509.Extensions;
 import org.mozilla.jss.netscape.security.x509.X509Key;
+import org.mozilla.jss.pkcs11.PK11PrivKey;
 import org.mozilla.jss.pkix.primitive.Name;
 
 import com.netscape.certsrv.client.ClientConfig;
@@ -148,8 +152,11 @@ public class NSSCertRequestCLI extends CommandCLI {
         String keyIDFile = cmd.getOptionValue("key-id-file");
 
         if (keyID == null && keyIDFile != null) {
-            // load key ID from file
-            keyID = Files.readString(Paths.get(keyIDFile)).strip();
+            Path keyIDPath = Paths.get(keyIDFile);
+            if (Files.exists(keyIDPath)) {
+                // load key ID from file
+                keyID = Files.readString(keyIDPath).strip();
+            }
         }
 
         String keyType = cmd.getOptionValue("key-type", "RSA");
@@ -212,6 +219,8 @@ public class NSSCertRequestCLI extends CommandCLI {
                     temporary,
                     sensitive,
                     extractable);
+            PK11PrivKey privateKey = (PK11PrivKey) keyPair.getPrivate();
+            keyID = "0x" + Utils.HexEncode(privateKey.getUniqueID());
 
         } else if ("EC".equalsIgnoreCase(keyType)) {
             keyPair = nssdb.createECKeyPair(
@@ -221,6 +230,8 @@ public class NSSCertRequestCLI extends CommandCLI {
                     temporary,
                     sensitive,
                     extractable);
+            PK11PrivKey privateKey = (PK11PrivKey) keyPair.getPrivate();
+            keyID = "0x" + Utils.HexEncode(privateKey.getUniqueID());
 
         } else if ("MLDSA".equalsIgnoreCase(keyType)) {
             String keySize = cmd.getOptionValue("key-size", "65");
@@ -230,9 +241,21 @@ public class NSSCertRequestCLI extends CommandCLI {
                     temporary,
                     sensitive,
                     extractable);
+            PK11PrivKey privateKey = (PK11PrivKey) keyPair.getPrivate();
+            keyID = "0x" + Utils.HexEncode(privateKey.getUniqueID());
 
         } else {
             throw new Exception("Unsupported key type: " + keyType);
+        }
+
+        if (keyIDFile != null) {
+            Path keyIDPath = Paths.get(keyIDFile);
+            if (Files.notExists(keyIDPath)) {
+                // store new key ID to file
+                try (FileWriter out = new FileWriter(keyIDFile)) {
+                    out.write(keyID);
+                }
+            }
         }
 
         NSSExtensionGenerator generator = new NSSExtensionGenerator();
