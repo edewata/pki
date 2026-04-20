@@ -96,6 +96,7 @@ public class NSSKeyShowCLI extends CommandCLI {
         String tokenName = getConfig().getTokenName();
         CryptoToken token = CryptoUtil.getKeyStorageToken(tokenName);
         CryptoStore cryptoStore = token.getCryptoStore();
+        KeyInfo keyInfo = null;
 
         if (keyID != null) {
 
@@ -108,13 +109,15 @@ public class NSSKeyShowCLI extends CommandCLI {
                 String hexKeyID = "0x" + Utils.HexEncode(privateKey.getUniqueID());
                 if (!keyID.equals(hexKeyID)) continue;
 
-                KeyInfo keyInfo = new KeyInfo();
+                keyInfo = new KeyInfo();
                 keyInfo.setKeyId(new KeyId(hexKeyID));
                 keyInfo.setType(privateKey.getType().toString());
                 keyInfo.setAlgorithm(privateKey.getAlgorithm());
-
-                printKeyInfo(keyInfo, outputFormat);
                 break;
+            }
+
+            if (keyInfo == null) {
+                throw new CLIException("Key ID not found: " + keyID);
             }
 
         } else if (keyNickname != null) {
@@ -129,17 +132,21 @@ public class NSSKeyShowCLI extends CommandCLI {
 
                 PK11SymKey symmetricKey = SessionKey.GetSymKeyByName(tokenName, nickname);
 
-                KeyInfo keyInfo = new KeyInfo();
+                keyInfo = new KeyInfo();
                 keyInfo.setNickname(symmetricKey.getNickName());
                 keyInfo.setType(symmetricKey.getType().toString());
                 keyInfo.setAlgorithm(symmetricKey.getAlgorithm());
-
-                printKeyInfo(keyInfo, outputFormat);
                 break;
+            }
+
+            if (keyInfo == null) {
+                throw new CLIException("Key nickname not found: " + keyNickname);
             }
 
         } else {
             throw new CLIException("Missing key ID or key nickname");
         }
+
+        printKeyInfo(keyInfo, outputFormat);
     }
 }
