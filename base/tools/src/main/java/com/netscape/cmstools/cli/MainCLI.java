@@ -29,6 +29,7 @@ import java.net.InetAddress;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -310,10 +311,42 @@ public class MainCLI extends CLI {
     }
 
     public String promptForPassword(String prompt) throws IOException {
-        char[] password = null;
-        Console console = System.console();
+
         System.out.print(prompt);
-        password = console.readPassword();
+
+        Console console = System.console();
+        char[] password;
+
+        if (console == null) {
+            // no console, read password from standard input
+            try {
+                char[] buffer = new char[128];
+                int len = 0;
+                int c;
+
+                // read a single line into buffer
+                while ((c = System.in.read()) != -1 && c != '\n' && c != '\r') {
+                    if (len == buffer.length) {
+                        // buffer full, resize buffer
+                        buffer = Arrays.copyOf(buffer, buffer.length * 2);
+                    }
+                    buffer[len++] = (char) c;
+                }
+
+                // get password from buffer
+                password = Arrays.copyOf(buffer, len);
+                Arrays.fill(buffer, (char) 0);
+
+            } catch (java.io.IOException e) {
+                logger.error("Unable to read password: " + e.getMessage(), e);
+                password = null;
+            }
+
+        } else {
+            // read password from console
+            password = console.readPassword();
+        }
+
         return new String(password);
     }
 
