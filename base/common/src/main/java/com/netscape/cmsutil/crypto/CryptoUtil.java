@@ -1754,17 +1754,27 @@ public class CryptoUtil {
     }
 
     /**
-     * Deletes a private key.
+     * Deletes a key pair.
      */
-    public static void deletePrivateKey(PrivateKey prikey) throws TokenException {
+    public static void deleteKeyPair(KeyPair keyPair) throws TokenException, NoSuchItemOnTokenException {
+
+        PrivateKey privateKey = (PrivateKey) keyPair.getPrivate();
+        PublicKey publicKey = keyPair.getPublic();
+        String keyID = "0x" + Utils.HexEncode(privateKey.getUniqueID());
+
+        CryptoToken token = privateKey.getOwningToken();
+        CryptoStore store = token.getCryptoStore();
 
         try {
-            CryptoToken token = prikey.getOwningToken();
-            CryptoStore store = token.getCryptoStore();
+            logger.debug("CryptoUtil: Deleting public key " + keyID);
+            store.deletePublicKey(publicKey);
 
-            store.deletePrivateKey(prikey);
         } catch (NoSuchItemOnTokenException e) {
+            logger.debug("CryptoUtil: Public key not found " + keyID);
         }
+
+        logger.debug("CryptoUtil: Deleting Private key " + keyID);
+        store.deletePrivateKey(privateKey);
     }
 
     /**

@@ -51,9 +51,9 @@ $ pki nss-key-find --nickname ca_signing
 
 **Availability:** Since PKI 11.2
 
-== Displaying Key Details ==
+== Displaying Key Info ==
 
-To display key details:
+To display the info of the specified key:
 
 ----
 $ pki nss-key-show --key-id 0x12e1587cf58ab6e16a5d8cf9682252a8bdf7a591
@@ -79,12 +79,18 @@ $ pki --token HSM nss-key-show --key-id 0x12e1587cf58ab6e16a5d8cf9682252a8bdf7a5
 
 **Availability:** Since PKI 11.6
 
+To display the info of a key which the ID is specified in a file:
+
+----
+$ pki nss-key-show --key-id-file key-id.txt
+----
+
 == Creating Key in NSS Database ==
 
 To create an RSA key:
 
 ----
-$ pki nss-key-create --key-type=RSA
+$ pki nss-key-create --key-type RSA
   Key ID: 0x12e1587cf58ab6e16a5d8cf9682252a8bdf7a591
   Type: RSA
   Algorithm: RSA
@@ -93,7 +99,7 @@ $ pki nss-key-create --key-type=RSA
 To create an EC key:
 
 ----
-$ pki nss-key-create --key-type=EC
+$ pki nss-key-create --key-type EC
   Key ID: 0x12e1587cf58ab6e16a5d8cf9682252a8bdf7a591
   Type: EC
   Algorithm: EC
@@ -102,27 +108,39 @@ $ pki nss-key-create --key-type=EC
 To create an AES key:
 
 ----
-$ pki nss-key-create --key-type=AES shared-secret
+$ pki nss-key-create --key-type AES shared-secret
   Nickname: shared-secret
   Type: AES
   Algorithm: AES
 ----
 
-**Availability:** Since PKI 11.3.
+**Availability:** Since PKI 11.3
 
-== Deleting Key from NSS Database (Not Implemented) ==
+To store the ID of the new key into a file:
+
+----
+$ pki nss-key-create \
+    ...
+    --key-id-file key-id.txt
+----
+
+**Availability:** Since PKI 11.9
+
+== Deleting Key from NSS Database ==
 
 To delete a key in internal token:
 
 ----
-$ pki -c Secret.123 nss-key-del e47e4cbd15fadbdd17eb865ce55031122c7c1b6
+$ pki nss-key-del --key-id 0x12e1587cf58ab6e16a5d8cf9682252a8bdf7a591
 ----
 
 To delete a key in HSM:
 
 ----
-$ pki --token HSM -c Secret.123 nss-key-del e47e4cbd15fadbdd17eb865ce55031122c7c1b6
+$ pki --token HSM nss-key-del --key-id 0x12e1587cf58ab6e16a5d8cf9682252a8bdf7a591
 ----
+
+**Availability:** Since PKI 11.9
 
 == Exporting Key from NSS Database ==
 
