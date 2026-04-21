@@ -1,4 +1,20 @@
 name: PKI NSS CLI with RSA
+# This test will perform the following operations:
+# - create NSS database
+# - create CA signing key
+# - create CA signing CSR with existing key
+# - issue self-signed CA signing cert
+# - import CA signing cert
+# - create SSL server CSR with new key
+# - issue SSL server cert
+# - import SSL server cert
+# - remove SSL server cert and key
+# - create audit signing CSR with new key
+# - issue audit signing cert
+# - import audit signing cert
+# - modify audit signing cert trust flags
+# - remove audit signing cert and key
+# - remove CA signing cert and key
 
 on: workflow_call
 
@@ -57,79 +73,119 @@ jobs:
 
           # TODO: validate output
 
-      - name: Create RSA key
+      - name: Create CA signing key
         run: |
-          docker exec pki pki nss-key-create --key-type RSA | tee output
+          docker exec pki pki \
+              nss-key-create \
+              --key-id-file $SHARED/ca_signing.key-id
 
-          # get key ID
-          KEY_ID=$(sed -n 's/^\s*Key ID:\s*\(\S\+\)\s*$/\1/p' output)
-          echo $KEY_ID > ca_signing_key_id
-
-          docker exec pki pki nss-key-show --key-id $KEY_ID
-
-      - name: Verify key type
+      - name: Check CA signing key
         run: |
-          echo rsa > expected
+          docker exec pki certutil -K \
+              -d /root/.dogtag/nssdb \
+              | tee output
 
-          docker exec pki certutil -K -d /root/.dogtag/nssdb | tee output
+          # key type should be RSA
+          echo "rsa" > expected
           sed -n 's/^<.*>\s\+\(\S\+\)\s\+\S\+\s\+.*$/\1/p' output > actual
-          diff actual expected
 
-          docker exec pki pki nss-key-find | tee output
-          sed -n 's/\s*Type:\s*\(\S\+\)\s*$/\L\1/p' output > actual
-          diff actual expected
+          diff expected actual
 
-      # https://github.com/dogtagpki/pki/wiki/Generating-CA-Signing-CSR-with-PKI-NSS
-      - name: Create CA signing cert request with existing RSA key
+          # list all keys
+          docker exec pki pki \
+              nss-key-find \
+              | tee output
+
+          # key type should be RSA
+          echo "RSA" > expected
+          sed -n 's/\s*Type:\s*\(\S\+\)\s*$/\1/p' output > actual
+
+          diff expected actual
+
+          docker exec pki pki \
+              nss-key-show \
+              --key-id-file $SHARED/ca_signing.key-id \
+              | tee output
+
+          # key type should be RSA
+          echo "RSA" > expected
+          sed -n 's/\s*Type:\s*\(\S\+\)\s*$/\1/p' output > actual
+
+          diff expected actual
+
+      - name: Create CA signing CSR with existing key
         run: |
-          docker exec pki pki nss-cert-request \
-              --key-id $(cat ca_signing_key_id) \
+          docker exec pki pki \
+              nss-cert-request \
+              --key-id-file $SHARED/ca_signing.key-id \
               --subject "CN=Certificate Authority" \
               --ext /usr/share/pki/server/certs/ca_signing.conf \
               --csr ca_signing.csr
+
           docker exec pki openssl req -text -noout -in ca_signing.csr
 
-      # https://github.com/dogtagpki/pki/wiki/Issuing-CA-Signing-Certificate-with-PKI-NSS
       - name: Issue self-signed CA signing cert
         run: |
-          docker exec pki pki nss-cert-issue \
+          docker exec pki pki \
+              nss-cert-issue \
               --csr ca_signing.csr \
               --ext /usr/share/pki/server/certs/ca_signing.conf \
               --cert ca_signing.crt
+
           docker exec pki openssl x509 -text -noout -in ca_signing.crt
 
       - name: Import CA signing cert
         run: |
-          docker exec pki pki nss-cert-import \
+          docker exec pki pki \
+              nss-cert-import \
               --cert ca_signing.crt \
-              --trust CT,C,C \
+              --trust "CT,C,C" \
               ca_signing
 
-      - name: Verify trust flags
+      - name: Check CA signing cert
         run: |
+          docker exec pki certutil -L \
+              -d /root/.dogtag/nssdb \
+              | tee output
+
+          # trust flags should be CTu,Cu,Cu
           echo "CTu,Cu,Cu" > expected
-
-          docker exec pki certutil -L -d /root/.dogtag/nssdb | tee output
           sed -n 's/^ca_signing\s*\(\S\+\)\s*$/\1/p' output > actual
-          diff actual expected
 
-          docker exec pki pki nss-cert-show ca_signing | tee output
+          diff expected actual
+
+          docker exec pki pki \
+              nss-cert-show \
+              ca_signing \
+              | tee output
+
+          # trust flags should be CTu,Cu,Cu
+          echo "CTu,Cu,Cu" > expected
           sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
-          diff actual expected
 
-          docker exec pki pki nss-cert-show --cert-file ca_signing.crt
+          diff expected actual
 
-      # https://github.com/dogtagpki/pki/wiki/Generating-SSL-Server-CSR-with-PKI-NSS
-      - name: Create SSL server cert request with new RSA key
+          # check cert with cert file
+          docker exec pki pki \
+              nss-cert-show \
+              --cert-file ca_signing.crt \
+              | tee output
+
+          # trust flags should be CTu,Cu,Cu
+          echo "CTu,Cu,Cu" > expected
+          sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
+
+          diff expected actual
+
+      - name: Create SSL server CSR with new key
         run: |
           docker exec pki pki nss-cert-request \
-              --key-type RSA \
               --subject "CN=pki.example.com" \
               --ext /usr/share/pki/server/certs/sslserver.conf \
               --csr sslserver.csr
+
           docker exec pki openssl req -text -noout -in sslserver.csr
 
-      # https://github.com/dogtagpki/pki/wiki/Issuing-SSL-Server-Certificate-with-PKI-NSS
       - name: Issue SSL server cert
         run: |
           docker exec pki pki nss-cert-issue \
@@ -137,6 +193,7 @@ jobs:
               --csr sslserver.csr \
               --ext /usr/share/pki/server/certs/sslserver.conf \
               --cert sslserver.crt
+
           docker exec pki openssl x509 -text -noout -in sslserver.crt
 
       - name: Import SSL server cert
@@ -145,161 +202,273 @@ jobs:
               --cert sslserver.crt \
               sslserver
 
-          # get key ID
-          docker exec pki certutil -K -d /root/.dogtag/nssdb | tee output
-          sed -n 's/^<.*>\s\+\S\+\s\+\(\S\+\)\s\+NSS Certificate DB:sslserver$/\1/p' output > sslserver_key_id
-
-      - name: Verify trust flags
+      - name: Check SSL server key
         run: |
-          echo "u,u,u" > expected
+          docker exec pki certutil -K \
+              -d /root/.dogtag/nssdb \
+              | tee output
 
-          docker exec pki certutil -L -d /root/.dogtag/nssdb | tee output
-          sed -n 's/^sslserver\s*\(\S\+\)\s*$/\1/p' output > actual
-          diff actual expected
-
-          docker exec pki pki nss-cert-show sslserver | tee output
-          sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
-          diff actual expected
-
-      - name: Verify key type
-        run: |
-          echo rsa > expected
-
-          docker exec pki certutil -K -d /root/.dogtag/nssdb | tee output
+          # key type should be RSA
+          echo "rsa" > expected
           sed -n 's/^<.*>\s\+\(\S\+\)\s\+\S\+\s\+NSS Certificate DB:sslserver$/\1/p' output > actual
-          diff actual expected
 
-          docker exec pki pki nss-key-find --nickname sslserver | tee output
-          sed -n 's/\s*Type:\s*\(\S\+\)\s*$/\L\1/p' output > actual
-          diff actual expected
-
-      - name: Delete SSL server cert but keep the key
-        run: |
-          docker exec pki pki nss-cert-del sslserver
-
-          docker exec pki certutil -L -d /root/.dogtag/nssdb | tee output
-
-          # SSL server cert should not exist
-          echo "ca_signing CTu,Cu,Cu" > expected
-          sed -n -e '1,4d' -e 's/^\(.*\S\)\s\+\(\S\+\)\s*$/\1 \2/p' output > actual
           diff expected actual
 
-          docker exec pki certutil -K -d /root/.dogtag/nssdb | tee output
+          docker exec pki pki \
+              nss-key-find \
+              --nickname sslserver \
+              | tee output
 
-          # SSL server key should exist but orphaned
-          echo "(orphan)" > expected
-          echo "NSS Certificate DB:ca_signing" >> expected
-          sed -n 's/^<.*>\s\+\S\+\s\+\S\+\s\+\(.*\)$/\1/p' output | sort > actual
+          # key type should be RSA
+          echo "RSA" > expected
+          sed -n 's/\s*Type:\s*\(\S\+\)\s*$/\1/p' output > actual
+
           diff expected actual
 
-      - name: Create new SSL server cert request with existing RSA key
+      - name: Check SSL server cert
         run: |
-          docker exec pki pki nss-cert-request \
-              --key-id "0x`cat sslserver_key_id`" \
-              --subject "CN=pki.example.com" \
-              --ext /usr/share/pki/server/certs/sslserver.conf \
-              --csr new_sslserver.csr
-          docker exec pki openssl req -text -noout -in new_sslserver.csr
+          docker exec pki certutil -L \
+              -d /root/.dogtag/nssdb \
+              | tee output
 
-      - name: Issue new SSL server cert
-        run: |
-          docker exec pki pki nss-cert-issue \
-              --issuer ca_signing \
-              --csr new_sslserver.csr \
-              --ext /usr/share/pki/server/certs/sslserver.conf \
-              --cert new_sslserver.crt
-          docker exec pki openssl x509 -text -noout -in new_sslserver.crt
-
-      - name: Import new SSL server cert
-        run: |
-          docker exec pki pki nss-cert-import \
-              --cert new_sslserver.crt \
-              new_sslserver
-
-          # check short cert info
-          docker exec pki pki nss-cert-show new_sslserver
-
-          # check full cert info
-          docker exec pki pki nss-cert-export \
-              --format RAW \
-              new_sslserver
-
-          # check PEM cert
-          docker exec pki pki nss-cert-export \
-              --format PEM \
-              new_sslserver
-
-      - name: Verify trust flags
-        run: |
+          # trust flags should be u,u,u
           echo "u,u,u" > expected
+          sed -n 's/^sslserver\s*\(\S\+\)\s*$/\1/p' output > actual
 
-          docker exec pki certutil -L -d /root/.dogtag/nssdb | tee output
-          sed -n 's/^new_sslserver\s*\(\S\+\)\s*$/\1/p' output > actual
-          diff actual expected
-
-          docker exec pki pki nss-cert-show new_sslserver | tee output
-          sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
-          diff actual expected
-
-      - name: Verify key type
-        run: |
-          echo rsa > expected
-
-          docker exec pki certutil -K -d /root/.dogtag/nssdb | tee output
-          sed -n 's/^<.*>\s\+\(\S\+\)\s\+\S\+\s\+NSS Certificate DB:new_sslserver$/\1/p' output > actual
-          diff actual expected
-
-          # verify key ID
-          docker exec pki certutil -K -d /root/.dogtag/nssdb | tee output
-          sed -n 's/^<.*>\s\+\S\+\s\+\(\S\+\)\s\+NSS Certificate DB:new_sslserver$/\1/p' output > new_sslserver_key_id
-          diff sslserver_key_id new_sslserver_key_id
-
-          docker exec pki pki nss-key-find --nickname new_sslserver | tee output
-          sed -n 's/\s*Type:\s*\(\S\+\)\s*$/\L\1/p' output > actual
-          diff actual expected
-
-      - name: Modify trust flags
-        run: |
-          docker exec pki pki nss-cert-mod \
-              --trust-flags ",,P" \
-              new_sslserver | tee output
-
-          echo "u,u,Pu" > expected
-
-          docker exec pki pki nss-cert-show new_sslserver | tee output
-          sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
           diff expected actual
 
-      - name: Delete SSL server cert and key
+          docker exec pki pki \
+              nss-cert-show \
+              sslserver \
+              | tee output
+
+          # trust flags should be u,u,u
+          echo "u,u,u" > expected
+          sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
+
+          diff expected actual
+
+      - name: Remove SSL server cert and key
         run: |
-          docker exec pki pki nss-cert-del new_sslserver --remove-key
+          docker exec pki pki \
+              nss-cert-del \
+              sslserver \
+              --remove-key
 
-          docker exec pki certutil -L -d /root/.dogtag/nssdb | tee output
+      - name: Check SSL server cert and key
+        run: |
+          docker exec pki certutil -L \
+              -d /root/.dogtag/nssdb \
+              | tee output
 
-          # SSL server cert should not exist
+          # cert should be removed
           echo "ca_signing CTu,Cu,Cu" > expected
           sed -n -e '1,4d' -e 's/^\(.*\S\)\s\+\(\S\+\)\s*$/\1 \2/p' output > actual
+
           diff expected actual
 
-          docker exec pki certutil -K -d /root/.dogtag/nssdb | tee output
+          docker exec pki certutil -K \
+              -d /root/.dogtag/nssdb \
+              | tee output
 
-          # SSL server key should not exist
+          # key should be removed
           echo "NSS Certificate DB:ca_signing" > expected
           sed -n 's/^<.*>\s\+\S\+\s\+\S\+\s\+\(.*\)$/\1/p' output | sort > actual
+
           diff expected actual
 
+          docker exec pki pki \
+              nss-cert-show \
+              sslserver \
+              > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          # cert should be removed
           cat > expected << EOF
-          ERROR: Certificate not found: new_sslserver
+          ERROR: Certificate not found: sslserver
           EOF
 
-          # pki nss-cert-show should fail
-          docker exec pki pki nss-cert-show new_sslserver \
+          diff expected stderr
+
+          docker exec pki pki \
+              nss-cert-export \
+              sslserver \
               > >(tee stdout) 2> >(tee stderr >&2) || true
+
+          # cert should be removed
+          cat > expected << EOF
+          ERROR: Certificate not found: sslserver
+          EOF
 
           diff expected stderr
 
-          # pki nss-cert-export should fail
-          docker exec pki pki nss-cert-export new_sslserver \
-              > >(tee stdout) 2> >(tee stderr >&2) || true
+      - name: Create audit signing CSR with new key
+        run: |
+          docker exec pki pki \
+              nss-cert-request \
+              --subject "CN=Audit Signing Certificate" \
+              --ext /usr/share/pki/server/certs/audit_signing.conf \
+              --csr audit_signing.csr
 
-          diff expected stderr
+          docker exec pki openssl req -text -noout -in audit_signing.csr
+
+      - name: Issue audit signing cert
+        run: |
+          docker exec pki pki \
+              nss-cert-issue \
+              --issuer ca_signing \
+              --csr audit_signing.csr \
+              --ext /usr/share/pki/server/certs/audit_signing.conf \
+              --cert audit_signing.crt
+
+          docker exec pki openssl x509 -text -noout -in audit_signing.crt
+
+      - name: Import audit signing cert
+        run: |
+          docker exec pki pki \
+              nss-cert-import \
+              --cert audit_signing.crt \
+              audit_signing
+
+      - name: Check audit signing key
+        run: |
+          docker exec pki certutil -K \
+              -d /root/.dogtag/nssdb \
+              | tee output
+
+          # key type should be RSA
+          echo "rsa" > expected
+          sed -n 's/^<.*>\s\+\(\S\+\)\s\+\S\+\s\+NSS Certificate DB:audit_signing$/\1/p' output > actual
+
+          diff expected actual
+
+          docker exec pki pki \
+              nss-key-find \
+              --nickname audit_signing | tee output
+
+          # key type should be RSA
+          echo "RSA" > expected
+          sed -n 's/\s*Type:\s*\(\S\+\)\s*$/\1/p' output > actual
+
+          diff expected actual
+
+      - name: Check audit signing cert
+        run: |
+          docker exec pki certutil -L \
+              -d /root/.dogtag/nssdb \
+              | tee output
+
+          # trust flags should be u,u,u
+          echo "u,u,u" > expected
+          sed -n 's/^audit_signing\s*\(\S\+\)\s*$/\1/p' output > actual
+
+          diff expected actual
+
+          docker exec pki pki \
+              nss-cert-show \
+              audit_signing | tee output
+
+          # trust flags should be u,u,u
+          echo "u,u,u" > expected
+          sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
+
+          diff expected actual
+
+      - name: Modify audit signing cert trust flags
+        run: |
+          docker exec pki pki \
+              nss-cert-mod \
+              --trust-flags ",,P" \
+              audit_signing \
+              | tee output
+
+      - name: Check audit signing cert trust flags
+        run: |
+          docker exec pki certutil -L \
+              -d /root/.dogtag/nssdb \
+              | tee output
+
+          # trust flags should be be u,u,Pu
+          echo "u,u,Pu" > expected
+          sed -n 's/^audit_signing\s*\(\S\+\)\s*$/\1/p' output > actual
+
+          diff expected actual
+
+          docker exec pki pki \
+              nss-cert-show \
+              audit_signing \
+              | tee output
+
+          # trust flags should be u,u,Pu
+          echo "u,u,Pu" > expected
+          sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
+
+          diff expected actual
+
+      - name: Remove audit signing cert and key
+        run: |
+          docker exec pki pki \
+              nss-cert-del \
+              audit_signing \
+              --remove-key
+
+      - name: Check audit signing cert and key
+        run: |
+          docker exec pki certutil -L \
+              -d /root/.dogtag/nssdb \
+              | tee output
+
+          # cert should be removed
+          echo "ca_signing CTu,Cu,Cu" > expected
+          sed -n -e '1,4d' -e 's/^\(.*\S\)\s\+\(\S\+\)\s*$/\1 \2/p' output > actual
+
+          diff expected actual
+
+          docker exec pki certutil -K \
+              -d /root/.dogtag/nssdb \
+              | tee output
+
+          # key should be removed
+          echo "NSS Certificate DB:ca_signing" > expected
+          sed -n 's/^<.*>\s\+\S\+\s\+\S\+\s\+\(.*\)$/\1/p' output | sort > actual
+
+          diff expected actual
+
+      - name: Remove CA signing cert
+        run: |
+          docker exec pki pki \
+              nss-cert-del \
+              ca_signing
+
+          docker exec pki certutil -L \
+              -d /root/.dogtag/nssdb \
+              | tee output
+
+          # cert should be removed
+          sed -n -e '1,4d' -e 's/^\(.*\S\)\s\+\(\S\+\)\s*$/\1 \2/p' output > actual
+
+          diff /dev/null actual
+
+          docker exec pki certutil -K \
+              -d /root/.dogtag/nssdb \
+              | tee output
+
+          # key should not be removed
+          echo "(orphan)" > expected
+          sed -n 's/^<.*>\s\+\S\+\s\+\S\+\s\+\(.*\)$/\1/p' output | sort > actual
+
+          diff expected actual
+
+      - name: Remove CA signing key
+        run: |
+          docker exec pki pki \
+              nss-key-del \
+              --key-id-file $SHARED/ca_signing.key-id
+
+          docker exec pki certutil -K \
+              -d /root/.dogtag/nssdb \
+              | tee output
+
+          # key should be removed
+          sed -n 's/^<.*>\s\+\S\+\s\+\S\+\s\+\(.*\)$/\1/p' output | sort > actual
+
+          diff /dev/null actual

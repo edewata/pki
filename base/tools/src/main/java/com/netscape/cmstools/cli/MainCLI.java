@@ -88,6 +88,7 @@ public class MainCLI extends CLI {
 
     public ClientConfig config = new ClientConfig();
 
+    String nssPasswordConfig;
     NSSDatabase nssdb;
     String apiVersion;
 
@@ -394,7 +395,7 @@ public class MainCLI extends CLI {
         String nssDatabase = cmd.getOptionValue("d");
         String nssPassword = cmd.getOptionValue("c");
         String nssPasswordFile = cmd.getOptionValue("C");
-        String nssPasswordConfig = cmd.getOptionValue("f");
+        nssPasswordConfig = cmd.getOptionValue("f");
 
         String tokenName = cmd.getOptionValue("token");
         String certNickname = cmd.getOptionValue("n");
@@ -544,6 +545,7 @@ public class MainCLI extends CLI {
         }
 
         logger.debug("Initializing NSS");
+        // by default CryptoManager will use ConsolePasswordCallback
         CryptoManager.initialize(nssdb.getPath().toString());
 
         CryptoManager manager;
@@ -555,13 +557,14 @@ public class MainCLI extends CLI {
             throw new Exception("NSS has not been initialized", e);
         }
 
-        // If password is specified, use password to access security token
         if (config.getNSSPassword() != null) {
+            // if token password is specified, use it to log in to token
+            // keep ConsolePasswordCallback in case NSS needs additional passwords
 
             String tokenName = config.getTokenName();
             tokenName = tokenName == null ? CryptoUtil.INTERNAL_TOKEN_NAME : tokenName;
 
-            logger.debug("Logging into " + tokenName + " token");
+            logger.debug("Logging in to " + tokenName + " token");
 
             CryptoToken token = CryptoUtil.getKeyStorageToken(tokenName);
             Password password = new Password(config.getNSSPassword().toCharArray());
@@ -577,16 +580,17 @@ public class MainCLI extends CLI {
                 password.clear();
             }
 
-        } else {
+        } else if (nssPasswordConfig != null) {
+            // if password config is specified, use it to log in to all specified tokens
 
             Map<String, String> passwords = config.getNSSPasswords();
-
             for (String tokenName : passwords.keySet()) {
 
-                logger.debug("Logging into " + tokenName + " token");
+                logger.debug("Logging in to " + tokenName + " token");
 
                 CryptoToken token = CryptoUtil.getKeyStorageToken(tokenName);
                 Password password = new Password(passwords.get(tokenName).toCharArray());
+
                 try {
                     token.login(password);
 
@@ -598,14 +602,23 @@ public class MainCLI extends CLI {
                     password.clear();
                 }
             }
+
+            // disable ConsolePasswordCallback due to issue with OpenDNSSEC:
+            // https://github.com/dogtagpki/pki/issues/5045
             manager.setPasswordCallback(new NullPasswordCallback());
+
+            // ignore unspecified tokens
             Enumeration<CryptoToken> externalTokens = CryptoUtil.getExternalTokens();
-            while (externalTokens!=null && externalTokens.hasMoreElements()) {
+            while (externalTokens != null && externalTokens.hasMoreElements()) {
                 CryptoToken extToken = externalTokens.nextElement();
                 if (!extToken.isLoggedIn()) {
                     logger.info("Password for token '{}' has not been provided, it will be skipped.", extToken.getName());
                 }
             }
+
+        } else {
+            // no passwords specified
+            // keep ConsolePasswordCallback in case NSS needs additional passwords
         }
 
         String tokenName = config.getTokenName();
