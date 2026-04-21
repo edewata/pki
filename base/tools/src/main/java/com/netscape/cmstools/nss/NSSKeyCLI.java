@@ -23,6 +23,7 @@ public class NSSKeyCLI extends CLI {
         addModule(new NSSKeyFindCLI(this));
         addModule(new NSSKeyShowCLI(this));
         addModule(new NSSKeyImportCLI(this));
+        addModule(new NSSKeyRemoveCLI(this));
     }
 
     public static void printKeyInfo(KeyInfo keyInfo) throws Exception {
