@@ -1,14 +1,21 @@
 name: Basic KRA
 # This test will perform the following operations:
-# - install CA
-# - install KRA
+# - install CA with RSA certs
+# - install KRA with RSA certs
+# - enroll RSA cert using CRMFPopClient without POP
+# - recover cert key
+# - enroll RSA cert using CRMFPopClient with POP
+# - recover cert key
+# - enroll RSA cert using PKI CLI without POP
+# - recover cert key
+# - enroll RSA cert using PKI CLI with POP
+# - recover cert key
+# - deactivate cert key
+# - reactivate cert key
 # - generate AES key
 # - generate RSA key
-# - enroll cert with key archival
-# - retrieve cert key
-# - deactivate cert key
 # - archive secret
-# - retrieve secret
+# - recover secret
 
 on: workflow_call
 
@@ -59,7 +66,9 @@ jobs:
           # get Fedora version
           FEDORA_VERSION=$(docker exec pki sed -n 's/^VERSION_ID=//p' /etc/os-release)
           echo "FEDORA_VERSION=$FEDORA_VERSION" >> $GITHUB_ENV
-          
+
+          docker exec pki dnf install -y dumpasn1
+
       - name: Calculate Tomcat flavor
         run: |
           TOMCAT_FLAVOR=$(docker exec pki bash -c '
@@ -627,6 +636,1550 @@ jobs:
 
           diff /dev/null actual
 
+      - name: Enroll cert using CRMFPopClient without POP
+        run: |
+          # generate key and cert request
+          docker exec pki CRMFPopClient \
+              -d /root/.dogtag/nssdb \
+              -p "" \
+              -f caUserCert \
+              -q POP_NONE \
+              -n UID=test-CRMFPopClient-without-POP \
+              -u test-CRMFPopClient-without-POP \
+              -r test-CRMFPopClient-without-POP \
+              -b kra_transport.crt \
+              -o test-CRMFPopClient-without-POP.csr | tee output
+
+          docker exec pki cat test-CRMFPopClient-without-POP.csr
+
+          docker exec pki AtoB test-CRMFPopClient-without-POP.csr test-CRMFPopClient-without-POP.der
+          docker exec pki dumpasn1 test-CRMFPopClient-without-POP.der
+
+          # issue cert
+          docker exec pki pki \
+              -u caadmin \
+              -w Secret.123 \
+              ca-cert-issue \
+              --request-type crmf \
+              --profile caUserCert \
+              --subject UID=test-CRMFPopClient-without-POP \
+              --csr-file test-CRMFPopClient-without-POP.csr \
+              --output-file test-CRMFPopClient-without-POP.crt | tee output
+
+          # import cert into NSS database
+          docker exec pki pki nss-cert-import \
+              --cert test-CRMFPopClient-without-POP.crt \
+              test-CRMFPopClient-without-POP
+
+          docker exec pki pki nss-cert-show test-CRMFPopClient-without-POP | tee output
+
+          # normalize output
+          sed \
+              -e '/^ *Serial Number:/d' \
+              -e '/^ *Not Valid Before:/d' \
+              -e '/^ *Not Valid After:/d' \
+              output > actual
+
+          cat > expected << EOF
+            Nickname: test-CRMFPopClient-without-POP
+            Subject DN: UID=test-CRMFPopClient-without-POP
+            Issuer DN: CN=CA Signing Certificate,OU=pki-tomcat,O=EXAMPLE
+            Trust Flags: u,u,u
+          EOF
+
+          diff expected actual
+
+      - name: Check key requests after enrollment
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-request-find \
+              | tee output
+
+          # normalize output
+          sed \
+              -e '/-----/d' \
+              -e '/entries matched/d' \
+              -e '/Number of entries returned/d' \
+              -e '/^ *Request ID:/d' \
+              -e '/^ *Key ID:/d' \
+              -e '/^ *Creation Time:/d' \
+              -e '/^ *Modification Time:/d' \
+              output > actual
+
+          # there should be 1 key requests
+          cat > expected << EOF
+            Type: enrollment
+            Status: complete
+          EOF
+
+          diff expected actual
+
+      - name: Check keys after enrollment
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-find \
+              | tee output
+
+          # normalize output
+          sed \
+              -e '/-----/d' \
+              -e '/key(s) matched/d' \
+              -e '/Number of entries returned/d' \
+              -e '/^ *Request ID:/d' \
+              -e '/^ *Key ID:/d' \
+              -e '/^ *Creation Time:/d' \
+              -e '/^ *Modification Time:/d' \
+              output > actual
+
+          # there should be 1 key
+          # NOTE: test-CRMFPopClient-without-POP key doesn't have a status
+          cat > expected << EOF
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-without-POP
+          EOF
+
+          diff expected actual
+
+      - name: Check key record after enrollment
+        run: |
+          # find archived key by owner
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-find \
+              --owner UID=test-CRMFPopClient-without-POP \
+              | tee output
+
+          KEY_ID=$(sed -n "s/^\s*Key ID:\s*\(\S*\)$/\1/p" output)
+          echo "Key ID: $KEY_ID"
+          echo $KEY_ID > cert.key_id
+
+          DEC_KEY_ID=$(python -c "print(int('$KEY_ID', 16))")
+          echo "Dec Key ID: $DEC_KEY_ID"
+
+          # get key record
+          docker exec ds ldapsearch \
+              -H ldap://ds.example.com:3389 \
+              -x \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b "cn=$DEC_KEY_ID,ou=keyRepository,ou=kra,dc=kra,dc=pki,dc=example,dc=com" \
+              -o ldif_wrap=no \
+              -LLL | tee output
+
+          # normalize output
+          sed \
+              -e '/^$/d' \
+              -e 's/^\(serialno\): .*$/\1: XXXXX/' \
+              -e 's/^\(privateKeyData\):: .*$/\1:: XXXXX/' \
+              -e 's/^\(publicKeyData\):: .*$/\1:: XXXXX/' \
+              -e 's/^\(metaInfo: payloadEncryptionIV\):.*/\1:XXXXX/' \
+              -e 's/^\(dateOfCreate\): .*$/\1: XXXXX/' \
+              -e 's/^\(dateOfModify\): .*$/\1: XXXXX/' \
+              output > actual
+
+          cat > expected << EOF
+          dn: cn=$DEC_KEY_ID,ou=keyRepository,ou=kra,dc=kra,dc=pki,dc=example,dc=com
+          objectClass: top
+          objectClass: keyRecord
+          keyState: VALID
+          serialno: XXXXX
+          ownerName: UID=test-CRMFPopClient-without-POP
+          keySize: 2048
+          algorithm: 1.2.840.113549.1.1.1
+          privateKeyData:: XXXXX
+          publicKeyData:: XXXXX
+          metaInfo: sessionKeyWrapAlgorithm:RSA
+          metaInfo: payloadEncrypted:false
+          metaInfo: sessionKeyKeyGenAlgorithm:AES
+          metaInfo: sessionKeyType:AES
+          metaInfo: sessionKeyLength:128
+          metaInfo: payloadEncryptionOID:2.16.840.1.101.3.4.1.2
+          metaInfo: payloadEncryptionIV:XXXXX
+          metaInfo: payloadWrapAlgorithm:AES KeyWrap/Padding
+          dateOfCreate: XXXXX
+          dateOfModify: XXXXX
+          archivedBy: CA-pki.example.com-8443
+          cn: $DEC_KEY_ID
+          EOF
+
+          diff expected actual
+
+      - name: Recover cert key
+        run: |
+          KEY_ID=$(cat cert.key_id)
+          echo "Key ID: $KEY_ID"
+
+          # export cert into Base64-encoded format
+          BASE64_CERT=$(docker exec pki pki nss-cert-export \
+              --format DER \
+              test-CRMFPopClient-without-POP \
+              | base64 --wrap=0)
+          echo "Cert: $BASE64_CERT"
+
+          # create recovery request with key ID, cert, and passphrase
+          cat > request.json <<EOF
+          {
+            "ClassName" : "com.netscape.certsrv.key.KeyRecoveryRequest",
+            "Attributes" : {
+              "Attribute" : [ {
+                "name" : "keyId",
+                "value" : "$KEY_ID"
+              }, {
+                "name" : "certificate",
+                "value" : "$BASE64_CERT"
+              }, {
+                "name" : "passphrase",
+                "value" : "Secret.123"
+              } ]
+            }
+          }
+          EOF
+
+          # recover cert and key into PKCS #12 file
+          # https://github.com/dogtagpki/pki/wiki/Retrieving-Archived-Key
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-retrieve \
+              --input $SHARED/request.json \
+              --transport kra_transport \
+              --output-data test-CRMFPopClient-without-POP.p12
+
+          # import PKCS #12 file into NSS database with the passphrase
+          docker exec pki pki \
+              -d nssdb \
+              pkcs12-import \
+              --pkcs12 test-CRMFPopClient-without-POP.p12 \
+              --password Secret.123
+
+          # remove archived cert from NSS database
+          docker exec pki pki -d nssdb nss-cert-del UID=test-CRMFPopClient-without-POP
+
+          # import original cert into NSS database
+          docker exec pki pki \
+              -d nssdb \
+              nss-cert-import \
+              --cert test-CRMFPopClient-without-POP.crt \
+              test-CRMFPopClient-without-POP
+
+          docker exec pki pki -d nssdb nss-cert-show test-CRMFPopClient-without-POP | tee output
+
+          # normalize output
+          sed \
+              -e '/^ *Serial Number:/d' \
+              -e '/^ *Not Valid Before:/d' \
+              -e '/^ *Not Valid After:/d' \
+              output > actual
+
+          # the cert should match the key (trust flags must be u,u,u)
+          cat > expected << EOF
+            Nickname: test-CRMFPopClient-without-POP
+            Subject DN: UID=test-CRMFPopClient-without-POP
+            Issuer DN: CN=CA Signing Certificate,OU=pki-tomcat,O=EXAMPLE
+            Trust Flags: u,u,u
+          EOF
+
+          diff expected actual
+
+      - name: Check key requests after recovery
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-request-find \
+              | tee output
+
+          # normalize output
+          sed \
+              -e '/-----/d' \
+              -e '/entries matched/d' \
+              -e '/Number of entries returned/d' \
+              -e '/^ *Request ID:/d' \
+              -e '/^ *Key ID:/d' \
+              -e '/^ *Creation Time:/d' \
+              -e '/^ *Modification Time:/d' \
+              output > actual
+
+          # there should be 2 key requests
+          cat > expected << EOF
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+          EOF
+
+          diff expected actual
+
+      - name: Check keys after recovery
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-find \
+              | tee output
+
+          # normalize output
+          sed \
+              -e '/-----/d' \
+              -e '/key(s) matched/d' \
+              -e '/Number of entries returned/d' \
+              -e '/^ *Request ID:/d' \
+              -e '/^ *Key ID:/d' \
+              -e '/^ *Creation Time:/d' \
+              -e '/^ *Modification Time:/d' \
+              output > actual
+
+          # there should be 1 key
+          # NOTE: test-CRMFPopClient-without-POP keys doesn't have a status
+          cat > expected << EOF
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-without-POP
+          EOF
+
+          diff expected actual
+
+      - name: Enroll cert using CRMFPopClient with POP
+        run: |
+          # generate key and cert request
+          docker exec pki CRMFPopClient \
+              -d /root/.dogtag/nssdb \
+              -p "" \
+              -f caUserCert \
+              -n UID=test-CRMFPopClient-with-POP \
+              -u test-CRMFPopClient-with-POP \
+              -r test-CRMFPopClient-with-POP \
+              -b kra_transport.crt \
+              -o test-CRMFPopClient-with-POP.csr | tee output
+
+          docker exec pki cat test-CRMFPopClient-with-POP.csr
+
+          docker exec pki AtoB test-CRMFPopClient-with-POP.csr test-CRMFPopClient-with-POP.der
+          docker exec pki dumpasn1 test-CRMFPopClient-with-POP.der
+
+          # issue cert
+          docker exec pki pki \
+              -u caadmin \
+              -w Secret.123 \
+              ca-cert-issue \
+              --request-type crmf \
+              --profile caUserCert \
+              --subject UID=test-CRMFPopClient-with-POP \
+              --csr-file test-CRMFPopClient-with-POP.csr \
+              --output-file test-CRMFPopClient-with-POP.crt | tee output
+
+          # import cert into NSS database
+          docker exec pki pki nss-cert-import \
+              --cert test-CRMFPopClient-with-POP.crt \
+              test-CRMFPopClient-with-POP
+
+          docker exec pki pki nss-cert-show test-CRMFPopClient-with-POP | tee output
+
+          # normalize output
+          sed \
+              -e '/^ *Serial Number:/d' \
+              -e '/^ *Not Valid Before:/d' \
+              -e '/^ *Not Valid After:/d' \
+              output > actual
+
+          cat > expected << EOF
+            Nickname: test-CRMFPopClient-with-POP
+            Subject DN: UID=test-CRMFPopClient-with-POP
+            Issuer DN: CN=CA Signing Certificate,OU=pki-tomcat,O=EXAMPLE
+            Trust Flags: u,u,u
+          EOF
+
+          diff expected actual
+
+      - name: Check key requests after enrollment
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-request-find \
+              | tee output
+
+          # normalize output
+          sed \
+              -e '/-----/d' \
+              -e '/entries matched/d' \
+              -e '/Number of entries returned/d' \
+              -e '/^ *Request ID:/d' \
+              -e '/^ *Key ID:/d' \
+              -e '/^ *Creation Time:/d' \
+              -e '/^ *Modification Time:/d' \
+              output > actual
+
+          # there should be 3 key requests
+          cat > expected << EOF
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+          EOF
+
+          diff expected actual
+
+      - name: Check keys after enrollment
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-find \
+              | tee output
+
+          # normalize output
+          sed \
+              -e '/-----/d' \
+              -e '/key(s) matched/d' \
+              -e '/Number of entries returned/d' \
+              -e '/^ *Request ID:/d' \
+              -e '/^ *Key ID:/d' \
+              -e '/^ *Creation Time:/d' \
+              -e '/^ *Modification Time:/d' \
+              output > actual
+
+          # there should be 2 keys
+          # NOTE: test-CRMFPopClient-with-POP key doesn't have a status
+          cat > expected << EOF
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-without-POP
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-with-POP
+          EOF
+
+          diff expected actual
+
+      - name: Check key record after enrollment
+        run: |
+          # find archived key by owner
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-find \
+              --owner UID=test-CRMFPopClient-with-POP \
+              | tee output
+
+          KEY_ID=$(sed -n "s/^\s*Key ID:\s*\(\S*\)$/\1/p" output)
+          echo "Key ID: $KEY_ID"
+          echo $KEY_ID > cert.key_id
+
+          DEC_KEY_ID=$(python -c "print(int('$KEY_ID', 16))")
+          echo "Dec Key ID: $DEC_KEY_ID"
+
+          # get key record
+          docker exec ds ldapsearch \
+              -H ldap://ds.example.com:3389 \
+              -x \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b "cn=$DEC_KEY_ID,ou=keyRepository,ou=kra,dc=kra,dc=pki,dc=example,dc=com" \
+              -o ldif_wrap=no \
+              -LLL | tee output
+
+          # normalize output
+          sed \
+              -e '/^$/d' \
+              -e 's/^\(serialno\): .*$/\1: XXXXX/' \
+              -e 's/^\(privateKeyData\):: .*$/\1:: XXXXX/' \
+              -e 's/^\(publicKeyData\):: .*$/\1:: XXXXX/' \
+              -e 's/^\(metaInfo: payloadEncryptionIV\):.*/\1:XXXXX/' \
+              -e 's/^\(dateOfCreate\): .*$/\1: XXXXX/' \
+              -e 's/^\(dateOfModify\): .*$/\1: XXXXX/' \
+              output > actual
+
+          cat > expected << EOF
+          dn: cn=$DEC_KEY_ID,ou=keyRepository,ou=kra,dc=kra,dc=pki,dc=example,dc=com
+          objectClass: top
+          objectClass: keyRecord
+          keyState: VALID
+          serialno: XXXXX
+          ownerName: UID=test-CRMFPopClient-with-POP
+          keySize: 2048
+          algorithm: 1.2.840.113549.1.1.1
+          privateKeyData:: XXXXX
+          publicKeyData:: XXXXX
+          metaInfo: sessionKeyWrapAlgorithm:RSA
+          metaInfo: payloadEncrypted:false
+          metaInfo: sessionKeyKeyGenAlgorithm:AES
+          metaInfo: sessionKeyType:AES
+          metaInfo: sessionKeyLength:128
+          metaInfo: payloadEncryptionOID:2.16.840.1.101.3.4.1.2
+          metaInfo: payloadEncryptionIV:XXXXX
+          metaInfo: payloadWrapAlgorithm:AES KeyWrap/Padding
+          dateOfCreate: XXXXX
+          dateOfModify: XXXXX
+          archivedBy: CA-pki.example.com-8443
+          cn: $DEC_KEY_ID
+          EOF
+
+          diff expected actual
+
+      - name: Recover cert key
+        run: |
+          KEY_ID=$(cat cert.key_id)
+          echo "Key ID: $KEY_ID"
+
+          # export cert into Base64-encoded format
+          BASE64_CERT=$(docker exec pki pki nss-cert-export \
+              --format DER \
+              test-CRMFPopClient-with-POP \
+              | base64 --wrap=0)
+          echo "Cert: $BASE64_CERT"
+
+          # create recovery request with key ID, cert, and passphrase
+          cat > request.json <<EOF
+          {
+            "ClassName" : "com.netscape.certsrv.key.KeyRecoveryRequest",
+            "Attributes" : {
+              "Attribute" : [ {
+                "name" : "keyId",
+                "value" : "$KEY_ID"
+              }, {
+                "name" : "certificate",
+                "value" : "$BASE64_CERT"
+              }, {
+                "name" : "passphrase",
+                "value" : "Secret.123"
+              } ]
+            }
+          }
+          EOF
+
+          # recover cert and key into PKCS #12 file
+          # https://github.com/dogtagpki/pki/wiki/Retrieving-Archived-Key
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-retrieve \
+              --input $SHARED/request.json \
+              --transport kra_transport \
+              --output-data test-CRMFPopClient-with-POP.p12
+
+          # import PKCS #12 file into NSS database with the passphrase
+          docker exec pki pki \
+              -d nssdb \
+              pkcs12-import \
+              --pkcs12 test-CRMFPopClient-with-POP.p12 \
+              --password Secret.123
+
+          # remove archived cert from NSS database
+          docker exec pki pki -d nssdb nss-cert-del UID=test-CRMFPopClient-with-POP
+
+          # import original cert into NSS database
+          docker exec pki pki -d nssdb nss-cert-import \
+              --cert test-CRMFPopClient-with-POP.crt \
+              test-CRMFPopClient-with-POP
+
+          docker exec pki pki -d nssdb nss-cert-show test-CRMFPopClient-with-POP | tee output
+
+          # normalize output
+          sed \
+              -e '/^ *Serial Number:/d' \
+              -e '/^ *Not Valid Before:/d' \
+              -e '/^ *Not Valid After:/d' \
+              output > actual
+
+          # the cert should match the key (trust flags must be u,u,u)
+          cat > expected << EOF
+            Nickname: test-CRMFPopClient-with-POP
+            Subject DN: UID=test-CRMFPopClient-with-POP
+            Issuer DN: CN=CA Signing Certificate,OU=pki-tomcat,O=EXAMPLE
+            Trust Flags: u,u,u
+          EOF
+
+          diff expected actual
+
+      - name: Check key requests after recovery
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-request-find \
+              | tee output
+
+          # normalize output
+          sed \
+              -e '/-----/d' \
+              -e '/entries matched/d' \
+              -e '/Number of entries returned/d' \
+              -e '/^ *Request ID:/d' \
+              -e '/^ *Key ID:/d' \
+              -e '/^ *Creation Time:/d' \
+              -e '/^ *Modification Time:/d' \
+              output > actual
+
+          # there should be 2 key requests
+          cat > expected << EOF
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+          EOF
+
+          diff expected actual
+
+      - name: Check keys after recovery
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-find \
+              | tee output
+
+          # normalize output
+          sed \
+              -e '/-----/d' \
+              -e '/key(s) matched/d' \
+              -e '/Number of entries returned/d' \
+              -e '/^ *Request ID:/d' \
+              -e '/^ *Key ID:/d' \
+              -e '/^ *Creation Time:/d' \
+              -e '/^ *Modification Time:/d' \
+              output > actual
+
+          # there should be 1 key
+          # NOTE: test-CRMFPopClient-with-POP and test-CRMFPopClient-with-POP keys don't have a status
+          cat > expected << EOF
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-without-POP
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-with-POP
+          EOF
+
+          diff expected actual
+
+      - name: Enroll cert using PKI CLI without POP
+        run: |
+          # generate key and cert request
+          # https://github.com/dogtagpki/pki/wiki/Generating-Certificate-Request-with-PKI-NSS
+          docker exec pki pki \
+              nss-cert-request \
+              --type crmf \
+              --subject UID=test-PKI-CLI-without-POP \
+              --transport kra_transport \
+              --csr test-PKI-CLI-without-POP.csr
+
+          docker exec pki cat test-PKI-CLI-without-POP.csr
+
+          docker exec pki AtoB test-PKI-CLI-without-POP.csr test-PKI-CLI-without-POP.der
+          docker exec pki dumpasn1 test-PKI-CLI-without-POP.der
+
+          # issue cert
+          # https://github.com/dogtagpki/pki/wiki/Issuing-Certificates
+          docker exec pki pki \
+              -u caadmin \
+              -w Secret.123 \
+              ca-cert-issue \
+              --request-type crmf \
+              --profile caUserCert \
+              --subject UID=test-PKI-CLI-without-POP \
+              --csr-file test-PKI-CLI-without-POP.csr \
+              --output-file test-PKI-CLI-without-POP.crt
+
+          # import cert into NSS database
+          docker exec pki pki nss-cert-import --cert test-PKI-CLI-without-POP.crt test-PKI-CLI-without-POP
+          docker exec pki pki nss-cert-show test-PKI-CLI-without-POP | tee output
+
+          # normalize output
+          sed \
+              -e '/^ *Serial Number:/d' \
+              -e '/^ *Not Valid Before:/d' \
+              -e '/^ *Not Valid After:/d' \
+              output > actual
+
+          # the cert should match the key (trust flags must be u,u,u)
+          cat > expected << EOF
+            Nickname: test-PKI-CLI-without-POP
+            Subject DN: UID=test-PKI-CLI-without-POP
+            Issuer DN: CN=CA Signing Certificate,OU=pki-tomcat,O=EXAMPLE
+            Trust Flags: u,u,u
+          EOF
+
+          diff expected actual
+
+      - name: Check key requests after enrollment
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-request-find \
+              | tee output
+
+          # normalize output
+          sed \
+              -e '/-----/d' \
+              -e '/entries matched/d' \
+              -e '/Number of entries returned/d' \
+              -e '/^ *Request ID:/d' \
+              -e '/^ *Key ID:/d' \
+              -e '/^ *Creation Time:/d' \
+              -e '/^ *Modification Time:/d' \
+              output > actual
+
+          # there should be 3 key requests
+          cat > expected << EOF
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+          EOF
+
+          diff expected actual
+
+      - name: Check keys after enrollment
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-find \
+              | tee output
+
+          # normalize output
+          sed \
+              -e '/-----/d' \
+              -e '/key(s) matched/d' \
+              -e '/Number of entries returned/d' \
+              -e '/^ *Request ID:/d' \
+              -e '/^ *Key ID:/d' \
+              -e '/^ *Creation Time:/d' \
+              -e '/^ *Modification Time:/d' \
+              output > actual
+
+          # there should be 2 keys
+          # NOTE: test-CRMFPopClient-without-POP and test-PKI-CLI-without-POP keys don't have a status
+          cat > expected << EOF
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-without-POP
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-with-POP
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-PKI-CLI-without-POP
+          EOF
+
+          diff expected actual
+
+      - name: Check key record after enrollment
+        run: |
+          # find archived key by owner
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-find \
+              --owner UID=test-PKI-CLI-without-POP \
+              | tee output
+
+          KEY_ID=$(sed -n "s/^\s*Key ID:\s*\(\S*\)$/\1/p" output)
+          echo "Key ID: $KEY_ID"
+          echo $KEY_ID > cert.key_id
+
+          DEC_KEY_ID=$(python -c "print(int('$KEY_ID', 16))")
+          echo "Dec Key ID: $DEC_KEY_ID"
+
+          # get key record
+          docker exec ds ldapsearch \
+              -H ldap://ds.example.com:3389 \
+              -x \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b "cn=$DEC_KEY_ID,ou=keyRepository,ou=kra,dc=kra,dc=pki,dc=example,dc=com" \
+              -o ldif_wrap=no \
+              -LLL | tee output
+
+          # normalize output
+          sed \
+              -e '/^$/d' \
+              -e 's/^\(serialno\): .*$/\1: XXXXX/' \
+              -e 's/^\(privateKeyData\):: .*$/\1:: XXXXX/' \
+              -e 's/^\(publicKeyData\):: .*$/\1:: XXXXX/' \
+              -e 's/^\(metaInfo: payloadEncryptionIV\):.*/\1:XXXXX/' \
+              -e 's/^\(dateOfCreate\): .*$/\1: XXXXX/' \
+              -e 's/^\(dateOfModify\): .*$/\1: XXXXX/' \
+              output > actual
+
+          cat > expected << EOF
+          dn: cn=$DEC_KEY_ID,ou=keyRepository,ou=kra,dc=kra,dc=pki,dc=example,dc=com
+          objectClass: top
+          objectClass: keyRecord
+          keyState: VALID
+          serialno: XXXXX
+          ownerName: UID=test-PKI-CLI-without-POP
+          keySize: 2048
+          algorithm: 1.2.840.113549.1.1.1
+          privateKeyData:: XXXXX
+          publicKeyData:: XXXXX
+          metaInfo: sessionKeyWrapAlgorithm:RSA
+          metaInfo: payloadEncrypted:false
+          metaInfo: sessionKeyKeyGenAlgorithm:AES
+          metaInfo: sessionKeyType:AES
+          metaInfo: sessionKeyLength:128
+          metaInfo: payloadEncryptionOID:2.16.840.1.101.3.4.1.2
+          metaInfo: payloadEncryptionIV:XXXXX
+          metaInfo: payloadWrapAlgorithm:AES KeyWrap/Padding
+          dateOfCreate: XXXXX
+          dateOfModify: XXXXX
+          archivedBy: CA-pki.example.com-8443
+          cn: $DEC_KEY_ID
+          EOF
+
+          diff expected actual
+
+      - name: Recover cert key
+        run: |
+          KEY_ID=$(cat cert.key_id)
+          echo "Key ID: $KEY_ID"
+
+          # export cert into Base64-encoded format
+          BASE64_CERT=$(docker exec pki pki nss-cert-export \
+              --format DER \
+              test-PKI-CLI-without-POP \
+              | base64 --wrap=0)
+          echo "Cert: $BASE64_CERT"
+
+          # create recovery request with key ID, cert, and passphrase
+          cat > request.json <<EOF
+          {
+            "ClassName" : "com.netscape.certsrv.key.KeyRecoveryRequest",
+            "Attributes" : {
+              "Attribute" : [ {
+                "name" : "keyId",
+                "value" : "$KEY_ID"
+              }, {
+                "name" : "certificate",
+                "value" : "$BASE64_CERT"
+              }, {
+                "name" : "passphrase",
+                "value" : "Secret.123"
+              } ]
+            }
+          }
+          EOF
+
+          # recover archived cert and key into PKCS #12 file
+          # https://github.com/dogtagpki/pki/wiki/Retrieving-Archived-Key
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-retrieve \
+              --input $SHARED/request.json \
+              --transport kra_transport \
+              --output-data test-PKI-CLI-without-POP.p12
+
+          # import PKCS #12 file into NSS database with the passphrase
+          docker exec pki pki \
+              -d nssdb \
+              pkcs12-import \
+              --pkcs12 test-PKI-CLI-without-POP.p12 \
+              --password Secret.123
+
+          # remove archived cert from NSS database
+          docker exec pki pki -d nssdb nss-cert-del UID=test-PKI-CLI-without-POP
+
+          # import original cert into NSS database
+          docker exec pki pki -d nssdb nss-cert-import \
+              --cert test-PKI-CLI-without-POP.crt \
+              test-PKI-CLI-without-POP
+
+          docker exec pki pki -d nssdb nss-cert-show test-PKI-CLI-without-POP | tee output
+
+          # normalize output
+          sed \
+              -e '/^ *Serial Number:/d' \
+              -e '/^ *Not Valid Before:/d' \
+              -e '/^ *Not Valid After:/d' \
+              output > actual
+
+          # the cert should match the key (trust flags must be u,u,u)
+          cat > expected << EOF
+            Nickname: test-PKI-CLI-without-POP
+            Subject DN: UID=test-PKI-CLI-without-POP
+            Issuer DN: CN=CA Signing Certificate,OU=pki-tomcat,O=EXAMPLE
+            Trust Flags: u,u,u
+          EOF
+
+          diff expected actual
+
+      - name: Check key requests after recovery
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-request-find \
+              | tee output
+
+          # normalize output
+          sed \
+              -e '/-----/d' \
+              -e '/entries matched/d' \
+              -e '/Number of entries returned/d' \
+              -e '/^ *Request ID:/d' \
+              -e '/^ *Key ID:/d' \
+              -e '/^ *Creation Time:/d' \
+              -e '/^ *Modification Time:/d' \
+              output > actual
+
+          # there should be 4 key requests
+          cat > expected << EOF
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+          EOF
+
+          diff expected actual
+
+      - name: Check keys after recovery
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-find \
+              | tee output
+
+          # normalize output
+          sed \
+              -e '/-----/d' \
+              -e '/key(s) matched/d' \
+              -e '/Number of entries returned/d' \
+              -e '/^ *Request ID:/d' \
+              -e '/^ *Key ID:/d' \
+              -e '/^ *Creation Time:/d' \
+              -e '/^ *Modification Time:/d' \
+              output > actual
+
+          # there should be 2 keys
+          # NOTE: test-CRMFPopClient-without-POP and test-PKI-CLI-without-POP keys don't have a status
+          cat > expected << EOF
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-without-POP
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-with-POP
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-PKI-CLI-without-POP
+          EOF
+
+          diff expected actual
+
+      - name: Enroll cert using PKI CLI with POP
+        run: |
+          # generate key and cert request
+          # https://github.com/dogtagpki/pki/wiki/Generating-Certificate-Request-with-PKI-NSS
+          docker exec pki pki \
+              nss-cert-request \
+              --type crmf \
+              --pop \
+              --subject UID=test-PKI-CLI-with-POP \
+              --transport kra_transport \
+              --csr test-PKI-CLI-with-POP.csr
+
+          docker exec pki cat test-PKI-CLI-with-POP.csr
+
+          docker exec pki AtoB test-PKI-CLI-with-POP.csr test-PKI-CLI-with-POP.der
+          docker exec pki dumpasn1 test-PKI-CLI-with-POP.der
+
+          # issue cert
+          # https://github.com/dogtagpki/pki/wiki/Issuing-Certificates
+          docker exec pki pki \
+              -u caadmin \
+              -w Secret.123 \
+              ca-cert-issue \
+              --request-type crmf \
+              --profile caUserCert \
+              --subject UID=test-PKI-CLI-with-POP \
+              --csr-file test-PKI-CLI-with-POP.csr \
+              --output-file test-PKI-CLI-with-POP.crt
+
+          # import cert into NSS database
+          docker exec pki pki nss-cert-import --cert test-PKI-CLI-with-POP.crt test-PKI-CLI-with-POP
+          docker exec pki pki nss-cert-show test-PKI-CLI-with-POP | tee output
+
+          # normalize output
+          sed \
+              -e '/^ *Serial Number:/d' \
+              -e '/^ *Not Valid Before:/d' \
+              -e '/^ *Not Valid After:/d' \
+              output > actual
+
+          # the cert should match the key (trust flags must be u,u,u)
+          cat > expected << EOF
+            Nickname: test-PKI-CLI-with-POP
+            Subject DN: UID=test-PKI-CLI-with-POP
+            Issuer DN: CN=CA Signing Certificate,OU=pki-tomcat,O=EXAMPLE
+            Trust Flags: u,u,u
+          EOF
+
+          diff expected actual
+
+      - name: Check key requests after enrollment
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-request-find \
+              | tee output
+
+          # normalize output
+          sed \
+              -e '/-----/d' \
+              -e '/entries matched/d' \
+              -e '/Number of entries returned/d' \
+              -e '/^ *Request ID:/d' \
+              -e '/^ *Key ID:/d' \
+              -e '/^ *Creation Time:/d' \
+              -e '/^ *Modification Time:/d' \
+              output > actual
+
+          # there should be 3 key requests
+          cat > expected << EOF
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+          EOF
+
+          diff expected actual
+
+      - name: Check keys after enrollment
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-find \
+              | tee output
+
+          # normalize output
+          sed \
+              -e '/-----/d' \
+              -e '/key(s) matched/d' \
+              -e '/Number of entries returned/d' \
+              -e '/^ *Request ID:/d' \
+              -e '/^ *Key ID:/d' \
+              -e '/^ *Creation Time:/d' \
+              -e '/^ *Modification Time:/d' \
+              output > actual
+
+          # there should be 2 keys
+          # NOTE: test-CRMFPopClient-with-POP and test-PKI-CLI-with-POP keys don't have a status
+          cat > expected << EOF
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-without-POP
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-with-POP
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-PKI-CLI-without-POP
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-PKI-CLI-with-POP
+          EOF
+
+          diff expected actual
+
+      - name: Check key record after enrollment
+        run: |
+          # find archived key by owner
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-find \
+              --owner UID=test-PKI-CLI-with-POP \
+              | tee output
+
+          KEY_ID=$(sed -n "s/^\s*Key ID:\s*\(\S*\)$/\1/p" output)
+          echo "Key ID: $KEY_ID"
+          echo $KEY_ID > cert.key_id
+
+          DEC_KEY_ID=$(python -c "print(int('$KEY_ID', 16))")
+          echo "Dec Key ID: $DEC_KEY_ID"
+
+          # get key record
+          docker exec ds ldapsearch \
+              -H ldap://ds.example.com:3389 \
+              -x \
+              -D "cn=Directory Manager" \
+              -w Secret.123 \
+              -b "cn=$DEC_KEY_ID,ou=keyRepository,ou=kra,dc=kra,dc=pki,dc=example,dc=com" \
+              -o ldif_wrap=no \
+              -LLL | tee output
+
+          # normalize output
+          sed \
+              -e '/^$/d' \
+              -e 's/^\(serialno\): .*$/\1: XXXXX/' \
+              -e 's/^\(privateKeyData\):: .*$/\1:: XXXXX/' \
+              -e 's/^\(publicKeyData\):: .*$/\1:: XXXXX/' \
+              -e 's/^\(metaInfo: payloadEncryptionIV\):.*/\1:XXXXX/' \
+              -e 's/^\(dateOfCreate\): .*$/\1: XXXXX/' \
+              -e 's/^\(dateOfModify\): .*$/\1: XXXXX/' \
+              output > actual
+
+          cat > expected << EOF
+          dn: cn=$DEC_KEY_ID,ou=keyRepository,ou=kra,dc=kra,dc=pki,dc=example,dc=com
+          objectClass: top
+          objectClass: keyRecord
+          keyState: VALID
+          serialno: XXXXX
+          ownerName: UID=test-PKI-CLI-with-POP
+          keySize: 2048
+          algorithm: 1.2.840.113549.1.1.1
+          privateKeyData:: XXXXX
+          publicKeyData:: XXXXX
+          metaInfo: sessionKeyWrapAlgorithm:RSA
+          metaInfo: payloadEncrypted:false
+          metaInfo: sessionKeyKeyGenAlgorithm:AES
+          metaInfo: sessionKeyType:AES
+          metaInfo: sessionKeyLength:128
+          metaInfo: payloadEncryptionOID:2.16.840.1.101.3.4.1.2
+          metaInfo: payloadEncryptionIV:XXXXX
+          metaInfo: payloadWrapAlgorithm:AES KeyWrap/Padding
+          dateOfCreate: XXXXX
+          dateOfModify: XXXXX
+          archivedBy: CA-pki.example.com-8443
+          cn: $DEC_KEY_ID
+          EOF
+
+          diff expected actual
+
+      - name: Recover cert key
+        run: |
+          KEY_ID=$(cat cert.key_id)
+          echo "Key ID: $KEY_ID"
+
+          # export cert into Base64-encoded format
+          BASE64_CERT=$(docker exec pki pki nss-cert-export \
+              --format DER \
+              test-PKI-CLI-with-POP \
+              | base64 --wrap=0)
+          echo "Cert: $BASE64_CERT"
+
+          # create recovery request with key ID, cert, and passphrase
+          cat > request.json <<EOF
+          {
+            "ClassName" : "com.netscape.certsrv.key.KeyRecoveryRequest",
+            "Attributes" : {
+              "Attribute" : [ {
+                "name" : "keyId",
+                "value" : "$KEY_ID"
+              }, {
+                "name" : "certificate",
+                "value" : "$BASE64_CERT"
+              }, {
+                "name" : "passphrase",
+                "value" : "Secret.123"
+              } ]
+            }
+          }
+          EOF
+
+          # recover archived cert and key into PKCS #12 file
+          # https://github.com/dogtagpki/pki/wiki/Retrieving-Archived-Key
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-retrieve \
+              --input $SHARED/request.json \
+              --transport kra_transport \
+              --output-data test-PKI-CLI-with-POP.p12
+
+          # import PKCS #12 file into NSS database with the passphrase
+          docker exec pki pki \
+              -d nssdb \
+              pkcs12-import \
+              --pkcs12 test-PKI-CLI-with-POP.p12 \
+              --password Secret.123
+
+          # remove archived cert from NSS database
+          docker exec pki pki -d nssdb nss-cert-del UID=test-PKI-CLI-with-POP
+
+          # import original cert into NSS database
+          docker exec pki pki -d nssdb nss-cert-import \
+              --cert test-PKI-CLI-with-POP.crt \
+              test-PKI-CLI-with-POP
+
+          docker exec pki pki -d nssdb nss-cert-show test-PKI-CLI-with-POP | tee output
+
+          # normalize output
+          sed \
+              -e '/^ *Serial Number:/d' \
+              -e '/^ *Not Valid Before:/d' \
+              -e '/^ *Not Valid After:/d' \
+              output > actual
+
+          # the cert should match the key (trust flags must be u,u,u)
+          cat > expected << EOF
+            Nickname: test-PKI-CLI-with-POP
+            Subject DN: UID=test-PKI-CLI-with-POP
+            Issuer DN: CN=CA Signing Certificate,OU=pki-tomcat,O=EXAMPLE
+            Trust Flags: u,u,u
+          EOF
+
+          diff expected actual
+
+      - name: Check key requests after recovery
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-request-find \
+              | tee output
+
+          # normalize output
+          sed \
+              -e '/-----/d' \
+              -e '/entries matched/d' \
+              -e '/Number of entries returned/d' \
+              -e '/^ *Request ID:/d' \
+              -e '/^ *Key ID:/d' \
+              -e '/^ *Creation Time:/d' \
+              -e '/^ *Modification Time:/d' \
+              output > actual
+
+          # there should be 4 key requests
+          cat > expected << EOF
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+          EOF
+
+          diff expected actual
+
+      - name: Check keys after recovery
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-find \
+              | tee output
+
+          # normalize output
+          sed \
+              -e '/-----/d' \
+              -e '/key(s) matched/d' \
+              -e '/Number of entries returned/d' \
+              -e '/^ *Request ID:/d' \
+              -e '/^ *Key ID:/d' \
+              -e '/^ *Creation Time:/d' \
+              -e '/^ *Modification Time:/d' \
+              output > actual
+
+          # there should be 2 keys
+          # NOTE: test-CRMFPopClient-with-POP and test-PKI-CLI-with-POP keys don't have a status
+          cat > expected << EOF
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-without-POP
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-with-POP
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-PKI-CLI-without-POP
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-PKI-CLI-with-POP
+          EOF
+
+          diff expected actual
+
+      # https://github.com/dogtagpki/pki/wiki/Changing-Archived-Key-Status
+      - name: Deactivate cert key
+        run: |
+          KEY_ID=$(cat cert.key_id)
+          echo "KEY_ID: $KEY_ID"
+
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-mod \
+              --status inactive \
+              $KEY_ID \
+              | tee output
+
+          cat > expected << EOF
+            Key ID: $KEY_ID
+            Status: inactive
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-PKI-CLI-with-POP
+          EOF
+
+          diff expected output
+
+      - name: Check key requests after deactivation
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-request-find \
+              | tee output
+
+          # normalize output
+          sed \
+              -e '/-----/d' \
+              -e '/entries matched/d' \
+              -e '/Number of entries returned/d' \
+              -e '/^ *Request ID:/d' \
+              -e '/^ *Key ID:/d' \
+              -e '/^ *Creation Time:/d' \
+              -e '/^ *Modification Time:/d' \
+              output > actual
+
+          # there should be 4 key requests
+          cat > expected << EOF
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+          EOF
+
+          diff expected actual
+
+      - name: Check keys after deactivation
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-find \
+              | tee output
+
+          # normalize output
+          sed \
+              -e '/-----/d' \
+              -e '/key(s) matched/d' \
+              -e '/Number of entries returned/d' \
+              -e '/^ *Request ID:/d' \
+              -e '/^ *Key ID:/d' \
+              -e '/^ *Creation Time:/d' \
+              -e '/^ *Modification Time:/d' \
+              output > actual
+
+          # there should be 2 keys
+          # NOTE: test-CRMFPopClient-with-POP key doesn't have a status
+          cat > expected << EOF
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-without-POP
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-with-POP
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-PKI-CLI-without-POP
+
+            Status: inactive
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-PKI-CLI-with-POP
+          EOF
+
+          diff expected actual
+
+      # https://github.com/dogtagpki/pki/wiki/Changing-Archived-Key-Status
+      - name: Reactivate cert key
+        run: |
+          KEY_ID=$(cat cert.key_id)
+          echo "KEY_ID: $KEY_ID"
+
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-mod \
+              --status active \
+              $KEY_ID \
+              | tee output
+
+          cat > expected << EOF
+            Key ID: $KEY_ID
+            Status: active
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-PKI-CLI-with-POP
+          EOF
+
+          diff expected output
+
+      - name: Check key requests after reactivation
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-request-find \
+              | tee output
+
+          # normalize output
+          sed \
+              -e '/-----/d' \
+              -e '/entries matched/d' \
+              -e '/Number of entries returned/d' \
+              -e '/^ *Request ID:/d' \
+              -e '/^ *Key ID:/d' \
+              -e '/^ *Creation Time:/d' \
+              -e '/^ *Modification Time:/d' \
+              output > actual
+
+          # there should be 4 key requests
+          cat > expected << EOF
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+          EOF
+
+          diff expected actual
+
+      - name: Check keys after reactivation
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-find \
+              | tee output
+
+          # normalize output
+          sed \
+              -e '/-----/d' \
+              -e '/key(s) matched/d' \
+              -e '/Number of entries returned/d' \
+              -e '/^ *Request ID:/d' \
+              -e '/^ *Key ID:/d' \
+              -e '/^ *Creation Time:/d' \
+              -e '/^ *Modification Time:/d' \
+              output > actual
+
+          # there should be 2 keys
+          # NOTE: test-CRMFPopClient-with-POP key doesn't have a status
+          cat > expected << EOF
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-without-POP
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-with-POP
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-PKI-CLI-without-POP
+
+            Status: active
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-PKI-CLI-with-POP
+          EOF
+
+          diff expected actual
+
       - name: Generate AES key
         run: |
           docker exec pki pki \
@@ -648,6 +2201,7 @@ jobs:
               -e '/^ *Modification Time:/d' \
               output > actual
 
+          # there should be 5 key requests
           cat > expected << EOF
             Type: symkeyGenRequest
             Status: complete
@@ -677,6 +2231,30 @@ jobs:
 
           # there should be 1 key request
           cat > expected << EOF
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
             Type: symkeyGenRequest
             Status: complete
           EOF
@@ -701,8 +2279,25 @@ jobs:
               -e '/^ *Modification Time:/d' \
               output > actual
 
-          # there should be 1 key
+          # there should be 3 keys
           cat > expected << EOF
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-without-POP
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-with-POP
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-PKI-CLI-without-POP
+
+            Status: active
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-PKI-CLI-with-POP
+
             Client Key ID: test-aes-keygen
             Status: active
             Algorithm: AES
@@ -759,8 +2354,32 @@ jobs:
               -e '/^ *Modification Time:/d' \
               output > actual
 
-          # there should be 2 key requests
+          # there should be 6 key requests
           cat > expected << EOF
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
             Type: symkeyGenRequest
             Status: complete
 
@@ -788,8 +2407,25 @@ jobs:
               -e '/^ *Modification Time:/d' \
               output > actual
 
-          # there should be 2 keys
+          # there should be 4 keys
           cat > expected << EOF
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-without-POP
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-with-POP
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-PKI-CLI-without-POP
+
+            Status: active
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-PKI-CLI-with-POP
+
             Client Key ID: test-aes-keygen
             Status: active
             Algorithm: AES
@@ -801,375 +2437,6 @@ jobs:
             Algorithm: RSA
             Size: 2048
             Owner: kraadmin
-          EOF
-
-          diff expected actual
-
-      - name: Enroll cert with key archival
-        run: |
-          # generate key and cert request
-          # https://github.com/dogtagpki/pki/wiki/Generating-Certificate-Request-with-PKI-NSS
-          docker exec pki pki \
-              nss-cert-request \
-              --type crmf \
-              --subject UID=testuser \
-              --transport kra_transport \
-              --csr testuser.csr
-
-          docker exec pki cat testuser.csr
-
-          # issue cert
-          # https://github.com/dogtagpki/pki/wiki/Issuing-Certificates
-          docker exec pki pki \
-              -u caadmin \
-              -w Secret.123 \
-              ca-cert-issue \
-              --request-type crmf \
-              --profile caUserCert \
-              --subject UID=testuser \
-              --csr-file testuser.csr \
-              --output-file testuser.crt
-
-          # import cert into NSS database
-          docker exec pki pki nss-cert-import --cert testuser.crt testuser
-
-          # the cert should match the key (trust flags must be u,u,u)
-          echo "u,u,u" > expected
-          docker exec pki pki nss-cert-show testuser | tee output
-          sed -n "s/^\s*Trust Flags:\s*\(\S*\)$/\1/p" output > actual
-          diff expected actual
-
-      - name: Check key requests after enrollment
-        run: |
-          docker exec pki pki \
-              -n caadmin \
-              kra-key-request-find \
-              | tee output
-
-          # normalize output
-          sed \
-              -e '/-----/d' \
-              -e '/entries matched/d' \
-              -e '/Number of entries returned/d' \
-              -e '/^ *Request ID:/d' \
-              -e '/^ *Key ID:/d' \
-              -e '/^ *Creation Time:/d' \
-              -e '/^ *Modification Time:/d' \
-              output > actual
-
-          # there should be 3 key requests
-          cat > expected << EOF
-            Type: symkeyGenRequest
-            Status: complete
-
-            Type: asymkeyGenRequest
-            Status: complete
-
-            Type: enrollment
-            Status: complete
-          EOF
-
-          diff expected actual
-
-      - name: Check keys after enrollment
-        run: |
-          docker exec pki pki \
-              -n caadmin \
-              kra-key-find \
-              | tee output
-
-          # normalize output
-          sed \
-              -e '/-----/d' \
-              -e '/key(s) matched/d' \
-              -e '/Number of entries returned/d' \
-              -e '/^ *Request ID:/d' \
-              -e '/^ *Key ID:/d' \
-              -e '/^ *Creation Time:/d' \
-              -e '/^ *Modification Time:/d' \
-              output > actual
-
-          # there should be 3 keys
-          cat > expected << EOF
-            Client Key ID: test-aes-keygen
-            Status: active
-            Algorithm: AES
-            Size: 256
-            Owner: kraadmin
-
-            Client Key ID: test-rsa-keygen
-            Status: active
-            Algorithm: RSA
-            Size: 2048
-            Owner: kraadmin
-
-            Algorithm: 1.2.840.113549.1.1.1
-            Size: 2048
-            Owner: UID=testuser
-          EOF
-
-          diff expected actual
-
-      - name: Check archived cert key
-        run: |
-          # find archived key by owner
-          docker exec pki pki \
-              -n caadmin \
-              kra-key-find \
-              --owner UID=testuser \
-              | tee output
-
-          KEY_ID=$(sed -n "s/^\s*Key ID:\s*\(\S*\)$/\1/p" output)
-          echo "Key ID: $KEY_ID"
-          echo $KEY_ID > cert.key_id
-
-          DEC_KEY_ID=$(python -c "print(int('$KEY_ID', 16))")
-          echo "Dec Key ID: $DEC_KEY_ID"
-
-          # get key record
-          docker exec ds ldapsearch \
-              -H ldap://ds.example.com:3389 \
-              -x \
-              -D "cn=Directory Manager" \
-              -w Secret.123 \
-              -b "cn=$DEC_KEY_ID,ou=keyRepository,ou=kra,dc=kra,dc=pki,dc=example,dc=com" \
-              -o ldif_wrap=no \
-              -LLL | tee output
-
-          # encryption mode should be "false" by default
-          echo "false" > expected
-          sed -n 's/^metaInfo:\s*payloadEncrypted:\(.*\)$/\1/p' output > actual
-          diff expected actual
-
-          # key wrap algorithm should be "AES KeyWrap/Padding" by default
-          echo "AES KeyWrap/Padding" > expected
-          sed -n 's/^metaInfo:\s*payloadWrapAlgorithm:\(.*\)$/\1/p' output > actual
-          diff expected actual
-
-      - name: Retrieve cert key
-        run: |
-          KEY_ID=$(cat cert.key_id)
-          echo "Key ID: $KEY_ID"
-
-          # export cert into Base64-encoded format
-          BASE64_CERT=$(docker exec pki pki nss-cert-export --format DER testuser | base64 --wrap=0)
-          echo "Cert: $BASE64_CERT"
-
-          # create retrieval request with key ID, cert, and passphrase
-          cat > request.json <<EOF
-          {
-            "ClassName" : "com.netscape.certsrv.key.KeyRecoveryRequest",
-            "Attributes" : {
-              "Attribute" : [ {
-                "name" : "keyId",
-                "value" : "$KEY_ID"
-              }, {
-                "name" : "certificate",
-                "value" : "$BASE64_CERT"
-              }, {
-                "name" : "passphrase",
-                "value" : "Secret.123"
-              } ]
-            }
-          }
-          EOF
-
-          # retrieve archived cert and key into PKCS #12 file
-          # https://github.com/dogtagpki/pki/wiki/Retrieving-Archived-Key
-          docker exec pki pki \
-              -n caadmin \
-              kra-key-retrieve \
-              --input $SHARED/request.json \
-              --transport kra_transport \
-              --output-data archived.p12
-
-          # import PKCS #12 file into NSS database with the passphrase
-          docker exec pki pki \
-              -d nssdb \
-              pkcs12-import \
-              --pkcs12 archived.p12 \
-              --password Secret.123
-
-          # remove archived cert from NSS database
-          docker exec pki pki -d nssdb nss-cert-del UID=testuser
-
-          # import original cert into NSS database
-          docker exec pki pki -d nssdb nss-cert-import --cert testuser.crt testuser
-
-          # the original cert should match the archived key (trust flags must be u,u,u)
-          echo "u,u,u" > expected
-          docker exec pki pki -d nssdb nss-cert-show testuser | tee output
-          sed -n "s/^\s*Trust Flags:\s*\(\S*\)$/\1/p" output > actual
-          diff expected actual
-
-      - name: Check key requests after retrieval
-        run: |
-          docker exec pki pki \
-              -n caadmin \
-              kra-key-request-find \
-              | tee output
-
-          # normalize output
-          sed \
-              -e '/-----/d' \
-              -e '/entries matched/d' \
-              -e '/Number of entries returned/d' \
-              -e '/^ *Request ID:/d' \
-              -e '/^ *Key ID:/d' \
-              -e '/^ *Creation Time:/d' \
-              -e '/^ *Modification Time:/d' \
-              output > actual
-
-          # there should be 4 key requests
-          cat > expected << EOF
-            Type: symkeyGenRequest
-            Status: complete
-
-            Type: asymkeyGenRequest
-            Status: complete
-
-            Type: enrollment
-            Status: complete
-
-            Type: recovery
-            Status: complete
-          EOF
-
-          diff expected actual
-
-      - name: Check keys after retrieval
-        run: |
-          docker exec pki pki \
-              -n caadmin \
-              kra-key-find \
-              | tee output
-
-          # normalize output
-          sed \
-              -e '/-----/d' \
-              -e '/key(s) matched/d' \
-              -e '/Number of entries returned/d' \
-              -e '/^ *Request ID:/d' \
-              -e '/^ *Key ID:/d' \
-              -e '/^ *Creation Time:/d' \
-              -e '/^ *Modification Time:/d' \
-              output > actual
-
-          # there should be 3 keys
-          cat > expected << EOF
-            Client Key ID: test-aes-keygen
-            Status: active
-            Algorithm: AES
-            Size: 256
-            Owner: kraadmin
-
-            Client Key ID: test-rsa-keygen
-            Status: active
-            Algorithm: RSA
-            Size: 2048
-            Owner: kraadmin
-
-            Algorithm: 1.2.840.113549.1.1.1
-            Size: 2048
-            Owner: UID=testuser
-          EOF
-
-          diff expected actual
-
-      # https://github.com/dogtagpki/pki/wiki/Changing-Archived-Key-Status
-      - name: Deactivate cert key
-        run: |
-          KEY_ID=$(cat cert.key_id)
-          echo "KEY_ID: $KEY_ID"
-
-          docker exec pki pki \
-              -n caadmin \
-              kra-key-mod \
-              --status inactive \
-              $KEY_ID \
-              | tee output
-
-          cat > expected << EOF
-            Key ID: $KEY_ID
-            Status: inactive
-            Algorithm: 1.2.840.113549.1.1.1
-            Size: 2048
-            Owner: UID=testuser
-          EOF
-
-          diff expected output
-
-      - name: Check key requests after deactivation
-        run: |
-          docker exec pki pki \
-              -n caadmin \
-              kra-key-request-find \
-              | tee output
-
-          # normalize output
-          sed \
-              -e '/-----/d' \
-              -e '/entries matched/d' \
-              -e '/Number of entries returned/d' \
-              -e '/^ *Request ID:/d' \
-              -e '/^ *Key ID:/d' \
-              -e '/^ *Creation Time:/d' \
-              -e '/^ *Modification Time:/d' \
-              output > actual
-
-          # there should be 4 key requests
-          cat > expected << EOF
-            Type: symkeyGenRequest
-            Status: complete
-
-            Type: asymkeyGenRequest
-            Status: complete
-
-            Type: enrollment
-            Status: complete
-
-            Type: recovery
-            Status: complete
-          EOF
-
-          diff expected actual
-
-      - name: Check keys after deactivation
-        run: |
-          docker exec pki pki \
-              -n caadmin \
-              kra-key-find \
-              | tee output
-
-          # normalize output
-          sed \
-              -e '/-----/d' \
-              -e '/key(s) matched/d' \
-              -e '/Number of entries returned/d' \
-              -e '/^ *Request ID:/d' \
-              -e '/^ *Key ID:/d' \
-              -e '/^ *Creation Time:/d' \
-              -e '/^ *Modification Time:/d' \
-              output > actual
-
-          # there should be 3 keys
-          cat > expected << EOF
-            Client Key ID: test-aes-keygen
-            Status: active
-            Algorithm: AES
-            Size: 256
-            Owner: kraadmin
-
-            Client Key ID: test-rsa-keygen
-            Status: active
-            Algorithm: RSA
-            Size: 2048
-            Owner: kraadmin
-
-            Status: inactive
-            Algorithm: 1.2.840.113549.1.1.1
-            Size: 2048
-            Owner: UID=testuser
           EOF
 
           diff expected actual
@@ -1214,18 +2481,36 @@ jobs:
               -e '/^ *Modification Time:/d' \
               output > actual
 
-          # there should be 5 key requests
+          # there should be 7 key requests
           cat > expected << EOF
-            Type: symkeyGenRequest
+            Type: enrollment
             Status: complete
 
-            Type: asymkeyGenRequest
+            Type: recovery
             Status: complete
 
             Type: enrollment
             Status: complete
 
             Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: symkeyGenRequest
+            Status: complete
+
+            Type: asymkeyGenRequest
             Status: complete
 
             Type: securityDataEnrollment
@@ -1252,8 +2537,26 @@ jobs:
               -e '/^ *Modification Time:/d' \
               output > actual
 
-          # there should be 4 keys
+          # there should be 5 keys
+          # NOTE: test-CRMFPopClient-with-POP key doesn't have a status
           cat > expected << EOF
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-without-POP
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-with-POP
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-PKI-CLI-without-POP
+
+            Status: active
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-PKI-CLI-with-POP
+
             Client Key ID: test-aes-keygen
             Status: active
             Algorithm: AES
@@ -1266,11 +2569,6 @@ jobs:
             Size: 2048
             Owner: kraadmin
 
-            Status: inactive
-            Algorithm: 1.2.840.113549.1.1.1
-            Size: 2048
-            Owner: UID=testuser
-
             Client Key ID: test-secret
             Status: active
             Owner: kraadmin
@@ -1279,7 +2577,7 @@ jobs:
           diff expected actual
 
       # https://github.com/dogtagpki/pki/wiki/Retrieving-Archived-Key
-      - name: Retrieve secret
+      - name: Recover secret
         run: |
           KEY_ID=$(cat cert.key_id)
           echo "KEY_ID: $KEY_ID"
@@ -1289,12 +2587,12 @@ jobs:
               kra-key-retrieve \
               --keyID $KEY_ID \
               --transport kra_transport \
-              --output-data $SHARED/secret.retrieved \
+              --output-data $SHARED/secret.recovered \
               -v
 
-          diff secret.archived secret.retrieved
+          diff secret.archived secret.recovered
 
-      - name: Check key requests after secret retrieval
+      - name: Check key requests after secret recovery
         run: |
           docker exec pki pki \
               -n caadmin \
@@ -1312,18 +2610,36 @@ jobs:
               -e '/^ *Modification Time:/d' \
               output > actual
 
-          # there should be 6 key requests
+          # there should be 8 key requests
           cat > expected << EOF
-            Type: symkeyGenRequest
+            Type: enrollment
             Status: complete
 
-            Type: asymkeyGenRequest
+            Type: recovery
             Status: complete
 
             Type: enrollment
             Status: complete
 
             Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: enrollment
+            Status: complete
+
+            Type: recovery
+            Status: complete
+
+            Type: symkeyGenRequest
+            Status: complete
+
+            Type: asymkeyGenRequest
             Status: complete
 
             Type: securityDataEnrollment
@@ -1335,7 +2651,7 @@ jobs:
 
           diff expected actual
 
-      - name: Check keys after secret retrieval
+      - name: Check keys after secret recovery
         run: |
           docker exec pki pki \
               -n caadmin \
@@ -1353,8 +2669,26 @@ jobs:
               -e '/^ *Modification Time:/d' \
               output > actual
 
-          # there should be 4 keys
+          # there should be 5 keys
+          # NOTE: test-CRMFPopClient-with-POP key doesn't have a status
           cat > expected << EOF
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-without-POP
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-CRMFPopClient-with-POP
+
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-PKI-CLI-without-POP
+
+            Status: active
+            Algorithm: 1.2.840.113549.1.1.1
+            Size: 2048
+            Owner: UID=test-PKI-CLI-with-POP
+
             Client Key ID: test-aes-keygen
             Status: active
             Algorithm: AES
@@ -1366,11 +2700,6 @@ jobs:
             Algorithm: RSA
             Size: 2048
             Owner: kraadmin
-
-            Status: inactive
-            Algorithm: 1.2.840.113549.1.1.1
-            Size: 2048
-            Owner: UID=testuser
 
             Client Key ID: test-secret
             Status: active
