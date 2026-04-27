@@ -299,10 +299,14 @@ public class NSSCertRequestCLI extends CommandCLI {
 
         } else if ("crmf".equalsIgnoreCase(requestType)) {
 
+            CryptoManager cm = CryptoManager.getInstance();
+
             String transportCertNickname = cmd.getOptionValue("transport");
 
-            CryptoManager cm = CryptoManager.getInstance();
-            X509Certificate transportCert = cm.findCertByNickname(transportCertNickname);
+            X509Certificate transportCert = null;
+            if (transportCertNickname != null) {
+                transportCert = cm.findCertByNickname(transportCertNickname);
+            }
 
             Name subjectName = CryptoUtil.createName(subject, subjectEncoding);
 
