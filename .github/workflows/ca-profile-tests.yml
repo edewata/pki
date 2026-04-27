@@ -1,0 +1,49 @@
+name: CA Profile Tests
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: Waiting for build
+    uses: ./.github/workflows/wait-for-build.yml
+    secrets: inherit
+
+  ca-profile-caDirUserCert-test:
+    name: CA with caDirUserCert profile
+    needs: build
+    uses: ./.github/workflows/ca-profile-caDirUserCert-test.yml
+
+  ca-profile-caDirPinUserCert-test:
+    name: CA with caDirPinUserCert profile
+    needs: build
+    uses: ./.github/workflows/ca-profile-caDirPinUserCert-test.yml
+
+  ca-profile-caServerCert-test:
+    name: CA with caServerCert profile
+    needs: build
+    uses: ./.github/workflows/ca-profile-caServerCert-test.yml
+
+  ca-profile-custom-test:
+    name: CA with custom profile
+    needs: build
+    uses: ./.github/workflows/ca-profile-custom-test.yml
+
+  ca-renewal-manual-test:
+    name: CA manual renewal
+    needs: build
+    uses: ./.github/workflows/ca-renewal-manual-test.yml
+
+  ca-renewal-manual-hsm-test:
+    name: CA manual renewal with HSM
+    needs: build
+    uses: ./.github/workflows/ca-renewal-manual-hsm-test.yml
+
+  ca-renewal-automated-test:
+    name: CA automated renewal
+    needs: build
+    uses: ./.github/workflows/ca-renewal-automated-test.yml
+
+  ca-renewal-automated-ldaps-test:
+    name: CA automated renewal with LDAPS
+    needs: build
+    uses: ./.github/workflows/ca-renewal-automated-ldaps-test.yml
