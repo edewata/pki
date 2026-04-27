@@ -2681,14 +2681,22 @@ class PKIDeployer:
 
     def get_install_token(self):
 
-        logger.info('Getting install token')
+        sd_url = self.mdict['pki_security_domain_uri']
+        logger.info('Getting install token from %s', sd_url)
+
+        url = urllib.parse.urlparse(sd_url)
+        sd_hostname = url.hostname
+        sd_port = str(url.port)
+
+        sd_subsystem = self.domain_info.subsystems['CA']
+        self.sd_host = sd_subsystem.get_host(sd_hostname, sd_port)
 
         hostname = self.mdict['pki_hostname']
         subsystem = self.subsystem_type
 
         ca_client = pki.ca.CAClient(self.sd_client)
-        token_client = pki.system.SecurityDomainClient(ca_client)
-        install_token = token_client.get_install_token(hostname, subsystem)
+        sd_token_client = pki.system.SecurityDomainClient(ca_client)
+        self.install_token = sd_token_client.get_install_token(hostname, subsystem)
 
         # Sleep for a bit to allow the install token to replicate to other clones.
         # In the future this can be replaced with signed tokens.
@@ -2698,21 +2706,6 @@ class PKIDeployer:
 
         sd_delay = self.mdict.get('pki_security_domain_post_login_sleep_seconds', '5')
         time.sleep(int(sd_delay))
-
-        return install_token
-
-    def join_security_domain(self):
-
-        sd_url = self.mdict['pki_security_domain_uri']
-
-        url = urllib.parse.urlparse(sd_url)
-        sd_hostname = url.hostname
-        sd_port = str(url.port)
-
-        sd_subsystem = self.domain_info.subsystems['CA']
-        self.sd_host = sd_subsystem.get_host(sd_hostname, sd_port)
-
-        self.install_token = self.get_install_token()
 
     def leave_security_domain(self, subsystem):
 
@@ -2768,7 +2761,7 @@ class PKIDeployer:
             sd_url = self.mdict['pki_security_domain_uri']
             logger.info('Joining security domain at %s', sd_url)
 
-            self.join_security_domain()
+            self.get_install_token()
 
             subsystem.set_config('securitydomain.host', self.sd_host.Hostname)
             subsystem.set_config('securitydomain.httpport', self.sd_host.Port)
@@ -2780,7 +2773,7 @@ class PKIDeployer:
                     config.str2bool(self.mdict['pki_subordinate_create_new_security_domain']):
 
                 logger.info('Creating new subordinate security domain')
-                self.join_security_domain()
+                self.get_install_token()
 
             else:
                 logger.info('Creating new security domain')
