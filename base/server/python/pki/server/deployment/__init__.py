@@ -2655,9 +2655,8 @@ class PKIDeployer:
 
     def get_domain_info(self):
 
-        logger.info('Getting security domain info')
-
-        self.sd_connect()
+        sd_url = self.mdict['pki_security_domain_uri']
+        logger.info('Getting domain info from %s', sd_url)
 
         ca_client = pki.ca.CAClient(self.sd_client)
         domain_client = pki.system.SecurityDomainClient(ca_client)
@@ -4584,6 +4583,8 @@ class PKIDeployer:
         # TODO(alee): Fix this logic once we move connector data to LDAP
 
         try:
+            self.sd_connect()
+
             # get a list of all the CA's in the security domain
             info = self.get_domain_info()
             ca_list = list(info.subsystems['CA'].hosts.values())
