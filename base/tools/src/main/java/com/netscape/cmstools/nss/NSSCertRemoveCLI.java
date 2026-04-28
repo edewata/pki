@@ -8,6 +8,7 @@ package com.netscape.cmstools.nss;
 import org.apache.commons.cli.CommandLine;
 import org.dogtagpki.cli.CLIException;
 import org.dogtagpki.cli.CommandCLI;
+import org.mozilla.jss.crypto.ObjectNotFoundException;
 
 import com.netscape.cmstools.cli.MainCLI;
 import com.netscape.cmsutil.crypto.CryptoUtil;
@@ -49,6 +50,10 @@ public class NSSCertRemoveCLI extends CommandCLI {
         MainCLI mainCLI = (MainCLI) getRoot();
         mainCLI.init();
 
-        CryptoUtil.deleteCertificates(nickname, removeKey);
+        try {
+            CryptoUtil.deleteCertificates(nickname, removeKey);
+        } catch (ObjectNotFoundException e) {
+            throw new CLIException("Certificate not found: " + nickname);
+        }
     }
 }
