@@ -67,12 +67,16 @@ public class NSSKeyCreateCLI extends CommandCLI {
         option.setArgName("token");
         options.addOption(option);
 
-        option = new Option(null, "key-type", true, "Key type: RSA (default), EC, MLDSA, AES");
+        option = new Option(null, "key-type", true, "Key type: RSA (default), EC, MLDSA, MLKEM, AES");
         option.setArgName("type");
         options.addOption(option);
 
-        option = new Option(null, "key-size", true, "Key size (RSA default: 2048, AES default: 256, MLDSA default: 65)");
+        option = new Option(null, "key-size", true, "DEPRECATED: Key size");
         option.setArgName("size");
+        options.addOption(option);
+
+        option = new Option(null, "key-strength", true, "Key strength (RSA default: 2048, AES default: 256, MLDSA default: 65, MLKEM default: 768)");
+        option.setArgName("strength");
         options.addOption(option);
 
         options.addOption(null, "key-wrap", false, "Generate RSA key for wrapping/unwrapping.");
@@ -125,7 +129,15 @@ public class NSSKeyCreateCLI extends CommandCLI {
         }
 
         String keyType = cmd.getOptionValue("key-type", "RSA");
+
+        String keyStrength = cmd.getOptionValue("key-strength");
         String keySize = cmd.getOptionValue("key-size");
+
+        if (keyStrength == null && keySize != null) {
+            logger.warn("The --key-size option has been deprecated. Use --key-strength instead.");
+            keyStrength = keySize;
+        }
+
         boolean keyWrap = cmd.hasOption("key-wrap");
         String curve = cmd.getOptionValue("curve", "nistp256");
         boolean sslECDH = cmd.hasOption("ssl-ecdh");
@@ -163,7 +175,7 @@ public class NSSKeyCreateCLI extends CommandCLI {
 
         if ("RSA".equalsIgnoreCase(keyType)) {
 
-            if (keySize == null) keySize = "2048";
+            if (keyStrength == null) keyStrength = "2048";
 
             KeyPairGeneratorSpi.Usage[] usages = null;
             if (opFlags != null && !opFlags.isEmpty()) {
@@ -181,7 +193,7 @@ public class NSSKeyCreateCLI extends CommandCLI {
 
             KeyPair keyPair = nssdb.createRSAKeyPair(
                     token,
-                    Integer.parseInt(keySize),
+                    Integer.parseInt(keyStrength),
                     temporary,
                     sensitive,
                     extractable,
@@ -226,7 +238,8 @@ public class NSSKeyCreateCLI extends CommandCLI {
             keyInfo.setAlgorithm(privateKey.getAlgorithm());
 
         } else if ("MLDSA".equalsIgnoreCase(keyType)) {
-            if (keySize == null) keySize = "65";
+
+            if (keyStrength == null) keyStrength = "65";
 
             KeyPairGeneratorSpi.Usage[] usages = null;
             if (opFlags != null && !opFlags.isEmpty()) {
@@ -240,7 +253,37 @@ public class NSSKeyCreateCLI extends CommandCLI {
 
             KeyPair keyPair = nssdb.createMLDSAKeyPair(
                     token,
-                    Integer.parseInt(keySize),
+                    Integer.parseInt(keyStrength),
+                    temporary,
+                    sensitive,
+                    extractable,
+                    usages,
+                    usagesMask);
+
+            PK11PrivKey privateKey = (PK11PrivKey) keyPair.getPrivate();
+
+            String hexKeyID = "0x" + Utils.HexEncode(privateKey.getUniqueID());
+            keyInfo.setKeyId(new KeyId(hexKeyID));
+            keyInfo.setType(privateKey.getType().toString());
+            keyInfo.setAlgorithm(privateKey.getAlgorithm());
+
+        } else if ("MLKEM".equalsIgnoreCase(keyType)) {
+
+            if (keyStrength == null) keyStrength = "768";
+
+            KeyPairGeneratorSpi.Usage[] usages = null;
+            if (opFlags != null && !opFlags.isEmpty()) {
+                usages = CryptoUtil.generateUsage(opFlags);
+            }
+
+            KeyPairGeneratorSpi.Usage[] usagesMask = null;
+            if (opFlagsMask != null && !opFlagsMask.isEmpty()) {
+                usagesMask = CryptoUtil.generateUsage(opFlagsMask);
+            }
+
+            KeyPair keyPair = nssdb.createMLKEMKeyPair(
+                    token,
+                    Integer.parseInt(keyStrength),
                     temporary,
                     sensitive,
                     extractable,
@@ -256,7 +299,7 @@ public class NSSKeyCreateCLI extends CommandCLI {
 
         } else if ("AES".equalsIgnoreCase(keyType)) {
 
-            if (keySize == null) keySize = "256";
+            if (keyStrength == null) keyStrength = "256";
 
             if (nickname == null) {
                 throw new CLIException("Missing key nickname");
@@ -270,7 +313,7 @@ public class NSSKeyCreateCLI extends CommandCLI {
             SymmetricKey symmetricKey = nssdb.createSymmetricKey(
                     token,
                     KeyGenAlgorithm.AES,
-                    Integer.parseInt(keySize),
+                    Integer.parseInt(keyStrength),
                     usages,
                     temporary,
                     sensitive);
