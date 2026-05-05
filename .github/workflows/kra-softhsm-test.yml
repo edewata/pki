@@ -1,4 +1,4 @@
-name: TPS with HSM
+name: KRA with SoftHSM
 
 on: workflow_call
 
@@ -6,7 +6,7 @@ env:
   DS_IMAGE: ${{ vars.DS_IMAGE || 'quay.io/389ds/dirsrv' }}
 
 jobs:
-  # docs/installation/tps/Installing_TPS_with_HSM.md
+  # docs/installation/kra/Installing_KRA_with_HSM.md
   test:
     name: Test
     runs-on: ubuntu-latest
@@ -48,7 +48,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          docker exec pki dnf install -y softhsm
+          docker exec pki dnf install -y softhsm opendnssec
 
       - name: Create SoftHSM token
         run: |
@@ -65,6 +65,8 @@ jobs:
               --free
 
           docker exec pki ls -laR /var/lib/softhsm/tokens
+
+          docker exec pki modutil -nocertdb -list
 
       - name: Install CA with HSM
         run: |
@@ -132,6 +134,57 @@ jobs:
           grep "Serial Number:" output | wc -l > actual
           diff expected actual
 
+      - name: Check kra_storage cert in internal token
+        run: |
+          echo ",," > expected
+          docker exec pki pki \
+              -d /var/lib/pki/pki-tomcat/conf/alias \
+              nss-cert-show \
+              kra_storage | tee output
+          sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
+          diff expected actual
+
+          docker exec pki pki \
+              -d /var/lib/pki/pki-tomcat/conf/alias \
+              -f /var/lib/pki/pki-tomcat/conf/password.conf \
+              nss-cert-verify \
+              --cert-usage SSLClient \
+              kra_storage
+
+      - name: Check kra_transport cert in internal token
+        run: |
+          echo ",," > expected
+          docker exec pki pki \
+              -d /var/lib/pki/pki-tomcat/conf/alias \
+              nss-cert-show \
+              kra_transport | tee output
+          sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
+          diff expected actual
+
+          docker exec pki pki \
+              -d /var/lib/pki/pki-tomcat/conf/alias \
+              -f /var/lib/pki/pki-tomcat/conf/password.conf \
+              nss-cert-verify \
+              --cert-usage SSLClient \
+              kra_transport
+
+      - name: Check kra_audit_signing cert in internal token
+        run: |
+          echo ",,P" > expected
+          docker exec pki pki \
+              -d /var/lib/pki/pki-tomcat/conf/alias \
+              nss-cert-show \
+              kra_audit_signing | tee output
+          sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
+          diff expected actual
+
+          docker exec pki pki \
+              -d /var/lib/pki/pki-tomcat/conf/alias \
+              -f /var/lib/pki/pki-tomcat/conf/password.conf \
+              nss-cert-verify \
+              --cert-usage ObjectSigner \
+              kra_audit_signing
+
       - name: Check system certs in HSM
         run: |
           # KRA should create 3 additional certs in HSM
@@ -144,93 +197,45 @@ jobs:
           grep "Serial Number:" output | wc -l > actual
           diff expected actual
 
-      - name: Install TKS
+      - name: Check kra_storage cert in HSM
         run: |
-          docker exec pki pkispawn \
-              -f /usr/share/pki/server/examples/installation/tks.cfg \
-              -s TKS \
-              -D pki_ds_url=ldap://ds.example.com:3389 \
-              -D pki_hsm_enable=True \
-              -D pki_token_name=HSM \
-              -D pki_token_password=Secret.HSM \
-              -D pki_server_database_password=Secret.123 \
-              -D pki_audit_signing_token=HSM \
-              -D pki_subsystem_token=HSM \
-              -D pki_sslserver_token=internal \
-              -v
-
-      - name: Check system certs in internal token
-        run: |
-          # TKS should create 1 additional cert in internal token
-          echo "9" > expected
-          docker exec pki pki \
-              -d /var/lib/pki/pki-tomcat/conf/alias \
-              nss-cert-find | tee output
-          grep "Serial Number:" output | wc -l > actual
-          diff expected actual
-
-      - name: Check system certs in HSM
-        run: |
-          # TKS should create 1 additional cert in HSM
-          echo "8" > expected
+          echo "u,u,u" > expected
           docker exec pki pki \
               -d /var/lib/pki/pki-tomcat/conf/alias \
               -f /var/lib/pki/pki-tomcat/conf/password.conf \
               --token HSM \
-              nss-cert-find | tee output
-          grep "Serial Number:" output | wc -l > actual
-          diff expected actual
-
-      - name: Install TPS
-        run: |
-          docker exec pki pkispawn \
-              -f /usr/share/pki/server/examples/installation/tps.cfg \
-              -s TPS \
-              -D pki_ds_url=ldap://ds.example.com:3389 \
-              -D pki_hsm_enable=True \
-              -D pki_token_name=HSM \
-              -D pki_token_password=Secret.HSM \
-              -D pki_server_database_password=Secret.123 \
-              -D pki_audit_signing_token=HSM \
-              -D pki_subsystem_token=HSM \
-              -D pki_sslserver_token=internal \
-              -D pki_authdb_url=ldap://ds.example.com:3389 \
-              -D pki_enable_server_side_keygen=True \
-              -v
-
-      - name: Check system certs in internal token
-        run: |
-          # TPS should create 1 additional cert in internal token
-          echo "10" > expected
-          docker exec pki pki \
-              -d /var/lib/pki/pki-tomcat/conf/alias \
-              nss-cert-find | tee output
-          grep "Serial Number:" output | wc -l > actual
-          diff expected actual
-
-      - name: Check tps_audit_signing cert in internal token
-        run: |
-          echo ",,P" > expected
-          docker exec pki pki \
-              -d /var/lib/pki/pki-tomcat/conf/alias \
               nss-cert-show \
-              tps_audit_signing | tee output
+              HSM:kra_storage | tee output
           sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
           diff expected actual
 
-      - name: Check system certs in HSM
+          docker exec pki pki \
+              -d /var/lib/pki/pki-tomcat/conf/alias \
+              -f /var/lib/pki/pki-tomcat/conf/password.conf \
+              nss-cert-verify \
+              --cert-usage SSLClient \
+              HSM:kra_storage
+
+      - name: Check kra_transport cert in HSM
         run: |
-          # TPS should create 1 additional cert in HSM
-          echo "9" > expected
+          echo "u,u,u" > expected
           docker exec pki pki \
               -d /var/lib/pki/pki-tomcat/conf/alias \
               -f /var/lib/pki/pki-tomcat/conf/password.conf \
               --token HSM \
-              nss-cert-find | tee output
-          grep "Serial Number:" output | wc -l > actual
+              nss-cert-show \
+              HSM:kra_transport | tee output
+          sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
           diff expected actual
 
-      - name: Check tps_audit_signing cert in HSM
+          docker exec pki pki \
+              -d /var/lib/pki/pki-tomcat/conf/alias \
+              -f /var/lib/pki/pki-tomcat/conf/password.conf \
+              nss-cert-verify \
+              --cert-usage SSLClient \
+              HSM:kra_transport
+
+      - name: Check kra_audit_signing cert in HSM
         run: |
           echo "u,u,Pu" > expected
           docker exec pki pki \
@@ -238,14 +243,21 @@ jobs:
               -f /var/lib/pki/pki-tomcat/conf/password.conf \
               --token HSM \
               nss-cert-show \
-              HSM:tps_audit_signing | tee output
+              HSM:kra_audit_signing | tee output
           sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
           diff expected actual
+
+          docker exec pki pki \
+              -d /var/lib/pki/pki-tomcat/conf/alias \
+              -f /var/lib/pki/pki-tomcat/conf/password.conf \
+              nss-cert-verify \
+              --cert-usage ObjectSigner \
+              HSM:kra_audit_signing
 
       - name: Run PKI healthcheck
         run: docker exec pki pki-healthcheck --failures-only
 
-      - name: Check TPS admin
+      - name: Check admin cert
         run: |
           docker exec pki pki-server cert-export ca_signing --cert-file ca_signing.crt
 
@@ -257,13 +269,12 @@ jobs:
           docker exec pki pki pkcs12-import \
               --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
               --pkcs12-password Secret.123
-          docker exec pki pki -n caadmin tps-user-show tpsadmin
 
-      - name: Remove TPS
-        run: docker exec pki pkidestroy -s TPS -v
+          docker exec pki pki nss-cert-verify \
+              --cert-usage SSLClient \
+              caadmin
 
-      - name: Remove TKS
-        run: docker exec pki pkidestroy -s TKS -v
+          docker exec pki pki -n caadmin kra-user-show kraadmin
 
       - name: Remove KRA
         run: docker exec pki pkidestroy -s KRA -v
@@ -275,16 +286,6 @@ jobs:
         run: |
           docker exec pki ls -laR /var/lib/softhsm/tokens
           docker exec pki runuser -u pkiuser -- softhsm2-util --delete-token --token HSM
-
-      - name: Check DS server systemd journal
-        if: always()
-        run: |
-          docker exec ds journalctl -x --no-pager -u dirsrv@localhost.service
-
-      - name: Check DS container logs
-        if: always()
-        run: |
-          docker logs ds
 
       - name: Check for PKI core dumps
         if: failure()
@@ -306,13 +307,4 @@ jobs:
         if: always()
         run: |
           docker exec pki find /var/lib/pki/pki-tomcat/logs/kra -name "debug.*" -exec cat {} \;
-
-      - name: Check TKS debug log
-        if: always()
-        run: |
-          docker exec pki find /var/lib/pki/pki-tomcat/logs/tks -name "debug.*" -exec cat {} \;
-
-      - name: Check TPS debug log
-        if: always()
-        run: |
-          docker exec pki find /var/lib/pki/pki-tomcat/logs/tps -name "debug.*" -exec cat {} \;
+ 
