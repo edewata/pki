@@ -85,12 +85,14 @@ public class SDLeaveCLI extends SubsystemCommandCLI {
         content.add(new BasicNameValuePair("host", hostname));
         content.add(new BasicNameValuePair("sport", securePort));
         content.add(new BasicNameValuePair("operation", "remove"));
+        logger.info("Request:\n" + content);
 
         MainCLI mainCLI = (MainCLI) getRoot();
         mainCLI.init();
 
         PKIClient client = getPKIClient();
         String response = client.post("ca/agent/ca/updateDomainXML", content, String.class);
+        logger.info("Response:\n" + response);
 
         if (StringUtils.isEmpty(response)) {
             logger.error("Missing response");
