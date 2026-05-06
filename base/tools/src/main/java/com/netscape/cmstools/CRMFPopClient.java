@@ -41,6 +41,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
+import org.dogtagpki.cli.CLIException;
 import org.dogtagpki.common.CAInfoClient;
 import org.dogtagpki.nss.NSSDatabase;
 import org.dogtagpki.util.cert.CRMFUtil;
@@ -112,8 +113,8 @@ public class CRMFPopClient {
         option.setArgName("algorithm");
         options.addOption(option);
 
-        option = new Option("l", true, "Key length");
-        option.setArgName("length");
+        option = new Option("l", true, "Key strength");
+        option.setArgName("strength");
         options.addOption(option);
 
         option = new Option("c", true, "ECC curve name");
@@ -191,9 +192,11 @@ public class CRMFPopClient {
         System.out.println("                               - true: enabled");
         System.out.println("                               - false: disabled");
         System.out.println("  -y                           Add SubjectKeyIdentifier extension in case of CMC SharedSecret requests (default: false when not specified); To be used with 'request.useSharedSecret=true' when running CMCRequest.");
-        System.out.println("  -a <rsa|ec>                  Key algorithm (default: rsa)");
+        System.out.println("  -a <rsa|ec|mldsa|mlkem>      Key algorithm (default: rsa)");
         System.out.println("                               - rsa: RSA");
         System.out.println("                               - ec: ECC");
+        System.out.println("                               - mldsa: ML-DSA");
+        System.out.println("                               - mlkem: ML-KEM");
         System.out.println("  -f <profile>                 Certificate profile");
         System.out.println("                               - RSA default: caEncUserCert");
         System.out.println("                               - ECC default: caEncECUserCert");
@@ -210,8 +213,11 @@ public class CRMFPopClient {
         System.out.println("  -v, --verbose                Run in verbose mode.");
         System.out.println("      --help                   Show help message.");
         System.out.println();
-        System.out.println("With RSA algorithm the following options can be specified:");
-        System.out.println("  -l <length>                  Key length (default: 2048)");
+        System.out.println("With RSA/ML-DSA/ML-KEM algorithm the following options can be specified:");
+        System.out.println("  -l <strength>                Key strength");
+        System.out.println("                               - RSA default: 2048");
+        System.out.println("                               - ML-DSA default: 65");
+        System.out.println("                               - ML-KEM default: 768");
         System.out.println(" -oaep                         Use OAEP key wrap algorithm");
         System.out.println();
         System.out.println("With ECC algorithm the following options can be specified:");
@@ -288,7 +294,7 @@ public class CRMFPopClient {
         String tokenName = cmd.getOptionValue("h");
 
         String algorithm = cmd.getOptionValue("a", "rsa");
-        int keySize = Integer.parseInt(cmd.getOptionValue("l", "2048"));
+        String keyStrength = cmd.getOptionValue("l");
 
         String profileID = cmd.getOptionValue("f");
         String subjectDN = cmd.getOptionValue("n");
@@ -345,7 +351,7 @@ public class CRMFPopClient {
             System.exit(1);
          }
 
-        if (algorithm.equals("rsa")) {
+        if (algorithm.equals("rsa") || algorithm.equals("mldsa") || algorithm.equals("mlkem")) {
             if (cmd.hasOption("c")) {
                 printError("Illegal parameter for RSA: -c");
                 System.exit(1);
@@ -464,9 +470,11 @@ public class CRMFPopClient {
 
             if (algorithm.equals("rsa")) {
 
+                if (keyStrength == null) keyStrength = "2048";
+
                 keyPair = nssdb.createRSAKeyPair(
                         token,
-                        keySize,
+                        Integer.parseInt(keyStrength),
                         true, // key wrap
                         temporary,
                         null, // sensitive
@@ -481,6 +489,28 @@ public class CRMFPopClient {
                         temporary,
                         sensitive == -1 ? null : sensitive == 1,
                         extractable == -1 ? null : extractable == 1);
+
+            } else if (algorithm.equals("mldsa")) {
+
+                if (keyStrength == null) keyStrength = "65";
+
+                keyPair = nssdb.createMLDSAKeyPair(
+                        token,
+                        Integer.parseInt(keyStrength),
+                        temporary,
+                        null, // sensitive
+                        true); // extractable
+
+            } else if (algorithm.equals("mlkem")) {
+
+                if (keyStrength == null) keyStrength = "768";
+
+                keyPair = nssdb.createMLKEMKeyPair(
+                        token,
+                        Integer.parseInt(keyStrength),
+                        temporary,
+                        null, // sensitive
+                        true); // extractable
 
             } else {
                 throw new Exception("Unknown algorithm: " + algorithm);
@@ -513,17 +543,6 @@ public class CRMFPopClient {
                 keyWrapAlgorithm = KeyWrapAlgorithm.fromString(kwAlg);
             }
 
-            SignatureAlgorithm signatureAlgorithm;
-            if (algorithm.equals("rsa")) {
-                signatureAlgorithm = SignatureAlgorithm.RSASignatureWithSHA256Digest;
-
-            } else if (algorithm.equals("ec")) {
-                signatureAlgorithm = SignatureAlgorithm.ECSignatureWithSHA256Digest;
-
-            } else {
-                throw new Exception("Unknown algorithm: " + algorithm);
-            }
-
             Boolean withPop = null; // POP_NONE
 
             if (popOption.equals("POP_SUCCESS")) {
@@ -531,6 +550,35 @@ public class CRMFPopClient {
 
             } else if (popOption.equals("POP_FAIL")) {
                 withPop = false;
+            }
+
+            SignatureAlgorithm signatureAlgorithm;
+            if (algorithm.equals("rsa")) {
+                signatureAlgorithm = SignatureAlgorithm.RSASignatureWithSHA256Digest;
+
+            } else if (algorithm.equals("ec")) {
+                signatureAlgorithm = SignatureAlgorithm.ECSignatureWithSHA256Digest;
+
+            } else if (algorithm.equals("mldsa")) {
+                if ("44".equals(keyStrength)) {
+                    signatureAlgorithm = SignatureAlgorithm.MLDSA44;
+                } else if ("65".equals(keyStrength)) {
+                    signatureAlgorithm = SignatureAlgorithm.MLDSA65;
+                } else if ("87".equals(keyStrength)) {
+                    signatureAlgorithm = SignatureAlgorithm.MLDSA87;
+                } else {
+                    throw new CLIException("Unsupported ML-DSA key strength: " + keyStrength);
+                }
+
+            } else if (algorithm.equals("mlkem")) {
+                if (withPop != null) {
+                    throw new CLIException("ML-KEM does not support signature-based POP");
+                }
+
+                signatureAlgorithm = null;
+
+            } else {
+                throw new Exception("Unknown algorithm: " + algorithm);
             }
 
             Extensions extensions = new Extensions();
