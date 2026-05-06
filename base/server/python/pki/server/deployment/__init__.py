@@ -3509,6 +3509,15 @@ class PKIDeployer:
             logger.info('Storing %s cert request', tag)
             self.instance.store_cert_request(cert_id, system_cert)
 
+        if subsystem.type == 'CA' and tag == 'signing':
+            trust_attributes = 'CTu,Cu,Cu'
+
+        elif tag == 'audit_signing':
+            trust_attributes = 'u,u,Pu'
+
+        else:
+            trust_attributes = None
+
         if request.systemCert.type == 'remote':
 
             if cert_info:
@@ -3573,11 +3582,15 @@ class PKIDeployer:
             logger.info('Importing %s cert into NSS database', tag)
             logger.info('- nickname: %s', request.systemCert.nickname)
 
+            # Due to Kryoptic issue the trust attributes need to be set
+            # while importing the cert:
+            # https://github.com/latchset/kryoptic/issues/445
             nssdb.add_cert(
                 nickname=request.systemCert.nickname,
                 cert_data=system_cert['data'],
                 cert_format='base64',
-                token=request.systemCert.token)
+                token=request.systemCert.token,
+                trust_attributes=trust_attributes)
 
             return
 
@@ -3610,11 +3623,15 @@ class PKIDeployer:
             logger.info('Importing %s cert into NSS database', tag)
             logger.info('- nickname: %s', request.systemCert.nickname)
 
+            # Due to Kryoptic issue the trust attributes need to be set
+            # while importing the cert:
+            # https://github.com/latchset/kryoptic/issues/445
             nssdb.add_cert(
                 nickname=request.systemCert.nickname,
                 cert_data=system_cert['data'],
                 cert_format='base64',
-                token=request.systemCert.token)
+                token=request.systemCert.token,
+                trust_attributes=trust_attributes)
 
         if config.str2bool(self.mdict['pki_ds_setup']):
             # import cert into CA database
@@ -3667,9 +3684,12 @@ class PKIDeployer:
 
             self.setup_system_cert(nssdb, subsystem, tag, system_cert, request)
 
-        if subsystem.type == 'CA':
+        if subsystem.type == 'CA' and clone:
 
-            logger.info('Setting up CA signing cert trust flags')
+            logger.info('Set CA signing cert trust attributes')
+            # When cloning with HSMs that don't store trust attributes (e.g SoftHSM)
+            # the trust attributes are stored locally in internal token so they need
+            # to be set again on each replica.
 
             token = self.mdict['pki_ca_signing_token']
             if pki.nssdb.internal_token(token):
@@ -3681,9 +3701,12 @@ class PKIDeployer:
                 nickname=full_name,
                 trust_attributes='CTu,Cu,Cu')
 
-        if audit_signing_nickname:
+        if audit_signing_nickname and clone:
 
-            logger.info('Setting up %s audit signing cert trust flags', subsystem.type)
+            logger.info('Updating %s audit signing cert trust attributes', subsystem.type)
+            # When cloning with HSMs that don't store trust attributes (e.g SoftHSM)
+            # the trust attributes are stored locally in internal token so they need
+            # to be set again on each replica.
 
             token = self.mdict['pki_audit_signing_token']
             if pki.nssdb.internal_token(token):
@@ -3722,6 +3745,8 @@ class PKIDeployer:
             credentials=None):
 
         tmpdir = tempfile.mkdtemp()
+        self.instance.chown(tmpdir)
+
         try:
             if request_format != 'pem':
                 request_data = pki.nssdb.convert_csr(request_data, request_format, 'pem')
@@ -3729,13 +3754,18 @@ class PKIDeployer:
             request_file = os.path.join(tmpdir, 'request.csr')
             with open(request_file, 'w', encoding='utf-8') as f:
                 f.write(request_data)
+            self.instance.chown(request_file)
 
             if self.install_token:
                 install_token = os.path.join(tmpdir, 'install-token')
                 with open(install_token, 'w', encoding='utf-8') as f:
                     f.write(self.install_token.token)
+                self.instance.chown(install_token)
 
             cmd = [
+                '/usr/sbin/runuser',
+                '-u', self.instance.user,
+                '--',
                 'pki',
                 '-d', self.instance.nssdb_dir,
                 '-f', self.instance.password_conf,
@@ -4391,13 +4421,19 @@ class PKIDeployer:
         sd_url = self.mdict['pki_security_domain_uri']
 
         tmpdir = tempfile.mkdtemp()
+        self.instance.chown(tmpdir)
+
         try:
             if not install_token:
                 install_token = os.path.join(tmpdir, 'install-token')
                 with open(install_token, 'w', encoding='utf-8') as f:
                     f.write(session)
+                self.instance.chown(install_token)
 
             cmd = [
+                '/usr/sbin/runuser',
+                '-u', self.instance.user,
+                '--',
                 'pki',
                 '-d', self.instance.nssdb_dir,
                 '-f', self.instance.password_conf,
@@ -4432,6 +4468,9 @@ class PKIDeployer:
     def get_ca_signing_cert(self, ca_url):
 
         cmd = [
+            '/usr/sbin/runuser',
+            '-u', self.instance.user,
+            '--',
             'pki',
             '-d', self.instance.nssdb_dir,
             '-f', self.instance.password_conf,
@@ -4457,6 +4496,9 @@ class PKIDeployer:
     def get_ca_subsystem_cert(self, ca_url):
 
         cmd = [
+            '/usr/sbin/runuser',
+            '-u', self.instance.user,
+            '--',
             'pki',
             '-d', self.instance.nssdb_dir,
             '-f', self.instance.password_conf,
@@ -4489,20 +4531,28 @@ class PKIDeployer:
         transport_nickname = transport_cert_info.get('nickname')
 
         tmpdir = tempfile.mkdtemp()
+        self.instance.chown(tmpdir)
+
         try:
             subsystem_cert_file = os.path.join(tmpdir, 'subsystem.crt')
             with open(subsystem_cert_file, 'w', encoding='utf-8') as f:
                 f.write(subsystem_cert)
+            self.instance.chown(subsystem_cert_file)
 
             transport_cert_file = os.path.join(tmpdir, 'transport.crt')
             with open(transport_cert_file, 'w', encoding='utf-8') as f:
                 f.write(transport_cert)
+            self.instance.chown(transport_cert_file)
 
             install_token = os.path.join(tmpdir, 'install-token')
             with open(install_token, 'w', encoding='utf-8') as f:
                 f.write(self.install_token.token)
+            self.instance.chown(install_token)
 
             cmd = [
+                '/usr/sbin/runuser',
+                '-u', self.instance.user,
+                '--',
                 'pki',
                 '-d', self.instance.nssdb_dir,
                 '-f', self.instance.password_conf,
@@ -4537,6 +4587,9 @@ class PKIDeployer:
             kra_port):
 
         cmd = [
+            '/usr/sbin/runuser',
+            '-u', self.instance.user,
+            '--',
             'pki',
             '-d', self.instance.nssdb_dir,
             '-f', self.instance.password_conf,
@@ -4628,16 +4681,23 @@ class PKIDeployer:
         subsystem_cert = subsystem.get_subsystem_cert('subsystem').get('data')
 
         tmpdir = tempfile.mkdtemp()
+        self.instance.chown(tmpdir)
+
         try:
             subsystem_cert_file = os.path.join(tmpdir, 'subsystem.crt')
             with open(subsystem_cert_file, 'w', encoding='utf-8') as f:
                 f.write(subsystem_cert)
+            self.instance.chown(subsystem_cert_file)
 
             install_token = os.path.join(tmpdir, 'install-token')
             with open(install_token, 'w', encoding='utf-8') as f:
                 f.write(self.install_token.token)
+            self.instance.chown(install_token)
 
             cmd = [
+                '/usr/sbin/runuser',
+                '-u', self.instance.user,
+                '--',
                 'pki',
                 '-d', self.instance.nssdb_dir,
                 '-f', self.instance.password_conf,
@@ -4666,6 +4726,9 @@ class PKIDeployer:
         kra_url = self.mdict['pki_kra_uri']
 
         cmd = [
+            '/usr/sbin/runuser',
+            '-u', self.instance.user,
+            '--',
             'pki',
             '-d', self.instance.nssdb_dir,
             '-f', self.instance.password_conf,
@@ -4699,13 +4762,19 @@ class PKIDeployer:
         nickname = 'transportCert-%s-%s' % (hostname, https_port)
 
         tmpdir = tempfile.mkdtemp()
+        self.instance.chown(tmpdir)
+
         try:
             if not install_token:
                 install_token = os.path.join(tmpdir, 'install-token')
                 with open(install_token, 'w', encoding='utf-8') as f:
                     f.write(session)
+                self.instance.chown(install_token)
 
             cmd = [
+                '/usr/sbin/runuser',
+                '-u', self.instance.user,
+                '--',
                 'pki',
                 '-d', self.instance.nssdb_dir,
                 '-f', self.instance.password_conf,
@@ -4753,6 +4822,9 @@ class PKIDeployer:
         https_port = server_config.get_https_port()
 
         cmd = [
+            '/usr/sbin/runuser',
+            '-u', self.instance.user,
+            '--',
             'pki',
             '-d', self.instance.nssdb_dir,
             '-f', self.instance.password_conf,
@@ -4794,6 +4866,9 @@ class PKIDeployer:
         https_port = server_config.get_https_port()
 
         cmd = [
+            '/usr/sbin/runuser',
+            '-u', self.instance.user,
+            '--',
             'pki',
             '-d', self.instance.nssdb_dir,
             '-f', self.instance.password_conf,
@@ -4849,6 +4924,9 @@ class PKIDeployer:
 
         try:
             cmd = [
+                '/usr/sbin/runuser',
+                '-u', self.instance.user,
+                '--',
                 'pki',
                 '-d', self.instance.nssdb_dir,
                 '-f', self.instance.password_conf,
@@ -4886,6 +4964,9 @@ class PKIDeployer:
             nickname = token + ':' + nickname
 
         cmd = [
+            '/usr/sbin/runuser',
+            '-u', self.instance.user,
+            '--',
             'pki',
             '-d', self.instance.nssdb_dir,
             '-f', self.instance.password_conf,
@@ -4917,6 +4998,9 @@ class PKIDeployer:
             nickname = token + ':' + nickname
 
         cmd = [
+            '/usr/sbin/runuser',
+            '-u', self.instance.user,
+            '--',
             'pki',
             '-d', self.instance.nssdb_dir,
             '-f', self.instance.password_conf,
@@ -4949,6 +5033,9 @@ class PKIDeployer:
             nickname = token + ':' + nickname
 
         cmd = [
+            '/usr/sbin/runuser',
+            '-u', self.instance.user,
+            '--',
             'pki',
             '-d', self.instance.nssdb_dir,
             '-f', self.instance.password_conf,
@@ -4980,6 +5067,9 @@ class PKIDeployer:
             nickname = token + ':' + nickname
 
         cmd = [
+            '/usr/sbin/runuser',
+            '-u', self.instance.user,
+            '--',
             'pki',
             '-d', self.instance.nssdb_dir,
             '-f', self.instance.password_conf,

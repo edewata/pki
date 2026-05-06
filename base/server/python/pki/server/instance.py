@@ -529,6 +529,9 @@ class PKIInstance(pki.server.PKIServer):
 
                 # add the certificate, key, and chain
                 cmd = [
+                    '/usr/sbin/runuser',
+                    '-u', self.user,
+                    '--',
                     'pki',
                     '-d', self.nssdb_dir,
                     '-f', self.password_conf
@@ -785,7 +788,8 @@ class PKIInstance(pki.server.PKIServer):
 
         cmd = [
             '/usr/sbin/runuser',
-            '-u', self.user, '--',
+            '-u', self.user,
+            '--',
             'pki',
             '-d', self.nssdb_dir,
             '-f', self.password_conf
@@ -879,7 +883,8 @@ class PKIInstance(pki.server.PKIServer):
 
             cmd = [
                 '/usr/sbin/runuser',
-                '-u', self.user, '--',
+                '-u', self.user,
+                '--',
                 'pki',
                 '-d', self.nssdb_dir,
                 '-f', self.password_conf
