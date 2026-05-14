@@ -1500,7 +1500,6 @@ pkgs=base\
     %{?with_maven:--without-java} \
     --with-pkgs=$pkgs \
     %{?with_console:--with-console} \
-    --without-test \
     dist
 
 ################################################################################

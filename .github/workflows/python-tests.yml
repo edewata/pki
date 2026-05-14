@@ -8,11 +8,6 @@ jobs:
     uses: ./.github/workflows/wait-for-build.yml
     secrets: inherit
 
-  python-lint-test:
-    name: Python lint
-    needs: build
-    uses: ./.github/workflows/python-lint-test.yml
-
   python-ca-test:
     name: CA Python API
     needs: build

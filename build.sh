@@ -780,6 +780,25 @@ if [ "$BUILD_TARGET" = "dist" ] ; then
 
     if [ "$RUN_TESTS" = true ] ; then
         ctest --output-on-failure
+
+        # Run Python lint tests
+        if command -v pylint-3 >/dev/null 2>&1 && command -v python3-flake8 >/dev/null 2>&1; then
+            echo "Running Python lint tests..."
+
+            # Run pylint
+            if [ -x "$SRC_DIR/tests/bin/python-lint.py" ]; then
+                echo "Running Python lint..."
+                "$SRC_DIR/tests/bin/python-lint.py"
+            fi
+
+            # Run flake8
+            if [ -x "$SRC_DIR/tests/bin/python-flake8.py" ]; then
+                echo "Running Python flake8..."
+                "$SRC_DIR/tests/bin/python-flake8.py"
+            fi
+        else
+            echo "Warning: pylint-3 or python3-flake8 not found, skipping Python lint tests"
+        fi
     fi
 
     echo
