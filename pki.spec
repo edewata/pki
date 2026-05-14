@@ -301,13 +301,14 @@ BuildRequires:    mvn(org.dogtagpki.ldap-sdk:ldapjdk) >= 5.6.0
 
 # Python build dependencies
 BuildRequires:    python3 >= 3.6
-BuildRequires:    python3-devel
-BuildRequires:    python3-setuptools
 BuildRequires:    python3-cryptography
-BuildRequires:    python3-lxml
+BuildRequires:    python3-devel
 BuildRequires:    python3-ldap
 BuildRequires:    python3-libselinux
+BuildRequires:    python3-lxml
+BuildRequires:    python3-pylint
 BuildRequires:    python3-requests >= 2.6.0
+BuildRequires:    python3-setuptools
 BuildRequires:    python3-sphinx
 
 BuildRequires:    systemd-units

@@ -76,7 +76,6 @@ ACME_REALM_TYPES = {value: key for key, value in ACME_REALM_CLASSES.items()}
 
 logger = logging.getLogger(__name__)
 
-
 @functools.total_ordering
 class PKISubsystem(object):
 

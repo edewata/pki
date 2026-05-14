@@ -1,10 +1,11 @@
 #! /bin/bash -e
 
-SCRIPT_PATH=`readlink -f "$0"`
-SCRIPT_NAME=`basename "$SCRIPT_PATH"`
+SCRIPT_PATH=$(readlink -f "$0")
+SCRIPT_NAME=$(basename "$SCRIPT_PATH")
 
-BIN_DIR=`dirname "$SCRIPT_PATH"`
-TESTS_DIR=`dirname "$BIN_DIR"`
+BIN_DIR=$(dirname "$SCRIPT_PATH")
+TESTS_DIR=$(dirname "$BIN_DIR")
+SRC_DIR=$(dirname "$TESTS_DIR")
 
 FLAKE8_CONFIG="$TESTS_DIR/tox.ini"
 
@@ -53,17 +54,10 @@ while getopts v-: arg ; do
     esac
 done
 
-PATHS=`python3 -Ic "import sys; print(' '.join(sys.path))"`
-SOURCES=""
-
-for path in $PATHS; do
-    if [ -d $path/pki ]; then
-        SOURCES="$SOURCES `find $path/pki -name "*.py"`"
-    fi
-done
-
-SOURCES="$SOURCES `find /usr/share/pki/upgrade -name "*.py"`"
-SOURCES="$SOURCES `find /usr/share/pki/server/upgrade -name "*.py"`"
+SOURCES=$(find $SRC_DIR/base/common/python/pki -name "*.py")
+SOURCES="$SOURCES $(find $SRC_DIR/base/common/upgrade -name "*.py")"
+SOURCES="$SOURCES $(find $SRC_DIR/base/server/python/pki/server -name "*.py")"
+SOURCES="$SOURCES $(find $SRC_DIR/base/server/upgrade -name "*.py")"
 
 python3-flake8 \
     --config ${FLAKE8_CONFIG} \
