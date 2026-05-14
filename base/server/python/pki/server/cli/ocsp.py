@@ -168,9 +168,17 @@ class OCSPClonePrepareCLI(pki.cli.CLI):
                 f.write(pkcs12_password)
 
             subsystem.export_system_cert(
-                'subsystem', pkcs12_file, pkcs12_password_file, no_key=no_key)
+                'subsystem',
+                pkcs12_file,
+                pkcs12_password=pkcs12_password,
+                no_key=no_key)
+
             subsystem.export_system_cert(
-                'signing', pkcs12_file, pkcs12_password_file, no_key=no_key, append=True)
+                'signing',
+                pkcs12_file,
+                pkcs12_password=pkcs12_password,
+                no_key=no_key,
+                append=True)
 
             # audit signing cert is optional
             cert = subsystem.get_subsystem_cert('audit_signing')
@@ -180,7 +188,7 @@ class OCSPClonePrepareCLI(pki.cli.CLI):
                 subsystem.export_system_cert(
                     'audit_signing',
                     pkcs12_file,
-                    pkcs12_password_file,
+                    pkcs12_password=pkcs12_password,
                     no_key=no_key,
                     append=True)
 
