@@ -33,10 +33,15 @@ jobs:
     needs: build
     uses: ./.github/workflows/tps-clone-test.yml
 
-  tps-hsm-test:
-    name: TPS with HSM
+  tps-kryoptic-test:
+    name: TPS with Kryoptic
     needs: build
-    uses: ./.github/workflows/tps-hsm-test.yml
+    uses: ./.github/workflows/tps-kryoptic-test.yml
+
+  tps-softhsm-test:
+    name: TPS with SoftHSM
+    needs: build
+    uses: ./.github/workflows/tps-softhsm-test.yml
 
   tps-container-test:
     name: TPS container

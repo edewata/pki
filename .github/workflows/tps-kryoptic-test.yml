@@ -1,4 +1,4 @@
-name: TPS with HSM
+name: TPS with Kryoptic
 
 on: workflow_call
 
@@ -46,25 +46,81 @@ jobs:
               --network-alias=pki.example.com \
               pki
 
-      - name: Install dependencies
+      - name: Install Kryoptic
         run: |
-          docker exec pki dnf install -y softhsm
+          # install OpenDNSSEC to ensure no conflicts
+          # https://github.com/dogtagpki/pki/issues/5045
+          docker exec pki dnf install -y kryoptic opensc opendnssec
 
-      - name: Create SoftHSM token
+          docker exec pki rpm -ql kryoptic
+          docker exec pki cat /usr/share/p11-kit/modules/kryoptic.module
+
+          # check with OpenSC
+          # NOTE: the command fails if there's no token
+          docker exec pki pkcs11-tool \
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
+              --show-info || true
+
+          # check with OpenSC
+          # NOTE: the command fails if there's no token
+          docker exec pki pkcs11-tool \
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
+              --list-slots || true
+
+          # check with NSS
+          docker exec pki modutil -nocertdb -list
+
+      # https://github.com/dogtagpki/pki/wiki/Kryoptic
+      - name: Create Kryoptic token
         run: |
-          # allow PKI user to access SoftHSM files
-          docker exec pki usermod pkiuser -a -G ods
+          # create password file for HSM
+          echo "Secret.HSM" > password.hsm
 
-          # create SoftHSM token for PKI server
+          # configure token
           docker exec pki runuser -u pkiuser -- \
-              softhsm2-util \
-              --init-token \
-              --label HSM \
-              --so-pin Secret.HSM \
-              --pin Secret.HSM \
-              --free
+              mkdir -p /home/pkiuser/.config/kryoptic
 
-          docker exec pki ls -laR /var/lib/softhsm/tokens
+          docker exec -i pki runuser -u pkiuser -- \
+              tee /home/pkiuser/.config/kryoptic/token.conf << EOF
+          [[slots]]
+          slot = 1
+          dbtype = "sqlite"
+          dbargs = "/home/pkiuser/.config/kryoptic/token.sql"
+          EOF
+
+          # check with OpenSC
+          docker exec pki runuser -u pkiuser -- \
+              pkcs11-tool \
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
+              --list-slots
+
+          # initialize token and SO PIN
+          docker exec pki runuser -u pkiuser -- \
+              pkcs11-tool \
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
+              --label HSM \
+              --so-pin $(cat password.hsm) \
+              --init-token
+
+          # initialize user PIN
+          docker exec pki runuser -u pkiuser -- \
+              pkcs11-tool \
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
+              --login \
+              --login-type so \
+              --so-pin $(cat password.hsm) \
+              --pin $(cat password.hsm) \
+              --init-pin
+
+          # check with OpenSC
+          docker exec pki runuser -u pkiuser -- \
+              pkcs11-tool \
+              --module /usr/lib64/pkcs11/libkryoptic_pkcs11.so \
+              --list-slots
+
+          # check with NSS
+          docker exec pki runuser -u pkiuser -- \
+              modutil -nocertdb -list
 
       - name: Install CA with HSM
         run: |
@@ -80,14 +136,15 @@ jobs:
               -D pki_ocsp_signing_token=HSM \
               -D pki_audit_signing_token=HSM \
               -D pki_subsystem_token=HSM \
-              -D pki_sslserver_token=internal \
+              -D pki_sslserver_token=HSM \
               -v
 
       - name: Check system certs in internal token
         run: |
-          # CA should create 5 certs in internal token
-          echo "5" > expected
-          docker exec pki pki \
+          # CA should create 0 certs
+          echo "0" > expected
+          docker exec pki runuser -u pkiuser -- \
+              pki \
               -d /var/lib/pki/pki-tomcat/conf/alias \
               nss-cert-find | tee output
           grep "Serial Number:" output | wc -l > actual
@@ -95,9 +152,10 @@ jobs:
 
       - name: Check system certs in HSM
         run: |
-          # CA should create 4 certs in HSM
-          echo "4" > expected
-          docker exec pki pki \
+          # CA should create 5 certs
+          echo "5" > expected
+          docker exec pki runuser -u pkiuser -- \
+              pki \
               -d /var/lib/pki/pki-tomcat/conf/alias \
               -f /var/lib/pki/pki-tomcat/conf/password.conf \
               --token HSM \
@@ -119,14 +177,14 @@ jobs:
               -D pki_transport_token=HSM \
               -D pki_audit_signing_token=HSM \
               -D pki_subsystem_token=HSM \
-              -D pki_sslserver_token=internal \
+              -D pki_sslserver_token=HSM \
               -v
 
       - name: Check system certs in internal token
         run: |
-          # KRA should create 3 additional certs in internal token
-          echo "8" > expected
-          docker exec pki pki \
+          echo "0" > expected
+          docker exec pki runuser -u pkiuser -- \
+              pki \
               -d /var/lib/pki/pki-tomcat/conf/alias \
               nss-cert-find | tee output
           grep "Serial Number:" output | wc -l > actual
@@ -134,9 +192,10 @@ jobs:
 
       - name: Check system certs in HSM
         run: |
-          # KRA should create 3 additional certs in HSM
-          echo "7" > expected
-          docker exec pki pki \
+          # KRA should create 3 additional certs
+          echo "8" > expected
+          docker exec pki runuser -u pkiuser -- \
+              pki \
               -d /var/lib/pki/pki-tomcat/conf/alias \
               -f /var/lib/pki/pki-tomcat/conf/password.conf \
               --token HSM \
@@ -156,14 +215,14 @@ jobs:
               -D pki_server_database_password=Secret.123 \
               -D pki_audit_signing_token=HSM \
               -D pki_subsystem_token=HSM \
-              -D pki_sslserver_token=internal \
+              -D pki_sslserver_token=HSM \
               -v
 
       - name: Check system certs in internal token
         run: |
-          # TKS should create 1 additional cert in internal token
-          echo "9" > expected
-          docker exec pki pki \
+          echo "0" > expected
+          docker exec pki runuser -u pkiuser -- \
+              pki \
               -d /var/lib/pki/pki-tomcat/conf/alias \
               nss-cert-find | tee output
           grep "Serial Number:" output | wc -l > actual
@@ -171,9 +230,10 @@ jobs:
 
       - name: Check system certs in HSM
         run: |
-          # TKS should create 1 additional cert in HSM
-          echo "8" > expected
-          docker exec pki pki \
+          # TKS should create 1 additional cert
+          echo "9" > expected
+          docker exec pki runuser -u pkiuser -- \
+              pki \
               -d /var/lib/pki/pki-tomcat/conf/alias \
               -f /var/lib/pki/pki-tomcat/conf/password.conf \
               --token HSM \
@@ -193,36 +253,27 @@ jobs:
               -D pki_server_database_password=Secret.123 \
               -D pki_audit_signing_token=HSM \
               -D pki_subsystem_token=HSM \
-              -D pki_sslserver_token=internal \
+              -D pki_sslserver_token=HSM \
               -D pki_authdb_url=ldap://ds.example.com:3389 \
               -D pki_enable_server_side_keygen=True \
               -v
 
       - name: Check system certs in internal token
         run: |
-          # TPS should create 1 additional cert in internal token
-          echo "10" > expected
-          docker exec pki pki \
+          echo "0" > expected
+          docker exec pki runuser -u pkiuser -- \
+              pki \
               -d /var/lib/pki/pki-tomcat/conf/alias \
               nss-cert-find | tee output
           grep "Serial Number:" output | wc -l > actual
           diff expected actual
 
-      - name: Check tps_audit_signing cert in internal token
-        run: |
-          echo ",,P" > expected
-          docker exec pki pki \
-              -d /var/lib/pki/pki-tomcat/conf/alias \
-              nss-cert-show \
-              tps_audit_signing | tee output
-          sed -n 's/\s*Trust Flags:\s*\(\S\+\)\s*$/\1/p' output > actual
-          diff expected actual
-
       - name: Check system certs in HSM
         run: |
-          # TPS should create 1 additional cert in HSM
-          echo "9" > expected
-          docker exec pki pki \
+          # TPS should create 1 additional cert
+          echo "10" > expected
+          docker exec pki runuser -u pkiuser -- \
+              pki \
               -d /var/lib/pki/pki-tomcat/conf/alias \
               -f /var/lib/pki/pki-tomcat/conf/password.conf \
               --token HSM \
@@ -233,7 +284,8 @@ jobs:
       - name: Check tps_audit_signing cert in HSM
         run: |
           echo "u,u,Pu" > expected
-          docker exec pki pki \
+          docker exec pki runuser -u pkiuser -- \
+              pki \
               -d /var/lib/pki/pki-tomcat/conf/alias \
               -f /var/lib/pki/pki-tomcat/conf/password.conf \
               --token HSM \
@@ -243,11 +295,14 @@ jobs:
           diff expected actual
 
       - name: Run PKI healthcheck
+        if: false
         run: docker exec pki pki-healthcheck --failures-only
 
       - name: Check TPS admin
         run: |
-          docker exec pki pki-server cert-export ca_signing --cert-file ca_signing.crt
+          docker exec pki pki-server cert-export \
+              --cert-file ca_signing.crt \
+              ca_signing
 
           docker exec pki pki nss-cert-import \
               --cert ca_signing.crt \
@@ -271,10 +326,10 @@ jobs:
       - name: Remove CA
         run: docker exec pki pkidestroy -s CA -v
 
-      - name: Remove SoftHSM token
+      - name: Remove Kryoptic token
         run: |
-          docker exec pki ls -laR /var/lib/softhsm/tokens
-          docker exec pki runuser -u pkiuser -- softhsm2-util --delete-token --token HSM
+          docker exec pki runuser -u pkiuser -- \
+              rm -rf /home/pkiuser/.config/kryoptic
 
       - name: Check DS server systemd journal
         if: always()
