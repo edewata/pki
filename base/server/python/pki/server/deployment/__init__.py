@@ -2488,7 +2488,7 @@ class PKIDeployer:
         nickname = self.mdict['pki_cert_chain_nickname']
         logger.debug('Checking existing cert chain: %s', nickname)
 
-        cert_chain = nssdb.get_cert(nickname)
+        cert_chain = nssdb.get_cert(nickname, runas=False)
         if cert_chain:
             # cert chain already exists
             return
