@@ -4316,10 +4316,13 @@ class PKIDeployer:
     def backup_keys(self, subsystem):
 
         tmpdir = tempfile.mkdtemp()
+        self.instance.chown(tmpdir)
+
         try:
             password_file = os.path.join(tmpdir, 'password.txt')
             with open(password_file, 'w', encoding='utf-8') as f:
                 f.write(self.mdict['pki_backup_password'])
+            self.instance.chown(password_file)
 
             cmd = [
                 'pki-server',
