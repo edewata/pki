@@ -3046,6 +3046,8 @@ class PKIDeployer:
 
         request.systemCert.keyAlgorithm = self.mdict['pki_%s_key_algorithm' % cert_param_id]
 
+        request.systemCert.requestID = None
+
         csr_path = subsystem.csr_file(tag)
 
         # load existing CSR if exists
