@@ -274,7 +274,7 @@ jobs:
               --token HSM \
               nss-cert-import \
               --cert ca_signing.crt \
-              --trust "CTu,Cu,Cu" \
+              --trust "CT,C,C" \
               HSM:ca_signing
 
       - name: Check CA signing cert in internal token
@@ -561,7 +561,7 @@ jobs:
               --token HSM \
               nss-cert-import \
               --cert audit_signing.crt \
-              --trust "u,u,Pu" \
+              --trust ",,P" \
               HSM:audit_signing
 
       - name: Check audit signing key
