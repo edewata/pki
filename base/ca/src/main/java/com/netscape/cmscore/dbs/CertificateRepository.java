@@ -1229,11 +1229,10 @@ public class CertificateRepository extends Repository {
     public int countCertificates(String filter, int timeLimit)
             throws EBaseException {
 
-        logger.debug("CertificateRepository: countCertificates filter {}", filter);
-        String[] attrs = {"objectclass"};
+        logger.debug("countCertificates filter {}", filter);
 
         try (DBSSession s = dbSubsystem.createSession()) {
-            return s.countEntries(CertRecord.class, mBaseDN, filter, attrs, timeLimit);
+            return s.countEntries(CertRecord.class, mBaseDN, filter, timeLimit);
         }
     }
 

@@ -189,30 +189,6 @@ jobs:
               -o ldif_wrap=no \
               -LLL
 
-      - name: Check cert requests in DS
-        run: |
-          docker exec ipa ldapsearch \
-              -H ldap://ipa.example.com:389 \
-              -D "cn=Directory Manager" \
-              -w Secret.123 \
-              -x \
-              -b "ou=ca,ou=requests,o=ipaca" \
-              -s one \
-              -o ldif_wrap=no \
-              -LLL
-
-      - name: Check certs in DS
-        run: |
-          docker exec ipa ldapsearch \
-              -H ldap://ipa.example.com:389 \
-              -D "cn=Directory Manager" \
-              -w Secret.123 \
-              -x \
-              -b "ou=certificateRepository,ou=ca,o=ipaca" \
-              -s one \
-              -o ldif_wrap=no \
-              -LLL
-
       - name: Check CA users
         run: |
           docker exec ipa pki-server ca-user-find
