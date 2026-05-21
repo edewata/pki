@@ -506,13 +506,16 @@ public class LDAPRegistry extends DBRegistry {
 
         String[] s = attr.getStringValueArray();
         String sorted = sortAndConcate(s).toLowerCase();
-        NameAndObject no = mOCldapNames.get(sorted);
+        logger.info("LDAPRegistry: - LDAP object class: " + sorted);
 
+        NameAndObject no = mOCldapNames.get(sorted);
         if (no == null) {
             throw new DBException(
                     CMS.getUserMessage("CMS_DBS_INVALID_CLASS_NAME", sorted));
         }
+
         Class<?> c = (Class<?>) no.getObject();
+        logger.info("LDAPRegistry: - Java class: " + c.getSimpleName());
 
         try {
             IDBObj obj = (IDBObj) c.getDeclaredConstructor().newInstance();
