@@ -2031,13 +2031,8 @@ class NSSDatabase:
         finally:
             shutil.rmtree(tmpdir)
 
-    def get_cert(
-            self,
-            nickname,
-            token=None,
-            output_format='pem',
-            output_text=False,
-            runas=True):
+    def get_cert(self, nickname, token=None, output_format='pem',
+                 output_text=False):
         '''
         This method returns a PEM pert, a base64-encoded DER cert,
         or a human-readable cert.
@@ -2096,7 +2091,7 @@ class NSSDatabase:
                 fullname
             ])
 
-            result = self.run(cmd, capture_output=True, runas=runas)
+            result = self.run(cmd, capture_output=True, runas=True)
 
         finally:
             shutil.rmtree(tmpdir)
