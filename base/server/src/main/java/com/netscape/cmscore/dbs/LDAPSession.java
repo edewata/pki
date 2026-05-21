@@ -539,22 +539,14 @@ public class LDAPSession extends DBSSession {
     }
 
     @Override
-    public <T extends IDBObj> int countEntries(
-            Class<T> classResults,
-            String base,
-            String filter,
-            String[] attrs,
-            int timeLimit)
+    public <T extends IDBObj> int countEntries(Class<T> classResults, String base, String filter, int timeLimit)
             throws EBaseException {
-
-        logger.info("LDAPSession: Counting entries");
+        String[] attrs = {"objectclass"};
         DBPagedSearch<T> search = createPagedSearch(classResults,  base, filter, attrs, (String) null);
         RecordPagedList<T> list = new RecordPagedList<>(search);
-
         int count = 0;
-        for(T c : list) {
+        for(T c: list) {
             count++;
-            logger.info("LDAPSession: - " + count);
         }
 
         return count;
