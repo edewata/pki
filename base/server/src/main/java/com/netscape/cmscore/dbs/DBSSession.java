@@ -293,6 +293,7 @@ public class DBSSession implements AutoCloseable {
             Class<T> classResults,
             String base,
             String filter,
+            String[] attrs,
             int timeLimit
             ) throws EBaseException {
         return -1;

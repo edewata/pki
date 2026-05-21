@@ -611,8 +611,11 @@ public class RequestRepository extends Repository {
      */
     public int getTotalRequestsByFilter(
             String filter) throws EBaseException {
+
+        String[] attrs = null;
+
         try(DBSSession session = dbSubsystem.createSession()){
-            return session.countEntries(RequestRecord.class, mBaseDN, filter, -1);
+            return session.countEntries(RequestRecord.class, mBaseDN, filter, attrs, -1);
         }
     }
     /**

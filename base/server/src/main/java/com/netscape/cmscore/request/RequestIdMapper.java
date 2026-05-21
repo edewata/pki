@@ -79,7 +79,23 @@ public class RequestIdMapper extends DBAttrMapper {
             String name, IDBObj parent)
             throws EBaseException {
 
+        logger.info("RequestIdMapper: Getting " + Schema.LDAP_ATTR_REQUEST_ID);
         LDAPAttribute attr = attrs.getAttribute(Schema.LDAP_ATTR_REQUEST_ID);
+        logger.info("RequestIdMapper: - found request ID: " + attr);
+
+        if (attr == null) {
+            logger.info("RequestIdMapper: Attributes: " + attrs.size());
+            for (Enumeration<LDAPAttribute> e = attrs.getAttributes(); e.hasMoreElements(); ) {
+                LDAPAttribute a = e.nextElement();
+                String n = a.getName();
+                logger.info("RequestIdMapper: - " + n);
+                if (Schema.LDAP_ATTR_REQUEST_ID.toLowerCase().equals(n.toLowerCase())) {
+                    logger.info("RequestIdMapper: - found request ID 2: " + a);
+                    attr = a;
+                    break;
+                }
+            }
+        }
 
         if (attr == null) {
             throw new EBaseException("Missing LDAP attribute: " + Schema.LDAP_ATTR_REQUEST_ID);
