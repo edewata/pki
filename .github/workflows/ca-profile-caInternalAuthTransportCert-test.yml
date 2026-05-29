@@ -143,7 +143,8 @@ jobs:
               -f caInternalAuthTransportCert \
               -n "CN=test-CRMFPopClient-without-POP" \
               -q POP_NONE \
-              -o test-CRMFPopClient-without-POP.csr
+              -o test-CRMFPopClient-without-POP.csr \
+              -v
 
           docker exec pki certutil -K -d /root/.dogtag/nssdb
 
