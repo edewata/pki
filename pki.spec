@@ -1122,12 +1122,6 @@ This package provides test suite for %{product_name}.
 
 %autosetup -n pki-%{full_version} -p 1
 
-%if 0%{?fedora} >= %{fedora_tomcat9_cutoff} || 0%{?rhel} >= %{rhel_tomcat9_cutoff}
-# Migrate the source first because we are starting with Tomcat 9 code,
-# so we can build against either Tomcat 9 or 10.1, based on the build platform.
-/usr/bin/javax2jakarta -profile=EE -exclude=./base/tomcat-9.0 ./base ./base
-%endif
-
 %if %{without runtime_deps}
 
 if [ -d base/common/lib ]
@@ -1228,23 +1222,37 @@ fi
 %endif
 
 %if 0%{?fedora} >= %{fedora_tomcat9_cutoff} || 0%{?rhel} >= %{rhel_tomcat9_cutoff}
+
+# migrate PKI sources to Jakarta for Tomcat 10
+javax2jakarta \
+    -logLevel=FINE \
+    -profile=EE \
+    -exclude=./base/tomcat-9.0 \
+    ./base \
+    ./base
+
 if [ -d base/common/lib ]
 then
     # migrate common libraries
     pushd base/common/lib
 
-    /usr/bin/javax2jakarta -profile=EE jakarta.activation-api-$JAKARTA_ACTIVATION_API_VERSION.jar jakarta.activation-api-$JAKARTA_ACTIVATION_API_VERSION.jar
-    /usr/bin/javax2jakarta -profile=EE jakarta.annotation-api-$JAKARTA_ANNOTATION_API_VERSION.jar jakarta.annotation-api-$JAKARTA_ANNOTATION_API_VERSION.jar
-    /usr/bin/javax2jakarta -profile=EE jakarta.xml.bind-api-$JAXB_API_VERSION.jar jakarta.xml.bind-api-$JAXB_API_VERSION.jar
+    # migrate jakarta.activation
+    jar tvf jakarta.activation-api-$JAKARTA_ACTIVATION_API_VERSION.jar \
+        | sed -n 's/.* \([^ ]\+\)\/[^\/]*\.class$/\1/p' \
+        | sort \
+        | uniq
 
-    /usr/bin/javax2jakarta -profile=EE jackson-annotations-$JACKSON_ANNOTATIONS_VERSION.jar jackson-annotations-$JACKSON_ANNOTATIONS_VERSION.jar
-    /usr/bin/javax2jakarta -profile=EE jackson-core-$JACKSON_CORE_VERSION.jar jackson-core-$JACKSON_CORE_VERSION.jar
-    /usr/bin/javax2jakarta -profile=EE jackson-databind-$JACKSON_CORE_VERSION.jar jackson-databind-$JACKSON_CORE_VERSION.jar
-    /usr/bin/javax2jakarta -profile=EE jackson-module-jaxb-annotations-$JACKSON_CORE_VERSION.jar jackson-module-jaxb-annotations-$JACKSON_CORE_VERSION.jar
-    /usr/bin/javax2jakarta -profile=EE jackson-jaxrs-base-$JACKSON_CORE_VERSION.jar jackson-jaxrs-base-$JACKSON_CORE_VERSION.jar
-    /usr/bin/javax2jakarta -profile=EE jackson-jaxrs-json-provider-$JACKSON_CORE_VERSION.jar jackson-jaxrs-json-provider-$JACKSON_CORE_VERSION.jar
+    javax2jakarta \
+        -logLevel=FINE \
+        -profile=EE \
+        jakarta.activation-api-$JAKARTA_ACTIVATION_API_VERSION.jar \
+        jakarta.activation-api-$JAKARTA_ACTIVATION_API_VERSION.jar
 
-    /usr/bin/javax2jakarta -profile=EE jboss-jaxrs-api_2.0_spec-$JAXRS_VERSION.jar jboss-jaxrs-api_2.0_spec-$JAXRS_VERSION.jar
+    # migrate javax.annotation and jakarta.annotation
+    jar tvf jakarta.annotation-api-$JAKARTA_ANNOTATION_API_VERSION.jar \
+        | sed -n 's/.* \([^ ]\+\)\/[^\/]*\.class$/\1/p' \
+        | sort \
+        | uniq
 
     javax2jakarta \
         -logLevel=FINE \
@@ -1393,11 +1401,20 @@ then
     # migrate server libraries
     pushd base/server/lib
 
-    /usr/bin/javax2jakarta -profile=EE resteasy-servlet-initializer-$RESTEASY_VERSION.jar resteasy-servlet-initializer-$RESTEASY_VERSION.jar
+    # migrate org.jboss.resteasy.plugins.servlet
+    jar tvf resteasy-servlet-initializer-$RESTEASY_VERSION.jar \
+        | sed -n 's/.* \([^ ]\+\)\/[^\/]*\.class$/\1/p' \
+        | sort \
+        | uniq
+
+    javax2jakarta \
+        -logLevel=FINE \
+        -profile=EE \
+        resteasy-servlet-initializer-$RESTEASY_VERSION.jar \
+        resteasy-servlet-initializer-$RESTEASY_VERSION.jar
 
     popd
 fi
-%endif
 
 %if %{without runtime_deps}
 if [ -d base/common/lib ]
@@ -1405,11 +1422,22 @@ then
     # install migrated common libraries
     pushd base/common/lib
 
-    mkdir -p ~/.m2/repository/pki-local/jboss-jaxrs-api_2.0_spec/$JAXRS_VERSION
-    cp jboss-jaxrs-api_2.0_spec-$JAXRS_VERSION.jar ~/.m2/repository/pki-local/jboss-jaxrs-api_2.0_spec/$JAXRS_VERSION
+    # org.jboss.spec.jakarta.ws.rs cannot be used with xmvn
+    # so it's replaced with pki-local
+    mkdir -p $HOME/.m2/repository/pki-local/jboss-jaxrs-api_2.0_spec/$JAXRS_VERSION
+    cp jboss-jaxrs-api_2.0_spec-$JAXRS_VERSION.jar $HOME/.m2/repository/pki-local/jboss-jaxrs-api_2.0_spec/$JAXRS_VERSION
 
     popd
+
+    # rename org.jboss.spec.jakarta.ws.rs into pki-local
+    cat base/common/pom.xml
+    %pom_change_dep org.jboss.spec.jakarta.ws.rs: pki-local: base/common
 fi
+
+# without runtime_deps
+%endif
+
+# fedora} >= fedora_tomcat9_cutoff || rhel} >= rhel_tomcat9_cutoff
 %endif
 
 %if ! %{with base}
@@ -1459,6 +1487,14 @@ fi
 
 %if ! %{with console}
 %pom_disable_module console base
+%endif
+
+%if 0%{?fedora} && 0%{?fedora} < %{fedora_tomcat9_cutoff} || 0%{?rhel} && 0%{?rhel} < %{rhel_tomcat9_cutoff}
+%pom_disable_module tomcat-10.1 base
+%pom_remove_dep :pki-tomcat-10.1 base/server
+%else
+%pom_disable_module tomcat-9.0 base
+%pom_remove_dep :pki-tomcat-9.0 base/server
 %endif
 
 # remove plugins not needed to build RPM
@@ -1540,14 +1576,6 @@ export JAVA_HOME=%{java_home}
 
 %if %{with maven}
 # build Java binaries and run unit tests with Maven
-
-%if 0%{?fedora} && 0%{?fedora} < %{fedora_tomcat9_cutoff} || 0%{?rhel} && 0%{?rhel} < %{rhel_tomcat9_cutoff}
-%pom_disable_module tomcat-10.1 base
-%pom_remove_dep :pki-tomcat-10.1 base/server
-%else
-%pom_disable_module tomcat-9.0 base
-%pom_remove_dep :pki-tomcat-9.0 base/server
-%endif
 
 %mvn_build %{!?with_test:-f} -j
 
@@ -1709,10 +1737,10 @@ xmlstarlet edit --inplace \
     -d "//_:dependency[_:groupId='jakarta.activation']" \
     -d "//_:dependency[_:groupId='jakarta.annotation']" \
     -d "//_:dependency[_:groupId='jakarta.xml.bind']" \
+    -d "//_:dependency[_:groupId='pki-local']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.core']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.module']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.jaxrs']" \
-    -d "//_:dependency[_:groupId='org.jboss.spec.javax.ws.rs']" \
     -d "//_:dependency[_:groupId='org.jboss.logging']" \
     -d "//_:dependency[_:groupId='org.jboss.resteasy']" \
     %{buildroot}%{_datadir}/maven-metadata/%{name}.xml
@@ -1733,11 +1761,10 @@ xmlstarlet edit --inplace \
     -d "//_:dependency[_:groupId='jakarta.activation']" \
     -d "//_:dependency[_:groupId='jakarta.annotation']" \
     -d "//_:dependency[_:groupId='jakarta.xml.bind']" \
+    -d "//_:dependency[_:groupId='pki-local']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.core']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.module']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.jaxrs']" \
-    -d "//_:dependency[_:groupId='org.jboss.spec.javax.ws.rs']" \
-    -d "//_:dependency[_:groupId='pki-local']" \
     -d "//_:dependency[_:groupId='org.jboss.logging']" \
     -d "//_:dependency[_:groupId='org.jboss.resteasy']" \
     %{buildroot}%{_datadir}/maven-metadata/%{name}-pki-java.xml
@@ -1756,10 +1783,10 @@ xmlstarlet edit --inplace \
     -d "//_:dependency[_:groupId='jakarta.activation']" \
     -d "//_:dependency[_:groupId='jakarta.annotation']" \
     -d "//_:dependency[_:groupId='jakarta.xml.bind']" \
+    -d "//_:dependency[_:groupId='pki-local']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.core']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.module']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.jaxrs']" \
-    -d "//_:dependency[_:groupId='org.jboss.spec.javax.ws.rs']" \
     -d "//_:dependency[_:groupId='org.jboss.logging']" \
     -d "//_:dependency[_:groupId='org.jboss.resteasy']" \
     %{buildroot}%{_datadir}/maven-metadata/%{name}-pki-tools.xml
@@ -1780,10 +1807,10 @@ xmlstarlet edit --inplace \
     -d "//_:dependency[_:groupId='jakarta.activation']" \
     -d "//_:dependency[_:groupId='jakarta.annotation']" \
     -d "//_:dependency[_:groupId='jakarta.xml.bind']" \
+    -d "//_:dependency[_:groupId='pki-local']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.core']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.module']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.jaxrs']" \
-    -d "//_:dependency[_:groupId='org.jboss.spec.javax.ws.rs']" \
     -d "//_:dependency[_:groupId='org.jboss.logging']" \
     -d "//_:dependency[_:groupId='org.jboss.resteasy']" \
     %{buildroot}%{_datadir}/maven-metadata/%{name}-pki-server.xml
@@ -1804,10 +1831,10 @@ xmlstarlet edit --inplace \
     -d "//_:dependency[_:groupId='jakarta.activation']" \
     -d "//_:dependency[_:groupId='jakarta.annotation']" \
     -d "//_:dependency[_:groupId='jakarta.xml.bind']" \
+    -d "//_:dependency[_:groupId='pki-local']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.core']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.module']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.jaxrs']" \
-    -d "//_:dependency[_:groupId='org.jboss.spec.javax.ws.rs']" \
     -d "//_:dependency[_:groupId='org.jboss.logging']" \
     -d "//_:dependency[_:groupId='org.jboss.resteasy']" \
     %{buildroot}%{_datadir}/maven-metadata/%{name}-pki-ca.xml
@@ -1828,10 +1855,10 @@ xmlstarlet edit --inplace \
     -d "//_:dependency[_:groupId='jakarta.activation']" \
     -d "//_:dependency[_:groupId='jakarta.annotation']" \
     -d "//_:dependency[_:groupId='jakarta.xml.bind']" \
+    -d "//_:dependency[_:groupId='pki-local']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.core']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.module']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.jaxrs']" \
-    -d "//_:dependency[_:groupId='org.jboss.spec.javax.ws.rs']" \
     -d "//_:dependency[_:groupId='org.jboss.logging']" \
     -d "//_:dependency[_:groupId='org.jboss.resteasy']" \
     %{buildroot}%{_datadir}/maven-metadata/%{name}-pki-kra.xml
@@ -1852,10 +1879,10 @@ xmlstarlet edit --inplace \
     -d "//_:dependency[_:groupId='jakarta.activation']" \
     -d "//_:dependency[_:groupId='jakarta.annotation']" \
     -d "//_:dependency[_:groupId='jakarta.xml.bind']" \
+    -d "//_:dependency[_:groupId='pki-local']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.core']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.module']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.jaxrs']" \
-    -d "//_:dependency[_:groupId='org.jboss.spec.javax.ws.rs']" \
     -d "//_:dependency[_:groupId='org.jboss.logging']" \
     -d "//_:dependency[_:groupId='org.jboss.resteasy']" \
     %{buildroot}%{_datadir}/maven-metadata/%{name}-pki-ocsp.xml
@@ -1876,10 +1903,10 @@ xmlstarlet edit --inplace \
     -d "//_:dependency[_:groupId='jakarta.activation']" \
     -d "//_:dependency[_:groupId='jakarta.annotation']" \
     -d "//_:dependency[_:groupId='jakarta.xml.bind']" \
+    -d "//_:dependency[_:groupId='pki-local']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.core']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.module']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.jaxrs']" \
-    -d "//_:dependency[_:groupId='org.jboss.spec.javax.ws.rs']" \
     -d "//_:dependency[_:groupId='org.jboss.logging']" \
     -d "//_:dependency[_:groupId='org.jboss.resteasy']" \
     %{buildroot}%{_datadir}/maven-metadata/%{name}-pki-tks.xml
@@ -1900,10 +1927,10 @@ xmlstarlet edit --inplace \
     -d "//_:dependency[_:groupId='jakarta.activation']" \
     -d "//_:dependency[_:groupId='jakarta.annotation']" \
     -d "//_:dependency[_:groupId='jakarta.xml.bind']" \
+    -d "//_:dependency[_:groupId='pki-local']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.core']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.module']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.jaxrs']" \
-    -d "//_:dependency[_:groupId='org.jboss.spec.javax.ws.rs']" \
     -d "//_:dependency[_:groupId='org.jboss.logging']" \
     -d "//_:dependency[_:groupId='org.jboss.resteasy']" \
     %{buildroot}%{_datadir}/maven-metadata/%{name}-pki-tps.xml
@@ -1924,10 +1951,10 @@ xmlstarlet edit --inplace \
     -d "//_:dependency[_:groupId='jakarta.activation']" \
     -d "//_:dependency[_:groupId='jakarta.annotation']" \
     -d "//_:dependency[_:groupId='jakarta.xml.bind']" \
+    -d "//_:dependency[_:groupId='pki-local']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.core']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.module']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.jaxrs']" \
-    -d "//_:dependency[_:groupId='org.jboss.spec.javax.ws.rs']" \
     -d "//_:dependency[_:groupId='org.jboss.logging']" \
     -d "//_:dependency[_:groupId='org.jboss.resteasy']" \
     %{buildroot}%{_datadir}/maven-metadata/%{name}-pki-acme.xml
@@ -1948,10 +1975,10 @@ xmlstarlet edit --inplace \
     -d "//_:dependency[_:groupId='jakarta.activation']" \
     -d "//_:dependency[_:groupId='jakarta.annotation']" \
     -d "//_:dependency[_:groupId='jakarta.xml.bind']" \
+    -d "//_:dependency[_:groupId='pki-local']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.core']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.module']" \
     -d "//_:dependency[_:groupId='com.fasterxml.jackson.jaxrs']" \
-    -d "//_:dependency[_:groupId='org.jboss.spec.javax.ws.rs']" \
     -d "//_:dependency[_:groupId='org.jboss.logging']" \
     -d "//_:dependency[_:groupId='org.jboss.resteasy']" \
     %{buildroot}%{_datadir}/maven-metadata/%{name}-pki-est.xml
