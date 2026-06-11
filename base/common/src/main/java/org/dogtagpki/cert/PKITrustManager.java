@@ -7,19 +7,23 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.List;
 
 import javax.net.ssl.X509TrustManager;
 
 import org.mozilla.jss.CryptoManager;
 import org.mozilla.jss.NotInitializedException;
+import org.mozilla.jss.crypto.CryptoStore;
+import org.mozilla.jss.crypto.CryptoToken;
+import org.mozilla.jss.crypto.TokenException;
 import org.mozilla.jss.netscape.security.util.Cert;
 import org.mozilla.jss.netscape.security.util.DerInputStream;
 import org.mozilla.jss.netscape.security.util.PrettyPrintFormat;
 import org.mozilla.jss.netscape.security.x509.AuthorityKeyIdentifierExtension;
 import org.mozilla.jss.netscape.security.x509.KeyIdentifier;
 import org.mozilla.jss.netscape.security.x509.SubjectKeyIdentifierExtension;
-import org.mozilla.jss.netscape.security.x509.X509CertImpl;
+import org.mozilla.jss.pkcs11.PK11Cert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -183,12 +187,42 @@ public class PKITrustManager implements X509TrustManager {
     @Override
     public X509Certificate[] getAcceptedIssuers() {
 
-        logger.debug("PKITrustManager: getAcceptedIssuers():");
+        logger.info("PKITrustManager: getAcceptedIssuers():");
 
         Collection<X509Certificate> caCerts = new ArrayList<>();
 
         try {
             CryptoManager manager = CryptoManager.getInstance();
+
+            Enumeration<CryptoToken> tokens =  manager.getAllTokens();
+            while (tokens.hasMoreElements()) {
+                CryptoToken token = tokens.nextElement();
+                logger.info("PKITrustManager: - " + token.getName());
+                CryptoStore store = token.getCryptoStore();
+
+                for (org.mozilla.jss.crypto.X509Certificate cert : store.getCertificates()) {
+                    logger.info("PKITrustManager:   - " + cert.getSubjectX500Principal());
+
+                    // check whether the cert has CT flags for SSL
+                    int flag = cert.getSSLTrust();
+                    if ((flag & PK11Cert.VALID_CA) == 0 || (flag & PK11Cert.TRUSTED_CA) == 0) {
+                        logger.info("PKITrustManager:     Not a valid CA certificate");
+                        continue;
+                    }
+
+                    try {
+                        cert.checkValidity();
+                        logger.info("PKITrustManager:     Valid CA certificate");
+
+                    } catch (CertificateException e) {
+                        logger.info("PKITrustManager:     Invalid CA certificate: " + e.getMessage());
+                        continue;
+                    }
+
+                    caCerts.add(cert);
+               }
+            }
+/*
             for (org.mozilla.jss.crypto.X509Certificate cert : manager.getCACerts()) {
                 logger.debug("PKITrustManager:  - " + cert.getSubjectX500Principal());
 
@@ -197,14 +231,13 @@ public class PKITrustManager implements X509TrustManager {
                     caCert.checkValidity();
                     caCerts.add(caCert);
 
-                } catch (Exception e) {
-                    logger.debug("PKITrustManager: invalid CA certificate: " + e);
+                } catch (CertificateException e) {
+                    logger.debug("PKITrustManager: Invalid CA certificate: " + e.getMessage());
                 }
             }
-
-        } catch (NotInitializedException e) {
-            logger.error("Unable to get CryptoManager: " + e, e);
-            throw new RuntimeException(e);
+*/
+        } catch (NotInitializedException | TokenException e) {
+            throw new RuntimeException("Unable to get CA certificates: " + e.getMessage(), e);
         }
 
         return caCerts.toArray(new X509Certificate[caCerts.size()]);

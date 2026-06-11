@@ -39,7 +39,6 @@ import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.security.SignatureException;
 import java.security.cert.X509Certificate;
@@ -69,6 +68,7 @@ import org.mozilla.jss.crypto.KeyPairGeneratorSpi.Usage;
 import org.mozilla.jss.crypto.KeyWrapAlgorithm;
 import org.mozilla.jss.crypto.ObjectNotFoundException;
 import org.mozilla.jss.crypto.PrivateKey;
+import org.mozilla.jss.crypto.PrivateKey.Type;
 import org.mozilla.jss.crypto.Signature;
 import org.mozilla.jss.crypto.SignatureAlgorithm;
 import org.mozilla.jss.crypto.SymmetricKey;
@@ -1222,18 +1222,27 @@ public class NSSDatabase {
         logger.debug("NSSDatabase: - subject: " + subject);
 
         PK11PrivKey privateKey = (PK11PrivKey) keyPair.getPrivate();
+        KeyType keyType = privateKey.getKeyType();
+        logger.debug("NSSDatabase: - key type: " + keyType);
+        String keyAlg = privateKey.getAlgorithm();
+        logger.debug("NSSDatabase: - key alg: " + keyAlg);
+
         String signatureAlgorithm;
 
-        if (privateKey.getKeyType() == KeyType.MLDSA) {
+        if (keyType == KeyType.MLDSA) {
             // ignore hash for ML-DSA
             // Accepted signature are ML-DSA-44, ML-DSA-65 and ML-DSA-87
-            signatureAlgorithm = privateKey.getType().toString();
+            Type type = privateKey.getType();
+            logger.debug("NSSDatabase: - ML-DSA type: " + type);
+            signatureAlgorithm = type.toString();
 
-        } else if (privateKey.getKeyType() == KeyType.MLKEM) {
+        } else if (keyType == KeyType.MLKEM) {
+            logger.debug("NSSDatabase: - ML-KEM");
             // ML-KEM does not support signature
             signatureAlgorithm = null;
 
         } else {
+            logger.debug("NSSDatabase: - Other");
             // Example of signature: SHA256withRSA or SHA256withEC
             signatureAlgorithm = hash + "with" + privateKey.getType();
         }
