@@ -4563,7 +4563,7 @@ class PKIDeployer:
                 '--ignore-banner',
                 '--security-domain', sd_url,
                 '--install-token', install_token,
-                '--fullName', full_name,
+                '--full-name', full_name,
                 uid
             ]
 
