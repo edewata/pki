@@ -123,8 +123,6 @@ install(
         ${SHARE_INSTALL_PREFIX}/${APPLICATION_NAME}/${PROJECT_NAME}
     PATTERN
         "CMakeLists.txt" EXCLUDE
-    PATTERN
-        listappletdates EXCLUDE
 )
 
 install(
