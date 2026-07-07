@@ -383,31 +383,26 @@ jobs:
           docker exec ipa bash -c "echo 'wait_for_dns=5' >> ~/.ipa/default.conf"
 
       - name: Run test_caacl_plugin.py
-        if: always()
         run: |
           docker exec ipa ipa-run-tests -x --verbose \
               test_xmlrpc/test_caacl_plugin.py
 
       - name: Run test_caacl_profile_enforcement.py
-        if: always()
         run: |
           docker exec ipa ipa-run-tests -x --verbose \
               test_xmlrpc/test_caacl_profile_enforcement.py
 
       - name: Run test_cert_plugin.py
-        if: always()
         run: |
           docker exec ipa ipa-run-tests -x --verbose \
               test_xmlrpc/test_cert_plugin.py
 
       - name: Run test_certprofile_plugin.py
-        if: always()
         run: |
           docker exec ipa ipa-run-tests -x --verbose \
               test_xmlrpc/test_certprofile_plugin.py
 
       - name: Run test_ca_plugin.py
-        if: always()
         run: |
           docker exec ipa ipa-run-tests -x --verbose \
               test_xmlrpc/test_ca_plugin.py
