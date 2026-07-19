@@ -37,10 +37,10 @@ then
     chown -Rf pkiuser:root /logs
 fi
 
-find /conf -type f -exec chmod +rw -- {} +
-find /conf -type d -exec chmod +rwx -- {} +
-find /logs -type f -exec chmod +rw -- {} +
-find /logs -type d -exec chmod +rwx -- {} +
+#find /conf -type f -exec chmod +rw -- {} +
+#find /conf -type d -exec chmod +rwx -- {} +
+#find /logs -type f -exec chmod +rw -- {} +
+#find /logs -type d -exec chmod +rwx -- {} +
 
 echo "################################################################################"
 
@@ -223,10 +223,10 @@ then
     chown -Rf pkiuser:root /logs
 fi
 
-find /conf -type f -exec chmod +rw -- {} +
-find /conf -type d -exec chmod +rwx -- {} +
-find /logs -type f -exec chmod +rw -- {} +
-find /logs -type d -exec chmod +rwx -- {} +
+#find /conf -type f -exec chmod +rw -- {} +
+#find /conf -type d -exec chmod +rwx -- {} +
+#find /logs -type f -exec chmod +rw -- {} +
+#find /logs -type d -exec chmod +rwx -- {} +
 
 echo "################################################################################"
 echo "INFO: Removing temporary files"
