@@ -113,8 +113,8 @@ jobs:
           lrwxrwxrwx root root httpclient.jar -> httpclient-x.y.z.jar
           -rw-r--r-- root root httpcore-x.y.z.jar
           lrwxrwxrwx root root httpcore.jar -> httpcore-x.y.z.jar
-          -rw-r--r-- root root jackson-annotations-x.y.z.jar
-          lrwxrwxrwx root root jackson-annotations.jar -> jackson-annotations-x.y.z.jar
+          -rw-r--r-- root root jackson-annotations-x.y.jar
+          lrwxrwxrwx root root jackson-annotations.jar -> jackson-annotations-x.y.jar
           -rw-r--r-- root root jackson-core-x.y.z.jar
           lrwxrwxrwx root root jackson-core.jar -> jackson-core-x.y.z.jar
           -rw-r--r-- root root jackson-databind-x.y.z.jar
@@ -153,9 +153,10 @@ jobs:
           EOF
 
           # normalize actual result:
-          # - replace version number with x.y.z
+          # - replace version number with x.y or x.y.z
           # - replace servlet.jar with tomcat-servlet-api.jar
-          sed -e 's/-[0-9]*\.[0-9]*\.[0-9]*\.jar$/-x.y.z.jar/' \
+          sed -e 's/-[0-9]*\.[0-9]*\.jar$/-x.y.jar/' \
+              -e 's/-[0-9]*\.[0-9]*\.[0-9]*\.jar$/-x.y.z.jar/' \
               -e 's/-[0-9]*\.[0-9]*\.[0-9]*\.Final\.jar$/-x.y.z.Final.jar/' \
               -e 's/\/servlet.jar$/\/tomcat-servlet-api.jar/' \
               output > actual
