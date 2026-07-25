@@ -46,6 +46,9 @@ jobs:
               --network-alias=pki.example.com \
               pki
 
+          docker exec pki rpm -qa | grep openjdk
+          docker exec pki dnf install -y java-25-openjdk-devel
+
       - name: Get Fedora version
         run: |
           FEDORA_VERSION=$(docker exec pki sed -n 's/^VERSION_ID=//p' /etc/os-release)
@@ -549,6 +552,62 @@ jobs:
       - name: Restart PKI server
         run: |
           docker exec pki pki-server restart --wait
+          docker exec pki ps ax
+
+          PID=$(docker exec pki ps -C java -o pid --no-headers | awk '{print $1;}')
+          echo "PID=$PID"
+          echo "$PID" > java.pid
+
+      - name: Check heap before load test
+        run: |
+          PID=$(cat java.pid)
+
+          docker exec pki jhsdb jmap --histo --pid $PID \
+              | tail -n +9 \
+              | grep -E 'org.dogtagpki|org.mozilla' \
+              | awk '{print $4, $2}' \
+              | sort \
+              | tee heap.before
+
+      - name: Run load test
+        run: |
+          for i in $(seq 1 100); do
+              docker exec pki pki info
+          done
+
+      - name: Run garbage collection
+        run: |
+          PID=$(cat java.pid)
+
+          docker exec pki jcmd $PID GC.run
+
+      - name: Check heap after load test
+        run: |
+          PID=$(cat java.pid)
+
+          # get object class names and number of instances
+          docker exec pki jhsdb jmap --histo --pid $PID \
+              | tail -n +9 \
+              | grep -E 'org.dogtagpki|org.mozilla' \
+              | awk '{print $4, $2}' \
+              | sort \
+              | tee heap.after
+
+      - name: Check heap growth
+        run: |
+          tests/bin/compare-heap-snapshots.py heap.before heap.after
+
+      - name: Check heap info
+        run: |
+          PID=$(cat java.pid)
+
+          docker exec pki jhsdb jmap --heap --pid $PID
+
+      - name: Check class loader statistics
+        run: |
+          PID=$(cat java.pid)
+
+          docker exec pki jmap -clstats $PID
 
       - name: Check pki info with default API
         run: |
