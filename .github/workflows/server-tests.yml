@@ -53,6 +53,11 @@ jobs:
     needs: build
     uses: ./.github/workflows/server-https-kryoptic-pqc-test.yml
 
+  server-memory-leak-test:
+    name: Server memory leak
+    needs: build
+    uses: ./.github/workflows/server-memory-leak-test.yml
+
   server-backup-test:
     name: Server backup
     needs: build
