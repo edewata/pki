@@ -1,0 +1,357 @@
+name: KRA with RSA-OAEP
+
+on: workflow_call
+
+env:
+  DS_IMAGE: ${{ vars.DS_IMAGE || 'quay.io/389ds/dirsrv' }}
+
+jobs:
+  # docs/installation/kra/Installing_KRA.md
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    env:
+      SHARED: /tmp/workdir/pki
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install dumpasn1
+
+      - name: Clone repository
+        uses: actions/checkout@v7
+
+      - name: Retrieve PKI images
+        uses: actions/cache@v5
+        with:
+          key: pki-images-${{ github.sha }}
+          path: pki-images.tar
+
+      - name: Load PKI images
+        run: docker load --input pki-images.tar
+
+      - name: Create network
+        run: docker network create example
+
+      - name: Set up DS container
+        run: |
+          tests/bin/ds-create.sh \
+              --image=${{ env.DS_IMAGE }} \
+              --hostname=ds.example.com \
+              --network=example \
+              --network-alias=ds.example.com \
+              --password=Secret.123 \
+              ds
+
+      - name: Set up PKI container
+        run: |
+          tests/bin/runner-init.sh \
+              --hostname=pki.example.com \
+              --network=example \
+              --network-alias=pki.example.com \
+              pki
+
+          #docker exec pki dnf install -y jq dumpasn1
+
+      - name: Install CA
+        run: |
+          docker exec pki pkispawn \
+              -f /usr/share/pki/server/examples/installation/ca.cfg \
+              -s CA \
+              -D pki_ds_url=ldap://ds.example.com:3389 \
+              -D pki_use_oaep_rsa_keywrap=True \
+              -v
+
+      - name: Check OAEP config in CA
+        run: |
+          echo "true" > expected
+
+          docker exec pki pki-server ca-config-show keyWrap.useOAEP | tee actual
+
+          diff expected actual
+
+      - name: Check initial CA info
+        run: |
+          cat > expected << EOF
+          {
+              "Attributes": {
+                  "Attribute": []
+              }
+          }
+          EOF
+
+          docker exec pki curl -ks https://pki.example.com:8443/ca/v2/info \
+              | python -m json.tool \
+              | tee actual
+
+          diff expected actual
+
+      - name: Install KRA
+        run: |
+          docker exec pki pkispawn \
+              -f /usr/share/pki/server/examples/installation/kra.cfg \
+              -s KRA \
+              -D pki_ds_url=ldap://ds.example.com:3389 \
+              -D pki_use_oaep_rsa_keywrap=True \
+              -v
+
+      - name: Check OAEP config in KRA
+        run: |
+          echo "true" > expected
+
+          docker exec pki pki-server kra-config-show keyWrap.useOAEP | tee actual
+
+          diff expected actual
+
+      - name: Check CA info after KRA installation
+        run: |
+          cat > expected << EOF
+          {
+              "ArchivalMechanism": "keywrap",
+              "EncryptionAlgorithm": "AES/CBC/PKCS5Padding",
+              "KeyWrapAlgorithm": "AES KeyWrap/Padding",
+              "RsaPublicKeyWrapAlgorithm": "RSA_OAEP",
+              "CaRsaPublicKeyWrapAlgorithm": "RSA_OAEP",
+              "Attributes": {
+                  "Attribute": []
+              }
+          }
+          EOF
+
+          docker exec pki curl -ks https://pki.example.com:8443/ca/v2/info \
+              | python -m json.tool \
+              | tee actual
+
+          diff expected actual
+
+      - name: Check KRA info
+        run: |
+          cat > expected << EOF
+          {
+              "ArchivalMechanism": "keywrap",
+              "RecoveryMechanism": "keywrap",
+              "EncryptionAlgorithm": "AES/CBC/PKCS5Padding",
+              "WrapAlgorithm": "AES KeyWrap/Padding",
+              "RsaPublicKeyWrapAlgorithm": "RSA_OAEP",
+              "Attributes": {
+                  "Attribute": []
+              }
+          }
+          EOF
+
+          docker exec pki curl -ks https://pki.example.com:8443/kra/v2/info \
+              | python -m json.tool \
+              | tee actual
+
+          diff expected actual
+
+      - name: Run PKI healthcheck
+        run: docker exec pki pki-healthcheck --failures-only
+
+      - name: Check KRA admin
+        run: |
+          docker exec pki pki-server cert-export \
+              --cert-file ca_signing.crt \
+              ca_signing
+
+          docker exec pki pki nss-cert-import \
+              --cert ca_signing.crt \
+              --trust CT,C,C \
+              ca_signing
+
+          docker exec pki pki pkcs12-import \
+              --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
+              --pkcs12-password Secret.123
+
+          docker exec pki pki -n caadmin kra-user-show kraadmin
+
+      - name: Check KRA connector in CA
+        run: |
+          echo pki.example.com > expected
+
+          docker exec pki pki -n caadmin ca-kraconnector-show | tee output
+          sed -n 's/\s*Host:\s\+\(\S\+\):.*/\1/p' output > actual
+
+          diff expected actual
+
+      - name: Check KRA transport cert
+        run: |
+          docker exec pki pki-server cert-export \
+              --cert-file $SHARED/kra_transport.crt \
+              kra_transport
+
+          docker exec pki AtoB \
+              /var/lib/pki/pki-tomcat/conf/certs/kra_transport.csr \
+              $SHARED/kra_transport.der
+
+          # ignore failure: Error: Object has zero length.
+          dumpasn1 kra_transport.der || true
+
+          openssl x509 -text -noout -in kra_transport.crt
+
+      - name: Generate CSR
+        run: |
+          docker exec pki pki nss-cert-import \
+              --cert $SHARED/kra_transport.crt \
+              kra_transport
+
+          # generate CSR with AES KeyWrap/Wrapped and OAEP
+          docker exec pki CRMFPopClient \
+              -d /root/.dogtag/nssdb \
+              -p "" \
+              -n "UID=testuser" \
+              -b $SHARED/kra_transport.crt \
+              -oaep \
+              -v \
+              -o $SHARED/testuser.csr
+
+          #docker exec pki pki nss-cert-request \
+          #    --type crmf \
+          #    --subject "UID=testuser" \
+          #    --transport kra_transport \
+          #    --key-wrap-oaep \
+          #    --csr $SHARED/testuser.csr
+
+          docker exec pki AtoB $SHARED/testuser.csr $SHARED/testuser.der
+
+          dumpasn1 testuser.der
+
+      - name: Enroll cert with key archival
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              ca-cert-issue \
+              --request-type crmf \
+              --profile caDualCert \
+              --subject "UID=testuser" \
+              --csr-file $SHARED/testuser.csr \
+              --output-file $SHARED/testuser.crt
+
+          openssl x509 -text -noout -in testuser.crt
+
+      - name: Import cert
+        run: |
+          docker exec pki pki \
+              nss-cert-import \
+              --cert $SHARED/testuser.crt \
+              testuser
+
+          # the cert should match the private key (trust flags must be u,u,u)
+          docker exec pki pki nss-cert-show testuser | tee output
+
+          echo "u,u,u" > expected
+          sed -n "s/^\s*Trust Flags:\s*\(\S*\)$/\1/p" output > actual
+
+          diff expected actual
+
+      - name: Check archived key
+        run: |
+          # find archived key by owner
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-find \
+              --owner "UID=testuser" \
+              | tee output
+
+          KEY_ID=$(sed -n "s/^\s*Key ID:\s*\(\S*\)$/\1/p" output)
+          echo "Key ID: $KEY_ID"
+          echo $KEY_ID > cert.key_id
+
+      - name: Recover key
+        run: |
+          KEY_ID=$(cat cert.key_id)
+          echo "Key ID: $KEY_ID"
+
+          # export cert into Base64-encoded format
+          BASE64_CERT=$(docker exec pki openssl x509 -in $SHARED/testuser.crt -outform DER | base64 --wrap=0)
+          echo "Cert: $BASE64_CERT"
+
+          # create recovery request with key ID, cert, and passphrase
+          cat > request.json << EOF
+          {
+              "ClassName": "com.netscape.certsrv.key.KeyRecoveryRequest",
+              "Attributes": {
+                  "Attribute": [
+                      {
+                          "name": "keyId",
+                          "value": "$KEY_ID"
+                      }, {
+                          "name": "certificate",
+                          "value": "$BASE64_CERT"
+                      }, {
+                          "name": "passphrase",
+                          "value": "Secret.123"
+                      }
+                  ]
+              }
+          }
+          EOF
+
+          # retrieve archived key and cert into PKCS #12 file
+          docker exec pki pki \
+              -n caadmin \
+              kra-key-retrieve \
+              --input $SHARED/request.json \
+              --transport kra_transport \
+              --output-data $SHARED/archived.p12
+
+      - name: Check recovered key
+        run: |
+          # import recovered cert and key into new NSS database
+          docker exec pki pki \
+              -d nssdb \
+              pkcs12-import \
+              --pkcs12 $SHARED/archived.p12 \
+              --password Secret.123
+
+          # remove recovered cert from NSS database
+          docker exec pki pki \
+              -d nssdb \
+              nss-cert-del \
+              "UID=testuser"
+
+          # import original cert into NSS database
+          docker exec pki pki \
+              -d nssdb \
+              nss-cert-import \
+              --cert $SHARED/testuser.crt \
+              testuser
+
+          # the original cert should match the recovered key (trust flags must be u,u,u)
+          docker exec pki pki \
+              -d nssdb \
+              nss-cert-show \
+              testuser \
+              | tee output
+
+          echo "u,u,u" > expected
+          sed -n "s/^\s*Trust Flags:\s*\(\S*\)$/\1/p" output > actual
+
+          diff expected actual
+
+      - name: Remove KRA
+        run: docker exec pki pkidestroy -s KRA -v
+
+      - name: Remove CA
+        run: docker exec pki pkidestroy -s CA -v
+
+      - name: Check for PKI core dumps
+        if: failure()
+        run: |
+          docker exec pki ls -l
+          docker exec pki find / -path /proc -prune -o -name "hs_err_pid*.log" -exec cat {} \;
+
+      - name: Check PKI server systemd journal
+        if: always()
+        run: |
+          docker exec pki journalctl -x --no-pager -u pki-tomcatd@pki-tomcat.service
+
+      - name: Check CA debug log
+        if: always()
+        run: |
+          docker exec pki find /var/lib/pki/pki-tomcat/logs/ca -name "debug.*" -exec cat {} \;
+
+      - name: Check KRA debug log
+        if: always()
+        run: |
+          docker exec pki find /var/lib/pki/pki-tomcat/logs/kra -name "debug.*" -exec cat {} \;
