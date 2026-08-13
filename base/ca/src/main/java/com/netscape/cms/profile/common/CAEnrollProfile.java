@@ -35,6 +35,7 @@ import org.mozilla.jss.crypto.IVParameterSpec;
 import org.mozilla.jss.crypto.KeyGenAlgorithm;
 import org.mozilla.jss.crypto.KeyWrapAlgorithm;
 import org.mozilla.jss.crypto.SymmetricKey;
+import org.mozilla.jss.netscape.security.util.Utils;
 import org.mozilla.jss.netscape.security.x509.CertificateSubjectName;
 import org.mozilla.jss.netscape.security.x509.CertificateX509Key;
 import org.mozilla.jss.netscape.security.x509.KeyIdentifier;
@@ -120,24 +121,22 @@ public class CAEnrollProfile extends EnrollProfile {
         String isSSKeygenStr = request.getExtDataInString("isServerSideKeygen");
 
         if (isSSKeygenStr != null && isSSKeygenStr.equalsIgnoreCase("true")) {
-            logger.debug(method + "isServerSideKeygen = true");
+            logger.debug(method + "isServerSideKeygen: true");
             isSSKeygen = true;
         } else {
-            logger.debug(method + "isServerSideKeygen = false");
+            logger.debug(method + "isServerSideKeygen: false");
         }
 
         // prepare for auditing
-        CertificateSubjectName reqSubj =
-                request.getExtDataInCertSubjectName(Request.REQUEST_SUBJECT_NAME);
+        CertificateSubjectName reqSubj = request.getExtDataInCertSubjectName(Request.REQUEST_SUBJECT_NAME);
         String clientId = "unknown serverKeyGenUser";
         if (reqSubj != null) {
             X500Name xN = reqSubj.getX500Name();
             clientId = xN.toString();
-            logger.debug(method + "clientId = " + clientId);
+            logger.debug(method + "clientId: " + clientId);
         }
 
-        // if PKI Archive Option present, send this request
-        // to DRM
+        // if archive options are present, send this request to KRA
         byte[] optionsData = request.getExtDataInByteArray(Request.REQUEST_ARCHIVE_OPTIONS);
 
         byte[] transWrappedSessionKey = null;
@@ -145,14 +144,12 @@ public class CAEnrollProfile extends EnrollProfile {
 
         if (isSSKeygen) {
 
-            logger.info("CAEnrollProfile: Processing server-side keygen enrollment");
+            logger.info("CAEnrollProfile: Generating key in KRA");
             request.setExtData(Request.SSK_STAGE, Request.SSK_STAGE_KEYGEN);
 
             Map<String, byte[]> p12PasswordInfo = processP12Password(request);
             transWrappedSessionKey = p12PasswordInfo.get("serverSideKeygenP12PasswdTransSession");
-
             sessionWrappedPassphrase = p12PasswordInfo.get("serverSideKeygenP12PasswdEnc");
-
 
             try {
                 Connector kraConnector = caService.getKRAConnector();
@@ -163,14 +160,11 @@ public class CAEnrollProfile extends EnrollProfile {
                     throw new EProfileException(message);
                 }
 
-                logger.info(method + "Sending key archival request");
+                logger.info("CAEnrollProfile: Sending key generation request");
                 kraConnector.send(request);
 
-                // check response
                 if (!request.isSuccess()) {
-
-                    String message = "serverSide Keygen request failed";
-                    logger.debug(method + message);
+                    logger.info("CAEnrollProfile: Key generation failed");
 
                     if (getLocale(request) == null || request.getError(getLocale(request)) == null) {
                         throw new ERejectException(CMS.getUserMessage("CMS_CA_SEND_KRA_REQUEST") + " check KRA log for detail");
@@ -185,6 +179,8 @@ public class CAEnrollProfile extends EnrollProfile {
                     throw new ERejectException(request.getError(getLocale(request)));
                 }
 
+                logger.info("CAEnrollProfile: Key generation completed");
+
                 // TODO: perhaps have Server-Side Keygen enrollment audit
                 // event, or expand AsymKeyGenerationEvent
                 auditor.log(new ServerSideKeygenEnrollKeygenEvent(
@@ -195,7 +191,7 @@ public class CAEnrollProfile extends EnrollProfile {
 
             } catch (Exception e) {
 
-                logger.debug(method + e);
+                logger.error("CAEnrollProfile: Unable to generate key in KRA: " + e.getMessage(), e);
 
                 auditor.log(new ServerSideKeygenEnrollKeygenEvent(
                             auditSubjectID,
@@ -216,7 +212,7 @@ public class CAEnrollProfile extends EnrollProfile {
             PKIArchiveOptions options = toPKIArchiveOptions(optionsData);
 
             if (options != null) {
-                logger.info("CAEnrollProfile: Processing PKIArchiveOptions");
+                logger.info("CAEnrollProfile: Processing archive options");
                 try {
                     Connector kraConnector = caService.getKRAConnector();
 
@@ -238,18 +234,16 @@ public class CAEnrollProfile extends EnrollProfile {
                     logger.info("CAEnrollProfile: Sending key archival request");
                     kraConnector.send(request);
 
-                    // check response
                     if (!request.isSuccess()) {
 
-                        String message = "archival request failed";
-                        logger.error("CAEnrollProfile: " + message);
+                        logger.error("CAEnrollProfile: Key archival failed");
 
                         auditor.log(SecurityDataArchivalRequestEvent.createFailureEvent(
                                 auditSubjectID,
                                 auditRequesterID,
                                 requestId,
                                 null,
-                                message));
+                                "archival request failed"));
 
                         if (getLocale(request) == null || request.getError(getLocale(request)) == null) {
                             throw new ERejectException(CMS.getUserMessage("CMS_CA_SEND_KRA_REQUEST") + " check KRA log for detail");
@@ -263,6 +257,8 @@ public class CAEnrollProfile extends EnrollProfile {
 
                         throw new ERejectException(request.getError(getLocale(request)));
                     }
+
+                    logger.error("CAEnrollProfile: Key archival completed");
 
                     auditor.log(SecurityDataArchivalRequestEvent.createSuccessEvent(
                             auditSubjectID,
@@ -290,29 +286,28 @@ public class CAEnrollProfile extends EnrollProfile {
             }
         }
 
-        // process certificate issuance
+        logger.info("CAEnrollProfile: Issuing cert");
         X509CertInfo info = request.getExtDataInCertInfo(Request.REQUEST_CERTINFO);
         // logger.debug(method + " before: X509CertInfo info = " + info.toString());
 
         if (isSSKeygen) {
             try {
                 String pubKeyStr = request.getExtDataInString("public_key");
+                // logger.debug(method + "pubKeyStr = " + pubKeyStr);
 
                 if (pubKeyStr == null) {
                     throw new EProfileException("Server-Side Keygen enrollment failed to retrieve public_key from KRA");
                 }
-                // logger.debug(method + "pubKeyStr = " + pubKeyStr);
-                byte[] pubKeyB = CryptoUtil.base64Decode(pubKeyStr);
-                CertificateX509Key certKey = new CertificateX509Key(
-                    new ByteArrayInputStream(pubKeyB));
+
+                byte[] pubKeyB = Utils.base64decode(pubKeyStr);
+                CertificateX509Key certKey = new CertificateX509Key(new ByteArrayInputStream(pubKeyB));
 
                 // replace fake key in info
-                CertificateX509Key infokey = (CertificateX509Key)
-                        info.get(X509CertInfo.KEY);
+                CertificateX509Key infokey = (CertificateX509Key) info.get(X509CertInfo.KEY);
+
                 if (infokey != null) {
-                    X509Key key = (X509Key)
-                            infokey.get(CertificateX509Key.KEY);
-                    // logger.debug(method + "key = " + key.toString());
+                    X509Key key = (X509Key) infokey.get(CertificateX509Key.KEY);
+                    // logger.debug(method + "key = " + key);
                     // a placeholder temporary fake key was put in
                     // ServerKeygenUserKeyDefault
                     info.delete(X509CertInfo.KEY);
@@ -327,31 +322,30 @@ public class CAEnrollProfile extends EnrollProfile {
 
                 SubjectKeyIdentifierExtension ext = (SubjectKeyIdentifierExtension) CertUtils.getExtension(PKIXExtensions.SubjectKey_Id.toString(), info);
                 if (ext != null) {
-                    logger.debug(method + "found SubjectKey_Id extension");
-                    /*
-                     * determine message digest algorithm:
-                     * the "old_ski" was generated based on the profile
-                     * from the "fake key",
-                     * so we could use it's length to determine the size
-                     * of the new hash.
-                     *
-                     * Message digest can be controlled by the messageDigest
-                     * parameter in the subjectKeyIdentifier extension in a
-                     * profile. e.g.
-                     * policyset.caCertSet.8.default.params.messageDigest=SHA-256
-                     */
+                    logger.info("CAEnrollProfile: Replacing SKI");
+                    // determine message digest algorithm:
+                    // the "old_ski" was generated based on the profile
+                    // from the "fake key",
+                    // so we could use it's length to determine the size
+                    // of the new hash.
+                    //
+                    // Message digest can be controlled by the messageDigest
+                    // parameter in the subjectKeyIdentifier extension in a
+                    // profile. e.g.
+                    // policyset.caCertSet.8.default.params.messageDigest=SHA-256
                     String messageDigest = "SHA-1"; // default; len==20
+
                     KeyIdentifier old_ski = null;
                     try {
                         old_ski = (KeyIdentifier) ext.get(SubjectKeyIdentifierExtension.KEY_ID);
                     } catch (IOException e) {
                         old_ski = null;
                     }
+
                     if (old_ski != null) {
                         byte[] old_ski_val = old_ski.getIdentifier();
                         if (old_ski_val != null) {
                             int old_ski_len = old_ski_val.length;
-
                             if (old_ski_len == 32) {
                                 messageDigest = "SHA-256";
                             } else if (old_ski_len == 48) {
@@ -361,32 +355,33 @@ public class CAEnrollProfile extends EnrollProfile {
                             }
                         }
                     }
-                    logger.debug(method + "ServerSideKeygen message digest alg == " + messageDigest);
-                    // compute keyId
-                    X509Key realkey = (X509Key)
-                            certKey.get(CertificateX509Key.KEY);
+                    logger.debug(method + "SSKG message digest alg: " + messageDigest);
+
+                    // compute new SKI
+                    X509Key realkey = (X509Key) certKey.get(CertificateX509Key.KEY);
                     byte[] hash = CryptoUtil.generateKeyIdentifier(realkey.getKey(), messageDigest);
                     int new_ski_len = hash.length;
-                    logger.debug(method + "ServerSideKeygen hash len = " + new_ski_len);
+                    logger.debug(method + "SSKG hash length: " + new_ski_len);
+
                     KeyIdentifier id = new KeyIdentifier(hash);
-                    SubjectKeyIdentifierExtension skiExt =
-                            new SubjectKeyIdentifierExtension(id.getIdentifier());
+                    SubjectKeyIdentifierExtension skiExt = new SubjectKeyIdentifierExtension(id.getIdentifier());
 
-                    // replace it
+                    // replace SKI
                     CertUtils.replaceExtension(PKIXExtensions.SubjectKey_Id.toString(), skiExt, info);
-                    logger.debug(method + " SubjectKey_Id replaced");
 
-                    // logger.debug(method + " after replacement: X509CertInfo info = " + info.toString());
-                }/* else
+                    // logger.debug(method + "cert info after replacement: " + info);
+
+                } /* else
                     Not every cert needs an SKI
                     logger.debug(method + "did not find SubjectKey_Id");
-                  */
+                */
 
             } catch (CertificateException | IOException e) {
                 logger.error(method + e.getMessage(), e);
                 throw new EProfileException(e);
+
             } catch (Exception e) {
-                logger.debug(method + e);
+                logger.error(method + e.getMessage(), e);
                 throw new EProfileException(e);
             }
         }
@@ -400,15 +395,19 @@ public class CAEnrollProfile extends EnrollProfile {
             sc.put("profileSetId", setId);
         }
 
-        AuthorityID aid = null;
         String aidString = request.getExtDataInString(Request.AUTHORITY_ID);
-        if (aidString != null)
+        AuthorityID aid = null;
+        if (aidString != null) {
             aid = new AuthorityID(aidString);
+        }
 
         X509CertImpl theCert;
         try {
             theCert = caService.issueX509Cert(
-                aid, info, getId() /* profileId */, requestId.toString());
+                aid,
+                info,
+                getId() /* profileId */,
+                requestId.toString());
         } catch (EBaseException e) {
             logger.error("CAEnrollProfile: " + e.getMessage(), e);
             throw new EProfileException(e);
@@ -416,9 +415,10 @@ public class CAEnrollProfile extends EnrollProfile {
 
         request.setExtData(Request.REQUEST_ISSUED_CERT, theCert);
 
-        // cert issued, now retrieve p12
+        // cert issued, now retrieve private key
         if (isSSKeygen) {
-            logger.debug(method + "onto SSK_STAGE_KEY_RETRIEVE");
+            logger.info("CAEnrollProfile: Retrieving key from KRA");
+
             request.setExtData(Request.SSK_STAGE, Request.SSK_STAGE_KEY_RETRIEVE);
             request.setExtData(Request.REQ_STATUS, "begin");
             request.setExtData("requestType", "recovery");
@@ -438,14 +438,12 @@ public class CAEnrollProfile extends EnrollProfile {
                     logger.debug(method + message);
 
                 } else {
-                    logger.info(method + "Sending key archival request");
+                    logger.info("CAEnrollProfile: Sending key retrieval request");
                     kraConnector.send(request);
 
                     // check response
                     if (!request.isSuccess()) {
-
-                        String message = "serverSide Keygen request failed";
-                        logger.debug(method + message);
+                        logger.info("CAEnrollProfile: Key retrieval failed");
 
                         if (getLocale(request) == null || request.getError(getLocale(request)) == null) {
                             throw new ERejectException(CMS.getUserMessage("CMS_CA_SEND_KRA_REQUEST") + " check KRA log for detail");
@@ -461,15 +459,17 @@ public class CAEnrollProfile extends EnrollProfile {
                     }
 
                     auditor.log(new ServerSideKeygenEnrollKeyRetrievalEvent(
-                                auditSubjectID,
-                                "Success",
-                                requestId,
-                                clientId));
+                            auditSubjectID,
+                            "Success",
+                            requestId,
+                            clientId));
                 }
+
+                logger.info("CAEnrollProfile: Key retrieval completed");
 
             } catch (Exception e) {
 
-                logger.debug(method + e);
+                logger.error("CAEnrollProfile: Unable to retrieve key from KRA: " + e.getMessage(), e);
 
                 auditor.log(new ServerSideKeygenEnrollKeyRetrievalEvent(
                             auditSubjectID,
@@ -490,8 +490,6 @@ public class CAEnrollProfile extends EnrollProfile {
                 request.setExtData("serverSideKeygenP12PasswdEnc", "");
                 request.deleteExtData("serverSideKeygenP12PasswdEnc");
             }
-
-            logger.debug(method + "isSSKeygen: response received from KRA");
         }
 
         long endTime = new Date().getTime();
@@ -541,13 +539,10 @@ public class CAEnrollProfile extends EnrollProfile {
      * @return symmetric keys
      * @throws EProfileException
      */
-    private Map<String, byte[]> processP12Password (Request request) throws EProfileException {
+    private Map<String, byte[]> processP12Password(Request request) throws EProfileException {
         String method = "CAEnrollProfile: processP12Password: ";
-        Map<String, byte[]> returnPass = null;
 
         String p12passwd = request.getExtDataInString("serverSideKeygenP12Passwd");
-
-        org.mozilla.jss.crypto.X509Certificate transCert = null;
 
         CAEngine engine = CAEngine.getInstance();
         CertificateAuthority ca = engine.getCA();
@@ -555,29 +550,29 @@ public class CAEnrollProfile extends EnrollProfile {
         ConnectorsConfig connectorsConfig = caConfig.getConnectorsConfig();
         ConnectorConfig kraConnectorConfig = connectorsConfig.getConnectorConfig("KRA");
 
+        logger.info("CAEnrollProfile: Loading transport cert");
+        org.mozilla.jss.crypto.X509Certificate transCert;
         try {
             CryptoManager cm = CryptoManager.getInstance();
             String transportNickname = kraConnectorConfig.getString("transportCertNickname", "KRA Transport Certificate");
             transCert = cm.findCertByNickname(transportNickname);
         } catch (Exception e) {
-            logger.error(method + "'KRA transport certificate' not found in nssdb; need to be manually setup for Server-Side keygen enrollment");
+            logger.error("CAEnrollProfile: Unable to load transport cert: " + e.getMessage(), e);
             throw new EProfileException(CMS.getUserMessage("CMS_MISSING_KRA_TRANSPORT_CERT_IN_CA_NSSDB"));
         }
+        logger.info("CAEnrollProfile: Transport cert subject: " + transCert.getSubjectDN());
 
-        try
-        {
+        try {
             // todo: make things configurable in CS.cfg or profile
-            CryptoToken ct =
-                CryptoUtil.getCryptoToken(CryptoUtil.INTERNAL_TOKEN_NAME);
+            CryptoToken ct = CryptoUtil.getCryptoToken(CryptoUtil.INTERNAL_TOKEN_NAME);
 
-            EncryptionAlgorithm encryptAlgorithm =
-                    EncryptionAlgorithm.AES_128_CBC_PAD;
+            EncryptionAlgorithm encryptAlgorithm = EncryptionAlgorithm.AES_128_CBC_PAD;
 
             CAEngineConfig caCfg = engine.getConfig();
             boolean useOAEP = caCfg.getUseOAEPKeyWrap();
 
             KeyWrapAlgorithm wrapAlgorithm = KeyWrapAlgorithm.RSA;
-            if(useOAEP) {
+            if (useOAEP) {
                 wrapAlgorithm = KeyWrapAlgorithm.RSA_OAEP;
             }
 
@@ -597,43 +592,41 @@ public class CAEnrollProfile extends EnrollProfile {
                     p12passwd.getBytes("UTF-8"),
                     encryptAlgorithm,
                     new IVParameterSpec(iv));
-
-            logger.debug(method + "sessionWrappedPassphrase.length=" + sessionWrappedPassphrase.length);
+            logger.debug(method + "sessionWrappedPassphrase length: " + sessionWrappedPassphrase.length);
 
             byte[] transWrappedSessionKey = CryptoUtil.wrapUsingPublicKey(
                     ct,
                     transCert.getPublicKey(),
                     sessionKey,
                     wrapAlgorithm);
-            logger.debug(method + " transWrappedSessionKey.length =" +transWrappedSessionKey.length);
+            logger.debug(method + " transWrappedSessionKey length: " +transWrappedSessionKey.length);
 
-            CertificateSubjectName reqSubj =
-                    request.getExtDataInCertSubjectName(Request.REQUEST_SUBJECT_NAME);
+            CertificateSubjectName reqSubj = request.getExtDataInCertSubjectName(Request.REQUEST_SUBJECT_NAME);
             String subj = "unknown serverKeyGenUser";
             if (reqSubj != null) {
                 X500Name xN = reqSubj.getX500Name();
                 subj = xN.toString();
-                logger.debug(method + "subj = " + subj);
+                logger.debug(method + "subject: " + subj);
             }
-            // store in request to pass to kra
-            request.setExtData(Request.SECURITY_DATA_CLIENT_KEY_ID,
-                    subj);
-            returnPass = new HashMap<>();
 
-            returnPass.put("serverSideKeygenP12PasswdEnc",
-                    sessionWrappedPassphrase);
-            returnPass.put("serverSideKeygenP12PasswdTransSession",
-                    transWrappedSessionKey);
+            // store in request to pass to kra
+            request.setExtData(Request.SECURITY_DATA_CLIENT_KEY_ID, subj);
+
+            Map<String, byte[]> returnPass = new HashMap<>();
+            returnPass.put("serverSideKeygenP12PasswdEnc", sessionWrappedPassphrase);
+            returnPass.put("serverSideKeygenP12PasswdTransSession", transWrappedSessionKey);
 
             // delete
             request.setExtData("serverSideKeygenP12Passwd", "");
             request.deleteExtData("serverSideKeygenP12Passwd");
-        } catch(Exception e) {
-            logger.debug("{}{}", method, e.toString());
-            throw new EProfileException(e.getMessage());
 
+            return returnPass;
+
+        } catch(Exception e) {
+            String message = "Unable to generate symmetic key: " + e.getMessage();
+            logger.error("CAEnrollProfile: " + message, e);
+            throw new EProfileException(message, e);
         }
-        return returnPass;
     }
 
 }
