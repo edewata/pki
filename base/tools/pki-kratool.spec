@@ -1,5 +1,5 @@
 Name:           pki-kratool
-Version:        10.13.13
+Version:        10.13.14
 Release:        1%{?dist}
 Summary:        KRATool - PKI KRA LDIF Migration Tool
 
