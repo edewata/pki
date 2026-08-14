@@ -551,12 +551,28 @@ public class CAEnrollProfile extends EnrollProfile {
         ConnectorsConfig connectorsConfig = caConfig.getConnectorsConfig();
         ConnectorConfig kraConnectorConfig = connectorsConfig.getConnectorConfig("KRA");
 
-        logger.info("CAEnrollProfile: Loading transport cert");
-        org.mozilla.jss.crypto.X509Certificate transCert;
+        java.security.cert.X509Certificate transCert;
         try {
             CryptoManager cm = CryptoManager.getInstance();
-            String transportNickname = kraConnectorConfig.getString("transportCertNickname", "KRA Transport Certificate");
-            transCert = cm.findCertByNickname(transportNickname);
+
+            String transportBase64 = kraConnectorConfig.getString("transportCert", null);
+            logger.info("CAEnrollProfile: Transport cert: " + transportBase64);
+
+            if (transportBase64 == null) {
+                String transportNickname = kraConnectorConfig.getString("transportCertNickname", "KRA Transport Certificate");
+                logger.info("CAEnrollProfile: Loading transport cert from NSS database: " + transportNickname);
+                transCert = cm.findCertByNickname(transportNickname);
+
+            } else {
+                logger.info("CAEnrollProfile: Parsing transport cert");
+                transCert = new X509CertImpl(Utils.base64decode(transportBase64));
+                //transCert = cm.importDERCert(
+                //        Utils.base64decode(transportBase64),
+                //        CertificateUsage.SSLClient,
+                //        false,
+                //        "KRA Transport Certificate");
+            }
+
         } catch (Exception e) {
             logger.error("CAEnrollProfile: Unable to load transport cert: " + e.getMessage(), e);
             throw new EProfileException(CMS.getUserMessage("CMS_MISSING_KRA_TRANSPORT_CERT_IN_CA_NSSDB"));
