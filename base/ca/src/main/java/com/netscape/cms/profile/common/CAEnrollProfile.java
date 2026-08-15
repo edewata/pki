@@ -19,7 +19,6 @@ package com.netscape.cms.profile.common;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.util.Date;
 import java.util.Enumeration;
@@ -46,7 +45,6 @@ import org.mozilla.jss.netscape.security.x509.X500Name;
 import org.mozilla.jss.netscape.security.x509.X509CertImpl;
 import org.mozilla.jss.netscape.security.x509.X509CertInfo;
 import org.mozilla.jss.netscape.security.x509.X509Key;
-import org.mozilla.jss.pkcs11.KeyType;
 import org.mozilla.jss.pkix.crmf.PKIArchiveOptions;
 
 import com.netscape.ca.CAService;
@@ -552,35 +550,17 @@ public class CAEnrollProfile extends EnrollProfile {
         ConnectorsConfig connectorsConfig = caConfig.getConnectorsConfig();
         ConnectorConfig kraConnectorConfig = connectorsConfig.getConnectorConfig("KRA");
 
-        java.security.cert.X509Certificate transCert;
+        logger.info("CAEnrollProfile: Loading transport cert");
+        org.mozilla.jss.crypto.X509Certificate transCert;
         try {
             CryptoManager cm = CryptoManager.getInstance();
-
-            String transportBase64 = kraConnectorConfig.getString("transportCert", null);
-            logger.info("CAEnrollProfile: Transport cert: " + transportBase64);
-
-            if (transportBase64 == null) {
-                String transportNickname = kraConnectorConfig.getString("transportCertNickname", "KRA Transport Certificate");
-                logger.info("CAEnrollProfile: Loading transport cert from NSS database: " + transportNickname);
-                transCert = cm.findCertByNickname(transportNickname);
-
-            } else {
-                logger.info("CAEnrollProfile: Parsing transport cert");
-                transCert = new X509CertImpl(Utils.base64decode(transportBase64));
-                //transCert = cm.importDERCert(
-                //        Utils.base64decode(transportBase64),
-                //        CertificateUsage.SSLClient,
-                //        false,
-                //        "KRA Transport Certificate");
-            }
-
+            String transportNickname = kraConnectorConfig.getString("transportCertNickname", "KRA Transport Certificate");
+            transCert = cm.findCertByNickname(transportNickname);
         } catch (Exception e) {
             logger.error("CAEnrollProfile: Unable to load transport cert: " + e.getMessage(), e);
             throw new EProfileException(CMS.getUserMessage("CMS_MISSING_KRA_TRANSPORT_CERT_IN_CA_NSSDB"));
         }
-        logger.info("CAEnrollProfile: Transport cert subject: " + transCert.getSubjectX500Principal());
-        PublicKey transPublicKey = transCert.getPublicKey();
-        logger.info("CAEnrollProfile: Transport cert public key: " + transPublicKey.getAlgorithm() + " " + transPublicKey.getFormat());
+        logger.info("CAEnrollProfile: Transport cert subject: " + transCert.getSubjectDN());
 
         try {
             // todo: make things configurable in CS.cfg or profile
@@ -596,11 +576,7 @@ public class CAEnrollProfile extends EnrollProfile {
                 wrapAlgorithm = KeyWrapAlgorithm.RSA_OAEP;
             }
 
-            logger.info(method + "key wrap algorithm: " + wrapAlgorithm);
-
-            KeyType type = KeyType.getKeyTypeFromAlgorithm(wrapAlgorithm);
-            logger.info("CAEnrollProfile: Transport cert key type: " + type);
-            logger.info("CAEnrollProfile: Transport cert key class: " + transPublicKey.getClass().getName());
+            logger.debug(method + "KeyWrapAlgorithm: " + wrapAlgorithm);
 
             SymmetricKey sessionKey = CryptoUtil.generateKey(
                     ct,
@@ -616,24 +592,24 @@ public class CAEnrollProfile extends EnrollProfile {
                     p12passwd.getBytes("UTF-8"),
                     encryptAlgorithm,
                     new IVParameterSpec(iv));
-            logger.info(method + "sessionWrappedPassphrase length: " + sessionWrappedPassphrase.length);
+            logger.debug(method + "sessionWrappedPassphrase length: " + sessionWrappedPassphrase.length);
 
             byte[] transWrappedSessionKey = CryptoUtil.wrapUsingPublicKey(
                     ct,
-                    transPublicKey,
+                    transCert.getPublicKey(),
                     sessionKey,
                     wrapAlgorithm);
-            logger.info(method + "transWrappedSessionKey length: " +transWrappedSessionKey.length);
+            logger.debug(method + " transWrappedSessionKey length: " +transWrappedSessionKey.length);
 
             CertificateSubjectName reqSubj = request.getExtDataInCertSubjectName(Request.REQUEST_SUBJECT_NAME);
             String subj = "unknown serverKeyGenUser";
             if (reqSubj != null) {
                 X500Name xN = reqSubj.getX500Name();
                 subj = xN.toString();
+                logger.debug(method + "subject: " + subj);
             }
 
             // store in request to pass to kra
-            logger.info(method + "subject: " + subj);
             request.setExtData(Request.SECURITY_DATA_CLIENT_KEY_ID, subj);
 
             Map<String, byte[]> returnPass = new HashMap<>();
