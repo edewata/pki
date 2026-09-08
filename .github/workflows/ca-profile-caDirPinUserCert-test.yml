@@ -333,7 +333,7 @@ jobs:
               --subject "UID=testuser1" \
               --csr $SHARED/testuser1.csr
 
-          echo "Secret.123" > password.txt
+          echo "Secret.1234" > password.txt
           echo "$PIN" > pin.txt
 
           # issue cert
@@ -383,7 +383,7 @@ jobs:
 
           # insert password
           xmlstarlet edit --inplace \
-              -s "/CertEnrollmentRequest/Attributes" --type elem --name "Attribute" -v "Secret.123" \
+              -s "/CertEnrollmentRequest/Attributes" --type elem --name "Attribute" -v "Secret.1234" \
               -i "/CertEnrollmentRequest/Attributes/Attribute[not(@name)]" -t attr -n "name" -v "pwd" \
               testuser2-request.xml
 
@@ -471,7 +471,7 @@ jobs:
               testuser3-request.json | sponge testuser3-request.json
 
           # insert password
-          jq '.Attributes.Attribute[.Attributes.Attribute|length] |= . + { "name": "pwd", "value": "Secret.123" }' \
+          jq '.Attributes.Attribute[.Attributes.Attribute|length] |= . + { "name": "pwd", "value": "Secret.1234" }' \
               testuser3-request.json | sponge testuser3-request.json
 
           # insert PIN
