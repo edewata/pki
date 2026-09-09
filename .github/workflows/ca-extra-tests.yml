@@ -72,8 +72,3 @@ jobs:
     name: CA with SSNv2
     needs: build
     uses: ./.github/workflows/ca-ssnv2-test.yml
-
-  scep-test:
-    name: SCEP responder
-    needs: build
-    uses: ./.github/workflows/scep-test.yml

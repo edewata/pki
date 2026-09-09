@@ -1,4 +1,4 @@
-name: SCEP responder
+name: SCEP with SSCEP
 # https://github.com/dogtagpki/sscep
 
 on: workflow_call
