@@ -1,0 +1,19 @@
+name: SCEP Tests
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: Waiting for build
+    uses: ./.github/workflows/wait-for-build.yml
+    secrets: inherit
+
+  scep-sscep-test:
+    name: SCEP with SSCEP
+    needs: build
+    uses: ./.github/workflows/scep-sscep-test.yml
+
+  scep-micromdm-test:
+    name: SCEP with MicroMDM
+    needs: build
+    uses: ./.github/workflows/scep-micromdm-test.yml

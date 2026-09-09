@@ -1,0 +1,203 @@
+name: SCEP with MicroMDM
+# https://github.com/micromdm/scep
+
+on: workflow_call
+
+env:
+  DS_IMAGE: ${{ vars.DS_IMAGE || 'quay.io/389ds/dirsrv' }}
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    env:
+      SHARED: /tmp/workdir/pki
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+
+          # replace docker with podman
+          sudo apt-get -y purge --auto-remove docker-ce-cli
+          sudo apt-get -y install podman-docker
+
+          # use json-file log driver to avoid the following issue:
+          # https://github.com/containers/conmon/issues/348
+          mkdir -p ~/.config/containers
+          cat > ~/.config/containers/containers.conf << EOF
+          [containers]
+          log_driver = "json-file"
+          EOF
+
+      - name: Clone repository
+        uses: actions/checkout@v7
+
+      - name: Retrieve PKI images
+        uses: actions/cache@v5
+        with:
+          key: pki-images-${{ github.sha }}
+          path: pki-images.tar
+
+      - name: Load PKI images
+        run: docker load --input pki-images.tar
+
+      - name: Create network
+        run: docker network create example
+
+      - name: Set up DS container
+        run: |
+          tests/bin/ds-create.sh \
+              --image=${{ env.DS_IMAGE }} \
+              --hostname=ds.example.com \
+              --network=example \
+              --network-alias=ds.example.com \
+              --password=Secret.123 \
+              ds
+
+      - name: Set up PKI container
+        run: |
+          tests/bin/runner-init.sh \
+              --hostname=pki.example.com \
+              --network=example \
+              --network-alias=pki.example.com \
+              pki
+
+      - name: Install CA in PKI container
+        run: |
+          docker exec pki pkispawn \
+              -f /usr/share/pki/server/examples/installation/ca.cfg \
+              -s CA \
+              -D pki_ds_url=ldap://ds.example.com:3389 \
+              -v
+
+          docker exec pki dnf install -y xmlstarlet
+
+          # disable access log buffer
+          docker exec pki xmlstarlet edit --inplace \
+              -u "//Valve[@className='org.apache.catalina.valves.AccessLogValve']/@buffered" \
+              -v "false" \
+              -i "//Valve[@className='org.apache.catalina.valves.AccessLogValve' and not(@buffered)]" \
+              -t attr \
+              -n "buffered" \
+              -v "false" \
+              /etc/pki/pki-tomcat/server.xml
+
+          docker exec pki pki-server restart --wait
+
+          docker exec pki pki-server cert-export \
+              --cert-file ca_signing.crt \
+              ca_signing
+
+          docker exec pki openssl x509 -text -noout \
+              -in ca_signing.crt
+
+      - name: Check default FlatFileAuth config
+        run: |
+          docker exec pki pki-server ca-config-find \
+              | sed -n \
+                  -e '/^auths\.impl\.FlatFileAuth\./p' \
+                  -e '/^auths\.instance\.flatFileAuth\./p' \
+              | sort \
+              | tee output
+
+          cat > expected << EOF
+          auths.impl.FlatFileAuth.class=com.netscape.cms.authentication.FlatFileAuth
+          auths.instance.flatFileAuth.fileName=/var/lib/pki/pki-tomcat/conf/ca/flatfile.txt
+          auths.instance.flatFileAuth.pluginName=FlatFileAuth
+          EOF
+
+          diff expected output
+
+          docker exec pki cat /var/lib/pki/pki-tomcat/conf/ca/flatfile.txt
+
+      - name: Check default SCEP responder config
+        run: |
+          docker exec pki pki-server ca-config-find \
+              | sed -n \
+                  -e '/^ca\.scep\._/d' \
+                  -e '/^ca\.scep\./p' \
+              | sort \
+              | tee output
+
+          cat > expected << EOF
+          ca.scep.allowedEncryptionAlgorithms=DES3
+          ca.scep.allowedHashAlgorithms=SHA256,SHA512
+          ca.scep.enable=false
+          ca.scep.encryptionAlgorithm=DES3
+          ca.scep.hashAlgorithm=SHA256
+          ca.scep.nonceSizeLimit=16
+          EOF
+
+          diff expected output
+
+      - name: Enable SCEP responder
+        run: |
+          docker exec pki pki-server ca-config-set ca.scep.enable true
+          docker exec pki pki-server ca-config-set ca.scep.encryptionAlgorithm DES
+          docker exec pki pki-server ca-config-set ca.scep.allowedEncryptionAlgorithms DES
+          docker exec pki pki-server ca-config-set ca.scep.hashAlgorithm SHA1
+          docker exec pki pki-server ca-config-set ca.scep.allowedHashAlgorithms SHA1
+
+          docker exec pki pki-server ca-redeploy --wait
+
+      # https://hub.docker.com/r/nielshojen/scepclient
+      - name: Get CA certificate
+        run: |
+          mkdir certs
+
+          docker run --rm \
+              -v $(pwd)/certs:/certs \
+              --hostname client.example.com \
+              --network example \
+              --network-alias client.example.com \
+              nielshojen/scepclient \
+              scepclient \
+              --help || true
+
+          docker run --rm \
+              -v $(pwd)/certs:/certs \
+              --hostname client.example.com \
+              --network example \
+              --network-alias client.example.com \
+              nielshojen/scepclient \
+              scepclient \
+              -server-url="http://pki.example.com:8080/ca/cgi-bin/pkiclient.exe" \
+              -private-key=private.key \
+              -debug
+
+              # \
+              #-ca-fingerprint="YOUR_CA_FINGERPRINT"
+
+          ls -la certs
+
+      - name: Enroll cert
+        run: |
+          docker run --rm \
+              -v $(pwd)/certs:/certs \
+              --hostname client.example.com \
+              --network example \
+              --network-alias client.example.com \
+              nielshojen/scepclient \
+              scepclient \
+              -server-url="http://pki.example.com:8080/ca/cgi-bin/pkiclient.exe" \
+              -challenge="YourScepChallengePassword" \
+              -cn="client.example.com"
+
+      - name: Remove CA from PKI container
+        run: |
+          docker exec pki pkidestroy -s CA -v
+
+      - name: Check PKI server systemd journal
+        if: always()
+        run: |
+          docker exec pki journalctl -x --no-pager -u pki-tomcatd@pki-tomcat.service
+
+      - name: Check PKI server access log
+        if: always()
+        run: |
+          docker exec pki find /var/log/pki/pki-tomcat -name "localhost_access_log.*" -exec cat {} \;
+
+      - name: Check CA debug log
+        if: always()
+        run: |
+          docker exec pki find /var/lib/pki/pki-tomcat/logs/ca -name "debug.*" -exec cat {} \;
