@@ -204,7 +204,7 @@ public class CRSEnrollment extends HttpServlet {
     private String mAllowedDynamicProfileIdList = null;
     private String[] mAllowedDynamicProfileId;
     private boolean mUseOAEPKeyWrap = false;
-    /* for hashing challenge password */
+    // for hashing challenge password
     protected MessageDigest mSHADigest = null;
 
     private static final String PROP_SUBSTORENAME = "substorename";
@@ -256,14 +256,15 @@ public class CRSEnrollment extends HttpServlet {
     }
 
     @Override
-    public void init(ServletConfig sc) {
+    public void init(ServletConfig sc) throws ServletException {
 
         logger.info("CRSEnrollment: Initializing SCEP responder");
 
         // Find the CertificateAuthority we should use for CRS.
         String crsCA = sc.getInitParameter(PROP_AUTHORITY);
-        if (crsCA == null)
+        if (crsCA == null) {
             crsCA = "ca";
+        }
 
         CAEngine engine = CAEngine.getInstance();
         CAEngineConfig cs = engine.getConfig();
@@ -273,7 +274,9 @@ public class CRSEnrollment extends HttpServlet {
         ca = mAuthority;
 
         if (mAuthority == null) {
-            logger.warn("CRSEnrollment: " + CMS.getLogMessage("CMSGW_CANT_FIND_AUTHORITY", crsCA));
+            String message = CMS.getLogMessage("CMSGW_CANT_FIND_AUTHORITY", crsCA);
+            logger.warn("CRSEnrollment: " + message);
+            throw new ServletException(message);
         }
 
         try {
@@ -281,10 +284,12 @@ public class CRSEnrollment extends HttpServlet {
             SCEPConfig scepConfig = authorityConfig.getSCEPConfig();
             mEnabled = scepConfig.getEnable();
             mUseOAEPKeyWrap = cs.getUseOAEPKeyWrap();
+
             if (sc.getServletName().equals(SERVLET_NAME_DYN_PROFILE)) {
                 mIsDynamicProfileId = true;
                 logger.info("CRSEnrollment: Expecting dynamic profile ID in URL");
             }
+
             mHashAlgorithm = scepConfig.getHashAlgorithm();
             mConfiguredEncryptionAlgorithm = scepConfig.getEncryptionAlgorithm();
             mNonceSizeLimit = scepConfig.getNonceSizeLimit();
@@ -292,6 +297,7 @@ public class CRSEnrollment extends HttpServlet {
             mAllowedHashAlgorithm = mHashAlgorithmList.split(",");
             mEncryptionAlgorithmList = scepConfig.getAllowedEncryptionAlgorithms();
             mAllowedEncryptionAlgorithm = mEncryptionAlgorithmList.split(",");
+
             if (mIsDynamicProfileId) {
                 logger.debug("CRSEnrollment: - allowed dynamic profiles:");
                 mAllowedDynamicProfileIdList = scepConfig.getAllowedDynamicProfileIds();
@@ -310,6 +316,7 @@ public class CRSEnrollment extends HttpServlet {
                 mTokenName = scepConfig.getTokenName();
                 mUseCA = false;
             }
+
             if (!CryptoUtil.isInternalToken(mTokenName)) {
                 int i = mNickname.indexOf(':');
                 if (!((i > -1) && (mTokenName.length() == i) && (mNickname.startsWith(mTokenName)))) {
@@ -318,8 +325,10 @@ public class CRSEnrollment extends HttpServlet {
             }
 
         } catch (EBaseException e) {
-            logger.warn("CRSEnrollment: " + e.getMessage(), e);
+            logger.warn("CRSEnrollment: Unable to initialize SCEP responder: " + e.getMessage(), e);
+            throw new ServletException("Unable to initialize SCEP responder: " + e.getMessage(), e);
         }
+
         mEncryptionAlgorithm = mConfiguredEncryptionAlgorithm;
         logger.debug("CRSEnrollment: - enabled: " + mEnabled);
         logger.debug("CRSEnrollment: - SCEP nickname: " + mNickname);
@@ -327,17 +336,18 @@ public class CRSEnrollment extends HttpServlet {
         logger.debug("CRSEnrollment: - token name: " + mTokenName);
         logger.debug("CRSEnrollment: - use CA keys: " + mUseCA);
         logger.debug("CRSEnrollment: - nonce size limit: " + mNonceSizeLimit);
-        logger.debug("CRSEnrollment: - hash algorithm: " + mHashAlgorithm);
+        logger.info("CRSEnrollment: - hash algorithm: " + mHashAlgorithm);
         logger.debug("CRSEnrollment: - hash algorithm list: " + mHashAlgorithmList);
-        logger.debug("CRSEnrollment: - use OAEP key wrap: " + mUseOAEPKeyWrap);
 
-        logger.debug("CRSEnrollment: - allowed hash algorithms:");
+        logger. debug("CRSEnrollment: - allowed hash algorithms:");
         for (int i = 0; i < mAllowedHashAlgorithm.length; i++) {
             mAllowedHashAlgorithm[i] = mAllowedHashAlgorithm[i].trim();
             logger.debug("CRSEnrollment:   - " + mAllowedHashAlgorithm[i]);
         }
 
-        logger.debug("CRSEnrollment: - encryption algorithm: " + mEncryptionAlgorithm);
+        logger.debug("CRSEnrollment: - use OAEP key wrap: " + mUseOAEPKeyWrap);
+
+        logger.info("CRSEnrollment: - encryption algorithm: " + mEncryptionAlgorithm);
         logger.debug("CRSEnrollment: - encryption algorithm list: " + mEncryptionAlgorithmList);
 
         logger.debug("CRSEnrollment: - allowed encryption algorithms:");
@@ -356,7 +366,9 @@ public class CRSEnrollment extends HttpServlet {
 
             mAuthSubsystem = engine.getAuthSubsystem();
             mAuthManagerName = sc.getInitParameter(PROP_CRSAUTHMGR);
+
             mAppendDN = sc.getInitParameter(PROP_APPENDDN);
+            logger.debug("CRSEnrollment: - append DN: " + mAppendDN);
 
             String tmp = sc.getInitParameter(PROP_CREATEENTRY);
             if (tmp != null && tmp.trim().equalsIgnoreCase("true")) {
@@ -381,7 +393,9 @@ public class CRSEnrollment extends HttpServlet {
             if (mSubstoreName == null) {
                 mSubstoreName = "default";
             }
+
         } catch (Exception e) {
+            throw new ServletException("Unable to initialize SCEP responder: " + e.getMessage(), e);
         }
 
         OID_UNSTRUCTUREDNAME = X500NameAttrMap.getDefault().getOid("UNSTRUCTUREDNAME");
@@ -391,24 +405,21 @@ public class CRSEnrollment extends HttpServlet {
         try {
             mSHADigest = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
+            throw new ServletException("Unable to initialize SCEP responder: " + e.getMessage(), e);
         }
 
         mRandom = jssSubsystem.getRandomNumberGenerator();
     }
 
     /**
-     *
      * Service a CRS Request. It all starts here. This is where the message from the
      * router is processed
      *
      * @param httpReq The HttpServletRequest.
      * @param httpResp The HttpServletResponse.
-     *
      */
     @Override
-    public void service(HttpServletRequest httpReq,
-                      HttpServletResponse httpResp)
-            throws ServletException {
+    public void service(HttpServletRequest httpReq, HttpServletResponse httpResp) throws ServletException {
 
         logger.info("CRSEnrollment: Processing SCEP request");
 
@@ -443,7 +454,7 @@ public class CRSEnrollment extends HttpServlet {
         try {
             // Read in two form parameters - the router sets these
             operation = (String) input.get(URL_OPERATION);
-            logger.info("CRSEnrollment: Processing " + operation);
+            logger.info("CRSEnrollment: - operation: " + operation);
 
             message = (String) input.get(URL_MESSAGE);
             logger.debug("CRSEnrollment: - message: " + message);
@@ -458,12 +469,10 @@ public class CRSEnrollment extends HttpServlet {
                 throw new ServletException("Bad request: operation missing from URL");
             }
 
-            /**
-             * the router can make three kinds of requests
-             * 1) simple request for CA cert
-             * 2) simple request for CA SCEP capabilities
-             * 3) encoded, signed, enveloped request for anything else (PKIOperation)
-             */
+            // the router can make three kinds of requests
+            // 1) simple request for CA cert
+            // 2) simple request for CA SCEP capabilities
+            // 3) encoded, signed, enveloped request for anything else (PKIOperation)
 
             if (operation.equals(OP_GETCACERT)) {
                 handleGetCACert(httpReq, httpResp);
@@ -472,7 +481,11 @@ public class CRSEnrollment extends HttpServlet {
                 handleGetCACaps(httpReq, httpResp);
 
             } else if (operation.equals(OP_PKIOPERATION)) {
+                // If the 'operation' is 'PKIOperation', the 'message' part of the URL is a
+                // PKIMessage structure. We decode it to see what type message it is.
                 String decodeMode = (String) input.get("decode");
+                logger.info("CRSEnrollment: - decode: " + decodeMode);
+
                 if (decodeMode == null || decodeMode.equals("false")) {
                     handlePKIOperation(httpReq, httpResp, message);
                 } else {
@@ -485,22 +498,19 @@ public class CRSEnrollment extends HttpServlet {
             }
 
         } catch (ServletException e) {
-            logger.error("CRSEnrollment: " + e.getMessage(), e);
-            throw new ServletException(e.getMessage().toString(), e);
+            throw e;
 
         } catch (Exception e) {
-            logger.warn("CRSEnrollment: " + e.getMessage(), e);
+            logger.error("CRSEnrollment: Unable to process SCEP request: " + e.getMessage(), e);
+            throw new ServletException("Unable to process SCEP request: " + e.getMessage(), e);
         }
-
     }
 
     /**
-     *
-     * Extracts the ProfileId encoded in the URI.
+     * Extract the ProfileId encoded in the URI.
      * Expects URI in the form of "/scep/PROFILE_ID/pkiclient.exe".
      *
      * @param httpReq The HttpServletRequest.
-     *
      */
     private String extractProfileIdFromURL(HttpServletRequest httpReq) throws ServletException {
         String pathInfo = httpReq.getPathInfo();
@@ -572,7 +582,6 @@ public class CRSEnrollment extends HttpServlet {
      * the whole thing should get packaged as a PKIMessage (degnerate PKCS7 - no
      * signerInfo)
      */
-
     public void handleGetCACert(HttpServletRequest httpReq, HttpServletResponse httpResp)
             throws ServletException {
 
@@ -660,13 +669,12 @@ public class CRSEnrollment extends HttpServlet {
     }
 
     /**
-     * Returns the CA capabilities in a series of plaintext lines.
+     * Return the CA capabilities in a series of plaintext lines.
      *
      * @param httpReq The HttpServletRequest.
      * @param httpResp The HttpServletResponse.
      *
      */
-
     public void handleGetCACaps(HttpServletRequest httpReq,
                               HttpServletResponse httpResp)
             throws ServletException {
@@ -695,6 +703,11 @@ public class CRSEnrollment extends HttpServlet {
             if (isAlgorithmAllowed(mAllowedEncryptionAlgorithm, "DES3")) {
                 response.append("DES3\n");
             }
+
+            if (isAlgorithmAllowed(mAllowedEncryptionAlgorithm, "DES")) {
+                response.append("DES\n");
+            }
+
             // response.append("POSTPKIOperation\n");
             if (isAlgorithmAllowed(mAllowedHashAlgorithm, "SHA1")) {
                 response.append("SHA-1\n");
@@ -742,12 +755,7 @@ public class CRSEnrollment extends HttpServlet {
     }
 
     /**
-     * If the 'operation' is 'PKIOperation', the 'message' part of the URL is a
-     * PKIMessage structure. We decode it to see what type message it is.
-     */
-
-    /**
-     * Decodes the PKI message and return information to RA.
+     * Decode the PKI message and return information to RA.
      */
     public void decodePKIMessage(HttpServletRequest httpReq,
                                  HttpServletResponse httpResp,
@@ -775,11 +783,12 @@ public class CRSEnrollment extends HttpServlet {
                 throw new ServletException("CRS request is too small to be a real request (" +
                         decodedPKIMessage.length + " bytes)");
             }
+
             try {
                 req = new CRSPKIMessage(is);
 
                 String ea = req.getEncryptionAlgorithm();
-                logger.debug("CRSEnrollment: - request encryption algorithm: " + ea);
+                logger.info("CRSEnrollment: - request encryption algorithm: " + ea);
                 logger.debug("CRSEnrollment: - allowed encryption algorithm: " + mEncryptionAlgorithmList);
 
                 if (!isAlgorithmAllowed(mAllowedEncryptionAlgorithm, ea)) {
@@ -789,7 +798,7 @@ public class CRSEnrollment extends HttpServlet {
                 }
 
                 String da = req.getDigestAlgorithmName();
-                logger.debug("CRSEnrollment: - request digest algorithm: " + da);
+                logger.info("CRSEnrollment: - request digest algorithm: " + da);
                 logger.debug("CRSEnrollment: - allowed digest algorithm: " + mHashAlgorithmList);
 
                 if (!isAlgorithmAllowed(mAllowedHashAlgorithm, da)) {
@@ -803,8 +812,8 @@ public class CRSEnrollment extends HttpServlet {
                 }
 
             } catch (Exception e) {
-                logger.error("CRSEnrollment: " + e.getMessage(), e);
-                throw new ServletException("Unable to decode the request: " + e.getMessage(), e);
+                logger.error("CRSEnrollment: Unable to decode PKI message: " + e.getMessage(), e);
+                throw new ServletException("Unable to decode PKI message: " + e.getMessage(), e);
             }
 
             // Create a new crypto context for doing all the crypto operations
@@ -948,20 +957,19 @@ public class CRSEnrollment extends HttpServlet {
                     "<PKCS10>" + pkcs10Attr + "</PKCS10>";
 
         } catch (ServletException e) {
-            throw new ServletException(e.getMessage().toString(), e);
+            throw e;
 
         } catch (CRSInvalidSignatureException e) {
             logger.warn("CRSEnrollment: " + e.getMessage(), e);
 
         } catch (Exception e) {
-            logger.error("CRSEnrollment: " + e.getMessage(), e);
-            throw new ServletException("Failed to process message in CEP servlet: " + e.getMessage(), e);
+            logger.error("CRSEnrollment: Unable to decode PKI message: " + e.getMessage(), e);
+            throw new ServletException("Unable to decode PKI message: " + e.getMessage(), e);
         }
 
         // We have now processed the request, and need to make the response message
 
         try {
-
             responseData = "<XMLResponse>" + responseData + "</XMLResponse>";
             // Get the response coding
             response = responseData.getBytes();
@@ -986,33 +994,33 @@ public class CRSEnrollment extends HttpServlet {
             logger.debug(responseData);
 
         } catch (Exception e) {
-            throw new ServletException("Failed to create response for CEP message" + e.getMessage(), e);
+            logger.error("CRSEnrollment: Unable to create SCEP response: " + e.getMessage(), e);
+            throw new ServletException("Unable to create SCEP response: " + e.getMessage(), e);
         }
 
     }
 
     /**
-     * finds a request with this transaction ID.
+     * Find a request with this transaction ID.
      * If could not find any request - return null
      * If could only find 'rejected' or 'cancelled' requests, return null
      * If found 'pending' or 'completed' request - return that request
      */
-
     public void handlePKIOperation(HttpServletRequest httpReq,
                                  HttpServletResponse httpResp,
                                  String msg)
             throws ServletException {
 
-        CryptoContext cx = null;
+        logger.info("CRSEnrollment: Handling PKI operation");
 
+        CryptoContext cx = null;
         CRSPKIMessage req = null;
         CRSPKIMessage crsResp = null;
 
-        byte[] decodedPKIMessage;
         byte[] response = null;
         X509CertImpl cert = null;
 
-        decodedPKIMessage = Utils.base64decode(msg);
+        byte[] decodedPKIMessage = Utils.base64decode(msg);
 
         try {
             ByteArrayInputStream is = new ByteArrayInputStream(decodedPKIMessage);
@@ -1030,7 +1038,7 @@ public class CRSEnrollment extends HttpServlet {
                 req = new CRSPKIMessage(is);
 
                 String ea = req.getEncryptionAlgorithm();
-                logger.debug("CRSEnrollment: - request encryption algorithm: " + ea);
+                logger.info("CRSEnrollment: - request encryption algorithm: " + ea);
                 logger.debug("CRSEnrollment: - allowed encryption algorithm: " + mEncryptionAlgorithmList);
 
                 if (!isAlgorithmAllowed(mAllowedEncryptionAlgorithm, ea)) {
@@ -1040,7 +1048,7 @@ public class CRSEnrollment extends HttpServlet {
                 }
 
                 String da = req.getDigestAlgorithmName();
-                logger.debug("CRSEnrollment: - request digest algorithm: " + da);
+                logger.info("CRSEnrollment: - request digest algorithm: " + da);
                 logger.debug("CRSEnrollment: - allowed digest algorithm: " + mHashAlgorithmList);
 
                 if (!isAlgorithmAllowed(mAllowedHashAlgorithm, da)) {
@@ -1056,11 +1064,11 @@ public class CRSEnrollment extends HttpServlet {
                 crsResp = new CRSPKIMessage();
 
             } catch (ServletException e) {
-                throw new ServletException(e.getMessage().toString(), e);
+                throw e;
 
             } catch (Exception e) {
-                logger.error("CRSEnrollmenet: " + e.getMessage(), e);
-                throw new ServletException("Unable to decode request: " + e.getMessage(), e);
+                logger.error("CRSEnrollmenet: Unable to handle PKI operation: " + e.getMessage(), e);
+                throw new ServletException("Unable to handle PKI operation: " + e.getMessage(), e);
             }
 
             crsResp.setMessageType(CRSPKIMessage.mType_CertRep);
@@ -1073,15 +1081,16 @@ public class CRSEnrollment extends HttpServlet {
 
             // Deal with Transaction ID
             String transactionID = req.getTransactionID();
+            logger.info("CRSEnrollment: - transaction ID: " + transactionID);
             if (transactionID == null) {
-                throw new ServletException("Error: malformed PKIMessage - missing transactionID");
+                throw new ServletException("Missing Transaction ID");
             }
             crsResp.setTransactionID(transactionID);
 
             // Deal with Nonces
             byte[] sn = req.getSenderNonce();
             if (sn == null) {
-                throw new ServletException("Error: malformed PKIMessage - missing sendernonce");
+                throw new ServletException("Missing sender nonce");
             }
 
             if (mNonceSizeLimit > 0 && sn.length > mNonceSizeLimit) {
@@ -1100,7 +1109,7 @@ public class CRSEnrollment extends HttpServlet {
             // Deal with message type
             String mt = req.getMessageType();
             if (mt == null) {
-                throw new ServletException("Error: malformed PKIMessage - missing messageType");
+                throw new ServletException("Missing message type");
             }
 
             // now run appropriate code, depending on message type
@@ -1124,15 +1133,15 @@ public class CRSEnrollment extends HttpServlet {
                     cert = handlePKCSReq(httpReq, cmsRequest, req, crsResp, cx);
 
                 } catch (CRSFailureException e) {
-                    throw new ServletException("Couldn't handle CEP request (PKCSReq) - " + e.getMessage(), e);
+                    throw new ServletException("Unable to process PKCSReq: " + e.getMessage(), e);
                 }
 
             } else if (mt.equals(CRSPKIMessage.mType_GetCertInitial)) {
-                logger.info("CRSEnrollment: Processing GetCertInitial");
                 cert = handleGetCertInitial(req, crsResp);
 
             } else {
-                logger.warn("CRSEnrollment: Invalid request type " + mt);
+                logger.error("CRSEnrollment: Invalid request type: " + mt);
+                throw new ServletException("Invalid request type: " + mt);
             }
 
         } catch (ServletException e) {
@@ -1143,8 +1152,8 @@ public class CRSEnrollment extends HttpServlet {
             crsResp.setFailInfo(CRSPKIMessage.mFailInfo_badMessageCheck);
 
         } catch (Exception e) {
-            logger.error("CRSEnrollment: " + e.getMessage(), e);
-            throw new ServletException("Failed to process message in CEP servlet: " + e.getMessage(), e);
+            logger.error("CRSEnrollment: Unable to handle PKI operation: " + e.getMessage(), e);
+            throw new ServletException("Unable to handle PKI operation: " + e.getMessage(), e);
         }
 
         // We have now processed the request, and need to make the response message
@@ -1164,23 +1173,26 @@ public class CRSEnrollment extends HttpServlet {
 
             logger.debug("CRSEnrollment: Output PKIOperation response:");
             logger.debug(Utils.base64encode(response, true));
+
         } catch (Exception e) {
-            throw new ServletException("Failed to create response for CEP message" + e.getMessage(), e);
+            logger.error("CRSEnrollment: Unable to create SCEP response: " + e.getMessage(), e);
+            throw new ServletException("Unable to create SCEP response: " + e.getMessage(), e);
         }
 
     }
 
     /**
-     * finds a request with this transaction ID.
+     * Find a request with this transaction ID.
      * If could not find any request - return null
      * If could only find 'rejected' or 'cancelled' requests, return null
      * If found 'pending' or 'completed' request - return that request
      */
-
     public Request findRequestByTransactionID(String txid, boolean ignoreRejected)
             throws EBaseException {
 
-        /* Check if certificate request has been completed */
+        logger.info("CRSEnrollment: Finding transaction " + txid);
+
+        // Check if certificate request has been completed
 
         CAEngine engine = CAEngine.getInstance();
         RequestRepository requestRepository = engine.getRequestRepository();
@@ -1194,11 +1206,16 @@ public class CRSEnrollment extends HttpServlet {
             if (!ignoreRejected ||
                     request.getRequestStatus().equals(RequestStatus.PENDING) ||
                     request.getRequestStatus().equals(RequestStatus.COMPLETE)) {
+
                 if (foundRequest != null) {
+                    logger.info("CRSEnrollment: - request ID: " + request.getRequestId());
+                    logger.info("CRSEnrollment:   request status: " + request.getRequestStatus());
+                    foundRequest = request;
+                    break;
                 }
-                foundRequest = request;
             }
         }
+
         return foundRequest;
     }
 
@@ -1216,8 +1233,10 @@ public class CRSEnrollment extends HttpServlet {
      * If no request is found, the response should be to return null
      *
      */
-
     public X509CertImpl handleGetCertInitial(CRSPKIMessage req, CRSPKIMessage resp) {
+
+        logger.info("CRSEnrollment: Processing GetCertInitial");
+
         Request foundRequest = null;
 
         // already done by handlePKIOperation
@@ -1248,14 +1267,11 @@ public class CRSEnrollment extends HttpServlet {
 
         @SuppressWarnings("unused")
         byte[] reqAAsig = req.getAADigest(); // check for errors
-
     }
 
     /**
      * Create an entry for this user in the publishing directory
-     *
      */
-
     private boolean createEntry(String dn) {
 
         logger.info("CRSEnrollment: Creating " + dn);
@@ -1302,9 +1318,7 @@ public class CRSEnrollment extends HttpServlet {
 
     /**
      * Here we decrypt the PKCS10 message from the client
-     *
      */
-
     public void unwrapPKCS10(CRSPKIMessage req, CryptoContext cx)
             throws ServletException,
              NotInitializedException,
@@ -1346,18 +1360,19 @@ public class CRSEnrollment extends HttpServlet {
                     ea = EncryptionAlgorithm.DES_CBC;
             }
 
+            logger.info("CRSEnrollment: - symmetric key type: " + skt);
+            logger.info("CRSEnrollment: - encryption algorithm: " + ea);
+
             sk = kw.unwrapSymmetric(req.getWrappedKey(),
                               skt,
                               SymmetricKey.Usage.DECRYPT,
                               padding ? ea.getKeyStrength() / 8 : 0);
 
-            skinternal = moveSymmetricToInternalToken(cx, sk, skt, ea);
+            skinternal = sk; // moveSymmetricToInternalToken(cx, sk, skt, ea);
 
             cip = skinternal.getOwningToken().getCipherContext(ea);
             cip.initDecrypt(skinternal, (new IVParameterSpec(req.getIV())));
-
             decryptedP10bytes = cip.doFinal(req.getEncryptedPkcs10());
-            logger.debug("CRSEnrollment: - decryptedP10bytes:\n" + Debug.dump(decryptedP10bytes));
 
             req.setP10(new PKCS10(decryptedP10bytes));
 
@@ -1538,8 +1553,9 @@ public class CRSEnrollment extends HttpServlet {
                 }
             }
 
-            if (authCreds != null)
+            if (authCreds != null) {
                 req.put(AUTH_CREDS, authCreds);
+            }
 
             try {
                 if (sane == null)
@@ -1554,30 +1570,26 @@ public class CRSEnrollment extends HttpServlet {
 
                     new X500Name(subject.toString()); // check for errors
 
-                    subject = new X500Name(subject.toString().concat("," + mAppendDN));
+                    subject = new X500Name(subject + "," + mAppendDN);
                 }
 
             } catch (Exception sne) {
-                logger.warn("CRSEnrollment: Unable to use appendDN parameter: "
-                                + mAppendDN + ". Error is " + sne.getMessage() + " Using unmodified subjectname", sne);
+                logger.warn("CRSEnrollment: Unable to append DN: " + sne.getMessage());
+                // use unmodified subject name
             }
 
-            if (subject != null)
+            if (subject != null) {
                 req.put(SUBJECTNAME, subject);
+            }
 
             if (key == null || subject == null) {
                 // log
                 //throw new ERegistrationException(RegistrationResources.ERROR_MALFORMED_P10);
             }
 
-            certInfo.set(X509CertInfo.VERSION,
-                           new CertificateVersion(CertificateVersion.V3));
-
-            certInfo.set(X509CertInfo.SUBJECT,
-                           new CertificateSubjectName(subject));
-
-            certInfo.set(X509CertInfo.KEY,
-                           new CertificateX509Key(key));
+            certInfo.set(X509CertInfo.VERSION, new CertificateVersion(CertificateVersion.V3));
+            certInfo.set(X509CertInfo.SUBJECT, new CertificateSubjectName(subject));
+            certInfo.set(X509CertInfo.KEY, new CertificateX509Key(key));
 
             CertificateExtensions ext = new CertificateExtensions();
 
@@ -1593,6 +1605,7 @@ public class CRSEnrollment extends HttpServlet {
             certInfo.set(X509CertInfo.EXTENSIONS, ext);
 
             req.put(CERTINFO, certInfo);
+
         } catch (Exception e) {
             crsResp.setFailInfo(CRSPKIMessage.mFailInfo_badMessageCheck);
             crsResp.setPKIStatus(CRSPKIMessage.mStatus_FAILURE);
@@ -1638,10 +1651,10 @@ public class CRSEnrollment extends HttpServlet {
         }
     }
 
-    // Perform authentication
-
-    /*
-     * if the authentication is set up for CEP, and the user provides
+    /**
+     * Perform authentication
+     *
+     * If the authentication is set up for CEP, and the user provides
      * some credential, an attempt is made to authenticate the user
      * If this fails, this method will return true
      * If it is sucessful, this method will return true and
@@ -1654,7 +1667,6 @@ public class CRSEnrollment extends HttpServlet {
      * In other word, this method returns true if the request
      * should be aborted, false otherwise.
      */
-
     private boolean authenticateUser(CRSPKIMessage req) {
         boolean authenticationFailed = true;
 
@@ -1729,6 +1741,8 @@ public class CRSEnrollment extends HttpServlet {
                                     CRSPKIMessage crsResp, CryptoContext cx)
             throws Exception {
 
+        logger.info("CRSEnrollment: Handling PKCSReq");
+
         CAEngine engine = CAEngine.getInstance();
         Auditor auditor = engine.getAuditor();
 
@@ -1738,9 +1752,10 @@ public class CRSEnrollment extends HttpServlet {
 
             if (cmsRequest != null) {
                 if (areFingerprintsEqual(cmsRequest, fingerprints)) {
-                    logger.info("CRSEnrollment: Createing response from request");
+                    logger.info("CRSEnrollment: Creating response from request");
                     return makeResponseFromRequest(req, crsResp, cmsRequest);
                 }
+
                 logger.warn("CRSEnrollment: " + CMS.getLogMessage("CMSGW_ENROLL_FAIL_DUP_TRANS_ID"));
                 crsResp.setFailInfo(CRSPKIMessage.mFailInfo_badRequest);
                 crsResp.setPKIStatus(CRSPKIMessage.mStatus_FAILURE);
@@ -1789,18 +1804,16 @@ public class CRSEnrollment extends HttpServlet {
         return null;
     }
 
-    //////   post the request
-
-    /*
-      needed:
-
-      token (authtoken)
-      certInfo
-      fingerprints       x
-      req.transactionID
-      crsResp
-    */
-
+    /**
+     * Post the request.
+     *
+     * needed:
+     * - token (authtoken)
+     * - certInfo
+     * - fingerprints
+     * - req.transactionID
+     * - crsResp
+     */
     private Request postRequest(HttpServletRequest httpReq, CRSPKIMessage req, CRSPKIMessage crsResp)
             throws Exception {
 
@@ -1867,12 +1880,14 @@ public class CRSEnrollment extends HttpServlet {
             logger.info("CRSEnrollment: Creating profile requests");
             ctx.put(EnrollProfile.CTX_CERT_REQUEST_TYPE, "pkcs10");
             ctx.put(Request.CTX_CERT_REQUEST, pkcs10blob);
+
             Locale locale = Locale.getDefault();
             reqs = profile.createRequests(ctx, locale);
             if (reqs == null) {
                 logger.error("CRSEnrollment: No request has been created");
                 return null;
             }
+
             logger.info("CRSEnrollment: Request (" + reqs.length + ") have been created");
             // set transaction id
             reqs[0].setSourceId(req.getTransactionID());
@@ -1894,7 +1909,8 @@ public class CRSEnrollment extends HttpServlet {
                 logger.error("CRSEnrollment: Missing profile policy set ID");
                 throw new CRSFailureException("Missing profile policy set ID");
             }
-            logger.debug("CRSEnrollment: - profile policy set ID : " + setId);
+
+            logger.debug("CRSEnrollment: - profile policy set ID: " + setId);
             reqs[0].setExtData("profileSetId", setId);
 
             logger.info("CRSEnrollment: Populating inputs");
@@ -1940,8 +1956,7 @@ public class CRSEnrollment extends HttpServlet {
         try {
             String chpwd = (String) req.get(ChallengePassword.NAME);
             if (chpwd != null) {
-                pkiReq.setExtData("challengePhrase",
-                        chpwd);
+                pkiReq.setExtData("challengePhrase", chpwd);
             }
         } catch (Exception pwex) {
         }
@@ -1997,12 +2012,14 @@ public class CRSEnrollment extends HttpServlet {
         if (fingerprints != null) {
             req.put(Request.FINGERPRINTS, fingerprints);
         }
+
         return fingerprints;
     }
 
-    // Take a look to see if the request was successful, and fill
-    // in the response message
-
+    /**
+     * Take a look to see if the request was successful, and fill
+     * in the response message.
+     */
     private X509CertImpl makeResponseFromRequest(CRSPKIMessage crsReq, CRSPKIMessage crsResp,
                                       Request pkiReq) {
 
@@ -2065,7 +2082,6 @@ public class CRSEnrollment extends HttpServlet {
     /**
      * Make the CRSPKIMESSAGE response
      */
-
     private void processCertRep(CryptoContext cx,
                               X509CertImpl issuedCert,
                               CRSPKIMessage crsResp,
@@ -2076,6 +2092,9 @@ public class CRSEnrollment extends HttpServlet {
 
         try {
             if (issuedCert != null) {
+
+                logger.info("CRSEnrollment: Generating symmetric key");
+
                 SymmetricKey sk;
                 SymmetricKey skinternal;
                 EncryptionAlgorithm ea;
@@ -2093,6 +2112,9 @@ public class CRSEnrollment extends HttpServlet {
                         skt = SymmetricKey.DES;
                         ea = EncryptionAlgorithm.DES_CBC;
                 }
+
+                logger.info("CRSEnrollment: - symmetric key type: " + skt);
+                logger.info("CRSEnrollment: - encryption algorithm: " + ea);
 
                 // 1. Make the Degenerated PKCS7 with the recipient's certificate in it
                 byte toBeEncrypted[] =
@@ -2146,9 +2168,7 @@ public class CRSEnrollment extends HttpServlet {
 
             crsResp.setMsgDigest(msgdigest);
 
-        }
-
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new CRSFailureException("Failed to create inner response to CEP message: " + e.getMessage());
         }
 
@@ -2195,12 +2215,12 @@ public class CRSEnrollment extends HttpServlet {
 
                 crsResp.debug();
             }
+
         } catch (Exception e) {
             throw new CRSFailureException("Failed to create outer response to CEP request: " + e.getMessage());
         }
 
         // if debugging, dump out the response into a file
-
     }
 
     class CryptoContext {
@@ -2217,9 +2237,7 @@ public class CRSEnrollment extends HttpServlet {
         private int signingCertKeySize;
 
         class CryptoContextException extends Exception {
-            /**
-         *
-         */
+
             private static final long serialVersionUID = -1124116326126256475L;
 
             public CryptoContextException() {
@@ -2236,7 +2254,7 @@ public class CRSEnrollment extends HttpServlet {
             logger.info("CRSEnrollment: Creating CryptoContext");
 
             try {
-                logger.debug("CRSEnrollment: - encryption algorithm: " + mEncryptionAlgorithm);
+                logger.info("CRSEnrollment: - encryption algorithm: " + mEncryptionAlgorithm);
                 KeyGenAlgorithm kga;
                 switch(String.valueOf(mEncryptionAlgorithm)) {
                 case "DES3":
@@ -2386,12 +2404,11 @@ public class CRSEnrollment extends HttpServlet {
 
     }
 
-    /* General failure. The request/response cannot be processed. */
-
-    class CRSFailureException extends Exception {
-        /**
-     *
+    /**
+     *  General failure. The request/response cannot be processed.
      */
+    class CRSFailureException extends Exception {
+
         private static final long serialVersionUID = 1962741611501549051L;
 
         public CRSFailureException() {
@@ -2408,9 +2425,7 @@ public class CRSEnrollment extends HttpServlet {
     }
 
     class CRSInvalidSignatureException extends Exception {
-        /**
-     *
-     */
+
         private static final long serialVersionUID = 9096408193567657944L;
 
         public CRSInvalidSignatureException() {
@@ -2423,9 +2438,7 @@ public class CRSEnrollment extends HttpServlet {
     }
 
     class CRSPolicyException extends Exception {
-        /**
-     *
-     */
+
         private static final long serialVersionUID = 5846593800658787396L;
 
         public CRSPolicyException() {

@@ -795,6 +795,7 @@ public class CRSPKIMessage {
         if (ris.size() == 0) {
             throw new Exception("RecipientInfos is empty");
         }
+
         ri = (RecipientInfo) ris.elementAt(0);
         eci = sded.getEncryptedContentInfo();
 

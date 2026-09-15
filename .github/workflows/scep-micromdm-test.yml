@@ -62,6 +62,13 @@ jobs:
               --network-alias=pki.example.com \
               pki
 
+          docker exec pki cat /etc/crypto-policies/back-ends/nss.config
+
+          docker exec pki dnf install -y crypto-policies-scripts
+          docker exec pki update-crypto-policies --set LEGACY
+
+          docker exec pki cat /etc/crypto-policies/back-ends/nss.config
+
       - name: Install CA in PKI container
         run: |
           docker exec pki pkispawn \
@@ -140,6 +147,13 @@ jobs:
 
           docker exec pki pki-server ca-redeploy --wait
 
+      - name: Register client
+        run: |
+          docker exec -i pki tee /var/lib/pki/pki-tomcat/conf/ca/flatfile.txt << EOF
+          UID:1.2.3.4
+          PWD:Secret.123
+          EOF
+
       # https://hub.docker.com/r/nielshojen/scepclient
       - name: Get CA certificate
         run: |
@@ -154,22 +168,6 @@ jobs:
               scepclient \
               --help || true
 
-          docker run --rm \
-              -v $(pwd)/certs:/certs \
-              --hostname client.example.com \
-              --network example \
-              --network-alias client.example.com \
-              nielshojen/scepclient \
-              scepclient \
-              -server-url="http://pki.example.com:8080/ca/cgi-bin/pkiclient.exe" \
-              -private-key=private.key \
-              -debug
-
-              # \
-              #-ca-fingerprint="YOUR_CA_FINGERPRINT"
-
-          ls -la certs
-
       - name: Enroll cert
         run: |
           docker run --rm \
@@ -179,9 +177,13 @@ jobs:
               --network-alias client.example.com \
               nielshojen/scepclient \
               scepclient \
-              -server-url="http://pki.example.com:8080/ca/cgi-bin/pkiclient.exe" \
-              -challenge="YourScepChallengePassword" \
-              -cn="client.example.com"
+              -server-url http://pki.example.com:8080/ca/cgi-bin/pkiclient.exe \
+              -private-key private.key \
+              -cn 1.2.3.4 \
+              -challenge Secret.123 \
+              -debug
+
+          ls -la certs
 
       - name: Remove CA from PKI container
         run: |
