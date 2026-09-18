@@ -64,11 +64,11 @@ jobs:
            (targetattr=*)
            (version 3.0; acl "Allow anyone to read and search itself"; allow (search, read) userdn = "ldap:///self";)
 
-          dn: uid=testuser,ou=people,dc=example,dc=com
+          dn: uid=五輪真弓,ou=people,dc=example,dc=com
           objectClass: person
           objectClass: organizationalPerson
           objectClass: inetOrgPerson
-          uid: testuser
+          uid: 五輪真弓
           cn: Test User
           sn: User
           userPassword: Secret.123
@@ -228,7 +228,7 @@ jobs:
         run: |
           # create cert request
           docker exec pki pki nss-cert-request \
-              --subject "UID=testuser" \
+              --subject "UID=五輪真弓" \
               --csr testuser.csr
 
           echo "Secret.123" > password.txt
@@ -236,7 +236,7 @@ jobs:
           # issue cert
           docker exec pki pki ca-cert-issue \
               --profile CustomProfile \
-              --username testuser \
+              --username "五輪真弓" \
               --password-file $SHARED/password.txt \
               --csr-file testuser.csr \
               --output-file testuser.crt
@@ -256,7 +256,7 @@ jobs:
 
           cat > expected << EOF
             Nickname: testuser
-            Subject DN: UID=testuser,OU=people,DC=example,DC=com
+            Subject DN: UID=五輪真弓,OU=people,DC=example,DC=com
             Issuer DN: CN=CA Signing Certificate,OU=pki-tomcat,O=EXAMPLE
             Trust Flags: u,u,u
           EOF
