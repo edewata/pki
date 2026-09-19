@@ -15,11 +15,12 @@
 // (C) 2017 Red Hat, Inc.
 // All rights reserved.
 // --- END COPYRIGHT BLOCK ---
+package com.example.pki.ca;
 
 import java.net.InetAddress;
 
-import com.netscape.certsrv.ca.CAClient;
 import com.netscape.certsrv.ca.CACertClient;
+import com.netscape.certsrv.ca.CAClient;
 import com.netscape.certsrv.cert.CertData;
 import com.netscape.certsrv.cert.CertDataInfo;
 import com.netscape.certsrv.cert.CertDataInfos;
@@ -29,13 +30,32 @@ import com.netscape.certsrv.client.PKIClient;
 import com.netscape.certsrv.dbs.certdb.CertId;
 
 /**
+ * First, export the CA signing cert from the CA:
+ * $ pki-server cert-export \
+ *     --cert-file ca_signing.crt \
+ *     ca_signing
+ *
+ * Then import the CA signing cert into the client NSS database:
+ * $ pki nss-cert-import \
+ *     --cert ca_signing.crt \
+ *     --trust CT,C,C \
+ *     ca_signing
+ *
  * To compile the program:
- * $ javac -cp "../../lib/*" CACertClientExample.java
+ * $ javac \
+ *     -cp "/usr/share/pki/lib/*" \
+ *     com/example/pki/ca/CertClientExample.java
  *
  * To run the program:
- * $ java -cp "../../lib/*:." CACertClientExample
+ * $ java \
+ *     -cp "/usr/share/pki/lib/*:." \
+ *     com.example.pki.ca.CertClientExample
  */
-public class CACertClientExample {
+public class CertClientExample {
+
+    static {
+        System.setProperty("java.util.logging.config.file", "/usr/share/pki/etc/logging.properties");
+    }
 
     public static void main(String args[]) throws Exception {
 
@@ -52,8 +72,6 @@ public class CACertClientExample {
 
         CertDataInfos infos = certClient.listCerts(null, null, null, null, null);
 
-        System.out.println("Total: " + infos.getTotal());
-        System.out.println();
         System.out.println("Certificates:");
 
         for (CertDataInfo info : infos.getEntries()) {
