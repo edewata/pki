@@ -1,5 +1,6 @@
 name: CA with custom profile
 # The test will perform the following:
+# - customize CA webapp
 # - create a custom profile with wide chars in the name and description
 # - enroll a cert with wide chars in the subject DN
 # - create a user with wide chars in the full name
@@ -47,32 +48,6 @@ jobs:
               --password=Secret.123 \
               ds
 
-      - name: Add LDAP users
-        run: |
-          docker exec -i ds ldapadd \
-              -H ldap://ds.example.com:3389 \
-              -D "cn=Directory Manager" \
-              -w Secret.123 << EOF
-          dn: ou=people,dc=example,dc=com
-          objectclass: top
-          objectclass: organizationalUnit
-          ou: People
-          aci: (target = "ldap:///ou=people,dc=example,dc=com")
-           (targetattr=objectClass||dc||ou||uid||cn||sn||givenName)
-           (version 3.0; acl "Allow anyone to read and search basic attributes"; allow (search, read) userdn = "ldap:///anyone";)
-          aci: (target = "ldap:///ou=people,dc=example,dc=com")
-           (targetattr=*)
-           (version 3.0; acl "Allow anyone to read and search itself"; allow (search, read) userdn = "ldap:///self";)
-
-          dn: uid=testuser,ou=people,dc=example,dc=com
-          objectClass: person
-          objectClass: organizationalPerson
-          objectClass: inetOrgPerson
-          uid: testuser
-          cn: Test User
-          sn: User
-          userPassword: Secret.123
-
       - name: Set up PKI container
         run: |
           tests/bin/runner-init.sh \
@@ -89,21 +64,6 @@ jobs:
               -D pki_ds_url=ldap://ds.example.com:3389 \
               -v
 
-      - name: Configure UserDirEnrollment
-        run: |
-          docker exec pki pki-server ca-config-set auths.instance.UserDirEnrollment.pluginName UidPwdDirAuth
-          docker exec pki pki-server ca-config-set auths.instance.UserDirEnrollment.ldap.basedn dc=example,dc=com
-          docker exec pki pki-server ca-config-set auths.instance.UserDirEnrollment.ldap.ldapauth.authtype BasicAuth
-          docker exec pki pki-server ca-config-set auths.instance.UserDirEnrollment.ldap.ldapauth.bindDN "cn=Directory Manager"
-          docker exec pki pki-server ca-config-set auths.instance.UserDirEnrollment.ldap.ldapauth.bindPWPrompt internaldb
-          docker exec pki pki-server ca-config-set auths.instance.UserDirEnrollment.ldap.ldapconn.host ds.example.com
-          docker exec pki pki-server ca-config-set auths.instance.UserDirEnrollment.ldap.ldapconn.port 3389
-          docker exec pki pki-server ca-config-set auths.instance.UserDirEnrollment.ldap.ldapconn.secureConn false
-
-      - name: Restart CA subsystem
-        run: |
-          docker exec pki pki-server ca-redeploy --wait
-
       - name: Install CA admin cert
         run: |
           docker exec pki pki-server cert-export \
@@ -118,6 +78,200 @@ jobs:
           docker exec pki pki pkcs12-import \
               --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
               --password Secret.123
+
+      - name: Check default auth plugins
+        run: |
+          docker exec pki pki-server ca-auth-plugin-find \
+              | tee output
+
+          cat > expected << EOF
+            Plugin ID: AgentCertAuth
+            Class Name: com.netscape.cms.authentication.AgentCertAuthentication
+
+            Plugin ID: CMCAuth
+            Class Name: com.netscape.cms.authentication.CMCAuth
+
+            Plugin ID: CMCAuthForEST
+            Class Name: com.netscape.cms.authentication.CMCAuthForEST
+
+            Plugin ID: CMCUserSignedAuth
+            Class Name: com.netscape.cms.authentication.CMCUserSignedAuth
+
+            Plugin ID: FlatFileAuth
+            Class Name: com.netscape.cms.authentication.FlatFileAuth
+
+            Plugin ID: SSLclientCertAuth
+            Class Name: com.netscape.cms.authentication.SSLclientCertAuthentication
+
+            Plugin ID: SessionAuthentication
+            Class Name: com.netscape.cms.authentication.SessionAuthentication
+
+            Plugin ID: SharedToken
+            Class Name: com.netscape.cms.authentication.SharedSecret
+
+            Plugin ID: TokenAuth
+            Class Name: com.netscape.cms.authentication.TokenAuthentication
+
+            Plugin ID: UidPwdDirAuth
+            Class Name: com.netscape.cms.authentication.UidPwdDirAuthentication
+
+            Plugin ID: UidPwdGroupDirAuth
+            Class Name: com.netscape.cms.authentication.UidPwdGroupDirAuthentication
+
+            Plugin ID: UidPwdPinDirAuth
+            Class Name: com.netscape.cms.authentication.UidPwdPinDirAuthentication
+
+            Plugin ID: UserPwdDirAuth
+            Class Name: com.netscape.cms.authentication.UserPwdDirAuthentication
+          EOF
+
+          diff expected output
+
+      - name: Install JDK
+        run: |
+          docker exec pki dnf install -y java-25-openjdk-devel
+
+      - name: Undeploy CA webapp
+        run: |
+          docker exec pki pki-server webapp-undeploy \
+              --wait \
+              ca
+
+      - name: Customize CA webapp folder
+        run: |
+          # create CA webapp deployment folder
+          docker exec pki mkdir -p /var/lib/pki/pki-tomcat/webapps/ca
+
+          # create links to files in original CA webapp folder
+          docker exec pki find \
+              /usr/share/pki/ca/webapps/ca \
+              -mindepth 1 \
+              -maxdepth 1 \
+              -exec ln -s {} /var/lib/pki/pki-tomcat/webapps/ca \;
+
+          # update owner/permission
+          docker exec pki chown -R pkiuser:pkiuser /var/lib/pki/pki-tomcat/webapps/ca
+
+          docker exec pki ls -l /var/lib/pki/pki-tomcat/webapps/ca
+
+      - name: Customize CA webapp WEB-INF folder
+        run: |
+          # replace WEB-INF link with actual folder
+          docker exec pki rm -f /var/lib/pki/pki-tomcat/webapps/ca/WEB-INF
+          docker exec pki mkdir -p /var/lib/pki/pki-tomcat/webapps/ca/WEB-INF
+
+          # create links to files in original WEB-INF folder
+          docker exec pki find \
+              /usr/share/pki/ca/webapps/ca/WEB-INF \
+              -mindepth 1 \
+              -maxdepth 1 \
+              -exec ln -s {} /var/lib/pki/pki-tomcat/webapps/ca/WEB-INF \;
+
+          # update owner/permission
+          docker exec pki chown -R pkiuser:pkiuser /var/lib/pki/pki-tomcat/webapps/ca/WEB-INF
+
+          docker exec pki ls -l /var/lib/pki/pki-tomcat/webapps/ca/WEB-INF
+
+      - name: Customize CA webapp WEB-INF/classes folder
+        run: |
+          # replace WEB-INF/classes link with actual folder
+          docker exec pki rm -f /var/lib/pki/pki-tomcat/webapps/ca/WEB-INF/classes
+          docker exec pki mkdir -p /var/lib/pki/pki-tomcat/webapps/ca/WEB-INF/classes
+
+          # create links to files in original WEB-INF/classes folder
+          docker exec pki find \
+              /usr/share/pki/ca/webapps/ca/WEB-INF/classes \
+              -mindepth 1 \
+              -maxdepth 1 \
+              -exec ln -s {} /var/lib/pki/pki-tomcat/webapps/ca/WEB-INF/classes \;
+
+          # update owner/permission
+          docker exec pki chown -R pkiuser:pkiuser /var/lib/pki/pki-tomcat/webapps/ca/WEB-INF/classes
+
+          docker exec pki ls -l /var/lib/pki/pki-tomcat/webapps/ca/WEB-INF/classes
+
+      - name: Build custom auth plugin
+        run: |
+          # build plugin and store the classes in WEB-INF/classes
+          docker exec \
+              -w /usr/share/pki/server/examples/java \
+              pki javac \
+              -cp "/usr/share/pki/lib/*:/usr/share/pki/server/common/lib/*:/usr/share/pki/server/webapps/pki/WEB-INF/lib/*" \
+              -d /var/lib/pki/pki-tomcat/webapps/ca/WEB-INF/classes \
+              com/example/pki/server/auth/CustomAuthPlugin.java
+
+          # update owner/permission
+          docker exec pki chown -R pkiuser:pkiuser /var/lib/pki/pki-tomcat/webapps/ca/WEB-INF/classes
+
+          docker exec pki ls -lR /var/lib/pki/pki-tomcat/webapps/ca/WEB-INF/classes
+
+      - name: Add custom auth plugin
+        run: |
+          docker exec pki pki-server ca-auth-plugin-add \
+              --class-name com.example.pki.server.auth.CustomAuthPlugin \
+              CustomAuthPlugin
+
+          docker exec pki pki-server ca-auth-plugin-find \
+              | tee output
+
+          # custom auth plugin should be added
+          cat > expected << EOF
+            Plugin ID: AgentCertAuth
+            Class Name: com.netscape.cms.authentication.AgentCertAuthentication
+
+            Plugin ID: CMCAuth
+            Class Name: com.netscape.cms.authentication.CMCAuth
+
+            Plugin ID: CMCAuthForEST
+            Class Name: com.netscape.cms.authentication.CMCAuthForEST
+
+            Plugin ID: CMCUserSignedAuth
+            Class Name: com.netscape.cms.authentication.CMCUserSignedAuth
+
+            Plugin ID: CustomAuthPlugin
+            Class Name: com.example.pki.server.auth.CustomAuthPlugin
+
+            Plugin ID: FlatFileAuth
+            Class Name: com.netscape.cms.authentication.FlatFileAuth
+
+            Plugin ID: SSLclientCertAuth
+            Class Name: com.netscape.cms.authentication.SSLclientCertAuthentication
+
+            Plugin ID: SessionAuthentication
+            Class Name: com.netscape.cms.authentication.SessionAuthentication
+
+            Plugin ID: SharedToken
+            Class Name: com.netscape.cms.authentication.SharedSecret
+
+            Plugin ID: TokenAuth
+            Class Name: com.netscape.cms.authentication.TokenAuthentication
+
+            Plugin ID: UidPwdDirAuth
+            Class Name: com.netscape.cms.authentication.UidPwdDirAuthentication
+
+            Plugin ID: UidPwdGroupDirAuth
+            Class Name: com.netscape.cms.authentication.UidPwdGroupDirAuthentication
+
+            Plugin ID: UidPwdPinDirAuth
+            Class Name: com.netscape.cms.authentication.UidPwdPinDirAuthentication
+
+            Plugin ID: UserPwdDirAuth
+            Class Name: com.netscape.cms.authentication.UserPwdDirAuthentication
+          EOF
+
+          diff expected output
+
+      - name: Add custom auth manager
+        run: |
+          docker exec pki pki-server ca-config-set auths.instance.CustomAuthManager.pluginName CustomAuthPlugin
+
+      - name: Redeploy CA subsystem
+        run: |
+          docker exec pki pki-server webapp-deploy \
+              --descriptor /usr/share/pki/ca/conf/Catalina/localhost/ca.xml \
+              --doc-base /var/lib/pki/pki-tomcat/webapps/ca \
+              --wait \
+              ca
 
       - name: Retrieve caDirUserCert profile
         run: |
@@ -150,6 +304,12 @@ jobs:
           xmlstarlet edit --inplace \
               -u "/Profile/description" \
               -v "Certificate profile for 五輪真弓" \
+              CustomProfile.xml
+
+          # update profile authenticator ID
+          xmlstarlet edit --inplace \
+              -u "/Profile/authenticatorId" \
+              -v "CustomAuthManager" \
               CustomProfile.xml
 
           cat CustomProfile.xml
@@ -256,7 +416,7 @@ jobs:
 
           cat > expected << EOF
             Nickname: testuser
-            Subject DN: UID=testuser,OU=people,DC=example,DC=com
+            Subject DN: UID=testuser
             Issuer DN: CN=CA Signing Certificate,OU=pki-tomcat,O=EXAMPLE
             Trust Flags: u,u,u
           EOF
@@ -276,6 +436,61 @@ jobs:
               -n caadmin \
               ca-profile-del \
               CustomProfile
+
+      - name: Remove custom auth manager
+        run: |
+          docker exec pki pki-server ca-config-unset auths.instance.CustomAuthManager.pluginName
+
+      - name: Remove custom auth plugin
+        run: |
+          docker exec pki pki-server ca-auth-plugin-del CustomAuthPlugin
+
+          docker exec pki pki-server ca-auth-plugin-find \
+              | tee output
+
+          # custom auth plugin should be removed
+          cat > expected << EOF
+            Plugin ID: AgentCertAuth
+            Class Name: com.netscape.cms.authentication.AgentCertAuthentication
+
+            Plugin ID: CMCAuth
+            Class Name: com.netscape.cms.authentication.CMCAuth
+
+            Plugin ID: CMCAuthForEST
+            Class Name: com.netscape.cms.authentication.CMCAuthForEST
+
+            Plugin ID: CMCUserSignedAuth
+            Class Name: com.netscape.cms.authentication.CMCUserSignedAuth
+
+            Plugin ID: FlatFileAuth
+            Class Name: com.netscape.cms.authentication.FlatFileAuth
+
+            Plugin ID: SSLclientCertAuth
+            Class Name: com.netscape.cms.authentication.SSLclientCertAuthentication
+
+            Plugin ID: SessionAuthentication
+            Class Name: com.netscape.cms.authentication.SessionAuthentication
+
+            Plugin ID: SharedToken
+            Class Name: com.netscape.cms.authentication.SharedSecret
+
+            Plugin ID: TokenAuth
+            Class Name: com.netscape.cms.authentication.TokenAuthentication
+
+            Plugin ID: UidPwdDirAuth
+            Class Name: com.netscape.cms.authentication.UidPwdDirAuthentication
+
+            Plugin ID: UidPwdGroupDirAuth
+            Class Name: com.netscape.cms.authentication.UidPwdGroupDirAuthentication
+
+            Plugin ID: UidPwdPinDirAuth
+            Class Name: com.netscape.cms.authentication.UidPwdPinDirAuthentication
+
+            Plugin ID: UserPwdDirAuth
+            Class Name: com.netscape.cms.authentication.UserPwdDirAuthentication
+          EOF
+
+          diff expected output
 
       - name: Remove CA
         run: docker exec pki pkidestroy -s CA -v
