@@ -337,7 +337,11 @@ public class CertProcessor extends CAProcessor {
             Profile profile, Map<String, String> ctx, AuthManager authenticator, AuthToken authToken,
             Request[] reqs) throws Exception {
 
+        int i = 0;
         for (Request req : reqs) {
+
+            logger.info("CertProcessor: Populating request #" + i);
+
             // adding parameters to request
             if (isRenewal) {
                 setInputsIntoRequest(origReq, profile, req, locale);
@@ -390,6 +394,15 @@ public class CertProcessor extends CAProcessor {
             }
             profile.populateInput(ctx, req);
             profile.populate(req);
+
+            logger.info("CertProcessor: Request #" + i + ":");
+            for (Enumeration<String> e = req.getExtDataKeys(); e.hasMoreElements(); ) {
+                String name = e.nextElement();
+                String value = req.getExtDataInString(name);
+                logger.info("CertProcessor: - " + name + ": " + value);
+            }
+
+            i++;
         }
     }
 
