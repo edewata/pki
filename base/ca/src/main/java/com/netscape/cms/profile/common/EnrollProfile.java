@@ -226,8 +226,9 @@ public abstract class EnrollProfile extends Profile {
     @Override
     public Request[] createRequests(Map<String, String> ctx, Locale locale) throws Exception {
 
+        logger.info("EnrollProfile: Creating requests");
+
         String method = "EnrollProfile: createRequests: ";
-        logger.debug(method + "begins");
 
         // determine how many requests should be created
         String cert_request_type = ctx.get(CTX_CERT_REQUEST_TYPE);
@@ -237,7 +238,7 @@ public abstract class EnrollProfile extends Profile {
 
         /* cert_request_type can be null for the case of CMC */
         if (cert_request_type == null) {
-            logger.debug(method + " request type is null");
+            logger.warn(method + "EnrollProfile: Missing request type");
         }
 
         int num_requests = 1; // default to 1 request
@@ -305,6 +306,7 @@ public abstract class EnrollProfile extends Profile {
             renewal_seq_num = renewal_seq_num_str == null ? 0 : Integer.parseInt(renewal_seq_num_str);
         }
 
+        logger.info("EnrollProfile: Creating " + num_requests + " request(s)");
         // populate requests with appropriate content
         Request result[] = new Request[num_requests];
 
