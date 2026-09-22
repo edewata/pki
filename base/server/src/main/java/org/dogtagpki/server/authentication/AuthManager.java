@@ -40,6 +40,8 @@ import com.netscape.cmscore.request.Request;
  */
 public abstract class AuthManager {
 
+    public static org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(AuthManager.class);
+
     public static final String AUTHENTICATED_NAME = "authenticatedName";
 
     /* standard credential for client cert from ssl client auth */
