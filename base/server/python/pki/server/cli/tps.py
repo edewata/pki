@@ -31,6 +31,7 @@ import urllib.parse
 import pki.cli
 import pki.server.cli.acl
 import pki.server.cli.audit
+import pki.server.cli.auth
 import pki.server.cli.config
 import pki.server.cli.db
 import pki.server.cli.group
@@ -57,6 +58,7 @@ class TPSCLI(pki.cli.CLI):
         self.add_module(pki.server.cli.group.GroupCLI(self))
         self.add_module(pki.server.cli.user.UserCLI(self))
         self.add_module(pki.server.cli.acl.SubsystemACLCLI(self))
+        self.add_module(pki.server.cli.auth.SubsystemAuthCLI(self))
 
 
 class TPSCloneCLI(pki.cli.CLI):

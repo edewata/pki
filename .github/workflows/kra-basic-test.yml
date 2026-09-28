@@ -474,6 +474,33 @@ jobs:
 
           diff /dev/null output
 
+      - name: Check default KRA auth plugins
+        run: |
+          docker exec pki pki-server kra-auth-plugin-find \
+              | tee output
+
+          cat > expected << EOF
+            Plugin ID: AgentCertAuth
+            Class: com.netscape.cms.authentication.AgentCertAuthentication
+
+            Plugin ID: PortalEnroll
+            Class: com.netscape.cms.authentication.PortalEnroll
+
+            Plugin ID: TokenAuth
+            Class: com.netscape.cms.authentication.TokenAuthentication
+
+            Plugin ID: UidPwdDirAuth
+            Class: com.netscape.cms.authentication.UidPwdDirAuthentication
+
+            Plugin ID: UidPwdPinDirAuth
+            Class: com.netscape.cms.authentication.UidPwdPinDirAuthentication
+
+            Plugin ID: UserPwdDirAuth
+            Class: com.netscape.cms.authentication.UserPwdDirAuthentication
+          EOF
+
+          diff expected output
+
       - name: Check PKI server system certs
         run: |
           docker exec pki pki-server cert-find

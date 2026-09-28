@@ -368,6 +368,54 @@ jobs:
 
           diff expected_$TOMCAT_FLAVOR output
 
+      - name: Check default CA auth plugins
+        run: |
+          docker exec pki pki-server ca-auth-plugin-find \
+              | tee output
+
+          cat > expected << EOF
+            Plugin ID: AgentCertAuth
+            Class: com.netscape.cms.authentication.AgentCertAuthentication
+
+            Plugin ID: CMCAuth
+            Class: com.netscape.cms.authentication.CMCAuth
+
+            Plugin ID: CMCAuthForEST
+            Class: com.netscape.cms.authentication.CMCAuthForEST
+
+            Plugin ID: CMCUserSignedAuth
+            Class: com.netscape.cms.authentication.CMCUserSignedAuth
+
+            Plugin ID: FlatFileAuth
+            Class: com.netscape.cms.authentication.FlatFileAuth
+
+            Plugin ID: SSLclientCertAuth
+            Class: com.netscape.cms.authentication.SSLclientCertAuthentication
+
+            Plugin ID: SessionAuthentication
+            Class: com.netscape.cms.authentication.SessionAuthentication
+
+            Plugin ID: SharedToken
+            Class: com.netscape.cms.authentication.SharedSecret
+
+            Plugin ID: TokenAuth
+            Class: com.netscape.cms.authentication.TokenAuthentication
+
+            Plugin ID: UidPwdDirAuth
+            Class: com.netscape.cms.authentication.UidPwdDirAuthentication
+
+            Plugin ID: UidPwdGroupDirAuth
+            Class: com.netscape.cms.authentication.UidPwdGroupDirAuthentication
+
+            Plugin ID: UidPwdPinDirAuth
+            Class: com.netscape.cms.authentication.UidPwdPinDirAuthentication
+
+            Plugin ID: UserPwdDirAuth
+            Class: com.netscape.cms.authentication.UserPwdDirAuthentication
+          EOF
+
+          diff expected output
+
       - name: Check CA server status
         run: |
           docker exec pki pki-server status | tee output

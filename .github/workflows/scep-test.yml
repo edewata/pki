@@ -86,15 +86,23 @@ jobs:
 
       - name: Check default FlatFileAuth config
         run: |
+          docker exec pki pki-server ca-auth-plugin-show FlatFileAuth \
+              | tee output
+
+          cat > expected << EOF
+            Plugin ID: FlatFileAuth
+            Class: com.netscape.cms.authentication.FlatFileAuth
+          EOF
+
+          diff expected output
+
           docker exec pki pki-server ca-config-find \
               | sed -n \
-                  -e '/^auths\.impl\.FlatFileAuth\./p' \
                   -e '/^auths\.instance\.flatFileAuth\./p' \
               | sort \
               | tee output
 
           cat > expected << EOF
-          auths.impl.FlatFileAuth.class=com.netscape.cms.authentication.FlatFileAuth
           auths.instance.flatFileAuth.fileName=/var/lib/pki/pki-tomcat/conf/ca/flatfile.txt
           auths.instance.flatFileAuth.pluginName=FlatFileAuth
           EOF

@@ -68,32 +68,6 @@ jobs:
               -D pki_ds_url=ldap://ds.example.com:3389 \
               -v
 
-      - name: Check default auth plugins
-        run: |
-          docker exec pki pki-server ca-config-find \
-              | sed -n \
-                  -e '/^auths\.impl\._/d' \
-                  -e '/^auths\.impl\./p' \
-              | tee output
-
-          cat > expected << EOF
-          auths.impl.AgentCertAuth.class=com.netscape.cms.authentication.AgentCertAuthentication
-          auths.impl.CMCAuth.class=com.netscape.cms.authentication.CMCAuth
-          auths.impl.CMCAuthForEST.class=com.netscape.cms.authentication.CMCAuthForEST
-          auths.impl.CMCUserSignedAuth.class=com.netscape.cms.authentication.CMCUserSignedAuth
-          auths.impl.FlatFileAuth.class=com.netscape.cms.authentication.FlatFileAuth
-          auths.impl.SSLclientCertAuth.class=com.netscape.cms.authentication.SSLclientCertAuthentication
-          auths.impl.SessionAuthentication.class=com.netscape.cms.authentication.SessionAuthentication
-          auths.impl.SharedToken.class=com.netscape.cms.authentication.SharedSecret
-          auths.impl.TokenAuth.class=com.netscape.cms.authentication.TokenAuthentication
-          auths.impl.UidPwdDirAuth.class=com.netscape.cms.authentication.UidPwdDirAuthentication
-          auths.impl.UidPwdGroupDirAuth.class=com.netscape.cms.authentication.UidPwdGroupDirAuthentication
-          auths.impl.UidPwdPinDirAuth.class=com.netscape.cms.authentication.UidPwdPinDirAuthentication
-          auths.impl.UserPwdDirAuth.class=com.netscape.cms.authentication.UserPwdDirAuthentication
-          EOF
-
-          diff expected output
-
       - name: Install CA admin cert
         run: |
           docker exec pki pki-server cert-export \
@@ -214,31 +188,66 @@ jobs:
         run: |
           # https://github.com/dogtagpki/pki/wiki/Registering-Authentication-Plugin
 
-          docker exec pki pki-server ca-config-set \
-              auths.impl.CustomAuthPlugin.class \
-              com.example.pki.server.auth.CustomAuthPlugin
+          docker exec pki pki-server ca-auth-plugin-add \
+              --class com.example.pki.server.auth.CustomAuthPlugin \
+              CustomAuthPlugin
 
-          docker exec pki pki-server ca-config-find \
-              | sed -n \
-                  -e '/^auths\.impl\._/d' \
-                  -e '/^auths\.impl\./p' \
+          docker exec pki pki-server ca-auth-plugin-find \
+              | tee output
+
+          # custom auth plugin should be added
+          cat > expected << EOF
+            Plugin ID: AgentCertAuth
+            Class: com.netscape.cms.authentication.AgentCertAuthentication
+
+            Plugin ID: CMCAuth
+            Class: com.netscape.cms.authentication.CMCAuth
+
+            Plugin ID: CMCAuthForEST
+            Class: com.netscape.cms.authentication.CMCAuthForEST
+
+            Plugin ID: CMCUserSignedAuth
+            Class: com.netscape.cms.authentication.CMCUserSignedAuth
+
+            Plugin ID: CustomAuthPlugin
+            Class: com.example.pki.server.auth.CustomAuthPlugin
+
+            Plugin ID: FlatFileAuth
+            Class: com.netscape.cms.authentication.FlatFileAuth
+
+            Plugin ID: SSLclientCertAuth
+            Class: com.netscape.cms.authentication.SSLclientCertAuthentication
+
+            Plugin ID: SessionAuthentication
+            Class: com.netscape.cms.authentication.SessionAuthentication
+
+            Plugin ID: SharedToken
+            Class: com.netscape.cms.authentication.SharedSecret
+
+            Plugin ID: TokenAuth
+            Class: com.netscape.cms.authentication.TokenAuthentication
+
+            Plugin ID: UidPwdDirAuth
+            Class: com.netscape.cms.authentication.UidPwdDirAuthentication
+
+            Plugin ID: UidPwdGroupDirAuth
+            Class: com.netscape.cms.authentication.UidPwdGroupDirAuthentication
+
+            Plugin ID: UidPwdPinDirAuth
+            Class: com.netscape.cms.authentication.UidPwdPinDirAuthentication
+
+            Plugin ID: UserPwdDirAuth
+            Class: com.netscape.cms.authentication.UserPwdDirAuthentication
+          EOF
+
+          diff expected output
+
+          docker exec pki pki-server ca-auth-plugin-show CustomAuthPlugin \
               | tee output
 
           cat > expected << EOF
-          auths.impl.AgentCertAuth.class=com.netscape.cms.authentication.AgentCertAuthentication
-          auths.impl.CMCAuth.class=com.netscape.cms.authentication.CMCAuth
-          auths.impl.CMCAuthForEST.class=com.netscape.cms.authentication.CMCAuthForEST
-          auths.impl.CMCUserSignedAuth.class=com.netscape.cms.authentication.CMCUserSignedAuth
-          auths.impl.CustomAuthPlugin.class=com.example.pki.server.auth.CustomAuthPlugin
-          auths.impl.FlatFileAuth.class=com.netscape.cms.authentication.FlatFileAuth
-          auths.impl.SSLclientCertAuth.class=com.netscape.cms.authentication.SSLclientCertAuthentication
-          auths.impl.SessionAuthentication.class=com.netscape.cms.authentication.SessionAuthentication
-          auths.impl.SharedToken.class=com.netscape.cms.authentication.SharedSecret
-          auths.impl.TokenAuth.class=com.netscape.cms.authentication.TokenAuthentication
-          auths.impl.UidPwdDirAuth.class=com.netscape.cms.authentication.UidPwdDirAuthentication
-          auths.impl.UidPwdGroupDirAuth.class=com.netscape.cms.authentication.UidPwdGroupDirAuthentication
-          auths.impl.UidPwdPinDirAuth.class=com.netscape.cms.authentication.UidPwdPinDirAuthentication
-          auths.impl.UserPwdDirAuth.class=com.netscape.cms.authentication.UserPwdDirAuthentication
+            Plugin ID: CustomAuthPlugin
+            Class: com.example.pki.server.auth.CustomAuthPlugin
           EOF
 
           diff expected output
@@ -426,29 +435,51 @@ jobs:
 
       - name: Remove custom auth plugin
         run: |
-          docker exec pki pki-server ca-config-unset \
-              auths.impl.CustomAuthPlugin.class \
+          docker exec pki pki-server ca-auth-plugin-del CustomAuthPlugin
 
-          docker exec pki pki-server ca-config-find \
-              | sed -n \
-                  -e '/^auths\.impl\._/d' \
-                  -e '/^auths\.impl\./p' \
+          docker exec pki pki-server ca-auth-plugin-find \
               | tee output
 
+          # custom auth plugin should be removed
           cat > expected << EOF
-          auths.impl.AgentCertAuth.class=com.netscape.cms.authentication.AgentCertAuthentication
-          auths.impl.CMCAuth.class=com.netscape.cms.authentication.CMCAuth
-          auths.impl.CMCAuthForEST.class=com.netscape.cms.authentication.CMCAuthForEST
-          auths.impl.CMCUserSignedAuth.class=com.netscape.cms.authentication.CMCUserSignedAuth
-          auths.impl.FlatFileAuth.class=com.netscape.cms.authentication.FlatFileAuth
-          auths.impl.SSLclientCertAuth.class=com.netscape.cms.authentication.SSLclientCertAuthentication
-          auths.impl.SessionAuthentication.class=com.netscape.cms.authentication.SessionAuthentication
-          auths.impl.SharedToken.class=com.netscape.cms.authentication.SharedSecret
-          auths.impl.TokenAuth.class=com.netscape.cms.authentication.TokenAuthentication
-          auths.impl.UidPwdDirAuth.class=com.netscape.cms.authentication.UidPwdDirAuthentication
-          auths.impl.UidPwdGroupDirAuth.class=com.netscape.cms.authentication.UidPwdGroupDirAuthentication
-          auths.impl.UidPwdPinDirAuth.class=com.netscape.cms.authentication.UidPwdPinDirAuthentication
-          auths.impl.UserPwdDirAuth.class=com.netscape.cms.authentication.UserPwdDirAuthentication
+            Plugin ID: AgentCertAuth
+            Class: com.netscape.cms.authentication.AgentCertAuthentication
+
+            Plugin ID: CMCAuth
+            Class: com.netscape.cms.authentication.CMCAuth
+
+            Plugin ID: CMCAuthForEST
+            Class: com.netscape.cms.authentication.CMCAuthForEST
+
+            Plugin ID: CMCUserSignedAuth
+            Class: com.netscape.cms.authentication.CMCUserSignedAuth
+
+            Plugin ID: FlatFileAuth
+            Class: com.netscape.cms.authentication.FlatFileAuth
+
+            Plugin ID: SSLclientCertAuth
+            Class: com.netscape.cms.authentication.SSLclientCertAuthentication
+
+            Plugin ID: SessionAuthentication
+            Class: com.netscape.cms.authentication.SessionAuthentication
+
+            Plugin ID: SharedToken
+            Class: com.netscape.cms.authentication.SharedSecret
+
+            Plugin ID: TokenAuth
+            Class: com.netscape.cms.authentication.TokenAuthentication
+
+            Plugin ID: UidPwdDirAuth
+            Class: com.netscape.cms.authentication.UidPwdDirAuthentication
+
+            Plugin ID: UidPwdGroupDirAuth
+            Class: com.netscape.cms.authentication.UidPwdGroupDirAuthentication
+
+            Plugin ID: UidPwdPinDirAuth
+            Class: com.netscape.cms.authentication.UidPwdPinDirAuthentication
+
+            Plugin ID: UserPwdDirAuth
+            Class: com.netscape.cms.authentication.UserPwdDirAuthentication
           EOF
 
           diff expected output
