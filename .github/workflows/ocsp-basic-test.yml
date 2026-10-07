@@ -439,6 +439,21 @@ jobs:
 
           diff expected output
 
+      - name: Check default OCSP auth managers
+        run: |
+          docker exec pki pki-server ocsp-auth-manager-find \
+              | tee output
+
+          cat > expected << EOF
+            Manager ID: AgentCertAuth
+            Plugin ID: AgentCertAuth
+
+            Manager ID: TokenAuth
+            Plugin ID: TokenAuth
+          EOF
+
+          diff expected output
+
       - name: Check PKI server status
         run: |
           docker exec pki pki-server status | tee output

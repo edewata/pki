@@ -96,15 +96,14 @@ jobs:
 
           diff expected output
 
-          docker exec pki pki-server ca-config-find \
-              | sed -n \
-                  -e '/^auths\.instance\.flatFileAuth\./p' \
-              | sort \
+          docker exec pki pki-server ca-auth-manager-show flatFileAuth \
               | tee output
 
           cat > expected << EOF
-          auths.instance.flatFileAuth.fileName=/var/lib/pki/pki-tomcat/conf/ca/flatfile.txt
-          auths.instance.flatFileAuth.pluginName=FlatFileAuth
+            Manager ID: flatFileAuth
+            Plugin ID: FlatFileAuth
+            Properties:
+              fileName: /var/lib/pki/pki-tomcat/conf/ca/flatfile.txt
           EOF
 
           diff expected output

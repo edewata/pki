@@ -501,6 +501,21 @@ jobs:
 
           diff expected output
 
+      - name: Check default KRA auth managers
+        run: |
+          docker exec pki pki-server kra-auth-manager-find \
+              | tee output
+
+          cat > expected << EOF
+            Manager ID: AgentCertAuth
+            Plugin ID: AgentCertAuth
+
+            Manager ID: TokenAuth
+            Plugin ID: TokenAuth
+          EOF
+
+          diff expected output
+
       - name: Check PKI server system certs
         run: |
           docker exec pki pki-server cert-find

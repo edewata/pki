@@ -293,11 +293,28 @@ jobs:
 
       - name: Configure PinDirEnrollment
         run: |
-          docker exec pki pki-server ca-config-set auths.instance.PinDirEnrollment.pluginName UidPwdPinDirAuth
-          docker exec pki pki-server ca-config-set auths.instance.PinDirEnrollment.ldap.basedn ou=people,dc=example,dc=com
-          docker exec pki pki-server ca-config-set auths.instance.PinDirEnrollment.ldap.ldapauth.authtype BasicAuth
-          docker exec pki pki-server ca-config-set auths.instance.PinDirEnrollment.ldap.ldapconn.host ds.example.com
-          docker exec pki pki-server ca-config-set auths.instance.PinDirEnrollment.ldap.ldapconn.port 3389
+          docker exec pki pki-server ca-auth-manager-add \
+              --plugin UidPwdPinDirAuth \
+              -D ldap.basedn=ou=people,dc=example,dc=com \
+              -D ldap.ldapauth.authtype=BasicAuth \
+              -D ldap.ldapconn.host=ds.example.com \
+              -D ldap.ldapconn.port=3389 \
+              PinDirEnrollment
+
+          docker exec pki pki-server ca-auth-manager-show PinDirEnrollment \
+              | tee output
+
+          cat > expected << EOF
+            Manager ID: PinDirEnrollment
+            Plugin ID: UidPwdPinDirAuth
+            Properties:
+              ldap.basedn: ou=people,dc=example,dc=com
+              ldap.ldapauth.authtype: BasicAuth
+              ldap.ldapconn.host: ds.example.com
+              ldap.ldapconn.port: 3389
+          EOF
+
+          diff expected output
 
       - name: Enable caDirPinUserCert profile
         run: |

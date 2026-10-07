@@ -391,6 +391,27 @@ jobs:
 
           diff expected output
 
+      - name: Check default TPS auth managers
+        run: |
+          docker exec pki pki-server tps-auth-manager-find \
+              | tee output
+
+          cat > expected << EOF
+            Manager ID: AgentCertAuth
+            Plugin ID: AgentCertAuth
+
+            Manager ID: SSLclientCertAuth
+            Plugin ID: SSLclientCertAuth
+
+            Manager ID: TokenAuth
+            Plugin ID: TokenAuth
+
+            Manager ID: ldap1
+            Plugin ID: UidPwdDirAuth
+          EOF
+
+          diff expected output
+
       - name: Check TPS server status
         run: |
           docker exec pki pki-server status | tee output
@@ -480,7 +501,7 @@ jobs:
 
           diff expected output
 
-      - name: Set up TPS authentication and misc cfg settings
+      - name: Set up TPS auth database
         run: |
           # import sample TPS users
           docker exec pki ldapadd \
@@ -488,27 +509,77 @@ jobs:
               -D "cn=Directory Manager" \
               -w Secret.123 \
               -f /usr/share/pki/tps/auth/ds/create.ldif
+
           docker exec pki ldapadd \
               -H ldap://ds.example.com:3389 \
               -D "cn=Directory Manager" \
               -w Secret.123 \
               -f /usr/share/pki/tps/auth/ds/example.ldif
 
-          # configure TPS to use the sample TPS users
-          docker exec pki pki-server tps-config-set \
-              auths.instance.ldap1.ldap.basedn \
-              ou=people,dc=example,dc=com
+      - name: Configure TPS auth manager
+        run: |
+          docker exec pki pki-server tps-auth-manager-mod \
+              -D ldap.basedn=ou=people,dc=example,dc=com \
+              ldap1
 
-          # configure TPS to allow tpsclient tests to work
+          docker exec pki pki-server tps-auth-manager-show ldap1 \
+              | tee output
+
+          cat > expected << EOF
+            Manager ID: ldap1
+            Plugin ID: UidPwdDirAuth
+            Properties:
+              authCredName: uid
+              dnpattern: 
+              externalReg.attributes: certsToAdd,tokenCUID,enrollmenttype,registrationtype,tokenType
+              externalReg.certs.recoverAttributeName: certsToAdd
+              externalReg.cuidAttributeName: tokenCUID
+              externalReg.registrationTypeAttributeName: registrationtype
+              externalReg.tokenTypeAttributeName: tokenType
+              ldap.basedn: ou=people,dc=example,dc=com
+              ldap.ldapauth.authtype: BasicAuth
+              ldap.ldapauth.bindDN: 
+              ldap.ldapauth.bindPWPrompt: ldap1
+              ldap.ldapauth.clientCertNickname: subsystem
+              ldap.ldapconn.host: ds.example.com
+              ldap.ldapconn.port: 3389
+              ldap.ldapconn.secureConn: false
+              ldap.ldapconn.version: 3
+              ldap.maxConns: 15
+              ldap.minConns: 3
+              ldapByteAttributes: 
+              ldapStringAttributes: mail,cn,uid,enrollmenttype,certsToAdd,tokenCUID,registrationtype,tokenType,firstname,lastname,exec-edipi,exec-mail
+              ui.description.en: This authenticates user against the LDAP directory.
+              ui.id.PASSWORD.credMap.authCred: pwd
+              ui.id.PASSWORD.credMap.msgCred.extlogin: PASSWORD
+              ui.id.PASSWORD.credMap.msgCred.login: password
+              ui.id.PASSWORD.description.en: LDAP Password
+              ui.id.PASSWORD.name.en: LDAP Password
+              ui.id.UID.credMap.authCred: uid
+              ui.id.UID.credMap.msgCred.extlogin: UID
+              ui.id.UID.credMap.msgCred.login: screen_name
+              ui.id.UID.description.en: LDAP User ID
+              ui.id.UID.name.en: LDAP User ID
+              ui.retries: 3
+              ui.title.en: LDAP Authentication
+          EOF
+
+          diff expected output
+
+      - name: Configure TPS for testing
+        run: |
+          # allow TPS client to work
           docker exec pki pki-server tps-config-set \
-              channel.scp01.no.le.byte true
+              channel.scp01.no.le.byte \
+              true
 
           # reset PIN_RESET after PIN reset
           docker exec pki pki-server tps-config-set \
               tokendb.defaultPolicy \
               "RE_ENROLL=YES;RENEW=NO;FORCE_FORMAT=NO;PIN_RESET=NO;RESET_PIN_RESET_TO_NO=YES"
 
-          # restart TPS subsystem
+      - name: Restart TPS subsystem
+        run: |
           docker exec pki pki-server tps-redeploy --wait
 
       - name: Check pki tps-client

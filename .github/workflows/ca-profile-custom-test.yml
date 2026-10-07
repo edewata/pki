@@ -256,7 +256,57 @@ jobs:
         run: |
           # https://github.com/dogtagpki/pki/wiki/Creating-Authentication-Manager
 
-          docker exec pki pki-server ca-config-set auths.instance.CustomAuthManager.pluginName CustomAuthPlugin
+          docker exec pki pki-server ca-auth-manager-add \
+              --plugin CustomAuthPlugin \
+              CustomAuthManager
+
+          # custom auth manager should be added
+          docker exec pki pki-server ca-auth-manager-find \
+              | tee output
+
+          cat > expected << EOF
+            Manager ID: AgentCertAuth
+            Plugin ID: AgentCertAuth
+
+            Manager ID: CMCAuth
+            Plugin ID: CMCAuth
+
+            Manager ID: CMCAuthForEST
+            Plugin ID: CMCAuthForEST
+
+            Manager ID: CMCUserSignedAuth
+            Plugin ID: CMCUserSignedAuth
+
+            Manager ID: CustomAuthManager
+            Plugin ID: CustomAuthPlugin
+
+            Manager ID: SSLclientCertAuth
+            Plugin ID: SSLclientCertAuth
+
+            Manager ID: SessionAuthentication
+            Plugin ID: SessionAuthentication
+
+            Manager ID: TokenAuth
+            Plugin ID: TokenAuth
+
+            Manager ID: flatFileAuth
+            Plugin ID: FlatFileAuth
+
+            Manager ID: raCertAuth
+            Plugin ID: AgentCertAuth
+          EOF
+
+          diff expected output
+
+          docker exec pki pki-server ca-auth-manager-show CustomAuthManager \
+              | tee output
+
+          cat > expected << EOF
+            Manager ID: CustomAuthManager
+            Plugin ID: CustomAuthPlugin
+          EOF
+
+          diff expected output
 
       - name: Redeploy CA subsystem
         run: |
@@ -431,7 +481,42 @@ jobs:
 
       - name: Remove custom auth manager
         run: |
-          docker exec pki pki-server ca-config-unset auths.instance.CustomAuthManager.pluginName
+          docker exec pki pki-server ca-auth-manager-del CustomAuthManager
+
+          docker exec pki pki-server ca-auth-manager-find \
+              | tee output
+
+          # custom auth manager should be removed
+          cat > expected << EOF
+            Manager ID: AgentCertAuth
+            Plugin ID: AgentCertAuth
+
+            Manager ID: CMCAuth
+            Plugin ID: CMCAuth
+
+            Manager ID: CMCAuthForEST
+            Plugin ID: CMCAuthForEST
+
+            Manager ID: CMCUserSignedAuth
+            Plugin ID: CMCUserSignedAuth
+
+            Manager ID: SSLclientCertAuth
+            Plugin ID: SSLclientCertAuth
+
+            Manager ID: SessionAuthentication
+            Plugin ID: SessionAuthentication
+
+            Manager ID: TokenAuth
+            Plugin ID: TokenAuth
+
+            Manager ID: flatFileAuth
+            Plugin ID: FlatFileAuth
+
+            Manager ID: raCertAuth
+            Plugin ID: AgentCertAuth
+          EOF
+
+          diff expected output
 
       - name: Remove custom auth plugin
         run: |

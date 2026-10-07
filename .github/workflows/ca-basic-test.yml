@@ -416,6 +416,42 @@ jobs:
 
           diff expected output
 
+      - name: Check default CA auth managers
+        run: |
+          docker exec pki pki-server ca-auth-manager-find \
+              | tee output
+
+          cat > expected << EOF
+            Manager ID: AgentCertAuth
+            Plugin ID: AgentCertAuth
+
+            Manager ID: CMCAuth
+            Plugin ID: CMCAuth
+
+            Manager ID: CMCAuthForEST
+            Plugin ID: CMCAuthForEST
+
+            Manager ID: CMCUserSignedAuth
+            Plugin ID: CMCUserSignedAuth
+
+            Manager ID: SSLclientCertAuth
+            Plugin ID: SSLclientCertAuth
+
+            Manager ID: SessionAuthentication
+            Plugin ID: SessionAuthentication
+
+            Manager ID: TokenAuth
+            Plugin ID: TokenAuth
+
+            Manager ID: flatFileAuth
+            Plugin ID: FlatFileAuth
+
+            Manager ID: raCertAuth
+            Plugin ID: AgentCertAuth
+          EOF
+
+          diff expected output
+
       - name: Check CA server status
         run: |
           docker exec pki pki-server status | tee output

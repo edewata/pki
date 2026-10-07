@@ -125,7 +125,7 @@ jobs:
           docker exec pki pki-server ca-config-set ca.cert.issuance_protection.nickname ca_issuance_protection
 
       # https://github.com/dogtagpki/pki/wiki/Configuring-CMC-Shared-Token-Authentication
-      - name: Configure shared token auth
+      - name: Set up auth database
         run: |
           # update schema
           docker exec pki ldapmodify \
@@ -151,28 +151,51 @@ jobs:
               -w Secret.123 \
               -f /usr/share/pki/ca/auth/ds/example.ldif
 
-          # configure CMC shared token authentication
-          docker exec pki pki-server ca-config-set auths.instance.SharedToken.ldap.basedn ou=people,dc=example,dc=com
-          docker exec pki pki-server ca-config-set auths.instance.SharedToken.ldap.ldapauth.authtype BasicAuth
-          docker exec pki pki-server ca-config-set auths.instance.SharedToken.ldap.ldapauth.bindDN "cn=Directory Manager"
-          docker exec pki pki-server ca-config-set auths.instance.SharedToken.ldap.ldapauth.bindPWPrompt "Rule SharedToken"
-          docker exec pki pki-server ca-config-set auths.instance.SharedToken.ldap.ldapconn.host ds.example.com
-          docker exec pki pki-server ca-config-set auths.instance.SharedToken.ldap.ldapconn.port 3389
-          docker exec pki pki-server ca-config-set auths.instance.SharedToken.ldap.ldapconn.secureConn false
-          docker exec pki pki-server ca-config-set auths.instance.SharedToken.pluginName SharedToken
-          docker exec pki pki-server ca-config-set auths.instance.SharedToken.shrTokAttr shrTok
+      - name: Configure shared token auth manager
+        run: |
+          docker exec pki pki-server ca-auth-manager-add \
+              --plugin SharedToken \
+              -D ldap.basedn="ou=people,dc=example,dc=com" \
+              -D ldap.ldapauth.authtype=BasicAuth \
+              -D ldap.ldapauth.bindDN="cn=Directory Manager" \
+              -D ldap.ldapauth.bindPWPrompt="Rule SharedToken" \
+              -D ldap.ldapconn.host=ds.example.com \
+              -D ldap.ldapconn.port=3389 \
+              -D ldap.ldapconn.secureConn=false \
+              SharedToken
 
-          # enable caFullCMCSharedTokenCert profile
+          docker exec pki pki-server ca-auth-manager-show SharedToken \
+              | tee output
+
+          cat > expected << EOF
+            Manager ID: SharedToken
+            Plugin ID: SharedToken
+            Properties:
+              ldap.basedn: ou=people,dc=example,dc=com
+              ldap.ldapauth.authtype: BasicAuth
+              ldap.ldapauth.bindDN: cn=Directory Manager
+              ldap.ldapauth.bindPWPrompt: Rule SharedToken
+              ldap.ldapconn.host: ds.example.com
+              ldap.ldapconn.port: 3389
+              ldap.ldapconn.secureConn: false
+          EOF
+
+          diff expected output
+
+      - name: Enable caFullCMCSharedTokenCert profile
+        run: |
           docker exec pki sed -i \
               -e "s/^\(enable\)=.*/\1=true/" \
               /var/lib/pki/pki-tomcat/ca/profiles/ca/caFullCMCSharedTokenCert.cfg
 
-          # enable caFullCMCUserSignedCert profile
+      - name: Enable caFullCMCUserSignedCert profile
+        run: |
           docker exec pki sed -i \
               -e "s/^\(enable\)=.*/\1=true/" \
               /var/lib/pki/pki-tomcat/ca/profiles/ca/caFullCMCUserSignedCert.cfg
 
-          # restart CA subsystem
+      - name: Restart CA subsystem
+        run: |
           docker exec pki pki-server ca-redeploy --wait
 
       # https://github.com/dogtagpki/pki/wiki/Generating-CMC-Shared-Token

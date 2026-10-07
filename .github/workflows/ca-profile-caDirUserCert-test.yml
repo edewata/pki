@@ -106,14 +106,34 @@ jobs:
 
       - name: Configure UserDirEnrollment
         run: |
-          docker exec pki pki-server ca-config-set auths.instance.UserDirEnrollment.pluginName UidPwdDirAuth
-          docker exec pki pki-server ca-config-set auths.instance.UserDirEnrollment.ldap.basedn dc=example,dc=com
-          docker exec pki pki-server ca-config-set auths.instance.UserDirEnrollment.ldap.ldapauth.authtype BasicAuth
-          docker exec pki pki-server ca-config-set auths.instance.UserDirEnrollment.ldap.ldapauth.bindDN "cn=Directory Manager"
-          docker exec pki pki-server ca-config-set auths.instance.UserDirEnrollment.ldap.ldapauth.bindPWPrompt internaldb
-          docker exec pki pki-server ca-config-set auths.instance.UserDirEnrollment.ldap.ldapconn.host ds.example.com
-          docker exec pki pki-server ca-config-set auths.instance.UserDirEnrollment.ldap.ldapconn.port 3389
-          docker exec pki pki-server ca-config-set auths.instance.UserDirEnrollment.ldap.ldapconn.secureConn false
+          docker exec pki pki-server ca-auth-manager-add \
+              --plugin UidPwdDirAuth \
+              -D ldap.basedn=dc=example,dc=com \
+              -D ldap.ldapauth.authtype=BasicAuth \
+              -D ldap.ldapauth.bindDN="cn=Directory Manager" \
+              -D ldap.ldapauth.bindPWPrompt=internaldb \
+              -D ldap.ldapconn.host=ds.example.com \
+              -D ldap.ldapconn.port=3389 \
+              -D ldap.ldapconn.secureConn=false \
+              UserDirEnrollment
+
+          docker exec pki pki-server ca-auth-manager-show UserDirEnrollment \
+              | tee output
+
+          cat > expected << EOF
+            Manager ID: UserDirEnrollment
+            Plugin ID: UidPwdDirAuth
+            Properties:
+              ldap.basedn: dc=example,dc=com
+              ldap.ldapauth.authtype: BasicAuth
+              ldap.ldapauth.bindDN: cn=Directory Manager
+              ldap.ldapauth.bindPWPrompt: internaldb
+              ldap.ldapconn.host: ds.example.com
+              ldap.ldapconn.port: 3389
+              ldap.ldapconn.secureConn: false
+          EOF
+
+          diff expected output
 
       - name: Enable caDirUserCert profile
         run: |

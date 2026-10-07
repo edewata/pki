@@ -956,22 +956,8 @@ jobs:
               conn.tks1.tksSharedSymKeyName \
               "TPS sharedSecret"
 
-      - name: Set up user auth database for TPS
+      - name: Set up TPS auth database
         run: |
-          # configure connection to auth database
-          docker exec tps pki-server tps-config-set \
-              auths.instance.ldap1.ldap.ldapconn.secureConn \
-              false
-          docker exec tps pki-server tps-config-set \
-              auths.instance.ldap1.ldap.ldapconn.host \
-              tpsds.example.com
-          docker exec tps pki-server tps-config-set \
-              auths.instance.ldap1.ldap.ldapconn.port \
-              3389
-          docker exec tps pki-server tps-config-set \
-              auths.instance.ldap1.ldap.basedn \
-              ou=people,dc=example,dc=com
-
           # import base entry
           docker exec tps ldapadd \
               -H ldap://tpsds.example.com:3389 \
@@ -985,6 +971,59 @@ jobs:
               -D "cn=Directory Manager" \
               -w Secret.123 \
               -f /usr/share/pki/tps/auth/ds/example.ldif
+
+      - name: Configure TPS auth manager
+        run: |
+          docker exec tps pki-server tps-auth-manager-mod \
+              -D ldap.ldapconn.host=tpsds.example.com \
+              -D ldap.ldapconn.port=3389 \
+              -D ldap.ldapconn.secureConn=false \
+              -D ldap.basedn=ou=people,dc=example,dc=com \
+              ldap1
+
+          docker exec tps pki-server tps-auth-manager-show ldap1 \
+              | tee output
+
+          cat > expected << EOF
+            Manager ID: ldap1
+            Plugin ID: UidPwdDirAuth
+            Properties:
+              authCredName: uid
+              dnpattern: 
+              externalReg.attributes: certsToAdd,tokenCUID,enrollmenttype,registrationtype,tokenType
+              externalReg.certs.recoverAttributeName: certsToAdd
+              externalReg.cuidAttributeName: tokenCUID
+              externalReg.registrationTypeAttributeName: registrationtype
+              externalReg.tokenTypeAttributeName: tokenType
+              ldap.basedn: ou=people,dc=example,dc=com
+              ldap.ldapauth.authtype: BasicAuth
+              ldap.ldapauth.bindDN: 
+              ldap.ldapauth.bindPWPrompt: ldap1
+              ldap.ldapauth.clientCertNickname: 
+              ldap.ldapconn.host: tpsds.example.com
+              ldap.ldapconn.port: 3389
+              ldap.ldapconn.secureConn: false
+              ldap.ldapconn.version: 3
+              ldap.maxConns: 15
+              ldap.minConns: 0
+              ldapByteAttributes: 
+              ldapStringAttributes: mail,cn,uid,enrollmenttype,certsToAdd,tokenCUID,registrationtype,tokenType,firstname,lastname,exec-edipi,exec-mail
+              ui.description.en: This authenticates user against the LDAP directory.
+              ui.id.PASSWORD.credMap.authCred: pwd
+              ui.id.PASSWORD.credMap.msgCred.extlogin: PASSWORD
+              ui.id.PASSWORD.credMap.msgCred.login: password
+              ui.id.PASSWORD.description.en: LDAP Password
+              ui.id.PASSWORD.name.en: LDAP Password
+              ui.id.UID.credMap.authCred: uid
+              ui.id.UID.credMap.msgCred.extlogin: UID
+              ui.id.UID.credMap.msgCred.login: screen_name
+              ui.id.UID.description.en: LDAP User ID
+              ui.id.UID.name.en: LDAP User ID
+              ui.retries: 3
+              ui.title.en: LDAP Authentication
+          EOF
+
+          diff expected output
 
       - name: Configure TPS for testing
         run: |
