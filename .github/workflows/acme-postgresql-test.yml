@@ -36,11 +36,11 @@ jobs:
       - name: Retrieve ACME images
         uses: actions/cache@v5
         with:
-          key: acme-images-${{ github.sha }}
-          path: acme-images.tar
+          key: pki-images-${{ github.sha }}
+          path: pki-images.tar
 
       - name: Load ACME images
-        run: docker load --input acme-images.tar
+        run: docker load --input pki-images.tar
 
       - name: Create network
         run: docker network create example

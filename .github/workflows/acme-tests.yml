@@ -2,116 +2,11 @@ name: ACME Tests
 
 on: [push, pull_request]
 
-env:
-  BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
-  BASE_IMAGE: ${{ vars.BASE_IMAGE }}
-  COPR_REPO: ${{ vars.COPR_REPO }}
-
 jobs:
   build:
-    name: Building ACME images
-    runs-on: ubuntu-latest
-    env:
-      NAMESPACE: ${{ vars.REGISTRY_NAMESPACE || 'dogtagpki' }}
-    steps:
-      - name: Clone repository
-        uses: actions/checkout@v7
-
-      - name: Initialization
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WORKFLOW_REF: ${{ github.workflow_ref }}
-          TESTS: ${{ vars.TESTS }}
-        run: tests/bin/test-init.sh
-
-      - name: Update Dockerfile
-        run: |
-          # update registry namespace
-          sed -i "s/quay.io\/dogtagpki\//quay.io\/$NAMESPACE\//g" Dockerfile
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Cache Docker layers
-        id: cache-buildx
-        uses: actions/cache@v5
-        with:
-          key: buildx-${{ hashFiles('pki.spec') }}
-          path: /tmp/.buildx-cache
-
-      - name: Build pki-deps image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          build-args: |
-            BASE_IMAGE=${{ env.BASE_IMAGE }}
-            COPR_REPO=${{ env.COPR_REPO }}
-          tags: pki-deps
-          target: pki-deps
-          cache-to: type=local,dest=/tmp/.buildx-cache
-        if: steps.cache-buildx.outputs.cache-hit != 'true'
-
-      - name: Build pki-builder-deps image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          build-args: |
-            BASE_IMAGE=${{ env.BASE_IMAGE }}
-            COPR_REPO=${{ env.COPR_REPO }}
-          tags: pki-builder-deps
-          target: pki-builder-deps
-          cache-to: type=local,dest=/tmp/.buildx-cache
-        if: steps.cache-buildx.outputs.cache-hit != 'true'
-
-      - name: Build pki-runner image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          build-args: |
-            BASE_IMAGE=${{ env.BASE_IMAGE }}
-            COPR_REPO=${{ env.COPR_REPO }}
-            BUILD_OPTS=--with-pkgs=base,server,ca,acme --without-test
-          tags: pki-runner
-          target: pki-runner
-          cache-from: type=local,src=/tmp/.buildx-cache
-          outputs: type=docker
-
-      - name: Build pki-ca image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          build-args: |
-            BASE_IMAGE=${{ env.BASE_IMAGE }}
-            COPR_REPO=${{ env.COPR_REPO }}
-            BUILD_OPTS=--with-pkgs=base,server,ca,acme --without-test
-          tags: pki-ca
-          target: pki-ca
-          cache-from: type=local,src=/tmp/.buildx-cache
-          outputs: type=docker
-
-      - name: Build pki-acme image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          build-args: |
-            BASE_IMAGE=${{ env.BASE_IMAGE }}
-            COPR_REPO=${{ env.COPR_REPO }}
-            BUILD_OPTS=--with-pkgs=base,server,ca,acme --without-test
-          tags: pki-acme
-          target: pki-acme
-          cache-from: type=local,src=/tmp/.buildx-cache
-          outputs: type=docker
-
-      - name: Save ACME images
-        run: |
-          docker images
-          docker save -o acme-images.tar pki-runner pki-ca pki-acme
-
-      - name: Store ACME images
-        uses: actions/cache@v5
-        with:
-          key: acme-images-${{ github.sha }}
-          path: acme-images.tar
+    name: Waiting for build
+    uses: ./.github/workflows/wait-for-build.yml
+    secrets: inherit
 
   acme-basic-test:
     name: Basic ACME
@@ -180,11 +75,11 @@ jobs:
       - name: Retrieve ACME images
         uses: actions/cache@v5
         with:
-          key: acme-images-${{ github.sha }}
-          path: acme-images.tar
+          key: pki-images-${{ github.sha }}
+          path: pki-images.tar
 
       - name: Load ACME images
-        run: docker load --input acme-images.tar
+        run: docker load --input pki-images.tar
 
       - name: Publish pki-acme image
         run: |
