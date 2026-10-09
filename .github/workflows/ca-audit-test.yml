@@ -1,0 +1,703 @@
+name: CA audit
+# This test will perform the following operations:
+# - install CA without audit signing cert
+# - create audit signing cert
+# - enable audit log signing
+# - check audit operations
+
+on: workflow_call
+
+env:
+  DS_IMAGE: ${{ vars.DS_IMAGE || 'quay.io/389ds/dirsrv' }}
+
+jobs:
+  # docs/installation/ca/Installing_CA.md
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    env:
+      SHARED: /tmp/workdir/pki
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v7
+
+      - name: Retrieve PKI images
+        uses: actions/cache@v5
+        with:
+          key: pki-images-${{ github.sha }}
+          path: pki-images.tar
+
+      - name: Load PKI images
+        run: docker load --input pki-images.tar
+
+      - name: Create network
+        run: docker network create example
+
+      - name: Set up DS container
+        run: |
+          tests/bin/ds-create.sh \
+              --image=${{ env.DS_IMAGE }} \
+              --hostname=ds.example.com \
+              --network=example \
+              --network-alias=ds.example.com \
+              --password=Secret.123 \
+              ds
+
+      - name: Set up PKI container
+        run: |
+          tests/bin/runner-init.sh \
+              --hostname=pki.example.com \
+              --network=example \
+              --network-alias=pki.example.com \
+              pki
+
+      - name: Install CA
+        run: |
+          docker exec pki pkispawn \
+              -f /usr/share/pki/server/examples/installation/ca.cfg \
+              -s CA \
+              -D pki_ds_url=ldap://ds.example.com:3389 \
+              --debug \
+              > >(tee stdout) 2> >(tee stderr >&2)
+              # -D pki_audit_signing_nickname= \
+
+      - name: Check for warnings
+        if: always()
+        run: |
+          sed -n '/^WARNING:/p' stderr | tee output
+          diff /dev/null output
+
+      - name: Check external commands
+        if: always()
+        run: |
+          sed -n '/^DEBUG: Command:/p' stderr | tee output
+          wc -l output
+
+      - name: Check default audit config
+        run: |
+          docker exec pki pki-server ca-config-find | grep audit_signing | tee output
+
+          cat > expected << EOF
+          ca.audit_signing.defaultSigningAlgorithm=SHA256withRSA
+          ca.audit_signing.nickname=ca_audit_signing
+          ca.audit_signing.tokenname=internal
+          ca.cert.audit_signing.certusage=ObjectSigner
+          ca.cert.audit_signing.nickname=ca_audit_signing
+          ca.cert.list=signing,ocsp_signing,sslserver,subsystem,audit_signing
+          log.instance.SignedAudit.signedAuditCertNickname=ca_audit_signing
+          EOF
+
+          diff expected output
+
+          docker exec pki pki-server ca-audit-config-show | tee output
+
+          cat > expected << EOF
+            Enabled: True
+            Log File: /var/lib/pki/pki-tomcat/logs/ca/signedAudit/ca_audit
+            Buffer Size (bytes): 512
+            Flush Interval (seconds): 5
+            Max File Size (bytes): 2000
+            Rollover Interval (seconds): 2592000
+            Expiration Time (seconds): 0
+            Log Signing: False
+            Signing Certificate: ca_audit_signing
+          EOF
+
+          diff expected output
+
+      - name: Check default CA audit events
+        run: |
+          docker exec pki pki-server ca-audit-event-find | tee output
+
+          cat > expected << EOF
+          ------------------
+          57 entries matched
+          ------------------
+            Event Name: ACCESS_SESSION_ESTABLISH
+            Enabled: True
+            Filter: None
+
+            Event Name: ACCESS_SESSION_TERMINATED
+            Enabled: True
+            Filter: None
+
+            Event Name: AUDIT_LOG_DELETE
+            Enabled: False
+            Filter: None
+
+            Event Name: AUDIT_LOG_SHUTDOWN
+            Enabled: False
+            Filter: None
+
+            Event Name: AUDIT_LOG_SIGNING
+            Enabled: True
+            Filter: None
+
+            Event Name: AUDIT_LOG_STARTUP
+            Enabled: True
+            Filter: None
+
+            Event Name: AUTH
+            Enabled: True
+            Filter: None
+
+            Event Name: AUTHORITY_CONFIG
+            Enabled: True
+            Filter: None
+
+            Event Name: AUTHZ
+            Enabled: True
+            Filter: None
+
+            Event Name: CERT_PROFILE_APPROVAL
+            Enabled: True
+            Filter: None
+
+            Event Name: CERT_REQUEST_PROCESSED
+            Enabled: True
+            Filter: None
+
+            Event Name: CERT_SIGNING_INFO
+            Enabled: True
+            Filter: None
+
+            Event Name: CERT_STATUS_CHANGE_REQUEST
+            Enabled: True
+            Filter: None
+
+            Event Name: CERT_STATUS_CHANGE_REQUEST_PROCESSED
+            Enabled: True
+            Filter: None
+
+            Event Name: CIMC_CERT_VERIFICATION
+            Enabled: False
+            Filter: None
+
+            Event Name: CLIENT_ACCESS_SESSION_ESTABLISH
+            Enabled: True
+            Filter: None
+
+            Event Name: CLIENT_ACCESS_SESSION_TERMINATED
+            Enabled: True
+            Filter: None
+
+            Event Name: CMC_ID_POP_LINK_WITNESS
+            Enabled: False
+            Filter: None
+
+            Event Name: CMC_PROOF_OF_IDENTIFICATION
+            Enabled: False
+            Filter: None
+
+            Event Name: CMC_REQUEST_RECEIVED
+            Enabled: True
+            Filter: None
+
+            Event Name: CMC_RESPONSE_SENT
+            Enabled: True
+            Filter: None
+
+            Event Name: CMC_SIGNED_REQUEST_SIG_VERIFY
+            Enabled: True
+            Filter: (Outcome=Failure)
+
+            Event Name: CMC_USER_SIGNED_REQUEST_SIG_VERIFY
+            Enabled: True
+            Filter: (Outcome=Failure)
+
+            Event Name: CONFIG_ACL
+            Enabled: True
+            Filter: None
+
+            Event Name: CONFIG_AUTH
+            Enabled: True
+            Filter: None
+
+            Event Name: CONFIG_CERT_POLICY
+            Enabled: False
+            Filter: None
+
+            Event Name: CONFIG_CERT_PROFILE
+            Enabled: True
+            Filter: None
+
+            Event Name: CONFIG_CRL_PROFILE
+            Enabled: True
+            Filter: None
+
+            Event Name: CONFIG_ENCRYPTION
+            Enabled: True
+            Filter: None
+
+            Event Name: CONFIG_ROLE
+            Enabled: True
+            Filter: None
+
+            Event Name: CONFIG_SERIAL_NUMBER
+            Enabled: True
+            Filter: None
+
+            Event Name: CONFIG_SIGNED_AUDIT
+            Enabled: True
+            Filter: None
+
+            Event Name: CONFIG_TRUSTED_PUBLIC_KEY
+            Enabled: True
+            Filter: None
+
+            Event Name: CRL_SIGNING_INFO
+            Enabled: True
+            Filter: None
+
+            Event Name: DELTA_CRL_GENERATION
+            Enabled: True
+            Filter: (Outcome=Failure)
+
+            Event Name: DELTA_CRL_PUBLISHING
+            Enabled: False
+            Filter: None
+
+            Event Name: FULL_CRL_GENERATION
+            Enabled: True
+            Filter: (Outcome=Failure)
+
+            Event Name: FULL_CRL_PUBLISHING
+            Enabled: False
+            Filter: None
+
+            Event Name: INTER_BOUNDARY
+            Enabled: False
+            Filter: None
+
+            Event Name: KEY_GEN_ASYMMETRIC
+            Enabled: True
+            Filter: None
+
+            Event Name: KEY_RECOVERY_REQUEST
+            Enabled: False
+            Filter: None
+
+            Event Name: LOG_EXPIRATION_CHANGE
+            Enabled: False
+            Filter: None
+
+            Event Name: LOG_PATH_CHANGE
+            Enabled: True
+            Filter: None
+
+            Event Name: NON_PROFILE_CERT_REQUEST
+            Enabled: False
+            Filter: None
+
+            Event Name: OCSP_GENERATION
+            Enabled: True
+            Filter: (Outcome=Failure)
+
+            Event Name: OCSP_SIGNING_INFO
+            Enabled: True
+            Filter: None
+
+            Event Name: PROFILE_CERT_REQUEST
+            Enabled: True
+            Filter: None
+
+            Event Name: PROOF_OF_POSSESSION
+            Enabled: True
+            Filter: None
+
+            Event Name: RANDOM_GENERATION
+            Enabled: True
+            Filter: (Outcome=Failure)
+
+            Event Name: ROLE_ASSUME
+            Enabled: True
+            Filter: None
+
+            Event Name: SCHEDULE_CRL_GENERATION
+            Enabled: True
+            Filter: None
+
+            Event Name: SECURITY_DOMAIN_UPDATE
+            Enabled: True
+            Filter: None
+
+            Event Name: SELFTESTS_EXECUTION
+            Enabled: True
+            Filter: None
+
+            Event Name: SERVER_SIDE_KEYGEN_ENROLL_KEYGEN_REQUEST
+            Enabled: False
+            Filter: None
+
+            Event Name: SERVER_SIDE_KEYGEN_ENROLL_KEY_RETRIEVAL_REQUEST
+            Enabled: False
+            Filter: None
+
+            Event Name: SERVER_SIDE_KEYGEN_REQUEST
+            Enabled: True
+            Filter: None
+
+            Event Name: SERVER_SIDE_KEYGEN_REQUEST_PROCESSED
+            Enabled: True
+            Filter: None
+          EOF
+
+          diff expected output
+
+      - name: Check initial audit logs
+        run: |
+          # there should be one log file
+          cat > filenames << EOF
+          ca_audit
+          EOF
+
+          # get filenames
+          docker exec pki pki-server ca-audit-file-find | tee output
+
+          sed -n "s/^\s*File name: \s*\(\S*\)$/\1/p" output > actual
+
+          diff filenames actual
+
+          # check logs
+          docker exec pki ls -l /var/lib/pki/pki-tomcat/logs/ca/signedAudit
+
+          # remove thread and timestamp
+          # <thread> - [timestamp] [...] [...] [AuditEvent=...][...]...
+          docker exec pki cat /var/lib/pki/pki-tomcat/logs/ca/signedAudit/ca_audit \
+              | sed -E \
+                    -e 's/^.*(\[AuditEvent=.*)$/\1/' \
+              | tee output
+
+          # remove random values
+          sed -E \
+              -e 's/\[SKI=([^]]+)\]/\[SKI=XXXXX\]/' \
+              -e 's/\[ClientIP=([^]]+)\]/\[ClientIP=XXXXX\]/' \
+              -e 's/\[ServerIP=([^]]+)\]/\[ServerIP=XXXXX\]/' \
+              output \
+              > actual
+
+          cat > expected << EOF
+          EOF
+
+          diff expected actual || true
+
+      - name: Validate initial audit logs
+        run: |
+          docker exec pki pki-server ca-audit-file-verify \
+              > >(tee stdout) 2> >(tee stderr >&2)
+
+          cat > expected << EOF
+          Verification process complete.
+          Valid signatures: 0
+          Invalid signatures: 0
+          EOF
+
+          diff expected stdout || true
+
+      - name: Run PKI healthcheck
+        run: |
+          docker exec pki pki-healthcheck \
+              --failures-only \
+              --debug \
+              > >(tee stdout) 2> >(tee stderr >&2)
+
+      - name: Check external commands
+        if: always()
+        run: |
+          sed -n '/^Command:/p' stderr | tee output
+          wc -l output
+
+      - name: Install admin cert
+        run: |
+          docker exec pki pki-server cert-export \
+              --cert-file ca_signing.crt \
+              ca_signing
+
+          docker exec pki pki nss-cert-import \
+              --cert ca_signing.crt \
+              --trust CT,C,C \
+              ca_signing
+
+          docker exec pki pki pkcs12-import \
+              --pkcs12 /root/.dogtag/pki-tomcat/ca_admin_cert.p12 \
+              --password Secret.123
+
+          docker exec pki pki -n caadmin ca-user-show caadmin
+
+      - name: Check CA audit signing cert request
+        run: |
+          docker exec pki openssl req -text -noout \
+              -in /var/lib/pki/pki-tomcat/conf/certs/ca_audit_signing.csr \
+              | tee output
+
+          # normalize output
+          # - remove hex string
+          sed -E \
+              -e '/^ *[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2})+:?$/d' \
+              -e '/^ *Modulus:$/d' \
+              -e '/^ *Signature Value:$/d' \
+              output > actual
+
+          cat > expected << EOF
+          Certificate Request:
+              Data:
+                  Version: 1 (0x0)
+                  Subject: O=EXAMPLE, OU=pki-tomcat, CN=CA Audit Signing Certificate
+                  Subject Public Key Info:
+                      Public Key Algorithm: rsaEncryption
+                          Public-Key: (2048 bit)
+                          Exponent: 65537 (0x10001)
+                  Attributes:
+                      (none)
+                      Requested Extensions:
+              Signature Algorithm: sha256WithRSAEncryption
+          EOF
+
+          diff expected actual
+
+      - name: Check CA audit signing cert
+        run: |
+          docker exec pki pki-server cert-export \
+              --cert-file ca_audit_signing.crt \
+              ca_audit_signing
+
+          docker exec pki openssl x509 -text -noout \
+              -in ca_audit_signing.crt \
+              | tee output
+
+          # normalize output
+          # - remove hex string
+          # - remove date and time
+          sed -E \
+              -e '/^ *[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2})+:?$/d' \
+              -e '/^ *Serial Number:$/d' \
+              -e '/^ *Validity$/d' \
+              -e '/^ *Not Before:/d' \
+              -e '/^ *Not After :/d' \
+              -e '/^ *Modulus:$/d' \
+              -e '/^ *Signature Value:$/d' \
+              -e '/^$/d' \
+              -e 's/ *$//' \
+              output > actual
+
+          cat > expected << EOF
+          Certificate:
+              Data:
+                  Version: 3 (0x2)
+                  Signature Algorithm: sha256WithRSAEncryption
+                  Issuer: O=EXAMPLE, OU=pki-tomcat, CN=CA Signing Certificate
+                  Subject: O=EXAMPLE, OU=pki-tomcat, CN=CA Audit Signing Certificate
+                  Subject Public Key Info:
+                      Public Key Algorithm: rsaEncryption
+                          Public-Key: (2048 bit)
+                          Exponent: 65537 (0x10001)
+                  X509v3 extensions:
+                      X509v3 Authority Key Identifier:
+                      X509v3 Key Usage: critical
+                          Digital Signature, Non Repudiation
+                      Authority Information Access:
+                          OCSP - URI:http://pki.example.com:8080/ca/ocsp
+              Signature Algorithm: sha256WithRSAEncryption
+          EOF
+
+          diff expected actual
+
+      - name: Check CA audit signing cert status
+        run: |
+          docker exec pki pki-server cert-show ca_audit_signing | tee output
+          SERIAL=$(sed -n "s/^\s*Serial Number:\s*\(\S*\)$/\1/p" output)
+
+          docker exec pki openssl ocsp \
+              -url http://pki.example.com:8080/ca/ocsp \
+              -CAfile ca_signing.crt \
+              -issuer ca_signing.crt \
+              -serial $SERIAL \
+              | tee output
+
+          sed -n "/^$SERIAL:/p" output > actual
+          echo "$SERIAL: good" > expected
+
+          diff expected actual
+
+      - name: Enable audit log signing
+        run: |
+          docker exec pki pki-server ca-audit-config-mod \
+              --logSigning true
+
+          docker exec pki pki-server ca-config-find | grep audit_signing | tee output
+
+          cat > expected << EOF
+          ca.audit_signing.defaultSigningAlgorithm=SHA256withRSA
+          ca.audit_signing.nickname=ca_audit_signing
+          ca.audit_signing.tokenname=internal
+          ca.cert.audit_signing.certusage=ObjectSigner
+          ca.cert.audit_signing.nickname=ca_audit_signing
+          ca.cert.list=signing,ocsp_signing,sslserver,subsystem,audit_signing
+          log.instance.SignedAudit.signedAuditCertNickname=ca_audit_signing
+          EOF
+
+          diff expected output
+
+          docker exec pki pki-server ca-audit-config-show | tee output
+
+          cat > expected << EOF
+            Enabled: True
+            Log File: /var/lib/pki/pki-tomcat/logs/ca/signedAudit/ca_audit
+            Buffer Size (bytes): 512
+            Flush Interval (seconds): 5
+            Max File Size (bytes): 2000
+            Rollover Interval (seconds): 2592000
+            Expiration Time (seconds): 0
+            Log Signing: True
+            Signing Certificate: ca_audit_signing
+          EOF
+
+          diff expected output
+
+      - name: Create auditor user
+        run: |
+          # create auditor user
+          docker exec pki pki \
+              -n caadmin \
+              ca-user-add \
+              --full-name "CA Auditor" \
+              --password Secret.123 \
+              caauditor
+
+          # add user to Auditors group
+          docker exec pki pki \
+              -n caadmin \
+              ca-user-membership-add \
+              caauditor \
+              "Auditors"
+
+      - name: Create auditor cert
+        run: |
+          # create cert request
+          docker exec pki pki \
+              nss-cert-request \
+              --subject UID=caauditor \
+              --csr caauditor.csr
+
+          # issue cert
+          docker exec pki pki \
+              -n caadmin \
+              ca-cert-issue \
+              --profile caUserCert \
+              --csr-file caauditor.csr \
+              --subject UID=caauditor \
+              --output-file caauditor.crt
+
+          # assign the cert to the user
+          docker exec pki pki \
+              -n caadmin \
+              ca-user-cert-add \
+              --input caauditor.crt \
+              caauditor
+
+          # import the cert into client
+          docker exec pki pki \
+              nss-cert-import \
+              --cert caauditor.crt \
+              caauditor
+
+      - name: Retrieve audit log files
+        run: |
+          # there should be one log file
+          cat > filenames << EOF
+          ca_audit
+          EOF
+
+          # get filenames with username and password
+          docker exec pki pki \
+              -u caauditor \
+              -w Secret.123 \
+              ca-audit-file-find \
+              | tee output
+
+          sed -n "s/^\s*File name: \s*\(\S*\)$/\1/p" output > actual
+
+          diff filenames actual
+
+          # get filenames with client cert
+          docker exec pki pki \
+              -n caauditor \
+              ca-audit-file-find \
+              | tee output
+
+          sed -n "s/^\s*File name: \s*\(\S*\)$/\1/p" output > actual
+
+          diff filenames actual
+
+          # retrieve log file
+          docker exec pki pki \
+              -n caauditor \
+              ca-audit-file-retrieve \
+              ca_audit
+
+          docker exec pki cat ca_audit
+
+          # remove thread and timestamp
+          # <thread> - [timestamp] [...] [...] [AuditEvent=...][...]...
+          docker exec pki cat ca_audit \
+              | sed -E \
+                    -e 's/^.*(\[AuditEvent=.*)$/\1/' \
+              | tee output
+
+          # remove random values
+          sed -E \
+              -e 's/\[SKI=([^]]+)\]/\[SKI=XXXXX\]/' \
+              -e 's/\[ClientIP=([^]]+)\]/\[ClientIP=XXXXX\]/' \
+              -e 's/\[ServerIP=([^]]+)\]/\[ServerIP=XXXXX\]/' \
+              output \
+              > actual
+
+          cat > expected << EOF
+          EOF
+
+          diff expected actual || true
+
+      - name: Validate audit log files
+        run: |
+          docker exec pki pki-server cert-export \
+              --cert-file ca_audit_signing.crt \
+              ca_audit_signing
+
+          docker exec pki pki nss-cert-import \
+              --cert ca_audit_signing.crt \
+              --trust ,,P \
+              ca_audit_signing
+
+          docker exec pki AuditVerify \
+              -d /root/.dogtag/nssdb \
+              -n ca_audit_signing \
+              -a $SHARED/filenames
+
+      - name: Remove CA
+        run: |
+          docker exec pki pkidestroy -s CA
+
+      - name: Check DS server systemd journal
+        if: always()
+        run: |
+          docker exec ds journalctl -x --no-pager -u dirsrv@localhost.service
+
+      - name: Check DS container logs
+        if: always()
+        run: |
+          docker logs ds
+
+      - name: Check PKI server systemd journal
+        if: always()
+        run: |
+          docker exec pki journalctl -x --no-pager -u pki-tomcatd@pki-tomcat.service
+
+      - name: Check PKI server access log
+        if: always()
+        run: |
+          docker exec pki find /var/log/pki/pki-tomcat -name "localhost_access_log.*" -exec cat {} \;
+
+      - name: Check CA debug log
+        if: always()
+        run: |
+          docker exec pki find /var/lib/pki/pki-tomcat/logs/ca -name "debug.*" -exec cat {} \;
