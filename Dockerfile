@@ -87,7 +87,7 @@ COPY . /root/pki/
 RUN ./build.sh  --work-dir=build $BUILD_OPTS rpm
 
 ################################################################################
-FROM alpine:latest AS pki-dist
+FROM ghcr.io/jitesoft/alpine:latest AS pki-dist
 
 # Import PKI packages
 COPY --from=pki-builder /root/pki/build/SRPMS /root/SRPMS/
