@@ -1,8 +1,17 @@
 name: CA audit
 # This test will perform the following operations:
 # - install CA
+# - check default audit config
+# - check default audit events
 # - check initial audit logs
 # - check admin user
+# - check audit config remotely
+# - export audit config
+# - check audit signing CSR
+# - check audit signing cert
+# - check audit signing cert status
+# - enable audit log signing
+# - restart CA
 # - create auditor user
 # - add auditor user to Auditors group
 # - create auditor password
@@ -12,7 +21,8 @@ name: CA audit
 # - check audit log files with client cert
 # - export audit log files
 # - check exported audit log files
-# - check audit log signatures
+# - check valid audit log signatures
+# - check invalid audit log signatures
 # - remove CA
 #
 # The NEW_LOGS and TOTAL_LOGS variables are used to get
@@ -22,6 +32,10 @@ name: CA audit
 # Currently each ACCESS_SESSION_ESTABLISH event has two
 # ACCESS_SESSION_TERMINATED events. This needs further
 # investigation.
+#
+# The AUDIT_LOG_SIGNING event happens randomly since it's
+# only generated if the buffer is full, so it's inspected
+# separately.
 
 on: workflow_call
 
@@ -77,6 +91,285 @@ jobs:
               -s CA \
               -D pki_ds_url=ldap://ds.example.com:3389 \
               -v
+
+      - name: Check default audit config
+        run: |
+          # https://github.com/dogtagpki/pki/wiki/Configuring-Audit
+
+          docker exec pki pki-server ca-config-find \
+              | sed -n \
+                  -e '/^ca\.audit_signing\..*=/p' \
+                  -e '/^ca\.cert\.audit_signing\..*=/p' \
+                  -e '/^ca\.cert\.list=/p' \
+              | tee output
+
+          cat > expected << EOF
+          ca.audit_signing.defaultSigningAlgorithm=SHA256withRSA
+          ca.audit_signing.nickname=ca_audit_signing
+          ca.audit_signing.tokenname=internal
+          ca.cert.audit_signing.certusage=ObjectSigner
+          ca.cert.audit_signing.nickname=ca_audit_signing
+          ca.cert.list=signing,ocsp_signing,sslserver,subsystem,audit_signing
+          EOF
+
+          diff expected output
+
+          docker exec pki pki-server ca-audit-config-show | tee output
+
+          cat > expected << EOF
+            Enabled: True
+            Log File: /var/lib/pki/pki-tomcat/logs/ca/signedAudit/ca_audit
+            Buffer Size (bytes): 512
+            Flush Interval (seconds): 5
+            Max File Size (bytes): 2000
+            Rollover Interval (seconds): 2592000
+            Expiration Time (seconds): 0
+            Log Signing: False
+            Signing Certificate: ca_audit_signing
+          EOF
+
+          diff expected output
+
+      - name: Check default audit events
+        run: |
+          # https://github.com/dogtagpki/pki/wiki/PKI-Server-Audit-CLI
+
+          docker exec pki pki-server ca-audit-event-find | tee output
+
+          cat > expected << EOF
+          ------------------
+          57 entries matched
+          ------------------
+            Event Name: ACCESS_SESSION_ESTABLISH
+            Enabled: True
+            Filter: None
+
+            Event Name: ACCESS_SESSION_TERMINATED
+            Enabled: True
+            Filter: None
+
+            Event Name: AUDIT_LOG_DELETE
+            Enabled: False
+            Filter: None
+
+            Event Name: AUDIT_LOG_SHUTDOWN
+            Enabled: False
+            Filter: None
+
+            Event Name: AUDIT_LOG_SIGNING
+            Enabled: True
+            Filter: None
+
+            Event Name: AUDIT_LOG_STARTUP
+            Enabled: True
+            Filter: None
+
+            Event Name: AUTH
+            Enabled: True
+            Filter: None
+
+            Event Name: AUTHORITY_CONFIG
+            Enabled: True
+            Filter: None
+
+            Event Name: AUTHZ
+            Enabled: True
+            Filter: None
+
+            Event Name: CERT_PROFILE_APPROVAL
+            Enabled: True
+            Filter: None
+
+            Event Name: CERT_REQUEST_PROCESSED
+            Enabled: True
+            Filter: None
+
+            Event Name: CERT_SIGNING_INFO
+            Enabled: True
+            Filter: None
+
+            Event Name: CERT_STATUS_CHANGE_REQUEST
+            Enabled: True
+            Filter: None
+
+            Event Name: CERT_STATUS_CHANGE_REQUEST_PROCESSED
+            Enabled: True
+            Filter: None
+
+            Event Name: CIMC_CERT_VERIFICATION
+            Enabled: False
+            Filter: None
+
+            Event Name: CLIENT_ACCESS_SESSION_ESTABLISH
+            Enabled: True
+            Filter: None
+
+            Event Name: CLIENT_ACCESS_SESSION_TERMINATED
+            Enabled: True
+            Filter: None
+
+            Event Name: CMC_ID_POP_LINK_WITNESS
+            Enabled: False
+            Filter: None
+
+            Event Name: CMC_PROOF_OF_IDENTIFICATION
+            Enabled: False
+            Filter: None
+
+            Event Name: CMC_REQUEST_RECEIVED
+            Enabled: True
+            Filter: None
+
+            Event Name: CMC_RESPONSE_SENT
+            Enabled: True
+            Filter: None
+
+            Event Name: CMC_SIGNED_REQUEST_SIG_VERIFY
+            Enabled: True
+            Filter: (Outcome=Failure)
+
+            Event Name: CMC_USER_SIGNED_REQUEST_SIG_VERIFY
+            Enabled: True
+            Filter: (Outcome=Failure)
+
+            Event Name: CONFIG_ACL
+            Enabled: True
+            Filter: None
+
+            Event Name: CONFIG_AUTH
+            Enabled: True
+            Filter: None
+
+            Event Name: CONFIG_CERT_POLICY
+            Enabled: False
+            Filter: None
+
+            Event Name: CONFIG_CERT_PROFILE
+            Enabled: True
+            Filter: None
+
+            Event Name: CONFIG_CRL_PROFILE
+            Enabled: True
+            Filter: None
+
+            Event Name: CONFIG_ENCRYPTION
+            Enabled: True
+            Filter: None
+
+            Event Name: CONFIG_ROLE
+            Enabled: True
+            Filter: None
+
+            Event Name: CONFIG_SERIAL_NUMBER
+            Enabled: True
+            Filter: None
+
+            Event Name: CONFIG_SIGNED_AUDIT
+            Enabled: True
+            Filter: None
+
+            Event Name: CONFIG_TRUSTED_PUBLIC_KEY
+            Enabled: True
+            Filter: None
+
+            Event Name: CRL_SIGNING_INFO
+            Enabled: True
+            Filter: None
+
+            Event Name: DELTA_CRL_GENERATION
+            Enabled: True
+            Filter: (Outcome=Failure)
+
+            Event Name: DELTA_CRL_PUBLISHING
+            Enabled: False
+            Filter: None
+
+            Event Name: FULL_CRL_GENERATION
+            Enabled: True
+            Filter: (Outcome=Failure)
+
+            Event Name: FULL_CRL_PUBLISHING
+            Enabled: False
+            Filter: None
+
+            Event Name: INTER_BOUNDARY
+            Enabled: False
+            Filter: None
+
+            Event Name: KEY_GEN_ASYMMETRIC
+            Enabled: True
+            Filter: None
+
+            Event Name: KEY_RECOVERY_REQUEST
+            Enabled: False
+            Filter: None
+
+            Event Name: LOG_EXPIRATION_CHANGE
+            Enabled: False
+            Filter: None
+
+            Event Name: LOG_PATH_CHANGE
+            Enabled: True
+            Filter: None
+
+            Event Name: NON_PROFILE_CERT_REQUEST
+            Enabled: False
+            Filter: None
+
+            Event Name: OCSP_GENERATION
+            Enabled: True
+            Filter: (Outcome=Failure)
+
+            Event Name: OCSP_SIGNING_INFO
+            Enabled: True
+            Filter: None
+
+            Event Name: PROFILE_CERT_REQUEST
+            Enabled: True
+            Filter: None
+
+            Event Name: PROOF_OF_POSSESSION
+            Enabled: True
+            Filter: None
+
+            Event Name: RANDOM_GENERATION
+            Enabled: True
+            Filter: (Outcome=Failure)
+
+            Event Name: ROLE_ASSUME
+            Enabled: True
+            Filter: None
+
+            Event Name: SCHEDULE_CRL_GENERATION
+            Enabled: True
+            Filter: None
+
+            Event Name: SECURITY_DOMAIN_UPDATE
+            Enabled: True
+            Filter: None
+
+            Event Name: SELFTESTS_EXECUTION
+            Enabled: True
+            Filter: None
+
+            Event Name: SERVER_SIDE_KEYGEN_ENROLL_KEYGEN_REQUEST
+            Enabled: False
+            Filter: None
+
+            Event Name: SERVER_SIDE_KEYGEN_ENROLL_KEY_RETRIEVAL_REQUEST
+            Enabled: False
+            Filter: None
+
+            Event Name: SERVER_SIDE_KEYGEN_REQUEST
+            Enabled: True
+            Filter: None
+
+            Event Name: SERVER_SIDE_KEYGEN_REQUEST_PROCESSED
+            Enabled: True
+            Filter: None
+          EOF
+
+          diff expected output
 
       - name: Check initial audit logs
         run: |
@@ -202,6 +495,554 @@ jobs:
           echo "NEW_LOGS: $NEW_LOGS"
           echo $((TOTAL_LOGS + NEW_LOGS)) > total_logs
 
+      - name: Check audit config remotely
+        run: |
+          # https://github.com/dogtagpki/pki/wiki/PKI-Subsystem-Audit-CLI
+
+          docker exec pki pki -n caadmin ca-audit-show | tee output
+
+          cat > expected << EOF
+          -------------------
+          Audit configuration
+          -------------------
+            Status: Enabled
+            Signed: false
+            Interval (seconds): 5
+            Buffer size (bytes): 512
+            Events:
+              ACCESS_SESSION_ESTABLISH: enabled
+              ACCESS_SESSION_TERMINATED: enabled
+              ASYMKEY_GENERATION_REQUEST: disabled
+              ASYMKEY_GENERATION_REQUEST_PROCESSED: disabled
+              AUDIT_LOG_DELETE: disabled
+              AUDIT_LOG_SHUTDOWN: disabled
+              AUDIT_LOG_SIGNING: enabled
+              AUDIT_LOG_STARTUP: enabled
+              AUTH: enabled
+              AUTHORITY_CONFIG: enabled
+              AUTHZ: enabled
+              CERT_PROFILE_APPROVAL: enabled
+              CERT_REQUEST_PROCESSED: enabled
+              CERT_SIGNING_INFO: enabled
+              CERT_STATUS_CHANGE_REQUEST: enabled
+              CERT_STATUS_CHANGE_REQUEST_PROCESSED: enabled
+              CIMC_CERT_VERIFICATION: disabled
+              CLIENT_ACCESS_SESSION_ESTABLISH: enabled
+              CLIENT_ACCESS_SESSION_TERMINATED: enabled
+              CMC_ID_POP_LINK_WITNESS: disabled
+              CMC_PROOF_OF_IDENTIFICATION: disabled
+              CMC_REQUEST_RECEIVED: enabled
+              CMC_RESPONSE_SENT: enabled
+              CMC_SIGNED_REQUEST_SIG_VERIFY: enabled
+              CMC_USER_SIGNED_REQUEST_SIG_VERIFY: enabled
+              COMPUTE_RANDOM_DATA_REQUEST: disabled
+              COMPUTE_RANDOM_DATA_REQUEST_PROCESSED: disabled
+              COMPUTE_SESSION_KEY_REQUEST: disabled
+              COMPUTE_SESSION_KEY_REQUEST_PROCESSED: disabled
+              CONFIG_ACL: enabled
+              CONFIG_AUTH: enabled
+              CONFIG_CERT_POLICY: disabled
+              CONFIG_CERT_PROFILE: enabled
+              CONFIG_CRL_PROFILE: enabled
+              CONFIG_DRM: disabled
+              CONFIG_ENCRYPTION: enabled
+              CONFIG_OCSP_PROFILE: disabled
+              CONFIG_ROLE: enabled
+              CONFIG_SERIAL_NUMBER: enabled
+              CONFIG_SIGNED_AUDIT: enabled
+              CONFIG_TOKEN_AUTHENTICATOR: disabled
+              CONFIG_TOKEN_CONNECTOR: disabled
+              CONFIG_TOKEN_GENERAL: disabled
+              CONFIG_TOKEN_MAPPING_RESOLVER: disabled
+              CONFIG_TOKEN_PROFILE: disabled
+              CONFIG_TOKEN_RECORD: disabled
+              CONFIG_TRUSTED_PUBLIC_KEY: enabled
+              CRL_RETRIEVAL: disabled
+              CRL_SIGNING_INFO: enabled
+              CRL_VALIDATION: disabled
+              DELTA_CRL_GENERATION: enabled
+              DELTA_CRL_PUBLISHING: disabled
+              DIVERSIFY_KEY_REQUEST: disabled
+              DIVERSIFY_KEY_REQUEST_PROCESSED: disabled
+              ENCRYPT_DATA_REQUEST: disabled
+              ENCRYPT_DATA_REQUEST_PROCESSED: disabled
+              FULL_CRL_GENERATION: enabled
+              FULL_CRL_PUBLISHING: disabled
+              INTER_BOUNDARY: disabled
+              KEY_GEN_ASYMMETRIC: enabled
+              KEY_RECOVERY_AGENT_LOGIN: disabled
+              KEY_RECOVERY_REQUEST: disabled
+              KEY_STATUS_CHANGE: disabled
+              LOG_PATH_CHANGE: enabled
+              NON_PROFILE_CERT_REQUEST: disabled
+              OCSP_ADD_CA_REQUEST: disabled
+              OCSP_ADD_CA_REQUEST_PROCESSED: disabled
+              OCSP_GENERATION: enabled
+              OCSP_REMOVE_CA_REQUEST: disabled
+              OCSP_REMOVE_CA_REQUEST_PROCESSED: disabled
+              OCSP_SIGNING_INFO: enabled
+              PROFILE_CERT_REQUEST: enabled
+              PROOF_OF_POSSESSION: enabled
+              RANDOM_GENERATION: enabled
+              ROLE_ASSUME: enabled
+              SCHEDULE_CRL_GENERATION: enabled
+              SECURITY_DATA_ARCHIVAL_REQUEST: disabled
+              SECURITY_DATA_ARCHIVAL_REQUEST_PROCESSED: disabled
+              SECURITY_DATA_EXPORT_KEY: disabled
+              SECURITY_DATA_INFO: disabled
+              SECURITY_DATA_RECOVERY_REQUEST: disabled
+              SECURITY_DATA_RECOVERY_REQUEST_PROCESSED: disabled
+              SECURITY_DATA_RECOVERY_REQUEST_STATE_CHANGE: disabled
+              SECURITY_DOMAIN_UPDATE: enabled
+              SELFTESTS_EXECUTION: enabled
+              SERVER_SIDE_KEYGEN_ENROLL_KEYGEN_REQUEST: disabled
+              SERVER_SIDE_KEYGEN_ENROLL_KEYGEN_REQUEST_PROCESSED: disabled
+              SERVER_SIDE_KEYGEN_ENROLL_KEY_RETRIEVAL_REQUEST: disabled
+              SERVER_SIDE_KEYGEN_ENROLL_KEY_RETRIEVAL_REQUEST_PROCESSED: disabled
+              SERVER_SIDE_KEYGEN_REQUEST: enabled
+              SERVER_SIDE_KEYGEN_REQUEST_PROCESSED: enabled
+              SYMKEY_GENERATION_REQUEST: disabled
+              SYMKEY_GENERATION_REQUEST_PROCESSED: disabled
+              TOKEN_APPLET_UPGRADE: disabled
+              TOKEN_AUTH: disabled
+              TOKEN_CERT_ENROLLMENT: disabled
+              TOKEN_CERT_RENEWAL: disabled
+              TOKEN_CERT_RETRIEVAL: disabled
+              TOKEN_CERT_STATUS_CHANGE_REQUEST: disabled
+              TOKEN_FORMAT: disabled
+              TOKEN_KEY_CHANGEOVER: disabled
+              TOKEN_KEY_CHANGEOVER_REQUIRED: disabled
+              TOKEN_KEY_RECOVERY: disabled
+              TOKEN_KEY_SANITY_CHECK: disabled
+              TOKEN_OP_REQUEST: disabled
+              TOKEN_PIN_RESET: disabled
+              TOKEN_STATE_CHANGE: disabled
+          EOF
+
+          diff expected output
+
+          TOTAL_LOGS=$(cat total_logs)
+          echo "TOTAL_LOGS: $TOTAL_LOGS"
+
+          # get new audit logs
+          docker exec pki cat /var/lib/pki/pki-tomcat/logs/ca/signedAudit/ca_audit \
+              | sed -E \
+                  -e "1,${TOTAL_LOGS}d" \
+                  -e 's/^.*(\[AuditEvent=.*)$/\1/' \
+              | tee output
+
+          # get verifiable events and properties
+          sed -E \
+              -e '/^.*\[AuditEvent=ACCESS_SESSION_ESTABLISH\].*$/d' \
+              -e '/^.*\[AuditEvent=ACCESS_SESSION_TERMINATED\].*$/d' \
+              -e 's/^.*\[AuditEvent=(AUTH)\].*\[SubjectID=([^]]*)\].*\[AuthMgr=([^]]*)\].*$/\2 \1 \3/' \
+              -e 's/^.*\[AuditEvent=(AUTHZ)\].*\[SubjectID=([^]]*)\].*\[aclResource=([^]]*)\].*\[Op=([^]]*)\].*$/\2 \1 \3 \4/' \
+              -e 's/^.*\[AuditEvent=(ROLE_ASSUME)\].*\[SubjectID=([^]]*)\].*\[Role=([^]]*)\].*$/\2 \1 "\3"/' \
+              output > actual
+
+          # OCSP validation, login, config operation, and logout events should be logged
+          cat > expected << EOF
+          \$NonRoleUser\$ AUTHZ certServer.ee.request.ocsp submit
+          caadmin AUTH certUserDBAuthMgr
+          caadmin AUTHZ certServer.ca.account login
+          caadmin ROLE_ASSUME "Administrators,Certificate Manager Agents,Enterprise CA Administrators,Enterprise EST Administrators,Enterprise KRA Administrators,Enterprise OCSP Administrators,Enterprise RA Administrators,Enterprise TKS Administrators,Enterprise TPS Administrators,Security Domain Administrators"
+          caadmin AUTHZ certServer.log.configuration read
+          caadmin ROLE_ASSUME "Administrators,Certificate Manager Agents,Enterprise CA Administrators,Enterprise EST Administrators,Enterprise KRA Administrators,Enterprise OCSP Administrators,Enterprise RA Administrators,Enterprise TKS Administrators,Enterprise TPS Administrators,Security Domain Administrators"
+          caadmin AUTHZ certServer.ca.account logout
+          caadmin ROLE_ASSUME "Administrators,Certificate Manager Agents,Enterprise CA Administrators,Enterprise EST Administrators,Enterprise KRA Administrators,Enterprise OCSP Administrators,Enterprise RA Administrators,Enterprise TKS Administrators,Enterprise TPS Administrators,Security Domain Administrators"
+          EOF
+
+          diff expected actual
+
+          # check SSL session events
+          sed -En \
+              -e '/^.*\[AuditEvent=ACCESS_SESSION_ESTABLISH\].*$/p' \
+              -e '/^.*\[AuditEvent=ACCESS_SESSION_TERMINATED\].*$/p' \
+              output > actual
+
+          # there should be some SSL session events
+          [ -s actual ]
+
+          NEW_LOGS=$(cat output | wc -l)
+          echo "NEW_LOGS: $NEW_LOGS"
+          echo $((TOTAL_LOGS + NEW_LOGS)) > total_logs
+
+      - name: Export audit config
+        run: |
+          docker exec pki pki \
+              -n caadmin \
+              ca-audit-show \
+              --output $SHARED/output
+
+          cat output
+
+          cat > expected << EOF
+          {
+            "bufferSize" : 512,
+            "Status" : "Enabled",
+            "Signed" : false,
+            "Interval" : 5,
+            "Events" : {
+              "ACCESS_SESSION_ESTABLISH" : "enabled",
+              "ACCESS_SESSION_TERMINATED" : "enabled",
+              "ASYMKEY_GENERATION_REQUEST" : "disabled",
+              "ASYMKEY_GENERATION_REQUEST_PROCESSED" : "disabled",
+              "AUDIT_LOG_DELETE" : "disabled",
+              "AUDIT_LOG_SHUTDOWN" : "disabled",
+              "AUDIT_LOG_SIGNING" : "enabled",
+              "AUDIT_LOG_STARTUP" : "enabled",
+              "AUTH" : "enabled",
+              "AUTHORITY_CONFIG" : "enabled",
+              "AUTHZ" : "enabled",
+              "CERT_PROFILE_APPROVAL" : "enabled",
+              "CERT_REQUEST_PROCESSED" : "enabled",
+              "CERT_SIGNING_INFO" : "enabled",
+              "CERT_STATUS_CHANGE_REQUEST" : "enabled",
+              "CERT_STATUS_CHANGE_REQUEST_PROCESSED" : "enabled",
+              "CIMC_CERT_VERIFICATION" : "disabled",
+              "CLIENT_ACCESS_SESSION_ESTABLISH" : "enabled",
+              "CLIENT_ACCESS_SESSION_TERMINATED" : "enabled",
+              "CMC_ID_POP_LINK_WITNESS" : "disabled",
+              "CMC_PROOF_OF_IDENTIFICATION" : "disabled",
+              "CMC_REQUEST_RECEIVED" : "enabled",
+              "CMC_RESPONSE_SENT" : "enabled",
+              "CMC_SIGNED_REQUEST_SIG_VERIFY" : "enabled",
+              "CMC_USER_SIGNED_REQUEST_SIG_VERIFY" : "enabled",
+              "COMPUTE_RANDOM_DATA_REQUEST" : "disabled",
+              "COMPUTE_RANDOM_DATA_REQUEST_PROCESSED" : "disabled",
+              "COMPUTE_SESSION_KEY_REQUEST" : "disabled",
+              "COMPUTE_SESSION_KEY_REQUEST_PROCESSED" : "disabled",
+              "CONFIG_ACL" : "enabled",
+              "CONFIG_AUTH" : "enabled",
+              "CONFIG_CERT_POLICY" : "disabled",
+              "CONFIG_CERT_PROFILE" : "enabled",
+              "CONFIG_CRL_PROFILE" : "enabled",
+              "CONFIG_DRM" : "disabled",
+              "CONFIG_ENCRYPTION" : "enabled",
+              "CONFIG_OCSP_PROFILE" : "disabled",
+              "CONFIG_ROLE" : "enabled",
+              "CONFIG_SERIAL_NUMBER" : "enabled",
+              "CONFIG_SIGNED_AUDIT" : "enabled",
+              "CONFIG_TOKEN_AUTHENTICATOR" : "disabled",
+              "CONFIG_TOKEN_CONNECTOR" : "disabled",
+              "CONFIG_TOKEN_GENERAL" : "disabled",
+              "CONFIG_TOKEN_MAPPING_RESOLVER" : "disabled",
+              "CONFIG_TOKEN_PROFILE" : "disabled",
+              "CONFIG_TOKEN_RECORD" : "disabled",
+              "CONFIG_TRUSTED_PUBLIC_KEY" : "enabled",
+              "CRL_RETRIEVAL" : "disabled",
+              "CRL_SIGNING_INFO" : "enabled",
+              "CRL_VALIDATION" : "disabled",
+              "DELTA_CRL_GENERATION" : "enabled",
+              "DELTA_CRL_PUBLISHING" : "disabled",
+              "DIVERSIFY_KEY_REQUEST" : "disabled",
+              "DIVERSIFY_KEY_REQUEST_PROCESSED" : "disabled",
+              "ENCRYPT_DATA_REQUEST" : "disabled",
+              "ENCRYPT_DATA_REQUEST_PROCESSED" : "disabled",
+              "FULL_CRL_GENERATION" : "enabled",
+              "FULL_CRL_PUBLISHING" : "disabled",
+              "INTER_BOUNDARY" : "disabled",
+              "KEY_GEN_ASYMMETRIC" : "enabled",
+              "KEY_RECOVERY_AGENT_LOGIN" : "disabled",
+              "KEY_RECOVERY_REQUEST" : "disabled",
+              "KEY_STATUS_CHANGE" : "disabled",
+              "LOG_PATH_CHANGE" : "enabled",
+              "NON_PROFILE_CERT_REQUEST" : "disabled",
+              "OCSP_ADD_CA_REQUEST" : "disabled",
+              "OCSP_ADD_CA_REQUEST_PROCESSED" : "disabled",
+              "OCSP_GENERATION" : "enabled",
+              "OCSP_REMOVE_CA_REQUEST" : "disabled",
+              "OCSP_REMOVE_CA_REQUEST_PROCESSED" : "disabled",
+              "OCSP_SIGNING_INFO" : "enabled",
+              "PROFILE_CERT_REQUEST" : "enabled",
+              "PROOF_OF_POSSESSION" : "enabled",
+              "RANDOM_GENERATION" : "enabled",
+              "ROLE_ASSUME" : "enabled",
+              "SCHEDULE_CRL_GENERATION" : "enabled",
+              "SECURITY_DATA_ARCHIVAL_REQUEST" : "disabled",
+              "SECURITY_DATA_ARCHIVAL_REQUEST_PROCESSED" : "disabled",
+              "SECURITY_DATA_EXPORT_KEY" : "disabled",
+              "SECURITY_DATA_INFO" : "disabled",
+              "SECURITY_DATA_RECOVERY_REQUEST" : "disabled",
+              "SECURITY_DATA_RECOVERY_REQUEST_PROCESSED" : "disabled",
+              "SECURITY_DATA_RECOVERY_REQUEST_STATE_CHANGE" : "disabled",
+              "SECURITY_DOMAIN_UPDATE" : "enabled",
+              "SELFTESTS_EXECUTION" : "enabled",
+              "SERVER_SIDE_KEYGEN_ENROLL_KEYGEN_REQUEST" : "disabled",
+              "SERVER_SIDE_KEYGEN_ENROLL_KEYGEN_REQUEST_PROCESSED" : "disabled",
+              "SERVER_SIDE_KEYGEN_ENROLL_KEY_RETRIEVAL_REQUEST" : "disabled",
+              "SERVER_SIDE_KEYGEN_ENROLL_KEY_RETRIEVAL_REQUEST_PROCESSED" : "disabled",
+              "SERVER_SIDE_KEYGEN_REQUEST" : "enabled",
+              "SERVER_SIDE_KEYGEN_REQUEST_PROCESSED" : "enabled",
+              "SYMKEY_GENERATION_REQUEST" : "disabled",
+              "SYMKEY_GENERATION_REQUEST_PROCESSED" : "disabled",
+              "TOKEN_APPLET_UPGRADE" : "disabled",
+              "TOKEN_AUTH" : "disabled",
+              "TOKEN_CERT_ENROLLMENT" : "disabled",
+              "TOKEN_CERT_RENEWAL" : "disabled",
+              "TOKEN_CERT_RETRIEVAL" : "disabled",
+              "TOKEN_CERT_STATUS_CHANGE_REQUEST" : "disabled",
+              "TOKEN_FORMAT" : "disabled",
+              "TOKEN_KEY_CHANGEOVER" : "disabled",
+              "TOKEN_KEY_CHANGEOVER_REQUIRED" : "disabled",
+              "TOKEN_KEY_RECOVERY" : "disabled",
+              "TOKEN_KEY_SANITY_CHECK" : "disabled",
+              "TOKEN_OP_REQUEST" : "disabled",
+              "TOKEN_PIN_RESET" : "disabled",
+              "TOKEN_STATE_CHANGE" : "disabled"
+            }
+          }
+          EOF
+
+          diff expected output
+
+          TOTAL_LOGS=$(cat total_logs)
+          echo "TOTAL_LOGS: $TOTAL_LOGS"
+
+          # get new audit logs
+          docker exec pki cat /var/lib/pki/pki-tomcat/logs/ca/signedAudit/ca_audit \
+              | sed -E \
+                  -e "1,${TOTAL_LOGS}d" \
+                  -e 's/^.*(\[AuditEvent=.*)$/\1/' \
+              | tee output
+
+          # get verifiable events and properties
+          sed -E \
+              -e '/^.*\[AuditEvent=ACCESS_SESSION_ESTABLISH\].*$/d' \
+              -e '/^.*\[AuditEvent=ACCESS_SESSION_TERMINATED\].*$/d' \
+              -e 's/^.*\[AuditEvent=(AUTH)\].*\[SubjectID=([^]]*)\].*\[AuthMgr=([^]]*)\].*$/\2 \1 \3/' \
+              -e 's/^.*\[AuditEvent=(AUTHZ)\].*\[SubjectID=([^]]*)\].*\[aclResource=([^]]*)\].*\[Op=([^]]*)\].*$/\2 \1 \3 \4/' \
+              -e 's/^.*\[AuditEvent=(ROLE_ASSUME)\].*\[SubjectID=([^]]*)\].*\[Role=([^]]*)\].*$/\2 \1 "\3"/' \
+              output > actual
+
+          # OCSP validation, login, config access, and logout events should be logged
+          cat > expected << EOF
+          \$NonRoleUser\$ AUTHZ certServer.ee.request.ocsp submit
+          caadmin AUTH certUserDBAuthMgr
+          caadmin AUTHZ certServer.ca.account login
+          caadmin ROLE_ASSUME "Administrators,Certificate Manager Agents,Enterprise CA Administrators,Enterprise EST Administrators,Enterprise KRA Administrators,Enterprise OCSP Administrators,Enterprise RA Administrators,Enterprise TKS Administrators,Enterprise TPS Administrators,Security Domain Administrators"
+          caadmin AUTHZ certServer.log.configuration read
+          caadmin ROLE_ASSUME "Administrators,Certificate Manager Agents,Enterprise CA Administrators,Enterprise EST Administrators,Enterprise KRA Administrators,Enterprise OCSP Administrators,Enterprise RA Administrators,Enterprise TKS Administrators,Enterprise TPS Administrators,Security Domain Administrators"
+          caadmin AUTHZ certServer.ca.account logout
+          caadmin ROLE_ASSUME "Administrators,Certificate Manager Agents,Enterprise CA Administrators,Enterprise EST Administrators,Enterprise KRA Administrators,Enterprise OCSP Administrators,Enterprise RA Administrators,Enterprise TKS Administrators,Enterprise TPS Administrators,Security Domain Administrators"
+          EOF
+
+          diff expected actual
+
+          # check SSL session events
+          sed -En \
+              -e '/^.*\[AuditEvent=ACCESS_SESSION_ESTABLISH\].*$/p' \
+              -e '/^.*\[AuditEvent=ACCESS_SESSION_TERMINATED\].*$/p' \
+              output > actual
+
+          # there should be some SSL session events
+          [ -s actual ]
+
+          NEW_LOGS=$(cat output | wc -l)
+          echo "NEW_LOGS: $NEW_LOGS"
+          echo $((TOTAL_LOGS + NEW_LOGS)) > total_logs
+
+      - name: Check audit signing cert request
+        run: |
+          docker exec pki openssl req -text -noout \
+              -in /var/lib/pki/pki-tomcat/conf/certs/ca_audit_signing.csr \
+              | tee output
+
+          # normalize output
+          # - remove hex string
+          sed -E \
+              -e '/^ *[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2})+:?$/d' \
+              -e '/^ *Modulus:$/d' \
+              -e '/^ *Signature Value:$/d' \
+              output > actual
+
+          cat > expected << EOF
+          Certificate Request:
+              Data:
+                  Version: 1 (0x0)
+                  Subject: O=EXAMPLE, OU=pki-tomcat, CN=CA Audit Signing Certificate
+                  Subject Public Key Info:
+                      Public Key Algorithm: rsaEncryption
+                          Public-Key: (2048 bit)
+                          Exponent: 65537 (0x10001)
+                  Attributes:
+                      (none)
+                      Requested Extensions:
+              Signature Algorithm: sha256WithRSAEncryption
+          EOF
+
+          diff expected actual
+
+      - name: Check audit signing cert
+        run: |
+          docker exec pki pki-server cert-export \
+              --cert-file ca_audit_signing.crt \
+              ca_audit_signing
+
+          docker exec pki openssl x509 -text -noout \
+              -in ca_audit_signing.crt \
+              | tee output
+
+          # normalize output
+          # - remove hex string
+          # - remove date and time
+          sed -E \
+              -e '/^ *[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2})+:?$/d' \
+              -e '/^ *Serial Number:$/d' \
+              -e '/^ *Validity$/d' \
+              -e '/^ *Not Before:/d' \
+              -e '/^ *Not After :/d' \
+              -e '/^ *Modulus:$/d' \
+              -e '/^ *Signature Value:$/d' \
+              -e '/^$/d' \
+              -e 's/ *$//' \
+              output > actual
+
+          cat > expected << EOF
+          Certificate:
+              Data:
+                  Version: 3 (0x2)
+                  Signature Algorithm: sha256WithRSAEncryption
+                  Issuer: O=EXAMPLE, OU=pki-tomcat, CN=CA Signing Certificate
+                  Subject: O=EXAMPLE, OU=pki-tomcat, CN=CA Audit Signing Certificate
+                  Subject Public Key Info:
+                      Public Key Algorithm: rsaEncryption
+                          Public-Key: (2048 bit)
+                          Exponent: 65537 (0x10001)
+                  X509v3 extensions:
+                      X509v3 Authority Key Identifier:
+                      X509v3 Key Usage: critical
+                          Digital Signature, Non Repudiation
+                      Authority Information Access:
+                          OCSP - URI:http://pki.example.com:8080/ca/ocsp
+              Signature Algorithm: sha256WithRSAEncryption
+          EOF
+
+          diff expected actual
+
+      - name: Check audit signing cert status
+        run: |
+          docker exec pki pki-server cert-show ca_audit_signing | tee output
+          SERIAL=$(sed -n "s/^\s*Serial Number:\s*\(\S*\)$/\1/p" output)
+
+          # check cert status with OCSP
+          docker exec pki openssl ocsp \
+              -url http://pki.example.com:8080/ca/ocsp \
+              -CAfile ca_signing.crt \
+              -issuer ca_signing.crt \
+              -serial $SERIAL \
+              | tee output
+
+          sed -n "/^$SERIAL:/p" output > actual
+          echo "$SERIAL: good" > expected
+
+          diff expected actual
+
+          sleep 10
+
+          TOTAL_LOGS=$(cat total_logs)
+          echo "TOTAL_LOGS: $TOTAL_LOGS"
+
+          # get new audit logs
+          docker exec pki cat /var/lib/pki/pki-tomcat/logs/ca/signedAudit/ca_audit \
+              | sed -E \
+                  -e "1,${TOTAL_LOGS}d" \
+                  -e 's/^.*(\[AuditEvent=.*)$/\1/' \
+              | tee output
+
+          # get verifiable values
+          sed -E \
+              -e 's/^.*\[AuditEvent=(AUTHZ)\].*\[SubjectID=([^]]*)\].*\[aclResource=([^]]*)\].*\[Op=([^]]*)\].*$/\2 \1 \3 \4/' \
+              output > actual
+
+          # OCSP validation should be logged
+          cat > expected << EOF
+          \$NonRoleUser\$ AUTHZ certServer.ee.request.ocsp submit
+          EOF
+
+          diff expected actual
+
+          NEW_LOGS=$(cat output | wc -l)
+          echo "NEW_LOGS: $NEW_LOGS"
+          echo $((TOTAL_LOGS + NEW_LOGS)) > total_logs
+
+      - name: Enable audit log signing
+        run: |
+          docker exec pki pki-server ca-audit-config-mod \
+              --logSigning true \
+              | tee output
+
+          cat > expected << EOF
+            Enabled: True
+            Log File: /var/lib/pki/pki-tomcat/logs/ca/signedAudit/ca_audit
+            Buffer Size (bytes): 512
+            Flush Interval (seconds): 5
+            Max File Size (bytes): 2000
+            Rollover Interval (seconds): 2592000
+            Expiration Time (seconds): 0
+            Log Signing: True
+            Signing Certificate: ca_audit_signing
+          EOF
+
+          diff expected output
+
+      - name: Restart CA
+        run: |
+          docker exec pki pki-server ca-redeploy --wait
+
+          TOTAL_LOGS=$(cat total_logs)
+          echo "TOTAL_LOGS: $TOTAL_LOGS"
+
+          # get new audit logs
+          docker exec pki cat /var/lib/pki/pki-tomcat/logs/ca/signedAudit/ca_audit \
+              | sed -E \
+                  -e "1,${TOTAL_LOGS}d" \
+                  -e 's/^.*(\[AuditEvent=.*)$/\1/' \
+              | tee output
+
+          # get verifiable events and properties
+          sed -E \
+              -e '/^.*\[AuditEvent=ACCESS_SESSION_ESTABLISH\].*$/d' \
+              -e '/^.*\[AuditEvent=ACCESS_SESSION_TERMINATED\].*$/d' \
+              -e 's/^.*\[AuditEvent=(AUDIT_LOG_STARTUP)\].*\[SubjectID=([^]]*)\].*$/\1 \2/' \
+              -e 's/^.*\[AuditEvent=(CERT_SIGNING_INFO)\].*\[SubjectID=([^]]*)\].*$/\1 \2/' \
+              -e 's/^.*\[AuditEvent=(CRL_SIGNING_INFO)\].*\[SubjectID=([^]]*)\].*$/\1 \2/' \
+              -e 's/^.*\[AuditEvent=(OCSP_SIGNING_INFO)\].*\[SubjectID=([^]]*)\].*$/\1 \2/' \
+              -e 's/^.*\[AuditEvent=(SELFTESTS_EXECUTION)\].*\[SubjectID=([^]]*)\].*$/\1 \2/' \
+              -e '/^.*\[AuditEvent=AUDIT_LOG_SIGNING\].*$/d' \
+              output > actual
+
+          cat > expected << EOF
+          AUDIT_LOG_STARTUP \$System\$
+          CERT_SIGNING_INFO \$System\$
+          CRL_SIGNING_INFO \$System\$
+          OCSP_SIGNING_INFO \$System\$
+          SELFTESTS_EXECUTION \$System\$
+          EOF
+
+          diff expected actual
+
+          # check SSL session events
+          sed -En \
+              -e '/^.*\[AuditEvent=ACCESS_SESSION_ESTABLISH\].*$/p' \
+              -e '/^.*\[AuditEvent=ACCESS_SESSION_TERMINATED\].*$/p' \
+              output > actual
+
+          # there should be some SSL session events
+          [ -s actual ]
+
+          # check audit signing events
+          sed -En \
+              -e '/^.*\[AuditEvent=AUDIT_LOG_SIGNING\].*$/p' \
+              output > actual
+
+          # there should be some audit signing events
+          [ -s actual ]
+
+          NEW_LOGS=$(cat output | wc -l)
+          echo "NEW_LOGS: $NEW_LOGS"
+          echo $((TOTAL_LOGS + NEW_LOGS)) > total_logs
+
       - name: Create auditor user
         run: |
           # https://github.com/dogtagpki/pki/wiki/Creating-Auditor
@@ -233,6 +1074,7 @@ jobs:
               -e 's/^.*\[AuditEvent=(ROLE_ASSUME)\].*\[SubjectID=([^]]*)\].*\[Role=([^]]*)\].*$/\1 \2 "\3"/' \
               -e 's/^.*\[AuditEvent=(CONFIG_ROLE)\].*\[SubjectID=([^]]*)\].*\[ParamNameValPairs=([^]]*)\].*$/\1 \2 \3/' \
               -e 's/^(CONFIG_ROLE .*) Scope;;([^+]*).*Operation;;([^+]*).*Resource;;([^+]*).*/\1 \2 \3 "\4"/' \
+              -e '/^.*\[AuditEvent=AUDIT_LOG_SIGNING\].*$/d' \
               output > actual
 
           cat > expected << EOF
@@ -251,6 +1093,14 @@ jobs:
           EOF
 
           diff expected actual
+
+          # check audit signing events
+          sed -En \
+              -e '/^.*\[AuditEvent=AUDIT_LOG_SIGNING\].*$/p' \
+              output > actual
+
+          # there should be some audit signing events
+          [ -s actual ]
 
           NEW_LOGS=$(cat output | wc -l)
           echo "NEW_LOGS: $NEW_LOGS"
@@ -287,6 +1137,7 @@ jobs:
               -e 's/^.*\[AuditEvent=(ROLE_ASSUME)\].*\[SubjectID=([^]]*)\].*\[Role=([^]]*)\].*$/\1 \2 "\3"/' \
               -e 's/^.*\[AuditEvent=(CONFIG_ROLE)\].*\[SubjectID=([^]]*)\].*\[ParamNameValPairs=([^]]*)\].*$/\1 \2 \3/' \
               -e 's/^(CONFIG_ROLE .*) Scope;;([^+]*).*Operation;;([^+]*).*Resource;;([^+]*).*/\1 \2 \3 "\4"/' \
+              -e '/^.*\[AuditEvent=AUDIT_LOG_SIGNING\].*$/d' \
               output > actual
 
           cat > expected << EOF
@@ -305,6 +1156,14 @@ jobs:
           EOF
 
           diff expected actual
+
+          # check audit signing events
+          sed -En \
+              -e '/^.*\[AuditEvent=AUDIT_LOG_SIGNING\].*$/p' \
+              output > actual
+
+          # there should be some audit signing events
+          [ -s actual ]
 
           NEW_LOGS=$(cat output | wc -l)
           echo "NEW_LOGS: $NEW_LOGS"
@@ -341,6 +1200,7 @@ jobs:
               -e 's/^.*\[AuditEvent=(ROLE_ASSUME)\].*\[SubjectID=([^]]*)\].*\[Role=([^]]*)\].*$/\1 \2 "\3"/' \
               -e 's/^.*\[AuditEvent=(CONFIG_ROLE)\].*\[SubjectID=([^]]*)\].*\[ParamNameValPairs=([^]]*)\].*$/\1 \2 \3/' \
               -e 's/^(CONFIG_ROLE .*) Scope;;([^+]*).*Operation;;([^+]*).*Resource;;([^+]*).*/\1 \2 \3 "\4"/' \
+              -e '/^.*\[AuditEvent=AUDIT_LOG_SIGNING\].*$/d' \
               output > actual
 
           cat > expected << EOF
@@ -359,6 +1219,14 @@ jobs:
           EOF
 
           diff expected actual
+
+          # check audit signing events
+          sed -En \
+              -e '/^.*\[AuditEvent=AUDIT_LOG_SIGNING\].*$/p' \
+              output > actual
+
+          # there should be some audit signing events
+          [ -s actual ]
 
           NEW_LOGS=$(cat output | wc -l)
           echo "NEW_LOGS: $NEW_LOGS"
@@ -404,6 +1272,7 @@ jobs:
               -e 's/^.*\[AuditEvent=(ROLE_ASSUME)\].*\[SubjectID=([^]]*)\].*\[Role=([^]]*)\].*$/\1 \2 "\3"/' \
               -e 's/^.*\[AuditEvent=(PROFILE_CERT_REQUEST)\].*\[SubjectID=([^]]*)\].*\[ProfileID=([^]]*)\].*\[CertSubject=([^]]*)\].*$/\1 \2 \3 \4/' \
               -e 's/^.*\[AuditEvent=(CERT_REQUEST_PROCESSED)\].*\[SubjectID=([^]]*)\].*$/\1 \2/' \
+              -e '/^.*\[AuditEvent=AUDIT_LOG_SIGNING\].*$/d' \
               output > actual
 
           # TODO: investigate <null> values
@@ -432,6 +1301,14 @@ jobs:
           EOF
 
           diff expected actual
+
+          # check audit signing events
+          sed -En \
+              -e '/^.*\[AuditEvent=AUDIT_LOG_SIGNING\].*$/p' \
+              output > actual
+
+          # there should be some audit signing events
+          [ -s actual ]
 
           NEW_LOGS=$(cat output | wc -l)
           echo "NEW_LOGS: $NEW_LOGS"
@@ -468,6 +1345,7 @@ jobs:
               -e 's/^.*\[AuditEvent=(ROLE_ASSUME)\].*\[SubjectID=([^]]*)\].*\[Role=([^]]*)\].*$/\1 \2 "\3"/' \
               -e 's/^.*\[AuditEvent=(CONFIG_ROLE)\].*\[SubjectID=([^]]*)\].*\[ParamNameValPairs=([^]]*)\].*$/\1 \2 \3/' \
               -e 's/^(CONFIG_ROLE .*) Scope;;([^+]*).*Operation;;([^+]*).*Resource;;([^+]*).*/\1 \2 \3 "\4"/' \
+              -e '/^.*\[AuditEvent=AUDIT_LOG_SIGNING\].*$/d' \
               output > actual
 
           cat > expected << EOF
@@ -486,6 +1364,14 @@ jobs:
           EOF
 
           diff expected actual
+
+          # check audit signing events
+          sed -En \
+              -e '/^.*\[AuditEvent=AUDIT_LOG_SIGNING\].*$/p' \
+              output > actual
+
+          # there should be some audit signing events
+          [ -s actual ]
 
           NEW_LOGS=$(cat output | wc -l)
           echo "NEW_LOGS: $NEW_LOGS"
@@ -529,6 +1415,7 @@ jobs:
               -e 's/^.*\[AuditEvent=(AUTH)\].*\[SubjectID=([^]]*)\].*\[AuthMgr=([^]]*)\].*$/\1 \2 \3/' \
               -e 's/^.*\[AuditEvent=(AUTHZ)\].*\[SubjectID=([^]]*)\].*\[aclResource=([^]]*)\].*\[Op=([^]]*)\].*$/\1 \2 \3 \4/' \
               -e 's/^.*\[AuditEvent=(ROLE_ASSUME)\].*\[SubjectID=([^]]*)\].*\[Role=([^]]*)\].*$/\1 \2 "\3"/' \
+              -e '/^.*\[AuditEvent=AUDIT_LOG_SIGNING\].*$/d' \
               output > actual
 
           cat > expected << EOF
@@ -546,6 +1433,14 @@ jobs:
           EOF
 
           diff expected actual
+
+          # check audit signing events
+          sed -En \
+              -e '/^.*\[AuditEvent=AUDIT_LOG_SIGNING\].*$/p' \
+              output > actual
+
+          # there should be some audit signing events
+          [ -s actual ]
 
           NEW_LOGS=$(cat output | wc -l)
           echo "NEW_LOGS: $NEW_LOGS"
@@ -594,6 +1489,7 @@ jobs:
               -e 's/^.*\[AuditEvent=(AUTH)\].*\[SubjectID=([^]]*)\].*\[AuthMgr=([^]]*)\].*$/\1 \2 \3/' \
               -e 's/^.*\[AuditEvent=(AUTHZ)\].*\[SubjectID=([^]]*)\].*\[aclResource=([^]]*)\].*\[Op=([^]]*)\].*$/\1 \2 \3 \4/' \
               -e 's/^.*\[AuditEvent=(ROLE_ASSUME)\].*\[SubjectID=([^]]*)\].*\[Role=([^]]*)\].*$/\1 \2 "\3"/' \
+              -e '/^.*\[AuditEvent=AUDIT_LOG_SIGNING\].*$/d' \
               output > actual
 
           cat > expected << EOF
@@ -611,6 +1507,14 @@ jobs:
           EOF
 
           diff expected actual
+
+          # check audit signing events
+          sed -En \
+              -e '/^.*\[AuditEvent=AUDIT_LOG_SIGNING\].*$/p' \
+              output > actual
+
+          # there should be some audit signing events
+          [ -s actual ]
 
           NEW_LOGS=$(cat output | wc -l)
           echo "NEW_LOGS: $NEW_LOGS"
@@ -645,6 +1549,7 @@ jobs:
               -e 's/^.*\[AuditEvent=(AUTH)\].*\[SubjectID=([^]]*)\].*\[AuthMgr=([^]]*)\].*$/\1 \2 \3/' \
               -e 's/^.*\[AuditEvent=(AUTHZ)\].*\[SubjectID=([^]]*)\].*\[aclResource=([^]]*)\].*\[Op=([^]]*)\].*$/\1 \2 \3 \4/' \
               -e 's/^.*\[AuditEvent=(ROLE_ASSUME)\].*\[SubjectID=([^]]*)\].*\[Role=([^]]*)\].*$/\1 \2 "\3"/' \
+              -e '/^.*\[AuditEvent=AUDIT_LOG_SIGNING\].*$/d' \
               output > actual
 
           cat > expected << EOF
@@ -662,6 +1567,14 @@ jobs:
           EOF
 
           diff expected actual
+
+          # check audit signing events
+          sed -En \
+              -e '/^.*\[AuditEvent=AUDIT_LOG_SIGNING\].*$/p' \
+              output > actual
+
+          # there should be some audit signing events
+          [ -s actual ]
 
           NEW_LOGS=$(cat output | wc -l)
           echo "NEW_LOGS: $NEW_LOGS"
@@ -691,7 +1604,7 @@ jobs:
 
           diff expected ca_audit
 
-      - name: Check audit log signatures
+      - name: Check valid audit log signatures
         run: |
           # https://github.com/dogtagpki/pki/wiki/Verifying-Signed-Audit-Logs
 
@@ -717,11 +1630,55 @@ jobs:
           # normalize output
           sed -E -e '/^$/d' output > actual
 
-          # there should be no signatures since log signing is disabled
+          # there should be valid signatures
           cat > expected << EOF
           Verification process complete.
-          Valid signatures: 0
+          Valid signatures: 46
           Invalid signatures: 0
+          EOF
+
+          diff expected actual
+
+      - name: Check invalid audit log signatures
+        run: |
+          # invalidate signatures
+          sed -Ei \
+              -e 's/^(.*\[AuditEvent=AUDIT_LOG_SIGNING\].* sig:) .*$/\1 XXXXX/' \
+              ca_audit
+
+          docker exec pki AuditVerify \
+              -d /root/.dogtag/nssdb \
+              -n ca_audit_signing \
+              -a $SHARED/filenames \
+              | tee output
+
+          # normalize output
+          sed \
+              -e '/^$/d' \
+              -e '/^Line .*: VERIFICATION FAILED:/d' \
+              output > actual
+
+          # there should be invalid signatures
+          cat > expected << EOF
+          ======
+          File: $SHARED/ca_audit
+          ======
+          Verification process complete.
+          Valid signatures: 0
+          Invalid signatures: 46
+          EOF
+
+          diff expected actual
+
+          # count failures
+          sed -n \
+              -e '/^Line .*: VERIFICATION FAILED:/p' \
+              output \
+              | wc -l \
+              > actual
+
+          cat > expected << EOF
+          46
           EOF
 
           diff expected actual
@@ -752,6 +1709,7 @@ jobs:
               -e 's/^(CONFIG_ROLE .*) Scope;;([^+]*).*Operation;;(OP_DELETE_USER)\+.*resource;;([^+]*).*user;;([^+]*).*/\1 \2 \3 "\4" "\5"/' \
               -e 's/^.*\[AuditEvent=(SECURITY_DOMAIN_UPDATE)\].*\[SubjectID=([^]]*)\].*\[ParamNameValPairs=([^]]*)\].*$/\1 \2 \3/' \
               -e 's/^(SECURITY_DOMAIN_UPDATE .*) .*\+name;;([^+]*).*operation;;([^+]*).*/\1 \3 "\2"/' \
+              -e '/^.*\[AuditEvent=AUDIT_LOG_SIGNING\].*$/d' \
               output > actual
 
           # TODO: investigate missing OCSP and ACCESS_SESSION_TERMINATED events
@@ -766,6 +1724,14 @@ jobs:
           EOF
 
           diff expected actual
+
+          # check audit signing events
+          sed -En \
+              -e '/^.*\[AuditEvent=AUDIT_LOG_SIGNING\].*$/p' \
+              output > actual
+
+          # there should be some audit signing events
+          [ -s actual ]
 
           NEW_LOGS=$(cat output | wc -l)
           echo "NEW_LOGS: $NEW_LOGS"
