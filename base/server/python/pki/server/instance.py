@@ -743,12 +743,10 @@ class PKIInstance(pki.server.PKIServer):
             cert_config = subsystem.get_system_cert_config(cert_tag)
             nickname = cert_config['nickname']
             token = cert_config['token']
-        else:
-            # if the subsystem does not exist, use the specified
-            # nickname and token
-            if not nickname and cert_id:
-                # if nickname not specified, use the cert ID
-                nickname = cert_id
+
+        if not nickname and cert_id:
+            # if nickname not specified, use the cert ID
+            nickname = cert_id
 
         # audit and CA signing cert require special flags set in NSSDB
         trust_attributes = None
