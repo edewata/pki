@@ -138,6 +138,7 @@ ExcludeArch: i686
 
 # Build with Maven unless --without maven is specified.
 %bcond_without maven
+%bcond_without xmvn
 
 # Execute unit tests unless --without test is specified.
 %bcond_without test
@@ -1589,7 +1590,8 @@ export JAVA_HOME=%{java_home}
 %if %{with maven}
 # build Java binaries and run unit tests with Maven
 
-%mvn_build %{!?with_test:-f} -j -- -Dapi.v1=%{?with_apiv1:true}%{!?with_apiv1:false}
+# mvn_build %{!?with_test:-f} -j -- -Dapi.v1=%{?with_apiv1:true}%{!?with_apiv1:false}
+mvn -Dapi.v1=%{?with_apiv1:true}%{!?with_apiv1:false} clean package
 
 # create links to Maven-built JAR files for CMake
 mkdir -p %{_vpath_builddir}/dist
