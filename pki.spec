@@ -1328,7 +1328,7 @@ then
 
 %if %{with apiv1}
     # migrate javax.ws.rs to jakarta.ws.rs
-    # this also renames org.jboss.spec.javax.ws.r into org.jboss.spec.jakarta.ws.rs
+    # this also renames org.jboss.spec.javax.ws.rs into org.jboss.spec.jakarta.ws.rs
     jar tvf jboss-jaxrs-api_2.0_spec-$JAXRS_VERSION.jar \
         | sed -n 's/.* \([^ ]\+\)\/[^\/]*\.class$/\1/p' \
         | sort \
@@ -1435,14 +1435,15 @@ then
 
     # org.jboss.spec.jakarta.ws.rs cannot be used with xmvn
     # so it's replaced with pki-local
-    mkdir -p $HOME/.m2/repository/pki-local/jboss-jaxrs-api_2.0_spec/$JAXRS_VERSION
-    cp jboss-jaxrs-api_2.0_spec-$JAXRS_VERSION.jar $HOME/.m2/repository/pki-local/jboss-jaxrs-api_2.0_spec/$JAXRS_VERSION
+    mkdir -p $HOME/.m2/repository/jakarta.ws.rs/jakarta.ws.rs-api/2.1.6
+    cp jboss-jaxrs-api_2.0_spec-$JAXRS_VERSION.jar $HOME/.m2/repository/jakarta.ws.rs/jakarta.ws.rs-api/2.1.6/jakarta.ws.rs-api-$JAXRS_VERSION.jar
 
     popd
 
     # rename org.jboss.spec.jakarta.ws.rs into pki-local
     cat base/common/pom.xml
-    %pom_change_dep org.jboss.spec.jakarta.ws.rs: pki-local: base/common
+    %pom_change_dep org.jboss.spec.jakarta.ws.rs:jboss-jaxrs-api_2.0_spec:1.0.0.Final jakarta.ws.rs:jakarta.ws.rs-api:2.1.6 base/common
+    cat base/common/pom.xml
 fi
 
 # without runtime_deps
