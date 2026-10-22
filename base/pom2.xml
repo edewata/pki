@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.dogtagpki.pki</groupId>
+        <artifactId>pki-parent</artifactId>
+        <version>11.10.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>pki-base-parent</artifactId>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>common</module>
+        <module>tools</module>
+        <module>tomcat</module>
+        <module>tomcat-10.1</module>
+        <module>server</module>
+        <module>server-webapp</module>
+        <module>ca</module>
+        <module>kra</module>
+        <module>ocsp</module>
+        <module>tks</module>
+        <module>tps</module>
+        <module>acme</module>
+        <module>est</module>
+        <module>console</module>
+    </modules>
+
+    <profiles>
+        <!-- Profile to drop v1 API completely (no compilation) -->
+        <profile>
+            <id>api-v1-dropped</id>
+            <activation>
+                <property>
+                    <name>api.v1</name>
+                    <value>false</value>
+                </property>
+            </activation>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-compiler-plugin</artifactId>
+                            <configuration>
+                                <excludes combine.children="append">
+                                    <!-- Exclude all v1 REST API files -->
+                                    <exclude>**/rest/v1/**</exclude>
+                                    <!-- Exclude v1 base classes -->
+                                    <exclude>**/PKIService.java</exclude>
+                                    <exclude>**/SubsystemService.java</exclude>
+                                    <exclude>**/v1/PKIApplication.java</exclude>
+                                    <!-- Exclude JAX-RS resource interfaces (v1 only) -->
+                                    <exclude>**/*Resource.java</exclude>
+                                    <!-- Exclude PATCH annotation -->
+                                    <exclude>**/PATCH.java</exclude>
+                                    <!-- Exclude TPS v1 services -->
+                                    <exclude>**/TPSAccountService.java</exclude>
+                                    <exclude>**/config/ConfigService.java</exclude>
+                                </excludes>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+    </profiles>
+
+</project>
