@@ -51,6 +51,7 @@ WITH_COMMIT_ID=
 DIST=
 
 WITH_JAVA=true
+WITH_JAVADOC=true
 WITH_CONSOLE=
 RUN_TESTS=true
 
@@ -61,6 +62,8 @@ ALL_PKGS=( $(echo "$PKG_LIST" | sed 's/ *, */ /g') )
 
 WITH_PKGS=
 WITHOUT_PKGS=
+
+BUILDER=
 
 VERBOSE=
 DEBUG=
@@ -95,11 +98,13 @@ usage() {
     echo "    --with-commit-id             Append commit ID to RPM version number."
     echo "    --dist=<name>                Distribution name (e.g. fc28)."
     echo "    --without-java               Do not build Java binaries."
+    echo "    --without-javadoc            Do not build Javadoc."
     echo "    --with-console               Build console package."
     echo "    --with-pkgs=<list>           Build packages specified in comma-separated list only."
     echo "    --without-pkgs=<list>        Build everything except packages specified in comma-separated list."
     echo "    --without-test               Do not run unit tests."
     echo "    --without-apiv1              Do not build API V1 in any of the subpackages."
+    echo "    --builder=<name>             Builder: xmvn (default), mvn, cmake"
     echo " -v,--verbose                    Run in verbose mode."
     echo "    --debug                      Run in debug mode."
     echo "    --help                       Show help message."
@@ -293,6 +298,11 @@ generate_rpm_spec() {
         sed -i "s/%bcond_with *console\$/%bcond_without console/g" "$SPEC_FILE"
     fi
 
+    # hard-code builder
+    if [ "$BUILDER" != "" ] ; then
+        sed -i "s/^\(%global *builder\) *.*\$/\1 $BUILDER/g" "$SPEC_FILE"
+    fi
+
     # hard-code packages to build
     for package in "${PKGS_TO_SKIP[@]}"
     do
@@ -400,6 +410,9 @@ while getopts v-: arg ; do
         without-java)
             WITH_JAVA=false
             ;;
+        without-javadoc)
+            WITH_JAVADOC=false
+            ;;
         with-console)
             WITH_CONSOLE=true
             ;;
@@ -423,6 +436,9 @@ while getopts v-: arg ; do
         without-apiv1)
             WITH_APIV1=false
             ;;
+        builder=?*)
+            BUILDER="$LONG_OPTARG"
+            ;;
         verbose)
             VERBOSE=true
             ;;
@@ -441,7 +457,7 @@ while getopts v-: arg ; do
         prefix-dir* | include-dir* | lib-dir* | sysconf-dir* | share-dir* | \
         cmake* | c-flags* | java-home* | jni-dir* | \
         unit-dir* | python* | python-dir* | install-dir* | \
-        source-tag* | spec* | with-pkgs* | without-pkgs* | dist* )
+        source-tag* | spec* | with-pkgs* | without-pkgs* | dist* | builder* )
             echo "ERROR: Missing argument for --$OPTARG option" >&2
             exit 1
             ;;
@@ -514,6 +530,7 @@ if [ "$DEBUG" = true ] ; then
     echo "PYTHON_DIR: $PYTHON_DIR"
     echo "UNIT_DIR: $UNIT_DIR"
     echo "INSTALL_DIR: $INSTALL_DIR"
+    echo "BUILDER: $BUILDER"
     echo "BUILD_TARGET: $BUILD_TARGET"
 fi
 
@@ -764,6 +781,10 @@ if [ "$BUILD_TARGET" = "dist" ] ; then
         OPTIONS+=(-DWITH_JAVA=FALSE)
     fi
 
+    if [ "$WITH_JAVADOC" = false ] ; then
+        OPTIONS+=(-DWITH_JAVADOC=FALSE)
+    fi
+
     for package in "${PKGS_TO_SKIP[@]}"
     do
         package=${package^^}
@@ -809,7 +830,7 @@ if [ "$BUILD_TARGET" = "dist" ] ; then
         make "${OPTIONS[@]}" theme
     fi
 
-    if [[ " ${PKGS_TO_BUILD[*]} " =~ " javadoc " ]]; then
+    if [ "$WITH_JAVADOC" = true ] ; then
         # build Javadoc
         make "${OPTIONS[@]}" javadoc
     fi
@@ -877,7 +898,8 @@ if [ "$BUILD_TARGET" = "dist" ] ; then
     echo "    $WORK_DIR/base/server/man"
     echo "    $WORK_DIR/base/tps/man"
     echo "    $WORK_DIR/base/common/python/html"
-    if [[ " ${PKGS_TO_BUILD[*]} " =~ " javadoc " ]]; then
+
+    if [ "$WITH_JAVADOC" = true ] ; then
         echo "    $WORK_DIR/base/javadoc/javadoc/pki"
     fi
 

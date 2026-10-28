@@ -6,6 +6,7 @@ env:
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
   BASE_IMAGE: ${{ vars.BASE_IMAGE }}
   COPR_REPO: ${{ vars.COPR_REPO }}
+  BUILDER: ${{ vars.BUILDER || 'mvn' }}
   NAMESPACE: ${{ vars.REGISTRY_NAMESPACE || 'dogtagpki' }}
 
 jobs:
@@ -42,6 +43,7 @@ jobs:
           build-args: |
             BASE_IMAGE=${{ env.BASE_IMAGE }}
             COPR_REPO=${{ env.COPR_REPO }}
+            BUILD_OPTS=--builder=${{ env.BUILDER }}
           tags: pki-deps
           target: pki-deps
           cache-to: type=local,dest=/tmp/.buildx-cache
@@ -54,6 +56,7 @@ jobs:
           build-args: |
             BASE_IMAGE=${{ env.BASE_IMAGE }}
             COPR_REPO=${{ env.COPR_REPO }}
+            BUILD_OPTS=--builder=${{ env.BUILDER }}
           tags: pki-builder-deps
           target: pki-builder-deps
           cache-to: type=local,dest=/tmp/.buildx-cache
@@ -66,6 +69,7 @@ jobs:
           build-args: |
             BASE_IMAGE=${{ env.BASE_IMAGE }}
             COPR_REPO=${{ env.COPR_REPO }}
+            BUILD_OPTS=--builder=${{ env.BUILDER }}
           tags: pki-builder
           target: pki-builder
           cache-from: type=local,src=/tmp/.buildx-cache
@@ -78,6 +82,7 @@ jobs:
           build-args: |
             BASE_IMAGE=${{ env.BASE_IMAGE }}
             COPR_REPO=${{ env.COPR_REPO }}
+            BUILD_OPTS=--builder=${{ env.BUILDER }}
           tags: pki-dist
           target: pki-dist
           cache-from: type=local,src=/tmp/.buildx-cache
@@ -90,6 +95,7 @@ jobs:
           build-args: |
             BASE_IMAGE=${{ env.BASE_IMAGE }}
             COPR_REPO=${{ env.COPR_REPO }}
+            BUILD_OPTS=--builder=${{ env.BUILDER }}
           tags: pki-runner
           target: pki-runner
           cache-from: type=local,src=/tmp/.buildx-cache
@@ -102,6 +108,7 @@ jobs:
           build-args: |
             BASE_IMAGE=${{ env.BASE_IMAGE }}
             COPR_REPO=${{ env.COPR_REPO }}
+            BUILD_OPTS=--builder=${{ env.BUILDER }}
           tags: pki-server
           target: pki-server
           cache-from: type=local,src=/tmp/.buildx-cache
@@ -114,6 +121,7 @@ jobs:
           build-args: |
             BASE_IMAGE=${{ env.BASE_IMAGE }}
             COPR_REPO=${{ env.COPR_REPO }}
+            BUILD_OPTS=--builder=${{ env.BUILDER }}
           tags: pki-ca
           target: pki-ca
           cache-from: type=local,src=/tmp/.buildx-cache
@@ -126,6 +134,7 @@ jobs:
           build-args: |
             BASE_IMAGE=${{ env.BASE_IMAGE }}
             COPR_REPO=${{ env.COPR_REPO }}
+            BUILD_OPTS=--builder=${{ env.BUILDER }}
           tags: pki-kra
           target: pki-kra
           cache-from: type=local,src=/tmp/.buildx-cache
@@ -138,6 +147,7 @@ jobs:
           build-args: |
             BASE_IMAGE=${{ env.BASE_IMAGE }}
             COPR_REPO=${{ env.COPR_REPO }}
+            BUILD_OPTS=--builder=${{ env.BUILDER }}
           tags: pki-ocsp
           target: pki-ocsp
           cache-from: type=local,src=/tmp/.buildx-cache
@@ -150,6 +160,7 @@ jobs:
           build-args: |
             BASE_IMAGE=${{ env.BASE_IMAGE }}
             COPR_REPO=${{ env.COPR_REPO }}
+            BUILD_OPTS=--builder=${{ env.BUILDER }}
           tags: pki-tks
           target: pki-tks
           cache-from: type=local,src=/tmp/.buildx-cache
@@ -162,6 +173,7 @@ jobs:
           build-args: |
             BASE_IMAGE=${{ env.BASE_IMAGE }}
             COPR_REPO=${{ env.COPR_REPO }}
+            BUILD_OPTS=--builder=${{ env.BUILDER }}
           tags: pki-tps
           target: pki-tps
           cache-from: type=local,src=/tmp/.buildx-cache

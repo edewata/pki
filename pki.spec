@@ -130,14 +130,23 @@ ExcludeArch: i686
 # PKI
 ################################################################################
 
-# Use external build dependencies unless --without build_deps is specified.
+# Build RPM with external build dependencies unless --without build_deps is specified.
 %bcond_without build_deps
 
-# Use bundled runtime dependencies unless --with runtime_deps is specified.
+# Build RPM without external runtime dependencies unless --with runtime_deps is specified.
 %bcond_with runtime_deps
 
-# Build with Maven unless --without maven is specified.
-%bcond_without maven
+# Build RPM with xmvn unless --define "builder <name>" is specified.
+%global builder mvn
+
+# Supported builders: xmvn, mvn, cmake
+%if "%{builder}" == "xmvn"
+    %global with_xmvn 1
+%elif "%{builder}" == "mvn"
+    %global with_mvn 1
+%else  # builder == cmake
+    %global with_cmake 1
+%endif
 
 # Execute unit tests unless --without test is specified.
 %bcond_without test
@@ -235,14 +244,7 @@ BuildRequires:    javapackages-tools
 BuildRequires:    xmlstarlet
 %endif
 
-%if 0%{?fedora} && 0%{?fedora} < %{fedora_tomcat9_cutoff} || 0%{?rhel} && 0%{?rhel} < %{rhel_tomcat9_cutoff}
-BuildRequires:    tomcat-lib >= 9.0
-%else
-BuildRequires:    tomcat-lib >= 1:10.1.36
-BuildRequires:    tomcat-jakartaee-migration
-%endif
-
-BuildRequires:    %{vendor_id}-jss >= 5.10.0
+%if 0%{?with_xmvn}
 
 BuildRequires:    mvn(xml-apis:xml-apis)
 BuildRequires:    mvn(xml-resolver:xml-resolver)
@@ -283,6 +285,10 @@ BuildRequires:    mvn(org.jboss.resteasy:resteasy-jackson2-provider)
 BuildRequires:    mvn(org.jboss.resteasy:resteasy-servlet-initializer)
 %endif
 
+# with build deps
+%endif
+
+# with xmvn
 %endif
 
 %if 0%{?fedora} && 0%{?fedora} < %{fedora_tomcat9_cutoff} || 0%{?rhel} && 0%{?rhel} < %{rhel_tomcat9_cutoff}
@@ -291,6 +297,7 @@ BuildRequires:    mvn(org.apache.tomcat:tomcat-catalina) >= 9.0.62
 BuildRequires:    mvn(org.apache.tomcat:tomcat-servlet-api) >= 9.0.62
 BuildRequires:    mvn(org.apache.tomcat:tomcat-jaspic-api) >= 9.0.62
 BuildRequires:    mvn(org.apache.tomcat:tomcat-util-scan) >= 9.0.62
+BuildRequires:    tomcat-lib >= 9.0
 
 %else
 
@@ -298,6 +305,8 @@ BuildRequires:    mvn(org.apache.tomcat:tomcat-catalina) >= 10.1.36
 BuildRequires:    mvn(org.apache.tomcat:tomcat-servlet-api) >= 10.1.36
 BuildRequires:    mvn(org.apache.tomcat:tomcat-jaspic-api) >= 10.1.36
 BuildRequires:    mvn(org.apache.tomcat:tomcat-util-scan) >= 10.0.36
+BuildRequires:    tomcat-lib >= 1:10.1.36
+BuildRequires:    tomcat-jakartaee-migration
 
 %endif
 
@@ -1120,10 +1129,15 @@ This package provides test suite for %{product_name}.
 
 %autosetup -n pki-%{full_version} -p 1
 
+%if 0%{?with_xmvn}
+
 %if %{without runtime_deps}
+# if the RPM is to be built without external runtime deps
 
 if [ -d base/common/lib ]
 then
+    # use runtime deps already in base/common/lib
+
     pushd base/common/lib
 
     # get JAR versions
@@ -1150,6 +1164,8 @@ then
     popd
 
 else
+    # import runtime deps from RPMs into base/common/lib
+
     mkdir -p base/common/lib
     pushd base/common/lib
 
@@ -1224,25 +1240,22 @@ then
 
     popd
 fi
+# with APIv1
 %endif
+
+# without external runtime deps
 %endif
 
 %if 0%{?fedora} >= %{fedora_tomcat9_cutoff} || 0%{?rhel} >= %{rhel_tomcat9_cutoff}
-
-# migrate PKI sources to Jakarta for Tomcat 10
-javax2jakarta \
-    -logLevel=FINE \
-    -profile=EE \
-    -exclude=./base/tomcat-9.0 \
-    ./base \
-    ./base
 
 if [ -d base/common/lib ]
 then
     # migrate common libraries
     pushd base/common/lib
 
-    # migrate jakarta.activation
+    echo "################################################################################"
+    echo "Migrating jakarta.activation-api"
+
     jar tvf jakarta.activation-api-$JAKARTA_ACTIVATION_API_VERSION.jar \
         | sed -n 's/.* \([^ ]\+\)\/[^\/]*\.class$/\1/p' \
         | sort \
@@ -1254,7 +1267,9 @@ then
         jakarta.activation-api-$JAKARTA_ACTIVATION_API_VERSION.jar \
         jakarta.activation-api-$JAKARTA_ACTIVATION_API_VERSION.jar
 
-    # migrate javax.annotation and jakarta.annotation
+    echo "################################################################################"
+    echo "Migrating jakarta.annotation-api"
+
     jar tvf jakarta.annotation-api-$JAKARTA_ANNOTATION_API_VERSION.jar \
         | sed -n 's/.* \([^ ]\+\)\/[^\/]*\.class$/\1/p' \
         | sort \
@@ -1266,7 +1281,9 @@ then
         jakarta.annotation-api-$JAKARTA_ANNOTATION_API_VERSION.jar \
         jakarta.annotation-api-$JAKARTA_ANNOTATION_API_VERSION.jar
 
-    # migrate jakarta.xml.bind
+    echo "################################################################################"
+    echo "Migrating jakarta.xml.bind-api"
+
     jar tvf jakarta.xml.bind-api-$JAXB_API_VERSION.jar \
         | sed -n 's/.* \([^ ]\+\)\/[^\/]*\.class$/\1/p' \
         | sort \
@@ -1278,7 +1295,9 @@ then
         jakarta.xml.bind-api-$JAXB_API_VERSION.jar \
         jakarta.xml.bind-api-$JAXB_API_VERSION.jar
 
-    # migrate com.fasterxml.jackson.annotation
+    echo "################################################################################"
+    echo "Migrating jackson-annotations"
+
     jar tvf jackson-annotations-$JACKSON_ANNOTATIONS_VERSION.jar \
         | sed -n 's/.* \([^ ]\+\)\/[^\/]*\.class$/\1/p' \
         | sort \
@@ -1290,7 +1309,9 @@ then
         jackson-annotations-$JACKSON_ANNOTATIONS_VERSION.jar \
         jackson-annotations-$JACKSON_ANNOTATIONS_VERSION.jar
 
-    # migrate com.fasterxml.jackson.core
+    echo "################################################################################"
+    echo "Migrating jackson-core"
+
     jar tvf jackson-core-$JACKSON_CORE_VERSION.jar \
         | sed -n 's/.* \([^ ]\+\)\/[^\/]*\.class$/\1/p' \
         | sort \
@@ -1302,7 +1323,9 @@ then
         jackson-core-$JACKSON_CORE_VERSION.jar \
         jackson-core-$JACKSON_CORE_VERSION.jar
 
-    # migrate com.fasterxml.jackson.databind
+    echo "################################################################################"
+    echo "Migrating jackson-databind"
+
     jar tvf jackson-databind-$JACKSON_CORE_VERSION.jar \
         | sed -n 's/.* \([^ ]\+\)\/[^\/]*\.class$/\1/p' \
         | sort \
@@ -1314,7 +1337,9 @@ then
         jackson-databind-$JACKSON_CORE_VERSION.jar \
         jackson-databind-$JACKSON_CORE_VERSION.jar
 
-    # migrate com.fasterxml.jackson.module.jaxb
+    echo "################################################################################"
+    echo "Migrating jackson-module-jaxb-annotations"
+
     jar tvf jackson-module-jaxb-annotations-$JACKSON_CORE_VERSION.jar \
         | sed -n 's/.* \([^ ]\+\)\/[^\/]*\.class$/\1/p' \
         | sort \
@@ -1327,8 +1352,11 @@ then
         jackson-module-jaxb-annotations-$JACKSON_CORE_VERSION.jar
 
 %if %{with apiv1}
-    # migrate javax.ws.rs to jakarta.ws.rs
-    # this also renames org.jboss.spec.javax.ws.r into org.jboss.spec.jakarta.ws.rs
+
+    echo "################################################################################"
+    echo "Migrating jboss-jaxrs-api_2.0_spec"
+
+    # this renames org.jboss.spec.javax.ws.rs into org.jboss.spec.jakarta.ws.rs
     jar tvf jboss-jaxrs-api_2.0_spec-$JAXRS_VERSION.jar \
         | sed -n 's/.* \([^ ]\+\)\/[^\/]*\.class$/\1/p' \
         | sort \
@@ -1340,7 +1368,9 @@ then
         jboss-jaxrs-api_2.0_spec-$JAXRS_VERSION.jar \
         jboss-jaxrs-api_2.0_spec-$JAXRS_VERSION.jar
 
-    # migrate com.fasterxml.jackson.jaxrs
+    echo "################################################################################"
+    echo "Migrating jackson-jaxrs-base"
+
     jar tvf jackson-jaxrs-base-$JACKSON_CORE_VERSION.jar \
         | sed -n 's/.* \([^ ]\+\)\/[^\/]*\.class$/\1/p' \
         | sort \
@@ -1352,7 +1382,9 @@ then
         jackson-jaxrs-base-$JACKSON_CORE_VERSION.jar \
         jackson-jaxrs-base-$JACKSON_CORE_VERSION.jar
 
-    # migrate com.fasterxml.jackson.jaxrs.json
+    echo "################################################################################"
+    echo "Migrating jackson-jaxrs-json-provider"
+
     jar tvf jackson-jaxrs-json-provider-$JACKSON_CORE_VERSION.jar \
         | sed -n 's/.* \([^ ]\+\)\/[^\/]*\.class$/\1/p' \
         | sort \
@@ -1364,7 +1396,9 @@ then
         jackson-jaxrs-json-provider-$JACKSON_CORE_VERSION.jar \
         jackson-jaxrs-json-provider-$JACKSON_CORE_VERSION.jar
 
-    # migrate org.jboss.resteasy.client.jaxrs
+    echo "################################################################################"
+    echo "Migrating resteasy-client"
+
     jar tvf resteasy-client-$RESTEASY_VERSION.jar \
         | sed -n 's/.* \([^ ]\+\)\/[^\/]*\.class$/\1/p' \
         | sort \
@@ -1376,7 +1410,9 @@ then
         resteasy-client-$RESTEASY_VERSION.jar \
         resteasy-client-$RESTEASY_VERSION.jar
 
-    # migrate org.jboss.resteasy.annotations.providers
+    echo "################################################################################"
+    echo "Migrating resteasy-jackson2-provider"
+
     jar tvf resteasy-jackson2-provider-$RESTEASY_VERSION.jar \
         | sed -n 's/.* \([^ ]\+\)\/[^\/]*\.class$/\1/p' \
         | sort \
@@ -1388,7 +1424,9 @@ then
         resteasy-jackson2-provider-$RESTEASY_VERSION.jar \
         resteasy-jackson2-provider-$RESTEASY_VERSION.jar
 
-    # migrate org.jboss.resteasy
+    echo "################################################################################"
+    echo "Migrating resteasy-jaxrs"
+
     jar tvf resteasy-jaxrs-$RESTEASY_VERSION.jar \
         | sed -n 's/.* \([^ ]\+\)\/[^\/]*\.class$/\1/p' \
         | sort \
@@ -1410,7 +1448,9 @@ then
     # migrate server libraries
     pushd base/server/lib
 
-    # migrate org.jboss.resteasy.plugins.servlet
+    echo "################################################################################"
+    echo "Migrating resteasy-servlet-initializer"
+
     jar tvf resteasy-servlet-initializer-$RESTEASY_VERSION.jar \
         | sed -n 's/.* \([^ ]\+\)\/[^\/]*\.class$/\1/p' \
         | sort \
@@ -1424,32 +1464,71 @@ then
 
     popd
 fi
-%endif
 
-%if %{without runtime_deps}
-%if %{with apiv1}
-if [ -d base/common/lib ]
-then
-    # install migrated common libraries
-    pushd base/common/lib
-
-    # org.jboss.spec.jakarta.ws.rs cannot be used with xmvn
-    # so it's replaced with pki-local
-    mkdir -p $HOME/.m2/repository/pki-local/jboss-jaxrs-api_2.0_spec/$JAXRS_VERSION
-    cp jboss-jaxrs-api_2.0_spec-$JAXRS_VERSION.jar $HOME/.m2/repository/pki-local/jboss-jaxrs-api_2.0_spec/$JAXRS_VERSION
-
-    popd
-
-    # rename org.jboss.spec.jakarta.ws.rs into pki-local
-    cat base/common/pom.xml
-    %pom_change_dep org.jboss.spec.jakarta.ws.rs: pki-local: base/common
-fi
-
-# without runtime_deps
+# with APIv1
 %endif
 
 # fedora >= fedora_tomcat9_cutoff || rhel >= rhel_tomcat9_cutoff
 %endif
+
+# with xmvn
+%endif
+
+echo "################################################################################"
+echo "Migrating base/common/pom.xml"
+
+cat base/common/pom.xml
+
+%if 0%{?fedora} >= %{fedora_tomcat9_cutoff} || 0%{?rhel} >= %{rhel_tomcat9_cutoff}
+
+%if %{without runtime_deps}
+
+%if %{with apiv1}
+
+%if 0%{?with_xmvn}
+
+    # replace org.jboss.spec.jakarta.ws.rs:jboss-jaxrs-api_2.0_spec:1.0.0.Final
+    # with pki-local:jboss-jaxrs-api_2.0_spec:1.0.0.Final for xmvn
+
+    mkdir -p $HOME/.m2/repository/pki-local/jboss-jaxrs-api_2.0_spec/$JAXRS_VERSION
+    cp \
+        base/common/lib/jboss-jaxrs-api_2.0_spec-$JAXRS_VERSION.jar \
+        $HOME/.m2/repository/pki-local/jboss-jaxrs-api_2.0_spec/$JAXRS_VERSION
+
+    %pom_change_dep org.jboss.spec.jakarta.ws.rs: pki-local: base/common
+
+%elif 0%{?with_mvn}
+
+    # replace org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.0_spec:1.0.0.Final
+    # with jakarta.ws.rs:jakarta.ws.rs-api:3.0.0 for mvn
+
+    %pom_change_dep org.jboss.spec.javax.ws.rs: jakarta.ws.rs:jakarta.ws.rs-api:3.0.0 base/common
+%endif
+
+cat base/common/pom.xml
+
+# with APIv1
+%endif
+
+# without external runtime deps
+%endif
+
+# fedora >= fedora_tomcat9_cutoff || rhel >= rhel_tomcat9_cutoff
+%endif
+
+echo "################################################################################"
+echo "Migrating PKI sources"
+
+%if 0%{?fedora} >= %{fedora_tomcat9_cutoff} || 0%{?rhel} >= %{rhel_tomcat9_cutoff}
+
+javax2jakarta \
+    -logLevel=FINE \
+    -profile=EE \
+    -exclude=./base/tomcat-9.0 \
+    ./base \
+    ./base
+
+# fedora >= fedora_tomcat9_cutoff || rhel >= rhel_tomcat9_cutoff
 %endif
 
 %if ! %{with base}
@@ -1586,10 +1665,55 @@ EOF
 
 export JAVA_HOME=%{java_home}
 
-%if %{with maven}
-# build Java binaries and run unit tests with Maven
+%if 0%{?with_xmvn}
 
-%mvn_build %{!?with_test:-f} -j -- -Dapi.v1=%{?with_apiv1:true}%{!?with_apiv1:false}
+    # build Java binaries and run unit tests with XMvn
+    OPTIONS=()
+
+    %if ! 0%{?with_test}
+        OPTIONS+=(-f)
+    %endif
+
+    #OPTIONS+=(-j)
+    OPTIONS+=(--)
+
+    %if 0%{?with_apiv1}
+        OPTIONS+=(-Dapi.v1=true)
+    %else
+        OPTIONS+=(-Dapi.v1=false)
+    %endif
+
+    OPTIONS+=(-Papi-v1-deps)
+
+    %mvn_build "${OPTIONS[@]}"
+
+%elif 0%{?with_mvn}
+
+    # build Java binaries and run unit tests with Maven
+    OPTIONS=()
+    OPTIONS+=(--batch-mode)
+
+    %if 0%{?with_apiv1}
+        OPTIONS+=(-Dapi.v1=true)
+    %else
+        OPTIONS+=(-Dapi.v1=false)
+    %endif
+
+    %if ! 0%{?with_test}
+        OPTIONS+=(-DskipTests)
+    %endif
+
+    #OPTIONS+=(-Dmaven.javadoc.skip=true)
+    OPTIONS+=(-Papi-v1-deps)
+
+    mvn "${OPTIONS[@]}" verify
+
+    ls -la base/target
+    find base/target -type d
+
+%endif
+
+%if 0%{?with_xmvn} || 0%{?with_mvn}
 
 # create links to Maven-built JAR files for CMake
 mkdir -p %{_vpath_builddir}/dist
@@ -1647,7 +1771,7 @@ ln -sf ../../base/console/target/pki-console.jar
 
 popd
 
-# with maven
+# ! with cmake
 %endif
 
 # Remove all symbol table and relocation information from the executable.
@@ -1663,48 +1787,134 @@ pkgs=base\
 %{?with_tks:,tks}\
 %{?with_tps:,tps}\
 %{?with_acme:,acme}\
-%{?with_javadoc:,javadoc}\
 %{?with_theme:,theme}\
 %{?with_meta:,meta}\
 %{?with_tests:,tests}\
 %{?with_debug:,debug}
 
+#%{?with_javadoc:,javadoc}\
+
+OPTIONS=()
+
+%if 0%{?_verbose}
+    OPTIONS+=(-v)
+%endif
+
+OPTIONS+=(--product-name="%{product_name}")
+OPTIONS+=(--product-id=%{product_id})
+
+%if "%{?product_version}" != ""
+    OPTIONS+=(--product-version=%{product_version})
+%else
+    OPTIONS+=(--product-version=%{version})
+%endif
+
+%if 0%{?with_theme}
+    OPTIONS+=(--theme=%{theme})
+%endif
+
+OPTIONS+=(--work-dir=%{_vpath_builddir})
+OPTIONS+=(--prefix-dir=%{_prefix})
+OPTIONS+=(--include-dir=%{_includedir})
+OPTIONS+=(--lib-dir=%{_libdir})
+OPTIONS+=(--sbin-dir=%{_sbindir})
+OPTIONS+=(--sysconf-dir=%{_sysconfdir})
+OPTIONS+=(--share-dir=%{_datadir})
+OPTIONS+=(--cmake=%{__cmake})
+OPTIONS+=(--c-flags="$C_FLAGS")
+OPTIONS+=(--cxx-flags="$CXX_FLAGS")
+OPTIONS+=(--java-home=%{java_home})
+OPTIONS+=(--jni-dir=%{_jnidir})
+OPTIONS+=(--unit-dir=%{_unitdir})
+OPTIONS+=(--python=%{python3})
+OPTIONS+=(--python-dir=%{python3_sitelib})
+
+%if ! 0%{?with_cmake}
+    OPTIONS+=(--without-java)
+%endif
+
+OPTIONS+=(--without-javadoc)
+
+OPTIONS+=(--with-pkgs=$pkgs)
+
+%if 0%{?with_console}
+    OPTIONS+=(--with-console)
+%endif
+
+OPTIONS+=(--without-test)
+
+%if ! 0%{?with_apiv1}
+    OPTIONS+=(--without-apiv1)
+%endif
+
 # build PKI console, Javadoc, and native binaries with CMake
-./build.sh \
-    %{?_verbose:-v} \
-    --product-name="%{product_name}" \
-    --product-id=%{product_id} \
-    --product-version=%{?product_version:%{product_version}}%{!?product_version:%{version}} \
-    %{?with_theme:--theme=%{theme}} \
-    --work-dir=%{_vpath_builddir} \
-    --prefix-dir=%{_prefix} \
-    --include-dir=%{_includedir} \
-    --lib-dir=%{_libdir} \
-    --sbin-dir=%{_sbindir} \
-    --sysconf-dir=%{_sysconfdir} \
-    --share-dir=%{_datadir} \
-    --cmake=%{__cmake} \
-    --c-flags="$C_FLAGS" \
-    --cxx-flags="$CXX_FLAGS" \
-    --java-home=%{java_home} \
-    --jni-dir=%{_jnidir} \
-    --unit-dir=%{_unitdir} \
-    --python=%{python3} \
-    --python-dir=%{python3_sitelib} \
-    %{?with_maven:--without-java} \
-    --with-pkgs=$pkgs \
-    %{?with_console:--with-console} \
-    --without-test \
-    %{!?with_apiv1:--without-apiv1} \
-    dist
+./build.sh "${OPTIONS[@]}" dist
 
 ################################################################################
 %install
 ################################################################################
 
-%if %{with maven}
+%if ! 0%{?with_cmake}
+
 # install Java binaries
+%if 0%{?with_xmvn}
 %mvn_install
+
+%elif 0%{?with_mvn}
+
+mkdir -p %{buildroot}%{_javadir}/pki
+
+%if %{with base}
+cp base/common/target/pki-common.jar %{buildroot}%{_javadir}/pki
+cp base/tools/target/pki-tools.jar %{buildroot}%{_javadir}/pki
+%endif
+
+%if %{with server}
+cp base/tomcat/target/pki-tomcat.jar %{buildroot}%{_javadir}/pki
+
+%if 0%{?fedora} && 0%{?fedora} < %{fedora_tomcat9_cutoff} || 0%{?rhel} && 0%{?rhel} < %{rhel_tomcat9_cutoff}
+cp base/tomcat-9.0/target/pki-tomcat-9.0.jar %{buildroot}%{_javadir}/pki
+%else
+cp base/tomcat-10.1/target/pki-tomcat-10.1.jar %{buildroot}%{_javadir}/pki
+%endif
+
+cp base/server/target/pki-server.jar %{buildroot}%{_javadir}/pki
+cp base/server-webapp/target/pki-server-webapp.jar %{buildroot}%{_javadir}/pki
+%endif
+
+%if %{with ca}
+cp base/ca/target/pki-ca.jar %{buildroot}%{_javadir}/pki
+%endif
+
+%if %{with kra}
+cp base/kra/target/pki-kra.jar %{buildroot}%{_javadir}/pki
+%endif
+
+%if %{with ocsp}
+cp base/ocsp/target/pki-ocsp.jar %{buildroot}%{_javadir}/pki
+%endif
+
+%if %{with tks}
+cp base/tks/target/pki-tks.jar %{buildroot}%{_javadir}/pki
+%endif
+
+%if %{with tps}
+cp base/tps/target/pki-tps.jar %{buildroot}%{_javadir}/pki
+%endif
+
+%if %{with acme}
+cp base/acme/target/pki-acme.jar %{buildroot}%{_javadir}/pki
+%endif
+
+%if %{with est}
+cp base/est/target/pki-est.jar %{buildroot}%{_javadir}/pki
+%endif
+
+%if %{with console}
+cp base/console/target/pki-console.jar %{buildroot}%{_javadir}/pki
+%endif
+
+%endif
 
 # Normally JAR files are installed in /usr/share/java/pki.
 # Since pki-tools.jar uses JNI Maven might install it in
@@ -1720,7 +1930,7 @@ else
    ln -sf ../../../..%{_javadir}/pki/pki-tools.jar %{buildroot}%{_jnidir}/pki
 fi
 
-# with maven
+# ! with cmake
 %endif
 
 # install PKI console, Javadoc, and native binaries
@@ -1732,7 +1942,7 @@ fi
 
 %if %{without runtime_deps}
 
-%if %{with maven}
+%if 0%{?with_xmvn}
 
 %if %{with meta}
 echo "Removing RPM deps from %{buildroot}%{_datadir}/maven-metadata/%{name}.xml"
@@ -1996,7 +2206,7 @@ xmlstarlet edit --inplace \
     %{buildroot}%{_datadir}/maven-metadata/%{name}-pki-est.xml
 %endif
 
-# with maven
+# with xmvn
 %endif
 
 # without runtime_deps
@@ -2125,10 +2335,10 @@ fi
 %if %{with meta}
 %if "%{name}" != "%{product_id}"
 ################################################################################
-%files -n %{product_id} %{?with_maven:-f .mfiles}
+%files -n %{product_id} %{?with_xmvn:-f .mfiles}
 ################################################################################
 %else
-%files %{?with_maven:-f .mfiles}
+%files %{?with_xmvn:-f .mfiles}
 %endif
 
 %doc %{_datadir}/doc/pki/README
@@ -2164,7 +2374,7 @@ fi
 %{_mandir}/man8/pki-upgrade.8.gz
 
 ################################################################################
-%files -n %{product_id}-java %{?with_maven:-f .mfiles-pki-java}
+%files -n %{product_id}-java %{?with_xmvn:-f .mfiles-pki-java}
 ################################################################################
 
 %license base/common/LICENSE
@@ -2172,7 +2382,7 @@ fi
 %{_datadir}/pki/examples/java/
 %{_datadir}/pki/lib/*.jar
 
-%if %{without maven}
+%if ! 0%{?with_xmvn}
 %{_javadir}/pki/pki-common.jar
 %endif
 
@@ -2188,7 +2398,7 @@ fi
 %{python3_sitelib}/pki
 
 ################################################################################
-%files -n %{product_id}-tools %{?with_maven:-f .mfiles-pki-tools}
+%files -n %{product_id}-tools %{?with_xmvn:-f .mfiles-pki-tools}
 ################################################################################
 
 %license base/tools/LICENSE
@@ -2257,7 +2467,7 @@ fi
 %{_mandir}/man1/PKICertImport.1.gz
 %{_mandir}/man1/tpsclient.1.gz
 
-%if %{without maven}
+%if ! 0%{?with_xmvn}
 %{_javadir}/pki/pki-tools.jar
 %endif
 
@@ -2268,7 +2478,7 @@ fi
 
 %if %{with server}
 ################################################################################
-%files -n %{product_id}-server %{?with_maven:-f .mfiles-pki-server}
+%files -n %{product_id}-server %{?with_xmvn:-f .mfiles-pki-server}
 ################################################################################
 
 %license base/common/THIRD_PARTY_LICENSES
@@ -2327,7 +2537,8 @@ fi
 %if 0%{?fedora}
 %{_sysusersdir}/%{product_id}.conf
 %endif
-%if %{without maven}
+
+%if ! 0%{?with_xmvn}
 %{_javadir}/pki/pki-server.jar
 %{_javadir}/pki/pki-server-webapp.jar
 %{_javadir}/pki/pki-tomcat.jar
@@ -2338,7 +2549,7 @@ fi
 %{_javadir}/pki/pki-tomcat-10.1.jar
 %endif
 
-#without maven
+# ! with xmvn
 %endif
 
 # with server
@@ -2346,12 +2557,12 @@ fi
 
 %if %{with acme}
 ################################################################################
-%files -n %{product_id}-acme %{?with_maven:-f .mfiles-pki-acme}
+%files -n %{product_id}-acme %{?with_xmvn:-f .mfiles-pki-acme}
 ################################################################################
 
 %{_datadir}/pki/acme/
 
-%if %{without maven}
+%if ! 0%{?with_xmvn}
 %{_javadir}/pki/pki-acme.jar
 %endif
 
@@ -2360,13 +2571,13 @@ fi
 
 %if %{with ca}
 ################################################################################
-%files -n %{product_id}-ca %{?with_maven:-f .mfiles-pki-ca}
+%files -n %{product_id}-ca %{?with_xmvn:-f .mfiles-pki-ca}
 ################################################################################
 
 %license base/ca/LICENSE
 %{_datadir}/pki/ca/
 
-%if %{without maven}
+%if ! 0%{?with_xmvn}
 %{_javadir}/pki/pki-ca.jar
 %endif
 
@@ -2375,12 +2586,12 @@ fi
 
 %if %{with est}
 ################################################################################
-%files -n %{product_id}-est %{?with_maven:-f .mfiles-pki-est}
+%files -n %{product_id}-est %{?with_xmvn:-f .mfiles-pki-est}
 ################################################################################
 
 %{_datadir}/pki/est/
 
-%if %{without maven}
+%if ! 0%{?with_xmvn}
 %{_javadir}/pki/pki-est.jar
 %endif
 
@@ -2389,13 +2600,13 @@ fi
 
 %if %{with kra}
 ################################################################################
-%files -n %{product_id}-kra %{?with_maven:-f .mfiles-pki-kra}
+%files -n %{product_id}-kra %{?with_xmvn:-f .mfiles-pki-kra}
 ################################################################################
 
 %license base/kra/LICENSE
 %{_datadir}/pki/kra/
 
-%if %{without maven}
+%if ! 0%{?with_xmvn}
 %{_javadir}/pki/pki-kra.jar
 %endif
 
@@ -2404,13 +2615,13 @@ fi
 
 %if %{with ocsp}
 ################################################################################
-%files -n %{product_id}-ocsp %{?with_maven:-f .mfiles-pki-ocsp}
+%files -n %{product_id}-ocsp %{?with_xmvn:-f .mfiles-pki-ocsp}
 ################################################################################
 
 %license base/ocsp/LICENSE
 %{_datadir}/pki/ocsp/
 
-%if %{without maven}
+%if ! 0%{?with_xmvn}
 %{_javadir}/pki/pki-ocsp.jar
 %endif
 
@@ -2419,13 +2630,13 @@ fi
 
 %if %{with tks}
 ################################################################################
-%files -n %{product_id}-tks %{?with_maven:-f .mfiles-pki-tks}
+%files -n %{product_id}-tks %{?with_xmvn:-f .mfiles-pki-tks}
 ################################################################################
 
 %license base/tks/LICENSE
 %{_datadir}/pki/tks/
 
-%if %{without maven}
+%if ! 0%{?with_xmvn}
 %{_javadir}/pki/pki-tks.jar
 %endif
 
@@ -2434,7 +2645,7 @@ fi
 
 %if %{with tps}
 ################################################################################
-%files -n %{product_id}-tps %{?with_maven:-f .mfiles-pki-tps}
+%files -n %{product_id}-tps %{?with_xmvn:-f .mfiles-pki-tps}
 ################################################################################
 
 %license base/tps/LICENSE
@@ -2442,7 +2653,7 @@ fi
 %{_mandir}/man5/pki-tps-connector.5.gz
 %{_mandir}/man5/pki-tps-profile.5.gz
 
-%if %{without maven}
+%if ! 0%{?with_xmvn}
 %{_javadir}/pki/pki-tps.jar
 %endif
 
@@ -2461,12 +2672,13 @@ fi
 
 %if %{with console}
 ################################################################################
-%files -n %{product_id}-console %{?with_maven:-f .mfiles-pki-console}
+%files -n %{product_id}-console %{?with_xmvn:-f .mfiles-pki-console}
 ################################################################################
 
 %license base/console/LICENSE
 %{_bindir}/pkiconsole
-%if %{without maven}
+
+%if ! 0%{?with_xmvn}
 %{_javadir}/pki/pki-console.jar
 %endif
 
