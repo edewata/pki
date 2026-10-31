@@ -1,0 +1,29 @@
+name: Build Tests
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: Waiting for build
+    uses: ./.github/workflows/wait-for-build.yml
+    secrets: inherit
+
+  version-test:
+    name: Version number
+    uses: ./.github/workflows/version-test.yml
+
+  shell-test:
+    name: Shell
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          severity: error
+          ignore_paths: tests # Don't check legacy test scripts
+
+  rpminspect-test:
+    name: RPM inspect
+    needs: build
+    uses: ./.github/workflows/rpminspect-test.yml

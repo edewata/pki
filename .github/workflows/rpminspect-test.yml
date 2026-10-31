@@ -1,4 +1,4 @@
-name: rpminspect
+name: RPM inspect
 
 on: workflow_call
 
