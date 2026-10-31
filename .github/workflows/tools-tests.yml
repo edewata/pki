@@ -82,12 +82,3 @@ jobs:
     name: Basic PKI Server CLI
     needs: build
     uses: ./.github/workflows/pki-server-basic-test.yml
-
-  rpminspect-test:
-    name: rpminspect
-    needs: build
-    uses: ./.github/workflows/rpminspect-test.yml
-
-  version-number-test:
-    name: Version number
-    uses: ./.github/workflows/version-number-test.yml

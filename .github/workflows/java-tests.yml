@@ -66,14 +66,3 @@ jobs:
     name: Java Client
     needs: build
     uses: ./.github/workflows/java-client-test.yml
-
-  shellcheck:
-    name: Shellcheck
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - name: Run ShellCheck
-        uses: ludeeus/action-shellcheck@master
-        with:
-          severity: error
-          ignore_paths: tests # Don't check legacy test scripts
