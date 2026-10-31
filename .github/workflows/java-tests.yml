@@ -66,3 +66,8 @@ jobs:
     name: Java Client
     needs: build
     uses: ./.github/workflows/java-client-test.yml
+
+  javadoc-test:
+    name: Javadoc
+    needs: build
+    uses: ./.github/workflows/javadoc-test.yml
