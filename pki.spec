@@ -1257,6 +1257,10 @@ javax2jakarta \
     ./base \
     ./base
 
+%if %{without mvn}
+# migrate dependencies to Jakarta for Tomcat 10
+# (not needed with mvn since it downloads the dependencies as defined in pom.xml)
+
 if [ -d base/common/lib ]
 then
     # migrate common libraries
@@ -1465,11 +1469,16 @@ then
     %pom_change_dep org.jboss.spec.jakarta.ws.rs: pki-local: base/common
 fi
 
+# with apiv1
+%endif
+
 # without runtime_deps
 %endif
 
-# fedora >= fedora_tomcat9_cutoff || rhel >= rhel_tomcat9_cutoff
+# without mvn
 %endif
+
+# fedora >= fedora_tomcat9_cutoff || rhel >= rhel_tomcat9_cutoff
 %endif
 
 %if ! %{with base}
