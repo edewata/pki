@@ -50,6 +50,7 @@ WITH_TIMESTAMP=
 WITH_COMMIT_ID=
 DIST=
 
+BUILDER=xmvn
 WITH_JAVA=true
 WITH_CONSOLE=
 RUN_TESTS=true
@@ -94,6 +95,7 @@ usage() {
     echo "    --with-timestamp             Append timestamp to RPM version number."
     echo "    --with-commit-id             Append commit ID to RPM version number."
     echo "    --dist=<name>                Distribution name (e.g. fc28)."
+    echo "    --builder=<name>             Java builder for RPM build: xmvn (default), mvn, or cmake."
     echo "    --without-java               Do not build Java binaries."
     echo "    --with-console               Build console package."
     echo "    --with-pkgs=<list>           Build packages specified in comma-separated list only."
@@ -288,6 +290,9 @@ generate_rpm_spec() {
         sed -i "s/# Patch: pki-VERSION-RELEASE.patch/Patch: $PATCH/g" "$SPEC_FILE"
     fi
 
+    # hard-code Java builder
+    sed -i "s/^%{!?builder:%global builder *[^}]*}\$/%{!?builder:%global builder $BUILDER}/g" "$SPEC_FILE"
+
     if [ "$WITH_CONSOLE" = true ] ; then
         # convert bcond_with into bcond_without to build console by default
         sed -i "s/%bcond_with *console\$/%bcond_without console/g" "$SPEC_FILE"
@@ -397,6 +402,9 @@ while getopts v-: arg ; do
         dist=?*)
             DIST="$LONG_OPTARG"
             ;;
+        builder=?*)
+            BUILDER="$LONG_OPTARG"
+            ;;
         without-java)
             WITH_JAVA=false
             ;;
@@ -441,7 +449,7 @@ while getopts v-: arg ; do
         prefix-dir* | include-dir* | lib-dir* | sysconf-dir* | share-dir* | \
         cmake* | c-flags* | java-home* | jni-dir* | \
         unit-dir* | python* | python-dir* | install-dir* | \
-        source-tag* | spec* | with-pkgs* | without-pkgs* | dist* )
+        source-tag* | spec* | with-pkgs* | without-pkgs* | dist* | builder* )
             echo "ERROR: Missing argument for --$OPTARG option" >&2
             exit 1
             ;;
@@ -468,6 +476,13 @@ fi
 
 if [ "$WORK_DIR" = "" ] ; then
     WORK_DIR="$HOME/build/$NAME"
+fi
+
+if [ "$BUILDER" != "xmvn" ] &&
+        [ "$BUILDER" != "mvn" ] &&
+        [ "$BUILDER" != "cmake" ] ; then
+    echo "ERROR: Invalid builder: $BUILDER" >&2
+    exit 1
 fi
 
 if [ "$WITH_PKGS" != "" ] ; then
@@ -514,6 +529,7 @@ if [ "$DEBUG" = true ] ; then
     echo "PYTHON_DIR: $PYTHON_DIR"
     echo "UNIT_DIR: $UNIT_DIR"
     echo "INSTALL_DIR: $INSTALL_DIR"
+    echo "BUILDER: $BUILDER"
     echo "BUILD_TARGET: $BUILD_TARGET"
 fi
 

@@ -136,8 +136,25 @@ ExcludeArch: i686
 # Use bundled runtime dependencies unless --with runtime_deps is specified.
 %bcond_with runtime_deps
 
-# Build with XMvn unless --without xmvn is specified.
-%bcond_without xmvn
+# Java builder: xmvn (default), mvn, or cmake.
+# Specify with --define "builder <name>".
+# The mvn builder downloads dependencies as defined in pom.xml.
+# Native code and Javadoc are always built with CMake.
+%{!?builder:%global builder xmvn}
+
+%if "%{builder}" == "xmvn"
+%global with_xmvn 1
+%else
+%if "%{builder}" == "mvn"
+%global with_mvn 1
+%else
+%if "%{builder}" == "cmake"
+%global with_cmake 1
+%else
+%{error:Invalid builder: %{builder}}
+%endif
+%endif
+%endif
 
 # Execute unit tests unless --without test is specified.
 %bcond_without test
@@ -228,6 +245,9 @@ BuildRequires:    %{java_devel}
 BuildRequires:    %{maven_local}
 %if 0%{?fedora}
 BuildRequires:    xmvn-tools
+%endif
+%if %{with mvn}
+BuildRequires:    maven
 %endif
 BuildRequires:    javapackages-tools
 
@@ -1514,6 +1534,7 @@ fi
 %pom_remove_plugin org.apache.maven.plugins:maven-deploy-plugin
 %pom_remove_plugin com.github.github:site-maven-plugin
 
+%if %{with xmvn}
 # specify XMvn artifact locations
 %mvn_file org.dogtagpki.pki:pki-common            pki/pki-common
 %mvn_file org.dogtagpki.pki:pki-tools             pki/pki-tools
@@ -1546,7 +1567,6 @@ fi
 %mvn_package org.dogtagpki.pki:pki-server-webapp  pki-server
 %mvn_package org.dogtagpki.pki:pki-tomcat         pki-server
 
-
 %if 0%{?fedora} && 0%{?fedora} < %{fedora_tomcat9_cutoff} || 0%{?rhel} && 0%{?rhel} < %{rhel_tomcat9_cutoff}
 %mvn_package org.dogtagpki.pki:pki-tomcat-9.0     pki-server
 %else
@@ -1563,6 +1583,9 @@ fi
 
 %if %{with console}
 %mvn_package org.dogtagpki.pki:pki-console        pki-console
+%endif
+
+# with xmvn
 %endif
 
 %if 0%{?fedora}
@@ -1588,10 +1611,22 @@ export JAVA_HOME=%{java_home}
 
 %if %{with xmvn}
 # build Java binaries and run unit tests with XMvn
-
 %mvn_build %{!?with_test:-f} -j -- -Dapi.v1=%{?with_apiv1:true}%{!?with_apiv1:false}
+%endif
 
-# create links to XMvn-built JAR files for CMake
+%if %{with mvn}
+# build Java binaries and run unit tests with Maven
+# using dependencies downloaded as defined in pom.xml
+mvn \
+    --batch-mode \
+    --no-transfer-progress \
+    %{!?with_test:-DskipTests} \
+    -Dapi.v1=%{?with_apiv1:true}%{!?with_apiv1:false} \
+    package
+%endif
+
+%if %{with xmvn} || %{with mvn}
+# create links to Maven-built JAR files for CMake
 mkdir -p %{_vpath_builddir}/dist
 pushd %{_vpath_builddir}/dist
 
@@ -1647,7 +1682,7 @@ ln -sf ../../base/console/target/pki-console.jar
 
 popd
 
-# with xmvn
+# with xmvn || with mvn
 %endif
 
 # Remove all symbol table and relocation information from the executable.
@@ -1669,7 +1704,8 @@ pkgs=base\
 %{?with_tests:,tests}\
 %{?with_debug:,debug}
 
-# build PKI console, Javadoc, and native binaries with CMake
+# build Java binaries and PKI console (if builder is cmake),
+# Javadoc, and native binaries with CMake
 ./build.sh \
     %{?_verbose:-v} \
     --product-name="%{product_name}" \
@@ -1691,7 +1727,7 @@ pkgs=base\
     --unit-dir=%{_unitdir} \
     --python=%{python3} \
     --python-dir=%{python3_sitelib} \
-    %{?with_xmvn:--without-java} \
+    %{!?with_cmake:--without-java} \
     --with-pkgs=$pkgs \
     %{?with_console:--with-console} \
     --without-test \
@@ -1721,6 +1757,67 @@ else
 fi
 
 # with xmvn
+%endif
+
+%if %{with mvn}
+# install Java binaries built with Maven
+mkdir -p %{buildroot}%{_javadir}/pki
+
+%if %{with base}
+install -p -m 644 base/common/target/pki-common.jar %{buildroot}%{_javadir}/pki
+
+# install pki-tools.jar in /usr/lib/java/pki and create a link in /usr/share/java/pki
+mkdir -p %{buildroot}%{_jnidir}/pki
+install -p -m 644 base/tools/target/pki-tools.jar %{buildroot}%{_jnidir}/pki
+ln -sf ../../../..%{_jnidir}/pki/pki-tools.jar %{buildroot}%{_javadir}/pki
+%endif
+
+%if %{with server}
+install -p -m 644 base/tomcat/target/pki-tomcat.jar %{buildroot}%{_javadir}/pki
+
+%if 0%{?fedora} && 0%{?fedora} < %{fedora_tomcat9_cutoff} || 0%{?rhel} && 0%{?rhel} < %{rhel_tomcat9_cutoff}
+install -p -m 644 base/tomcat-9.0/target/pki-tomcat-9.0.jar %{buildroot}%{_javadir}/pki
+%else
+install -p -m 644 base/tomcat-10.1/target/pki-tomcat-10.1.jar %{buildroot}%{_javadir}/pki
+%endif
+
+install -p -m 644 base/server/target/pki-server.jar %{buildroot}%{_javadir}/pki
+install -p -m 644 base/server-webapp/target/pki-server-webapp.jar %{buildroot}%{_javadir}/pki
+%endif
+
+%if %{with ca}
+install -p -m 644 base/ca/target/pki-ca.jar %{buildroot}%{_javadir}/pki
+%endif
+
+%if %{with kra}
+install -p -m 644 base/kra/target/pki-kra.jar %{buildroot}%{_javadir}/pki
+%endif
+
+%if %{with ocsp}
+install -p -m 644 base/ocsp/target/pki-ocsp.jar %{buildroot}%{_javadir}/pki
+%endif
+
+%if %{with tks}
+install -p -m 644 base/tks/target/pki-tks.jar %{buildroot}%{_javadir}/pki
+%endif
+
+%if %{with tps}
+install -p -m 644 base/tps/target/pki-tps.jar %{buildroot}%{_javadir}/pki
+%endif
+
+%if %{with acme}
+install -p -m 644 base/acme/target/pki-acme.jar %{buildroot}%{_javadir}/pki
+%endif
+
+%if %{with est}
+install -p -m 644 base/est/target/pki-est.jar %{buildroot}%{_javadir}/pki
+%endif
+
+%if %{with console}
+install -p -m 644 base/console/target/pki-console.jar %{buildroot}%{_javadir}/pki
+%endif
+
+# with mvn
 %endif
 
 # install PKI console, Javadoc, and native binaries
