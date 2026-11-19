@@ -70,11 +70,15 @@ public class TLSALPN01Validator extends ACMEValidator {
     // RFC 8737 Section 3: the validation is done on port 443
     public static final int PORT = 443;
 
+    // By default use SunJSSE to create TLS connection with ALPN.
+    // TODO: Replace the default with Mozilla-JSS.
+    public static final String DEFAULT_TLS_PROVIDER = "SunJSSE";
     public static final int DEFAULT_TIMEOUT = 10000; // milliseconds
 
     // subjectAltName GeneralName type for dNSName
     static final int SAN_DNS_NAME = 2;
 
+    String tlsProvider = DEFAULT_TLS_PROVIDER;
     int timeout = DEFAULT_TIMEOUT;
 
     // not configurable: RFC 8737 mandates port 443
@@ -102,7 +106,14 @@ public class TLSALPN01Validator extends ACMEValidator {
 
         if (config == null) return;
 
-        String value = config.getParameter("timeout");
+        String value = config.getParameter("tlsProvider");
+        if (value != null) {
+            tlsProvider = value;
+        }
+
+        logger.info("- TLS provider: " + tlsProvider);
+
+        value = config.getParameter("timeout");
         if (value != null) {
             timeout = Integer.parseInt(value);
             if (timeout <= 0) {
@@ -172,7 +183,7 @@ public class TLSALPN01Validator extends ACMEValidator {
             validateCertificate(cert, hostname, keyAuthorization);
 
         } catch (Exception e) {
-            logger.error("Invalid TLS-ALPN-01 certificate: " + e.getMessage());
+            logger.error("Invalid TLS-ALPN-01 certificate: " + e.getMessage(), e);
 
             ACMEError error = new ACMEError();
             error.setType("urn:ietf:params:acme:error:incorrectResponse");
@@ -194,11 +205,7 @@ public class TLSALPN01Validator extends ACMEValidator {
 
         logger.info("Connecting to " + hostname + ":" + port);
 
-        // Use JSSE to create TLS connection with ALPN.
-        //
-        // TODO: Replace JSSE with JSS once it supports ALPN.
-        // https://github.com/dogtagpki/jss/pull/1127
-        SSLContext context = SSLContext.getInstance("TLS", "SunJSSE");
+        SSLContext context = SSLContext.getInstance("TLS", tlsProvider);
         context.init(null, new TrustManager[] { new AcceptAllTrustManager() }, null);
 
         try (Socket socket = new Socket()) {
