@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.dogtagpki.pki</groupId>
+        <artifactId>pki-base-parent</artifactId>
+        <version>12.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>pki-javadoc</artifactId>
+    <packaging>pom</packaging>
+
+    <!--
+    Generate the PKI Javadoc by calling the javadoc command directly
+    with the same options as base/javadoc/CMakeLists.txt. The classpath
+    is taken from the dependencies of this module.
+
+    The Javadoc covers the same packages as the CMake build. The server
+    sources are included unless -Dpki.server=false is specified. The
+    API v1 packages are excluded if -Dapi.v1=false is specified.
+    -->
+
+    <properties>
+        <javadoc.dest>${project.build.directory}/javadoc/pki</javadoc.dest>
+        <javadoc.sourcepath>${project.basedir}/../common/src/main/java:${project.basedir}/../tools/src/main/java</javadoc.sourcepath>
+        <javadoc.server.sourcepath></javadoc.server.sourcepath>
+        <javadoc.subpackages>com.netscape.cmsutil:com.netscape.cmstools:com.netscape.certsrv:org.dogtagpki</javadoc.subpackages>
+        <javadoc.server.subpackages></javadoc.server.subpackages>
+    </properties>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>pki-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>pki-tools</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>javadoc</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>${java.home}/bin/javadoc</executable>
+                            <classpathScope>compile</classpathScope>
+                            <arguments>
+                                <argument>-d</argument>
+                                <argument>${javadoc.dest}</argument>
+                                <argument>-windowtitle</argument>
+                                <argument>pki-javadoc</argument>
+                                <argument>-doctitle</argument>
+                                <argument>&lt;h1&gt;PKI Javadoc&lt;/h1&gt;</argument>
+                                <argument>-author</argument>
+                                <argument>-use</argument>
+                                <argument>-version</argument>
+                                <argument>-quiet</argument>
+                                <argument>-Xdoclint:none</argument>
+                                <argument>-sourcepath</argument>
+                                <argument>${javadoc.sourcepath}${javadoc.server.sourcepath}</argument>
+                                <argument>-classpath</argument>
+                                <classpath/>
+                                <argument>-subpackages</argument>
+                                <argument>${javadoc.subpackages}${javadoc.server.subpackages}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+
+        <!-- Include server sources unless -Dpki.server=false is specified -->
+        <profile>
+            <id>javadoc-server</id>
+            <activation>
+                <property>
+                    <name>pki.server</name>
+                    <value>!false</value>
+                </property>
+            </activation>
+            <properties>
+                <javadoc.server.sourcepath>:${project.basedir}/../server/src/main/java</javadoc.server.sourcepath>
+                <javadoc.server.subpackages>:com.netscape.cms</javadoc.server.subpackages>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>pki-server</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <!-- Exclude API v1 packages if -Dapi.v1=false is specified -->
+        <profile>
+            <id>javadoc-api-v1-dropped</id>
+            <activation>
+                <property>
+                    <name>api.v1</name>
+                    <value>false</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>javadoc</id>
+                                <configuration>
+                                    <arguments combine.children="append">
+                                        <!-- transformed v1 code references jakarta.ws.rs which is not available -->
+                                        <argument>--ignore-source-errors</argument>
+                                        <argument>-exclude</argument>
+                                        <argument>com.netscape.certsrv:com.netscape.cms.servlet:org.dogtagpki.server.rest.v1:org.dogtagpki.server.ca.rest.v1:org.dogtagpki.server.kra.rest.v1:org.dogtagpki.server.ocsp.rest.v1:org.dogtagpki.server.tks.rest.v1:org.dogtagpki.server.tps.rest.v1</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+    </profiles>
+
+</project>

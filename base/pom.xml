@@ -30,6 +30,7 @@
         <module>acme</module>
         <module>est</module>
         <module>console</module>
+        <module>javadoc</module>
     </modules>
 
     <profiles>
